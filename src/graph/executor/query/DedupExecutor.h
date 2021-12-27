@@ -13,7 +13,7 @@ namespace graph {
 
 class DedupExecutor final : public Executor {
  public:
-  DedupExecutor(const PlanNode *node, QueryContext *qctx) : Executor("DedupExecutor", node, qctx) {}
+  DedupExecutor(const PlanNode* node, QueryContext* qctx) : Executor("DedupExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

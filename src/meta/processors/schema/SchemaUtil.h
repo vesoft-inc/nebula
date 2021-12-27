@@ -16,7 +16,7 @@ class SchemaUtil final {
   ~SchemaUtil() = default;
 
  public:
-  static bool checkType(std::vector<cpp2::ColumnDef> &columns);
+  static bool checkType(std::vector<cpp2::ColumnDef>& columns);
 };
 
 }  // namespace meta

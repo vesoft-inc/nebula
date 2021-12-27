@@ -44,7 +44,7 @@ void SetFlagsHandler::onEOM() noexcept {
     if (flags.empty()) {
       err_ = HttpCode::E_UNPROCESSABLE;
     }
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     LOG(ERROR) << "Fail to update flags: " << e.what();
     err_ = HttpCode::E_UNPROCESSABLE;
   }
@@ -66,10 +66,10 @@ void SetFlagsHandler::onEOM() noexcept {
   }
 
   folly::dynamic failedOptions = folly::dynamic::array();
-  for (auto &item : flags.items()) {
-    const std::string &name = item.first.asString();
-    const std::string &value = item.second.asString();
-    const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
+  for (auto& item : flags.items()) {
+    const std::string& name = item.first.asString();
+    const std::string& value = item.second.asString();
+    const std::string& newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
     if (newValue.empty()) {
       failedOptions.push_back(name);
     }

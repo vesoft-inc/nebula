@@ -26,7 +26,7 @@ Status SignalHandler::init() {
   return Status::OK();
 }
 
-SignalHandler &SignalHandler::get() {
+SignalHandler& SignalHandler::get() {
   static SignalHandler instance;
   return instance;
 }
@@ -77,11 +77,11 @@ Status SignalHandler::installInternal(int sig, Handler handler) {
 }
 
 // static
-void SignalHandler::handlerHook(int sig, siginfo_t *info, void *uctx) {
+void SignalHandler::handlerHook(int sig, siginfo_t* info, void* uctx) {
   get().doHandle(sig, info, uctx);
 }
 
-void SignalHandler::doHandle(int sig, siginfo_t *info, void *uctx) {
+void SignalHandler::doHandle(int sig, siginfo_t* info, void* uctx) {
   switch (sig) {
     case SIGSEGV:  // segment fault
     case SIGABRT:  // abort
@@ -100,13 +100,13 @@ void SignalHandler::doHandle(int sig, siginfo_t *info, void *uctx) {
   handleGeneralSignal(sig, info);
 }
 
-void SignalHandler::handleGeneralSignal(int sig, siginfo_t *info) {
+void SignalHandler::handleGeneralSignal(int sig, siginfo_t* info) {
   auto index = sig - 1;
   GeneralSignalInfo siginfo(info);
   handlers_[index](&siginfo);
 }
 
-void SignalHandler::handleFatalSignal(int sig, siginfo_t *info, void *uctx) {
+void SignalHandler::handleFatalSignal(int sig, siginfo_t* info, void* uctx) {
   auto index = sig - 1;
   FatalSignalInfo siginfo(info, uctx);
   handlers_[index](&siginfo);
@@ -115,13 +115,13 @@ void SignalHandler::handleFatalSignal(int sig, siginfo_t *info, void *uctx) {
   ::raise(sig);
 }
 
-SignalHandler::GeneralSignalInfo::GeneralSignalInfo(const siginfo_t *info) {
+SignalHandler::GeneralSignalInfo::GeneralSignalInfo(const siginfo_t* info) {
   pid_ = info->si_pid;
   uid_ = info->si_uid;
   sig_ = info->si_signo;
 }
 
-const char *SignalHandler::GeneralSignalInfo::toString() const {
+const char* SignalHandler::GeneralSignalInfo::toString() const {
   static thread_local char buffer[1024];
   snprintf(buffer,
            sizeof(buffer),
@@ -133,12 +133,12 @@ const char *SignalHandler::GeneralSignalInfo::toString() const {
   return buffer;
 }
 
-SignalHandler::FatalSignalInfo::FatalSignalInfo(const siginfo_t *info, void *uctx)
+SignalHandler::FatalSignalInfo::FatalSignalInfo(const siginfo_t* info, void* uctx)
     : GeneralSignalInfo(info) {
   UNUSED(uctx);
 }
 
-const char *SignalHandler::FatalSignalInfo::toString() const {
+const char* SignalHandler::FatalSignalInfo::toString() const {
   return GeneralSignalInfo::toString();
 }
 

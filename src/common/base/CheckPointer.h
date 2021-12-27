@@ -9,7 +9,7 @@
 namespace nebula {
 
 template <typename T>
-bool inline checkPointer(const T *lhs, const T *rhs) {
+bool inline checkPointer(const T* lhs, const T* rhs) {
   if (lhs == rhs) {
     return true;
   } else if (lhs != nullptr && rhs != nullptr) {
@@ -20,7 +20,7 @@ bool inline checkPointer(const T *lhs, const T *rhs) {
 }
 
 template <typename T, template <typename, typename...> class DeRefAble>
-bool inline checkPointer(const DeRefAble<T> &lhs, const DeRefAble<T> &rhs) {
+bool inline checkPointer(const DeRefAble<T>& lhs, const DeRefAble<T>& rhs) {
   if (lhs == rhs) {
     return true;
   } else if (lhs != nullptr && rhs != nullptr) {

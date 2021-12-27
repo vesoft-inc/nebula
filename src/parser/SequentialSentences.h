@@ -19,19 +19,19 @@ namespace nebula {
 
 class SequentialSentences final : public Sentence {
  public:
-  explicit SequentialSentences(Sentence *sentence) {
+  explicit SequentialSentences(Sentence* sentence) {
     kind_ = Kind::kSequential;
     sentences_.emplace_back(sentence);
   }
 
-  void addSentence(Sentence *sentence) {
+  void addSentence(Sentence* sentence) {
     sentences_.emplace_back(sentence);
   }
 
   auto sentences() const {
-    std::vector<Sentence *> result;
+    std::vector<Sentence*> result;
     result.resize(sentences_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(sentences_.begin(), sentences_.end(), result.begin(), get);
     return result;
   }

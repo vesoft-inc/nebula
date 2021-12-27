@@ -48,7 +48,6 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
   ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 }
 
-
 TEST(LearnerTest, OneLeaderTwoLearnerTest) {
   fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
@@ -88,7 +87,6 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
   appendLogs(100, 199, leader, msgs);
   ASSERT_TRUE(checkConsensus(copies, 100, 199, msgs));
 }
-
 
 TEST(LearnerTest, CatchUpDataTest) {
   fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");

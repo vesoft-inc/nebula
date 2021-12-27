@@ -25,30 +25,30 @@ PushLimitDownTagIndexFullScanRule::PushLimitDownTagIndexFullScanRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushLimitDownTagIndexFullScanRule::pattern() const {
+const Pattern& PushLimitDownTagIndexFullScanRule::pattern() const {
   static Pattern pattern = Pattern::create(
       graph::PlanNode::Kind::kLimit, {Pattern::create(graph::PlanNode::Kind::kTagIndexFullScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownTagIndexFullScanRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
-  auto *qctx = octx->qctx();
+    OptContext* octx, const MatchedResult& matched) const {
+  auto* qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto indexScanGroupNode = matched.dependencies.front().node;
 
-  const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto indexScan = static_cast<const TagIndexFullScan *>(indexScanGroupNode->node());
+  const auto limit = static_cast<const Limit*>(limitGroupNode->node());
+  const auto indexScan = static_cast<const TagIndexFullScan*>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count(qctx);
   if (indexScan->limit(qctx) >= 0 && limitRows >= indexScan->limit(qctx)) {
     return TransformResult::noTransform();
   }
 
-  auto newLimit = static_cast<Limit *>(limit->clone());
+  auto newLimit = static_cast<Limit*>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newTagIndexFullScan = static_cast<TagIndexFullScan *>(indexScan->clone());
+  auto newTagIndexFullScan = static_cast<TagIndexFullScan*>(indexScan->clone());
   newTagIndexFullScan->setLimit(limitRows);
   auto newTagIndexFullScanGroup = OptGroup::create(octx);
   auto newTagIndexFullScanGroupNode = newTagIndexFullScanGroup->makeGroupNode(newTagIndexFullScan);

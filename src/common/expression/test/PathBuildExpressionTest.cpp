@@ -53,7 +53,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
     EXPECT_EQ(eval.type(), Value::Type::PATH);
   }
 
-  auto varPropExpr = [](const std::string &name) {
+  auto varPropExpr = [](const std::string& name) {
     return VariablePropertyExpression::make(&pool, "var1", name);
   };
 
@@ -68,7 +68,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
       // Test: Path + Edge
       auto result = Expression::eval(expr, gExpCtxt);
       EXPECT_EQ(result.type(), Value::Type::PATH);
-      const auto &path = result.getPath();
+      const auto& path = result.getPath();
       EXPECT_EQ(path.steps.size(), 1);
       EXPECT_EQ(path.steps.back().dst.vid, "2");
     }
@@ -81,7 +81,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
       // Test: Path + Edge + Path
       auto result = Expression::eval(expr, gExpCtxt);
       EXPECT_EQ(result.type(), Value::Type::PATH);
-      const auto &path = result.getPath();
+      const auto& path = result.getPath();
       EXPECT_EQ(path.steps.size(), 1);
       EXPECT_EQ(path.steps.back().dst.vid, "2");
     }
@@ -92,7 +92,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
       // Test: Path + Edge + Path + Edge
       auto result = Expression::eval(expr, gExpCtxt);
       EXPECT_EQ(result.type(), Value::Type::PATH);
-      const auto &path = result.getPath();
+      const auto& path = result.getPath();
       EXPECT_EQ(path.steps.size(), 2);
       EXPECT_EQ(path.steps.back().dst.vid, "3");
     }
@@ -109,7 +109,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
       // Test: Path + Path
       auto result = Expression::eval(pathExpr3, gExpCtxt);
       EXPECT_EQ(result.type(), Value::Type::PATH);
-      const auto &path = result.getPath();
+      const auto& path = result.getPath();
       EXPECT_EQ(path.steps.size(), 3);
       EXPECT_EQ(path.steps.back().dst.vid, "4");
     }

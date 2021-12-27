@@ -31,8 +31,8 @@ using proxygen::ProxygenError;
 using proxygen::ResponseBuilder;
 using proxygen::UpgradeProtocol;
 
-void MetaHttpIngestHandler::init(nebula::kvstore::KVStore *kvstore,
-                                 nebula::thread::GenericThreadPool *pool) {
+void MetaHttpIngestHandler::init(nebula::kvstore::KVStore* kvstore,
+                                 nebula::thread::GenericThreadPool* pool) {
   kvstore_ = kvstore;
   pool_ = pool;
   CHECK_NOTNULL(kvstore_);
@@ -119,7 +119,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
   std::set<std::string> storageIPs;
   while (iter->valid()) {
-    for (auto &host : MetaKeyUtils::parsePartVal(iter->val())) {
+    for (auto& host : MetaKeyUtils::parsePartVal(iter->val())) {
       if (storageIPs.count(host.host) == 0) {
         storageIPs.insert(std::move(host.host));
       }
@@ -129,9 +129,9 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
   std::vector<folly::SemiFuture<bool>> futures;
 
-  for (auto &storageIP : storageIPs) {
+  for (auto& storageIP : storageIPs) {
     auto dispatcher = [storageIP, space]() {
-      static const char *tmp = "http://%s:%d/ingest?space=%d";
+      static const char* tmp = "http://%s:%d/ingest?space=%d";
       auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_ws_storage_http_port, space);
       auto ingestResult = nebula::http::HttpClient::get(url);
       return ingestResult.ok() && ingestResult.value() == "SSTFile ingest successfully";
@@ -142,7 +142,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
   bool successfully{true};
   auto tries = folly::collectAll(std::move(futures)).get();
-  for (const auto &t : tries) {
+  for (const auto& t : tries) {
     if (t.hasException()) {
       LOG(ERROR) << "Ingest Failed: " << t.exception();
       successfully = false;

@@ -26,19 +26,19 @@ PushStepSampleDownGetNeighborsRule::PushStepSampleDownGetNeighborsRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushStepSampleDownGetNeighborsRule::pattern() const {
+const Pattern& PushStepSampleDownGetNeighborsRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kSample,
                                            {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
+    OptContext* octx, const MatchedResult& matched) const {
   auto sampleGroupNode = matched.node;
   auto gnGroupNode = matched.dependencies.front().node;
 
-  const auto sample = static_cast<const Sample *>(sampleGroupNode->node());
-  const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
+  const auto sample = static_cast<const Sample*>(sampleGroupNode->node());
+  const auto gn = static_cast<const GetNeighbors*>(gnGroupNode->node());
   if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
       graph::ExpressionUtils::isEvaluableExpr(sample->countExpr())) {
     int64_t limitRows = sample->count();
@@ -48,10 +48,10 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
     }
   }
 
-  auto newSample = static_cast<Sample *>(sample->clone());
+  auto newSample = static_cast<Sample*>(sample->clone());
   auto newSampleGroupNode = OptGroupNode::create(octx, newSample, sampleGroupNode->group());
 
-  auto newGn = static_cast<GetNeighbors *>(gn->clone());
+  auto newGn = static_cast<GetNeighbors*>(gn->clone());
   newGn->setLimit(sample->countExpr()->clone());
   newGn->setRandom(true);
   auto newGnGroup = OptGroup::create(octx);

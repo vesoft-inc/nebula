@@ -13,7 +13,7 @@ namespace graph {
 
 class CreateTagIndexExecutor final : public Executor {
  public:
-  CreateTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateTagIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateTagIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class CreateTagIndexExecutor final : public Executor {
 
 class DropTagIndexExecutor final : public Executor {
  public:
-  DropTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  DropTagIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropTagIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -29,7 +29,7 @@ class DropTagIndexExecutor final : public Executor {
 
 class DescTagIndexExecutor final : public Executor {
  public:
-  DescTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  DescTagIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DescTagIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -37,7 +37,7 @@ class DescTagIndexExecutor final : public Executor {
 
 class ShowCreateTagIndexExecutor final : public Executor {
  public:
-  ShowCreateTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCreateTagIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowCreateTagIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -45,7 +45,7 @@ class ShowCreateTagIndexExecutor final : public Executor {
 
 class ShowTagIndexesExecutor final : public Executor {
  public:
-  ShowTagIndexesExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowTagIndexesExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowTagIndexesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -53,7 +53,7 @@ class ShowTagIndexesExecutor final : public Executor {
 
 class ShowTagIndexStatusExecutor final : public Executor {
  public:
-  ShowTagIndexStatusExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowTagIndexStatusExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowTagIndexStatusExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

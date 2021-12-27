@@ -25,7 +25,7 @@ class SetExecutor : public Executor {
   Result getRightInputData() const;
 
  protected:
-  SetExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+  SetExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : Executor(name, node, qctx) {}
 
   std::vector<std::string> colNames_;

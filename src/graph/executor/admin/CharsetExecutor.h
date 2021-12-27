@@ -13,7 +13,7 @@ namespace graph {
 
 class ShowCharsetExecutor final : public Executor {
  public:
-  ShowCharsetExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCharsetExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowCharsetExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class ShowCharsetExecutor final : public Executor {
 
 class ShowCollationExecutor final : public Executor {
  public:
-  ShowCollationExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCollationExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowCollationExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

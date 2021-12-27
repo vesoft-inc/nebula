@@ -29,7 +29,7 @@ class StatusOr final {
       return 0;
     }
     template <typename V>
-    static auto sfinae(const StatusOr<V> &) -> uint16_t {
+    static auto sfinae(const StatusOr<V>&) -> uint16_t {
       return 0;
     }
     static constexpr auto value = (sizeof(sfinae(std::declval<U>())) == sizeof(uint16_t));
@@ -47,7 +47,7 @@ class StatusOr final {
   // e.g. convertible but not constructible.
   template <typename U>
   static constexpr bool is_initializable_v =
-      is_constructible_v<T, U> &&std::is_convertible<U, T>::value && !is_status_or_v<U> &&
+      is_constructible_v<T, U>&& std::is_convertible<U, T>::value && !is_status_or_v<U> &&
       !is_status_v<U>;
 
   // Assert that `T' must be copy/move constructible
@@ -79,7 +79,7 @@ class StatusOr final {
   // Not explicit to allow construct from a `Status', e.g. in the `return'
   // statement
   template <typename U>
-  StatusOr(U &&status, std::enable_if_t<is_status_v<U>> * = nullptr)  // NOLINT
+  StatusOr(U&& status, std::enable_if_t<is_status_v<U>>* = nullptr)  // NOLINT
       : variant_(std::forward<U>(status)) {
     state_ = kStatus;
   }
@@ -88,18 +88,18 @@ class StatusOr final {
   // Not explicit to allow construct from a value, e.g. in the `return'
   // statement
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr(U &&value)  // NOLINT
+  StatusOr(U&& value)  // NOLINT
       : variant_(std::forward<U>(value)) {
     state_ = kValue;
   }
 
-  StatusOr(T &&value)  // NOLINT
+  StatusOr(T&& value)  // NOLINT
       : variant_(std::move(value)) {
     state_ = kValue;
   }
 
   // Copy constructor
-  StatusOr(const StatusOr &rhs) : state_(rhs.state_) {
+  StatusOr(const StatusOr& rhs) : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(rhs.variant_.value_);
     } else if (hasStatus()) {
@@ -109,7 +109,7 @@ class StatusOr final {
 
   // Copy construct from a lvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr(const StatusOr<U> &rhs) : state_(rhs.state_) {
+  StatusOr(const StatusOr<U>& rhs) : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(rhs.variant_.value_);
     } else if (hasStatus()) {
@@ -118,7 +118,7 @@ class StatusOr final {
   }
 
   // Copy assignment operator
-  StatusOr &operator=(const StatusOr &rhs) {
+  StatusOr& operator=(const StatusOr& rhs) {
     if (&rhs == this) {
       return *this;
     }
@@ -134,7 +134,7 @@ class StatusOr final {
   }
 
   // Move constructor
-  StatusOr(StatusOr &&rhs) noexcept : state_(rhs.state_) {
+  StatusOr(StatusOr&& rhs) noexcept : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
       rhs.resetValue();
@@ -146,7 +146,7 @@ class StatusOr final {
 
   // Move construct from a rvalue of StatusOr<U>
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr(StatusOr<U> &&rhs) noexcept : state_(rhs.state_) {
+  StatusOr(StatusOr<U>&& rhs) noexcept : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
       rhs.resetValue();
@@ -159,7 +159,7 @@ class StatusOr final {
   }
 
   // Move assignment operator
-  StatusOr &operator=(StatusOr &&rhs) noexcept {
+  StatusOr& operator=(StatusOr&& rhs) noexcept {
     if (&rhs == this) {
       return *this;
     }
@@ -180,7 +180,7 @@ class StatusOr final {
 
   // Move assignment operator from a rvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr &operator=(StatusOr<U> &&rhs) noexcept {
+  StatusOr& operator=(StatusOr<U>&& rhs) noexcept {
     reset();
     if (rhs.hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
@@ -198,7 +198,7 @@ class StatusOr final {
 
   // Move assignment operator from a rvalue of any compatible type with `T'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr &operator=(U &&value) noexcept {
+  StatusOr& operator=(U&& value) noexcept {
     destruct();
     new (&variant_) Variant(std::forward<U>(value));
     state_ = kValue;
@@ -206,7 +206,7 @@ class StatusOr final {
   }
 
   // Copy assign from a lvalue of `Status'
-  StatusOr &operator=(const Status &status) {
+  StatusOr& operator=(const Status& status) {
     destruct();
     new (&variant_) Variant(status);
     state_ = kStatus;
@@ -214,7 +214,7 @@ class StatusOr final {
   }
 
   // Move assign from a rvalue of `Status'
-  StatusOr &operator=(Status &&status) noexcept {
+  StatusOr& operator=(Status&& status) noexcept {
     destruct();
     new (&variant_) Variant(std::move(status));
     state_ = kStatus;
@@ -233,7 +233,7 @@ class StatusOr final {
 
   // Return the associated `Status' if and only if it has one,
   //
-  Status status() const & {
+  Status status() const& {
     CHECK(hasStatus());
     return variant_.status_;
   }
@@ -247,13 +247,13 @@ class StatusOr final {
 
   // Return the non-const lvalue reference to the associated value
   // `ok()' is DCHECK'd
-  T &value() & {
+  T& value() & {
     DCHECK(ok());
     return variant_.value_;
   }
 
   // Return the const lvalue reference to the associated value
-  const T &value() const & {
+  const T& value() const& {
     DCHECK(ok());
     return variant_.value_;
   }
@@ -318,10 +318,10 @@ class StatusOr final {
   // Variant type to hold a `Status', or a `T', or nothing
   union Variant {
     Variant() {}
-    Variant(const Status &status) : status_(status) {}
-    Variant(Status &&status) : status_(std::move(status)) {}
+    Variant(const Status& status) : status_(status) {}
+    Variant(Status&& status) : status_(std::move(status)) {}
     template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-    Variant(U &&value) : value_(std::forward<U>(value)) {}
+    Variant(U&& value) : value_(std::forward<U>(value)) {}
     ~Variant() {}
 
     Status status_;

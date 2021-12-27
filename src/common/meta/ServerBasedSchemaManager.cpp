@@ -16,7 +16,7 @@ ServerBasedSchemaManager::~ServerBasedSchemaManager() {
   }
 }
 
-void ServerBasedSchemaManager::init(MetaClient *client) {
+void ServerBasedSchemaManager::init(MetaClient* client) {
   CHECK_NOTNULL(client);
   metaClient_ = client;
 }
@@ -167,7 +167,7 @@ StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> ServerBasedSchemaM
   return std::move(ret).value();
 }
 
-std::unique_ptr<ServerBasedSchemaManager> ServerBasedSchemaManager::create(MetaClient *client) {
+std::unique_ptr<ServerBasedSchemaManager> ServerBasedSchemaManager::create(MetaClient* client) {
   auto mgr = std::make_unique<ServerBasedSchemaManager>();
   mgr->init(client);
   return mgr;

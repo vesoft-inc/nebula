@@ -23,16 +23,16 @@ folly::Future<Status> IndexScanExecutor::execute() {
 }
 
 folly::Future<Status> IndexScanExecutor::indexScan() {
-  StorageClient *storageClient = qctx_->getStorageClient();
-  auto *lookup = asNode<IndexScan>(node());
+  StorageClient* storageClient = qctx_->getStorageClient();
+  auto* lookup = asNode<IndexScan>(node());
   if (lookup->isEmptyResultSet()) {
     DataSet dataSet({"dummy"});
     return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
   }
 
-  const auto &ictxs = lookup->queryContext();
+  const auto& ictxs = lookup->queryContext();
   auto iter = std::find_if(
-      ictxs.begin(), ictxs.end(), [](auto &ictx) { return !ictx.index_id_ref().is_set(); });
+      ictxs.begin(), ictxs.end(), [](auto& ictx) { return !ictx.index_id_ref().is_set(); });
   if (ictxs.empty() || iter != ictxs.end()) {
     return Status::Error("There is no index to use at runtime");
   }
@@ -49,7 +49,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
                     lookup->returnColumns(),
                     lookup->limit(qctx_))
       .via(runner())
-      .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
+      .thenValue([this](StorageRpcResponse<LookupIndexResp>&& rpcResp) {
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp));
       });
@@ -57,16 +57,16 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
 
 // TODO(shylock) merge the handler with GetProp
 template <typename Resp>
-Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp) {
+Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp>&& rpcResp) {
   auto completeness = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   if (!completeness.ok()) {
     return std::move(completeness).status();
   }
   auto state = std::move(completeness).value();
   nebula::DataSet v;
-  for (auto &resp : rpcResp.responses()) {
+  for (auto& resp : rpcResp.responses()) {
     if (resp.data_ref().has_value()) {
-      nebula::DataSet &data = *resp.data_ref();
+      nebula::DataSet& data = *resp.data_ref();
       // TODO: convert the column name to alias.
       if (v.colNames.empty()) {
         v.colNames = data.colNames;

@@ -24,21 +24,21 @@ MergeGetVerticesAndDedupRule::MergeGetVerticesAndDedupRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &MergeGetVerticesAndDedupRule::pattern() const {
+const Pattern& MergeGetVerticesAndDedupRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetVertices,
                                            {Pattern::create(graph::PlanNode::Kind::kDedup)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> MergeGetVerticesAndDedupRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
-  const OptGroupNode *optGV = matched.node;
-  const OptGroupNode *optDedup = matched.dependencies.back().node;
+    OptContext* ctx, const MatchedResult& matched) const {
+  const OptGroupNode* optGV = matched.node;
+  const OptGroupNode* optDedup = matched.dependencies.back().node;
   DCHECK_EQ(optGV->node()->kind(), PlanNode::Kind::kGetVertices);
   DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
-  auto gv = static_cast<const GetVertices *>(optGV->node());
-  auto dedup = static_cast<const Dedup *>(optDedup->node());
-  auto newGV = static_cast<GetVertices *>(gv->clone());
+  auto gv = static_cast<const GetVertices*>(optGV->node());
+  auto dedup = static_cast<const Dedup*>(optDedup->node());
+  auto newGV = static_cast<GetVertices*>(gv->clone());
   if (!newGV->dedup()) {
     newGV->setDedup();
   }

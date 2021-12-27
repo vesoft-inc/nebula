@@ -16,7 +16,7 @@ folly::Future<Status> SignInTSServiceExecutor::execute() {
 }
 
 folly::Future<Status> SignInTSServiceExecutor::signInTSService() {
-  auto *siNode = asNode<SignInTSService>(node());
+  auto* siNode = asNode<SignInTSService>(node());
   return qctx()
       ->getMetaClient()
       ->signInFTService(siNode->type(), siNode->clients())

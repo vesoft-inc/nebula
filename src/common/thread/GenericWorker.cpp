@@ -48,11 +48,11 @@ bool GenericWorker::start(std::string name) {
     LOG(ERROR) << "Create eventfd failed: " << ::strerror(errno);
     return false;
   }
-  auto cb = [](int fd, int16_t, void *arg) {
+  auto cb = [](int fd, int16_t, void* arg) {
     auto val = 0UL;
     auto len = ::read(fd, &val, sizeof(val));
     DCHECK(len == sizeof(val));
-    reinterpret_cast<GenericWorker *>(arg)->onNotify();
+    reinterpret_cast<GenericWorker*>(arg)->onNotify();
   };
   auto events = EV_READ | EV_PERSIST;
   notifier_ = event_new(evbase_, evfd_, events, cb, this);
@@ -111,7 +111,7 @@ void GenericWorker::onNotify() {
       std::lock_guard<std::mutex> guard(lock_);
       newcomings.swap(pendingTasks_);
     }
-    for (auto &task : newcomings) {
+    for (auto& task : newcomings) {
       task();
     }
   }
@@ -121,16 +121,16 @@ void GenericWorker::onNotify() {
       std::lock_guard<std::mutex> guard(lock_);
       newcomings.swap(pendingTimers_);
     }
-    auto cb = [](int fd, int16_t, void *arg) {
+    auto cb = [](int fd, int16_t, void* arg) {
       UNUSED(fd);
-      auto timer = reinterpret_cast<Timer *>(arg);
+      auto timer = reinterpret_cast<Timer*>(arg);
       auto worker = timer->owner_;
       timer->callback_();
       if (timer->intervalMSec_ == 0.0) {
         worker->purgeTimerInternal(timer->id_);
       }
     };
-    for (auto &timer : newcomings) {
+    for (auto& timer : newcomings) {
       timer->ev_ = event_new(evbase_, -1, EV_PERSIST, cb, timer.get());
 
       auto delay = timer->delayMSec_;

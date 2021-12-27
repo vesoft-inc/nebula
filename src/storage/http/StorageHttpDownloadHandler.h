@@ -23,9 +23,9 @@ class StorageHttpDownloadHandler : public proxygen::RequestHandler {
  public:
   StorageHttpDownloadHandler() = default;
 
-  void init(nebula::hdfs::HdfsHelper *helper,
-            nebula::thread::GenericThreadPool *pool,
-            nebula::kvstore::KVStore *kvstore,
+  void init(nebula::hdfs::HdfsHelper* helper,
+            nebula::thread::GenericThreadPool* pool,
+            nebula::kvstore::KVStore* kvstore,
             std::vector<std::string> paths);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
@@ -41,10 +41,10 @@ class StorageHttpDownloadHandler : public proxygen::RequestHandler {
   void onError(proxygen::ProxygenError error) noexcept override;
 
  private:
-  bool downloadSSTFiles(const std::string &url,
+  bool downloadSSTFiles(const std::string& url,
                         int port,
-                        const std::string &path,
-                        const std::vector<std::string> &parts);
+                        const std::string& path,
+                        const std::vector<std::string>& parts);
 
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
@@ -53,9 +53,9 @@ class StorageHttpDownloadHandler : public proxygen::RequestHandler {
   int32_t hdfsPort_;
   std::string hdfsPath_;
   std::string partitions_;
-  nebula::hdfs::HdfsHelper *helper_;
-  nebula::thread::GenericThreadPool *pool_;
-  nebula::kvstore::KVStore *kvstore_;
+  nebula::hdfs::HdfsHelper* helper_;
+  nebula::thread::GenericThreadPool* pool_;
+  nebula::kvstore::KVStore* kvstore_;
   std::vector<std::string> paths_;
 };
 

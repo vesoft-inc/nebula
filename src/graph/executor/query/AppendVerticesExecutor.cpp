@@ -15,7 +15,7 @@ folly::Future<Status> AppendVerticesExecutor::execute() {
   return appendVertices();
 }
 
-DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
+DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices* av) {
   if (av == nullptr) {
     return nebula::DataSet({kVid});
   }
@@ -26,8 +26,8 @@ DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
 
-  auto *av = asNode<AppendVertices>(node());
-  StorageClient *storageClient = qctx()->getStorageClient();
+  auto* av = asNode<AppendVertices>(node());
+  StorageClient* storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(av);
   if (vertices.rows.empty()) {
@@ -54,7 +54,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         SCOPED_TIMER(&execTime_);
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
-      .thenValue([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+      .thenValue([this](StorageRpcResponse<GetPropResponse>&& rpcResp) {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp));
@@ -62,20 +62,20 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
 }
 
 Status AppendVerticesExecutor::handleResp(
-    storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp) {
+    storage::StorageRpcResponse<storage::cpp2::GetPropResponse>&& rpcResp) {
   auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   auto state = std::move(result).value();
   std::unordered_map<Value, Value> map;
-  auto *av = asNode<AppendVertices>(node());
-  auto *vFilter = av->vFilter();
+  auto* av = asNode<AppendVertices>(node());
+  auto* vFilter = av->vFilter();
   QueryExpressionContext ctx(qctx()->ectx());
-  for (auto &resp : rpcResp.responses()) {
+  for (auto& resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
       for (; iter.valid(); iter.next()) {
         if (vFilter != nullptr) {
-          auto &vFilterVal = vFilter->eval(ctx(&iter));
+          auto& vFilterVal = vFilter->eval(ctx(&iter));
           if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
             continue;
           }
@@ -86,14 +86,14 @@ Status AppendVerticesExecutor::handleResp(
   }
 
   auto iter = qctx()->ectx()->getResult(av->inputVar()).iter();
-  auto *src = av->src();
+  auto* src = av->src();
 
   DataSet ds;
   ds.colNames = av->colNames();
   ds.rows.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
     auto dstFound = map.find(src->eval(ctx(iter.get())));
-    auto row = static_cast<SequentialIter *>(iter.get())->moveRow();
+    auto row = static_cast<SequentialIter*>(iter.get())->moveRow();
     if (dstFound == map.end()) {
       continue;
     }

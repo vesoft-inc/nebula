@@ -18,14 +18,14 @@ folly::Future<Status> ListUsersExecutor::execute() {
 
 folly::Future<Status> ListUsersExecutor::listUsers() {
   return qctx()->getMetaClient()->listUsers().via(runner()).thenValue(
-      [this](StatusOr<std::unordered_map<std::string, std::string>> &&resp) {
+      [this](StatusOr<std::unordered_map<std::string, std::string>>&& resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           return std::move(resp).status();
         }
         nebula::DataSet v({"Account"});
         auto items = std::move(resp).value();
-        for (const auto &item : items) {
+        for (const auto& item : items) {
           v.emplace_back(nebula::Row({
               std::move(item).first,
           }));

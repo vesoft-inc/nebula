@@ -31,9 +31,9 @@ using proxygen::ProxygenError;
 using proxygen::ResponseBuilder;
 using proxygen::UpgradeProtocol;
 
-void MetaHttpDownloadHandler::init(nebula::kvstore::KVStore *kvstore,
-                                   nebula::hdfs::HdfsHelper *helper,
-                                   nebula::thread::GenericThreadPool *pool) {
+void MetaHttpDownloadHandler::init(nebula::kvstore::KVStore* kvstore,
+                                   nebula::hdfs::HdfsHelper* helper,
+                                   nebula::thread::GenericThreadPool* pool) {
   kvstore_ = kvstore;
   helper_ = helper;
   pool_ = pool;
@@ -121,9 +121,9 @@ void MetaHttpDownloadHandler::onError(ProxygenError error) noexcept {
              << proxygen::getErrorString(error);
 }
 
-bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
+bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
                                                int hdfsPort,
-                                               const std::string &hdfsPath) {
+                                               const std::string& hdfsPath) {
   auto result = helper_->ls(hdfsHost, hdfsPort, hdfsPath);
   if (!result.ok()) {
     LOG(ERROR) << "Dispatch SSTFile Failed";
@@ -160,13 +160,13 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
   }
 
   std::vector<folly::SemiFuture<bool>> futures;
-  for (auto &pair : hostPartition) {
+  for (auto& pair : hostPartition) {
     std::string partsStr;
     folly::join(",", pair.second, partsStr);
 
     auto hostaddr = pair.first.host;
     auto dispatcher = [hostaddr, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
-      static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&parts=%s&space=%d";
+      static const char* tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&parts=%s&space=%d";
       std::string url = folly::stringPrintf(tmp,
                                             hostaddr.c_str(),
                                             FLAGS_ws_storage_http_port,
@@ -185,7 +185,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
 
   bool successfully{true};
   auto tries = folly::collectAll(std::move(futures)).get();
-  for (const auto &t : tries) {
+  for (const auto& t : tries) {
     if (t.hasException()) {
       LOG(ERROR) << "Download Failed: " << t.exception();
       successfully = false;

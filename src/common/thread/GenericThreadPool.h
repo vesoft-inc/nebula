@@ -41,7 +41,7 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
    * @nrThreads   number of internal threads
    * @name        name of internal threads
    */
-  bool start(size_t nrThreads, const std::string &name = "");
+  bool start(size_t nrThreads, const std::string& name = "");
 
   /**
    * Asynchronously to notify the workers to stop handling further new tasks.
@@ -71,11 +71,11 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
    *          for the result of `task'
    */
   template <typename F, typename... Args>
-  auto addTask(F &&, Args &&...) ->
+  auto addTask(F&&, Args&&...) ->
       typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                               FutureType<F, Args...>>::type;
   template <typename F, typename... Args>
-  auto addTask(F &&, Args &&...) ->
+  auto addTask(F&&, Args&&...) ->
       typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type;
 
   /**
@@ -87,11 +87,11 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
    *          for the result of `task'
    */
   template <typename F, typename... Args>
-  auto addDelayTask(size_t, F &&, Args &&...) ->
+  auto addDelayTask(size_t, F&&, Args&&...) ->
       typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                               FutureType<F, Args...>>::type;
   template <typename F, typename... Args>
-  auto addDelayTask(size_t, F &&, Args &&...) ->
+  auto addDelayTask(size_t, F&&, Args&&...) ->
       typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type;
 
   /**
@@ -102,7 +102,7 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
    * @return  ID of the added task, unique for this worker
    */
   template <typename F, typename... Args>
-  uint64_t addRepeatTask(size_t, F &&, Args &&...);
+  uint64_t addRepeatTask(size_t, F&&, Args&&...);
 
   /**
    * To purge or deactivate a repeated task.
@@ -117,7 +117,7 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
 };
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
+auto GenericThreadPool::addTask(F&& f, Args&&... args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto idx = nextThread_++ % nrThreads_;
@@ -125,14 +125,14 @@ auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
+auto GenericThreadPool::addTask(F&& f, Args&&... args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto idx = nextThread_++ % nrThreads_;
   return pool_[idx]->addTask(std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
+auto GenericThreadPool::addDelayTask(size_t ms, F&& f, Args&&... args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto idx = nextThread_++ % nrThreads_;
@@ -140,14 +140,14 @@ auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
+auto GenericThreadPool::addDelayTask(size_t ms, F&& f, Args&&... args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto idx = nextThread_++ % nrThreads_;
   return pool_[idx]->addDelayTask(ms, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
-uint64_t GenericThreadPool::addRepeatTask(size_t ms, F &&f, Args &&... args) {
+uint64_t GenericThreadPool::addRepeatTask(size_t ms, F&& f, Args&&... args) {
   auto idx = nextThread_++ % nrThreads_;
   auto id = pool_[idx]->addRepeatTask(ms, std::forward<F>(f), std::forward<Args>(args)...);
   return ((idx << GenericWorker::TIMER_ID_BITS) | id);

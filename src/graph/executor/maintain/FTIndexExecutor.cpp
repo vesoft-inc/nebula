@@ -15,7 +15,7 @@ namespace graph {
 
 folly::Future<Status> CreateFTIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *inode = asNode<CreateFTIndex>(node());
+  auto* inode = asNode<CreateFTIndex>(node());
   return qctx()
       ->getMetaClient()
       ->createFTIndex(inode->getIndexName(), inode->getIndex())
@@ -31,7 +31,7 @@ folly::Future<Status> CreateFTIndexExecutor::execute() {
 }
 
 folly::Future<Status> DropFTIndexExecutor::execute() {
-  auto *inode = asNode<DropFTIndex>(node());
+  auto* inode = asNode<DropFTIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -69,7 +69,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
         auto indexes = std::move(resp).value();
         DataSet dataSet;
         dataSet.colNames = {"Name", "Schema Type", "Schema Name", "Fields"};
-        for (auto &index : indexes) {
+        for (auto& index : indexes) {
           if (index.second.get_space_id() != spaceId) {
             continue;
           }

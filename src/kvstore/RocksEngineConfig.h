@@ -69,11 +69,11 @@ DECLARE_uint64(rocksdb_kv_separation_threshold);
 namespace nebula {
 namespace kvstore {
 
-rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts,
+rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
                                    GraphSpaceID spaceId,
                                    int32_t vidLen = 8);
 
-bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string &gflags);
+bool loadOptionsMap(std::unordered_map<std::string, std::string>& map, const std::string& gflags);
 
 std::shared_ptr<rocksdb::Statistics> getDBStatistics();
 

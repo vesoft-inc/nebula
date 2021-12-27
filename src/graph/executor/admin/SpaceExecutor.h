@@ -13,7 +13,7 @@ namespace graph {
 
 class CreateSpaceExecutor final : public Executor {
  public:
-  CreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateSpaceExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateSpaceExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class CreateSpaceExecutor final : public Executor {
 
 class CreateSpaceAsExecutor final : public Executor {
  public:
-  CreateSpaceAsExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateSpaceAsExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateSpaceAsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -29,7 +29,7 @@ class CreateSpaceAsExecutor final : public Executor {
 
 class DescSpaceExecutor final : public Executor {
  public:
-  DescSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+  DescSpaceExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DescSpaceExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -37,17 +37,17 @@ class DescSpaceExecutor final : public Executor {
 
 class DropSpaceExecutor final : public Executor {
  public:
-  DropSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+  DropSpaceExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropSpaceExecutor", node, qctx) {}
 
-  void unRegisterSpaceLevelMetrics(const std::string &spaceName);
+  void unRegisterSpaceLevelMetrics(const std::string& spaceName);
 
   folly::Future<Status> execute() override;
 };
 
 class ShowSpacesExecutor final : public Executor {
  public:
-  ShowSpacesExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowSpacesExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowSpacesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -55,7 +55,7 @@ class ShowSpacesExecutor final : public Executor {
 
 class ShowCreateSpaceExecutor final : public Executor {
  public:
-  ShowCreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCreateSpaceExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowCreateSpaceExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

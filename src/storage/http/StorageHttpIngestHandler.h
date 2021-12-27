@@ -21,7 +21,7 @@ class StorageHttpIngestHandler : public proxygen::RequestHandler {
  public:
   StorageHttpIngestHandler() = default;
 
-  void init(nebula::kvstore::KVStore *kvstore);
+  void init(nebula::kvstore::KVStore* kvstore);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -39,7 +39,7 @@ class StorageHttpIngestHandler : public proxygen::RequestHandler {
 
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
-  nebula::kvstore::KVStore *kvstore_;
+  nebula::kvstore::KVStore* kvstore_;
   GraphSpaceID space_;
 };
 

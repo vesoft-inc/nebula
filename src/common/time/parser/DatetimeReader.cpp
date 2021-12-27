@@ -10,7 +10,7 @@ namespace time {
 
 DatetimeReader::DatetimeReader(Type type) : parser_(scanner_, error_, &dt_, type) {
   // Callback invoked by DatetimeScanner
-  auto readBuffer = [this](char *buf, int maxSize) -> int {
+  auto readBuffer = [this](char* buf, int maxSize) -> int {
     // Reach the end
     if (pos_ >= end_) {
       pos_ = nullptr;

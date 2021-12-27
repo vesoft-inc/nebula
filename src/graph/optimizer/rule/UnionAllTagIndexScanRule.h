@@ -13,7 +13,7 @@ namespace opt {
 
 class UnionAllTagIndexScanRule final : public UnionAllIndexScanBaseRule {
  public:
-  const Pattern &pattern() const override;
+  const Pattern& pattern() const override;
   std::string toString() const override;
 
  private:

@@ -14,7 +14,7 @@
 namespace nebula {
 namespace graph {
 
-YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx) : Validator(sentence, qctx) {
+YieldValidator::YieldValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {
   setNoSpaceRequired();
 }
 
@@ -23,7 +23,7 @@ Status YieldValidator::validateImpl() {
     space_ = vctx_->whichSpace();
   }
 
-  auto yield = static_cast<YieldSentence *>(sentence_);
+  auto yield = static_cast<YieldSentence*>(sentence_);
   if (yield->yield()->yields()->hasAgg()) {
     NG_RETURN_IF_ERROR(makeImplicitGroupByValidator());
   }
@@ -58,7 +58,7 @@ Status YieldValidator::validateImpl() {
   return Status::OK();
 }
 
-Status YieldValidator::makeOutputColumn(YieldColumn *column) {
+Status YieldValidator::makeOutputColumn(YieldColumn* column) {
   columns_->addColumn(column);
 
   auto colExpr = column->expr();
@@ -82,8 +82,8 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 }
 
 Status YieldValidator::makeImplicitGroupByValidator() {
-  auto *groupSentence = qctx()->objPool()->add(new GroupBySentence(
-      static_cast<YieldSentence *>(sentence_)->yield()->clone().release(), nullptr, nullptr));
+  auto* groupSentence = qctx()->objPool()->add(new GroupBySentence(
+      static_cast<YieldSentence*>(sentence_)->yield()->clone().release(), nullptr, nullptr));
   groupByValidator_ = std::make_unique<GroupByValidator>(groupSentence, qctx());
   groupByValidator_->setInputCols(inputs_);
 
@@ -96,43 +96,43 @@ Status YieldValidator::validateImplicitGroupBy() {
   outputs_ = groupByValidator_->outputCols();
   exprProps_.unionProps(groupByValidator_->exprProps());
 
-  const auto &groupVars = groupByValidator_->userDefinedVarNameList();
+  const auto& groupVars = groupByValidator_->userDefinedVarNameList();
   // TODO: Support Multiple userDefinedVars
   userDefinedVarNameList_.insert(groupVars.begin(), groupVars.end());
 
   return Status::OK();
 }
 
-Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
+Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause* clause) {
   auto columns = clause->columns();
-  auto *pool = qctx_->objPool();
+  auto* pool = qctx_->objPool();
   columns_ = pool->add(new YieldColumns);
   for (auto column : columns) {
     auto expr = DCHECK_NOTNULL(column->expr());
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(expr));
 
     if (expr->kind() == Expression::Kind::kInputProperty) {
-      auto ipe = static_cast<const InputPropertyExpression *>(expr);
+      auto ipe = static_cast<const InputPropertyExpression*>(expr);
       // Get all props of input expression could NOT be a part of another
       // expression. So it's always a root of expression.
       if (ipe->prop() == "*") {
-        for (auto &colDef : inputs_) {
+        for (auto& colDef : inputs_) {
           auto newExpr = InputPropertyExpression::make(pool, colDef.name);
           NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
         }
         continue;
       }
     } else if (expr->kind() == Expression::Kind::kVarProperty) {
-      auto vpe = static_cast<const VariablePropertyExpression *>(expr);
+      auto vpe = static_cast<const VariablePropertyExpression*>(expr);
       // Get all props of variable expression is same as above input property
       // expression.
       if (vpe->prop() == "*") {
-        auto &var = vpe->sym();
+        auto& var = vpe->sym();
         if (!vctx_->existVar(var)) {
           return Status::SemanticError("variable `%s' not exists.", var.c_str());
         }
-        auto &varColDefs = vctx_->getVar(var);
-        for (auto &colDef : varColDefs) {
+        auto& varColDefs = vctx_->getVar(var);
+        for (auto& colDef : varColDefs) {
           auto newExpr = VariablePropertyExpression::make(pool, var, colDef.name);
           NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
         }
@@ -146,7 +146,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   return Status::OK();
 }
 
-Status YieldValidator::validateWhere(const WhereClause *where) {
+Status YieldValidator::validateWhere(const WhereClause* where) {
   if (where == nullptr) {
     return Status::OK();
   }
@@ -163,7 +163,7 @@ Status YieldValidator::validateWhere(const WhereClause *where) {
 }
 
 Status YieldValidator::toPlan() {
-  auto yield = static_cast<const YieldSentence *>(sentence_);
+  auto yield = static_cast<const YieldSentence*>(sentence_);
 
   std::string inputVar;
   std::vector<std::string> colNames(inputs_.size());
@@ -176,36 +176,36 @@ Status YieldValidator::toPlan() {
     inputVar = vctx_->anonVarGen()->getVar();
   } else {
     std::transform(
-        inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });
+        inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto& col) { return col.name; });
   }
 
-  Filter *filter = nullptr;
+  Filter* filter = nullptr;
   if (yield->where()) {
     filter = Filter::make(qctx_, nullptr, filterCondition_);
     filter->setColNames(std::move(colNames));
   }
 
-  SingleInputNode *dedupDep = nullptr;
+  SingleInputNode* dedupDep = nullptr;
 
   if (groupByValidator_) {
     groupByValidator_->toPlan();
-    auto *groupByValidatorRoot = groupByValidator_->root();
-    auto *groupByValidatorTail = groupByValidator_->tail();
+    auto* groupByValidatorRoot = groupByValidator_->root();
+    auto* groupByValidatorTail = groupByValidator_->tail();
     // groupBy validator only gen Project or Aggregate Node
     DCHECK(groupByValidatorRoot->isSingleInput());
     DCHECK(groupByValidatorTail->isSingleInput());
-    dedupDep = static_cast<SingleInputNode *>(groupByValidatorRoot);
+    dedupDep = static_cast<SingleInputNode*>(groupByValidatorRoot);
     if (filter != nullptr) {
       if (!inputVar.empty()) {
         filter->setInputVar(inputVar);
       }
-      static_cast<SingleInputNode *>(groupByValidatorTail)->dependsOn(filter);
-      static_cast<SingleInputNode *>(groupByValidatorTail)->setInputVar(filter->outputVar());
+      static_cast<SingleInputNode*>(groupByValidatorTail)->dependsOn(filter);
+      static_cast<SingleInputNode*>(groupByValidatorTail)->setInputVar(filter->outputVar());
       tail_ = filter;
     } else {
       tail_ = groupByValidatorTail;
       if (!inputVar.empty()) {
-        static_cast<SingleInputNode *>(tail_)->setInputVar(inputVar);
+        static_cast<SingleInputNode*>(tail_)->setInputVar(inputVar);
       }
     }
   } else {
@@ -218,7 +218,7 @@ Status YieldValidator::toPlan() {
     }
     // Otherwise the input of tail_ would be set by pipe.
     if (!inputVar.empty()) {
-      static_cast<SingleInputNode *>(tail_)->setInputVar(inputVar);
+      static_cast<SingleInputNode*>(tail_)->setInputVar(inputVar);
     }
   }
 

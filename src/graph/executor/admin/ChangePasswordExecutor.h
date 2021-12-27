@@ -13,7 +13,7 @@ namespace graph {
 
 class ChangePasswordExecutor final : public Executor {
  public:
-  ChangePasswordExecutor(const PlanNode *node, QueryContext *qctx)
+  ChangePasswordExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ChangePasswordExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

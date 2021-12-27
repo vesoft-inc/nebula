@@ -16,7 +16,7 @@ namespace graph {
 
 class IndexScanExecutor final : public StorageAccessExecutor {
  public:
-  IndexScanExecutor(const PlanNode *node, QueryContext *qctx)
+  IndexScanExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("IndexScanExecutor", node, qctx) {
     gn_ = asNode<IndexScan>(node);
   }
@@ -27,10 +27,10 @@ class IndexScanExecutor final : public StorageAccessExecutor {
   folly::Future<Status> indexScan();
 
   template <typename Resp>
-  Status handleResp(storage::StorageRpcResponse<Resp> &&rpcResp);
+  Status handleResp(storage::StorageRpcResponse<Resp>&& rpcResp);
 
  private:
-  const IndexScan *gn_;
+  const IndexScan* gn_;
 };
 
 }  // namespace graph

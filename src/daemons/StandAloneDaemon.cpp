@@ -46,7 +46,7 @@ using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
 void setupThreadManager();
-void printHelp(const char *prog);
+void printHelp(const char* prog);
 void stopAllDaemon();
 static void signalHandler(int sig);
 static Status setupSignalHandler();
@@ -86,7 +86,7 @@ DECLARE_int32(storage_port);
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(meta_port, 45500, "Meta daemon listening port");
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   google::SetVersionString(nebula::versionString());
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      nebula::meta::JobManager *jobMgr = nebula::meta::JobManager::getInstance();
+      nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
       if (!jobMgr->init(gMetaKVStore.get())) {
         LOG(ERROR) << "Init job manager failed";
         return;
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
       }
       metaReady = true;
       gMetaServer->serve();  // Will wait until the server shuts down
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       LOG(ERROR) << "Exception thrown: " << e.what();
       return;
     }
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localhost.host.c_str(), localhost.port);
     try {
       gServer->serve();  // Blocking wait until shut down via gServer->stop()
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
       return;
     }
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> paths;
     folly::split(",", FLAGS_data_path, paths, true);
-    std::transform(paths.begin(), paths.end(), paths.begin(), [](auto &p) {
+    std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
       return folly::trimWhitespace(p).str();
     });
     if (paths.empty()) {
@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
 Status setupSignalHandler() {
   return nebula::SignalHandler::install(
       {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
 }
 
 void stopAllDaemon() {
@@ -429,7 +429,7 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) {
+void printHelp(const char* prog) {
   fprintf(stderr, "%s --flagfile <config_file>\n", prog);
 }
 

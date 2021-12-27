@@ -18,7 +18,7 @@ namespace graph {
 folly::Future<Status> SubmitJobExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *sjNode = asNode<SubmitJob>(node());
+  auto* sjNode = asNode<SubmitJob>(node());
   auto jobOp = sjNode->jobOp();
   auto cmd = sjNode->cmd();
   auto params = sjNode->params();
@@ -27,7 +27,7 @@ folly::Future<Status> SubmitJobExecutor::execute() {
       ->getMetaClient()
       ->submitJob(jobOp, cmd, params)
       .via(runner())
-      .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
+      .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult>&& resp) {
         SCOPED_TIMER(&execTime_);
 
         if (!resp.ok()) {
@@ -41,7 +41,7 @@ folly::Future<Status> SubmitJobExecutor::execute() {
 }
 
 StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::AdminJobOp jobOp,
-                                                 meta::cpp2::AdminJobResult &&resp) {
+                                                 meta::cpp2::AdminJobResult&& resp) {
   switch (jobOp) {
     case meta::cpp2::AdminJobOp::ADD: {
       nebula::DataSet v({"New Job Id"});
@@ -70,7 +70,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::AdminJobOp jobOp,
       if (!resp.task_desc_ref().has_value()) {
         return Status::Error("Response unexpected");
       }
-      auto &jobDesc = *resp.job_desc_ref();
+      auto& jobDesc = *resp.job_desc_ref();
       return buildShowResultData(jobDesc.front(), *resp.get_task_desc());
     }
     case meta::cpp2::AdminJobOp::SHOW_All: {
@@ -79,8 +79,8 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::AdminJobOp jobOp,
       if (!resp.job_desc_ref().has_value()) {
         return Status::Error("Response unexpected");
       }
-      const auto &jobsDesc = *resp.job_desc_ref();
-      for (const auto &jobDesc : jobsDesc) {
+      const auto& jobsDesc = *resp.job_desc_ref();
+      for (const auto& jobDesc : jobsDesc) {
         v.emplace_back(nebula::Row({
             jobDesc.get_id(),
             apache::thrift::util::enumNameSafe(jobDesc.get_cmd()),
@@ -108,11 +108,11 @@ Value SubmitJobExecutor::convertJobTimestampToDateTime(int64_t timestamp) {
 }
 
 nebula::DataSet SubmitJobExecutor::buildShowResultData(
-    const nebula::meta::cpp2::JobDesc &jd, const std::vector<nebula::meta::cpp2::TaskDesc> &td) {
+    const nebula::meta::cpp2::JobDesc& jd, const std::vector<nebula::meta::cpp2::TaskDesc>& td) {
   if (jd.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE) {
     nebula::DataSet v(
         {"Job Id(spaceId:partId)", "Command(src->dst)", "Status", "Start Time", "Stop Time"});
-    const auto &paras = jd.get_paras();
+    const auto& paras = jd.get_paras();
     size_t index = std::stoul(paras.back());
     uint32_t total = paras.size() - index - 1, succeeded = 0, failed = 0, inProgress = 0,
              invalid = 0;
@@ -160,7 +160,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
         convertJobTimestampToDateTime(jd.get_stop_time()),
     }));
     // tasks desc
-    for (const auto &taskDesc : td) {
+    for (const auto& taskDesc : td) {
       v.emplace_back(nebula::Row({
           taskDesc.get_task_id(),
           taskDesc.get_host().host,

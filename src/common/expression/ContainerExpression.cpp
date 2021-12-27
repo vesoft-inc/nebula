@@ -18,7 +18,7 @@ std::string ListExpression::toString() const {
   buf.reserve(256);
 
   buf += '[';
-  for (auto *expr : items_) {
+  for (auto* expr : items_) {
     buf += expr ? expr->toString() : "";
     buf += ",";
   }
@@ -31,12 +31,12 @@ std::string ListExpression::toString() const {
   return buf;
 }
 
-bool ListExpression::operator==(const Expression &rhs) const {
+bool ListExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {
     return false;
   }
 
-  auto &list = static_cast<const ListExpression &>(rhs);
+  auto& list = static_cast<const ListExpression&>(rhs);
   if (size() != list.size()) {
     return false;
   }
@@ -50,12 +50,12 @@ bool ListExpression::operator==(const Expression &rhs) const {
   return true;
 }
 
-const Value &ListExpression::eval(ExpressionContext &ctx) {
+const Value& ListExpression::eval(ExpressionContext& ctx) {
   // TODO(dutor) Reuse `result_' iff all elements are constant
   std::vector<Value> items;
   items.reserve(size());
 
-  for (auto &expr : items_) {
+  for (auto& expr : items_) {
     items.emplace_back(expr->eval(ctx));
   }
   result_.setList(List(std::move(items)));
@@ -63,15 +63,15 @@ const Value &ListExpression::eval(ExpressionContext &ctx) {
   return result_;
 }
 
-void ListExpression::writeTo(Encoder &encoder) const {
+void ListExpression::writeTo(Encoder& encoder) const {
   encoder << kind();
   encoder << size();
-  for (auto &expr : items_) {
+  for (auto& expr : items_) {
     encoder << *expr;
   }
 }
 
-void ListExpression::resetFrom(Decoder &decoder) {
+void ListExpression::resetFrom(Decoder& decoder) {
   auto size = decoder.readSize();
   items_.reserve(size);
   for (auto i = 0u; i < size; i++) {
@@ -79,7 +79,7 @@ void ListExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void ListExpression::accept(ExprVisitor *visitor) {
+void ListExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 
@@ -89,7 +89,7 @@ std::string SetExpression::toString() const {
   buf.reserve(256);
 
   buf += '{';
-  for (auto *expr : items_) {
+  for (auto* expr : items_) {
     buf += expr ? expr->toString() : "";
     buf += ",";
   }
@@ -102,12 +102,12 @@ std::string SetExpression::toString() const {
   return buf;
 }
 
-bool SetExpression::operator==(const Expression &rhs) const {
+bool SetExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {
     return false;
   }
 
-  auto &set = static_cast<const SetExpression &>(rhs);
+  auto& set = static_cast<const SetExpression&>(rhs);
   if (size() != set.size()) {
     return false;
   }
@@ -121,12 +121,12 @@ bool SetExpression::operator==(const Expression &rhs) const {
   return true;
 }
 
-const Value &SetExpression::eval(ExpressionContext &ctx) {
+const Value& SetExpression::eval(ExpressionContext& ctx) {
   // TODO(dutor) Reuse `result_' iff all elements are constant
   std::unordered_set<Value> set;
   set.reserve(size());
 
-  for (auto &expr : items_) {
+  for (auto& expr : items_) {
     set.emplace(expr->eval(ctx));
   }
   result_.setSet(Set(std::move(set)));
@@ -134,15 +134,15 @@ const Value &SetExpression::eval(ExpressionContext &ctx) {
   return result_;
 }
 
-void SetExpression::writeTo(Encoder &encoder) const {
+void SetExpression::writeTo(Encoder& encoder) const {
   encoder << kind();
   encoder << size();
-  for (auto &expr : items_) {
+  for (auto& expr : items_) {
     encoder << *expr;
   }
 }
 
-void SetExpression::resetFrom(Decoder &decoder) {
+void SetExpression::resetFrom(Decoder& decoder) {
   auto size = decoder.readSize();
   items_.reserve(size);
   for (auto i = 0u; i < size; i++) {
@@ -150,7 +150,7 @@ void SetExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void SetExpression::accept(ExprVisitor *visitor) {
+void SetExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 
@@ -160,7 +160,7 @@ std::string MapExpression::toString() const {
   buf.reserve(256);
 
   buf += '{';
-  for (auto &kv : items_) {
+  for (auto& kv : items_) {
     buf += kv.first;
     buf += ":";
     buf += kv.second ? kv.second->toString() : "";
@@ -175,12 +175,12 @@ std::string MapExpression::toString() const {
   return buf;
 }
 
-bool MapExpression::operator==(const Expression &rhs) const {
+bool MapExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {
     return false;
   }
 
-  auto &map = static_cast<const MapExpression &>(rhs);
+  auto& map = static_cast<const MapExpression&>(rhs);
   if (size() != map.size()) {
     return false;
   }
@@ -197,12 +197,12 @@ bool MapExpression::operator==(const Expression &rhs) const {
   return true;
 }
 
-const Value &MapExpression::eval(ExpressionContext &ctx) {
+const Value& MapExpression::eval(ExpressionContext& ctx) {
   // TODO(dutor) Reuse `result_' iff all elements are constant
   std::unordered_map<std::string, Value> map;
   map.reserve(size());
 
-  for (auto &kv : items_) {
+  for (auto& kv : items_) {
     map.emplace(kv.first, kv.second->eval(ctx));
   }
   result_.setMap(Map(std::move(map)));
@@ -210,16 +210,16 @@ const Value &MapExpression::eval(ExpressionContext &ctx) {
   return result_;
 }
 
-void MapExpression::writeTo(Encoder &encoder) const {
+void MapExpression::writeTo(Encoder& encoder) const {
   encoder << kind();
   encoder << size();
-  for (auto &kv : items_) {
+  for (auto& kv : items_) {
     encoder << kv.first;
     encoder << *kv.second;
   }
 }
 
-void MapExpression::resetFrom(Decoder &decoder) {
+void MapExpression::resetFrom(Decoder& decoder) {
   auto size = decoder.readSize();
   items_.reserve(size);
   for (auto i = 0u; i < size; i++) {
@@ -229,7 +229,7 @@ void MapExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void MapExpression::accept(ExprVisitor *visitor) {
+void MapExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 

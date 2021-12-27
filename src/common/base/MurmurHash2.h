@@ -29,25 +29,25 @@ class MurmurHash2 {
 
  public:
   // std::string
-  size_t operator()(const std::string &str) const noexcept {
+  size_t operator()(const std::string& str) const noexcept {
     return this->operator()(str.data(), str.length());
   }
 
   // null-terminated C-style string
   template <typename T, typename = std::enable_if_t<is_char_v<T>>>
-  size_t operator()(const T *&str) const noexcept {
+  size_t operator()(const T*& str) const noexcept {
     return this->operator()(str, ::strlen(str));
   }
 
   // raw bytes array
   template <typename T, typename = std::enable_if_t<is_char_v<T>>>
-  size_t operator()(const T *str, size_t size) const noexcept {
+  size_t operator()(const T* str, size_t size) const noexcept {
     uint64_t seed = 0xc70f6907UL;
     const uint64_t m = 0xc6a4a7935bd1e995;
     const uint32_t r = 47;
     uint64_t h = seed ^ (size * m);
-    const uint64_t *data = (const uint64_t *)str;
-    const uint64_t *end = data + (size / 8);
+    const uint64_t* data = (const uint64_t*)str;
+    const uint64_t* end = data + (size / 8);
     while (data != end) {
       uint64_t k = *data++;
 
@@ -59,7 +59,7 @@ class MurmurHash2 {
       h *= m;
     }
 
-    const unsigned char *data2 = (const unsigned char *)data;
+    const unsigned char* data2 = (const unsigned char*)data;
     switch (size & 7) {
       case 7:
         h ^= uint64_t(data2[6]) << 48;  // fallthrough
@@ -103,19 +103,19 @@ class MurmurHash2 {
 
   // pointers
   template <typename T>
-  std::enable_if_t<!is_char_v<T>, size_t> operator()(const T *ptr) const noexcept {
+  std::enable_if_t<!is_char_v<T>, size_t> operator()(const T* ptr) const noexcept {
     return reinterpret_cast<size_t>(ptr);
   }
 
   // std::shared_ptr
   template <typename T>
-  size_t operator()(const std::shared_ptr<T> &ptr) const noexcept {
+  size_t operator()(const std::shared_ptr<T>& ptr) const noexcept {
     return reinterpret_cast<size_t>(ptr.get());
   }
 
   // std::unique_ptr
   template <typename T, typename Deleter>
-  size_t operator()(const std::unique_ptr<T, Deleter> &ptr) const noexcept {
+  size_t operator()(const std::unique_ptr<T, Deleter>& ptr) const noexcept {
     return reinterpret_cast<size_t>(ptr.get());
   }
 };

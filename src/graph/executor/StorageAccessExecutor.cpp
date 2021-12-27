@@ -25,23 +25,23 @@ struct Vid;
 
 template <>
 struct Vid<int64_t> {
-  static int64_t value(const Value &v) {
+  static int64_t value(const Value& v) {
     return v.getInt();
   }
 };
 
 template <>
 struct Vid<std::string> {
-  static std::string value(const Value &v) {
+  static std::string value(const Value& v) {
     return v.getStr();
   }
 };
 
 template <typename VidType>
-DataSet buildRequestDataSet(const SpaceInfo &space,
-                            QueryExpressionContext &exprCtx,
-                            Iterator *iter,
-                            Expression *expr,
+DataSet buildRequestDataSet(const SpaceInfo& space,
+                            QueryExpressionContext& exprCtx,
+                            Iterator* iter,
+                            Expression* expr,
                             bool dedup) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
@@ -51,7 +51,7 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
   std::unordered_set<VidType> uniqueSet;
   uniqueSet.reserve(s);
 
-  const auto &vidType = *(space.spaceDesc.vid_type_ref());
+  const auto& vidType = *(space.spaceDesc.vid_type_ref());
 
   for (; iter->valid(); iter->next()) {
     auto vid = expr->eval(exprCtx(iter));
@@ -70,14 +70,14 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
 
 }  // namespace internal
 
-bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
+bool StorageAccessExecutor::isIntVidType(const SpaceInfo& space) const {
   return (*space.spaceDesc.vid_type_ref()).type == nebula::cpp2::PropertyType::INT64;
 }
 
-DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
-                                                            Expression *expr,
+DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator* iter,
+                                                            Expression* expr,
                                                             bool dedup) {
-  const auto &space = qctx()->rctx()->session()->space();
+  const auto& space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   if (isIntVidType(space)) {
@@ -87,9 +87,9 @@ DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
 }
 
 std::string StorageAccessExecutor::getStorageDetail(
-    optional_field_ref<const std::map<std::string, int32_t> &> ref) const {
+    optional_field_ref<const std::map<std::string, int32_t>&> ref) const {
   if (ref.has_value()) {
-    auto content = util::join(*ref, [](auto &iter) -> std::string {
+    auto content = util::join(*ref, [](auto& iter) -> std::string {
       return folly::sformat("{}:{}(us)", iter.first, iter.second);
     });
     return "{" + content + "}";

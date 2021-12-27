@@ -55,27 +55,27 @@ class StepClause final {
 
 class VertexIDList final {
  public:
-  void add(Expression *expr) {
+  void add(Expression* expr) {
     vidList_.emplace_back(expr);
   }
 
-  const std::vector<Expression *> &vidList() const {
+  const std::vector<Expression*>& vidList() const {
     return vidList_;
   }
 
   std::string toString() const;
 
  private:
-  std::vector<Expression *> vidList_;
+  std::vector<Expression*> vidList_;
 };
 
 class VerticesClause {
  public:
-  explicit VerticesClause(VertexIDList *vidList) {
+  explicit VerticesClause(VertexIDList* vidList) {
     vidList_.reset(vidList);
   }
 
-  explicit VerticesClause(Expression *ref) {
+  explicit VerticesClause(Expression* ref) {
     ref_ = ref;
   }
 
@@ -95,39 +95,39 @@ class VerticesClause {
 
  protected:
   std::unique_ptr<VertexIDList> vidList_;
-  Expression *ref_{nullptr};
+  Expression* ref_{nullptr};
 };
 
 class FromClause final : public VerticesClause {
  public:
-  explicit FromClause(VertexIDList *vidList) : VerticesClause(vidList) {}
+  explicit FromClause(VertexIDList* vidList) : VerticesClause(vidList) {}
 
-  explicit FromClause(Expression *ref) : VerticesClause(ref) {}
+  explicit FromClause(Expression* ref) : VerticesClause(ref) {}
 
   std::string toString() const;
 };
 
 class ToClause final : public VerticesClause {
  public:
-  explicit ToClause(VertexIDList *vidList) : VerticesClause(vidList) {}
+  explicit ToClause(VertexIDList* vidList) : VerticesClause(vidList) {}
 
-  explicit ToClause(Expression *ref) : VerticesClause(ref) {}
+  explicit ToClause(Expression* ref) : VerticesClause(ref) {}
 
   std::string toString() const;
 };
 
 class OverEdge final {
  public:
-  explicit OverEdge(std::string *edge, std::string *alias = nullptr) {
+  explicit OverEdge(std::string* edge, std::string* alias = nullptr) {
     edge_.reset(edge);
     alias_.reset(alias);
   }
 
-  std::string *edge() const {
+  std::string* edge() const {
     return edge_.get();
   }
 
-  std::string *alias() const {
+  std::string* alias() const {
     return alias_.get();
   }
 
@@ -140,17 +140,17 @@ class OverEdge final {
 
 class OverEdges final {
  public:
-  void addEdge(OverEdge *edge) {
+  void addEdge(OverEdge* edge) {
     edges_.emplace_back(edge);
   }
 
-  std::vector<OverEdge *> edges() {
-    std::vector<OverEdge *> result;
+  std::vector<OverEdge*> edges() {
+    std::vector<OverEdge*> result;
 
     std::transform(edges_.cbegin(),
                    edges_.cend(),
-                   std::insert_iterator<std::vector<OverEdge *>>(result, result.begin()),
-                   [](auto &edge) { return edge.get(); });
+                   std::insert_iterator<std::vector<OverEdge*>>(result, result.begin()),
+                   [](auto& edge) { return edge.get(); });
     return result;
   }
 
@@ -162,7 +162,7 @@ class OverEdges final {
 
 class OverClause final {
  public:
-  OverClause(OverEdges *edges,
+  OverClause(OverEdges* edges,
              storage::cpp2::EdgeDirection direction = storage::cpp2::EdgeDirection::OUT_EDGE) {
     overEdges_.reset(edges);
     direction_ = direction;
@@ -175,7 +175,7 @@ class OverClause final {
     overEdges_ = std::make_unique<OverEdges>();
   }
 
-  std::vector<OverEdge *> edges() const {
+  std::vector<OverEdge*> edges() const {
     return overEdges_->edges();
   }
 
@@ -197,12 +197,12 @@ class OverClause final {
 
 class TruncateClause {
  public:
-  TruncateClause(Expression *expr, bool isSample) {
+  TruncateClause(Expression* expr, bool isSample) {
     truncate_ = expr;
     isSample_ = isSample;
   }
 
-  Expression *truncate() const {
+  Expression* truncate() const {
     return truncate_;
   }
 
@@ -218,20 +218,20 @@ class TruncateClause {
 
  private:
   bool isSample_{false};
-  Expression *truncate_{nullptr};
+  Expression* truncate_{nullptr};
 };
 
 class WhereClause {
  public:
-  explicit WhereClause(Expression *filter) {
+  explicit WhereClause(Expression* filter) {
     filter_ = filter;
   }
 
-  Expression *filter() const {
+  Expression* filter() const {
     return filter_;
   }
 
-  void setFilter(Expression *expr) {
+  void setFilter(Expression* expr) {
     filter_ = expr;
   }
 
@@ -242,19 +242,19 @@ class WhereClause {
   std::string toString() const;
 
  private:
-  Expression *filter_{nullptr};
+  Expression* filter_{nullptr};
 };
 
 class WhenClause : public WhereClause {
  public:
-  explicit WhenClause(Expression *filter) : WhereClause(filter) {}
+  explicit WhenClause(Expression* filter) : WhereClause(filter) {}
 
   std::string toString() const;
 };
 
 class YieldColumn final {
  public:
-  explicit YieldColumn(Expression *expr, const std::string &alias = "") {
+  explicit YieldColumn(Expression* expr, const std::string& alias = "") {
     expr_ = expr;
     alias_ = alias;
   }
@@ -263,19 +263,19 @@ class YieldColumn final {
     return std::make_unique<YieldColumn>(expr_->clone(), alias_);
   }
 
-  void setExpr(Expression *expr) {
+  void setExpr(Expression* expr) {
     expr_ = expr;
   }
 
-  Expression *expr() const {
+  Expression* expr() const {
     return expr_;
   }
 
-  void setAlias(const std::string &alias) {
+  void setAlias(const std::string& alias) {
     alias_ = alias;
   }
 
-  const std::string &alias() const {
+  const std::string& alias() const {
     return alias_;
   }
 
@@ -286,25 +286,25 @@ class YieldColumn final {
   std::string toString() const;
 
  private:
-  Expression *expr_{nullptr};
+  Expression* expr_{nullptr};
   std::string alias_;
 };
 
-bool operator==(const YieldColumn &l, const YieldColumn &r);
-inline bool operator!=(const YieldColumn &l, const YieldColumn &r) {
+bool operator==(const YieldColumn& l, const YieldColumn& r);
+inline bool operator!=(const YieldColumn& l, const YieldColumn& r) {
   return !(l == r);
 }
 
 class YieldColumns final {
  public:
-  void addColumn(YieldColumn *field) {
+  void addColumn(YieldColumn* field) {
     columns_.emplace_back(field);
   }
 
-  std::vector<YieldColumn *> columns() const {
-    std::vector<YieldColumn *> result;
+  std::vector<YieldColumn*> columns() const {
+    std::vector<YieldColumn*> result;
     result.resize(columns_.size());
-    auto get = [](auto &column) { return column.get(); };
+    auto get = [](auto& column) { return column.get(); };
     std::transform(columns_.begin(), columns_.end(), result.begin(), get);
     return result;
   }
@@ -312,7 +312,7 @@ class YieldColumns final {
   std::vector<std::string> names() const {
     std::vector<std::string> names;
     names.reserve(columns_.size());
-    for (auto &col : columns_) {
+    for (auto& col : columns_) {
       names.emplace_back(col->name());
     }
     return names;
@@ -328,7 +328,7 @@ class YieldColumns final {
 
   std::unique_ptr<YieldColumns> clone() const {
     auto cols = std::make_unique<YieldColumns>();
-    for (auto &col : columns_) {
+    for (auto& col : columns_) {
       cols->addColumn(col->clone().release());
     }
     return cols;
@@ -336,11 +336,11 @@ class YieldColumns final {
 
   std::string toString() const;
 
-  const YieldColumn *back() const {
+  const YieldColumn* back() const {
     return columns_.back().get();
   }
 
-  YieldColumn *back() {
+  YieldColumn* back() {
     return columns_.back().get();
   }
 
@@ -352,16 +352,16 @@ class YieldColumns final {
 
 class YieldClause final {
  public:
-  explicit YieldClause(YieldColumns *yields, bool distinct = false) {
+  explicit YieldClause(YieldColumns* yields, bool distinct = false) {
     yieldColumns_.reset(yields);
     distinct_ = distinct;
   }
 
-  std::vector<YieldColumn *> columns() const {
+  std::vector<YieldColumn*> columns() const {
     return yieldColumns_->columns();
   }
 
-  YieldColumns *yields() const {
+  YieldColumns* yields() const {
     return yieldColumns_.get();
   }
 
@@ -383,11 +383,11 @@ class YieldClause final {
 
 class GroupClause final {
  public:
-  explicit GroupClause(YieldColumns *fields) {
+  explicit GroupClause(YieldColumns* fields) {
     groupColumns_.reset(fields);
   }
 
-  std::vector<YieldColumn *> columns() const {
+  std::vector<YieldColumn*> columns() const {
     return groupColumns_->columns();
   }
 
@@ -401,12 +401,12 @@ class BoundClause final {
  public:
   enum BoundType : uint8_t { IN, OUT, BOTH };
 
-  explicit BoundClause(OverEdges *edges, BoundType type) {
+  explicit BoundClause(OverEdges* edges, BoundType type) {
     overEdges_.reset(edges);
     boundType_ = type;
   }
 
-  std::vector<OverEdge *> edges() const {
+  std::vector<OverEdge*> edges() const {
     return overEdges_->edges();
   }
 
@@ -425,7 +425,7 @@ class NameLabelList {
  public:
   NameLabelList() = default;
 
-  void add(std::string *label) {
+  void add(std::string* label) {
     labels_.emplace_back(label);
   }
 
@@ -437,14 +437,14 @@ class NameLabelList {
     return labels_.size();
   }
 
-  const std::string *front() const {
+  const std::string* front() const {
     return labels_.front().get();
   }
 
-  std::vector<const std::string *> labels() const {
-    std::vector<const std::string *> labels;
+  std::vector<const std::string*> labels() const {
+    std::vector<const std::string*> labels;
     labels.reserve(labels_.size());
-    for (const auto &it : labels_) {
+    for (const auto& it : labels_) {
       labels.emplace_back(it.get());
     }
     return labels;

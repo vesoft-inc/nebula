@@ -38,15 +38,15 @@ class SignalHandler final {
    * e.g. stop the process on SIGTERM.
    */
   class GeneralSignalInfo;
-  using Handler = std::function<void(GeneralSignalInfo *)>;
+  using Handler = std::function<void(GeneralSignalInfo*)>;
   static Status install(int sig, Handler handler);
   static Status install(std::initializer_list<int> sigs, Handler handler);
 
   class GeneralSignalInfo {
    public:
-    explicit GeneralSignalInfo(const siginfo_t *info);
+    explicit GeneralSignalInfo(const siginfo_t* info);
     virtual ~GeneralSignalInfo() = default;
-    virtual const char *toString() const;
+    virtual const char* toString() const;
     int sig() const {
       return sig_;
     }
@@ -67,36 +67,36 @@ class SignalHandler final {
   // signal
   class FatalSignalInfo final : public GeneralSignalInfo {
    public:
-    FatalSignalInfo(const siginfo_t *info, void *uctx);
+    FatalSignalInfo(const siginfo_t* info, void* uctx);
     ~FatalSignalInfo() override = default;
-    const char *toString() const override;
+    const char* toString() const override;
   };
 
  private:
   SignalHandler();
-  SignalHandler(const SignalHandler &) = delete;
-  SignalHandler &operator=(const SignalHandler &) = delete;
-  SignalHandler(SignalHandler &&) = delete;
-  SignalHandler &operator=(SignalHandler &&) = delete;
+  SignalHandler(const SignalHandler&) = delete;
+  SignalHandler& operator=(const SignalHandler&) = delete;
+  SignalHandler(SignalHandler&&) = delete;
+  SignalHandler& operator=(SignalHandler&&) = delete;
 
   // Get the singleton
-  static SignalHandler &get();
+  static SignalHandler& get();
 
   // The handler we use to register to the operating system.
-  static void handlerHook(int sig, siginfo_t *info, void *uctx);
+  static void handlerHook(int sig, siginfo_t* info, void* uctx);
 
   // init SIGPIPE and SIGHUB
   Status init();
 
   // Invoked by handlerHook, and dispatch signals to handleGeneralSignal or
   // handleFatalSignal
-  void doHandle(int sig, siginfo_t *info, void *uctx);
+  void doHandle(int sig, siginfo_t* info, void* uctx);
 
   // To handle general signals like SIGINT, SIGTERM, etc.
-  void handleGeneralSignal(int sig, siginfo_t *info);
+  void handleGeneralSignal(int sig, siginfo_t* info);
 
   // To handle fatal signals like SIGSEGV, SIGABRT, etc.
-  void handleFatalSignal(int sig, siginfo_t *info, void *uctx);
+  void handleFatalSignal(int sig, siginfo_t* info, void* uctx);
 
   Status installInternal(int sig, Handler handler);
 
@@ -105,7 +105,7 @@ class SignalHandler final {
   std::array<Handler, 64> handlers_;
 };
 
-inline std::ostream &operator<<(std::ostream &os, const SignalHandler::GeneralSignalInfo &info) {
+inline std::ostream& operator<<(std::ostream& os, const SignalHandler::GeneralSignalInfo& info) {
   return os << info.toString();
 }
 

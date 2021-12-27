@@ -25,30 +25,30 @@ PushLimitDownTagIndexRangeScanRule::PushLimitDownTagIndexRangeScanRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushLimitDownTagIndexRangeScanRule::pattern() const {
+const Pattern& PushLimitDownTagIndexRangeScanRule::pattern() const {
   static Pattern pattern = Pattern::create(
       graph::PlanNode::Kind::kLimit, {Pattern::create(graph::PlanNode::Kind::kTagIndexRangeScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownTagIndexRangeScanRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
-  auto *qctx = octx->qctx();
+    OptContext* octx, const MatchedResult& matched) const {
+  auto* qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto indexScanGroupNode = matched.dependencies.front().node;
 
-  const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto indexScan = static_cast<const TagIndexRangeScan *>(indexScanGroupNode->node());
+  const auto limit = static_cast<const Limit*>(limitGroupNode->node());
+  const auto indexScan = static_cast<const TagIndexRangeScan*>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count(qctx);
   if (indexScan->limit(qctx) >= 0 && limitRows >= indexScan->limit(qctx)) {
     return TransformResult::noTransform();
   }
 
-  auto newLimit = static_cast<Limit *>(limit->clone());
+  auto newLimit = static_cast<Limit*>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newTagIndexRangeScan = static_cast<TagIndexRangeScan *>(indexScan->clone());
+  auto newTagIndexRangeScan = static_cast<TagIndexRangeScan*>(indexScan->clone());
   newTagIndexRangeScan->setLimit(limitRows);
   auto newTagIndexRangeScanGroup = OptGroup::create(octx);
   auto newTagIndexRangeScanGroupNode =

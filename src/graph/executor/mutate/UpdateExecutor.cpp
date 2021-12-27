@@ -16,7 +16,7 @@ using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
-StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
+StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet&& data) {
   if (data.colNames.size() <= 1) {
     if (yieldNames_.empty()) {
       return Status::OK();
@@ -32,7 +32,7 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
   }
   DataSet result;
   result.colNames = std::move(yieldNames_);
-  for (auto &row : data.rows) {
+  for (auto& row : data.rows) {
     std::vector<Value> columns;
     for (auto i = 1u; i < row.values.size(); i++) {
       columns.emplace_back(std::move(row.values[i]));
@@ -44,7 +44,7 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
 
 folly::Future<Status> UpdateVertexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *uvNode = asNode<UpdateVertex>(node());
+  auto* uvNode = asNode<UpdateVertex>(node());
   yieldNames_ = uvNode->getYieldNames();
   time::Duration updateVertTime;
   auto plan = qctx()->plan();
@@ -71,7 +71,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
           return resp.status();
         }
         auto value = std::move(resp).value();
-        for (auto &code : value.get_result().get_failed_parts()) {
+        for (auto& code : value.get_result().get_failed_parts()) {
           NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
         }
         if (value.props_ref().has_value()) {
@@ -90,7 +90,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
 
 folly::Future<Status> UpdateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *ueNode = asNode<UpdateEdge>(node());
+  auto* ueNode = asNode<UpdateEdge>(node());
   storage::cpp2::EdgeKey edgeKey;
   edgeKey.src_ref() = ueNode->getSrcId();
   edgeKey.ranking_ref() = ueNode->getRank();
@@ -122,7 +122,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
           return resp.status();
         }
         auto value = std::move(resp).value();
-        for (auto &code : value.get_result().get_failed_parts()) {
+        for (auto& code : value.get_result().get_failed_parts()) {
           NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
         }
         if (value.props_ref().has_value()) {

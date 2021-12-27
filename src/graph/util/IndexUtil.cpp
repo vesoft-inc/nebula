@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 
-Status IndexUtil::validateColumns(const std::vector<std::string> &fields) {
+Status IndexUtil::validateColumns(const std::vector<std::string>& fields) {
   std::unordered_set<std::string> fieldSet(fields.begin(), fields.end());
   if (fieldSet.size() != fields.size()) {
     return Status::Error("Found duplicate column field");
@@ -24,9 +24,9 @@ Status IndexUtil::validateColumns(const std::vector<std::string> &fields) {
 }
 
 // static
-Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &params,
-                                      meta::cpp2::IndexParams &indexParams) {
-  for (auto *param : params) {
+Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem*>& params,
+                                      meta::cpp2::IndexParams& indexParams) {
+  for (auto* param : params) {
     switch (param->getParamType()) {
       case IndexParamItem::S2_MAX_LEVEL: {
         auto ret = param->getS2MaxLevel();
@@ -46,9 +46,9 @@ Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &param
   return Status::OK();
 }
 
-StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::IndexItem &indexItem) {
+StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::IndexItem& indexItem) {
   DataSet dataSet({"Field", "Type"});
-  for (auto &col : indexItem.get_fields()) {
+  for (auto& col : indexItem.get_fields()) {
     Row row;
     row.values.emplace_back(Value(col.get_name()));
     row.values.emplace_back(SchemaUtil::typeToString(col));
@@ -58,12 +58,12 @@ StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::IndexItem &indexItem)
 }
 
 StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
-                                               const std::string &indexName,
-                                               const meta::cpp2::IndexItem &indexItem) {
+                                               const std::string& indexName,
+                                               const meta::cpp2::IndexItem& indexItem) {
   DataSet dataSet;
   std::string createStr;
   createStr.reserve(1024);
-  const std::string &schemaName = indexItem.get_schema_name();
+  const std::string& schemaName = indexItem.get_schema_name();
   if (isTagIndex) {
     dataSet.colNames = {"Tag Index Name", "Create Tag Index"};
     createStr = "CREATE TAG INDEX `" + indexName + "` ON `" + schemaName + "` (\n";
@@ -73,10 +73,10 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
   }
   Row row;
   row.emplace_back(indexName);
-  for (auto &col : indexItem.get_fields()) {
+  for (auto& col : indexItem.get_fields()) {
     createStr += " `" + col.get_name();
     createStr += "`";
-    const auto &type = col.get_type();
+    const auto& type = col.get_type();
     if (type.type_length_ref().has_value()) {
       createStr += "(" + std::to_string(*type.type_length_ref()) + ")";
     }
@@ -88,7 +88,7 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
   }
   createStr += ")";
 
-  const auto *indexParams = indexItem.get_index_params();
+  const auto* indexParams = indexItem.get_index_params();
   std::vector<std::string> params;
   if (indexParams) {
     if (indexParams->s2_max_level_ref().has_value()) {

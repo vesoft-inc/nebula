@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 Status FetchEdgesValidator::validateImpl() {
-  auto *sentence = static_cast<FetchEdgesSentence *>(sentence_);
+  auto* sentence = static_cast<FetchEdgesSentence*>(sentence_);
   if (sentence->edgeSize() != 1) {
     return Status::SemanticError("only allow fetch on one edge");
   }
@@ -28,7 +28,7 @@ Status FetchEdgesValidator::validateImpl() {
 }
 
 Status FetchEdgesValidator::validateEdgeName() {
-  auto &spaceID = space_.id;
+  auto& spaceID = space_.id;
   auto status = qctx_->schemaMng()->toEdgeType(spaceID, edgeName_);
   NG_RETURN_IF_ERROR(status);
   edgeType_ = status.value();
@@ -39,9 +39,9 @@ Status FetchEdgesValidator::validateEdgeName() {
   return Status::OK();
 }
 
-StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *expr,
+StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression* expr,
                                                            Value::Type type) {
-  const auto &kind = expr->kind();
+  const auto& kind = expr->kind();
   if (kind != Expression::Kind::kInputProperty && kind != EdgeExpression::Kind::kVarProperty) {
     return Status::SemanticError("`%s', only input and variable expression is acceptable",
                                  expr->toString().c_str());
@@ -57,22 +57,22 @@ StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *exp
   if (kind == Expression::Kind::kInputProperty) {
     return inputVarName_;
   }
-  const auto *propExpr = static_cast<const PropertyExpression *>(expr);
+  const auto* propExpr = static_cast<const PropertyExpression*>(expr);
   userDefinedVarNameList_.emplace(propExpr->sym());
   return propExpr->sym();
 }
 
 Status FetchEdgesValidator::validateEdgeKey() {
   auto pool = qctx_->objPool();
-  auto *sentence = static_cast<FetchEdgesSentence *>(sentence_);
+  auto* sentence = static_cast<FetchEdgesSentence*>(sentence_);
   std::string inputVarName;
   if (sentence->isRef()) {
-    auto *srcExpr = sentence->ref()->srcid();
+    auto* srcExpr = sentence->ref()->srcid();
     auto result = validateEdgeRef(srcExpr, vidType_);
     NG_RETURN_IF_ERROR(result);
     inputVarName = std::move(result).value();
 
-    auto *rankExpr = sentence->ref()->rank();
+    auto* rankExpr = sentence->ref()->rank();
     if (rankExpr->kind() != Expression::Kind::kConstant) {
       result = validateEdgeRef(rankExpr, Value::Type::INT);
       NG_RETURN_IF_ERROR(result);
@@ -83,7 +83,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
       }
     }
 
-    auto *dstExpr = sentence->ref()->dstid();
+    auto* dstExpr = sentence->ref()->dstid();
     result = validateEdgeRef(dstExpr, vidType_);
     NG_RETURN_IF_ERROR(result);
     if (inputVarName != result.value()) {
@@ -103,7 +103,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
   QueryExpressionContext ctx;
   auto keys = sentence->keys()->keys();
   edgeKeys.rows.reserve(keys.size());
-  for (const auto &key : keys) {
+  for (const auto& key : keys) {
     if (!ExpressionUtils::isEvaluableExpr(key->srcid(), qctx_)) {
       return Status::SemanticError("`%s' is not evaluable.", key->srcid()->toString().c_str());
     }
@@ -136,12 +136,12 @@ Status FetchEdgesValidator::validateEdgeKey() {
   return Status::OK();
 }
 
-Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
+Status FetchEdgesValidator::validateYield(const YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
   }
   fetchCtx_->distinct = yield->isDistinct();
-  auto &exprProps = fetchCtx_->exprProps;
+  auto& exprProps = fetchCtx_->exprProps;
   exprProps.insertEdgeProp(edgeType_, nebula::kSrc);
   exprProps.insertEdgeProp(edgeType_, nebula::kDst);
   exprProps.insertEdgeProp(edgeType_, nebula::kRank);
@@ -150,7 +150,7 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   outputs_.reserve(size);
 
   auto pool = qctx_->objPool();
-  auto *newCols = pool->add(new YieldColumns());
+  auto* newCols = pool->add(new YieldColumns());
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kVertex, Expression::Kind::kPathBuild})) {
@@ -176,7 +176,7 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
     return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
 
-  for (const auto &edge : exprProps.edgeProps()) {
+  for (const auto& edge : exprProps.edgeProps()) {
     if (edge.first != edgeType_) {
       return Status::SemanticError("should use edge name `%s'", edgeName_.c_str());
     }

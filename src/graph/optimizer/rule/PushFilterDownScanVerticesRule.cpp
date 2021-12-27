@@ -29,18 +29,18 @@ PushFilterDownScanVerticesRule::PushFilterDownScanVerticesRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushFilterDownScanVerticesRule::pattern() const {
+const Pattern& PushFilterDownScanVerticesRule::pattern() const {
   static Pattern pattern =
       Pattern::create(PlanNode::Kind::kFilter, {Pattern::create(PlanNode::Kind::kScanVertices)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
+    OptContext* ctx, const MatchedResult& matched) const {
   auto filterGroupNode = matched.node;
   auto svGroupNode = matched.dependencies.front().node;
-  auto filter = static_cast<const Filter *>(filterGroupNode->node());
-  auto sv = static_cast<const ScanVertices *>(svGroupNode->node());
+  auto filter = static_cast<const Filter*>(filterGroupNode->node());
+  auto sv = static_cast<const ScanVertices*>(svGroupNode->node());
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
   auto condition = DCHECK_NOTNULL(filter->condition())->clone();
@@ -52,7 +52,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
   }
 
   auto remainedExpr = std::move(visitor).remainedExpr();
-  OptGroupNode *newFilterGroupNode = nullptr;
+  OptGroupNode* newFilterGroupNode = nullptr;
   if (remainedExpr != nullptr) {
     auto newFilter = Filter::make(qctx, nullptr, remainedExpr);
     newFilter->setOutputVar(filter->outputVar());
@@ -66,10 +66,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
     newSVFilter = logicExpr;
   }
 
-  auto newSV = static_cast<ScanVertices *>(sv->clone());
+  auto newSV = static_cast<ScanVertices*>(sv->clone());
   newSV->setFilter(newSVFilter);
 
-  OptGroupNode *newSvGroupNode = nullptr;
+  OptGroupNode* newSvGroupNode = nullptr;
   if (newFilterGroupNode != nullptr) {
     // Filter(A&&B)<-ScanVertices(C) => Filter(A)<-ScanVertices(B&&C)
     auto newGroup = OptGroup::create(ctx);

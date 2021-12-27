@@ -9,7 +9,7 @@ namespace nebula {
 namespace graph {
 class ScanEdgesExecutor final : public GetPropExecutor {
  public:
-  ScanEdgesExecutor(const PlanNode *node, QueryContext *qctx)
+  ScanEdgesExecutor(const PlanNode* node, QueryContext* qctx)
       : GetPropExecutor("ScanEdgesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

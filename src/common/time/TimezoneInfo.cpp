@@ -29,7 +29,7 @@ namespace time {
 /*static*/ Status Timezone::initializeGlobalTimezone() {
   // use system timezone configuration if not set.
   if (FLAGS_timezone_name.empty()) {
-    auto *tz = ::getenv("TZ");
+    auto* tz = ::getenv("TZ");
     if (tz != nullptr) {
       FLAGS_timezone_name.append(tz);
     }

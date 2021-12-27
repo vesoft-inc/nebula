@@ -24,9 +24,9 @@
 namespace nebula {
 namespace graph {
 
-static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
-                              meta::cpp2::Schema &schema) {
-  for (auto &spec : columnSpecs) {
+static Status validateColumns(const std::vector<ColumnSpecification*>& columnSpecs,
+                              meta::cpp2::Schema& schema) {
+  for (auto& spec : columnSpecs) {
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
     column.name_ref() = *spec->name();
@@ -36,7 +36,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
       column.type.geo_shape_ref() = spec->geoShape();
     }
-    for (const auto &property : spec->properties()->properties()) {
+    for (const auto& property : spec->properties()->properties()) {
       if (property->isNullable()) {
         column.nullable_ref() = property->nullable();
       } else if (property->isDefaultValue()) {
@@ -44,7 +44,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
           return Status::SemanticError("Wrong default value expression `%s'",
                                        property->defaultValue()->toString().c_str());
         }
-        auto *defaultValueExpr = property->defaultValue();
+        auto* defaultValueExpr = property->defaultValue();
         // some expression is evaluable but not pure so only fold instead of eval here
         auto foldRes = ExpressionUtils::foldConstantExpr(defaultValueExpr);
         NG_RETURN_IF_ERROR(foldRes);
@@ -62,18 +62,18 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
 }
 
 static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
-    const std::vector<AlterSchemaOptItem *> &schemaOpts) {
+    const std::vector<AlterSchemaOptItem*>& schemaOpts) {
   std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
   std::unordered_set<std::string> uniqueColName;
-  for (const auto &schemaOpt : schemaOpts) {
+  for (const auto& schemaOpt : schemaOpts) {
     meta::cpp2::AlterSchemaItem schemaItem;
     auto opType = schemaOpt->toType();
     schemaItem.op_ref() = opType;
     meta::cpp2::Schema schema;
 
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
-      const auto &colNames = schemaOpt->columnNames();
-      for (auto &colName : colNames) {
+      const auto& colNames = schemaOpt->columnNames();
+      for (auto& colName : colNames) {
         if (!uniqueColName.emplace(*colName).second) {
           return Status::SemanticError("Duplicate column name `%s'", colName->c_str());
         }
@@ -82,8 +82,8 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
         schema.columns_ref().value().emplace_back(std::move(column));
       }
     } else {
-      const auto &specs = schemaOpt->columnSpecs();
-      for (auto &spec : specs) {
+      const auto& specs = schemaOpt->columnSpecs();
+      for (auto& spec : specs) {
         if (!uniqueColName.emplace(*spec->name()).second) {
           return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
         }
@@ -98,9 +98,9 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
 }
 
 static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
-    const std::vector<SchemaPropItem *> &schemaProps) {
+    const std::vector<SchemaPropItem*>& schemaProps) {
   meta::cpp2::SchemaProp schemaProp;
-  for (const auto &prop : schemaProps) {
+  for (const auto& prop : schemaProps) {
     auto propType = prop->getPropType();
     switch (propType) {
       case SchemaPropItem::TTL_DURATION: {
@@ -131,9 +131,9 @@ static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
   return schemaProp;
 }
 
-static Status checkColName(const std::vector<ColumnSpecification *> specs) {
+static Status checkColName(const std::vector<ColumnSpecification*> specs) {
   std::unordered_set<std::string> uniqueColName;
-  for (const auto &spec : specs) {
+  for (const auto& spec : specs) {
     auto name = *spec->name();
     if (!uniqueColName.emplace(name).second) {
       return Status::SemanticError("Duplicate column name `%s'", name.c_str());
@@ -144,7 +144,7 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
 
 Status CreateTagValidator::validateImpl() {
   createCtx_ = getContext<CreateSchemaContext>();
-  auto sentence = static_cast<CreateTagSentence *>(sentence_);
+  auto sentence = static_cast<CreateTagSentence*>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
   auto name = *sentence->name();
   // Check the validateContext has the same name schema
@@ -167,7 +167,7 @@ Status CreateTagValidator::validateImpl() {
 
 Status CreateEdgeValidator::validateImpl() {
   createCtx_ = getContext<CreateSchemaContext>();
-  auto sentence = static_cast<CreateEdgeSentence *>(sentence_);
+  auto sentence = static_cast<CreateEdgeSentence*>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
   auto name = *sentence->name();
   // Check the validateContext has the same name schema
@@ -193,7 +193,7 @@ Status DescTagValidator::validateImpl() {
 }
 
 Status DescTagValidator::toPlan() {
-  auto sentence = static_cast<DescribeTagSentence *>(sentence_);
+  auto sentence = static_cast<DescribeTagSentence*>(sentence_);
   auto name = *sentence->name();
   auto doNode = DescTag::make(qctx_, nullptr, std::move(name));
   root_ = doNode;
@@ -206,7 +206,7 @@ Status DescEdgeValidator::validateImpl() {
 }
 
 Status DescEdgeValidator::toPlan() {
-  auto sentence = static_cast<DescribeEdgeSentence *>(sentence_);
+  auto sentence = static_cast<DescribeEdgeSentence*>(sentence_);
   auto name = *sentence->name();
   auto doNode = DescEdge::make(qctx_, nullptr, std::move(name));
   root_ = doNode;
@@ -216,7 +216,7 @@ Status DescEdgeValidator::toPlan() {
 
 Status AlterTagValidator::validateImpl() {
   alterCtx_ = getContext<AlterSchemaContext>();
-  auto sentence = static_cast<AlterTagSentence *>(sentence_);
+  auto sentence = static_cast<AlterTagSentence*>(sentence_);
   auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
   NG_RETURN_IF_ERROR(schemaItems);
   alterCtx_->schemaItems = std::move(schemaItems.value());
@@ -228,7 +228,7 @@ Status AlterTagValidator::validateImpl() {
 
 Status AlterEdgeValidator::validateImpl() {
   alterCtx_ = getContext<AlterSchemaContext>();
-  auto sentence = static_cast<AlterEdgeSentence *>(sentence_);
+  auto sentence = static_cast<AlterEdgeSentence*>(sentence_);
   auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
   NG_RETURN_IF_ERROR(schemaItems);
   alterCtx_->schemaItems = std::move(schemaItems.value());
@@ -243,7 +243,7 @@ Status ShowTagsValidator::validateImpl() {
 }
 
 Status ShowTagsValidator::toPlan() {
-  auto *doNode = ShowTags::make(qctx_, nullptr);
+  auto* doNode = ShowTags::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -254,7 +254,7 @@ Status ShowEdgesValidator::validateImpl() {
 }
 
 Status ShowEdgesValidator::toPlan() {
-  auto *doNode = ShowEdges::make(qctx_, nullptr);
+  auto* doNode = ShowEdges::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -265,8 +265,8 @@ Status ShowCreateTagValidator::validateImpl() {
 }
 
 Status ShowCreateTagValidator::toPlan() {
-  auto sentence = static_cast<ShowCreateTagSentence *>(sentence_);
-  auto *doNode = ShowCreateTag::make(qctx_, nullptr, *sentence->name());
+  auto sentence = static_cast<ShowCreateTagSentence*>(sentence_);
+  auto* doNode = ShowCreateTag::make(qctx_, nullptr, *sentence->name());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -277,8 +277,8 @@ Status ShowCreateEdgeValidator::validateImpl() {
 }
 
 Status ShowCreateEdgeValidator::toPlan() {
-  auto sentence = static_cast<ShowCreateEdgeSentence *>(sentence_);
-  auto *doNode = ShowCreateEdge::make(qctx_, nullptr, *sentence->name());
+  auto sentence = static_cast<ShowCreateEdgeSentence*>(sentence_);
+  auto* doNode = ShowCreateEdge::make(qctx_, nullptr, *sentence->name());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -289,8 +289,8 @@ Status DropTagValidator::validateImpl() {
 }
 
 Status DropTagValidator::toPlan() {
-  auto sentence = static_cast<DropTagSentence *>(sentence_);
-  auto *doNode = DropTag::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
+  auto sentence = static_cast<DropTagSentence*>(sentence_);
+  auto* doNode = DropTag::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -301,20 +301,20 @@ Status DropEdgeValidator::validateImpl() {
 }
 
 Status DropEdgeValidator::toPlan() {
-  auto sentence = static_cast<DropEdgeSentence *>(sentence_);
-  auto *doNode = DropEdge::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
+  auto sentence = static_cast<DropEdgeSentence*>(sentence_);
+  auto* doNode = DropEdge::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status CreateTagIndexValidator::validateImpl() {
-  auto sentence = static_cast<CreateTagIndexSentence *>(sentence_);
+  auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
   name_ = *sentence->tagName();
   index_ = *sentence->indexName();
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
-  auto *indexParamList = sentence->getIndexParamList();
+  auto* indexParamList = sentence->getIndexParamList();
   if (indexParamList) {
     meta::cpp2::IndexParams indexParams;
     NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams));
@@ -324,8 +324,8 @@ Status CreateTagIndexValidator::validateImpl() {
 }
 
 Status CreateTagIndexValidator::toPlan() {
-  auto sentence = static_cast<CreateTagIndexSentence *>(sentence_);
-  auto *doNode = CreateTagIndex::make(qctx_,
+  auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
+  auto* doNode = CreateTagIndex::make(qctx_,
                                       nullptr,
                                       *sentence->tagName(),
                                       *sentence->indexName(),
@@ -339,13 +339,13 @@ Status CreateTagIndexValidator::toPlan() {
 }
 
 Status CreateEdgeIndexValidator::validateImpl() {
-  auto sentence = static_cast<CreateEdgeIndexSentence *>(sentence_);
+  auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
   name_ = *sentence->edgeName();
   index_ = *sentence->indexName();
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
   // TODO(darion) Save the index
-  auto *indexParamList = sentence->getIndexParamList();
+  auto* indexParamList = sentence->getIndexParamList();
   if (indexParamList) {
     meta::cpp2::IndexParams indexParams;
     NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams));
@@ -355,8 +355,8 @@ Status CreateEdgeIndexValidator::validateImpl() {
 }
 
 Status CreateEdgeIndexValidator::toPlan() {
-  auto sentence = static_cast<CreateEdgeIndexSentence *>(sentence_);
-  auto *doNode = CreateEdgeIndex::make(qctx_,
+  auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
+  auto* doNode = CreateEdgeIndex::make(qctx_,
                                        nullptr,
                                        *sentence->edgeName(),
                                        *sentence->indexName(),
@@ -370,106 +370,106 @@ Status CreateEdgeIndexValidator::toPlan() {
 }
 
 Status DropTagIndexValidator::validateImpl() {
-  auto sentence = static_cast<DropTagIndexSentence *>(sentence_);
+  auto sentence = static_cast<DropTagIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   ifExist_ = sentence->isIfExists();
   return Status::OK();
 }
 
 Status DropTagIndexValidator::toPlan() {
-  auto *doNode = DropTagIndex::make(qctx_, nullptr, indexName_, ifExist_);
+  auto* doNode = DropTagIndex::make(qctx_, nullptr, indexName_, ifExist_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status DropEdgeIndexValidator::validateImpl() {
-  auto sentence = static_cast<DropEdgeIndexSentence *>(sentence_);
+  auto sentence = static_cast<DropEdgeIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   ifExist_ = sentence->isIfExists();
   return Status::OK();
 }
 
 Status DropEdgeIndexValidator::toPlan() {
-  auto *doNode = DropEdgeIndex::make(qctx_, nullptr, indexName_, ifExist_);
+  auto* doNode = DropEdgeIndex::make(qctx_, nullptr, indexName_, ifExist_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status DescribeTagIndexValidator::validateImpl() {
-  auto sentence = static_cast<DescribeTagIndexSentence *>(sentence_);
+  auto sentence = static_cast<DescribeTagIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   return Status::OK();
 }
 
 Status DescribeTagIndexValidator::toPlan() {
-  auto *doNode = DescTagIndex::make(qctx_, nullptr, indexName_);
+  auto* doNode = DescTagIndex::make(qctx_, nullptr, indexName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status DescribeEdgeIndexValidator::validateImpl() {
-  auto sentence = static_cast<DescribeEdgeIndexSentence *>(sentence_);
+  auto sentence = static_cast<DescribeEdgeIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   return Status::OK();
 }
 
 Status DescribeEdgeIndexValidator::toPlan() {
-  auto *doNode = DescEdgeIndex::make(qctx_, nullptr, indexName_);
+  auto* doNode = DescEdgeIndex::make(qctx_, nullptr, indexName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status ShowCreateTagIndexValidator::validateImpl() {
-  auto sentence = static_cast<ShowCreateTagIndexSentence *>(sentence_);
+  auto sentence = static_cast<ShowCreateTagIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   return Status::OK();
 }
 
 Status ShowCreateTagIndexValidator::toPlan() {
-  auto *doNode = ShowCreateTagIndex::make(qctx_, nullptr, indexName_);
+  auto* doNode = ShowCreateTagIndex::make(qctx_, nullptr, indexName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status ShowCreateEdgeIndexValidator::validateImpl() {
-  auto sentence = static_cast<ShowCreateTagIndexSentence *>(sentence_);
+  auto sentence = static_cast<ShowCreateTagIndexSentence*>(sentence_);
   indexName_ = *sentence->indexName();
   return Status::OK();
 }
 
 Status ShowCreateEdgeIndexValidator::toPlan() {
-  auto *doNode = ShowCreateEdgeIndex::make(qctx_, nullptr, indexName_);
+  auto* doNode = ShowCreateEdgeIndex::make(qctx_, nullptr, indexName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status ShowTagIndexesValidator::validateImpl() {
-  auto sentence = static_cast<ShowTagIndexesSentence *>(sentence_);
+  auto sentence = static_cast<ShowTagIndexesSentence*>(sentence_);
   name_ = *sentence->name();
   return Status::OK();
 }
 
 Status ShowTagIndexesValidator::toPlan() {
-  auto *doNode = ShowTagIndexes::make(qctx_, nullptr, name_);
+  auto* doNode = ShowTagIndexes::make(qctx_, nullptr, name_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status ShowEdgeIndexesValidator::validateImpl() {
-  auto sentence = static_cast<ShowEdgeIndexesSentence *>(sentence_);
+  auto sentence = static_cast<ShowEdgeIndexesSentence*>(sentence_);
   name_ = *sentence->name();
   return Status::OK();
 }
 
 Status ShowEdgeIndexesValidator::toPlan() {
-  auto *doNode = ShowEdgeIndexes::make(qctx_, nullptr, name_);
+  auto* doNode = ShowEdgeIndexes::make(qctx_, nullptr, name_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -480,7 +480,7 @@ Status ShowTagIndexStatusValidator::validateImpl() {
 }
 
 Status ShowTagIndexStatusValidator::toPlan() {
-  auto *doNode = ShowTagIndexStatus::make(qctx_, nullptr);
+  auto* doNode = ShowTagIndexStatus::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -491,7 +491,7 @@ Status ShowEdgeIndexStatusValidator::validateImpl() {
 }
 
 Status ShowEdgeIndexStatusValidator::toPlan() {
-  auto *doNode = ShowEdgeIndexStatus::make(qctx_, nullptr);
+  auto* doNode = ShowEdgeIndexStatus::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -502,8 +502,8 @@ Status MergeZoneValidator::validateImpl() {
 }
 
 Status MergeZoneValidator::toPlan() {
-  auto sentence = static_cast<MergeZoneSentence *>(sentence_);
-  auto *doNode =
+  auto sentence = static_cast<MergeZoneSentence*>(sentence_);
+  auto* doNode =
       MergeZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->zoneNames()->zoneNames());
   root_ = doNode;
   tail_ = root_;
@@ -515,8 +515,8 @@ Status RenameZoneValidator::validateImpl() {
 }
 
 Status RenameZoneValidator::toPlan() {
-  auto sentence = static_cast<RenameZoneSentence *>(sentence_);
-  auto *doNode =
+  auto sentence = static_cast<RenameZoneSentence*>(sentence_);
+  auto* doNode =
       RenameZone::make(qctx_, nullptr, *sentence->originalZoneName(), *sentence->zoneName());
   root_ = doNode;
   tail_ = root_;
@@ -528,8 +528,8 @@ Status DropZoneValidator::validateImpl() {
 }
 
 Status DropZoneValidator::toPlan() {
-  auto sentence = static_cast<DropZoneSentence *>(sentence_);
-  auto *doNode = DropZone::make(qctx_, nullptr, *sentence->zoneName());
+  auto sentence = static_cast<DropZoneSentence*>(sentence_);
+  auto* doNode = DropZone::make(qctx_, nullptr, *sentence->zoneName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -540,8 +540,8 @@ Status SplitZoneValidator::validateImpl() {
 }
 
 Status SplitZoneValidator::toPlan() {
-  auto sentence = static_cast<SplitZoneSentence *>(sentence_);
-  auto *doNode =
+  auto sentence = static_cast<SplitZoneSentence*>(sentence_);
+  auto* doNode =
       SplitZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->zoneNames()->zoneNames());
   root_ = doNode;
   tail_ = root_;
@@ -553,8 +553,8 @@ Status DescribeZoneValidator::validateImpl() {
 }
 
 Status DescribeZoneValidator::toPlan() {
-  auto sentence = static_cast<DescribeZoneSentence *>(sentence_);
-  auto *doNode = DescribeZone::make(qctx_, nullptr, *sentence->zoneName());
+  auto sentence = static_cast<DescribeZoneSentence*>(sentence_);
+  auto* doNode = DescribeZone::make(qctx_, nullptr, *sentence->zoneName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -565,7 +565,7 @@ Status ListZonesValidator::validateImpl() {
 }
 
 Status ListZonesValidator::toPlan() {
-  auto *doNode = ListZones::make(qctx_, nullptr);
+  auto* doNode = ListZones::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -576,8 +576,8 @@ Status AddHostsIntoZoneValidator::validateImpl() {
 }
 
 Status AddHostsIntoZoneValidator::toPlan() {
-  auto sentence = static_cast<AddHostsIntoZoneSentence *>(sentence_);
-  auto *doNode = AddHostsIntoZone::make(
+  auto sentence = static_cast<AddHostsIntoZoneSentence*>(sentence_);
+  auto* doNode = AddHostsIntoZone::make(
       qctx_, nullptr, *sentence->zoneName(), sentence->address()->hosts(), sentence->isNew());
   root_ = doNode;
   tail_ = root_;
@@ -585,7 +585,7 @@ Status AddHostsIntoZoneValidator::toPlan() {
 }
 
 Status CreateFTIndexValidator::validateImpl() {
-  auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
+  auto sentence = static_cast<CreateFTIndexSentence*>(sentence_);
   auto name = *sentence->indexName();
   if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
     return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
@@ -615,8 +615,8 @@ Status CreateFTIndexValidator::validateImpl() {
 }
 
 Status CreateFTIndexValidator::toPlan() {
-  auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
-  auto *doNode = CreateFTIndex::make(qctx_, nullptr, *sentence->indexName(), index_);
+  auto sentence = static_cast<CreateFTIndexSentence*>(sentence_);
+  auto* doNode = CreateFTIndex::make(qctx_, nullptr, *sentence->indexName(), index_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -629,8 +629,8 @@ Status DropFTIndexValidator::validateImpl() {
 }
 
 Status DropFTIndexValidator::toPlan() {
-  auto sentence = static_cast<DropFTIndexSentence *>(sentence_);
-  auto *doNode = DropFTIndex::make(qctx_, nullptr, *sentence->name());
+  auto sentence = static_cast<DropFTIndexSentence*>(sentence_);
+  auto* doNode = DropFTIndex::make(qctx_, nullptr, *sentence->name());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -641,7 +641,7 @@ Status ShowFTIndexesValidator::validateImpl() {
 }
 
 Status ShowFTIndexesValidator::toPlan() {
-  auto *doNode = ShowFTIndexes::make(qctx_, nullptr);
+  auto* doNode = ShowFTIndexes::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

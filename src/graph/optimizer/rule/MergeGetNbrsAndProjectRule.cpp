@@ -28,40 +28,40 @@ MergeGetNbrsAndProjectRule::MergeGetNbrsAndProjectRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &MergeGetNbrsAndProjectRule::pattern() const {
+const Pattern& MergeGetNbrsAndProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
                                            {Pattern::create(graph::PlanNode::Kind::kProject)});
   return pattern;
 }
 
-bool MergeGetNbrsAndProjectRule::match(OptContext *ctx, const MatchedResult &matched) const {
+bool MergeGetNbrsAndProjectRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  const auto *optGN = matched.node;
-  auto gn = static_cast<const GetNeighbors *>(optGN->node());
-  const auto *optProj = matched.dependencies.back().node;
-  auto proj = static_cast<const Project *>(optProj->node());
+  const auto* optGN = matched.node;
+  auto gn = static_cast<const GetNeighbors*>(optGN->node());
+  const auto* optProj = matched.dependencies.back().node;
+  auto proj = static_cast<const Project*>(optProj->node());
   // The projection must project only one column which expression will be
   // assigned to the src expression of GetNeighbors
   auto srcExpr = gn->src();
-  const auto &columns = proj->colNames();
+  const auto& columns = proj->colNames();
   if (srcExpr->kind() != Expression::Kind::kInputProperty || columns.size() != 1UL) {
     return false;
   }
-  auto inputPropExpr = static_cast<const InputPropertyExpression *>(srcExpr);
+  auto inputPropExpr = static_cast<const InputPropertyExpression*>(srcExpr);
   return columns.back() == inputPropExpr->prop();
 }
 
 StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
-  const OptGroupNode *optGN = matched.node;
-  const OptGroupNode *optProj = matched.dependencies.back().node;
+    OptContext* ctx, const MatchedResult& matched) const {
+  const OptGroupNode* optGN = matched.node;
+  const OptGroupNode* optProj = matched.dependencies.back().node;
   DCHECK_EQ(optGN->node()->kind(), PlanNode::Kind::kGetNeighbors);
   DCHECK_EQ(optProj->node()->kind(), PlanNode::Kind::kProject);
-  auto gn = static_cast<const GetNeighbors *>(optGN->node());
-  auto project = static_cast<const Project *>(optProj->node());
-  auto newGN = static_cast<GetNeighbors *>(gn->clone());
+  auto gn = static_cast<const GetNeighbors*>(optGN->node());
+  auto project = static_cast<const Project*>(optProj->node());
+  auto newGN = static_cast<GetNeighbors*>(gn->clone());
   auto column = project->columns()->back();
   auto srcExpr = column->expr()->clone();
   newGN->setSrc(srcExpr);

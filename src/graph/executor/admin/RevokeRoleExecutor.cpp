@@ -19,8 +19,8 @@ folly::Future<Status> RevokeRoleExecutor::execute() {
 }
 
 folly::Future<Status> RevokeRoleExecutor::revokeRole() {
-  auto *rrNode = asNode<RevokeRole>(node());
-  const auto *spaceName = rrNode->spaceName();
+  auto* rrNode = asNode<RevokeRole>(node());
+  const auto* spaceName = rrNode->spaceName();
   auto spaceIdResult = qctx()->getMetaClient()->getSpaceIdByNameFromCache(*spaceName);
   NG_RETURN_IF_ERROR(spaceIdResult);
   auto spaceId = spaceIdResult.value();
@@ -28,7 +28,7 @@ folly::Future<Status> RevokeRoleExecutor::revokeRole() {
   if (rrNode->role() == meta::cpp2::RoleType::GOD) {
     return Status::PermissionError("Permission denied");
   }
-  auto *session = qctx_->rctx()->session();
+  auto* session = qctx_->rctx()->session();
   NG_RETURN_IF_ERROR(
       PermissionManager::canWriteRole(session, rrNode->role(), spaceId, *rrNode->username()));
 

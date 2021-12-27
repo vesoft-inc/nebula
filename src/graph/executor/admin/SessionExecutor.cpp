@@ -15,7 +15,7 @@ namespace graph {
 
 folly::Future<Status> ShowSessionsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *showNode = asNode<ShowSessions>(node());
+  auto* showNode = asNode<ShowSessions>(node());
   if (showNode->isSetSessionID()) {
     return getSession(showNode->getSessionId());
   }
@@ -39,7 +39,7 @@ folly::Future<Status> ShowSessionsExecutor::listSessions() {
                         "GraphAddr",
                         "Timezone",
                         "ClientIp"});
-        for (auto &session : sessions) {
+        for (auto& session : sessions) {
           addSessions(session, result);
         }
         return finish(ResultBuilder().value(Value(std::move(result))).build());
@@ -56,7 +56,7 @@ folly::Future<Status> ShowSessionsExecutor::listLocalSessions() {
                   "GraphAddr",
                   "Timezone",
                   "ClientIp"});
-  for (auto &session : localSessions) {
+  for (auto& session : localSessions) {
     addSessions(session, result);
   }
   return finish(ResultBuilder().value(Value(std::move(result))).build());
@@ -86,7 +86,7 @@ folly::Future<Status> ShowSessionsExecutor::getSession(SessionID sessionId) {
       });
 }
 
-void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataSet &dataSet) const {
+void ShowSessionsExecutor::addSessions(const meta::cpp2::Session& session, DataSet& dataSet) const {
   Row row;
   row.emplace_back(session.get_session_id());
   row.emplace_back(session.get_user_name());
@@ -102,11 +102,11 @@ void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataS
 folly::Future<Status> UpdateSessionExecutor::execute() {
   VLOG(1) << "Update sessions to metad";
   SCOPED_TIMER(&execTime_);
-  auto *updateNode = asNode<UpdateSession>(node());
+  auto* updateNode = asNode<UpdateSession>(node());
   std::vector<meta::cpp2::Session> sessions;
   sessions.emplace_back(updateNode->getSession());
   return qctx()->getMetaClient()->updateSessions(sessions).via(runner()).thenValue(
-      [this](auto &&resp) {
+      [this](auto&& resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           LOG(ERROR) << resp.status();

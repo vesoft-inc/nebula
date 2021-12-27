@@ -25,7 +25,7 @@ TEST(Time, secondsTimeConversion) {
                                    folly::Random::rand32(0, 60),
                                    0));
     }
-    for (const auto &dt : values) {
+    for (const auto& dt : values) {
       EXPECT_EQ(dt,
                 time::TimeConversion::unixSecondsToDateTime(
                     time::TimeConversion::dateTimeToUnixSeconds(dt)));
@@ -53,7 +53,7 @@ TEST(Time, secondsTimeConversion) {
                                folly::Random::rand32(1, 13),
                                folly::Random::rand32(1, 29)));
     }
-    for (const auto &d : values) {
+    for (const auto& d : values) {
       EXPECT_EQ(
           d, time::TimeConversion::unixSecondsToDate(time::TimeConversion::dateToUnixSeconds(d)));
     }
@@ -77,7 +77,7 @@ TEST(Time, secondsTimeConversion) {
                                folly::Random::rand32(0, 60),
                                0));
     }
-    for (const auto &t : values) {
+    for (const auto& t : values) {
       EXPECT_EQ(t, time::TimeConversion::unixSecondsToTime(time::TimeConversion::timeToSeconds(t)));
     }
   }
@@ -171,7 +171,7 @@ TEST(Time, Parse) {
 
 }  // namespace nebula
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);

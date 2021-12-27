@@ -96,72 +96,72 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
   }
   {
     // empty == empty
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value());
-    auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value());
+    auto* expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
   }
   {
     // empty == null
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
-    auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
+    auto* expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::kNullValue.type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value::kNullValue) << "check failed: " << expr->toString();
   }
   {
     // empty != null
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
-    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
+    auto* expr = RelationalExpression::makeNE(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::kNullValue.type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value::kNullValue) << "check failed: " << expr->toString();
   }
   {
     // empty != 1
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(1));
-    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(1));
+    auto* expr = RelationalExpression::makeNE(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
   }
   {
     // empty != true
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(true));
-    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(true));
+    auto* expr = RelationalExpression::makeNE(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
   }
   {
     // empty > "1"
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value("1"));
-    auto *expr = RelationalExpression::makeGT(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value("1"));
+    auto* expr = RelationalExpression::makeGT(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
   }
   {
     // empty < 1
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(1));
-    auto *expr = RelationalExpression::makeLT(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(1));
+    auto* expr = RelationalExpression::makeLT(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
   }
   {
     // empty >= 1.11
-    auto *operand1 = ConstantExpression::make(&pool, Value());
-    auto *operand2 = ConstantExpression::make(&pool, Value(1.11));
-    auto *expr = RelationalExpression::makeGE(&pool, operand1, operand2);
+    auto* operand1 = ConstantExpression::make(&pool, Value());
+    auto* operand2 = ConstantExpression::make(&pool, Value(1.11));
+    auto* expr = RelationalExpression::makeGE(&pool, operand1, operand2);
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
     EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
@@ -474,7 +474,7 @@ TEST_F(RelationalExpressionTest, RelationNotIn) {
 
 TEST_F(RelationalExpressionTest, InList) {
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -487,7 +487,7 @@ TEST_F(RelationalExpressionTest, InList) {
     ASSERT_EQ(true, value);
   }
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -503,7 +503,7 @@ TEST_F(RelationalExpressionTest, InList) {
 
 TEST_F(RelationalExpressionTest, InSet) {
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -516,7 +516,7 @@ TEST_F(RelationalExpressionTest, InSet) {
     ASSERT_EQ(true, value);
   }
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -532,7 +532,7 @@ TEST_F(RelationalExpressionTest, InSet) {
 
 TEST_F(RelationalExpressionTest, InMap) {
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -546,7 +546,7 @@ TEST_F(RelationalExpressionTest, InMap) {
     ASSERT_EQ(true, value);
   }
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -560,7 +560,7 @@ TEST_F(RelationalExpressionTest, InMap) {
     ASSERT_EQ(false, value);
   }
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -577,7 +577,7 @@ TEST_F(RelationalExpressionTest, InMap) {
 
 TEST_F(RelationalExpressionTest, NotInList) {
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -590,7 +590,7 @@ TEST_F(RelationalExpressionTest, NotInList) {
     ASSERT_EQ(false, value);
   }
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -606,7 +606,7 @@ TEST_F(RelationalExpressionTest, NotInList) {
 
 TEST_F(RelationalExpressionTest, NotInSet) {
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -619,7 +619,7 @@ TEST_F(RelationalExpressionTest, NotInSet) {
     ASSERT_EQ(false, value);
   }
   {
-    auto *elist = ExpressionList::make(&pool);
+    auto* elist = ExpressionList::make(&pool);
     (*elist)
         .add(ConstantExpression::make(&pool, 12345))
         .add(ConstantExpression::make(&pool, "Hello"))
@@ -635,7 +635,7 @@ TEST_F(RelationalExpressionTest, NotInSet) {
 
 TEST_F(RelationalExpressionTest, NotInMap) {
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -649,7 +649,7 @@ TEST_F(RelationalExpressionTest, NotInMap) {
     ASSERT_EQ(false, value);
   }
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -663,7 +663,7 @@ TEST_F(RelationalExpressionTest, NotInMap) {
     ASSERT_EQ(true, value);
   }
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))

@@ -9,7 +9,7 @@
 
 namespace nebula {
 
-const Value &LogicalExpression::eval(ExpressionContext &ctx) {
+const Value& LogicalExpression::eval(ExpressionContext& ctx) {
   DCHECK_GE(operands_.size(), 2UL);
   switch (kind()) {
     case Kind::kLogicalAnd:
@@ -24,10 +24,10 @@ const Value &LogicalExpression::eval(ExpressionContext &ctx) {
 }
 
 // evalAnd short circuit logic: BADNULL == false > NULL >= EMPTY > true
-const Value &LogicalExpression::evalAnd(ExpressionContext &ctx) {
+const Value& LogicalExpression::evalAnd(ExpressionContext& ctx) {
   result_ = true;
   for (auto i = 0u; i < operands_.size(); i++) {
-    auto &value = operands_[i]->eval(ctx);
+    auto& value = operands_[i]->eval(ctx);
     if (value.isBadNull() || (value.isBool() && !value.getBool())) {
       result_ = value;
       return result_;
@@ -48,10 +48,10 @@ const Value &LogicalExpression::evalAnd(ExpressionContext &ctx) {
 }
 
 // evalOr short circuit logic: BADNULL == true > NULL >= EMPTY > false
-const Value &LogicalExpression::evalOr(ExpressionContext &ctx) {
+const Value& LogicalExpression::evalOr(ExpressionContext& ctx) {
   result_ = false;
   for (auto i = 0u; i < operands_.size(); i++) {
-    auto &value = operands_[i]->eval(ctx);
+    auto& value = operands_[i]->eval(ctx);
     if (value.isBadNull() || (value.isBool() && value.getBool())) {
       result_ = value;
       return result_;
@@ -72,11 +72,11 @@ const Value &LogicalExpression::evalOr(ExpressionContext &ctx) {
 }
 
 // evalXor short circuit logic: BADNULL == NULL > EMPTY > Bool
-const Value &LogicalExpression::evalXor(ExpressionContext &ctx) {
+const Value& LogicalExpression::evalXor(ExpressionContext& ctx) {
   auto hasEmpty = 0u;
   auto firstBool = 1u;
   for (auto i = 0u; i < operands_.size(); i++) {
-    auto &value = operands_[i]->eval(ctx);
+    auto& value = operands_[i]->eval(ctx);
     if (value.isNull()) {
       result_ = value;
       return result_;
@@ -133,19 +133,19 @@ std::string LogicalExpression::toString() const {
   return buf;
 }
 
-void LogicalExpression::accept(ExprVisitor *visitor) {
+void LogicalExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 
-void LogicalExpression::writeTo(Encoder &encoder) const {
+void LogicalExpression::writeTo(Encoder& encoder) const {
   encoder << kind();
   encoder << operands_.size();
-  for (auto &expr : operands_) {
+  for (auto& expr : operands_) {
     encoder << *expr;
   }
 }
 
-void LogicalExpression::resetFrom(Decoder &decoder) {
+void LogicalExpression::resetFrom(Decoder& decoder) {
   auto size = decoder.readSize();
   operands_.resize(size);
   for (auto i = 0u; i < size; i++) {
@@ -153,11 +153,11 @@ void LogicalExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-bool LogicalExpression::operator==(const Expression &rhs) const {
+bool LogicalExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {
     return false;
   }
-  auto &logic = static_cast<const LogicalExpression &>(rhs);
+  auto& logic = static_cast<const LogicalExpression&>(rhs);
 
   if (operands_.size() != logic.operands_.size()) {
     return false;

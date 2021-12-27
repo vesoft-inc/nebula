@@ -44,56 +44,56 @@ namespace storage {
  */
 class IndexSelectionNode : public IndexNode {
  public:
-  IndexSelectionNode(const IndexSelectionNode &node);
-  IndexSelectionNode(RuntimeContext *context, Expression *expr);
-  nebula::cpp2::ErrorCode init(InitContext &ctx) override;
+  IndexSelectionNode(const IndexSelectionNode& node);
+  IndexSelectionNode(RuntimeContext* context, Expression* expr);
+  nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   std::unique_ptr<IndexNode> copy() override;
   std::string identify() override;
 
  private:
   Result doNext() override;
-  inline bool filter(const Row &row) {
+  inline bool filter(const Row& row) {
     ctx_->setRow(row);
-    auto &result = expr_->eval(*ctx_);
+    auto& result = expr_->eval(*ctx_);
     return result.type() == Value::Type::BOOL ? result.getBool() : false;
   }
-  Expression *expr_;
+  Expression* expr_;
   Map<std::string, size_t> colPos_;
   // TODO(hs.zhang): `ExprContext` could be moved out later if we unify the volcano in go/lookup
   class ExprContext : public ExpressionContext {
    public:
-    explicit ExprContext(const Map<std::string, size_t> &colPos) : colPos_(colPos) {}
-    void setRow(const Row &row) {
+    explicit ExprContext(const Map<std::string, size_t>& colPos) : colPos_(colPos) {}
+    void setRow(const Row& row) {
       row_ = &row;
     }
-    Value getEdgeProp(const std::string &edgeType, const std::string &prop) const override;
-    Value getTagProp(const std::string &tag, const std::string &prop) const override;
+    Value getEdgeProp(const std::string& edgeType, const std::string& prop) const override;
+    Value getTagProp(const std::string& tag, const std::string& prop) const override;
     // override
-    const Value &getVar(const std::string &var) const override {
+    const Value& getVar(const std::string& var) const override {
       UNUSED(var);
       return fatal(__FILE__, __LINE__);
     }
-    const Value &getVersionedVar(const std::string &var, int64_t version) const override {
+    const Value& getVersionedVar(const std::string& var, int64_t version) const override {
       UNUSED(var), UNUSED(version);
       return fatal(__FILE__, __LINE__);
     }
-    const Value &getVarProp(const std::string &var, const std::string &prop) const override {
+    const Value& getVarProp(const std::string& var, const std::string& prop) const override {
       UNUSED(var), UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    Value getSrcProp(const std::string &tag, const std::string &prop) const override {
+    Value getSrcProp(const std::string& tag, const std::string& prop) const override {
       UNUSED(tag), UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    const Value &getDstProp(const std::string &tag, const std::string &prop) const override {
+    const Value& getDstProp(const std::string& tag, const std::string& prop) const override {
       UNUSED(tag), UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    const Value &getInputProp(const std::string &prop) const override {
+    const Value& getInputProp(const std::string& prop) const override {
       UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    Value getVertex(const std::string &) const override {
+    Value getVertex(const std::string&) const override {
       return fatal(__FILE__, __LINE__);
     }
     Value getEdge() const override {
@@ -103,15 +103,15 @@ class IndexSelectionNode : public IndexNode {
       UNUSED(index);
       return fatal(__FILE__, __LINE__);
     }
-    void setVar(const std::string &var, Value val) override {
+    void setVar(const std::string& var, Value val) override {
       UNUSED(var), UNUSED(val);
       fatal(__FILE__, __LINE__);
     }
 
    private:
-    const Map<std::string, size_t> &colPos_;
-    const Row *row_;
-    inline const Value &fatal(const std::string &file, int line) const {
+    const Map<std::string, size_t>& colPos_;
+    const Row* row_;
+    inline const Value& fatal(const std::string& file, int line) const {
       LOG(FATAL) << "Unexpect at " << file << ":" << line;
       static Value placeholder;
       return placeholder;
@@ -122,25 +122,25 @@ class IndexSelectionNode : public IndexNode {
 
 class SelectionExprVisitor : public ExprVisitorBase {
  public:
-  void visit(EdgeSrcIdExpression *expr) override {
+  void visit(EdgeSrcIdExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  void visit(EdgeTypeExpression *expr) override {
+  void visit(EdgeTypeExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  void visit(EdgeRankExpression *expr) override {
+  void visit(EdgeRankExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  void visit(EdgeDstIdExpression *expr) override {
+  void visit(EdgeDstIdExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  void visit(TagPropertyExpression *expr) override {
+  void visit(TagPropertyExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  void visit(EdgePropertyExpression *expr) override {
+  void visit(EdgePropertyExpression* expr) override {
     requiredColumns_.insert(expr->prop());
   }
-  const Set<std::string> &getRequiredColumns() {
+  const Set<std::string>& getRequiredColumns() {
     return requiredColumns_;
   }
   ::nebula::cpp2::ErrorCode getCode() {

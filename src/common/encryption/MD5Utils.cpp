@@ -8,9 +8,9 @@
 namespace nebula {
 namespace encryption {
 // static
-std::string MD5Utils::md5Encode(const std::string &str) {
+std::string MD5Utils::md5Encode(const std::string& str) {
   return proxygen::md5Encode(
-      folly::ByteRange(reinterpret_cast<const unsigned char *>(str.c_str()), str.length()));
+      folly::ByteRange(reinterpret_cast<const unsigned char*>(str.c_str()), str.length()));
 }
 }  // namespace encryption
 }  // namespace nebula

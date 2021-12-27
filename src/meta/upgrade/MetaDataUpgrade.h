@@ -20,32 +20,32 @@ namespace meta {
 
 class MetaDataUpgrade final {
  public:
-  explicit MetaDataUpgrade(kvstore::KVStore *kv) : kv_(kv) {}
+  explicit MetaDataUpgrade(kvstore::KVStore* kv) : kv_(kv) {}
 
   ~MetaDataUpgrade() = default;
 
-  Status rewriteHosts(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteSpaces(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteParts(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteLeaders(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteSchemas(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteIndexes(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteConfigs(const folly::StringPiece &key, const folly::StringPiece &val);
-  Status rewriteJobDesc(const folly::StringPiece &key, const folly::StringPiece &val);
+  Status rewriteHosts(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteSpaces(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteParts(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteLeaders(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteSchemas(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteIndexes(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteConfigs(const folly::StringPiece& key, const folly::StringPiece& val);
+  Status rewriteJobDesc(const folly::StringPiece& key, const folly::StringPiece& val);
 
-  Status deleteKeyVal(const folly::StringPiece &key);
+  Status deleteKeyVal(const folly::StringPiece& key);
 
-  void printHost(const folly::StringPiece &key, const folly::StringPiece &val);
-  void printSpaces(const folly::StringPiece &val);
-  void printParts(const folly::StringPiece &key, const folly::StringPiece &val);
-  void printLeaders(const folly::StringPiece &key);
-  void printSchemas(const folly::StringPiece &val);
-  void printIndexes(const folly::StringPiece &val);
-  void printConfigs(const folly::StringPiece &key, const folly::StringPiece &val);
-  void printJobDesc(const folly::StringPiece &key, const folly::StringPiece &val);
+  void printHost(const folly::StringPiece& key, const folly::StringPiece& val);
+  void printSpaces(const folly::StringPiece& val);
+  void printParts(const folly::StringPiece& key, const folly::StringPiece& val);
+  void printLeaders(const folly::StringPiece& key);
+  void printSchemas(const folly::StringPiece& val);
+  void printIndexes(const folly::StringPiece& val);
+  void printConfigs(const folly::StringPiece& key, const folly::StringPiece& val);
+  void printJobDesc(const folly::StringPiece& key, const folly::StringPiece& val);
 
  private:
-  Status put(const folly::StringPiece &key, const folly::StringPiece &val) {
+  Status put(const folly::StringPiece& key, const folly::StringPiece& val) {
     std::vector<kvstore::KV> data;
     data.emplace_back(key.str(), val.str());
     folly::Baton<true, std::atomic> baton;
@@ -67,7 +67,7 @@ class MetaDataUpgrade final {
     return Status::OK();
   }
 
-  Status remove(const folly::StringPiece &key) {
+  Status remove(const folly::StringPiece& key) {
     std::vector<std::string> keys{key.str()};
     folly::Baton<true, std::atomic> baton;
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -88,14 +88,14 @@ class MetaDataUpgrade final {
     return Status::OK();
   }
 
-  Status convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
-                             std::vector<cpp2::ColumnDef> &newCols);
+  Status convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef>& oldCols,
+                             std::vector<cpp2::ColumnDef>& newCols);
 
-  Status convertToNewIndexColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
-                                  std::vector<cpp2::ColumnDef> &newCols);
+  Status convertToNewIndexColumns(const std::vector<meta::v1::cpp2::ColumnDef>& oldCols,
+                                  std::vector<cpp2::ColumnDef>& newCols);
 
  private:
-  kvstore::KVStore *kv_ = nullptr;
+  kvstore::KVStore* kv_ = nullptr;
 };
 
 }  // namespace meta

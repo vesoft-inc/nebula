@@ -13,7 +13,7 @@ namespace graph {
 
 class CreateEdgeExecutor final : public Executor {
  public:
-  CreateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -24,7 +24,7 @@ class CreateEdgeExecutor final : public Executor {
 
 class DescEdgeExecutor final : public Executor {
  public:
-  DescEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  DescEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DescEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -35,7 +35,7 @@ class DescEdgeExecutor final : public Executor {
 
 class DropEdgeExecutor final : public Executor {
  public:
-  DropEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  DropEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -43,7 +43,7 @@ class DropEdgeExecutor final : public Executor {
 
 class ShowEdgesExecutor final : public Executor {
  public:
-  ShowEdgesExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowEdgesExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowEdgesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -51,7 +51,7 @@ class ShowEdgesExecutor final : public Executor {
 
 class ShowCreateEdgeExecutor final : public Executor {
  public:
-  ShowCreateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCreateEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowCreateEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -59,7 +59,7 @@ class ShowCreateEdgeExecutor final : public Executor {
 
 class AlterEdgeExecutor final : public Executor {
  public:
-  AlterEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  AlterEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("AlterEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

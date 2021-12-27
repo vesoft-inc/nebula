@@ -14,7 +14,7 @@ namespace fs {
 TEST(TempFile, Basic) {
   // auto deletion
   {
-    const char *path = "/tmp/tmp.XXXXXX";
+    const char* path = "/tmp/tmp.XXXXXX";
     std::string actual_path;
     {
       TempFile tmp(path);
@@ -35,7 +35,7 @@ TEST(TempFile, Basic) {
   }
   // no deletion
   {
-    const char *path = "/tmp/tmp.XXXXXX";
+    const char* path = "/tmp/tmp.XXXXXX";
     std::string actual_path;
     {
       TempFile tmp(path, false);

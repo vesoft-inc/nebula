@@ -9,12 +9,12 @@
 
 namespace nebula {
 
-const Value &EdgeExpression::eval(ExpressionContext &ctx) {
+const Value& EdgeExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdge();
   return result_;
 }
 
-void EdgeExpression::accept(ExprVisitor *visitor) {
+void EdgeExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 

@@ -13,7 +13,7 @@ namespace graph {
 
 class SignInTSServiceExecutor final : public Executor {
  public:
-  SignInTSServiceExecutor(const PlanNode *node, QueryContext *qctx)
+  SignInTSServiceExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("SignInTSServiceExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

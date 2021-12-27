@@ -22,7 +22,7 @@ namespace nebula {
 
 class GraphScanner : public yyFlexLexer {
  public:
-  int yylex(nebula::GraphParser::semantic_type *lval, nebula::GraphParser::location_type *loc) {
+  int yylex(nebula::GraphParser::semantic_type* lval, nebula::GraphParser::location_type* loc) {
     yylval = lval;
     yylloc = loc;
     return yylex();
@@ -31,7 +31,7 @@ class GraphScanner : public yyFlexLexer {
  public:
   // Called by GQLParser to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
-  void setReadBuffer(std::function<int(char *, int)> readBuffer) {
+  void setReadBuffer(std::function<int(char*, int)> readBuffer) {
     readBuffer_ = readBuffer;
   }
 
@@ -41,11 +41,11 @@ class GraphScanner : public yyFlexLexer {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
   }
 
-  void setQuery(std::string *query) {
+  void setQuery(std::string* query) {
     query_ = query;
   }
 
-  std::string *query() {
+  std::string* query() {
     return query_;
   }
 
@@ -67,7 +67,7 @@ class GraphScanner : public yyFlexLexer {
 
  protected:
   // Called when YY_INPUT is invoked
-  int LexerInput(char *buf, int maxSize) override {
+  int LexerInput(char* buf, int maxSize) override {
     return readBuffer_(buf, maxSize);
   }
 
@@ -90,7 +90,7 @@ class GraphScanner : public yyFlexLexer {
     sbufSize_ = newSize;
   }
 
-  char *sbuf() {
+  char* sbuf() {
     return sbuf_.get();
   }
 
@@ -181,13 +181,13 @@ class GraphScanner : public yyFlexLexer {
 
   bool hasUnaryMinus_{false};
   bool isIntMin_{false};
-  nebula::GraphParser::semantic_type *yylval{nullptr};
-  nebula::GraphParser::location_type *yylloc{nullptr};
+  nebula::GraphParser::semantic_type* yylval{nullptr};
+  nebula::GraphParser::location_type* yylloc{nullptr};
   std::unique_ptr<char[]> sbuf_{nullptr};
   size_t sbufSize_{0};
   size_t sbufPos_{0};
-  std::function<int(char *, int)> readBuffer_;
-  std::string *query_{nullptr};
+  std::function<int(char*, int)> readBuffer_;
+  std::string* query_{nullptr};
 };
 
 }  // namespace nebula

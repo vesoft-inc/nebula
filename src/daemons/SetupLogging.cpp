@@ -21,7 +21,7 @@ DEFINE_string(stderr_log_file, "stderr.log", "Destination filename of stderr");
 using nebula::Status;
 using nebula::fs::FileUtils;
 
-Status setupLogging(const std::string &exe) {
+Status setupLogging(const std::string& exe) {
   // If the log directory does not exist, try to create
   if (!FileUtils::exist(FLAGS_log_dir) && !FileUtils::makeDir(FLAGS_log_dir)) {
     return Status::Error("Failed to create log directory `%s'", FLAGS_log_dir.c_str());
@@ -38,7 +38,7 @@ Status setupLogging(const std::string &exe) {
     return Status::OK();
   }
 
-  auto dup = [](const std::string &filename, FILE *stream) -> Status {
+  auto dup = [](const std::string& filename, FILE* stream) -> Status {
     auto path = FLAGS_log_dir + "/" + filename;
     auto fd = ::open(path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (fd == -1) {

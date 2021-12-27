@@ -14,19 +14,19 @@
 
 namespace nebula {
 namespace graph {
-bool VertexIdSeek::matchEdge(EdgeContext *edgeCtx) {
+bool VertexIdSeek::matchEdge(EdgeContext* edgeCtx) {
   UNUSED(edgeCtx);
   return false;
 }
 
-StatusOr<SubPlan> VertexIdSeek::transformEdge(EdgeContext *edgeCtx) {
+StatusOr<SubPlan> VertexIdSeek::transformEdge(EdgeContext* edgeCtx) {
   UNUSED(edgeCtx);
   return Status::Error("Unimplemented for edge pattern.");
 }
 
-bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
-  auto &node = *nodeCtx->info;
-  auto *matchClauseCtx = nodeCtx->matchClauseCtx;
+bool VertexIdSeek::matchNode(NodeContext* nodeCtx) {
+  auto& node = *nodeCtx->info;
+  auto* matchClauseCtx = nodeCtx->matchClauseCtx;
   if (matchClauseCtx->where == nullptr || matchClauseCtx->where->filter == nullptr) {
     return false;
   }
@@ -42,7 +42,7 @@ bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
   if (vidResult.spec != VidExtractVisitor::VidPattern::Special::kInUsed) {
     return false;
   }
-  for (auto &nodeVid : vidResult.nodes) {
+  for (auto& nodeVid : vidResult.nodes) {
     if (nodeVid.second.kind == VidExtractVisitor::VidPattern::Vids::Kind::kIn) {
       if (nodeVid.first == node.alias) {
         nodeCtx->ids = std::move(nodeVid.second.vids);
@@ -54,10 +54,10 @@ bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
   return false;
 }
 
-std::string VertexIdSeek::listToAnnoVarVid(QueryContext *qctx, const List &list) {
+std::string VertexIdSeek::listToAnnoVarVid(QueryContext* qctx, const List& list) {
   auto input = qctx->vctx()->anonVarGen()->getVar();
   DataSet vids({kVid});
-  for (auto &v : list.values) {
+  for (auto& v : list.values) {
     vids.emplace_back(Row({std::move(v)}));
   }
 
@@ -66,18 +66,18 @@ std::string VertexIdSeek::listToAnnoVarVid(QueryContext *qctx, const List &list)
   return input;
 }
 
-StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext *nodeCtx) {
+StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
   SubPlan plan;
-  auto *matchClauseCtx = nodeCtx->matchClauseCtx;
-  auto *qctx = matchClauseCtx->qctx;
+  auto* matchClauseCtx = nodeCtx->matchClauseCtx;
+  auto* qctx = matchClauseCtx->qctx;
 
   std::string inputVar = listToAnnoVarVid(qctx, nodeCtx->ids);
 
-  auto *passThrough = PassThroughNode::make(qctx, nullptr);
+  auto* passThrough = PassThroughNode::make(qctx, nullptr);
   passThrough->setOutputVar(inputVar);
   passThrough->setColNames({kVid});
 
-  auto *dedup = Dedup::make(qctx, passThrough);
+  auto* dedup = Dedup::make(qctx, passThrough);
   dedup->setColNames({kVid});
 
   plan.root = dedup;

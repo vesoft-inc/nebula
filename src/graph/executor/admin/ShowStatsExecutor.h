@@ -13,7 +13,7 @@ namespace graph {
 
 class ShowStatsExecutor final : public Executor {
  public:
-  ShowStatsExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowStatsExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowStatsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

@@ -111,15 +111,15 @@ namespace nebula {
 namespace graph {
 
 // static
-Executor *Executor::create(const PlanNode *node, QueryContext *qctx) {
-  std::unordered_map<int64_t, Executor *> visited;
+Executor* Executor::create(const PlanNode* node, QueryContext* qctx) {
+  std::unordered_map<int64_t, Executor*> visited;
   return makeExecutor(node, qctx, &visited);
 }
 
 // static
-Executor *Executor::makeExecutor(const PlanNode *node,
-                                 QueryContext *qctx,
-                                 std::unordered_map<int64_t, Executor *> *visited) {
+Executor* Executor::makeExecutor(const PlanNode* node,
+                                 QueryContext* qctx,
+                                 std::unordered_map<int64_t, Executor*>* visited) {
   DCHECK(qctx != nullptr);
   DCHECK(node != nullptr);
   auto iter = visited->find(node->id());
@@ -127,19 +127,19 @@ Executor *Executor::makeExecutor(const PlanNode *node,
     return iter->second;
   }
 
-  Executor *exec = makeExecutor(qctx, node);
+  Executor* exec = makeExecutor(qctx, node);
 
   if (node->kind() == PlanNode::Kind::kSelect) {
     auto select = asNode<Select>(node);
     auto thenBody = makeExecutor(select->then(), qctx, visited);
     auto elseBody = makeExecutor(select->otherwise(), qctx, visited);
-    auto selectExecutor = static_cast<SelectExecutor *>(exec);
+    auto selectExecutor = static_cast<SelectExecutor*>(exec);
     selectExecutor->setThenBody(thenBody);
     selectExecutor->setElseBody(elseBody);
   } else if (node->kind() == PlanNode::Kind::kLoop) {
     auto loop = asNode<Loop>(node);
     auto body = makeExecutor(loop->body(), qctx, visited);
-    auto loopExecutor = static_cast<LoopExecutor *>(exec);
+    auto loopExecutor = static_cast<LoopExecutor*>(exec);
     loopExecutor->setLoopBody(body);
   }
 
@@ -152,7 +152,7 @@ Executor *Executor::makeExecutor(const PlanNode *node,
 }
 
 // static
-Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
+Executor* Executor::makeExecutor(QueryContext* qctx, const PlanNode* node) {
   auto pool = qctx->objPool();
   switch (node->kind()) {
     case PlanNode::Kind::kPassThrough: {
@@ -532,7 +532,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
   return nullptr;
 }
 
-Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+Executor::Executor(const std::string& name, const PlanNode* node, QueryContext* qctx)
     : id_(DCHECK_NOTNULL(node)->id()),
       name_(name),
       node_(DCHECK_NOTNULL(node)),
@@ -594,7 +594,7 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 void Executor::drop() {
-  for (const auto &inputVar : node()->inputVars()) {
+  for (const auto& inputVar : node()->inputVars()) {
     if (inputVar != nullptr) {
       // Make sure use the variable happened-before decrement count
       if (inputVar->userCount.fetch_sub(1, std::memory_order_release) == 1) {
@@ -607,7 +607,7 @@ void Executor::drop() {
   }
 }
 
-Status Executor::finish(Result &&result) {
+Status Executor::finish(Result&& result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
@@ -622,11 +622,11 @@ Status Executor::finish(Result &&result) {
   return Status::OK();
 }
 
-Status Executor::finish(Value &&value) {
+Status Executor::finish(Value&& value) {
   return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
-folly::Executor *Executor::runner() const {
+folly::Executor* Executor::runner() const {
   if (!qctx() || !qctx()->rctx() || !qctx()->rctx()->runner()) {
     // This is just for test
     return &folly::InlineExecutor::instance();

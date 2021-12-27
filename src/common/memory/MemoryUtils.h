@@ -26,10 +26,10 @@ class MemoryUtils final {
   static std::atomic_bool kHitMemoryHighWatermark;
 
  private:
-  MemoryUtils(const MemoryUtils &) = delete;
-  void operator=(const MemoryUtils &) = delete;
+  MemoryUtils(const MemoryUtils&) = delete;
+  void operator=(const MemoryUtils&) = delete;
 
-  static StatusOr<uint64_t> readSysContents(const std::string &path);
+  static StatusOr<uint64_t> readSysContents(const std::string& path);
 };
 
 }  // namespace nebula

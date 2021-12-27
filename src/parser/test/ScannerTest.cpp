@@ -20,7 +20,7 @@ using testing::AssertionSuccess;
 namespace nebula {
 
 using semantic_type = nebula::GraphParser::semantic_type;
-static auto checkSemanticValue(const char *expected, semantic_type *sv) {
+static auto checkSemanticValue(const char* expected, semantic_type* sv) {
   auto actual = *sv->strval;
   delete sv->strval;
   if (expected != actual) {
@@ -30,7 +30,7 @@ static auto checkSemanticValue(const char *expected, semantic_type *sv) {
   return AssertionSuccess();
 }
 
-static auto checkSemanticValue(bool expected, semantic_type *sv) {
+static auto checkSemanticValue(bool expected, semantic_type* sv) {
   auto actual = sv->boolval;
   if (expected != actual) {
     return AssertionFailure() << "Semantic value not match, "
@@ -41,7 +41,7 @@ static auto checkSemanticValue(bool expected, semantic_type *sv) {
 
 template <typename T>
 static std::enable_if_t<std::is_integral<T>::value, AssertionResult> checkSemanticValue(
-    T expected, semantic_type *sv) {
+    T expected, semantic_type* sv) {
   auto actual = static_cast<T>(sv->intval);
   if (expected != actual) {
     return AssertionFailure() << "Semantic value not match, "
@@ -52,7 +52,7 @@ static std::enable_if_t<std::is_integral<T>::value, AssertionResult> checkSemant
 
 template <typename T>
 static std::enable_if_t<std::is_floating_point<T>::value, AssertionResult> checkSemanticValue(
-    T expected, semantic_type *sv) {
+    T expected, semantic_type* sv) {
   auto actual = static_cast<T>(sv->doubleval);
   if (expected != actual) {
     return AssertionFailure() << "Semantic value not match, "
@@ -95,7 +95,7 @@ TEST(Scanner, Basic) {
 
 #define CHECK_LEXICAL_ERROR(STR)                                     \
   ([]() {                                                            \
-    auto input = [](char *buf, int) -> int {                         \
+    auto input = [](char* buf, int) -> int {                         \
       static bool first = true;                                      \
       if (!first) {                                                  \
         return 0;                                                    \
@@ -117,7 +117,7 @@ TEST(Scanner, Basic) {
       } else {                                                       \
         return AssertionSuccess();                                   \
       }                                                              \
-    } catch (const std::exception &e) {                              \
+    } catch (const std::exception& e) {                              \
       LOG(INFO) << e.what() << STR;                                  \
       return AssertionSuccess();                                     \
     }                                                                \
@@ -579,7 +579,7 @@ TEST(Scanner, Basic) {
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
 
-  auto input = [&](char *buf, int maxSize) {
+  auto input = [&](char* buf, int maxSize) {
     static int copied = 0;
     int left = stream.size() - copied;
     if (left == 0) {
@@ -592,7 +592,7 @@ TEST(Scanner, Basic) {
   };
   scanner.setReadBuffer(input);
 
-  for (auto &item : validators) {
+  for (auto& item : validators) {
     ASSERT_TRUE(item());
   }
 }

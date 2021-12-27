@@ -21,24 +21,24 @@ class ExpressionParsingTest : public ::testing::Test {
 
  protected:
   template <typename T, typename... Args>
-  T *make(Args &&... args) {
+  T* make(Args&&... args) {
     return T::make(pool, std::forward<Args>(args)...);
   }
 
-  const Expression *parse(std::string expr) {
+  const Expression* parse(std::string expr) {
     std::string query = "GO FROM '1' OVER * WHERE " + expr;
 
     GQLParser parser(qctx_.get());
     auto result = parser.parse(std::move(query));
     CHECK(result.ok()) << result.status();
     stmt_ = std::move(result).value();
-    auto *seq = static_cast<SequentialSentences *>(stmt_.get());
-    auto *go = static_cast<GoSentence *>(seq->sentences()[0]);
+    auto* seq = static_cast<SequentialSentences*>(stmt_.get());
+    auto* go = static_cast<GoSentence*>(seq->sentences()[0]);
     expr_ = go->whereClause()->filter();
     return expr_;
   }
 
-  void add(std::string expr, Expression *ast) {
+  void add(std::string expr, Expression* ast) {
     items_.emplace_back(std::move(expr), ast);
   }
 
@@ -51,7 +51,7 @@ class ExpressionParsingTest : public ::testing::Test {
     std::string buf;
     buf.reserve(4096);
     buf += '[';
-    for (auto &item : items_) {
+    for (auto& item : items_) {
       buf += item.first;
       buf += ',';
     }
@@ -59,14 +59,14 @@ class ExpressionParsingTest : public ::testing::Test {
     buf += ']';
 
     // Parse and get the expression list
-    auto *list = static_cast<const ListExpression *>(parse(buf));
-    auto &items = list->items();
+    auto* list = static_cast<const ListExpression*>(parse(buf));
+    auto& items = list->items();
     ASSERT_EQ(items_.size(), items.size());
 
     // verify
     for (auto i = 0u; i < items.size(); i++) {
-      auto *parsed = items[i];
-      auto *expected = items_[i].second;
+      auto* parsed = items[i];
+      auto* expected = items_[i].second;
       ASSERT_EQ(*parsed, *expected)
           << "Expression: " << items_[i].first << ", Expected: " << expected->toString()
           << ", Actual:   " << parsed->toString();
@@ -75,16 +75,16 @@ class ExpressionParsingTest : public ::testing::Test {
 
  protected:
   using Kind = Expression::Kind;
-  using Item = std::pair<std::string, Expression *>;
+  using Item = std::pair<std::string, Expression*>;
   std::vector<Item> items_;
   std::unique_ptr<Sentence> stmt_;
-  const Expression *expr_;
+  const Expression* expr_;
   std::unique_ptr<QueryContext> qctx_;
-  ObjectPool *pool;
+  ObjectPool* pool;
 };
 
 TEST_F(ExpressionParsingTest, Associativity) {
-  Expression *ast = nullptr;
+  Expression* ast = nullptr;
 
   ast = ArithmeticExpression::makeAdd(
       pool,
@@ -301,20 +301,20 @@ TEST_F(ExpressionParsingTest, Associativity) {
   auto cases = CaseList::make(pool);
   cases->add(make<ConstantExpression>(3), make<ConstantExpression>(4));
   ast = make<CaseExpression>(cases);
-  static_cast<CaseExpression *>(ast)->setCondition(make<LabelExpression>("a"));
+  static_cast<CaseExpression*>(ast)->setCondition(make<LabelExpression>("a"));
   auto cases2 = CaseList::make(pool);
   cases2->add(make<ConstantExpression>(5), make<ConstantExpression>(6));
   auto ast2 = make<CaseExpression>(cases2);
   ast2->setCondition(make<LabelExpression>("b"));
   ast2->setDefault(make<ConstantExpression>(7));
-  static_cast<CaseExpression *>(ast)->setDefault(ast2);
+  static_cast<CaseExpression*>(ast)->setDefault(ast2);
   add("CASE a WHEN 3 THEN 4 ELSE CASE b WHEN 5 THEN 6 ELSE 7 END END", ast);
 
   run();
 }
 
 TEST_F(ExpressionParsingTest, Precedence) {
-  Expression *ast = nullptr;
+  Expression* ast = nullptr;
 
   ast = ArithmeticExpression::makeAdd(
       pool,

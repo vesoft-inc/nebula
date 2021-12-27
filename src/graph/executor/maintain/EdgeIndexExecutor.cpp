@@ -14,7 +14,7 @@ namespace graph {
 folly::Future<Status> CreateEdgeIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ceiNode = asNode<CreateEdgeIndex>(node());
+  auto* ceiNode = asNode<CreateEdgeIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -39,7 +39,7 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
 folly::Future<Status> DropEdgeIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *deiNode = asNode<DropEdgeIndex>(node());
+  auto* deiNode = asNode<DropEdgeIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -58,7 +58,7 @@ folly::Future<Status> DropEdgeIndexExecutor::execute() {
 folly::Future<Status> DescEdgeIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *deiNode = asNode<DescEdgeIndex>(node());
+  auto* deiNode = asNode<DescEdgeIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -84,7 +84,7 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
 folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *sceiNode = asNode<ShowCreateEdgeIndex>(node());
+  auto* sceiNode = asNode<ShowCreateEdgeIndex>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -108,8 +108,8 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
 
 folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *iNode = asNode<ShowEdgeIndexes>(node());
-  const auto &bySchema = iNode->name();
+  auto* iNode = asNode<ShowEdgeIndexes>(node());
+  const auto& bySchema = iNode->name();
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()->getMetaClient()->listEdgeIndexes(spaceId).via(runner()).thenValue(
       [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
@@ -127,16 +127,16 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
         }
         dataSet.colNames.emplace_back("Columns");
         std::map<std::string, std::pair<std::string, std::vector<std::string>>> ids;
-        for (auto &edgeIndex : edgeIndexItems) {
-          const auto &sch = edgeIndex.get_schema_name();
-          const auto &cols = edgeIndex.get_fields();
+        for (auto& edgeIndex : edgeIndexItems) {
+          const auto& sch = edgeIndex.get_schema_name();
+          const auto& cols = edgeIndex.get_fields();
           std::vector<std::string> colsName;
-          for (const auto &col : cols) {
+          for (const auto& col : cols) {
             colsName.emplace_back(col.get_name());
           }
           ids[edgeIndex.get_index_name()] = {sch, std::move(colsName)};
         }
-        for (const auto &i : ids) {
+        for (const auto& i : ids) {
           if (!bySchema.empty() && bySchema != i.second.first) {
             continue;
           }
@@ -146,7 +146,7 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
             row.values.emplace_back(i.second.first);
           }
           List list;
-          for (const auto &c : i.second.second) {
+          for (const auto& c : i.second.second) {
             list.values.emplace_back(c);
           }
           row.values.emplace_back(std::move(list));
@@ -175,7 +175,7 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
 
         DataSet dataSet;
         dataSet.colNames = {"Name", "Index Status"};
-        for (auto &indexStatus : indexStatuses) {
+        for (auto& indexStatus : indexStatuses) {
           Row row;
           row.values.emplace_back(std::move(indexStatus.get_name()));
           row.values.emplace_back(std::move(indexStatus.get_status()));

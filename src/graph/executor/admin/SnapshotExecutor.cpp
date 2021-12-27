@@ -29,7 +29,7 @@ folly::Future<Status> CreateSnapshotExecutor::execute() {
 folly::Future<Status> DropSnapshotExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dsNode = asNode<DropSnapshot>(node());
+  auto* dsNode = asNode<DropSnapshot>(node());
   return qctx()
       ->getMetaClient()
       ->dropSnapshot(dsNode->getSnapshotName())
@@ -56,7 +56,7 @@ folly::Future<Status> ShowSnapshotsExecutor::execute() {
         auto snapshots = std::move(resp).value();
         DataSet dataSet({"Name", "Status", "Hosts"});
 
-        for (auto &snapshot : snapshots) {
+        for (auto& snapshot : snapshots) {
           Row row;
           row.values.emplace_back(*snapshot.name_ref());
           row.values.emplace_back(apache::thrift::util::enumNameSafe(*snapshot.status_ref()));

@@ -23,9 +23,9 @@ class MetaHttpDownloadHandler : public proxygen::RequestHandler {
  public:
   MetaHttpDownloadHandler() = default;
 
-  void init(nebula::kvstore::KVStore *kvstore,
-            nebula::hdfs::HdfsHelper *helper,
-            nebula::thread::GenericThreadPool *pool);
+  void init(nebula::kvstore::KVStore* kvstore,
+            nebula::hdfs::HdfsHelper* helper,
+            nebula::thread::GenericThreadPool* pool);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -40,7 +40,7 @@ class MetaHttpDownloadHandler : public proxygen::RequestHandler {
   void onError(proxygen::ProxygenError error) noexcept override;
 
  private:
-  bool dispatchSSTFiles(const std::string &host, int32_t port, const std::string &path);
+  bool dispatchSSTFiles(const std::string& host, int32_t port, const std::string& path);
 
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
@@ -48,9 +48,9 @@ class MetaHttpDownloadHandler : public proxygen::RequestHandler {
   int32_t hdfsPort_;
   std::string hdfsPath_;
   GraphSpaceID spaceID_;
-  nebula::kvstore::KVStore *kvstore_;
-  nebula::hdfs::HdfsHelper *helper_;
-  nebula::thread::GenericThreadPool *pool_;
+  nebula::kvstore::KVStore* kvstore_;
+  nebula::hdfs::HdfsHelper* helper_;
+  nebula::thread::GenericThreadPool* pool_;
 };
 
 }  // namespace meta

@@ -13,7 +13,7 @@ namespace graph {
 
 class DropHostsExecutor final : public Executor {
  public:
-  DropHostsExecutor(const PlanNode *node, QueryContext *qctx)
+  DropHostsExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropHostsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

@@ -10,60 +10,60 @@ namespace storage {
 
 class ExprVisitorBase : public ::nebula::ExprVisitor {
  public:
-  void visit(ConstantExpression *expr) override;
-  void visit(UnaryExpression *expr) override;
-  void visit(TypeCastingExpression *expr) override;
-  void visit(LabelExpression *expr) override;
-  void visit(LabelAttributeExpression *expr) override;
+  void visit(ConstantExpression* expr) override;
+  void visit(UnaryExpression* expr) override;
+  void visit(TypeCastingExpression* expr) override;
+  void visit(LabelExpression* expr) override;
+  void visit(LabelAttributeExpression* expr) override;
   // binary expression
-  void visit(ArithmeticExpression *expr) override;
-  void visit(RelationalExpression *expr) override;
-  void visit(SubscriptExpression *expr) override;
-  void visit(AttributeExpression *expr) override;
-  void visit(LogicalExpression *expr) override;
+  void visit(ArithmeticExpression* expr) override;
+  void visit(RelationalExpression* expr) override;
+  void visit(SubscriptExpression* expr) override;
+  void visit(AttributeExpression* expr) override;
+  void visit(LogicalExpression* expr) override;
   // function call
-  void visit(FunctionCallExpression *expr) override;
-  void visit(AggregateExpression *expr) override;
-  void visit(UUIDExpression *expr) override;
+  void visit(FunctionCallExpression* expr) override;
+  void visit(AggregateExpression* expr) override;
+  void visit(UUIDExpression* expr) override;
   // variable expression
-  void visit(VariableExpression *expr) override;
-  void visit(VersionedVariableExpression *expr) override;
+  void visit(VariableExpression* expr) override;
+  void visit(VersionedVariableExpression* expr) override;
   // container expression
-  void visit(ListExpression *expr) override;
-  void visit(SetExpression *expr) override;
-  void visit(MapExpression *expr) override;
+  void visit(ListExpression* expr) override;
+  void visit(SetExpression* expr) override;
+  void visit(MapExpression* expr) override;
   // property Expression
-  void visit(TagPropertyExpression *expr) override;
-  void visit(EdgePropertyExpression *expr) override;
-  void visit(InputPropertyExpression *expr) override;
-  void visit(VariablePropertyExpression *expr) override;
-  void visit(DestPropertyExpression *expr) override;
-  void visit(SourcePropertyExpression *expr) override;
-  void visit(EdgeSrcIdExpression *expr) override;
-  void visit(EdgeTypeExpression *expr) override;
-  void visit(EdgeRankExpression *expr) override;
-  void visit(EdgeDstIdExpression *expr) override;
+  void visit(TagPropertyExpression* expr) override;
+  void visit(EdgePropertyExpression* expr) override;
+  void visit(InputPropertyExpression* expr) override;
+  void visit(VariablePropertyExpression* expr) override;
+  void visit(DestPropertyExpression* expr) override;
+  void visit(SourcePropertyExpression* expr) override;
+  void visit(EdgeSrcIdExpression* expr) override;
+  void visit(EdgeTypeExpression* expr) override;
+  void visit(EdgeRankExpression* expr) override;
+  void visit(EdgeDstIdExpression* expr) override;
   // vertex/edge expression
-  void visit(VertexExpression *expr) override;
-  void visit(EdgeExpression *expr) override;
+  void visit(VertexExpression* expr) override;
+  void visit(EdgeExpression* expr) override;
   // case expression
-  void visit(CaseExpression *expr) override;
+  void visit(CaseExpression* expr) override;
   // path build expression
-  void visit(PathBuildExpression *expr) override;
+  void visit(PathBuildExpression* expr) override;
   // column expression
-  void visit(ColumnExpression *expr) override;
+  void visit(ColumnExpression* expr) override;
   // predicate expression
-  void visit(PredicateExpression *expr) override;
+  void visit(PredicateExpression* expr) override;
   // list comprehension expression
-  void visit(ListComprehensionExpression *expr) override;
+  void visit(ListComprehensionExpression* expr) override;
   // reduce expression
-  void visit(ReduceExpression *expr) override;
+  void visit(ReduceExpression* expr) override;
   // subscript range expression
-  void visit(SubscriptRangeExpression *expr) override;
+  void visit(SubscriptRangeExpression* expr) override;
 
  private:
   using ::nebula::ExprVisitor::visit;
-  inline void fatal(Expression *expr) {
+  inline void fatal(Expression* expr) {
     LOG(FATAL) << "Unexpect expression kind " << static_cast<int>(expr->kind()) << " at storage";
   }
 };

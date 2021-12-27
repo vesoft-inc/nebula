@@ -10,7 +10,7 @@
 namespace nebula {
 
 bool YieldColumns::hasAgg() const {
-  for (auto &col : columns_) {
+  for (auto& col : columns_) {
     if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
       return true;
     }
@@ -35,7 +35,7 @@ std::string StepClause::toString() const {
 std::string VertexIDList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &expr : vidList_) {
+  for (auto& expr : vidList_) {
     buf += expr->toString();
     buf += ",";
   }
@@ -87,7 +87,7 @@ std::string OverEdge::toString() const {
 std::string OverEdges::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &e : edges_) {
+  for (auto& e : edges_) {
     buf += e->toString();
     buf += ",";
   }
@@ -162,7 +162,7 @@ std::string YieldColumn::toString() const {
 std::string YieldColumns::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &col : columns_) {
+  for (auto& col : columns_) {
     buf += col->toString();
     buf += ",";
   }
@@ -172,7 +172,7 @@ std::string YieldColumns::toString() const {
   return buf;
 }
 
-bool operator==(const YieldColumn &l, const YieldColumn &r) {
+bool operator==(const YieldColumn& l, const YieldColumn& r) {
   if (!l.alias().empty() && !r.alias().empty()) {
     if (l.alias() != r.alias()) {
       return false;

@@ -19,7 +19,7 @@ class ContainerConv {
             typename T,
             template <typename, typename...>
             class From>
-  static To<T> to(From<T> &&from) {
+  static To<T> to(From<T>&& from) {
     To<T> to;
     to.reserve(from.size());
     to.insert(to.end(), std::make_move_iterator(from.begin()), std::make_move_iterator(from.end()));

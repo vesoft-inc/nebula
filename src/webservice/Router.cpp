@@ -15,11 +15,11 @@
 namespace nebula {
 namespace web {
 
-void Route::checkPath(const std::string &path) {
+void Route::checkPath(const std::string& path) {
   CHECK(!path.empty() && path[0] == '/') << "Path must start with '/'";
 }
 
-void Route::setPath(const std::string &path) {
+void Route::setPath(const std::string& path) {
   auto loc = path.find(':');
   if (loc != std::string::npos) {
     createPattenRegex(path);
@@ -38,7 +38,7 @@ void Route::setPath(const std::string &path) {
 std::unique_ptr<std::regex> Route::reToken_ =
     std::make_unique<std::regex>(":([A-Za-z][A-Za-z_0-9]*)");
 
-void Route::createPattenRegex(const std::string &path) {
+void Route::createPattenRegex(const std::string& path) {
   int pos = 0;
   std::stringstream ss;
   for (std::sregex_iterator next(path.begin(), path.end(), *reToken_), end; next != end; next++) {
@@ -46,7 +46,7 @@ void Route::createPattenRegex(const std::string &path) {
     if (!str.empty() && str.front() == ':') {
       str = str.substr(1);
     }
-    for (auto &group : groups_) {
+    for (auto& group : groups_) {
       CHECK_NE(str, group) << "Cannot use identifier " << group
                            << " more than once in pattern string";
     }
@@ -58,7 +58,7 @@ void Route::createPattenRegex(const std::string &path) {
   this->pattern_ = std::make_unique<std::regex>(ss.str());
 }
 
-bool Route::matches(proxygen::HTTPMethod method, const std::string &path) const {
+bool Route::matches(proxygen::HTTPMethod method, const std::string& path) const {
   if (method_ != method) {
     return false;
   }
@@ -88,7 +88,7 @@ void Route::handler(ReqHandlerGenerator generator) {
   generator_ = generator;
 }
 
-proxygen::RequestHandler *Route::generateHandler(const std::string &path) const {
+proxygen::RequestHandler* Route::generateHandler(const std::string& path) const {
   if (!pattern_) {
     return generator_({});
   }
@@ -102,8 +102,8 @@ proxygen::RequestHandler *Route::generateHandler(const std::string &path) const 
   return generator_(std::move(params));
 }
 
-proxygen::RequestHandler *Router::dispatch(const proxygen::HTTPMessage *msg) const {
-  for (Route *r = head_; r != nullptr; r = r->next()) {
+proxygen::RequestHandler* Router::dispatch(const proxygen::HTTPMessage* msg) const {
+  for (Route* r = head_; r != nullptr; r = r->next()) {
     if (r->matches(msg->getMethod().value(), msg->getPath())) {
       return r->generateHandler(msg->getPath());
     }
@@ -111,11 +111,11 @@ proxygen::RequestHandler *Router::dispatch(const proxygen::HTTPMessage *msg) con
   return new NotFoundHandler();
 }
 
-Route &Router::route(proxygen::HTTPMethod method, const std::string &path) {
+Route& Router::route(proxygen::HTTPMethod method, const std::string& path) {
   if (webSvc_) {
     CHECK(!webSvc_->started()) << "Don't add routes after starting web server!";
   }
-  Route *next = nullptr;
+  Route* next = nullptr;
   if (!prefix_.empty()) {
     next = new Route(method, "/" + prefix_ + (path.empty() ? "/" : path));
   } else {
@@ -125,7 +125,7 @@ Route &Router::route(proxygen::HTTPMethod method, const std::string &path) {
   return *next;
 }
 
-void Router::append(Route *route) {
+void Router::append(Route* route) {
   if (tail_ != nullptr) {
     tail_->setNext(route);
     tail_ = route;

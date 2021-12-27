@@ -15,7 +15,7 @@ namespace graph {
 
 class ShowSessionsExecutor final : public Executor {
  public:
-  ShowSessionsExecutor(const PlanNode *node, QueryContext *ectx)
+  ShowSessionsExecutor(const PlanNode* node, QueryContext* ectx)
       : Executor("ShowSessionsExecutor", node, ectx) {}
 
   folly::Future<Status> execute() override;
@@ -28,7 +28,7 @@ class ShowSessionsExecutor final : public Executor {
 
   folly::Future<Status> getSession(SessionID sessionId);
   // Add session info into dataset
-  void addSessions(const meta::cpp2::Session &session, DataSet &dataSet) const;
+  void addSessions(const meta::cpp2::Session& session, DataSet& dataSet) const;
 
   DateTime microSecToDateTime(const int64_t microSec) const {
     auto dateTime = time::TimeConversion::unixSecondsToDateTime(microSec / 1000000);
@@ -39,7 +39,7 @@ class ShowSessionsExecutor final : public Executor {
 
 class UpdateSessionExecutor final : public Executor {
  public:
-  UpdateSessionExecutor(const PlanNode *node, QueryContext *ectx)
+  UpdateSessionExecutor(const PlanNode* node, QueryContext* ectx)
       : Executor("UpdateSessionExecutor", node, ectx) {}
 
   folly::Future<Status> execute() override;

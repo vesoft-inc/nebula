@@ -15,10 +15,10 @@ namespace nebula {
 
 class GQLParser {
  public:
-  explicit GQLParser(nebula::graph::QueryContext *qctx = nullptr)
+  explicit GQLParser(nebula::graph::QueryContext* qctx = nullptr)
       : parser_(scanner_, error_, &sentences_, qctx) {
     // Callback invoked by GraphScanner
-    auto readBuffer = [this](char *buf, int maxSize) -> int {
+    auto readBuffer = [this](char* buf, int maxSize) -> int {
       // Reach the end
       if (pos_ >= end_) {
         pos_ = nullptr;
@@ -66,7 +66,7 @@ class GQLParser {
     if (sentences_ == nullptr) {
       return Status::StatementEmpty();
     }
-    auto *sentences = sentences_;
+    auto* sentences = sentences_;
     sentences_ = nullptr;
     scanner_.setQuery(nullptr);
     return std::unique_ptr<Sentence>(sentences);
@@ -74,12 +74,12 @@ class GQLParser {
 
  private:
   std::string buffer_;
-  const char *pos_{nullptr};
-  const char *end_{nullptr};
+  const char* pos_{nullptr};
+  const char* end_{nullptr};
   nebula::GraphScanner scanner_;
   nebula::GraphParser parser_;
   std::string error_;
-  Sentence *sentences_{nullptr};
+  Sentence* sentences_{nullptr};
 };
 
 }  // namespace nebula

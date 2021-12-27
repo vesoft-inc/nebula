@@ -13,7 +13,7 @@ namespace graph {
 
 class ScanVerticesExecutor final : public GetPropExecutor {
  public:
-  ScanVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+  ScanVerticesExecutor(const PlanNode* node, QueryContext* qctx)
       : GetPropExecutor("ScanVerticesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

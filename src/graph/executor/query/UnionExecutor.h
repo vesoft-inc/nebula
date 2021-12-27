@@ -13,7 +13,7 @@ namespace graph {
 
 class UnionExecutor : public SetExecutor {
  public:
-  UnionExecutor(const PlanNode *node, QueryContext *qctx)
+  UnionExecutor(const PlanNode* node, QueryContext* qctx)
       : SetExecutor("UnionExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

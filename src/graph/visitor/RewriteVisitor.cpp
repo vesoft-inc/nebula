@@ -8,7 +8,7 @@
 namespace nebula {
 namespace graph {
 
-void RewriteVisitor::visit(TypeCastingExpression *expr) {
+void RewriteVisitor::visit(TypeCastingExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -20,7 +20,7 @@ void RewriteVisitor::visit(TypeCastingExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(UnaryExpression *expr) {
+void RewriteVisitor::visit(UnaryExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -32,12 +32,12 @@ void RewriteVisitor::visit(UnaryExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(FunctionCallExpression *expr) {
+void RewriteVisitor::visit(FunctionCallExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  for (auto &arg : expr->args()->args()) {
+  for (auto& arg : expr->args()->args()) {
     if (matcher_(arg)) {
       arg = rewriter_(arg);
     } else {
@@ -46,7 +46,7 @@ void RewriteVisitor::visit(FunctionCallExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(AggregateExpression *expr) {
+void RewriteVisitor::visit(AggregateExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -59,67 +59,67 @@ void RewriteVisitor::visit(AggregateExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(LogicalExpression *expr) {
+void RewriteVisitor::visit(LogicalExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  for (auto &operand : expr->operands()) {
+  for (auto& operand : expr->operands()) {
     if (matcher_(operand)) {
-      const_cast<Expression *&>(operand) = rewriter_(operand);
+      const_cast<Expression*&>(operand) = rewriter_(operand);
     } else {
       operand->accept(this);
     }
   }
 }
 
-void RewriteVisitor::visit(ListExpression *expr) {
+void RewriteVisitor::visit(ListExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  auto &items = expr->items();
-  for (auto &item : items) {
+  auto& items = expr->items();
+  for (auto& item : items) {
     if (matcher_(item)) {
-      const_cast<Expression *&>(item) = rewriter_(item);
+      const_cast<Expression*&>(item) = rewriter_(item);
     } else {
       item->accept(this);
     }
   }
 }
 
-void RewriteVisitor::visit(SetExpression *expr) {
+void RewriteVisitor::visit(SetExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  auto &items = expr->items();
-  for (auto &item : items) {
+  auto& items = expr->items();
+  for (auto& item : items) {
     if (matcher_(item)) {
-      const_cast<Expression *&>(item) = rewriter_(item);
+      const_cast<Expression*&>(item) = rewriter_(item);
     } else {
       item->accept(this);
     }
   }
 }
 
-void RewriteVisitor::visit(MapExpression *expr) {
+void RewriteVisitor::visit(MapExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  auto &items = expr->items();
-  for (auto &pair : items) {
-    auto &item = pair.second;
+  auto& items = expr->items();
+  for (auto& pair : items) {
+    auto& item = pair.second;
     if (matcher_(item)) {
-      const_cast<Expression *&>(item) = rewriter_(item);
+      const_cast<Expression*&>(item) = rewriter_(item);
     } else {
       item->accept(this);
     }
   }
 }
 
-void RewriteVisitor::visit(CaseExpression *expr) {
+void RewriteVisitor::visit(CaseExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -138,7 +138,7 @@ void RewriteVisitor::visit(CaseExpression *expr) {
       expr->defaultResult()->accept(this);
     }
   }
-  auto &cases = expr->cases();
+  auto& cases = expr->cases();
   for (size_t i = 0; i < cases.size(); ++i) {
     auto when = cases[i].when;
     auto then = cases[i].then;
@@ -155,7 +155,7 @@ void RewriteVisitor::visit(CaseExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(ListComprehensionExpression *expr) {
+void RewriteVisitor::visit(ListComprehensionExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -181,7 +181,7 @@ void RewriteVisitor::visit(ListComprehensionExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(PredicateExpression *expr) {
+void RewriteVisitor::visit(PredicateExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -200,7 +200,7 @@ void RewriteVisitor::visit(PredicateExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(ReduceExpression *expr) {
+void RewriteVisitor::visit(ReduceExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -222,22 +222,22 @@ void RewriteVisitor::visit(ReduceExpression *expr) {
   }
 }
 
-void RewriteVisitor::visit(PathBuildExpression *expr) {
+void RewriteVisitor::visit(PathBuildExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
 
-  auto &items = expr->items();
-  for (auto &item : items) {
+  auto& items = expr->items();
+  for (auto& item : items) {
     if (matcher_(item)) {
-      const_cast<Expression *&>(item) = rewriter_(item);
+      const_cast<Expression*&>(item) = rewriter_(item);
     } else {
       item->accept(this);
     }
   }
 }
 
-void RewriteVisitor::visit(AttributeExpression *expr) {
+void RewriteVisitor::visit(AttributeExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -245,7 +245,7 @@ void RewriteVisitor::visit(AttributeExpression *expr) {
   visitBinaryExpr(expr);
 }
 
-void RewriteVisitor::visit(ArithmeticExpression *expr) {
+void RewriteVisitor::visit(ArithmeticExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -253,7 +253,7 @@ void RewriteVisitor::visit(ArithmeticExpression *expr) {
   visitBinaryExpr(expr);
 }
 
-void RewriteVisitor::visit(RelationalExpression *expr) {
+void RewriteVisitor::visit(RelationalExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -261,7 +261,7 @@ void RewriteVisitor::visit(RelationalExpression *expr) {
   visitBinaryExpr(expr);
 }
 
-void RewriteVisitor::visit(SubscriptExpression *expr) {
+void RewriteVisitor::visit(SubscriptExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -269,7 +269,7 @@ void RewriteVisitor::visit(SubscriptExpression *expr) {
   visitBinaryExpr(expr);
 }
 
-void RewriteVisitor::visit(SubscriptRangeExpression *expr) {
+void RewriteVisitor::visit(SubscriptRangeExpression* expr) {
   if (!care(expr->kind())) {
     return;
   }
@@ -294,7 +294,7 @@ void RewriteVisitor::visit(SubscriptRangeExpression *expr) {
   }
 }
 
-void RewriteVisitor::visitBinaryExpr(BinaryExpression *expr) {
+void RewriteVisitor::visitBinaryExpr(BinaryExpression* expr) {
   if (matcher_(expr->left())) {
     expr->setLeft(rewriter_(expr->left()));
   } else {
@@ -309,7 +309,7 @@ void RewriteVisitor::visitBinaryExpr(BinaryExpression *expr) {
 
 bool RewriteVisitor::care(Expression::Kind kind) {
   if (UNLIKELY(!needVisitedTypes_.empty())) {
-    for (auto &k : needVisitedTypes_) {
+    for (auto& k : needVisitedTypes_) {
       if (kind == k) {
         return true;
       }
@@ -319,27 +319,27 @@ bool RewriteVisitor::care(Expression::Kind kind) {
   return true;
 }
 
-Expression *RewriteVisitor::transform(const Expression *expr, Matcher matcher, Rewriter rewriter) {
+Expression* RewriteVisitor::transform(const Expression* expr, Matcher matcher, Rewriter rewriter) {
   if (matcher(expr)) {
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter));
-    auto *e = const_cast<Expression *>(expr);
+    auto* e = const_cast<Expression*>(expr);
     e->accept(&visitor);
     return e;
   }
 }
 
-Expression *RewriteVisitor::transform(
-    const Expression *expr,
+Expression* RewriteVisitor::transform(
+    const Expression* expr,
     Matcher matcher,
     Rewriter rewriter,
-    const std::unordered_set<Expression::Kind> &needVisitedTypes) {
+    const std::unordered_set<Expression::Kind>& needVisitedTypes) {
   if (matcher(expr)) {
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter), std::move(needVisitedTypes));
-    auto *e = const_cast<Expression *>(expr);
+    auto* e = const_cast<Expression*>(expr);
     e->accept(&visitor);
     return e;
   }

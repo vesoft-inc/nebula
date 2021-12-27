@@ -14,5 +14,5 @@
  * \return wether successfully setupLogging.
  *
  */
-nebula::Status setupLogging(const std::string &exe);
+nebula::Status setupLogging(const std::string& exe);
 #endif

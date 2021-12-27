@@ -18,7 +18,7 @@ class WKTReader {
  public:
   WKTReader() : parser_(scanner_, error_, &geog_) {
     // Callback invoked by WKTScanner
-    auto readBuffer = [this](char *buf, int maxSize) -> int {
+    auto readBuffer = [this](char* buf, int maxSize) -> int {
       // Reach the end
       if (pos_ >= end_) {
         pos_ = nullptr;
@@ -71,12 +71,12 @@ class WKTReader {
 
  private:
   std::string buffer_;
-  const char *pos_{nullptr};
-  const char *end_{nullptr};
+  const char* pos_{nullptr};
+  const char* end_{nullptr};
   nebula::geo::WKTScanner scanner_;
   nebula::geo::WKTParser parser_;
   std::string error_;
-  Geography *geog_{nullptr};
+  Geography* geog_{nullptr};
 };
 
 }  // namespace geo

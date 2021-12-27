@@ -11,7 +11,7 @@ class PredicateExpressionTest : public ExpressionTest {};
 TEST_F(PredicateExpressionTest, PredicateEvaluate) {
   {
     // all(n IN [0, 1, 2, 4, 5) WHERE n >= 2)
-    auto *listItems = ExpressionList::make(&pool);
+    auto* listItems = ExpressionList::make(&pool);
     (*listItems)
         .add(ConstantExpression::make(&pool, 0))
         .add(ConstantExpression::make(&pool, 1))
@@ -41,7 +41,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
 
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = PredicateExpression::make(
         &pool,
@@ -61,7 +61,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
   }
   {
     // single(n IN [0, 1, 2, 4, 5) WHERE n == 2)
-    auto *listItems = ExpressionList::make(&pool);
+    auto* listItems = ExpressionList::make(&pool);
     (*listItems)
         .add(ConstantExpression::make(&pool, 0))
         .add(ConstantExpression::make(&pool, 1))
@@ -91,7 +91,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
 
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = PredicateExpression::make(
         &pool,
@@ -126,7 +126,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
 
 TEST_F(PredicateExpressionTest, PredicateExprToString) {
   {
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(ConstantExpression::make(&pool, 1));
     argList->addArgument(ConstantExpression::make(&pool, 5));
     auto expr = PredicateExpression::make(

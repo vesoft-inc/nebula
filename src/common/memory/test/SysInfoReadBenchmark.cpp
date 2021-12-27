@@ -45,7 +45,7 @@ BENCHMARK(SysInfo) {
   folly::doNotOptimizeAway(total);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::runBenchmarks();
   return 0;

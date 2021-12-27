@@ -13,10 +13,10 @@ namespace opt {
 
 class PushFilterDownAggregateRule final : public OptRule {
  public:
-  const Pattern &pattern() const override;
+  const Pattern& pattern() const override;
 
-  StatusOr<OptRule::TransformResult> transform(OptContext *qctx,
-                                               const MatchedResult &matched) const override;
+  StatusOr<OptRule::TransformResult> transform(OptContext* qctx,
+                                               const MatchedResult& matched) const override;
 
   std::string toString() const override;
 

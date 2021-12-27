@@ -17,17 +17,17 @@
 
 namespace nebula {
 
-std::ostream &operator<<(std::ostream &os, nebula::cpp2::PropertyType type);
+std::ostream& operator<<(std::ostream& os, nebula::cpp2::PropertyType type);
 
 class ColumnProperty final {
  public:
-  using Value = std::variant<bool, Expression *, std::unique_ptr<std::string>>;
+  using Value = std::variant<bool, Expression*, std::unique_ptr<std::string>>;
 
   explicit ColumnProperty(bool nullable = true) : v_(nullable) {}
 
-  explicit ColumnProperty(Expression *defaultValue = nullptr) : v_(defaultValue) {}
+  explicit ColumnProperty(Expression* defaultValue = nullptr) : v_(defaultValue) {}
 
-  explicit ColumnProperty(std::string *comment = nullptr)
+  explicit ColumnProperty(std::string* comment = nullptr)
       : v_(std::unique_ptr<std::string>(comment)) {}
 
   bool isNullable() const {
@@ -40,19 +40,19 @@ class ColumnProperty final {
   }
 
   bool isDefaultValue() const {
-    return std::holds_alternative<Expression *>(v_);
+    return std::holds_alternative<Expression*>(v_);
   }
 
-  const auto *defaultValue() const {
+  const auto* defaultValue() const {
     DCHECK(isDefaultValue());
-    return std::get<Expression *>(v_);
+    return std::get<Expression*>(v_);
   }
 
   bool isComment() const {
     return std::holds_alternative<std::unique_ptr<std::string>>(v_);
   }
 
-  const auto *comment() const {
+  const auto* comment() const {
     DCHECK(isComment());
     return std::get<std::unique_ptr<std::string>>(v_).get();
   }
@@ -67,17 +67,17 @@ class ColumnProperties final {
  public:
   ColumnProperties() = default;
 
-  void addProperty(ColumnProperty *property) {
+  void addProperty(ColumnProperty* property) {
     properties_.emplace_back(property);
   }
 
-  auto &properties() const {
+  auto& properties() const {
     return properties_;
   }
 
   std::string toString() const {
     std::stringstream str;
-    for (const auto &property : properties_) {
+    for (const auto& property : properties_) {
       str << property->toString();
       str << " ";
     }
@@ -90,9 +90,9 @@ class ColumnProperties final {
 
 class ColumnSpecification final {
  public:
-  ColumnSpecification(std::string *name,
+  ColumnSpecification(std::string* name,
                       nebula::cpp2::PropertyType type,
-                      ColumnProperties *properties = nullptr,
+                      ColumnProperties* properties = nullptr,
                       int16_t typeLen = 0,
                       meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
       : name_(name),
@@ -105,7 +105,7 @@ class ColumnSpecification final {
     return type_;
   }
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -117,7 +117,7 @@ class ColumnSpecification final {
     return geoShape_;
   }
 
-  auto &properties() const {
+  auto& properties() const {
     return properties_;
   }
 
@@ -134,14 +134,14 @@ class ColumnSpecification final {
 class ColumnSpecificationList final {
  public:
   ColumnSpecificationList() = default;
-  void addColumn(ColumnSpecification *column) {
+  void addColumn(ColumnSpecification* column) {
     columns_.emplace_back(column);
   }
 
-  std::vector<ColumnSpecification *> columnSpecs() const {
-    std::vector<ColumnSpecification *> result;
+  std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> result;
     result.resize(columns_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(columns_.begin(), columns_.end(), result.begin(), get);
     return result;
   }
@@ -156,14 +156,14 @@ class ColumnNameList final {
  public:
   ColumnNameList() = default;
 
-  void addColumn(std::string *column) {
+  void addColumn(std::string* column) {
     columns_.emplace_back(column);
   }
 
-  std::vector<std::string *> columnNames() const {
-    std::vector<std::string *> result;
+  std::vector<std::string*> columnNames() const {
+    std::vector<std::string*> result;
     result.resize(columns_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(columns_.begin(), columns_.end(), result.begin(), get);
     return result;
   }
@@ -171,7 +171,7 @@ class ColumnNameList final {
   std::string toString() const {
     std::string buf;
     buf.reserve(128);
-    for (const auto &col : columns_) {
+    for (const auto& col : columns_) {
       buf += *col;
       buf += ", ";
     }
@@ -244,7 +244,7 @@ class SchemaPropItem final {
     return boost::get<int64_t>(propValue_);
   }
 
-  const std::string &asString() {
+  const std::string& asString() {
     return boost::get<std::string>(propValue_);
   }
 
@@ -281,14 +281,14 @@ class SchemaPropItem final {
 
 class SchemaPropList final {
  public:
-  void addOpt(SchemaPropItem *item) {
+  void addOpt(SchemaPropItem* item) {
     items_.emplace_back(item);
   }
 
-  std::vector<SchemaPropItem *> getProps() const {
-    std::vector<SchemaPropItem *> result;
+  std::vector<SchemaPropItem*> getProps() const {
+    std::vector<SchemaPropItem*> result;
     result.resize(items_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(items_.begin(), items_.end(), result.begin(), get);
     return result;
   }
@@ -301,9 +301,9 @@ class SchemaPropList final {
 
 class CreateTagSentence final : public CreateSentence {
  public:
-  CreateTagSentence(std::string *name,
-                    ColumnSpecificationList *columns,
-                    SchemaPropList *schemaProps,
+  CreateTagSentence(std::string* name,
+                    ColumnSpecificationList* columns,
+                    SchemaPropList* schemaProps,
                     bool ifNotExists)
       : CreateSentence(ifNotExists) {
     name_.reset(name);
@@ -314,15 +314,15 @@ class CreateTagSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
-  std::vector<ColumnSpecification *> columnSpecs() const {
+  std::vector<ColumnSpecification*> columnSpecs() const {
     return columns_->columnSpecs();
   }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const {
+  std::vector<SchemaPropItem*> getSchemaProps() const {
     return schemaProps_->getProps();
   }
 
@@ -334,9 +334,9 @@ class CreateTagSentence final : public CreateSentence {
 
 class CreateEdgeSentence final : public CreateSentence {
  public:
-  CreateEdgeSentence(std::string *name,
-                     ColumnSpecificationList *columns,
-                     SchemaPropList *schemaProps,
+  CreateEdgeSentence(std::string* name,
+                     ColumnSpecificationList* columns,
+                     SchemaPropList* schemaProps,
                      bool ifNotExists)
       : CreateSentence(ifNotExists) {
     name_.reset(name);
@@ -347,15 +347,15 @@ class CreateEdgeSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
-  std::vector<ColumnSpecification *> columnSpecs() const {
+  std::vector<ColumnSpecification*> columnSpecs() const {
     return columns_->columnSpecs();
   }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const {
+  std::vector<SchemaPropItem*> getSchemaProps() const {
     return schemaProps_->getProps();
   }
 
@@ -369,21 +369,21 @@ class AlterSchemaOptItem final {
  public:
   enum OptionType : uint8_t { ADD = 0x01, CHANGE = 0x02, DROP = 0x03 };
 
-  AlterSchemaOptItem(OptionType op, ColumnSpecificationList *columns) {
+  AlterSchemaOptItem(OptionType op, ColumnSpecificationList* columns) {
     optType_ = op;
     columns_.reset(columns);
   }
 
-  AlterSchemaOptItem(OptionType op, ColumnNameList *colNames) {
+  AlterSchemaOptItem(OptionType op, ColumnNameList* colNames) {
     optType_ = op;
     colNames_.reset(colNames);
   }
 
-  std::vector<ColumnSpecification *> columnSpecs() const {
+  std::vector<ColumnSpecification*> columnSpecs() const {
     return columns_->columnSpecs();
   }
 
-  std::vector<std::string *> columnNames() const {
+  std::vector<std::string*> columnNames() const {
     return colNames_->columnNames();
   }
 
@@ -404,14 +404,14 @@ class AlterSchemaOptItem final {
 class AlterSchemaOptList final {
  public:
   AlterSchemaOptList() = default;
-  void addOpt(AlterSchemaOptItem *item) {
+  void addOpt(AlterSchemaOptItem* item) {
     alterSchemaItems_.emplace_back(item);
   }
 
-  std::vector<AlterSchemaOptItem *> alterSchemaItems() const {
-    std::vector<AlterSchemaOptItem *> result;
+  std::vector<AlterSchemaOptItem*> alterSchemaItems() const {
+    std::vector<AlterSchemaOptItem*> result;
     result.resize(alterSchemaItems_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(alterSchemaItems_.begin(), alterSchemaItems_.end(), result.begin(), get);
     return result;
   }
@@ -424,7 +424,7 @@ class AlterSchemaOptList final {
 
 class AlterTagSentence final : public Sentence {
  public:
-  AlterTagSentence(std::string *name, AlterSchemaOptList *opts, SchemaPropList *schemaProps) {
+  AlterTagSentence(std::string* name, AlterSchemaOptList* opts, SchemaPropList* schemaProps) {
     name_.reset(name);
     opts_.reset(opts);
     schemaProps_.reset(schemaProps);
@@ -433,15 +433,15 @@ class AlterTagSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
-  std::vector<AlterSchemaOptItem *> getSchemaOpts() const {
+  std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
     return opts_->alterSchemaItems();
   }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const {
+  std::vector<SchemaPropItem*> getSchemaProps() const {
     return schemaProps_->getProps();
   }
 
@@ -453,7 +453,7 @@ class AlterTagSentence final : public Sentence {
 
 class AlterEdgeSentence final : public Sentence {
  public:
-  AlterEdgeSentence(std::string *name, AlterSchemaOptList *opts, SchemaPropList *schemaProps) {
+  AlterEdgeSentence(std::string* name, AlterSchemaOptList* opts, SchemaPropList* schemaProps) {
     name_.reset(name);
     opts_.reset(opts);
     schemaProps_.reset(schemaProps);
@@ -462,15 +462,15 @@ class AlterEdgeSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
-  std::vector<AlterSchemaOptItem *> getSchemaOpts() const {
+  std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
     return opts_->alterSchemaItems();
   }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const {
+  std::vector<SchemaPropItem*> getSchemaProps() const {
     return schemaProps_->getProps();
   }
 
@@ -482,14 +482,14 @@ class AlterEdgeSentence final : public Sentence {
 
 class DescribeTagSentence final : public Sentence {
  public:
-  explicit DescribeTagSentence(std::string *name) {
+  explicit DescribeTagSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kDescribeTag;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -499,14 +499,14 @@ class DescribeTagSentence final : public Sentence {
 
 class DescribeEdgeSentence final : public Sentence {
  public:
-  explicit DescribeEdgeSentence(std::string *name) {
+  explicit DescribeEdgeSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kDescribeEdge;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -516,14 +516,14 @@ class DescribeEdgeSentence final : public Sentence {
 
 class DropTagSentence final : public DropSentence {
  public:
-  explicit DropTagSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
+  explicit DropTagSentence(std::string* name, bool ifExists) : DropSentence(ifExists) {
     name_.reset(name);
     kind_ = Kind::kDropTag;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -533,14 +533,14 @@ class DropTagSentence final : public DropSentence {
 
 class DropEdgeSentence final : public DropSentence {
  public:
-  explicit DropEdgeSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
+  explicit DropEdgeSentence(std::string* name, bool ifExists) : DropSentence(ifExists) {
     name_.reset(name);
     kind_ = Kind::kDropEdge;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -556,10 +556,10 @@ class IndexFieldList final {
     fields_.emplace_back(std::move(field));
   }
 
-  std::vector<meta::cpp2::IndexFieldDef *> fields() const {
-    std::vector<meta::cpp2::IndexFieldDef *> result;
+  std::vector<meta::cpp2::IndexFieldDef*> fields() const {
+    std::vector<meta::cpp2::IndexFieldDef*> result;
     result.resize(fields_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(fields_.begin(), fields_.end(), result.begin(), get);
     return result;
   }
@@ -606,14 +606,14 @@ class IndexParamItem final {
 
 class IndexParamList final {
  public:
-  void add(IndexParamItem *item) {
+  void add(IndexParamItem* item) {
     items_.emplace_back(item);
   }
 
-  std::vector<IndexParamItem *> getParams() const {
-    std::vector<IndexParamItem *> result;
+  std::vector<IndexParamItem*> getParams() const {
+    std::vector<IndexParamItem*> result;
     result.resize(items_.size());
-    auto get = [](auto &ptr) { return ptr.get(); };
+    auto get = [](auto& ptr) { return ptr.get(); };
     std::transform(items_.begin(), items_.end(), result.begin(), get);
     return result;
   }
@@ -626,12 +626,12 @@ class IndexParamList final {
 
 class CreateTagIndexSentence final : public CreateSentence {
  public:
-  CreateTagIndexSentence(std::string *indexName,
-                         std::string *tagName,
-                         IndexFieldList *fields,
+  CreateTagIndexSentence(std::string* indexName,
+                         std::string* tagName,
+                         IndexFieldList* fields,
                          bool ifNotExists,
-                         IndexParamList *indexParams,
-                         std::string *comment)
+                         IndexParamList* indexParams,
+                         std::string* comment)
       : CreateSentence(ifNotExists) {
     indexName_.reset(indexName);
     tagName_.reset(tagName);
@@ -647,11 +647,11 @@ class CreateTagIndexSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
-  const std::string *tagName() const {
+  const std::string* tagName() const {
     return tagName_.get();
   }
 
@@ -664,11 +664,11 @@ class CreateTagIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const IndexParamList *getIndexParamList() const {
+  const IndexParamList* getIndexParamList() const {
     return indexParams_.get();
   }
 
-  const std::string *comment() const {
+  const std::string* comment() const {
     return comment_.get();
   }
 
@@ -682,12 +682,12 @@ class CreateTagIndexSentence final : public CreateSentence {
 
 class CreateEdgeIndexSentence final : public CreateSentence {
  public:
-  CreateEdgeIndexSentence(std::string *indexName,
-                          std::string *edgeName,
-                          IndexFieldList *fields,
+  CreateEdgeIndexSentence(std::string* indexName,
+                          std::string* edgeName,
+                          IndexFieldList* fields,
                           bool ifNotExists,
-                          IndexParamList *indexParams,
-                          std::string *comment)
+                          IndexParamList* indexParams,
+                          std::string* comment)
       : CreateSentence(ifNotExists) {
     indexName_.reset(indexName);
     edgeName_.reset(edgeName);
@@ -703,11 +703,11 @@ class CreateEdgeIndexSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
-  const std::string *edgeName() const {
+  const std::string* edgeName() const {
     return edgeName_.get();
   }
 
@@ -720,11 +720,11 @@ class CreateEdgeIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const IndexParamList *getIndexParamList() const {
+  const IndexParamList* getIndexParamList() const {
     return indexParams_.get();
   }
 
-  const std::string *comment() const {
+  const std::string* comment() const {
     return comment_.get();
   }
 
@@ -738,14 +738,14 @@ class CreateEdgeIndexSentence final : public CreateSentence {
 
 class DescribeTagIndexSentence final : public Sentence {
  public:
-  explicit DescribeTagIndexSentence(std::string *indexName) {
+  explicit DescribeTagIndexSentence(std::string* indexName) {
     indexName_.reset(indexName);
     kind_ = Kind::kDescribeTagIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -755,14 +755,14 @@ class DescribeTagIndexSentence final : public Sentence {
 
 class DescribeEdgeIndexSentence final : public Sentence {
  public:
-  explicit DescribeEdgeIndexSentence(std::string *indexName) {
+  explicit DescribeEdgeIndexSentence(std::string* indexName) {
     indexName_.reset(indexName);
     kind_ = Kind::kDescribeEdgeIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -772,14 +772,14 @@ class DescribeEdgeIndexSentence final : public Sentence {
 
 class DropTagIndexSentence final : public DropSentence {
  public:
-  explicit DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+  explicit DropTagIndexSentence(std::string* indexName, bool ifExists) : DropSentence(ifExists) {
     indexName_.reset(indexName);
     kind_ = Kind::kDropTagIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -789,14 +789,14 @@ class DropTagIndexSentence final : public DropSentence {
 
 class DropEdgeIndexSentence final : public DropSentence {
  public:
-  explicit DropEdgeIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+  explicit DropEdgeIndexSentence(std::string* indexName, bool ifExists) : DropSentence(ifExists) {
     indexName_.reset(indexName);
     kind_ = Kind::kDropEdgeIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -824,14 +824,14 @@ class ShowEdgesSentence : public Sentence {
 
 class ShowCreateTagSentence : public Sentence {
  public:
-  explicit ShowCreateTagSentence(std::string *name) {
+  explicit ShowCreateTagSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kShowCreateTag;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -841,14 +841,14 @@ class ShowCreateTagSentence : public Sentence {
 
 class ShowCreateEdgeSentence : public Sentence {
  public:
-  explicit ShowCreateEdgeSentence(std::string *name) {
+  explicit ShowCreateEdgeSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kShowCreateEdge;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -858,14 +858,14 @@ class ShowCreateEdgeSentence : public Sentence {
 
 class ShowTagIndexesSentence : public Sentence {
  public:
-  explicit ShowTagIndexesSentence(std::string *name) {
+  explicit ShowTagIndexesSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kShowTagIndexes;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -875,14 +875,14 @@ class ShowTagIndexesSentence : public Sentence {
 
 class ShowEdgeIndexesSentence : public Sentence {
  public:
-  explicit ShowEdgeIndexesSentence(std::string *name) {
+  explicit ShowEdgeIndexesSentence(std::string* name) {
     name_.reset(name);
     kind_ = Kind::kShowEdgeIndexes;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return name_.get();
   }
 
@@ -910,14 +910,14 @@ class ShowEdgeIndexStatusSentence : public Sentence {
 
 class ShowCreateTagIndexSentence : public Sentence {
  public:
-  explicit ShowCreateTagIndexSentence(std::string *indexName) {
+  explicit ShowCreateTagIndexSentence(std::string* indexName) {
     indexName_.reset(indexName);
     kind_ = Kind::kShowCreateTagIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -927,14 +927,14 @@ class ShowCreateTagIndexSentence : public Sentence {
 
 class ShowCreateEdgeIndexSentence : public Sentence {
  public:
-  explicit ShowCreateEdgeIndexSentence(std::string *indexName) {
+  explicit ShowCreateEdgeIndexSentence(std::string* indexName) {
     indexName_.reset(indexName);
     kind_ = Kind::kShowCreateEdgeIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
@@ -944,12 +944,12 @@ class ShowCreateEdgeIndexSentence : public Sentence {
 
 class AddHostsSentence : public Sentence {
  public:
-  explicit AddHostsSentence(HostList *hosts) {
+  explicit AddHostsSentence(HostList* hosts) {
     hosts_.reset(hosts);
     kind_ = Kind::kAddHosts;
   }
 
-  const HostList *hosts() const {
+  const HostList* hosts() const {
     return hosts_.get();
   }
 
@@ -961,12 +961,12 @@ class AddHostsSentence : public Sentence {
 
 class DropHostsSentence : public Sentence {
  public:
-  explicit DropHostsSentence(HostList *hosts) {
+  explicit DropHostsSentence(HostList* hosts) {
     hosts_.reset(hosts);
     kind_ = Kind::kDropHosts;
   }
 
-  const HostList *hosts() const {
+  const HostList* hosts() const {
     return hosts_.get();
   }
 
@@ -978,7 +978,7 @@ class DropHostsSentence : public Sentence {
 
 class MergeZoneSentence : public Sentence {
  public:
-  explicit MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
+  explicit MergeZoneSentence(ZoneNameList* zoneNames, std::string* zoneName) {
     zoneName_.reset(zoneName);
     zoneNames_.reset(zoneNames);
     kind_ = Kind::kMergeZone;
@@ -986,11 +986,11 @@ class MergeZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
-  const ZoneNameList *zoneNames() const {
+  const ZoneNameList* zoneNames() const {
     return zoneNames_.get();
   }
 
@@ -1001,14 +1001,14 @@ class MergeZoneSentence : public Sentence {
 
 class DropZoneSentence : public Sentence {
  public:
-  explicit DropZoneSentence(std::string *zoneName) {
+  explicit DropZoneSentence(std::string* zoneName) {
     zoneName_.reset(zoneName);
     kind_ = Kind::kDropZone;
   }
 
   std::string toString() const override;
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
@@ -1018,7 +1018,7 @@ class DropZoneSentence : public Sentence {
 
 class SplitZoneSentence : public Sentence {
  public:
-  explicit SplitZoneSentence(std::string *zoneName, ZoneNameList *zoneNames) {
+  explicit SplitZoneSentence(std::string* zoneName, ZoneNameList* zoneNames) {
     zoneName_.reset(zoneName);
     zoneNames_.reset(zoneNames);
     kind_ = Kind::kSplitZone;
@@ -1026,11 +1026,11 @@ class SplitZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
-  const ZoneNameList *zoneNames() const {
+  const ZoneNameList* zoneNames() const {
     return zoneNames_.get();
   }
 
@@ -1041,7 +1041,7 @@ class SplitZoneSentence : public Sentence {
 
 class RenameZoneSentence : public Sentence {
  public:
-  explicit RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
+  explicit RenameZoneSentence(std::string* originalZoneName, std::string* zoneName) {
     originalZoneName_.reset(originalZoneName);
     zoneName_.reset(zoneName);
     kind_ = Kind::kRenameZone;
@@ -1049,11 +1049,11 @@ class RenameZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *originalZoneName() const {
+  const std::string* originalZoneName() const {
     return originalZoneName_.get();
   }
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
@@ -1064,14 +1064,14 @@ class RenameZoneSentence : public Sentence {
 
 class DescribeZoneSentence : public Sentence {
  public:
-  explicit DescribeZoneSentence(std::string *zoneName) {
+  explicit DescribeZoneSentence(std::string* zoneName) {
     zoneName_.reset(zoneName);
     kind_ = Kind::kDescribeZone;
   }
 
   std::string toString() const override;
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
@@ -1090,18 +1090,18 @@ class ListZonesSentence : public Sentence {
 
 class AddHostsIntoZoneSentence : public Sentence {
  public:
-  AddHostsIntoZoneSentence(HostList *address, std::string *zoneName, bool isNew) {
+  AddHostsIntoZoneSentence(HostList* address, std::string* zoneName, bool isNew) {
     address_.reset(address);
     zoneName_.reset(zoneName);
     isNew_ = isNew;
     kind_ = Kind::kAddHostsIntoZone;
   }
 
-  const std::string *zoneName() const {
+  const std::string* zoneName() const {
     return zoneName_.get();
   }
 
-  const HostList *address() const {
+  const HostList* address() const {
     return address_.get();
   }
 
@@ -1123,9 +1123,9 @@ class AddHostsIntoZoneSentence : public Sentence {
 class CreateFTIndexSentence final : public Sentence {
  public:
   CreateFTIndexSentence(bool isEdge,
-                        std::string *indexName,
-                        std::string *schemaName,
-                        NameLabelList *fields) {
+                        std::string* indexName,
+                        std::string* schemaName,
+                        NameLabelList* fields) {
     isEdge_ = isEdge;
     indexName_.reset(indexName);
     schemaName_.reset(schemaName);
@@ -1138,11 +1138,11 @@ class CreateFTIndexSentence final : public Sentence {
   bool isEdge() {
     return isEdge_;
   }
-  const std::string *indexName() const {
+  const std::string* indexName() const {
     return indexName_.get();
   }
 
-  const std::string *schemaName() const {
+  const std::string* schemaName() const {
     return schemaName_.get();
   }
 
@@ -1163,14 +1163,14 @@ class CreateFTIndexSentence final : public Sentence {
 };
 class DropFTIndexSentence final : public Sentence {
  public:
-  explicit DropFTIndexSentence(std::string *indexName) {
+  explicit DropFTIndexSentence(std::string* indexName) {
     indexName_.reset(indexName);
     kind_ = Kind::kDropFTIndex;
   }
 
   std::string toString() const override;
 
-  const std::string *name() const {
+  const std::string* name() const {
     return indexName_.get();
   }
 

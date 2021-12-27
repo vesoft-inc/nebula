@@ -13,7 +13,7 @@ namespace graph {
 
 class RevokeRoleExecutor final : public Executor {
  public:
-  RevokeRoleExecutor(const PlanNode *node, QueryContext *qctx)
+  RevokeRoleExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("RevokeRoleExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

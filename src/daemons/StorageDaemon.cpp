@@ -53,7 +53,7 @@ extern Status setupBreakpad();
 
 std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   google::SetVersionString(nebula::versionString());
   // Detect if the server has already been started
   // Check pid before glog init, in case of user may start daemon twice
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   folly::split(",", FLAGS_data_path, paths, true);
   // make the paths absolute
   std::transform(
-      paths.begin(), paths.end(), paths.begin(), [](const std::string &p) -> std::string {
+      paths.begin(), paths.end(), paths.begin(), [](const std::string& p) -> std::string {
         auto path = folly::trimWhitespace(p).str();
         path = boost::filesystem::absolute(path).string();
         LOG(INFO) << "data path= " << path;
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 Status setupSignalHandler() {
   return nebula::SignalHandler::install(
       {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
 }
 
 void signalHandler(int sig) {

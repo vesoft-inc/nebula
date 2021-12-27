@@ -24,22 +24,22 @@ MergeGetNbrsAndDedupRule::MergeGetNbrsAndDedupRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &MergeGetNbrsAndDedupRule::pattern() const {
+const Pattern& MergeGetNbrsAndDedupRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
                                            {Pattern::create(graph::PlanNode::Kind::kDedup)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> MergeGetNbrsAndDedupRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
-  const OptGroupNode *optGN = matched.node;
-  const OptGroupNode *optDedup = matched.dependencies.back().node;
+    OptContext* octx, const MatchedResult& matched) const {
+  const OptGroupNode* optGN = matched.node;
+  const OptGroupNode* optDedup = matched.dependencies.back().node;
   DCHECK_EQ(optGN->node()->kind(), PlanNode::Kind::kGetNeighbors);
   DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
-  auto gn = static_cast<const GetNeighbors *>(optGN->node());
-  auto dedup = static_cast<const Dedup *>(optDedup->node());
+  auto gn = static_cast<const GetNeighbors*>(optGN->node());
+  auto dedup = static_cast<const Dedup*>(optDedup->node());
 
-  auto newGN = static_cast<GetNeighbors *>(gn->clone());
+  auto newGN = static_cast<GetNeighbors*>(gn->clone());
   if (!newGN->dedup()) {
     newGN->setDedup();
   }

@@ -47,7 +47,7 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
 
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = ListComprehensionExpression::make(
         &pool,
@@ -74,7 +74,7 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
 
 TEST_F(ListComprehensionExpressionTest, ListComprehensionExprToString) {
   {
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(ConstantExpression::make(&pool, 1));
     argList->addArgument(ConstantExpression::make(&pool, 5));
     auto expr = ListComprehensionExpression::make(
@@ -86,7 +86,7 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionExprToString) {
     ASSERT_EQ("[n IN range(1,5) WHERE (n>=2)]", expr->toString());
   }
   {
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(LabelExpression::make(&pool, "p"));
     auto expr = ListComprehensionExpression::make(
         &pool,

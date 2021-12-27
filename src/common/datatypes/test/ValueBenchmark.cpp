@@ -45,7 +45,7 @@ BENCHMARK(HashString, n) {
     }
   }
   std::unordered_set<std::string> set;
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     set.emplace(value.toString());
   }
 }
@@ -59,7 +59,7 @@ BENCHMARK(HashValue, n) {
     }
   }
   std::unordered_set<Value> set;
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     set.emplace(value);
   }
 }
@@ -76,7 +76,7 @@ BENCHMARK(HashIntString, n) {
     }
   }
   std::unordered_set<Value> set;
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     set.emplace(value.toString());
   }
 }
@@ -91,7 +91,7 @@ BENCHMARK(HashInt, n) {
     }
   }
   std::unordered_set<int64_t> set;
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     set.emplace(value.getInt());
   }
 }
@@ -106,7 +106,7 @@ BENCHMARK(HashIntValue, n) {
     }
   }
   std::unordered_set<Value> set;
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     set.emplace(value);
   }
 }

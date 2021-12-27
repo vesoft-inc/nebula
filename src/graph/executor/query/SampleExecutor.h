@@ -12,7 +12,7 @@ namespace graph {
 
 class SampleExecutor final : public Executor {
  public:
-  SampleExecutor(const PlanNode *node, QueryContext *qctx)
+  SampleExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("SampleExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

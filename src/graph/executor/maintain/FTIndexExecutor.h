@@ -13,7 +13,7 @@ namespace graph {
 
 class ShowFTIndexesExecutor final : public Executor {
  public:
-  ShowFTIndexesExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowFTIndexesExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowFTIndexesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class ShowFTIndexesExecutor final : public Executor {
 
 class CreateFTIndexExecutor final : public Executor {
  public:
-  CreateFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateFTIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateFTIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -29,7 +29,7 @@ class CreateFTIndexExecutor final : public Executor {
 
 class DropFTIndexExecutor final : public Executor {
  public:
-  DropFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
+  DropFTIndexExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropFTIndexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

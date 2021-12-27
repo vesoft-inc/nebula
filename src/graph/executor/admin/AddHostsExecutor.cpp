@@ -12,7 +12,7 @@ namespace graph {
 
 folly::Future<Status> AddHostsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *ahNode = asNode<AddHosts>(node());
+  auto* ahNode = asNode<AddHosts>(node());
   return qctx()
       ->getMetaClient()
       ->addHosts(ahNode->getHosts())

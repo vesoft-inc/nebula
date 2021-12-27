@@ -13,13 +13,13 @@ namespace graph {
 
 class UnwindExecutor final : public Executor {
  public:
-  UnwindExecutor(const PlanNode *node, QueryContext *qctx)
+  UnwindExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("UnwindExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 
  private:
-  std::vector<Value> extractList(const Value &val);
+  std::vector<Value> extractList(const Value& val);
 };
 
 }  // namespace graph

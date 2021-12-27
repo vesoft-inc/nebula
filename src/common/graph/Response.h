@@ -189,15 +189,15 @@ enum class ErrorCode { ErrorCodeEnums };
 
 #undef X
 
-const char *getErrorCode(ErrorCode code);
+const char* getErrorCode(ErrorCode code);
 
-static inline std::ostream &operator<<(std::ostream &os, ErrorCode code) {
+static inline std::ostream& operator<<(std::ostream& os, ErrorCode code) {
   os << getErrorCode(code);
   return os;
 }
 
 template <typename T>
-bool inline checkPointer(const T *lhs, const T *rhs) {
+bool inline checkPointer(const T* lhs, const T* rhs) {
   if (lhs == rhs) {
     return true;
   } else if (lhs != nullptr && rhs != nullptr) {
@@ -220,7 +220,7 @@ struct AuthResponse {
     __clear();
   }
 
-  bool operator==(const AuthResponse &rhs) const {
+  bool operator==(const AuthResponse& rhs) const {
     if (errorCode != rhs.errorCode) {
       return false;
     }
@@ -245,7 +245,7 @@ struct AuthResponse {
 
 struct ProfilingStats {
   ProfilingStats() = default;
-  ProfilingStats(ProfilingStats &&) = default;
+  ProfilingStats(ProfilingStats&&) = default;
 
   void __clear() {
     rows = 0;
@@ -258,7 +258,7 @@ struct ProfilingStats {
     __clear();
   }
 
-  auto &operator=(ProfilingStats &&rhs) {
+  auto& operator=(ProfilingStats&& rhs) {
     this->rows = rhs.rows;
     this->execDurationInUs = rhs.execDurationInUs;
     this->totalDurationInUs = rhs.totalDurationInUs;
@@ -266,7 +266,7 @@ struct ProfilingStats {
     return *this;
   }
 
-  bool operator==(const ProfilingStats &rhs) const {
+  bool operator==(const ProfilingStats& rhs) const {
     if (rows != rhs.rows) {
       return false;
     }
@@ -310,13 +310,13 @@ struct PlanNodeBranchInfo {
     __clear();
   }
 
-  auto &operator=(const PlanNodeBranchInfo &rhs) {
+  auto& operator=(const PlanNodeBranchInfo& rhs) {
     this->isDoBranch = rhs.isDoBranch;
     this->conditionNodeId = rhs.conditionNodeId;
     return *this;
   }
 
-  bool operator==(const PlanNodeBranchInfo &rhs) const {
+  bool operator==(const PlanNodeBranchInfo& rhs) const {
     return isDoBranch == rhs.isDoBranch && conditionNodeId == rhs.conditionNodeId;
   }
 
@@ -344,7 +344,7 @@ struct Pair {
     __clear();
   }
 
-  bool operator==(const Pair &rhs) const {
+  bool operator==(const Pair& rhs) const {
     return key == rhs.key && value == rhs.value;
   }
 
@@ -359,7 +359,7 @@ struct Pair {
 
 struct PlanNodeDescription {
   PlanNodeDescription() = default;
-  PlanNodeDescription(PlanNodeDescription &&) = default;
+  PlanNodeDescription(PlanNodeDescription&&) = default;
 
   void __clear() {
     name.clear();
@@ -375,7 +375,7 @@ struct PlanNodeDescription {
     __clear();
   }
 
-  auto &operator=(PlanNodeDescription &&rhs) {
+  auto& operator=(PlanNodeDescription&& rhs) {
     this->name = std::move(rhs.name);
     this->id = rhs.id;
     this->outputVar = std::move(rhs.outputVar);
@@ -386,7 +386,7 @@ struct PlanNodeDescription {
     return *this;
   }
 
-  bool operator==(const PlanNodeDescription &rhs) const;
+  bool operator==(const PlanNodeDescription& rhs) const;
 
   std::string name;
   int64_t id{-1};
@@ -408,14 +408,14 @@ struct PlanNodeDescription {
     auto descriptionObj = folly::dynamic::array();
     descriptionObj.resize(description->size());
     std::transform(
-        description->begin(), description->end(), descriptionObj.begin(), [](const auto &ele) {
+        description->begin(), description->end(), descriptionObj.begin(), [](const auto& ele) {
           return ele.toJson();
         });
     planNodeDescObj.insert("description", descriptionObj);
 
     auto profilesObj = folly::dynamic::array();
     profilesObj.resize(profiles->size());
-    std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto &ele) {
+    std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto& ele) {
       return ele.toJson();
     });
     planNodeDescObj.insert("profiles", profilesObj);
@@ -428,7 +428,7 @@ struct PlanNodeDescription {
 
 struct PlanDescription {
   PlanDescription() = default;
-  PlanDescription(PlanDescription &&rhs) = default;
+  PlanDescription(PlanDescription&& rhs) = default;
 
   void __clear() {
     planNodeDescs.clear();
@@ -441,7 +441,7 @@ struct PlanDescription {
     __clear();
   }
 
-  auto &operator=(PlanDescription &&rhs) {
+  auto& operator=(PlanDescription&& rhs) {
     this->planNodeDescs = std::move(rhs.planNodeDescs);
     this->nodeIndexMap = std::move(rhs.nodeIndexMap);
     this->format = std::move(rhs.format);
@@ -449,7 +449,7 @@ struct PlanDescription {
     return *this;
   }
 
-  bool operator==(const PlanDescription &rhs) const {
+  bool operator==(const PlanDescription& rhs) const {
     return planNodeDescs == rhs.planNodeDescs && nodeIndexMap == rhs.nodeIndexMap &&
            format == rhs.format;
   }
@@ -470,12 +470,12 @@ struct PlanDescription {
     std::transform(planNodeDescs.begin(),
                    planNodeDescs.end(),
                    planNodeDescsObj.begin(),
-                   [](const PlanNodeDescription &ele) { return ele.toJson(); });
+                   [](const PlanNodeDescription& ele) { return ele.toJson(); });
     PlanDescObj.insert("planNodeDescs", planNodeDescsObj);
     // nodeIndexMap uses int as the key of the map, but strict json format only accepts string as
     // the key, so convert the int to string here.
     folly::dynamic nodeIndexMapObj = folly::dynamic::object();
-    for (const auto &kv : nodeIndexMap) {
+    for (const auto& kv : nodeIndexMap) {
       nodeIndexMapObj.insert(folly::to<std::string>(kv.first), kv.second);
     }
     PlanDescObj.insert("nodeIndexMap", nodeIndexMapObj);
@@ -501,7 +501,7 @@ struct ExecutionResponse {
     __clear();
   }
 
-  bool operator==(const ExecutionResponse &rhs) const {
+  bool operator==(const ExecutionResponse& rhs) const {
     if (errorCode != rhs.errorCode) {
       return false;
     }

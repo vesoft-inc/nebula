@@ -28,7 +28,7 @@ class QueryContext;
 class Executor : private cpp::NonCopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
-  static Executor *create(const PlanNode *node, QueryContext *qctx);
+  static Executor* create(const PlanNode* node, QueryContext* qctx);
 
   virtual ~Executor();
 
@@ -45,7 +45,7 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 
   Status checkMemoryWatermark();
 
-  QueryContext *qctx() const {
+  QueryContext* qctx() const {
     return qctx_;
   }
 
@@ -53,58 +53,58 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
     return id_;
   }
 
-  const std::string &name() const {
+  const std::string& name() const {
     return name_;
   }
 
-  const PlanNode *node() const {
+  const PlanNode* node() const {
     return node_;
   }
 
-  const std::set<Executor *> &depends() const {
+  const std::set<Executor*>& depends() const {
     return depends_;
   }
 
-  const std::set<Executor *> &successors() const {
+  const std::set<Executor*>& successors() const {
     return successors_;
   }
 
-  Executor *dependsOn(Executor *dep) {
+  Executor* dependsOn(Executor* dep) {
     depends_.emplace(dep);
     dep->successors_.emplace(this);
     return this;
   }
 
   template <typename T>
-  static std::enable_if_t<std::is_base_of<PlanNode, T>::value, const T *> asNode(
-      const PlanNode *node) {
-    return static_cast<const T *>(node);
+  static std::enable_if_t<std::is_base_of<PlanNode, T>::value, const T*> asNode(
+      const PlanNode* node) {
+    return static_cast<const T*>(node);
   }
 
   // Throw runtime error to stop whole execution early
   folly::Future<Status> error(Status status) const;
 
  protected:
-  static Executor *makeExecutor(const PlanNode *node,
-                                QueryContext *qctx,
-                                std::unordered_map<int64_t, Executor *> *visited);
+  static Executor* makeExecutor(const PlanNode* node,
+                                QueryContext* qctx,
+                                std::unordered_map<int64_t, Executor*>* visited);
 
-  static Executor *makeExecutor(QueryContext *qctx, const PlanNode *node);
+  static Executor* makeExecutor(QueryContext* qctx, const PlanNode* node);
 
   // Only allow derived executor to construct
-  Executor(const std::string &name, const PlanNode *node, QueryContext *qctx);
+  Executor(const std::string& name, const PlanNode* node, QueryContext* qctx);
 
   // Start a future chain and bind it to thread pool
   folly::Future<Status> start(Status status = Status::OK()) const;
 
-  folly::Executor *runner() const;
+  folly::Executor* runner() const;
 
   void drop();
 
   // Store the result of this executor to execution context
-  Status finish(Result &&result);
+  Status finish(Result&& result);
   // Store the default result which not used for later executor
-  Status finish(Value &&value);
+  Status finish(Value&& value);
 
   int64_t id_;
 
@@ -112,15 +112,15 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   std::string name_;
 
   // Relative Plan Node
-  const PlanNode *node_;
+  const PlanNode* node_;
 
-  QueryContext *qctx_;
+  QueryContext* qctx_;
   // Execution context for saving some execution data
-  ExecutionContext *ectx_;
+  ExecutionContext* ectx_;
 
   // Topology
-  std::set<Executor *> depends_;
-  std::set<Executor *> successors_;
+  std::set<Executor*> depends_;
+  std::set<Executor*> successors_;
 
   // profiling data
   uint64_t numRows_{0};

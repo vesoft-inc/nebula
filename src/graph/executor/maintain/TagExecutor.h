@@ -13,7 +13,7 @@ namespace graph {
 
 class CreateTagExecutor final : public Executor {
  public:
-  CreateTagExecutor(const PlanNode *node, QueryContext *qctx)
+  CreateTagExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("CreateTagExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class CreateTagExecutor final : public Executor {
 
 class DescTagExecutor final : public Executor {
  public:
-  DescTagExecutor(const PlanNode *node, QueryContext *qctx)
+  DescTagExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DescTagExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -32,7 +32,7 @@ class DescTagExecutor final : public Executor {
 
 class DropTagExecutor final : public Executor {
  public:
-  DropTagExecutor(const PlanNode *node, QueryContext *qctx)
+  DropTagExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DropTagExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -40,7 +40,7 @@ class DropTagExecutor final : public Executor {
 
 class ShowTagsExecutor final : public Executor {
  public:
-  ShowTagsExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowTagsExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowTagsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -48,7 +48,7 @@ class ShowTagsExecutor final : public Executor {
 
 class ShowCreateTagExecutor final : public Executor {
  public:
-  ShowCreateTagExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowCreateTagExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowTagsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -56,7 +56,7 @@ class ShowCreateTagExecutor final : public Executor {
 
 class AlterTagExecutor final : public Executor {
  public:
-  AlterTagExecutor(const PlanNode *node, QueryContext *qctx)
+  AlterTagExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("AlterTagExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

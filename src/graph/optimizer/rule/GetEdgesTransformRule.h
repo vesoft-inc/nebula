@@ -22,21 +22,21 @@ namespace opt {
 // Optimize to get edges directly
 class GetEdgesTransformRule final : public OptRule {
  public:
-  const Pattern &pattern() const override;
+  const Pattern& pattern() const override;
 
-  bool match(OptContext *ctx, const MatchedResult &matched) const override;
-  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
+  bool match(OptContext* ctx, const MatchedResult& matched) const override;
+  StatusOr<TransformResult> transform(OptContext* ctx, const MatchedResult& matched) const override;
 
   std::string toString() const override;
 
  private:
   GetEdgesTransformRule();
 
-  static graph::ScanEdges *traverseToScanEdges(const graph::Traverse *traverse);
+  static graph::ScanEdges* traverseToScanEdges(const graph::Traverse* traverse);
 
-  static graph::Project *projectEdges(graph::QueryContext *qctx,
-                                      graph::PlanNode *input,
-                                      const std::string &colName);
+  static graph::Project* projectEdges(graph::QueryContext* qctx,
+                                      graph::PlanNode* input,
+                                      const std::string& colName);
 
   static std::unique_ptr<OptRule> kInstance;
 };

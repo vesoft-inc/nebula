@@ -16,7 +16,7 @@ namespace graph {
 folly::Future<Status> CreateTagExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ctNode = asNode<CreateTag>(node());
+  auto* ctNode = asNode<CreateTag>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -35,7 +35,7 @@ folly::Future<Status> CreateTagExecutor::execute() {
 folly::Future<Status> DescTagExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dtNode = asNode<DescTag>(node());
+  auto* dtNode = asNode<DescTag>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -60,7 +60,7 @@ folly::Future<Status> DescTagExecutor::execute() {
 folly::Future<Status> DropTagExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dtNode = asNode<DropTag>(node());
+  auto* dtNode = asNode<DropTag>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -91,10 +91,10 @@ folly::Future<Status> ShowTagsExecutor::execute() {
         DataSet dataSet;
         dataSet.colNames = {"Name"};
         std::set<std::string> orderTagNames;
-        for (auto &tag : tagItems) {
+        for (auto& tag : tagItems) {
           orderTagNames.emplace(tag.get_tag_name());
         }
-        for (auto &name : orderTagNames) {
+        for (auto& name : orderTagNames) {
           Row row;
           row.values.emplace_back(name);
           dataSet.rows.emplace_back(std::move(row));
@@ -109,7 +109,7 @@ folly::Future<Status> ShowTagsExecutor::execute() {
 folly::Future<Status> ShowCreateTagExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *sctNode = asNode<ShowCreateTag>(node());
+  auto* sctNode = asNode<ShowCreateTag>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -134,7 +134,7 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
 folly::Future<Status> AlterTagExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *aeNode = asNode<AlterTag>(node());
+  auto* aeNode = asNode<AlterTag>(node());
   return qctx()
       ->getMetaClient()
       ->alterTagSchema(

@@ -15,7 +15,7 @@ TEST(MurmurHash2, Basic) {
   // string
   {
 #define LITERAL "Another one bites the dust"
-    const char *cstr = LITERAL;
+    const char* cstr = LITERAL;
     std::string str = cstr;
     auto hv1 = hash(LITERAL);
     auto hv2 = hash(cstr);
@@ -38,17 +38,17 @@ TEST(MurmurHash2, Basic) {
     ASSERT_EQ(static_cast<size_t>(rand64), hash(rand64));
   }
   // pointer
-  {{auto *ptr = new MurmurHash2();
+  {{auto* ptr = new MurmurHash2();
   ASSERT_EQ(reinterpret_cast<size_t>(ptr), hash(ptr));
   delete ptr;
 }
 {
-  auto *ptr = new std::string();
+  auto* ptr = new std::string();
   ASSERT_EQ(reinterpret_cast<size_t>(ptr), hash(ptr));
   delete ptr;
 }
 {
-  auto *ptr = new int();
+  auto* ptr = new int();
   ASSERT_EQ(reinterpret_cast<size_t>(ptr), hash(ptr));
   delete ptr;
 }

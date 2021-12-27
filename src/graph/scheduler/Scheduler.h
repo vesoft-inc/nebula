@@ -20,7 +20,7 @@ class Scheduler : private cpp::NonCopyable, private cpp::NonMovable {
 
   virtual folly::Future<Status> schedule() = 0;
 
-  static void analyzeLifetime(const PlanNode *node, bool inLoop = false);
+  static void analyzeLifetime(const PlanNode* node, bool inLoop = false);
 };
 }  // namespace graph
 }  // namespace nebula

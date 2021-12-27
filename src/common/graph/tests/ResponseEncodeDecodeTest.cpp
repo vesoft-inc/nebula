@@ -29,7 +29,7 @@ TEST(ResponseEncodeDecodeTest, Basic) {
                                     std::make_unique<std::string>("Error Test."),
                                     std::make_unique<int32_t>(233),
                                     std::make_unique<std::string>("time zone")});
-    for (const auto &resp : resps) {
+    for (const auto& resp : resps) {
       std::string buf;
       buf.reserve(128);
       serializer::serialize(resp, &buf);
@@ -59,7 +59,7 @@ TEST(ResponseEncodeDecodeTest, Basic) {
                                          nullptr,
                                          std::make_unique<std::string>("test_space"),
                                          std::make_unique<std::string>("Error Msg.")});
-    for (const auto &resp : resps) {
+    for (const auto& resp : resps) {
       std::string buf;
       buf.reserve(128);
       serializer::serialize(resp, &buf);
@@ -76,7 +76,7 @@ TEST(ResponseEncodeDecodeTest, Basic) {
     pds.emplace_back(PlanDescription{std::vector<PlanNodeDescription>{},
                                      std::unordered_map<int64_t, int64_t>{{1, 2}, {4, 7}},
                                      "format"});
-    for (const auto &pd : pds) {
+    for (const auto& pd : pds) {
       std::string buf;
       buf.reserve(128);
       serializer::serialize(pd, &buf);
@@ -96,7 +96,7 @@ TEST(ResponseEncodeDecodeTest, ToJson) {
     pds.emplace_back(PlanDescription{std::vector<PlanNodeDescription>{},
                                      std::unordered_map<int64_t, int64_t>{{1, 2}, {4, 7}},
                                      "format"});
-    for (const auto &pd : pds) {
+    for (const auto& pd : pds) {
       std::string buf;
       buf.reserve(128);
       folly::dynamic jsonObj = pd.toJson();
@@ -128,7 +128,7 @@ TEST(ResponseEncodeDecodeTest, ToJson) {
                                          nullptr,
                                          std::make_unique<std::string>("test_space"),
                                          std::make_unique<std::string>("Error Msg.")});
-    for (const auto &resp : resps) {
+    for (const auto& resp : resps) {
       std::string buf;
       buf.reserve(128);
       folly::dynamic jsonObj = resp.toJson();

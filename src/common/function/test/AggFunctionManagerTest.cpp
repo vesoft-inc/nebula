@@ -18,7 +18,7 @@ class AggFunctionManagerTest : public ::testing::Test {
   void TearDown() override {}
 
  protected:
-  void testFunction(const char *expr, const std::vector<Value> &groupData, Value expect) {
+  void testFunction(const char* expr, const std::vector<Value>& groupData, Value expect) {
     auto result = AggFunctionManager::get(expr);
     ASSERT_TRUE(result.ok());
     auto aggFunc = result.value();
@@ -129,7 +129,7 @@ TEST_F(AggFunctionManagerTest, aggFunc) {
 
 }  // namespace nebula
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);

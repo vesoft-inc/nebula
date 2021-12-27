@@ -13,7 +13,7 @@ namespace graph {
 
 class UnionAllVersionVarExecutor : public Executor {
  public:
-  UnionAllVersionVarExecutor(const PlanNode *node, QueryContext *qctx)
+  UnionAllVersionVarExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("UnionAllVersionVarExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

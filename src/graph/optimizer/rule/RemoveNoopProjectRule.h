@@ -13,11 +13,11 @@ namespace opt {
 
 class RemoveNoopProjectRule final : public OptRule {
  public:
-  const Pattern &pattern() const override;
+  const Pattern& pattern() const override;
 
-  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
+  StatusOr<TransformResult> transform(OptContext* ctx, const MatchedResult& matched) const override;
 
-  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+  bool match(OptContext* ctx, const MatchedResult& matched) const override;
 
   std::string toString() const override;
 

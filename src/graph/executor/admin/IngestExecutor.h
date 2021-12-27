@@ -13,7 +13,7 @@ namespace graph {
 
 class IngestExecutor final : public Executor {
  public:
-  IngestExecutor(const PlanNode *node, QueryContext *qctx)
+  IngestExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("IngestExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

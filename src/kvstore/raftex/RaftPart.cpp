@@ -1119,8 +1119,8 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
     }
     highestTerm = std::max(highestTerm, r.second.get_current_term());
   }
-  VLOG(2) << idStr_ << "Received " << results.size()
-          << " responses and " << numSucceeded << " peers voted for me";
+  VLOG(2) << idStr_ << "Received " << results.size() << " responses and " << numSucceeded
+          << " peers voted for me";
 
   if (highestTerm > term_) {
     term_ = highestTerm;
@@ -1878,7 +1878,7 @@ void RaftPart::sendHeartbeat() {
       })
       .via(executor_.get())
       .then([replica, hosts = std::move(hosts), startMs, currTerm, this](
-          folly::Try<HeartbeatResponses>&& resps) {
+                folly::Try<HeartbeatResponses>&& resps) {
         CHECK(!resps.hasException());
         size_t numSucceeded = 0;
         TermID highestTerm = currTerm;

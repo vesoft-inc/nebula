@@ -17,16 +17,16 @@ class IndexUtil final {
  public:
   IndexUtil() = delete;
 
-  static Status validateColumns(const std::vector<std::string> &fields);
+  static Status validateColumns(const std::vector<std::string>& fields);
 
-  static Status validateIndexParams(const std::vector<IndexParamItem *> &params,
-                                    meta::cpp2::IndexParams &indexParams);
+  static Status validateIndexParams(const std::vector<IndexParamItem*>& params,
+                                    meta::cpp2::IndexParams& indexParams);
 
-  static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);
+  static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem& indexItem);
 
   static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
-                                             const std::string &indexName,
-                                             const meta::cpp2::IndexItem &indexItem);
+                                             const std::string& indexName,
+                                             const meta::cpp2::IndexItem& indexItem);
 
   static Expression::Kind reverseRelationalExprKind(Expression::Kind kind);
 };

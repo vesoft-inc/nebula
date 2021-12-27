@@ -11,7 +11,7 @@ class ReduceExpressionTest : public ExpressionTest {};
 TEST_F(ReduceExpressionTest, ReduceEvaluate) {
   {
     // reduce(totalNum = 2 * 10, n IN range(1, 5) | totalNum + n * 2)
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(ConstantExpression::make(&pool, 1));
     argList->addArgument(ConstantExpression::make(&pool, 5));
     auto expr = ReduceExpression::make(
@@ -36,7 +36,7 @@ TEST_F(ReduceExpressionTest, ReduceEvaluate) {
 TEST_F(ReduceExpressionTest, ReduceExprToString) {
   {
     // reduce(totalNum = 2 * 10, n IN range(1, 5) | totalNum + n * 2)
-    ArgumentList *argList = ArgumentList::make(&pool);
+    ArgumentList* argList = ArgumentList::make(&pool);
     argList->addArgument(ConstantExpression::make(&pool, 1));
     argList->addArgument(ConstantExpression::make(&pool, 5));
     auto expr = ReduceExpression::make(

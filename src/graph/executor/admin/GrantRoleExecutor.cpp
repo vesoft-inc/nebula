@@ -20,13 +20,13 @@ folly::Future<Status> GrantRoleExecutor::execute() {
 
 folly::Future<Status> GrantRoleExecutor::grantRole() {
   SCOPED_TIMER(&execTime_);
-  auto *grNode = asNode<GrantRole>(node());
-  const auto *spaceName = grNode->spaceName();
+  auto* grNode = asNode<GrantRole>(node());
+  const auto* spaceName = grNode->spaceName();
   auto spaceIdResult = qctx()->getMetaClient()->getSpaceIdByNameFromCache(*spaceName);
   NG_RETURN_IF_ERROR(spaceIdResult);
   auto spaceId = spaceIdResult.value();
 
-  auto *session = qctx_->rctx()->session();
+  auto* session = qctx_->rctx()->session();
   NG_RETURN_IF_ERROR(
       PermissionManager::canWriteRole(session, grNode->role(), spaceId, *grNode->username()));
 

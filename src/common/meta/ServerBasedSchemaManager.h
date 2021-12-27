@@ -73,12 +73,12 @@ class ServerBasedSchemaManager : public SchemaManager {
   StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) override;
 
-  void init(MetaClient *client);
+  void init(MetaClient* client);
 
-  static std::unique_ptr<ServerBasedSchemaManager> create(MetaClient *client);
+  static std::unique_ptr<ServerBasedSchemaManager> create(MetaClient* client);
 
  private:
-  MetaClient *metaClient_{nullptr};
+  MetaClient* metaClient_{nullptr};
 };
 
 }  // namespace meta

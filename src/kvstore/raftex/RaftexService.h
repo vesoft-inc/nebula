@@ -6,9 +6,10 @@
 #ifndef RAFTEX_RAFTEXSERVICE_H_
 #define RAFTEX_RAFTEXSERVICE_H_
 
-#include "common/base/Base.h"
 #include <folly/RWSpinLock.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+
+#include "common/base/Base.h"
 #include "interface/gen-cpp2/RaftexService.h"
 
 namespace nebula {

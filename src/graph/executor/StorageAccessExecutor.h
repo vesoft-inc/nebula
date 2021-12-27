@@ -24,7 +24,7 @@ struct SpaceInfo;
 // It's used for data write/update/query
 class StorageAccessExecutor : public Executor {
  protected:
-  StorageAccessExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+  StorageAccessExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : Executor(name, node, qctx) {}
 
   // Parameter isPartialSuccessAccepted to specify
@@ -32,11 +32,11 @@ class StorageAccessExecutor : public Executor {
   // An error will be returned if isPartialSuccessAccepted
   // is set to false and completeness is less than 100.
   template <typename Resp>
-  StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp,
+  StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,
                                              bool isPartialSuccessAccepted) const {
     auto completeness = rpcResp.completeness();
     if (completeness != 100) {
-      const auto &failedCodes = rpcResp.failedParts();
+      const auto& failedCodes = rpcResp.failedParts();
       for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
         LOG(ERROR) << name_ << " failed, error " << apache::thrift::util::enumNameSafe(it->second)
                    << ", part " << it->first;
@@ -128,10 +128,10 @@ class StorageAccessExecutor : public Executor {
   }
 
   template <typename RESP>
-  void addStats(RESP &resp, std::unordered_map<std::string, std::string> &stats) const {
-    auto &hostLatency = resp.hostLatency();
+  void addStats(RESP& resp, std::unordered_map<std::string, std::string>& stats) const {
+    auto& hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
-      auto &info = hostLatency[i];
+      auto& info = hostLatency[i];
       stats.emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
                     folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
       auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
@@ -142,11 +142,11 @@ class StorageAccessExecutor : public Executor {
   }
 
   std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t> &> ref) const;
+      apache::thrift::optional_field_ref<const std::map<std::string, int32_t>&> ref) const;
 
-  bool isIntVidType(const SpaceInfo &space) const;
+  bool isIntVidType(const SpaceInfo& space) const;
 
-  DataSet buildRequestDataSetByVidType(Iterator *iter, Expression *expr, bool dedup);
+  DataSet buildRequestDataSetByVidType(Iterator* iter, Expression* expr, bool dedup);
 };
 
 }  // namespace graph

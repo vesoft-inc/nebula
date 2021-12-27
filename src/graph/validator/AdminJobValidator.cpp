@@ -14,9 +14,9 @@ Status AdminJobValidator::validateImpl() {
   if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
-      const auto &spaceInfo = vctx_->whichSpace();
+      const auto& spaceInfo = vctx_->whichSpace();
       auto spaceId = spaceInfo.id;
-      const auto &spaceName = spaceInfo.name;
+      const auto& spaceName = spaceInfo.name;
       sentence_->addPara(spaceName);
 
       if (cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX ||
@@ -30,15 +30,15 @@ Status AdminJobValidator::validateImpl() {
                                        ret.status().toString().c_str());
         }
         auto indexes = std::move(ret).value();
-        const auto &paras = sentence_->getParas();
+        const auto& paras = sentence_->getParas();
         if (paras.size() == 1 && indexes.empty()) {
           return Status::SemanticError("Space `%s' without indexes", spaceName.c_str());
         }
         for (auto i = 0u; i < paras.size() - 1; i++) {
-          const auto &indexName = paras[i];
+          const auto& indexName = paras[i];
           auto it = std::find_if(indexes.begin(),
                                  indexes.end(),
-                                 [&indexName](std::shared_ptr<meta::cpp2::IndexItem> &item) {
+                                 [&indexName](std::shared_ptr<meta::cpp2::IndexItem>& item) {
                                    return item->get_index_name() == indexName;
                                  });
           if (it == indexes.end()) {
@@ -55,7 +55,7 @@ Status AdminJobValidator::validateImpl() {
 }
 
 Status AdminJobValidator::toPlan() {
-  auto *doNode = SubmitJob::make(
+  auto* doNode = SubmitJob::make(
       qctx_, nullptr, sentence_->getOp(), sentence_->getCmd(), sentence_->getParas());
   root_ = doNode;
   tail_ = root_;

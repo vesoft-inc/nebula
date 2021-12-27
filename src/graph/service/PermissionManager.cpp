@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 // static
-Status PermissionManager::canReadSpace(ClientSession *session, GraphSpaceID spaceId) {
+Status PermissionManager::canReadSpace(ClientSession* session, GraphSpaceID spaceId) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -36,7 +36,7 @@ Status PermissionManager::canReadSpace(ClientSession *session, GraphSpaceID spac
 }
 
 // static
-Status PermissionManager::canReadSchemaOrData(ClientSession *session, ValidateContext *vctx) {
+Status PermissionManager::canReadSchemaOrData(ClientSession* session, ValidateContext* vctx) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -61,7 +61,7 @@ Status PermissionManager::canReadSchemaOrData(ClientSession *session, ValidateCo
 }
 
 // static
-Status PermissionManager::canWriteSpace(ClientSession *session) {
+Status PermissionManager::canWriteSpace(ClientSession* session) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -72,7 +72,7 @@ Status PermissionManager::canWriteSpace(ClientSession *session) {
 }
 
 // static
-Status PermissionManager::canWriteSchema(ClientSession *session, ValidateContext *vctx) {
+Status PermissionManager::canWriteSchema(ClientSession* session, ValidateContext* vctx) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -98,7 +98,7 @@ Status PermissionManager::canWriteSchema(ClientSession *session, ValidateContext
 }
 
 // static
-Status PermissionManager::canWriteUser(ClientSession *session) {
+Status PermissionManager::canWriteUser(ClientSession* session) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -114,7 +114,7 @@ Status PermissionManager::canWriteUser(ClientSession *session) {
 }
 
 // static
-Status PermissionManager::canReadUser(ClientSession *session, const std::string &targetUser) {
+Status PermissionManager::canReadUser(ClientSession* session, const std::string& targetUser) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -132,10 +132,10 @@ Status PermissionManager::canReadUser(ClientSession *session, const std::string 
   return Status::PermissionError("No permission to read user `%s'.", targetUser.c_str());
 }
 
-Status PermissionManager::canWriteRole(ClientSession *session,
+Status PermissionManager::canWriteRole(ClientSession* session,
                                        meta::cpp2::RoleType targetRole,
                                        GraphSpaceID spaceId,
-                                       const std::string &targetUser) {
+                                       const std::string& targetUser) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -178,7 +178,7 @@ Status PermissionManager::canWriteRole(ClientSession *session,
 }
 
 // static
-Status PermissionManager::canWriteData(ClientSession *session, ValidateContext *vctx) {
+Status PermissionManager::canWriteData(ClientSession* session, ValidateContext* vctx) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -203,8 +203,8 @@ Status PermissionManager::canWriteData(ClientSession *session, ValidateContext *
   return Status::PermissionError("No permission to write data.");
 }
 
-StatusOr<meta::cpp2::RoleType> PermissionManager::checkRoleWithSpace(ClientSession *session,
-                                                                     ValidateContext *vctx) {
+StatusOr<meta::cpp2::RoleType> PermissionManager::checkRoleWithSpace(ClientSession* session,
+                                                                     ValidateContext* vctx) {
   if (!vctx->spaceChosen()) {
     return Status::Error("No space chosen.");
   }

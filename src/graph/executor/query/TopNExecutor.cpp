@@ -13,9 +13,9 @@ namespace graph {
 
 folly::Future<Status> TopNExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *topn = asNode<TopN>(node());
+  auto* topn = asNode<TopN>(node());
   Result result = ectx_->getResult(topn->inputVar());
-  auto *iter = result.iterRef();
+  auto* iter = result.iterRef();
   if (UNLIKELY(iter == nullptr)) {
     return Status::Error("Internal error: nullptr iterator in topn executor");
   }
@@ -26,9 +26,9 @@ folly::Future<Status> TopNExecutor::execute() {
     return Status::Error(ss.str());
   }
 
-  auto &factors = topn->factors();
-  comparator_ = [&factors](const Row &lhs, const Row &rhs) {
-    for (auto &item : factors) {
+  auto& factors = topn->factors();
+  comparator_ = [&factors](const Row& lhs, const Row& rhs) {
+    for (auto& item : factors) {
       auto index = item.first;
       auto orderType = item.second;
       if (lhs[index] == rhs[index]) {
@@ -68,8 +68,8 @@ folly::Future<Status> TopNExecutor::execute() {
 }
 
 template <typename U>
-void TopNExecutor::executeTopN(Iterator *iter) {
-  auto uIter = static_cast<U *>(iter);
+void TopNExecutor::executeTopN(Iterator* iter) {
+  auto uIter = static_cast<U*>(iter);
   std::vector<Row> heap(uIter->begin(), uIter->begin() + heapSize_);
   std::make_heap(heap.begin(), heap.end(), comparator_);
   auto it = uIter->begin() + heapSize_;

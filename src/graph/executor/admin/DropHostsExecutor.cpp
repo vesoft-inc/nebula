@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> DropHostsExecutor::execute() {
-  auto *dhNode = asNode<DropHosts>(node());
+  auto* dhNode = asNode<DropHosts>(node());
   return qctx()
       ->getMetaClient()
       ->dropHosts(dhNode->getHosts())

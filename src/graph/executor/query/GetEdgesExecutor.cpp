@@ -21,7 +21,7 @@ folly::Future<Status> GetEdgesExecutor::execute() {
   return getEdges();
 }
 
-DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
+DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges* ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();
   VLOG(1) << "GE input var:" << ge->inputVar() << " iter kind: " << valueIter->kind();
   QueryExpressionContext exprCtx(qctx()->ectx());
@@ -51,8 +51,8 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
 
 folly::Future<Status> GetEdgesExecutor::getEdges() {
   SCOPED_TIMER(&execTime_);
-  StorageClient *client = qctx()->getStorageClient();
-  auto *ge = asNode<GetEdges>(node());
+  StorageClient* client = qctx()->getStorageClient();
+  auto* ge = asNode<GetEdges>(node());
   if (ge->src() == nullptr || ge->type() == nullptr || ge->ranking() == nullptr ||
       ge->dst() == nullptr) {
     return Status::Error("ptr is nullptr");
@@ -86,7 +86,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
         SCOPED_TIMER(&execTime_);
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
-      .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+      .thenValue([this, ge](StorageRpcResponse<GetPropResponse>&& rpcResp) {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp), ge->colNames());

@@ -18,7 +18,7 @@ folly::Future<Status> UpdateUserExecutor::execute() {
 }
 
 folly::Future<Status> UpdateUserExecutor::updateUser() {
-  auto *uuNode = asNode<UpdateUser>(node());
+  auto* uuNode = asNode<UpdateUser>(node());
   return qctx()
       ->getMetaClient()
       ->alterUser(*uuNode->username(), encryption::MD5Utils::md5Encode(*uuNode->password()))

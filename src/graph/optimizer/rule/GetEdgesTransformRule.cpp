@@ -31,7 +31,7 @@ GetEdgesTransformRule::GetEdgesTransformRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &GetEdgesTransformRule::pattern() const {
+const Pattern& GetEdgesTransformRule::pattern() const {
   static Pattern pattern =
       Pattern::create(PlanNode::Kind::kAppendVertices,
                       {Pattern::create(PlanNode::Kind::kTraverse,
@@ -39,12 +39,12 @@ const Pattern &GetEdgesTransformRule::pattern() const {
   return pattern;
 }
 
-bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched) const {
+bool GetEdgesTransformRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  auto traverse = static_cast<const Traverse *>(matched.planNode({0, 0}));
-  const auto &colNames = traverse->colNames();
+  auto traverse = static_cast<const Traverse*>(matched.planNode({0, 0}));
+  const auto& colNames = traverse->colNames();
   auto colSize = colNames.size();
   DCHECK_GE(colSize, 2);
   if (colNames[colSize - 2][0] != '_') {  // src
@@ -57,11 +57,11 @@ bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched)
 }
 
 StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
+    OptContext* ctx, const MatchedResult& matched) const {
   auto appendVerticesGroupNode = matched.node;
-  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
+  auto appendVertices = static_cast<const AppendVertices*>(appendVerticesGroupNode->node());
   auto traverseGroupNode = matched.dependencies.front().node;
-  auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
+  auto traverse = static_cast<const Traverse*>(traverseGroupNode->node());
   auto scanVerticesGroupNode = matched.dependencies.front().dependencies.front().node;
   auto qctx = ctx->qctx();
 
@@ -72,14 +72,14 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   auto newAppendVerticesGroupNode =
       OptGroupNode::create(ctx, newAppendVertices, appendVerticesGroupNode->group());
 
-  auto *newScanEdges = traverseToScanEdges(traverse);
+  auto* newScanEdges = traverseToScanEdges(traverse);
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }
   auto newScanEdgesGroup = OptGroup::create(ctx);
   auto newScanEdgesGroupNode = newScanEdgesGroup->makeGroupNode(newScanEdges);
 
-  auto *newProj = projectEdges(qctx, newScanEdges, traverse->colNames().back());
+  auto* newProj = projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
   newProj->setOutputVar(traverse->outputVar());
   newProj->setColNames({traverse->colNames().back()});
@@ -102,9 +102,9 @@ std::string GetEdgesTransformRule::toString() const {
   return "GetEdgesTransformRule";
 }
 
-/*static*/ graph::ScanEdges *GetEdgesTransformRule::traverseToScanEdges(
-    const graph::Traverse *traverse) {
-  const auto *edgeProps = traverse->edgeProps();
+/*static*/ graph::ScanEdges* GetEdgesTransformRule::traverseToScanEdges(
+    const graph::Traverse* traverse) {
+  const auto* edgeProps = traverse->edgeProps();
   if (edgeProps == nullptr) {
     return nullptr;
   }
@@ -131,12 +131,12 @@ std::string GetEdgesTransformRule::toString() const {
   return scanEdges;
 }
 
-/*static*/ graph::Project *GetEdgesTransformRule::projectEdges(graph::QueryContext *qctx,
-                                                               PlanNode *input,
-                                                               const std::string &colName) {
-  auto *yieldColumns = qctx->objPool()->makeAndAdd<YieldColumns>();
-  auto *edgeExpr = EdgeExpression::make(qctx->objPool());
-  auto *listEdgeExpr = ListExpression::make(qctx->objPool());
+/*static*/ graph::Project* GetEdgesTransformRule::projectEdges(graph::QueryContext* qctx,
+                                                               PlanNode* input,
+                                                               const std::string& colName) {
+  auto* yieldColumns = qctx->objPool()->makeAndAdd<YieldColumns>();
+  auto* edgeExpr = EdgeExpression::make(qctx->objPool());
+  auto* listEdgeExpr = ListExpression::make(qctx->objPool());
   listEdgeExpr->setItems({edgeExpr});
   yieldColumns->addColumn(new YieldColumn(listEdgeExpr, colName));
   auto project = Project::make(qctx, input, yieldColumns);

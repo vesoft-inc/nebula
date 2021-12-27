@@ -18,14 +18,14 @@ folly::Future<Status> ChangePasswordExecutor::execute() {
 }
 
 folly::Future<Status> ChangePasswordExecutor::changePassword() {
-  auto *cpNode = asNode<ChangePassword>(node());
+  auto* cpNode = asNode<ChangePassword>(node());
   return qctx()
       ->getMetaClient()
       ->changePassword(*cpNode->username(),
                        encryption::MD5Utils::md5Encode(*cpNode->newPassword()),
                        encryption::MD5Utils::md5Encode(*cpNode->password()))
       .via(runner())
-      .thenValue([this](StatusOr<bool> &&resp) {
+      .thenValue([this](StatusOr<bool>&& resp) {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(resp);
         if (!resp.value()) {

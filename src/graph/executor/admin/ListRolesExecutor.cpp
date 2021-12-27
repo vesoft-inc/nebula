@@ -20,12 +20,12 @@ folly::Future<Status> ListRolesExecutor::execute() {
 }
 
 folly::Future<Status> ListRolesExecutor::listRoles() {
-  auto *lrNode = asNode<ListRoles>(node());
+  auto* lrNode = asNode<ListRoles>(node());
   return qctx()
       ->getMetaClient()
       ->listRoles(lrNode->space())
       .via(runner())
-      .thenValue([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
+      .thenValue([this](StatusOr<std::vector<meta::cpp2::RoleItem>>&& resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           return std::move(resp).status();
@@ -33,8 +33,8 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
         nebula::DataSet v({"Account", "Role Type"});
         auto items = std::move(resp).value();
         // Only god and admin show all roles, other roles only show themselves
-        const auto &account = qctx_->rctx()->session()->user();
-        auto foundItem = std::find_if(items.begin(), items.end(), [&account](const auto &item) {
+        const auto& account = qctx_->rctx()->session()->user();
+        auto foundItem = std::find_if(items.begin(), items.end(), [&account](const auto& item) {
           return item.get_user_id() == account;
         });
         if (foundItem != items.end()) {
@@ -42,13 +42,13 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
             v.emplace_back(Row({foundItem->get_user_id(),
                                 apache::thrift::util::enumNameSafe(foundItem->get_role_type())}));
           } else {
-            for (const auto &item : items) {
+            for (const auto& item : items) {
               v.emplace_back(nebula::Row(
                   {item.get_user_id(), apache::thrift::util::enumNameSafe(item.get_role_type())}));
             }
           }
         } else if (qctx_->rctx()->session()->isGod()) {
-          for (const auto &item : items) {
+          for (const auto& item : items) {
             v.emplace_back(nebula::Row(
                 {item.get_user_id(), apache::thrift::util::enumNameSafe(item.get_role_type())}));
           }

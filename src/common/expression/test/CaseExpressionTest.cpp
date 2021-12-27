@@ -10,14 +10,14 @@ class CaseExpressionTest : public ExpressionTest {};
 
 TEST_F(CaseExpressionTest, CaseExprToString) {
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 24), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setCondition(ConstantExpression::make(&pool, 23));
     ASSERT_EQ("CASE 23 WHEN 24 THEN 1 END", expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 24), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setCondition(ConstantExpression::make(&pool, 23));
@@ -25,7 +25,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
     ASSERT_EQ("CASE 23 WHEN 24 THEN 1 ELSE 2 END", expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 1));
     cases->add(ConstantExpression::make(&pool, true), ConstantExpression::make(&pool, 2));
     auto expr = CaseExpression::make(&pool, cases);
@@ -38,7 +38,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
         expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 7), ConstantExpression::make(&pool, 1));
     cases->add(ConstantExpression::make(&pool, 8), ConstantExpression::make(&pool, 2));
     cases->add(ConstantExpression::make(&pool, 8), ConstantExpression::make(&pool, "jack"));
@@ -52,20 +52,20 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
         expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 18));
     auto expr = CaseExpression::make(&pool, cases);
     ASSERT_EQ("CASE WHEN false THEN 18 END", expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 18));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setDefault(ConstantExpression::make(&pool, "ok"));
     ASSERT_EQ("CASE WHEN false THEN 18 ELSE \"ok\" END", expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(RelationalExpression::makeStartsWith(&pool,
                                                     ConstantExpression::make(&pool, "nebula"),
                                                     ConstantExpression::make(&pool, "nebu")),
@@ -78,7 +78,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
         expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(RelationalExpression::makeLT(
                    &pool, ConstantExpression::make(&pool, 23), ConstantExpression::make(&pool, 17)),
                ConstantExpression::make(&pool, 1));
@@ -96,7 +96,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
         expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(RelationalExpression::makeLT(
                    &pool, ConstantExpression::make(&pool, 23), ConstantExpression::make(&pool, 17)),
                ConstantExpression::make(&pool, 1));
@@ -105,7 +105,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
     ASSERT_EQ("((23<17) ? 1 : 2)", expr->toString());
   }
   {
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases, false);
     expr->setDefault(ConstantExpression::make(&pool, "ok"));
@@ -116,7 +116,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
 TEST_F(CaseExpressionTest, CaseEvaluate) {
   {
     // CASE 23 WHEN 24 THEN 1 END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 24), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setCondition(ConstantExpression::make(&pool, 23));
@@ -125,7 +125,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // CASE 23 WHEN 24 THEN 1 ELSE false END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 24), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setCondition(ConstantExpression::make(&pool, 23));
@@ -137,7 +137,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   {
     // CASE ("nebula" STARTS WITH "nebu") WHEN false THEN 1 WHEN true THEN 2
     // ELSE 3 END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 1));
     cases->add(ConstantExpression::make(&pool, true), ConstantExpression::make(&pool, 2));
     auto expr = CaseExpression::make(&pool, cases);
@@ -150,7 +150,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // CASE (3+5) WHEN 7 THEN 1 WHEN 8 THEN 2 WHEN 8 THEN "jack" ELSE "no" END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, 7), ConstantExpression::make(&pool, 1));
     cases->add(ConstantExpression::make(&pool, 8), ConstantExpression::make(&pool, 2));
     cases->add(ConstantExpression::make(&pool, 8), ConstantExpression::make(&pool, "jack"));
@@ -164,7 +164,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // CASE WHEN false THEN 18 END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 18));
     auto expr = CaseExpression::make(&pool, cases);
     auto value = Expression::eval(expr, gExpCtxt);
@@ -172,7 +172,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // CASE WHEN false THEN 18 ELSE ok END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 18));
     auto expr = CaseExpression::make(&pool, cases);
     expr->setDefault(ConstantExpression::make(&pool, "ok"));
@@ -182,7 +182,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // CASE WHEN "invalid when" THEN "no" ELSE 3 END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, "invalid when"),
                ConstantExpression::make(&pool, "no"));
     auto expr = CaseExpression::make(&pool, cases);
@@ -193,7 +193,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   {
     // CASE WHEN (23<17) THEN 1 WHEN (37==37) THEN 2 WHEN (45!=99) THEN 3 ELSE 4
     // END
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(RelationalExpression::makeLT(
                    &pool, ConstantExpression::make(&pool, 23), ConstantExpression::make(&pool, 17)),
                ConstantExpression::make(&pool, 1));
@@ -211,7 +211,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // ((23<17) ? 1 : 2)
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(RelationalExpression::makeLT(
                    &pool, ConstantExpression::make(&pool, 23), ConstantExpression::make(&pool, 17)),
                ConstantExpression::make(&pool, 1));
@@ -223,7 +223,7 @@ TEST_F(CaseExpressionTest, CaseEvaluate) {
   }
   {
     // (false ? 1 : "ok")
-    auto *cases = CaseList::make(&pool);
+    auto* cases = CaseList::make(&pool);
     cases->add(ConstantExpression::make(&pool, false), ConstantExpression::make(&pool, 1));
     auto expr = CaseExpression::make(&pool, cases, false);
     expr->setDefault(ConstantExpression::make(&pool, "ok"));

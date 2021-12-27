@@ -18,7 +18,7 @@ folly::Future<Status> MergeZoneExecutor::execute() {
 
 folly::Future<Status> RenameZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *rzNode = asNode<RenameZone>(node());
+  auto* rzNode = asNode<RenameZone>(node());
   return qctx()
       ->getMetaClient()
       ->renameZone(rzNode->originalZoneName(), rzNode->zoneName())
@@ -34,7 +34,7 @@ folly::Future<Status> RenameZoneExecutor::execute() {
 
 folly::Future<Status> DropZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *dzNode = asNode<DropZone>(node());
+  auto* dzNode = asNode<DropZone>(node());
   return qctx()
       ->getMetaClient()
       ->dropZone(dzNode->zoneName())
@@ -55,7 +55,7 @@ folly::Future<Status> SplitZoneExecutor::execute() {
 
 folly::Future<Status> DescribeZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *dzNode = asNode<DescribeZone>(node());
+  auto* dzNode = asNode<DescribeZone>(node());
   return qctx()
       ->getMetaClient()
       ->getZone(dzNode->zoneName())
@@ -68,7 +68,7 @@ folly::Future<Status> DescribeZoneExecutor::execute() {
 
         auto hosts = std::move(resp).value();
         DataSet dataSet({"Hosts", "Port"});
-        for (auto &host : hosts) {
+        for (auto& host : hosts) {
           Row row({host.host, host.port});
           dataSet.rows.emplace_back(std::move(row));
         }
@@ -82,7 +82,7 @@ folly::Future<Status> DescribeZoneExecutor::execute() {
 
 folly::Future<Status> AddHostsIntoZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *ahNode = asNode<AddHostsIntoZone>(node());
+  auto* ahNode = asNode<AddHostsIntoZone>(node());
   return qctx()
       ->getMetaClient()
       ->addHostsIntoZone(ahNode->address(), ahNode->zoneName(), ahNode->isNew())
@@ -107,8 +107,8 @@ folly::Future<Status> ListZonesExecutor::execute() {
 
         auto zones = std::move(resp).value();
         DataSet dataSet({"Name", "Host", "Port"});
-        for (auto &zone : zones) {
-          for (auto &host : zone.get_nodes()) {
+        for (auto& zone : zones) {
+          for (auto& host : zone.get_nodes()) {
             Row row({*zone.zone_name_ref(), host.host, host.port});
             dataSet.rows.emplace_back(std::move(row));
           }

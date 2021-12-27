@@ -16,11 +16,11 @@ namespace nebula {
 namespace graph {
 
 // static
-Status SchemaUtil::validateProps(const std::vector<SchemaPropItem *> &schemaProps,
-                                 meta::cpp2::Schema &schema) {
+Status SchemaUtil::validateProps(const std::vector<SchemaPropItem*>& schemaProps,
+                                 meta::cpp2::Schema& schema) {
   auto status = Status::OK();
   if (!schemaProps.empty()) {
-    for (auto &schemaProp : schemaProps) {
+    for (auto& schemaProp : schemaProps) {
       switch (schemaProp->getPropType()) {
         case SchemaPropItem::TTL_DURATION:
           status = setTTLDuration(schemaProp, schema);
@@ -41,7 +41,7 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem *> &schemaProp
       }
     }
 
-    auto &prop = *schema.schema_prop_ref();
+    auto& prop = *schema.schema_prop_ref();
     if (prop.get_ttl_duration() && (*prop.get_ttl_duration() != 0)) {
       // Disable implicit TTL mode
       if (!prop.get_ttl_col() || (prop.get_ttl_col() && prop.get_ttl_col()->empty())) {
@@ -55,11 +55,11 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem *> &schemaProp
 
 // static
 std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProvider(
-    ObjectPool *pool, const SchemaVer ver, const meta::cpp2::Schema &schema) {
+    ObjectPool* pool, const SchemaVer ver, const meta::cpp2::Schema& schema) {
   auto schemaPtr = std::make_shared<meta::NebulaSchemaProvider>(ver);
   for (auto col : schema.get_columns()) {
     bool hasDef = col.default_value_ref().has_value();
-    Expression *defaultValueExpr = nullptr;
+    Expression* defaultValueExpr = nullptr;
     if (hasDef) {
       defaultValueExpr = Expression::decode(pool, *col.default_value_ref());
     }
@@ -74,7 +74,7 @@ std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProv
 }
 
 // static
-Status SchemaUtil::setTTLDuration(SchemaPropItem *schemaProp, meta::cpp2::Schema &schema) {
+Status SchemaUtil::setTTLDuration(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {
   auto ret = schemaProp->getTtlDuration();
   if (!ret.ok()) {
     return ret.status();
@@ -86,7 +86,7 @@ Status SchemaUtil::setTTLDuration(SchemaPropItem *schemaProp, meta::cpp2::Schema
 }
 
 // static
-Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &schema) {
+Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {
   auto ret = schemaProp->getTtlCol();
   if (!ret.ok()) {
     return ret.status();
@@ -98,7 +98,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
     return Status::OK();
   }
   // Check the legality of the ttl column name
-  for (auto &col : *schema.columns_ref()) {
+  for (auto& col : *schema.columns_ref()) {
     if (col.name == ttlColName) {
       // Only integer columns and timestamp columns can be used as ttl_col
       // TODO(YT) Ttl_duration supports datetime type
@@ -114,7 +114,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
 }
 
 // static
-Status SchemaUtil::setComment(SchemaPropItem *schemaProp, meta::cpp2::Schema &schema) {
+Status SchemaUtil::setComment(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {
   auto ret = schemaProp->getComment();
   if (ret.ok()) {
     schema.schema_prop_ref()->comment_ref() = std::move(ret).value();
@@ -123,7 +123,7 @@ Status SchemaUtil::setComment(SchemaPropItem *schemaProp, meta::cpp2::Schema &sc
 }
 
 // static
-StatusOr<Value> SchemaUtil::toVertexID(Expression *expr, Value::Type vidType) {
+StatusOr<Value> SchemaUtil::toVertexID(Expression* expr, Value::Type vidType) {
   QueryExpressionContext ctx;
   auto vidVal = expr->eval(ctx(nullptr));
   if (vidVal.type() != vidType) {
@@ -134,11 +134,11 @@ StatusOr<Value> SchemaUtil::toVertexID(Expression *expr, Value::Type vidType) {
 }
 
 // static
-StatusOr<std::vector<Value>> SchemaUtil::toValueVec(std::vector<Expression *> exprs) {
+StatusOr<std::vector<Value>> SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
   std::vector<Value> values;
   values.reserve(exprs.size());
   QueryExpressionContext ctx;
-  for (auto *expr : exprs) {
+  for (auto* expr : exprs) {
     auto value = expr->eval(ctx(nullptr));
     if (value.isNull() && value.getNull() != NullType::__NULL__) {
       LOG(ERROR) << expr->toString() << " is the wrong value type: " << value.typeName();
@@ -149,9 +149,9 @@ StatusOr<std::vector<Value>> SchemaUtil::toValueVec(std::vector<Expression *> ex
   return values;
 }
 
-StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
+StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema& schema) {
   DataSet dataSet({"Field", "Type", "Null", "Default", "Comment"});
-  for (auto &col : schema.get_columns()) {
+  for (auto& col : schema.get_columns()) {
     Row row;
     row.values.emplace_back(Value(col.get_name()));
     row.values.emplace_back(typeToString(col));
@@ -186,8 +186,8 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
 }
 
 StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
-                                                 const std::string &name,
-                                                 const meta::cpp2::Schema &schema) {
+                                                 const std::string& name,
+                                                 const meta::cpp2::Schema& schema) {
   DataSet dataSet;
   std::string createStr;
   createStr.reserve(1024);
@@ -202,7 +202,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
   Row row;
   row.emplace_back(name);
   ObjectPool tempPool;
-  for (auto &col : schema.get_columns()) {
+  for (auto& col : schema.get_columns()) {
     createStr += " `" + col.get_name() + "`";
     createStr += " " + typeToString(col);
     auto nullable = col.nullable_ref().has_value() ? *col.nullable_ref() : false;
@@ -256,7 +256,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
   return dataSet;
 }
 
-std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
+std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef& col) {
   auto type = apache::thrift::util::enumNameSafe(col.get_type());
   if (col.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
     return folly::stringPrintf("%s(%d)", type.c_str(), *col.get_type_length());
@@ -270,7 +270,7 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
   return type;
 }
 
-std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
+std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef& col) {
   auto str = typeToString(col.get_type());
   std::transform(
       std::begin(str), std::end(str), std::begin(str), [](uint8_t c) { return std::tolower(c); });
@@ -311,21 +311,21 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
   return Value::Type::__EMPTY__;
 }
 
-bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef &type) {
+bool SchemaUtil::isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type) {
   return isValidVid(value, type.get_type());
 }
 
-bool SchemaUtil::isValidVid(const Value &value, nebula::cpp2::PropertyType type) {
+bool SchemaUtil::isValidVid(const Value& value, nebula::cpp2::PropertyType type) {
   return isValidVid(value) && value.type() == propTypeToValueType(type);
 }
 
-bool SchemaUtil::isValidVid(const Value &value) {
+bool SchemaUtil::isValidVid(const Value& value) {
   // compatible with 1.0
   return value.isStr() || value.isInt();
 }
 
 StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::getAllVertexProp(
-    QueryContext *qctx, GraphSpaceID spaceId, bool withProp) {
+    QueryContext* qctx, GraphSpaceID spaceId, bool withProp) {
   // Get all tags in the space
   const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(spaceId);
   NG_RETURN_IF_ERROR(allTagsResult);
@@ -337,7 +337,7 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::ge
   vertexProps->reserve(allTags.size());
   // Retrieve prop names of each tag and append "_tag" to the name list to query
   // empty tags
-  for (const auto &tag : allTags) {
+  for (const auto& tag : allTags) {
     // tag: pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
     std::vector<std::string> propNames;
     if (withProp) {
@@ -358,13 +358,13 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::ge
 }
 
 StatusOr<std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>> SchemaUtil::getEdgeProps(
-    QueryContext *qctx,
-    const SpaceInfo &space,
-    const std::vector<EdgeType> &edgeTypes,
+    QueryContext* qctx,
+    const SpaceInfo& space,
+    const std::vector<EdgeType>& edgeTypes,
     bool withProp) {
   auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
   edgeProps->reserve(edgeTypes.size());
-  for (const auto &edgeType : edgeTypes) {
+  for (const auto& edgeType : edgeTypes) {
     std::vector<std::string> propNames = {kSrc, kType, kRank, kDst};
     if (withProp) {
       auto edgeSchema = qctx->schemaMng()->getEdgeSchema(space.id, std::abs(edgeType));

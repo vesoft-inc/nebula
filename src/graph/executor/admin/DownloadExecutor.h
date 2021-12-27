@@ -13,7 +13,7 @@ namespace graph {
 
 class DownloadExecutor final : public Executor {
  public:
-  DownloadExecutor(const PlanNode *node, QueryContext *qctx)
+  DownloadExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("DownloadExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

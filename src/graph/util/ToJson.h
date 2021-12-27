@@ -52,49 +52,49 @@ struct Variable;
 namespace util {
 
 template <typename T>
-folly::dynamic toJson(const std::vector<T> &arr);
+folly::dynamic toJson(const std::vector<T>& arr);
 
-std::string toJson(const std::string &str);
+std::string toJson(const std::string& str);
 std::string toJson(int32_t i);
 std::string toJson(int64_t i);
 std::string toJson(size_t i);
 std::string toJson(bool b);
 
-std::string toJson(const HostAddr &addr);
-std::string toJson(const List &list);
-std::string toJson(const Value &value);
-std::string toJson(const EdgeKeyRef *ref);
-std::string toJson(const Expression *expr);
-folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
-folly::dynamic toJson(const meta::cpp2::ColumnDef &column);
-folly::dynamic toJson(const meta::cpp2::Schema &schema);
-folly::dynamic toJson(const meta::cpp2::SchemaProp &prop);
-folly::dynamic toJson(const meta::cpp2::IndexParams &indexParams);
-folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item);
-folly::dynamic toJson(const storage::cpp2::EdgeKey &edgeKey);
-folly::dynamic toJson(const storage::cpp2::NewTag &tag);
-folly::dynamic toJson(const storage::cpp2::NewVertex &vert);
-folly::dynamic toJson(const storage::cpp2::NewEdge &edge);
-folly::dynamic toJson(const storage::cpp2::UpdatedProp &prop);
-folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy);
-folly::dynamic toJson(const storage::cpp2::VertexProp &prop);
-folly::dynamic toJson(const storage::cpp2::EdgeProp &prop);
-folly::dynamic toJson(const storage::cpp2::StatProp &prop);
-folly::dynamic toJson(const storage::cpp2::Expr &expr);
-folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc);
-folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints);
-folly::dynamic toJson(const graph::Variable *var);
+std::string toJson(const HostAddr& addr);
+std::string toJson(const List& list);
+std::string toJson(const Value& value);
+std::string toJson(const EdgeKeyRef* ref);
+std::string toJson(const Expression* expr);
+folly::dynamic toJson(const meta::cpp2::SpaceDesc& desc);
+folly::dynamic toJson(const meta::cpp2::ColumnDef& column);
+folly::dynamic toJson(const meta::cpp2::Schema& schema);
+folly::dynamic toJson(const meta::cpp2::SchemaProp& prop);
+folly::dynamic toJson(const meta::cpp2::IndexParams& indexParams);
+folly::dynamic toJson(const meta::cpp2::AlterSchemaItem& item);
+folly::dynamic toJson(const storage::cpp2::EdgeKey& edgeKey);
+folly::dynamic toJson(const storage::cpp2::NewTag& tag);
+folly::dynamic toJson(const storage::cpp2::NewVertex& vert);
+folly::dynamic toJson(const storage::cpp2::NewEdge& edge);
+folly::dynamic toJson(const storage::cpp2::UpdatedProp& prop);
+folly::dynamic toJson(const storage::cpp2::OrderBy& orderBy);
+folly::dynamic toJson(const storage::cpp2::VertexProp& prop);
+folly::dynamic toJson(const storage::cpp2::EdgeProp& prop);
+folly::dynamic toJson(const storage::cpp2::StatProp& prop);
+folly::dynamic toJson(const storage::cpp2::Expr& expr);
+folly::dynamic toJson(const storage::cpp2::IndexQueryContext& iqc);
+folly::dynamic toJson(const storage::cpp2::IndexColumnHint& hints);
+folly::dynamic toJson(const graph::Variable* var);
 
 template <typename K, typename V>
-folly::dynamic toJson(const std::pair<K, V> &p) {
+folly::dynamic toJson(const std::pair<K, V>& p) {
   return folly::dynamic::object(toJson(p.first), toJson(p.second));
 }
 
 template <typename T>
-folly::dynamic toJson(const std::vector<T> &arr) {
+folly::dynamic toJson(const std::vector<T>& arr) {
   auto farr = folly::dynamic::array();
   std::transform(
-      arr.cbegin(), arr.cend(), std::back_inserter(farr), [](const T &t) { return toJson(t); });
+      arr.cbegin(), arr.cend(), std::back_inserter(farr), [](const T& t) { return toJson(t); });
   return farr;
 }
 

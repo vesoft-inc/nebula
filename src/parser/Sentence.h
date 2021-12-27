@@ -173,7 +173,7 @@ class DropSentence : public Sentence {
 
 class HostList final {
  public:
-  void addHost(HostAddr *addr) {
+  void addHost(HostAddr* addr) {
     hosts_.emplace_back(addr);
   }
 
@@ -182,7 +182,7 @@ class HostList final {
   std::vector<HostAddr> hosts() const {
     std::vector<HostAddr> result;
     result.reserve(hosts_.size());
-    for (auto &host : hosts_) {
+    for (auto& host : hosts_) {
       result.emplace_back(*host);
     }
     return result;
@@ -192,7 +192,7 @@ class HostList final {
   std::vector<std::unique_ptr<HostAddr>> hosts_;
 };
 
-inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
+inline std::ostream& operator<<(std::ostream& os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
 
@@ -200,21 +200,21 @@ class ZoneNameList final {
  public:
   ZoneNameList() = default;
 
-  void addZone(std::string *zone) {
+  void addZone(std::string* zone) {
     zones_.emplace_back(zone);
   }
 
   std::vector<std::string> zoneNames() const {
     std::vector<std::string> result;
     result.resize(zones_.size());
-    auto get = [](auto &ptr) { return *ptr.get(); };
+    auto get = [](auto& ptr) { return *ptr.get(); };
     std::transform(zones_.begin(), zones_.end(), result.begin(), get);
     return result;
   }
 
   std::string toString() const {
     std::string buf;
-    for (const auto &zone : zones_) {
+    for (const auto& zone : zones_) {
       buf += "\"";
       buf += *zone;
       buf += "\"";

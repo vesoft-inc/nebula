@@ -27,8 +27,8 @@ namespace geo {
 // TODO(jie) Try to reuse the class GraphScanner
 class WKTScanner : public yyFlexLexer {
  public:
-  int yylex(nebula::geo::WKTParser::semantic_type *lval,
-            nebula::geo::WKTParser::location_type *loc) {
+  int yylex(nebula::geo::WKTParser::semantic_type* lval,
+            nebula::geo::WKTParser::location_type* loc) {
     yylval = lval;
     yylloc = loc;
     return yylex();
@@ -37,7 +37,7 @@ class WKTScanner : public yyFlexLexer {
  public:
   // Called by WKTReader to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
-  void setReadBuffer(std::function<int(char *, int)> readBuffer) {
+  void setReadBuffer(std::function<int(char*, int)> readBuffer) {
     readBuffer_ = readBuffer;
   }
 
@@ -47,17 +47,17 @@ class WKTScanner : public yyFlexLexer {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
   }
 
-  void setWKT(std::string *wkt) {
+  void setWKT(std::string* wkt) {
     wkt_ = wkt;
   }
 
-  std::string *wkt() {
+  std::string* wkt() {
     return wkt_;
   }
 
  protected:
   // Called when YY_INPUT is invoked
-  int LexerInput(char *buf, int maxSize) override {
+  int LexerInput(char* buf, int maxSize) override {
     return readBuffer_(buf, maxSize);
   }
 
@@ -67,10 +67,10 @@ class WKTScanner : public yyFlexLexer {
   // friend class Scanner_Basic_Test; TODO(jie) add it
   int yylex() override;
 
-  nebula::geo::WKTParser::semantic_type *yylval{nullptr};
-  nebula::geo::WKTParser::location_type *yylloc{nullptr};
-  std::function<int(char *, int)> readBuffer_;
-  std::string *wkt_{nullptr};
+  nebula::geo::WKTParser::semantic_type* yylval{nullptr};
+  nebula::geo::WKTParser::location_type* yylloc{nullptr};
+  std::function<int(char*, int)> readBuffer_;
+  std::string* wkt_{nullptr};
 };
 
 }  // namespace geo

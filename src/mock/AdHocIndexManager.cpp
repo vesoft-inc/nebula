@@ -11,7 +11,7 @@ namespace mock {
 void AdHocIndexManager::addTagIndex(GraphSpaceID space,
                                     TagID tagID,
                                     IndexID indexID,
-                                    std::vector<nebula::meta::cpp2::ColumnDef> &&fields) {
+                                    std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
   folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
   IndexItem item;
   item.index_id_ref() = indexID;
@@ -49,7 +49,7 @@ void AdHocIndexManager::removeTagIndex(GraphSpaceID space, IndexID indexID) {
 void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
                                      EdgeType edgeType,
                                      IndexID indexID,
-                                     std::vector<nebula::meta::cpp2::ColumnDef> &&fields) {
+                                     std::vector<nebula::meta::cpp2::ColumnDef>&& fields) {
   folly::RWSpinLock::WriteHolder wh(edgeIndexLock_);
   IndexItem item;
   item.index_id_ref() = indexID;
@@ -78,7 +78,7 @@ StatusOr<std::shared_ptr<IndexItem>> AdHocIndexManager::getTagIndex(GraphSpaceID
     return Status::SpaceNotFound();
   }
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_index_id() == index) {
       return item;
     }
@@ -94,7 +94,7 @@ StatusOr<std::shared_ptr<IndexItem>> AdHocIndexManager::getEdgeIndex(GraphSpaceI
     return Status::SpaceNotFound();
   }
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_index_id() == index) {
       return item;
     }
@@ -130,7 +130,7 @@ StatusOr<IndexID> AdHocIndexManager::toTagIndexID(GraphSpaceID space, std::strin
   }
 
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_index_name() == indexName) {
       return item->get_index_id();
     }
@@ -146,7 +146,7 @@ StatusOr<IndexID> AdHocIndexManager::toEdgeIndexID(GraphSpaceID space, std::stri
   }
 
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_index_name() == indexName) {
       return item->get_index_id();
     }
@@ -162,7 +162,7 @@ Status AdHocIndexManager::checkTagIndexed(GraphSpaceID space, TagID tagID) {
   }
 
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_schema_id().get_tag_id() == tagID) {
       return Status::OK();
     }
@@ -178,7 +178,7 @@ Status AdHocIndexManager::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType
   }
 
   auto items = iter->second;
-  for (auto &item : items) {
+  for (auto& item : items) {
     if (item->get_schema_id().get_edge_type() == edgeType) {
       return Status::OK();
     }

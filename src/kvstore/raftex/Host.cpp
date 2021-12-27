@@ -375,11 +375,8 @@ folly::SemiFuture<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
   return client->semifuture_appendLog(*req);
 }
 
-folly::SemiFuture<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
-                                                               TermID term,
-                                                               LogID commitLogId,
-                                                               TermID lastLogTerm,
-                                                               LogID lastLogId) {
+folly::SemiFuture<cpp2::HeartbeatResponse> Host::sendHeartbeat(
+    folly::EventBase* eb, TermID term, LogID commitLogId, TermID lastLogTerm, LogID lastLogId) {
   auto req = std::make_shared<cpp2::HeartbeatRequest>();
   req->space_ref() = part_->spaceId();
   req->part_ref() = part_->partitionId();

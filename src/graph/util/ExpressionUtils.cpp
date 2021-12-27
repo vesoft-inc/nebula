@@ -17,7 +17,7 @@
 namespace nebula {
 namespace graph {
 
-bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
+bool ExpressionUtils::isPropertyExpr(const Expression* expr) {
   auto kind = expr->kind();
 
   return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
@@ -29,16 +29,16 @@ bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
       .count(kind);
 }
 
-const Expression *ExpressionUtils::findAny(const Expression *self,
-                                           const std::unordered_set<Expression::Kind> &expected) {
-  auto finder = [&expected](const Expression *expr) -> bool {
+const Expression* ExpressionUtils::findAny(const Expression* self,
+                                           const std::unordered_set<Expression::Kind>& expected) {
+  auto finder = [&expected](const Expression* expr) -> bool {
     if (expected.find(expr->kind()) != expected.end()) {
       return true;
     }
     return false;
   };
   FindVisitor visitor(finder);
-  const_cast<Expression *>(self)->accept(&visitor);
+  const_cast<Expression*>(self)->accept(&visitor);
   auto res = visitor.results();
 
   if (res.size() == 1) {
@@ -51,23 +51,23 @@ const Expression *ExpressionUtils::findAny(const Expression *self,
 
 // Find all expression fit any kind
 // Empty for not found any one
-std::vector<const Expression *> ExpressionUtils::collectAll(
-    const Expression *self, const std::unordered_set<Expression::Kind> &expected) {
-  auto finder = [&expected](const Expression *expr) -> bool {
+std::vector<const Expression*> ExpressionUtils::collectAll(
+    const Expression* self, const std::unordered_set<Expression::Kind>& expected) {
+  auto finder = [&expected](const Expression* expr) -> bool {
     if (expected.find(expr->kind()) != expected.end()) {
       return true;
     }
     return false;
   };
   FindVisitor visitor(finder, true);
-  const_cast<Expression *>(self)->accept(&visitor);
+  const_cast<Expression*>(self)->accept(&visitor);
   return std::move(visitor).results();
 }
 
-bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryContext *qctx) {
+bool ExpressionUtils::checkVarExprIfExist(const Expression* expr, const QueryContext* qctx) {
   auto vars = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
-  for (auto *var : vars) {
-    auto *varExpr = static_cast<const VariableExpression *>(var);
+  for (auto* var : vars) {
+    auto* varExpr = static_cast<const VariableExpression*>(var);
     if (!varExpr->isInner() && !qctx->existParameter(varExpr->var())) {
       return true;
     }
@@ -75,7 +75,7 @@ bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryCon
   return false;
 }
 
-std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
+std::vector<const Expression*> ExpressionUtils::findAllStorage(const Expression* expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
                      Expression::Kind::kEdgeProperty,
@@ -89,11 +89,11 @@ std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression
                      Expression::Kind::kEdge});
 }
 
-std::vector<const Expression *> ExpressionUtils::findAllInputVariableProp(const Expression *expr) {
+std::vector<const Expression*> ExpressionUtils::findAllInputVariableProp(const Expression* expr) {
   return collectAll(expr, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
 }
 
-bool ExpressionUtils::isConstExpr(const Expression *expr) {
+bool ExpressionUtils::isConstExpr(const Expression* expr) {
   return !hasAny(expr,
                  {Expression::Kind::kInputProperty,
                   Expression::Kind::kVarProperty,
@@ -112,21 +112,21 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kEdge});
 }
 
-bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext *qctx) {
+bool ExpressionUtils::isEvaluableExpr(const Expression* expr, const QueryContext* qctx) {
   EvaluableExprVisitor visitor(qctx);
-  const_cast<Expression *>(expr)->accept(&visitor);
+  const_cast<Expression*>(expr)->accept(&visitor);
   return visitor.ok();
 }
 
 // rewrite LabelAttr to EdgeProp
-Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
+  auto rewriter = [pool](const Expression* e) -> Expression* {
     DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
-    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
+    auto labelAttrExpr = static_cast<const LabelAttributeExpression*>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
     return EdgePropertyExpression::make(pool, leftName, rightName);
@@ -136,14 +136,14 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
 }
 
 // rewrite var in VariablePropExpr to another var
-Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string newVar) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::rewriteInnerVar(const Expression* expr, std::string newVar) {
+  ObjectPool* pool = expr->getObjPool();
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kVarProperty;
   };
-  auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
+  auto rewriter = [pool, newVar](const Expression* e) -> Expression* {
     DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
-    auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
+    auto varPropExpr = static_cast<const VariablePropertyExpression*>(e);
     auto newProp = varPropExpr->prop();
     return VariablePropertyExpression::make(pool, newVar, newProp);
   };
@@ -152,14 +152,14 @@ Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string
 }
 
 // rewrite parameter to Constant
-Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryContext *qctx) {
-  auto matcher = [qctx](const Expression *e) -> bool {
+Expression* ExpressionUtils::rewriteParameter(const Expression* expr, QueryContext* qctx) {
+  auto matcher = [qctx](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kVar &&
-           qctx->existParameter(static_cast<const VariableExpression *>(e)->var());
+           qctx->existParameter(static_cast<const VariableExpression*>(e)->var());
   };
-  auto rewriter = [qctx](const Expression *e) -> Expression * {
+  auto rewriter = [qctx](const Expression* e) -> Expression* {
     DCHECK_EQ(e->kind(), Expression::Kind::kVar);
-    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+    auto& v = const_cast<Expression*>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
     return ConstantExpression::make(qctx->objPool(), v);
   };
 
@@ -167,14 +167,14 @@ Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryConte
 }
 
 // rewrite LabelAttr to tagProp
-Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::rewriteLabelAttr2TagProp(const Expression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
+  auto rewriter = [pool](const Expression* e) -> Expression* {
     DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
-    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
+    auto labelAttrExpr = static_cast<const LabelAttributeExpression*>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
     return TagPropertyExpression::make(pool, leftName, rightName);
@@ -184,12 +184,12 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
 }
 
 // rewrite Agg to VarProp
-Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::rewriteAgg2VarProp(const Expression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kAggregate;
   };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
+  auto rewriter = [pool](const Expression* e) -> Expression* {
     return VariablePropertyExpression::make(pool, "", e->toString());
   };
 
@@ -198,10 +198,10 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
 
 // Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
 // Rewrite the IN expr to an OR expr if the right operand has more than 1 element.
-Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
+Expression* ExpressionUtils::rewriteInExpr(const Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kRelIn);
   auto pool = expr->getObjPool();
-  auto inExpr = static_cast<RelationalExpression *>(expr->clone());
+  auto inExpr = static_cast<RelationalExpression*>(expr->clone());
   auto containerOperands = getContainerExprOperands(inExpr->right());
 
   auto operandSize = containerOperands.size();
@@ -210,10 +210,10 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
     return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
   }
 
-  std::vector<Expression *> orExprOperands;
+  std::vector<Expression*> orExprOperands;
   orExprOperands.reserve(operandSize);
   // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
-  for (auto *operand : containerOperands) {
+  for (auto* operand : containerOperands) {
     orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
   }
   auto orExpr = LogicalExpression::makeOr(pool);
@@ -222,10 +222,10 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   return orExpr;
 }
 
-Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
+Expression* ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
   auto pool = expr->getObjPool();
-  auto logicalAndExpr = static_cast<LogicalExpression *>(expr->clone());
+  auto logicalAndExpr = static_cast<LogicalExpression*>(expr->clone());
   auto logicalAndExprSize = (logicalAndExpr->operands()).size();
 
   // Extract all OR expr
@@ -233,13 +233,13 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
   auto orExprListSize = orExprList.size();
 
   // Extract all non-OR expr
-  std::vector<Expression *> nonOrExprList;
+  std::vector<Expression*> nonOrExprList;
   bool isAllRelOr = logicalAndExprSize == orExprListSize;
 
   // If logical expression has operand that is not an OR expr, add into nonOrExprList
   if (!isAllRelOr) {
     nonOrExprList.reserve(logicalAndExprSize - orExprListSize);
-    for (const auto &operand : logicalAndExpr->operands()) {
+    for (const auto& operand : logicalAndExpr->operands()) {
       if (operand->kind() != Expression::Kind::kLogicalOr) {
         nonOrExprList.emplace_back(std::move(operand));
       }
@@ -247,16 +247,16 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
   }
 
   DCHECK_GT(orExprListSize, 0);
-  std::vector<std::vector<Expression *>> orExprOperands{{}};
+  std::vector<std::vector<Expression*>> orExprOperands{{}};
   orExprOperands.reserve(orExprListSize);
 
   // Merge the elements of vec2 into each subVec of vec1
   // [[A], [B]] and [C, D]  =>  [[A, C], [A, D], [B, C], [B,D]]
-  auto mergeVecs = [](std::vector<std::vector<Expression *>> &vec1,
-                      const std::vector<Expression *> vec2) {
-    std::vector<std::vector<Expression *>> res;
-    for (auto &ele1 : vec1) {
-      for (const auto &ele2 : vec2) {
+  auto mergeVecs = [](std::vector<std::vector<Expression*>>& vec1,
+                      const std::vector<Expression*> vec2) {
+    std::vector<std::vector<Expression*>> res;
+    for (auto& ele1 : vec1) {
+      for (const auto& ele2 : vec2) {
         auto tempSubVec = ele1;
         tempSubVec.emplace_back(std::move(ele2));
         res.emplace_back(std::move(tempSubVec));
@@ -267,7 +267,7 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
 
   // Iterate all OR exprs and construct the operand list
   for (auto curExpr : orExprList) {
-    auto curLogicalOrExpr = static_cast<LogicalExpression *>(const_cast<Expression *>(curExpr));
+    auto curLogicalOrExpr = static_cast<LogicalExpression*>(const_cast<Expression*>(curExpr));
     auto curOrOperands = curLogicalOrExpr->operands();
 
     orExprOperands = mergeVecs(orExprOperands, curOrOperands);
@@ -275,9 +275,9 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
 
   // orExprOperands is a 2D vector where each sub-vector is the operands of AND expression.
   // [[A, C], [A, D], [B, C], [B,D]]  =>  (A and C) or (A and D) or (B and C) or (B and D)
-  std::vector<Expression *> andExprList;
+  std::vector<Expression*> andExprList;
   andExprList.reserve(orExprOperands.size());
-  for (auto &operand : orExprOperands) {
+  for (auto& operand : orExprOperands) {
     auto andExpr = LogicalExpression::makeAnd(pool);
     // if nonOrExprList is not empty, append it to operand
     if (!isAllRelOr) {
@@ -292,24 +292,24 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
   return orExpr;
 }
 
-std::vector<Expression *> ExpressionUtils::getContainerExprOperands(const Expression *expr) {
+std::vector<Expression*> ExpressionUtils::getContainerExprOperands(const Expression* expr) {
   DCHECK(expr->isContainerExpr());
   auto pool = expr->getObjPool();
   auto containerExpr = expr->clone();
 
-  std::vector<Expression *> containerOperands;
+  std::vector<Expression*> containerOperands;
   switch (containerExpr->kind()) {
     case Expression::Kind::kList:
-      containerOperands = static_cast<ListExpression *>(containerExpr)->get();
+      containerOperands = static_cast<ListExpression*>(containerExpr)->get();
       break;
     case Expression::Kind::kSet: {
-      containerOperands = static_cast<SetExpression *>(containerExpr)->get();
+      containerOperands = static_cast<SetExpression*>(containerExpr)->get();
       break;
     }
     case Expression::Kind::kMap: {
-      auto mapItems = static_cast<MapExpression *>(containerExpr)->get();
+      auto mapItems = static_cast<MapExpression*>(containerExpr)->get();
       // iterate map and add key into containerOperands
-      for (auto &item : mapItems) {
+      for (auto& item : mapItems) {
         containerOperands.emplace_back(ConstantExpression::make(pool, std::move(item.first)));
       }
       break;
@@ -320,8 +320,8 @@ std::vector<Expression *> ExpressionUtils::getContainerExprOperands(const Expres
   return containerOperands;
 }
 
-StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr) {
-  ObjectPool *objPool = expr->getObjPool();
+StatusOr<Expression*> ExpressionUtils::foldConstantExpr(const Expression* expr) {
+  ObjectPool* objPool = expr->getObjPool();
   auto newExpr = expr->clone();
   FoldConstantExprVisitor visitor(objPool);
   newExpr->accept(&visitor);
@@ -338,36 +338,35 @@ StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr)
   return newExpr;
 }
 
-Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
+Expression* ExpressionUtils::reduceUnaryNotExpr(const Expression* expr) {
   // Match the operand
-  auto operandMatcher = [](const Expression *operandExpr) -> bool {
+  auto operandMatcher = [](const Expression* operandExpr) -> bool {
     return (operandExpr->kind() == Expression::Kind::kUnaryNot ||
             (operandExpr->isRelExpr() && operandExpr->kind() != Expression::Kind::kRelREG) ||
             operandExpr->isLogicalExpr());
   };
 
   // Match the root expression
-  auto rootMatcher = [&operandMatcher](const Expression *e) -> bool {
+  auto rootMatcher = [&operandMatcher](const Expression* e) -> bool {
     if (e->kind() == Expression::Kind::kUnaryNot) {
-      auto operand = static_cast<const UnaryExpression *>(e)->operand();
+      auto operand = static_cast<const UnaryExpression*>(e)->operand();
       return (operandMatcher(operand));
     }
     return false;
   };
 
-  std::function<Expression *(const Expression *)> rewriter =
-      [&](const Expression *e) -> Expression * {
-    auto operand = static_cast<const UnaryExpression *>(e)->operand();
+  std::function<Expression*(const Expression*)> rewriter = [&](const Expression* e) -> Expression* {
+    auto operand = static_cast<const UnaryExpression*>(e)->operand();
     auto reducedExpr = operand->clone();
 
     if (reducedExpr->kind() == Expression::Kind::kUnaryNot) {
-      auto castedExpr = static_cast<UnaryExpression *>(reducedExpr);
+      auto castedExpr = static_cast<UnaryExpression*>(reducedExpr);
       reducedExpr = castedExpr->operand();
     } else if (reducedExpr->isRelExpr() && reducedExpr->kind() != Expression::Kind::kRelREG) {
-      auto castedExpr = static_cast<RelationalExpression *>(reducedExpr);
+      auto castedExpr = static_cast<RelationalExpression*>(reducedExpr);
       reducedExpr = reverseRelExpr(castedExpr);
     } else if (reducedExpr->isLogicalExpr()) {
-      auto castedExpr = static_cast<LogicalExpression *>(reducedExpr);
+      auto castedExpr = static_cast<LogicalExpression*>(reducedExpr);
       reducedExpr = reverseLogicalExpr(castedExpr);
     }
     // Rewrite the output of rewrite if possible
@@ -379,19 +378,19 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
   return RewriteVisitor::transform(expr, rootMatcher, rewriter);
 }
 
-Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
+Expression* ExpressionUtils::rewriteRelExpr(const Expression* expr) {
+  ObjectPool* pool = expr->getObjPool();
   // Match relational expressions containing at least one arithmetic expr
-  auto matcher = [](const Expression *e) -> bool {
+  auto matcher = [](const Expression* e) -> bool {
     if (e->isRelExpr()) {
-      auto relExpr = static_cast<const RelationalExpression *>(e);
+      auto relExpr = static_cast<const RelationalExpression*>(e);
       if (isEvaluableExpr(relExpr->right())) {
         return true;
       }
       // TODO: To match arithmetic expression on both side
       auto lExpr = relExpr->left();
       if (lExpr->isArithmeticExpr()) {
-        auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+        auto arithmExpr = static_cast<const ArithmeticExpression*>(lExpr);
         return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
       }
     }
@@ -400,10 +399,10 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 
   // Simplify relational expressions involving boolean literals
   auto simplifyBoolOperand =
-      [pool](RelationalExpression *relExpr, Expression *lExpr, Expression *rExpr) -> Expression * {
+      [pool](RelationalExpression* relExpr, Expression* lExpr, Expression* rExpr) -> Expression* {
     QueryExpressionContext ctx(nullptr);
     if (rExpr->kind() == Expression::Kind::kConstant) {
-      auto conExpr = static_cast<ConstantExpression *>(rExpr);
+      auto conExpr = static_cast<ConstantExpression*>(rExpr);
       auto val = conExpr->eval(ctx(nullptr));
       auto valType = val.type();
       // Rewrite to null if the expression contains any operand that is null
@@ -423,10 +422,9 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     return nullptr;
   };
 
-  std::function<Expression *(const Expression *)> rewriter =
-      [&](const Expression *e) -> Expression * {
+  std::function<Expression*(const Expression*)> rewriter = [&](const Expression* e) -> Expression* {
     auto exprCopy = e->clone();
-    auto relExpr = static_cast<RelationalExpression *>(exprCopy);
+    auto relExpr = static_cast<RelationalExpression*>(exprCopy);
     auto lExpr = relExpr->left();
     auto rExpr = relExpr->right();
 
@@ -445,29 +443,29 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
-Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
-                                                  Expression *&relRightOperandExpr) {
-  ObjectPool *pool = expr->getObjPool();
+Expression* ExpressionUtils::rewriteRelExprHelper(const Expression* expr,
+                                                  Expression*& relRightOperandExpr) {
+  ObjectPool* pool = expr->getObjPool();
   // TODO: Support rewrite mul/div expression after fixing overflow
-  auto matcher = [](const Expression *e) -> bool {
+  auto matcher = [](const Expression* e) -> bool {
     if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
         e->kind() == Expression::Kind::kDivision)
       return false;
-    auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+    auto arithExpr = static_cast<const ArithmeticExpression*>(e);
 
     return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
            ExpressionUtils::isEvaluableExpr(arithExpr->right());
   };
 
   if (!matcher(expr)) {
-    return const_cast<Expression *>(expr);
+    return const_cast<Expression*>(expr);
   }
 
-  auto arithExpr = static_cast<const ArithmeticExpression *>(expr);
+  auto arithExpr = static_cast<const ArithmeticExpression*>(expr);
   auto kind = getNegatedArithmeticType(arithExpr->kind());
   auto lexpr = relRightOperandExpr->clone();
-  const Expression *root = nullptr;
-  Expression *rexpr = nullptr;
+  const Expression* root = nullptr;
+  Expression* rexpr = nullptr;
 
   // Use left operand as root
   if (ExpressionUtils::isEvaluableExpr(arithExpr->right())) {
@@ -495,8 +493,8 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
   return rewriteRelExprHelper(root, relRightOperandExpr);
 }
 
-StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  auto rewrittenExpr = const_cast<Expression *>(filter);
+StatusOr<Expression*> ExpressionUtils::filterTransform(const Expression* filter) {
+  auto rewrittenExpr = const_cast<Expression*>(filter);
   // Rewrite relational expression
   rewrittenExpr = rewriteRelExpr(rewrittenExpr);
   // Fold constant expression
@@ -508,67 +506,67 @@ StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter
   return rewrittenExpr;
 }
 
-void ExpressionUtils::pullAnds(Expression *expr) {
+void ExpressionUtils::pullAnds(Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
-  auto *logic = static_cast<LogicalExpression *>(expr);
-  std::vector<Expression *> operands;
+  auto* logic = static_cast<LogicalExpression*>(expr);
+  std::vector<Expression*> operands;
   pullAndsImpl(logic, operands);
   logic->setOperands(std::move(operands));
 }
 
-void ExpressionUtils::pullOrs(Expression *expr) {
+void ExpressionUtils::pullOrs(Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalOr);
-  auto *logic = static_cast<LogicalExpression *>(expr);
-  std::vector<Expression *> operands;
+  auto* logic = static_cast<LogicalExpression*>(expr);
+  std::vector<Expression*> operands;
   pullOrsImpl(logic, operands);
   logic->setOperands(std::move(operands));
 }
 
-void ExpressionUtils::pullAndsImpl(LogicalExpression *expr, std::vector<Expression *> &operands) {
-  for (auto &operand : expr->operands()) {
+void ExpressionUtils::pullAndsImpl(LogicalExpression* expr, std::vector<Expression*>& operands) {
+  for (auto& operand : expr->operands()) {
     if (operand->kind() != Expression::Kind::kLogicalAnd) {
       operands.emplace_back(std::move(operand));
       continue;
     }
-    pullAndsImpl(static_cast<LogicalExpression *>(operand), operands);
+    pullAndsImpl(static_cast<LogicalExpression*>(operand), operands);
   }
 }
 
-void ExpressionUtils::pullOrsImpl(LogicalExpression *expr, std::vector<Expression *> &operands) {
-  for (auto &operand : expr->operands()) {
+void ExpressionUtils::pullOrsImpl(LogicalExpression* expr, std::vector<Expression*>& operands) {
+  for (auto& operand : expr->operands()) {
     if (operand->kind() != Expression::Kind::kLogicalOr) {
       operands.emplace_back(std::move(operand));
       continue;
     }
-    pullOrsImpl(static_cast<LogicalExpression *>(operand), operands);
+    pullOrsImpl(static_cast<LogicalExpression*>(operand), operands);
   }
 }
 
-Expression *ExpressionUtils::flattenInnerLogicalAndExpr(const Expression *expr) {
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::flattenInnerLogicalAndExpr(const Expression* expr) {
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kLogicalAnd;
   };
-  auto rewriter = [](const Expression *e) -> Expression * {
-    pullAnds(const_cast<Expression *>(e));
+  auto rewriter = [](const Expression* e) -> Expression* {
+    pullAnds(const_cast<Expression*>(e));
     return e->clone();
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::flattenInnerLogicalOrExpr(const Expression *expr) {
-  auto matcher = [](const Expression *e) -> bool {
+Expression* ExpressionUtils::flattenInnerLogicalOrExpr(const Expression* expr) {
+  auto matcher = [](const Expression* e) -> bool {
     return e->kind() == Expression::Kind::kLogicalOr;
   };
-  auto rewriter = [](const Expression *e) -> Expression * {
-    pullOrs(const_cast<Expression *>(e));
+  auto rewriter = [](const Expression* e) -> Expression* {
+    pullOrs(const_cast<Expression*>(e));
     return e->clone();
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
+Expression* ExpressionUtils::flattenInnerLogicalExpr(const Expression* expr) {
   auto andFlattenExpr = flattenInnerLogicalAndExpr(expr);
   auto allFlattenExpr = flattenInnerLogicalOrExpr(andFlattenExpr);
 
@@ -576,11 +574,11 @@ Expression *ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
 }
 
 // pick the subparts of expression that meet picker's criteria
-void ExpressionUtils::splitFilter(const Expression *expr,
-                                  std::function<bool(const Expression *)> picker,
-                                  Expression **filterPicked,
-                                  Expression **filterUnpicked) {
-  ObjectPool *pool = expr->getObjPool();
+void ExpressionUtils::splitFilter(const Expression* expr,
+                                  std::function<bool(const Expression*)> picker,
+                                  Expression** filterPicked,
+                                  Expression** filterUnpicked) {
+  ObjectPool* pool = expr->getObjPool();
   // Pick the non-LogicalAndExpr directly
   if (expr->kind() != Expression::Kind::kLogicalAnd) {
     if (picker(expr)) {
@@ -593,11 +591,11 @@ void ExpressionUtils::splitFilter(const Expression *expr,
 
   auto flattenExpr = ExpressionUtils::flattenInnerLogicalExpr(expr);
   DCHECK(flattenExpr->kind() == Expression::Kind::kLogicalAnd);
-  auto *logicExpr = static_cast<LogicalExpression *>(flattenExpr);
+  auto* logicExpr = static_cast<LogicalExpression*>(flattenExpr);
   auto filterPickedPtr = LogicalExpression::makeAnd(pool);
   auto filterUnpickedPtr = LogicalExpression::makeAnd(pool);
 
-  std::vector<Expression *> &operands = logicExpr->operands();
+  std::vector<Expression*>& operands = logicExpr->operands();
   for (auto iter = operands.begin(); iter != operands.end(); ++iter) {
     if (picker((*iter))) {
       filterPickedPtr->addOperand((*iter)->clone());
@@ -605,8 +603,8 @@ void ExpressionUtils::splitFilter(const Expression *expr,
       filterUnpickedPtr->addOperand((*iter)->clone());
     }
   }
-  auto foldLogicalExpr = [](const LogicalExpression *e) -> Expression * {
-    const auto &ops = e->operands();
+  auto foldLogicalExpr = [](const LogicalExpression* e) -> Expression* {
+    const auto& ops = e->operands();
     auto size = ops.size();
     if (size > 1) {
       return e->clone();
@@ -620,17 +618,17 @@ void ExpressionUtils::splitFilter(const Expression *expr,
   *filterUnpicked = foldLogicalExpr(filterUnpickedPtr);
 }
 
-Expression *ExpressionUtils::pushOrs(ObjectPool *pool, const std::vector<Expression *> &rels) {
+Expression* ExpressionUtils::pushOrs(ObjectPool* pool, const std::vector<Expression*>& rels) {
   return pushImpl(pool, Expression::Kind::kLogicalOr, rels);
 }
 
-Expression *ExpressionUtils::pushAnds(ObjectPool *pool, const std::vector<Expression *> &rels) {
+Expression* ExpressionUtils::pushAnds(ObjectPool* pool, const std::vector<Expression*>& rels) {
   return pushImpl(pool, Expression::Kind::kLogicalAnd, rels);
 }
 
-Expression *ExpressionUtils::pushImpl(ObjectPool *pool,
+Expression* ExpressionUtils::pushImpl(ObjectPool* pool,
                                       Expression::Kind kind,
-                                      const std::vector<Expression *> &rels) {
+                                      const std::vector<Expression*>& rels) {
   DCHECK_GT(rels.size(), 1);
   DCHECK(kind == Expression::Kind::kLogicalOr || kind == Expression::Kind::kLogicalAnd);
   auto root = LogicalExpression::makeKind(pool, kind);
@@ -645,13 +643,13 @@ Expression *ExpressionUtils::pushImpl(ObjectPool *pool,
   return root;
 }
 
-Expression *ExpressionUtils::expandExpr(ObjectPool *pool, const Expression *expr) {
+Expression* ExpressionUtils::expandExpr(ObjectPool* pool, const Expression* expr) {
   auto kind = expr->kind();
-  std::vector<Expression *> target;
+  std::vector<Expression*> target;
   switch (kind) {
     case Expression::Kind::kLogicalOr: {
-      const auto *logic = static_cast<const LogicalExpression *>(expr);
-      for (const auto &e : logic->operands()) {
+      const auto* logic = static_cast<const LogicalExpression*>(expr);
+      for (const auto& e : logic->operands()) {
         if (e->kind() == Expression::Kind::kLogicalAnd) {
           target.emplace_back(expandImplAnd(pool, e));
         } else {
@@ -671,8 +669,8 @@ Expression *ExpressionUtils::expandExpr(ObjectPool *pool, const Expression *expr
   DCHECK_GT(target.size(), 0);
   if (target.size() == 1) {
     if (target[0]->kind() == Expression::Kind::kLogicalAnd) {
-      const auto *logic = static_cast<const LogicalExpression *>(target[0]);
-      const auto &ops = logic->operands();
+      const auto* logic = static_cast<const LogicalExpression*>(target[0]);
+      const auto& ops = logic->operands();
       DCHECK_EQ(ops.size(), 2);
       if (ops[0]->kind() == Expression::Kind::kLogicalOr ||
           ops[1]->kind() == Expression::Kind::kLogicalOr) {
@@ -684,24 +682,24 @@ Expression *ExpressionUtils::expandExpr(ObjectPool *pool, const Expression *expr
   return pushImpl(pool, kind, target);
 }
 
-Expression *ExpressionUtils::expandImplAnd(ObjectPool *pool, const Expression *expr) {
+Expression* ExpressionUtils::expandImplAnd(ObjectPool* pool, const Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
-  const auto *logic = static_cast<const LogicalExpression *>(expr);
+  const auto* logic = static_cast<const LogicalExpression*>(expr);
   DCHECK_EQ(logic->operands().size(), 2);
-  std::vector<Expression *> subL;
-  auto &ops = logic->operands();
+  std::vector<Expression*> subL;
+  auto& ops = logic->operands();
   if (ops[0]->kind() == Expression::Kind::kLogicalOr) {
     auto target = expandImplOr(ops[0]);
-    for (const auto &e : target) {
+    for (const auto& e : target) {
       subL.emplace_back(e->clone());
     }
   } else {
     subL.emplace_back(expandExpr(pool, std::move(ops[0])));
   }
-  std::vector<Expression *> subR;
+  std::vector<Expression*> subR;
   if (ops[1]->kind() == Expression::Kind::kLogicalOr) {
     auto target = expandImplOr(ops[1]);
-    for (const auto &e : target) {
+    for (const auto& e : target) {
       subR.emplace_back(e->clone());
     }
   } else {
@@ -710,9 +708,9 @@ Expression *ExpressionUtils::expandImplAnd(ObjectPool *pool, const Expression *e
 
   DCHECK_GT(subL.size(), 0);
   DCHECK_GT(subR.size(), 0);
-  std::vector<Expression *> target;
-  for (auto &le : subL) {
-    for (auto &re : subR) {
+  std::vector<Expression*> target;
+  for (auto& le : subL) {
+    for (auto& re : subR) {
       auto l = LogicalExpression::makeAnd(pool);
       l->addOperand(le->clone());
       l->addOperand(re->clone());
@@ -726,15 +724,15 @@ Expression *ExpressionUtils::expandImplAnd(ObjectPool *pool, const Expression *e
   return pushImpl(pool, Expression::Kind::kLogicalOr, target);
 }
 
-std::vector<Expression *> ExpressionUtils::expandImplOr(const Expression *expr) {
+std::vector<Expression*> ExpressionUtils::expandImplOr(const Expression* expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalOr);
-  const auto *logic = static_cast<const LogicalExpression *>(expr);
-  std::vector<Expression *> exprs;
-  auto &ops = logic->operands();
-  for (const auto &op : ops) {
+  const auto* logic = static_cast<const LogicalExpression*>(expr);
+  std::vector<Expression*> exprs;
+  auto& ops = logic->operands();
+  for (const auto& op : ops) {
     if (op->kind() == Expression::Kind::kLogicalOr) {
       auto target = expandImplOr(op);
-      for (const auto &e : target) {
+      for (const auto& e : target) {
         exprs.emplace_back(e->clone());
       }
     } else {
@@ -744,13 +742,13 @@ std::vector<Expression *> ExpressionUtils::expandImplOr(const Expression *expr) 
   return exprs;
 }
 
-Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
+Status ExpressionUtils::checkAggExpr(const AggregateExpression* aggExpr) {
   auto func = aggExpr->name();
   std::transform(func.begin(), func.end(), func.begin(), ::toupper);
 
   NG_RETURN_IF_ERROR(AggFunctionManager::find(func));
 
-  auto *aggArg = aggExpr->arg();
+  auto* aggArg = aggExpr->arg();
   if (graph::ExpressionUtils::findAny(aggArg, {Expression::Kind::kAggregate})) {
     return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
                                  aggExpr->toString().c_str());
@@ -759,7 +757,7 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
   // check : $-.* or $var.* can only be applied on `COUNT`
   if (func.compare("COUNT") && (aggArg->kind() == Expression::Kind::kInputProperty ||
                                 aggArg->kind() == Expression::Kind::kVarProperty)) {
-    auto propExpr = static_cast<const PropertyExpression *>(aggArg);
+    auto propExpr = static_cast<const PropertyExpression*>(aggArg);
     if (propExpr->prop() == "*") {
       return Status::SemanticError("Could not apply aggregation function `%s' on `%s'",
                                    aggExpr->toString().c_str(),
@@ -770,10 +768,10 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
   return Status::OK();
 }
 
-bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
-  auto finder = [](const Expression *e) -> bool {
+bool ExpressionUtils::findInnerRandFunction(const Expression* expr) {
+  auto finder = [](const Expression* e) -> bool {
     if (e->kind() == Expression::Kind::kFunctionCall) {
-      auto func = static_cast<const FunctionCallExpression *>(e)->name();
+      auto func = static_cast<const FunctionCallExpression*>(e)->name();
       std::transform(func.begin(), func.end(), func.begin(), ::tolower);
       return !func.compare("rand") || !func.compare("rand32") || !func.compare("rand64");
     }
@@ -783,7 +781,7 @@ bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
     return true;
   }
   FindVisitor visitor(finder);
-  const_cast<Expression *>(expr)->accept(&visitor);
+  const_cast<Expression*>(expr)->accept(&visitor);
   if (!visitor.results().empty()) {
     return true;
   }
@@ -791,10 +789,10 @@ bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
 }
 
 // Negate the given relational expr
-RelationalExpression *ExpressionUtils::reverseRelExpr(RelationalExpression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto left = static_cast<RelationalExpression *>(expr)->left();
-  auto right = static_cast<RelationalExpression *>(expr)->right();
+RelationalExpression* ExpressionUtils::reverseRelExpr(RelationalExpression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  auto left = static_cast<RelationalExpression*>(expr)->left();
+  auto right = static_cast<RelationalExpression*>(expr)->right();
   auto negatedKind = getNegatedRelExprKind(expr->kind());
 
   return RelationalExpression::makeKind(pool, negatedKind, left->clone(), right->clone());
@@ -856,21 +854,21 @@ Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kin
   }
 }
 
-LogicalExpression *ExpressionUtils::reverseLogicalExpr(LogicalExpression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  std::vector<Expression *> operands;
+LogicalExpression* ExpressionUtils::reverseLogicalExpr(LogicalExpression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  std::vector<Expression*> operands;
   if (expr->kind() == Expression::Kind::kLogicalAnd) {
     pullAnds(expr);
   } else {
     pullOrs(expr);
   }
 
-  auto &flattenOperands = static_cast<LogicalExpression *>(expr)->operands();
+  auto& flattenOperands = static_cast<LogicalExpression*>(expr)->operands();
   auto negatedKind = getNegatedLogicalExprKind(expr->kind());
   auto logic = LogicalExpression::makeKind(pool, negatedKind);
 
   // negate each item in the operands list
-  for (auto &operand : flattenOperands) {
+  for (auto& operand : flattenOperands) {
     auto tempExpr = UnaryExpression::makeNot(pool, operand);
     operands.emplace_back(std::move(tempExpr));
   }
@@ -894,8 +892,8 @@ Expression::Kind ExpressionUtils::getNegatedLogicalExprKind(const Expression::Ki
 }
 
 // ++loopStep <= steps
-Expression *ExpressionUtils::stepCondition(ObjectPool *pool,
-                                           const std::string &loopStep,
+Expression* ExpressionUtils::stepCondition(ObjectPool* pool,
+                                           const std::string& loopStep,
                                            uint32_t steps) {
   return RelationalExpression::makeLE(
       pool,
@@ -904,45 +902,45 @@ Expression *ExpressionUtils::stepCondition(ObjectPool *pool,
 }
 
 // size(var) != 0
-Expression *ExpressionUtils::neZeroCondition(ObjectPool *pool, const std::string &var) {
-  auto *args = ArgumentList::make(pool);
+Expression* ExpressionUtils::neZeroCondition(ObjectPool* pool, const std::string& var) {
+  auto* args = ArgumentList::make(pool);
   args->addArgument(VariableExpression::make(pool, var));
   return RelationalExpression::makeNE(
       pool, FunctionCallExpression::make(pool, "size", args), ConstantExpression::make(pool, 0));
 }
 
 // size(var) == 0
-Expression *ExpressionUtils::zeroCondition(ObjectPool *pool, const std::string &var) {
-  auto *args = ArgumentList::make(pool);
+Expression* ExpressionUtils::zeroCondition(ObjectPool* pool, const std::string& var) {
+  auto* args = ArgumentList::make(pool);
   args->addArgument(VariableExpression::make(pool, var));
   return RelationalExpression::makeEQ(
       pool, FunctionCallExpression::make(pool, "size", args), ConstantExpression::make(pool, 0));
 }
 
 // var == value
-Expression *ExpressionUtils::equalCondition(ObjectPool *pool,
-                                            const std::string &var,
-                                            const Value &value) {
+Expression* ExpressionUtils::equalCondition(ObjectPool* pool,
+                                            const std::string& var,
+                                            const Value& value) {
   return RelationalExpression::makeEQ(
       pool, VariableExpression::make(pool, var), ConstantExpression::make(pool, value));
 }
 
-bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
+bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression* expr) {
   static std::unordered_set<std::string> geoIndexAcceleratedPredicates{
       "st_intersects", "st_covers", "st_coveredby", "st_dwithin"};
 
   if (expr->isRelExpr()) {
-    auto *relExpr = static_cast<const RelationalExpression *>(expr);
-    auto isSt_Distance = [](const Expression *e) {
+    auto* relExpr = static_cast<const RelationalExpression*>(expr);
+    auto isSt_Distance = [](const Expression* e) {
       if (e->kind() == Expression::Kind::kFunctionCall) {
-        auto *funcExpr = static_cast<const FunctionCallExpression *>(e);
+        auto* funcExpr = static_cast<const FunctionCallExpression*>(e);
         return boost::algorithm::iequals(funcExpr->name(), "st_distance");
       }
       return false;
     };
     return isSt_Distance(relExpr->left()) || isSt_Distance(relExpr->right());
   } else if (expr->kind() == Expression::Kind::kFunctionCall) {
-    auto *funcExpr = static_cast<const FunctionCallExpression *>(expr);
+    auto* funcExpr = static_cast<const FunctionCallExpression*>(expr);
     std::string funcName = funcExpr->name();
     folly::toLowerAscii(funcName);
     if (geoIndexAcceleratedPredicates.count(funcName) != 0) {

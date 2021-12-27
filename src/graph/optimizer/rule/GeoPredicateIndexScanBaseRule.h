@@ -12,8 +12,8 @@ namespace opt {
 
 class GeoPredicateIndexScanBaseRule : public OptRule {
  public:
-  bool match(OptContext *ctx, const MatchedResult &matched) const override;
-  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
+  bool match(OptContext* ctx, const MatchedResult& matched) const override;
+  StatusOr<TransformResult> transform(OptContext* ctx, const MatchedResult& matched) const override;
 };
 
 }  // namespace opt

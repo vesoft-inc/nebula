@@ -11,12 +11,12 @@
 namespace nebula {
 namespace graph {
 
-void FoldConstantExprVisitor::visit(ConstantExpression *expr) {
+void FoldConstantExprVisitor::visit(ConstantExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = true;
 }
 
-void FoldConstantExprVisitor::visit(UnaryExpression *expr) {
+void FoldConstantExprVisitor::visit(UnaryExpression* expr) {
   if (!isConstant(expr->operand())) {
     expr->operand()->accept(this);
     if (canBeFolded_) {
@@ -29,7 +29,7 @@ void FoldConstantExprVisitor::visit(UnaryExpression *expr) {
   }
 }
 
-void FoldConstantExprVisitor::visit(TypeCastingExpression *expr) {
+void FoldConstantExprVisitor::visit(TypeCastingExpression* expr) {
   if (!isConstant(expr->operand())) {
     expr->operand()->accept(this);
     if (canBeFolded_) {
@@ -39,43 +39,43 @@ void FoldConstantExprVisitor::visit(TypeCastingExpression *expr) {
   }
 }
 
-void FoldConstantExprVisitor::visit(LabelExpression *expr) {
+void FoldConstantExprVisitor::visit(LabelExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(LabelAttributeExpression *expr) {
+void FoldConstantExprVisitor::visit(LabelAttributeExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // binary expression
-void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
+void FoldConstantExprVisitor::visit(ArithmeticExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
+void FoldConstantExprVisitor::visit(RelationalExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
+void FoldConstantExprVisitor::visit(SubscriptExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
+void FoldConstantExprVisitor::visit(AttributeExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
-  auto &operands = expr->operands();
+void FoldConstantExprVisitor::visit(LogicalExpression* expr) {
+  auto& operands = expr->operands();
   auto foldable = true;
   // auto shortCircuit = false;
   for (auto i = 0u; i < operands.size(); i++) {
-    auto *operand = operands[i];
+    auto* operand = operands[i];
     operand->accept(this);
     if (canBeFolded_) {
-      auto *newExpr = fold(operand);
+      auto* newExpr = fold(operand);
       if (!ok()) return;
       expr->setOperand(i, newExpr);
       /*
@@ -97,9 +97,9 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
 }
 
 // function call
-void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
+void FoldConstantExprVisitor::visit(FunctionCallExpression* expr) {
   bool canBeFolded = true;
-  for (auto &arg : expr->args()->args()) {
+  for (auto& arg : expr->args()->args()) {
     if (!isConstant(arg)) {
       arg->accept(this);
       if (canBeFolded_) {
@@ -120,7 +120,7 @@ void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(AggregateExpression *expr) {
+void FoldConstantExprVisitor::visit(AggregateExpression* expr) {
   // TODO : impl AggExpr foldConstantExprVisitor
   if (!isConstant(expr->arg())) {
     expr->arg()->accept(this);
@@ -131,25 +131,25 @@ void FoldConstantExprVisitor::visit(AggregateExpression *expr) {
   }
 }
 
-void FoldConstantExprVisitor::visit(UUIDExpression *expr) {
+void FoldConstantExprVisitor::visit(UUIDExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // variable expression
-void FoldConstantExprVisitor::visit(VariableExpression *expr) {
+void FoldConstantExprVisitor::visit(VariableExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(VersionedVariableExpression *expr) {
+void FoldConstantExprVisitor::visit(VersionedVariableExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // container expression
-void FoldConstantExprVisitor::visit(ListExpression *expr) {
-  auto &items = expr->items();
+void FoldConstantExprVisitor::visit(ListExpression* expr) {
+  auto& items = expr->items();
   bool canBeFolded = true;
   for (size_t i = 0; i < items.size(); ++i) {
     auto item = items[i];
@@ -167,8 +167,8 @@ void FoldConstantExprVisitor::visit(ListExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(SetExpression *expr) {
-  auto &items = expr->items();
+void FoldConstantExprVisitor::visit(SetExpression* expr) {
+  auto& items = expr->items();
   bool canBeFolded = true;
   for (size_t i = 0; i < items.size(); ++i) {
     auto item = items[i];
@@ -186,12 +186,12 @@ void FoldConstantExprVisitor::visit(SetExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(MapExpression *expr) {
-  auto &items = expr->items();
+void FoldConstantExprVisitor::visit(MapExpression* expr) {
+  auto& items = expr->items();
   bool canBeFolded = true;
   for (size_t i = 0; i < items.size(); ++i) {
-    auto &pair = items[i];
-    auto item = const_cast<Expression *>(pair.second);
+    auto& pair = items[i];
+    auto item = const_cast<Expression*>(pair.second);
     if (isConstant(item)) {
       continue;
     }
@@ -208,7 +208,7 @@ void FoldConstantExprVisitor::visit(MapExpression *expr) {
 }
 
 // case Expression
-void FoldConstantExprVisitor::visit(CaseExpression *expr) {
+void FoldConstantExprVisitor::visit(CaseExpression* expr) {
   bool canBeFolded = true;
   if (expr->hasCondition() && !isConstant(expr->condition())) {
     expr->condition()->accept(this);
@@ -228,7 +228,7 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
       canBeFolded = false;
     }
   }
-  auto &cases = expr->cases();
+  auto& cases = expr->cases();
   for (size_t i = 0; i < cases.size(); ++i) {
     auto when = cases[i].when;
     auto then = cases[i].then;
@@ -255,73 +255,73 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
 }
 
 // property Expression
-void FoldConstantExprVisitor::visit(TagPropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(TagPropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgePropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgePropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(InputPropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(InputPropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(VariablePropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(VariablePropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(DestPropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(DestPropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(SourcePropertyExpression *expr) {
+void FoldConstantExprVisitor::visit(SourcePropertyExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgeSrcIdExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgeSrcIdExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgeTypeExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgeTypeExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgeRankExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgeRankExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgeDstIdExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgeDstIdExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // vertex/edge expression
-void FoldConstantExprVisitor::visit(VertexExpression *expr) {
+void FoldConstantExprVisitor::visit(VertexExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(EdgeExpression *expr) {
+void FoldConstantExprVisitor::visit(EdgeExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visit(ColumnExpression *expr) {
+void FoldConstantExprVisitor::visit(ColumnExpression* expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
-void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
+void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression* expr) {
   bool leftCanBeFolded = true, rightCanBeFolded = true;
   if (!isConstant(expr->left())) {
     expr->left()->accept(this);
@@ -342,7 +342,7 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
   canBeFolded_ = leftCanBeFolded && rightCanBeFolded;
 }
 
-Expression *FoldConstantExprVisitor::fold(Expression *expr) {
+Expression* FoldConstantExprVisitor::fold(Expression* expr) {
   // Container expression should remain the same type after being folded
   if (expr->isContainerExpr()) {
     return expr;
@@ -378,8 +378,8 @@ Expression *FoldConstantExprVisitor::fold(Expression *expr) {
   return ConstantExpression::make(pool_, value);
 }
 
-void FoldConstantExprVisitor::visit(PathBuildExpression *expr) {
-  auto &items = expr->items();
+void FoldConstantExprVisitor::visit(PathBuildExpression* expr) {
+  auto& items = expr->items();
   bool canBeFolded = true;
   for (size_t i = 0; i < items.size(); ++i) {
     auto item = items[i];
@@ -397,7 +397,7 @@ void FoldConstantExprVisitor::visit(PathBuildExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
+void FoldConstantExprVisitor::visit(ListComprehensionExpression* expr) {
   bool canBeFolded = true;
   if (!isConstant(expr->collection())) {
     expr->collection()->accept(this);
@@ -429,7 +429,7 @@ void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
+void FoldConstantExprVisitor::visit(PredicateExpression* expr) {
   bool canBeFolded = true;
   if (!isConstant(expr->collection())) {
     expr->collection()->accept(this);
@@ -454,7 +454,7 @@ void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
+void FoldConstantExprVisitor::visit(ReduceExpression* expr) {
   bool canBeFolded = true;
   if (!isConstant(expr->initial())) {
     expr->initial()->accept(this);
@@ -486,7 +486,7 @@ void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
-void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
+void FoldConstantExprVisitor::visit(SubscriptRangeExpression* expr) {
   bool canBeFolded = true;
   if (!isConstant(expr->list())) {
     expr->list()->accept(this);

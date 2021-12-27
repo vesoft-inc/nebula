@@ -29,9 +29,9 @@ namespace graph {
  */
 
 // static
-Status PermissionCheck::permissionCheck(ClientSession *session,
-                                        Sentence *sentence,
-                                        ValidateContext *vctx,
+Status PermissionCheck::permissionCheck(ClientSession* session,
+                                        Sentence* sentence,
+                                        ValidateContext* vctx,
                                         GraphSpaceID targetSpace) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();

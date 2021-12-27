@@ -28,7 +28,7 @@ PushLimitDownScanAppendVerticesRule::PushLimitDownScanAppendVerticesRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushLimitDownScanAppendVerticesRule::pattern() const {
+const Pattern& PushLimitDownScanAppendVerticesRule::pattern() const {
   static Pattern pattern =
       Pattern::create(graph::PlanNode::Kind::kLimit,
                       {Pattern::create(graph::PlanNode::Kind::kAppendVertices,
@@ -36,50 +36,50 @@ const Pattern &PushLimitDownScanAppendVerticesRule::pattern() const {
   return pattern;
 }
 
-bool PushLimitDownScanAppendVerticesRule::match(OptContext *ctx,
-                                                const MatchedResult &matched) const {
+bool PushLimitDownScanAppendVerticesRule::match(OptContext* ctx,
+                                                const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  auto av = static_cast<const AppendVertices *>(matched.planNode({0, 0}));
-  auto *src = av->src();
+  auto av = static_cast<const AppendVertices*>(matched.planNode({0, 0}));
+  auto* src = av->src();
   if (src->kind() != Expression::Kind::kInputProperty &&
       src->kind() != Expression::Kind::kVarProperty) {
     return false;
   }
-  auto *propExpr = static_cast<const PropertyExpression *>(src);
+  auto* propExpr = static_cast<const PropertyExpression*>(src);
   if (propExpr->prop() != kVid) {
     return false;
   }
-  auto *filter = av->filter();
-  auto *vFilter = av->vFilter();
+  auto* filter = av->filter();
+  auto* vFilter = av->vFilter();
   // Limit can't push over filter operation
   return filter == nullptr && vFilter == nullptr;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownScanAppendVerticesRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
+    OptContext* octx, const MatchedResult& matched) const {
   auto limitGroupNode = matched.node;
   auto appendVerticesGroupNode = matched.dependencies.front().node;
   auto scanVerticesGroupNode = matched.dependencies.front().dependencies.front().node;
 
-  const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
-  const auto scanVertices = static_cast<const ScanVertices *>(scanVerticesGroupNode->node());
+  const auto limit = static_cast<const Limit*>(limitGroupNode->node());
+  const auto appendVertices = static_cast<const AppendVertices*>(appendVerticesGroupNode->node());
+  const auto scanVertices = static_cast<const ScanVertices*>(scanVerticesGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
   if (scanVertices->limit() >= 0 && limitRows >= scanVertices->limit()) {
     return TransformResult::noTransform();
   }
 
-  auto newLimit = static_cast<Limit *>(limit->clone());
+  auto newLimit = static_cast<Limit*>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newAppendVertices = static_cast<AppendVertices *>(appendVertices->clone());
+  auto newAppendVertices = static_cast<AppendVertices*>(appendVertices->clone());
   auto newAppendVerticesGroup = OptGroup::create(octx);
   auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
 
-  auto newScanVertices = static_cast<ScanVertices *>(scanVertices->clone());
+  auto newScanVertices = static_cast<ScanVertices*>(scanVertices->clone());
   newScanVertices->setLimit(limitRows);
   auto newScanVerticesGroup = OptGroup::create(octx);
   auto newScanVerticesGroupNode = newScanVerticesGroup->makeGroupNode(newScanVertices);

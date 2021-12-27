@@ -17,10 +17,10 @@ namespace time {
 // The mainstream Linux kernel's implementation constrains this
 constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
 
-/*static*/ StatusOr<DateTime> TimeUtils::dateTimeFromMap(const Map &m) {
+/*static*/ StatusOr<DateTime> TimeUtils::dateTimeFromMap(const Map& m) {
   // TODO(shylock) support timezone parameter
   DateTime dt;
-  for (const auto &kv : m.kvs) {
+  for (const auto& kv : m.kvs) {
     if (!kv.second.isInt()) {
       return Status::Error("Invalid value type.");
     }
@@ -76,9 +76,9 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
   return dt;
 }
 
-/*static*/ StatusOr<Date> TimeUtils::dateFromMap(const Map &m) {
+/*static*/ StatusOr<Date> TimeUtils::dateFromMap(const Map& m) {
   Date d;
-  for (const auto &kv : m.kvs) {
+  for (const auto& kv : m.kvs) {
     if (!kv.second.isInt()) {
       return Status::Error("Invalid value type.");
     }
@@ -109,9 +109,9 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
   return d;
 }
 
-/*static*/ StatusOr<Time> TimeUtils::timeFromMap(const Map &m) {
+/*static*/ StatusOr<Time> TimeUtils::timeFromMap(const Map& m) {
   Time t;
-  for (const auto &kv : m.kvs) {
+  for (const auto& kv : m.kvs) {
     if (!kv.second.isInt()) {
       return Status::Error("Invalid value type.");
     }
@@ -147,7 +147,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
   return t;
 }
 
-StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
+StatusOr<Value> TimeUtils::toTimestamp(const Value& val) {
   Timestamp timestamp;
   if (val.isStr()) {
     auto status = parseDateTime(val.getStr());
@@ -171,9 +171,9 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return timestamp;
 }
 
-/*static*/ StatusOr<Duration> TimeUtils::durationFromMap(const Map &m) {
+/*static*/ StatusOr<Duration> TimeUtils::durationFromMap(const Map& m) {
   Duration d;
-  for (const auto &kv : m.kvs) {
+  for (const auto& kv : m.kvs) {
     if (!kv.second.isInt()) {
       return Status::Error("Invalid value type.");
     }
@@ -204,21 +204,21 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return d;
 }
 
-/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
+/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string& str) {
   auto p = DatetimeReader::makeDateTimeReader();
   auto result = p.readDatetime(str);
   NG_RETURN_IF_ERROR(result);
   return result.value();
 }
 
-/*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string &str) {
+/*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string& str) {
   auto p = DatetimeReader::makeDateReader();
   auto result = p.readDate(str);
   NG_RETURN_IF_ERROR(result);
   return result.value();
 }
 
-/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
+/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string& str) {
   auto p = DatetimeReader::makeTimeReader();
   return p.readTime(str);
 }

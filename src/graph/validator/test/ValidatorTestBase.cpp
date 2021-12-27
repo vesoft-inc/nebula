@@ -21,8 +21,8 @@ namespace nebula {
 namespace graph {
 
 // static
-void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::Kind> &result) {
-  std::queue<const PlanNode *> queue;
+void ValidatorTestBase::bfsTraverse(const PlanNode* root, std::vector<PlanNode::Kind>& result) {
+  std::queue<const PlanNode*> queue;
   std::unordered_set<int64_t> visited;
   queue.emplace(root);
 
@@ -45,13 +45,13 @@ void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::
     }
 
     if (node->kind() == PlanNode::Kind::kSelect) {
-      auto *current = static_cast<const Select *>(node);
+      auto* current = static_cast<const Select*>(node);
       queue.emplace(current->then());
       if (current->otherwise() != nullptr) {
         queue.emplace(current->otherwise());
       }
     } else if (node->kind() == PlanNode::Kind::kLoop) {
-      auto *current = static_cast<const Loop *>(node);
+      auto* current = static_cast<const Loop*>(node);
       queue.emplace(current->body());
     }
   }
@@ -59,7 +59,7 @@ void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::
 
 // Compare the node itself's field in this function
 // static
-Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
+Status ValidatorTestBase::EqSelf(const PlanNode* l, const PlanNode* r) {
   if (l != nullptr && r != nullptr) {
     // continue
   } else if (l == nullptr && r == nullptr) {
@@ -83,8 +83,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
     case PlanNode::Kind::kDedup:
       return Status::OK();
     case PlanNode::Kind::kDataCollect: {
-      const auto *lDC = static_cast<const DataCollect *>(l);
-      const auto *rDC = static_cast<const DataCollect *>(r);
+      const auto* lDC = static_cast<const DataCollect*>(l);
+      const auto* rDC = static_cast<const DataCollect*>(r);
       if (lDC->kind() != rDC->kind()) {
         return Status::Error(
             "%s.collectKind_ != %s.collectKind_", l->outputVar().c_str(), r->outputVar().c_str());
@@ -92,8 +92,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
       return Status::OK();
     }
     case PlanNode::Kind::kGetVertices: {
-      const auto *lGV = static_cast<const GetVertices *>(l);
-      const auto *rGV = static_cast<const GetVertices *>(r);
+      const auto* lGV = static_cast<const GetVertices*>(l);
+      const auto* rGV = static_cast<const GetVertices*>(r);
       // src
       if (lGV->src() != nullptr && rGV->src() != nullptr) {
         // TODO(shylock) check more about the anno variable
@@ -110,8 +110,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
       return Status::OK();
     }
     case PlanNode::Kind::kGetEdges: {
-      const auto *lGE = static_cast<const GetEdges *>(l);
-      const auto *rGE = static_cast<const GetEdges *>(r);
+      const auto* lGE = static_cast<const GetEdges*>(l);
+      const auto* rGE = static_cast<const GetEdges*>(r);
       // src
       if (lGE->src() != nullptr && rGE->src() != nullptr) {
         // TODO(shylock) check more about the anno variable
@@ -149,8 +149,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
       return Status::OK();
     }
     case PlanNode::Kind::kProject: {
-      const auto *lp = static_cast<const Project *>(l);
-      const auto *rp = static_cast<const Project *>(r);
+      const auto* lp = static_cast<const Project*>(l);
+      const auto* rp = static_cast<const Project*>(r);
       if (lp->columns() == nullptr && rp->columns() == nullptr) {
       } else if (lp->columns() != nullptr && rp->columns() != nullptr) {
         auto lCols = lp->columns()->columns();
@@ -196,32 +196,32 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
 //   E
 // this will traversal sub-tree [D->E] twice but not matter the Equal result
 // TODO(shylock) maybe need check the topology of `Select` and `Loop`
-/*static*/ Status ValidatorTestBase::Eq(const PlanNode *l, const PlanNode *r) {
+/*static*/ Status ValidatorTestBase::Eq(const PlanNode* l, const PlanNode* r) {
   auto result = EqSelf(l, r);
   if (!result.ok()) {
     return result;
   }
 
-  const auto *lSingle = dynamic_cast<const SingleDependencyNode *>(l);
-  const auto *rSingle = dynamic_cast<const SingleDependencyNode *>(r);
+  const auto* lSingle = dynamic_cast<const SingleDependencyNode*>(l);
+  const auto* rSingle = dynamic_cast<const SingleDependencyNode*>(r);
   if (lSingle != nullptr) {
-    const auto *lDep = lSingle->dep();
-    const auto *rDep = CHECK_NOTNULL(rSingle)->dep();
+    const auto* lDep = lSingle->dep();
+    const auto* rDep = CHECK_NOTNULL(rSingle)->dep();
     return Eq(lDep, rDep);
   }
 
-  const auto *lBi = dynamic_cast<const BinaryInputNode *>(l);
-  const auto *rBi = dynamic_cast<const BinaryInputNode *>(r);
+  const auto* lBi = dynamic_cast<const BinaryInputNode*>(l);
+  const auto* rBi = dynamic_cast<const BinaryInputNode*>(r);
   if (lBi != nullptr) {
-    const auto *llInput = lBi->left();
-    const auto *rlInput = CHECK_NOTNULL(rBi)->left();
+    const auto* llInput = lBi->left();
+    const auto* rlInput = CHECK_NOTNULL(rBi)->left();
     result = Eq(llInput, rlInput);
     if (!result.ok()) {
       return result;
     }
 
-    const auto *lrInput = lBi->right();
-    const auto *rrInput = rBi->right();
+    const auto* lrInput = lBi->right();
+    const auto* rrInput = rBi->right();
     result = Eq(lrInput, rrInput);
     return result;
   }
@@ -229,7 +229,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
   return result;
 }
 
-std::ostream &operator<<(std::ostream &os, const std::vector<PlanNode::Kind> &plan) {
+std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& plan) {
   auto printPNKind = [](auto k) { return PlanNode::toString(k); };
   os << "[" << util::join(plan, printPNKind, ", ") << "]";
   return os;
@@ -238,7 +238,7 @@ std::ostream &operator<<(std::ostream &os, const std::vector<PlanNode::Kind> &pl
 }  // namespace graph
 }  // namespace nebula
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);

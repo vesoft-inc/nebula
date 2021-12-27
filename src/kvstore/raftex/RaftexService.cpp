@@ -35,7 +35,6 @@ std::shared_ptr<RaftexService> RaftexService::createService(
   return svc;
 }
 
-
 bool RaftexService::start() {
   LOG(INFO) << "Starting the Raftex Service";
 
@@ -69,7 +68,6 @@ bool RaftexService::start() {
   }
 }
 
-
 void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                                      std::shared_ptr<folly::Executor> workers,
                                      uint16_t port) {
@@ -89,16 +87,13 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
   server_->setStopWorkersOnStopListening(false);
 }
 
-
 std::shared_ptr<folly::IOThreadPoolExecutor> RaftexService::getIOThreadPool() const {
   return server_->getIOThreadPool();
 }
 
-
 std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
   return server_->getThreadManager();
 }
-
 
 void RaftexService::stop() {
   // stop service
@@ -114,7 +109,6 @@ void RaftexService::stop() {
   server_->stop();
 }
 
-
 void RaftexService::waitUntilStop() {
   if (serverThread_) {
     serverThread_->join();
@@ -125,7 +119,6 @@ void RaftexService::waitUntilStop() {
   }
 }
 
-
 void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   // todo(doodle): If we need to start both listener and normal replica on same
   // hosts, this class need to be aware of type.
@@ -133,14 +126,12 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   parts_.emplace(std::make_pair(part->spaceId(), part->partitionId()), part);
 }
 
-
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
   folly::RWSpinLock::WriteHolder wh(partsLock_);
   parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
   // Stop the partition
   part->stop();
 }
-
 
 std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, PartitionID partId) {
   folly::RWSpinLock::ReadHolder rh(partsLock_);
@@ -177,7 +168,6 @@ void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskFo
   part->processAskForVoteRequest(req, resp);
 }
 
-
 void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendLogRequest& req) {
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
@@ -188,7 +178,6 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
 
   part->processAppendLogRequest(req, resp);
 }
-
 
 void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
                                  const cpp2::SendSnapshotRequest& req) {
@@ -201,7 +190,6 @@ void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
 
   part->processSendSnapshotRequest(req, resp);
 }
-
 
 void RaftexService::async_eb_heartbeat(
     std::unique_ptr<apache::thrift::HandlerCallback<cpp2::HeartbeatResponse>> callback,

@@ -22,7 +22,7 @@ class MetaHttpIngestHandler : public proxygen::RequestHandler {
  public:
   MetaHttpIngestHandler() = default;
 
-  void init(nebula::kvstore::KVStore *kvstore, nebula::thread::GenericThreadPool *pool);
+  void init(nebula::kvstore::KVStore* kvstore, nebula::thread::GenericThreadPool* pool);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -41,8 +41,8 @@ class MetaHttpIngestHandler : public proxygen::RequestHandler {
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
   GraphSpaceID space_;
-  nebula::kvstore::KVStore *kvstore_;
-  nebula::thread::GenericThreadPool *pool_;
+  nebula::kvstore::KVStore* kvstore_;
+  nebula::thread::GenericThreadPool* pool_;
 };
 
 }  // namespace meta

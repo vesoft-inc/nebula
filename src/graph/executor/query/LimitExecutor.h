@@ -13,7 +13,7 @@ namespace graph {
 
 class LimitExecutor final : public Executor {
  public:
-  LimitExecutor(const PlanNode *node, QueryContext *qctx) : Executor("LimitExecutor", node, qctx) {}
+  LimitExecutor(const PlanNode* node, QueryContext* qctx) : Executor("LimitExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

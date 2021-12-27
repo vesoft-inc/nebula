@@ -28,17 +28,17 @@ PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushFilterDownGetNbrsRule::pattern() const {
+const Pattern& PushFilterDownGetNbrsRule::pattern() const {
   static Pattern pattern =
       Pattern::create(PlanNode::Kind::kFilter, {Pattern::create(PlanNode::Kind::kGetNeighbors)});
   return pattern;
 }
 
-bool PushFilterDownGetNbrsRule::match(OptContext *ctx, const MatchedResult &matched) const {
+bool PushFilterDownGetNbrsRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  auto gn = static_cast<const GetNeighbors *>(matched.planNode({0, 0}));
+  auto gn = static_cast<const GetNeighbors*>(matched.planNode({0, 0}));
   auto edgeProps = gn->edgeProps();
   // if fetching props of edge in GetNeighbors, let it go and do more checks in
   // transform. otherwise skip this rule.
@@ -46,11 +46,11 @@ bool PushFilterDownGetNbrsRule::match(OptContext *ctx, const MatchedResult &matc
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
+    OptContext* ctx, const MatchedResult& matched) const {
   auto filterGroupNode = matched.node;
   auto gnGroupNode = matched.dependencies.front().node;
-  auto filter = static_cast<const Filter *>(filterGroupNode->node());
-  auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
+  auto filter = static_cast<const Filter*>(filterGroupNode->node());
+  auto gn = static_cast<const GetNeighbors*>(gnGroupNode->node());
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
   auto condition = filter->condition()->clone();
@@ -62,7 +62,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   }
 
   auto remainedExpr = std::move(visitor).remainedExpr();
-  OptGroupNode *newFilterGroupNode = nullptr;
+  OptGroupNode* newFilterGroupNode = nullptr;
   if (remainedExpr != nullptr) {
     auto newFilter = Filter::make(qctx, nullptr, remainedExpr);
     newFilter->setOutputVar(filter->outputVar());
@@ -76,10 +76,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     newGNFilter = logicExpr;
   }
 
-  auto newGN = static_cast<GetNeighbors *>(gn->clone());
+  auto newGN = static_cast<GetNeighbors*>(gn->clone());
   newGN->setFilter(newGNFilter);
 
-  OptGroupNode *newGnGroupNode = nullptr;
+  OptGroupNode* newGnGroupNode = nullptr;
   if (newFilterGroupNode != nullptr) {
     // Filter(A&&B)<-GetNeighbors(C) => Filter(A)<-GetNeighbors(B&&C)
     auto newGroup = OptGroup::create(ctx);

@@ -18,14 +18,14 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
-LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext *qctx)
+LoopExecutor::LoopExecutor(const PlanNode* node, QueryContext* qctx)
     : Executor("LoopExecutor", node, qctx) {}
 
 folly::Future<Status> LoopExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *loopNode = asNode<Loop>(node());
-  Expression *expr = loopNode->condition();
+  auto* loopNode = asNode<Loop>(node());
+  Expression* expr = loopNode->condition();
   QueryExpressionContext ctx(ectx_);
 
   auto value = expr->eval(ctx);

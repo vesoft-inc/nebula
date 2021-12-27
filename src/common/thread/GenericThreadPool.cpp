@@ -17,7 +17,7 @@ GenericThreadPool::~GenericThreadPool() {
   wait();
 }
 
-bool GenericThreadPool::start(size_t nrThreads, const std::string &name) {
+bool GenericThreadPool::start(size_t nrThreads, const std::string& name) {
   if (nrThreads_ != 0) {
     return false;
   }
@@ -32,7 +32,7 @@ bool GenericThreadPool::start(size_t nrThreads, const std::string &name) {
 
 bool GenericThreadPool::stop() {
   auto ok = true;
-  for (auto &worker : pool_) {
+  for (auto& worker : pool_) {
     ok = worker->stop() && ok;
   }
   return ok;
@@ -40,7 +40,7 @@ bool GenericThreadPool::stop() {
 
 bool GenericThreadPool::wait() {
   auto ok = true;
-  for (auto &worker : pool_) {
+  for (auto& worker : pool_) {
     ok = worker->wait() && ok;
   }
   nrThreads_ = 0;

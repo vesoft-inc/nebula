@@ -9,16 +9,16 @@
 
 namespace nebula {
 
-const Value &ColumnExpression::eval(ExpressionContext &ctx) {
+const Value& ColumnExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getColumn(index_);
   return result_;
 }
 
-bool ColumnExpression::operator==(const Expression &expr) const {
+bool ColumnExpression::operator==(const Expression& expr) const {
   if (kind_ != expr.kind()) {
     return false;
   }
-  const auto &r = static_cast<const ColumnExpression &>(expr);
+  const auto& r = static_cast<const ColumnExpression&>(expr);
   return index_ == r.index_;
 }
 
@@ -28,16 +28,16 @@ std::string ColumnExpression::toString() const {
   return out.str();
 }
 
-void ColumnExpression::accept(ExprVisitor *visitor) {
+void ColumnExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 
-void ColumnExpression::writeTo(Encoder &encoder) const {
+void ColumnExpression::writeTo(Encoder& encoder) const {
   encoder << kind_;
   encoder << index_;
 }
 
-void ColumnExpression::resetFrom(Decoder &decoder) {
+void ColumnExpression::resetFrom(Decoder& decoder) {
   index_ = decoder.readValue().getInt();
 }
 

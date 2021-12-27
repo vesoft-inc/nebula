@@ -30,7 +30,7 @@ TEST_F(ExpressionTest, SetToString) {
 }
 
 TEST_F(ExpressionTest, MapTostring) {
-  auto *items = MapItemList::make(&pool);
+  auto* items = MapItemList::make(&pool);
   (*items)
       .add("key1", ConstantExpression::make(&pool, 12345))
       .add("key2", ConstantExpression::make(&pool, 12345))
@@ -74,7 +74,7 @@ TEST_F(ExpressionTest, SetEvaluate) {
 
 TEST_F(ExpressionTest, MapEvaluate) {
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))
@@ -87,7 +87,7 @@ TEST_F(ExpressionTest, MapEvaluate) {
     ASSERT_EQ(expected, value);
   }
   {
-    auto *items = MapItemList::make(&pool);
+    auto* items = MapItemList::make(&pool);
     (*items)
         .add("key1", ConstantExpression::make(&pool, 12345))
         .add("key2", ConstantExpression::make(&pool, 12345))

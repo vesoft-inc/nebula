@@ -33,7 +33,7 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   }
 
   template <typename T>
-  T *add(T *obj) {
+  T* add(T* obj) {
     if constexpr (std::is_base_of<Expression, T>::value) {
       VLOG(3) << "New expression added into pool: " << obj->toString();
     }
@@ -43,7 +43,7 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&... args) {
+  T* makeAndAdd(Args&&... args) {
     return add(new T(std::forward<Args>(args)...));
   }
 
@@ -56,16 +56,16 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   class OwnershipHolder {
    public:
     template <typename T>
-    explicit OwnershipHolder(T *obj)
-        : obj_(obj), deleteFn_([](void *p) { delete reinterpret_cast<T *>(p); }) {}
+    explicit OwnershipHolder(T* obj)
+        : obj_(obj), deleteFn_([](void* p) { delete reinterpret_cast<T*>(p); }) {}
 
     ~OwnershipHolder() {
       deleteFn_(obj_);
     }
 
    private:
-    void *obj_;
-    std::function<void(void *)> deleteFn_;
+    void* obj_;
+    std::function<void(void*)> deleteFn_;
   };
 
   std::list<OwnershipHolder> objects_;

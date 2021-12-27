@@ -26,7 +26,7 @@ DECLARE_uint32(string_index_limit);
 namespace nebula {
 namespace meta {
 
-Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key, const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto host = meta::v1::MetaServiceUtilsV1::parseHostKey(key);
   auto info = HostInfo::decodeV1(val);
   auto newVal = HostInfo::encodeV2(info);
@@ -37,8 +37,8 @@ Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key, const folly:
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece &key,
-                                       const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece& key,
+                                       const folly::StringPiece& val) {
   auto host = meta::v1::MetaServiceUtilsV1::parseLeaderKey(key);
   auto newKey =
       MetaKeyUtils::leaderKey(network::NetworkUtils::intToIPv4(host.get_ip()), host.get_port());
@@ -47,8 +47,8 @@ Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece &key,
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
-                                      const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece& key,
+                                      const folly::StringPiece& val) {
   auto oldProps = meta::v1::MetaServiceUtilsV1::parseSpace(val);
   cpp2::SpaceDesc spaceDesc;
   spaceDesc.space_name_ref() = oldProps.get_space_name();
@@ -62,10 +62,10 @@ Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteParts(const folly::StringPiece &key, const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteParts(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto oldHosts = meta::v1::MetaServiceUtilsV1::parsePartVal(val);
   std::vector<HostAddr> newHosts;
-  for (auto &host : oldHosts) {
+  for (auto& host : oldHosts) {
     HostAddr hostAddr;
     hostAddr.host = network::NetworkUtils::intToIPv4(host.get_ip());
     hostAddr.port = host.get_port();
@@ -75,12 +75,12 @@ Status MetaDataUpgrade::rewriteParts(const folly::StringPiece &key, const folly:
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
-                                       const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece& key,
+                                       const folly::StringPiece& val) {
   auto oldSchema = meta::v1::MetaServiceUtilsV1::parseSchema(val);
   cpp2::Schema newSchema;
   cpp2::SchemaProp newSchemaProps;
-  auto &schemaProp = oldSchema.get_schema_prop();
+  auto& schemaProp = oldSchema.get_schema_prop();
   if (schemaProp.ttl_duration_ref().has_value()) {
     newSchemaProps.ttl_duration_ref() = *schemaProp.get_ttl_duration();
   }
@@ -91,15 +91,15 @@ Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
   NG_LOG_AND_RETURN_IF_ERROR(
       convertToNewColumns((*oldSchema.columns_ref()), (*newSchema.columns_ref())));
 
-  auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
+  auto nameLen = *reinterpret_cast<const int32_t*>(val.data());
   auto schemaName = val.subpiece(sizeof(int32_t), nameLen).str();
   auto encodeVal = MetaKeyUtils::schemaVal(schemaName, newSchema);
   NG_LOG_AND_RETURN_IF_ERROR(put(key, encodeVal));
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
-                                       const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece& key,
+                                       const folly::StringPiece& val) {
   auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(val);
   cpp2::IndexItem newItem;
   newItem.index_id_ref() = oldItem.get_index_id();
@@ -117,24 +117,24 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
-                                       const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece& key,
+                                       const folly::StringPiece& val) {
   auto item = meta::v1::MetaServiceUtilsV1::parseConfigValue(val);
 
   Value configVal;
   switch (item.get_type()) {
     case meta::v1::cpp2::ConfigType::INT64: {
-      auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
+      auto value = *reinterpret_cast<const int64_t*>(item.get_value().data());
       configVal.setInt(boost::get<int64_t>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::DOUBLE: {
-      auto value = *reinterpret_cast<const double *>(item.get_value().data());
+      auto value = *reinterpret_cast<const double*>(item.get_value().data());
       configVal.setFloat(boost::get<double>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::BOOL: {
-      auto value = *reinterpret_cast<const bool *>(item.get_value().data());
+      auto value = *reinterpret_cast<const bool*>(item.get_value().data());
       configVal.setBool(boost::get<bool>(value) ? "True" : "False");
       break;
     }
@@ -152,7 +152,7 @@ Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
         return Status::Error("Parse value: %s failed", value.c_str());
       }
       Map map;
-      conf.forEachItem([&map](const folly::StringPiece &confKey, const folly::dynamic &confVal) {
+      conf.forEachItem([&map](const folly::StringPiece& confKey, const folly::dynamic& confVal) {
         map.kvs.emplace(confKey, confVal.asString());
       });
       configVal.setMap(std::move(map));
@@ -165,8 +165,8 @@ Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
   return Status::OK();
 }
 
-Status MetaDataUpgrade::rewriteJobDesc(const folly::StringPiece &key,
-                                       const folly::StringPiece &val) {
+Status MetaDataUpgrade::rewriteJobDesc(const folly::StringPiece& key,
+                                       const folly::StringPiece& val) {
   auto jobDesc = meta::v1::MetaServiceUtilsV1::parseJobDesc(val);
   auto cmdStr = std::get<0>(jobDesc);
   nebula::meta::cpp2::AdminCmd adminCmd;
@@ -185,33 +185,33 @@ Status MetaDataUpgrade::rewriteJobDesc(const folly::StringPiece &key,
   str.reserve(256);
   // use a big num to avoid possible conflict
   int32_t dataVersion = INT_MAX - 1;
-  str.append(reinterpret_cast<const char *>(&dataVersion), sizeof(dataVersion))
-      .append(reinterpret_cast<const char *>(&adminCmd), sizeof(adminCmd));
+  str.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion))
+      .append(reinterpret_cast<const char*>(&adminCmd), sizeof(adminCmd));
   auto paraSize = paras.size();
-  str.append(reinterpret_cast<const char *>(&paraSize), sizeof(size_t));
-  for (auto &para : paras) {
+  str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
+  for (auto& para : paras) {
     auto len = para.length();
-    str.append(reinterpret_cast<const char *>(&len), sizeof(len))
-        .append(reinterpret_cast<const char *>(&para[0]), len);
+    str.append(reinterpret_cast<const char*>(&len), sizeof(len))
+        .append(reinterpret_cast<const char*>(&para[0]), len);
   }
-  str.append(reinterpret_cast<const char *>(&status), sizeof(nebula::meta::cpp2::JobStatus))
-      .append(reinterpret_cast<const char *>(&startTime), sizeof(int64_t))
-      .append(reinterpret_cast<const char *>(&stopTime), sizeof(int64_t));
+  str.append(reinterpret_cast<const char*>(&status), sizeof(nebula::meta::cpp2::JobStatus))
+      .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
+      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
 
   NG_LOG_AND_RETURN_IF_ERROR(put(key, str));
   return Status::OK();
 }
 
-Status MetaDataUpgrade::deleteKeyVal(const folly::StringPiece &key) {
+Status MetaDataUpgrade::deleteKeyVal(const folly::StringPiece& key) {
   NG_LOG_AND_RETURN_IF_ERROR(remove(key));
   return Status::OK();
 }
 
-Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
-                                            std::vector<cpp2::ColumnDef> &newCols) {
+Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef>& oldCols,
+                                            std::vector<cpp2::ColumnDef>& newCols) {
   ObjectPool objPool;
   auto pool = &objPool;
-  for (auto &colDef : oldCols) {
+  for (auto& colDef : oldCols) {
     cpp2::ColumnDef columnDef;
     columnDef.name_ref() = colDef.get_name();
     columnDef.type.type_ref() =
@@ -256,8 +256,8 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::Co
 }
 
 Status MetaDataUpgrade::convertToNewIndexColumns(
-    const std::vector<meta::v1::cpp2::ColumnDef> &oldCols, std::vector<cpp2::ColumnDef> &newCols) {
-  for (auto &colDef : oldCols) {
+    const std::vector<meta::v1::cpp2::ColumnDef>& oldCols, std::vector<cpp2::ColumnDef>& newCols) {
+  for (auto& colDef : oldCols) {
     cpp2::ColumnDef columnDef;
     columnDef.name_ref() = colDef.get_name();
     if (colDef.get_type().get_type() == meta::v1::cpp2::SupportedType::STRING) {
@@ -278,7 +278,7 @@ Status MetaDataUpgrade::convertToNewIndexColumns(
   return Status::OK();
 }
 
-void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::StringPiece &val) {
+void MetaDataUpgrade::printHost(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto host = meta::v1::MetaServiceUtilsV1::parseHostKey(key);
   auto info = HostInfo::decodeV1(val);
   LOG(INFO) << "Host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
@@ -288,7 +288,7 @@ void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::Stri
   LOG(INFO) << "Host info: gitInfoSha_: " << info.gitInfoSha_;
 }
 
-void MetaDataUpgrade::printSpaces(const folly::StringPiece &val) {
+void MetaDataUpgrade::printSpaces(const folly::StringPiece& val) {
   auto oldProps = meta::v1::MetaServiceUtilsV1::parseSpace(val);
   LOG(INFO) << "Space name: " << oldProps.get_space_name();
   LOG(INFO) << "Partition num: " << oldProps.get_partition_num();
@@ -297,30 +297,30 @@ void MetaDataUpgrade::printSpaces(const folly::StringPiece &val) {
   LOG(INFO) << "Collate name: " << oldProps.get_collate_name();
 }
 
-void MetaDataUpgrade::printParts(const folly::StringPiece &key, const folly::StringPiece &val) {
+void MetaDataUpgrade::printParts(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto spaceId = meta::v1::MetaServiceUtilsV1::parsePartKeySpaceId(key);
   auto partId = meta::v1::MetaServiceUtilsV1::parsePartKeyPartId(key);
   auto oldHosts = meta::v1::MetaServiceUtilsV1::parsePartVal(val);
   LOG(INFO) << "Part spaceId: " << spaceId;
   LOG(INFO) << "Part      id: " << partId;
-  for (auto &host : oldHosts) {
+  for (auto& host : oldHosts) {
     LOG(INFO) << "Part host   ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
     LOG(INFO) << "Part host port: " << host.get_port();
   }
 }
 
-void MetaDataUpgrade::printLeaders(const folly::StringPiece &key) {
+void MetaDataUpgrade::printLeaders(const folly::StringPiece& key) {
   auto host = meta::v1::MetaServiceUtilsV1::parseLeaderKey(key);
   LOG(INFO) << "Leader host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
   LOG(INFO) << "Leader host port: " << host.get_port();
 }
 
-void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
+void MetaDataUpgrade::printSchemas(const folly::StringPiece& val) {
   auto oldSchema = meta::v1::MetaServiceUtilsV1::parseSchema(val);
-  auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
+  auto nameLen = *reinterpret_cast<const int32_t*>(val.data());
   auto schemaName = val.subpiece(sizeof(int32_t), nameLen).str();
   LOG(INFO) << "Schema name: " << schemaName;
-  for (auto &colDef : oldSchema.get_columns()) {
+  for (auto& colDef : oldSchema.get_columns()) {
     LOG(INFO) << "Schema column name: " << colDef.get_name();
     LOG(INFO) << "Schema column type: "
               << apache::thrift::util::enumNameSafe(colDef.get_type().get_type());
@@ -351,7 +351,7 @@ void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
   }
 }
 
-void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
+void MetaDataUpgrade::printIndexes(const folly::StringPiece& val) {
   auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(val);
   LOG(INFO) << "Index   id: " << oldItem.get_index_id();
   LOG(INFO) << "Index name: " << oldItem.get_index_name();
@@ -360,30 +360,30 @@ void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
   } else {
     LOG(INFO) << "Index on edgetype: " << oldItem.get_schema_id().get_edge_type();
   }
-  for (auto &colDef : oldItem.get_fields()) {
+  for (auto& colDef : oldItem.get_fields()) {
     LOG(INFO) << "Index field name: " << colDef.get_name();
     LOG(INFO) << "Index field type: "
               << apache::thrift::util::enumNameSafe(colDef.get_type().get_type());
   }
 }
 
-void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::StringPiece &val) {
+void MetaDataUpgrade::printConfigs(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto item = meta::v1::MetaServiceUtilsV1::parseConfigValue(val);
   auto configName = meta::v1::MetaServiceUtilsV1::parseConfigKey(key);
   Value configVal;
   switch (item.get_type()) {
     case meta::v1::cpp2::ConfigType::INT64: {
-      auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
+      auto value = *reinterpret_cast<const int64_t*>(item.get_value().data());
       configVal.setInt(boost::get<int64_t>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::DOUBLE: {
-      auto value = *reinterpret_cast<const double *>(item.get_value().data());
+      auto value = *reinterpret_cast<const double*>(item.get_value().data());
       configVal.setFloat(boost::get<double>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::BOOL: {
-      auto value = *reinterpret_cast<const bool *>(item.get_value().data());
+      auto value = *reinterpret_cast<const bool*>(item.get_value().data());
       configVal.setBool(boost::get<bool>(value) ? "True" : "False");
       break;
     }
@@ -401,7 +401,7 @@ void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::S
         return;
       }
       Map map;
-      conf.forEachItem([&map](const folly::StringPiece &confKey, const folly::dynamic &confVal) {
+      conf.forEachItem([&map](const folly::StringPiece& confKey, const folly::dynamic& confVal) {
         map.kvs.emplace(confKey, confVal.asString());
       });
       configVal.setMap(std::move(map));
@@ -414,7 +414,7 @@ void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::S
   LOG(INFO) << "Config  value: " << configVal;
 }
 
-void MetaDataUpgrade::printJobDesc(const folly::StringPiece &key, const folly::StringPiece &val) {
+void MetaDataUpgrade::printJobDesc(const folly::StringPiece& key, const folly::StringPiece& val) {
   auto jobId = meta::v1::MetaServiceUtilsV1::parseJobId(key);
   LOG(INFO) << "JobDesc id: " << jobId;
   auto jobDesc = meta::v1::MetaServiceUtilsV1::parseJobDesc(val);
@@ -426,7 +426,7 @@ void MetaDataUpgrade::printJobDesc(const folly::StringPiece &key, const folly::S
 
   LOG(INFO) << "JobDesc id: " << jobId;
   LOG(INFO) << "JobDesc cmd: " << cmdStr;
-  for (auto &para : paras) {
+  for (auto& para : paras) {
     LOG(INFO) << "JobDesc para: " << para;
   }
   LOG(INFO) << "JobDesc status: " << apache::thrift::util::enumNameSafe(status);

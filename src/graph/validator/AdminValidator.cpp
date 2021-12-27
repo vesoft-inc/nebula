@@ -16,7 +16,7 @@
 namespace nebula {
 namespace graph {
 Status CreateSpaceValidator::validateImpl() {
-  auto sentence = static_cast<CreateSpaceSentence *>(sentence_);
+  auto sentence = static_cast<CreateSpaceSentence*>(sentence_);
   ifNotExist_ = sentence->isIfNotExist();
   auto status = Status::OK();
   spaceDesc_.space_name_ref() = std::move(*(sentence->spaceName()));
@@ -25,12 +25,12 @@ Status CreateSpaceValidator::validateImpl() {
   }
   StatusOr<std::string> retStatusOr;
   std::string result;
-  auto *charsetInfo = qctx_->getCharsetInfo();
-  auto *spaceOpts = sentence->spaceOpts();
+  auto* charsetInfo = qctx_->getCharsetInfo();
+  auto* spaceOpts = sentence->spaceOpts();
   if (!spaceOpts || !spaceOpts->hasVidType()) {
     return Status::SemanticError("space vid_type must be specified explicitly");
   }
-  for (auto &item : sentence->getOpts()) {
+  for (auto& item : sentence->getOpts()) {
     switch (item->getOptType()) {
       case SpaceOptItem::PARTITION_NUM: {
         spaceDesc_.partition_num_ref() = item->getPartitionNum();
@@ -143,21 +143,21 @@ Status CreateSpaceValidator::validateImpl() {
 }
 
 Status CreateSpaceValidator::toPlan() {
-  auto *doNode = CreateSpace::make(qctx_, nullptr, std::move(spaceDesc_), ifNotExist_);
+  auto* doNode = CreateSpace::make(qctx_, nullptr, std::move(spaceDesc_), ifNotExist_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status CreateSpaceAsValidator::validateImpl() {
-  auto sentence = static_cast<CreateSpaceAsSentence *>(sentence_);
+  auto sentence = static_cast<CreateSpaceAsSentence*>(sentence_);
   oldSpaceName_ = sentence->getOldSpaceName();
   newSpaceName_ = sentence->getNewSpaceName();
   return Status::OK();
 }
 
 Status CreateSpaceAsValidator::toPlan() {
-  auto *doNode = CreateSpaceAsNode::make(qctx_, nullptr, oldSpaceName_, newSpaceName_);
+  auto* doNode = CreateSpaceAsNode::make(qctx_, nullptr, oldSpaceName_, newSpaceName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -168,8 +168,8 @@ Status DescSpaceValidator::validateImpl() {
 }
 
 Status DescSpaceValidator::toPlan() {
-  auto sentence = static_cast<DescribeSpaceSentence *>(sentence_);
-  auto *doNode = DescSpace::make(qctx_, nullptr, *sentence->spaceName());
+  auto sentence = static_cast<DescribeSpaceSentence*>(sentence_);
+  auto* doNode = DescSpace::make(qctx_, nullptr, *sentence->spaceName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -180,7 +180,7 @@ Status ShowSpacesValidator::validateImpl() {
 }
 
 Status ShowSpacesValidator::toPlan() {
-  auto *doNode = ShowSpaces::make(qctx_, nullptr);
+  auto* doNode = ShowSpaces::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -191,8 +191,8 @@ Status DropSpaceValidator::validateImpl() {
 }
 
 Status DropSpaceValidator::toPlan() {
-  auto sentence = static_cast<DropSpaceSentence *>(sentence_);
-  auto *doNode = DropSpace::make(qctx_, nullptr, *sentence->spaceName(), sentence->isIfExists());
+  auto sentence = static_cast<DropSpaceSentence*>(sentence_);
+  auto* doNode = DropSpace::make(qctx_, nullptr, *sentence->spaceName(), sentence->isIfExists());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -203,7 +203,7 @@ Status ShowCreateSpaceValidator::validateImpl() {
 }
 
 Status ShowCreateSpaceValidator::checkPermission() {
-  auto sentence = static_cast<ShowCreateSpaceSentence *>(sentence_);
+  auto sentence = static_cast<ShowCreateSpaceSentence*>(sentence_);
   auto spaceIdResult = qctx_->schemaMng()->toGraphSpaceID(*sentence->spaceName());
   NG_RETURN_IF_ERROR(spaceIdResult);
   auto targetSpaceId = spaceIdResult.value();
@@ -211,9 +211,9 @@ Status ShowCreateSpaceValidator::checkPermission() {
 }
 
 Status ShowCreateSpaceValidator::toPlan() {
-  auto sentence = static_cast<ShowCreateSpaceSentence *>(sentence_);
+  auto sentence = static_cast<ShowCreateSpaceSentence*>(sentence_);
   auto spaceName = *sentence->spaceName();
-  auto *doNode = ShowCreateSpace::make(qctx_, nullptr, std::move(spaceName));
+  auto* doNode = ShowCreateSpace::make(qctx_, nullptr, std::move(spaceName));
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -224,7 +224,7 @@ Status CreateSnapshotValidator::validateImpl() {
 }
 
 Status CreateSnapshotValidator::toPlan() {
-  auto *doNode = CreateSnapshot::make(qctx_, nullptr);
+  auto* doNode = CreateSnapshot::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -235,8 +235,8 @@ Status DropSnapshotValidator::validateImpl() {
 }
 
 Status DropSnapshotValidator::toPlan() {
-  auto sentence = static_cast<DropSnapshotSentence *>(sentence_);
-  auto *doNode = DropSnapshot::make(qctx_, nullptr, *sentence->name());
+  auto sentence = static_cast<DropSnapshotSentence*>(sentence_);
+  auto* doNode = DropSnapshot::make(qctx_, nullptr, *sentence->name());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -247,14 +247,14 @@ Status ShowSnapshotsValidator::validateImpl() {
 }
 
 Status ShowSnapshotsValidator::toPlan() {
-  auto *doNode = ShowSnapshots::make(qctx_, nullptr);
+  auto* doNode = ShowSnapshots::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status AddListenerValidator::validateImpl() {
-  auto sentence = static_cast<AddListenerSentence *>(sentence_);
+  auto sentence = static_cast<AddListenerSentence*>(sentence_);
   auto hosts = sentence->listeners()->hosts();
   if (hosts.empty()) {
     return Status::SemanticError("Listener hosts should not be empty");
@@ -267,7 +267,7 @@ Status AddListenerValidator::validateImpl() {
   }
 
   auto storageHosts = std::move(status).value();
-  for (auto &host : hosts) {
+  for (auto& host : hosts) {
     auto iter = std::find(storageHosts.begin(), storageHosts.end(), host);
     if (iter != storageHosts.end()) {
       return Status::Error("The listener host:%s couldn't on same with storage host info",
@@ -278,8 +278,8 @@ Status AddListenerValidator::validateImpl() {
 }
 
 Status AddListenerValidator::toPlan() {
-  auto sentence = static_cast<AddListenerSentence *>(sentence_);
-  auto *doNode =
+  auto sentence = static_cast<AddListenerSentence*>(sentence_);
+  auto* doNode =
       AddListener::make(qctx_, nullptr, sentence->type(), sentence->listeners()->hosts());
   root_ = doNode;
   tail_ = root_;
@@ -291,8 +291,8 @@ Status RemoveListenerValidator::validateImpl() {
 }
 
 Status RemoveListenerValidator::toPlan() {
-  auto sentence = static_cast<RemoveListenerSentence *>(sentence_);
-  auto *doNode = RemoveListener::make(qctx_, nullptr, sentence->type());
+  auto sentence = static_cast<RemoveListenerSentence*>(sentence_);
+  auto* doNode = RemoveListener::make(qctx_, nullptr, sentence->type());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -303,7 +303,7 @@ Status ShowListenerValidator::validateImpl() {
 }
 
 Status ShowListenerValidator::toPlan() {
-  auto *doNode = ShowListener::make(qctx_, nullptr);
+  auto* doNode = ShowListener::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -314,7 +314,7 @@ Status AddHostsValidator::validateImpl() {
 }
 
 Status AddHostsValidator::toPlan() {
-  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto sentence = static_cast<AddHostsSentence*>(sentence_);
   auto hosts = sentence->hosts()->hosts();
   if (hosts.empty()) {
     return Status::SemanticError("Host is empty");
@@ -325,7 +325,7 @@ Status AddHostsValidator::toPlan() {
     return Status::SemanticError("Host have duplicated");
   }
 
-  auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
+  auto* addHost = AddHosts::make(qctx_, nullptr, hosts);
   root_ = addHost;
   tail_ = root_;
   return Status::OK();
@@ -336,7 +336,7 @@ Status DropHostsValidator::validateImpl() {
 }
 
 Status DropHostsValidator::toPlan() {
-  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto sentence = static_cast<DropHostsSentence*>(sentence_);
   auto hosts = sentence->hosts()->hosts();
   if (hosts.empty()) {
     return Status::SemanticError("Host is empty");
@@ -347,7 +347,7 @@ Status DropHostsValidator::toPlan() {
     return Status::SemanticError("Host have duplicated");
   }
 
-  auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
+  auto* dropHost = DropHosts::make(qctx_, nullptr, hosts);
   root_ = dropHost;
   tail_ = root_;
   return Status::OK();
@@ -358,8 +358,8 @@ Status ShowHostsValidator::validateImpl() {
 }
 
 Status ShowHostsValidator::toPlan() {
-  auto sentence = static_cast<ShowHostsSentence *>(sentence_);
-  auto *showHosts = ShowHosts::make(qctx_, nullptr, sentence->getType());
+  auto sentence = static_cast<ShowHostsSentence*>(sentence_);
+  auto* showHosts = ShowHosts::make(qctx_, nullptr, sentence->getType());
   root_ = showHosts;
   tail_ = root_;
   return Status::OK();
@@ -370,7 +370,7 @@ Status ShowMetaLeaderValidator::validateImpl() {
 }
 
 Status ShowMetaLeaderValidator::toPlan() {
-  auto *node = ShowMetaLeaderNode::make(qctx_, nullptr);
+  auto* node = ShowMetaLeaderNode::make(qctx_, nullptr);
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -381,12 +381,12 @@ Status ShowPartsValidator::validateImpl() {
 }
 
 Status ShowPartsValidator::toPlan() {
-  auto sentence = static_cast<ShowPartsSentence *>(sentence_);
+  auto sentence = static_cast<ShowPartsSentence*>(sentence_);
   std::vector<PartitionID> partIds;
   if (sentence->getList() != nullptr) {
     partIds = *sentence->getList();
   }
-  auto *node = ShowParts::make(qctx_, nullptr, vctx_->whichSpace().id, std::move(partIds));
+  auto* node = ShowParts::make(qctx_, nullptr, vctx_->whichSpace().id, std::move(partIds));
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -397,7 +397,7 @@ Status ShowCharsetValidator::validateImpl() {
 }
 
 Status ShowCharsetValidator::toPlan() {
-  auto *node = ShowCharset::make(qctx_, nullptr);
+  auto* node = ShowCharset::make(qctx_, nullptr);
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -408,7 +408,7 @@ Status ShowCollationValidator::validateImpl() {
 }
 
 Status ShowCollationValidator::toPlan() {
-  auto *node = ShowCollation::make(qctx_, nullptr);
+  auto* node = ShowCollation::make(qctx_, nullptr);
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -419,7 +419,7 @@ Status ShowConfigsValidator::validateImpl() {
 }
 
 Status ShowConfigsValidator::toPlan() {
-  auto sentence = static_cast<ShowConfigsSentence *>(sentence_);
+  auto sentence = static_cast<ShowConfigsSentence*>(sentence_);
   meta::cpp2::ConfigModule module;
   auto item = sentence->configItem();
   if (item != nullptr) {
@@ -427,14 +427,14 @@ Status ShowConfigsValidator::toPlan() {
   } else {
     module = meta::cpp2::ConfigModule::ALL;
   }
-  auto *doNode = ShowConfigs::make(qctx_, nullptr, module);
+  auto* doNode = ShowConfigs::make(qctx_, nullptr, module);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status SetConfigValidator::validateImpl() {
-  auto sentence = static_cast<SetConfigSentence *>(sentence_);
+  auto sentence = static_cast<SetConfigSentence*>(sentence_);
   auto item = sentence->configItem();
   if (item == nullptr) {
     return Status::SemanticError("Empty config item");
@@ -457,7 +457,7 @@ Status SetConfigValidator::validateImpl() {
     }
   } else {
     Map configs;
-    for (auto &updateItem : updateItems->items()) {
+    for (auto& updateItem : updateItems->items()) {
       std::string name;
       Value value;
       if (updateItem->getFieldName() == nullptr || updateItem->value() == nullptr) {
@@ -465,7 +465,7 @@ Status SetConfigValidator::validateImpl() {
       }
       name = *updateItem->getFieldName();
 
-      value = Expression::eval(const_cast<Expression *>(updateItem->value()), ctx(nullptr));
+      value = Expression::eval(const_cast<Expression*>(updateItem->value()), ctx(nullptr));
 
       if (value.isNull() || (!value.isNumeric() && !value.isStr() && !value.isBool())) {
         return Status::SemanticError("Wrong value: `%s'", name.c_str());
@@ -479,14 +479,14 @@ Status SetConfigValidator::validateImpl() {
 }
 
 Status SetConfigValidator::toPlan() {
-  auto *doNode = SetConfig::make(qctx_, nullptr, module_, std::move(name_), std::move(value_));
+  auto* doNode = SetConfig::make(qctx_, nullptr, module_, std::move(name_), std::move(value_));
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
 Status GetConfigValidator::validateImpl() {
-  auto sentence = static_cast<GetConfigSentence *>(sentence_);
+  auto sentence = static_cast<GetConfigSentence*>(sentence_);
   auto item = sentence->configItem();
   if (item == nullptr) {
     return Status::SemanticError("Empty config item");
@@ -501,7 +501,7 @@ Status GetConfigValidator::validateImpl() {
 }
 
 Status GetConfigValidator::toPlan() {
-  auto *doNode = GetConfig::make(qctx_, nullptr, module_, std::move(name_));
+  auto* doNode = GetConfig::make(qctx_, nullptr, module_, std::move(name_));
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -512,7 +512,7 @@ Status ShowStatusValidator::validateImpl() {
 }
 
 Status ShowStatusValidator::toPlan() {
-  auto *node = ShowStats::make(qctx_, nullptr);
+  auto* node = ShowStats::make(qctx_, nullptr);
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -523,7 +523,7 @@ Status ShowTSClientsValidator::validateImpl() {
 }
 
 Status ShowTSClientsValidator::toPlan() {
-  auto *doNode = ShowTSClients::make(qctx_, nullptr);
+  auto* doNode = ShowTSClients::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -534,12 +534,12 @@ Status SignInTSServiceValidator::validateImpl() {
 }
 
 Status SignInTSServiceValidator::toPlan() {
-  auto sentence = static_cast<SignInTextServiceSentence *>(sentence_);
+  auto sentence = static_cast<SignInTextServiceSentence*>(sentence_);
   std::vector<meta::cpp2::FTClient> clients;
   if (sentence->clients() != nullptr) {
     clients = sentence->clients()->clients();
   }
-  auto *node = SignInTSService::make(qctx_, nullptr, std::move(clients));
+  auto* node = SignInTSService::make(qctx_, nullptr, std::move(clients));
   root_ = node;
   tail_ = root_;
   return Status::OK();
@@ -550,15 +550,15 @@ Status SignOutTSServiceValidator::validateImpl() {
 }
 
 Status SignOutTSServiceValidator::toPlan() {
-  auto *node = SignOutTSService::make(qctx_, nullptr);
+  auto* node = SignOutTSService::make(qctx_, nullptr);
   root_ = node;
   tail_ = root_;
   return Status::OK();
 }
 
 Status ShowSessionsValidator::toPlan() {
-  auto sentence = static_cast<ShowSessionsSentence *>(sentence_);
-  auto *node = ShowSessions::make(qctx_,
+  auto sentence = static_cast<ShowSessionsSentence*>(sentence_);
+  auto* node = ShowSessions::make(qctx_,
                                   nullptr,
                                   sentence->isSetSessionID(),
                                   sentence->getSessionID(),
@@ -584,17 +584,17 @@ Status ShowQueriesValidator::validateImpl() {
 }
 
 Status ShowQueriesValidator::toPlan() {
-  auto sentence = static_cast<ShowQueriesSentence *>(sentence_);
-  auto *node = ShowQueries::make(qctx_, nullptr, sentence->isAll());
+  auto sentence = static_cast<ShowQueriesSentence*>(sentence_);
+  auto* node = ShowQueries::make(qctx_, nullptr, sentence->isAll());
   root_ = node;
   tail_ = root_;
   return Status::OK();
 }
 
 Status KillQueryValidator::validateImpl() {
-  auto sentence = static_cast<KillQuerySentence *>(sentence_);
-  auto *sessionExpr = sentence->sessionId();
-  auto *epIdExpr = sentence->epId();
+  auto sentence = static_cast<KillQuerySentence*>(sentence_);
+  auto* sessionExpr = sentence->sessionId();
+  auto* epIdExpr = sentence->epId();
   auto sessionTypeStatus = deduceExprType(sessionExpr);
   if (!sessionTypeStatus.ok()) {
     return sessionTypeStatus.status();
@@ -619,8 +619,8 @@ Status KillQueryValidator::validateImpl() {
 }
 
 Status KillQueryValidator::toPlan() {
-  auto sentence = static_cast<KillQuerySentence *>(sentence_);
-  auto *node = KillQuery::make(qctx_, nullptr, sentence->sessionId(), sentence->epId());
+  auto sentence = static_cast<KillQuerySentence*>(sentence_);
+  auto* node = KillQuery::make(qctx_, nullptr, sentence->sessionId(), sentence->epId());
   root_ = node;
   tail_ = root_;
   return Status::OK();

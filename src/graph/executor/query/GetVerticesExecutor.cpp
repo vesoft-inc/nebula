@@ -23,8 +23,8 @@ folly::Future<Status> GetVerticesExecutor::execute() {
 folly::Future<Status> GetVerticesExecutor::getVertices() {
   SCOPED_TIMER(&execTime_);
 
-  auto *gv = asNode<GetVertices>(node());
-  StorageClient *storageClient = qctx()->getStorageClient();
+  auto* gv = asNode<GetVertices>(node());
+  StorageClient* storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(gv);
   if (vertices.rows.empty()) {
@@ -53,14 +53,14 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
         SCOPED_TIMER(&execTime_);
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
-      .thenValue([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+      .thenValue([this, gv](StorageRpcResponse<GetPropResponse>&& rpcResp) {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp), gv->colNames());
       });
 }
 
-DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
+DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices* gv) {
   if (gv == nullptr) {
     return nebula::DataSet({kVid});
   }

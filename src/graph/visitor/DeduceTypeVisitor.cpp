@@ -75,7 +75,7 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
 
 #define DETECT_NARYEXPR_TYPE(OP)                                                               \
   do {                                                                                         \
-    auto &operands = expr->operands();                                                         \
+    auto& operands = expr->operands();                                                         \
     operands[0]->accept(this);                                                                 \
     if (!ok()) return;                                                                         \
     auto prev = type_;                                                                         \
@@ -125,9 +125,9 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
   }                                                                                        \
   type_ = detectVal.type()
 
-DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
-                                     ValidateContext *vctx,
-                                     const ColsDef &inputs,
+DeduceTypeVisitor::DeduceTypeVisitor(QueryContext* qctx,
+                                     ValidateContext* vctx,
+                                     const ColsDef& inputs,
                                      GraphSpaceID space)
     : qctx_(qctx), vctx_(vctx), inputs_(inputs), space_(space) {
   DCHECK(qctx != nullptr);
@@ -141,12 +141,12 @@ DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
   }
 }
 
-void DeduceTypeVisitor::visit(ConstantExpression *expr) {
+void DeduceTypeVisitor::visit(ConstantExpression* expr) {
   QueryExpressionContext ctx(nullptr);
   type_ = expr->eval(ctx(nullptr)).type();
 }
 
-void DeduceTypeVisitor::visit(UnaryExpression *expr) {
+void DeduceTypeVisitor::visit(UnaryExpression* expr) {
   expr->operand()->accept(this);
   if (!ok()) return;
   switch (expr->kind()) {
@@ -207,7 +207,7 @@ void DeduceTypeVisitor::visit(UnaryExpression *expr) {
   }
 }
 
-void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
+void DeduceTypeVisitor::visit(TypeCastingExpression* expr) {
   expr->operand()->accept(this);
   if (!ok()) return;
 
@@ -241,11 +241,11 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
   status_ = Status::OK();
 }
 
-void DeduceTypeVisitor::visit(LabelExpression *) {
+void DeduceTypeVisitor::visit(LabelExpression*) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
+void DeduceTypeVisitor::visit(ArithmeticExpression* expr) {
   switch (expr->kind()) {
     case Expression::Kind::kAdd: {
       DETECT_BIEXPR_TYPE(+);
@@ -274,7 +274,7 @@ void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
   }
 }
 
-void DeduceTypeVisitor::visit(RelationalExpression *expr) {
+void DeduceTypeVisitor::visit(RelationalExpression* expr) {
   expr->left()->accept(this);
   if (!ok()) return;
   expr->right()->accept(this);
@@ -294,7 +294,7 @@ void DeduceTypeVisitor::visit(RelationalExpression *expr) {
   type_ = Value::Type::BOOL;
 }
 
-void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
+void DeduceTypeVisitor::visit(SubscriptExpression* expr) {
   expr->left()->accept(this);
   if (!ok()) return;
   auto leftType = type_;
@@ -352,7 +352,7 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(AttributeExpression *expr) {
+void DeduceTypeVisitor::visit(AttributeExpression* expr) {
   expr->left()->accept(this);
   if (!ok()) return;
   switch (type_) {
@@ -391,7 +391,7 @@ void DeduceTypeVisitor::visit(AttributeExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(LogicalExpression *expr) {
+void DeduceTypeVisitor::visit(LogicalExpression* expr) {
   switch (expr->kind()) {
     case Expression::Kind::kLogicalAnd: {
       DETECT_NARYEXPR_TYPE(&&);
@@ -409,8 +409,8 @@ void DeduceTypeVisitor::visit(LogicalExpression *expr) {
   }
 }
 
-void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
-  const_cast<LabelExpression *>(expr->left())->accept(this);
+void DeduceTypeVisitor::visit(LabelAttributeExpression* expr) {
+  const_cast<LabelExpression*>(expr->left())->accept(this);
   if (!ok()) return;
   if (type_ != Value::Type::STRING && !isSuperiorType(type_)) {
     std::stringstream ss;
@@ -420,7 +420,7 @@ void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
     return;
   }
 
-  const_cast<ConstantExpression *>(expr->right())->accept(this);
+  const_cast<ConstantExpression*>(expr->right())->accept(this);
   if (!ok()) return;
   if (type_ != Value::Type::STRING && !isSuperiorType(type_)) {
     std::stringstream ss;
@@ -434,10 +434,10 @@ void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
+void DeduceTypeVisitor::visit(FunctionCallExpression* expr) {
   std::vector<Value::Type> argsTypeList;
   argsTypeList.reserve(expr->args()->numArgs());
-  for (auto &arg : expr->args()->args()) {
+  for (auto& arg : expr->args()->args()) {
     arg->accept(this);
     if (!ok()) return;
     argsTypeList.push_back(type_);
@@ -457,44 +457,44 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
   type_ = result.value();
 }
 
-void DeduceTypeVisitor::visit(AggregateExpression *expr) {
+void DeduceTypeVisitor::visit(AggregateExpression* expr) {
   expr->arg()->accept(this);
   if (!ok()) return;
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(UUIDExpression *) {
+void DeduceTypeVisitor::visit(UUIDExpression*) {
   type_ = Value::Type::STRING;
 }
 
-void DeduceTypeVisitor::visit(VariableExpression *) {
+void DeduceTypeVisitor::visit(VariableExpression*) {
   // Will not deduce the actual value type of variable expression.
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(VersionedVariableExpression *) {
+void DeduceTypeVisitor::visit(VersionedVariableExpression*) {
   // Will not deduce the actual value type of versioned variable expression.
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(ListExpression *) {
+void DeduceTypeVisitor::visit(ListExpression*) {
   type_ = Value::Type::LIST;
 }
 
-void DeduceTypeVisitor::visit(SetExpression *) {
+void DeduceTypeVisitor::visit(SetExpression*) {
   type_ = Value::Type::SET;
 }
 
-void DeduceTypeVisitor::visit(MapExpression *) {
+void DeduceTypeVisitor::visit(MapExpression*) {
   type_ = Value::Type::MAP;
 }
 
-void DeduceTypeVisitor::visit(TagPropertyExpression *expr) {
+void DeduceTypeVisitor::visit(TagPropertyExpression* expr) {
   visitVertexPropertyExpr(expr);
 }
 
-void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
-  const auto &edge = expr->sym();
+void DeduceTypeVisitor::visit(EdgePropertyExpression* expr) {
+  const auto& edge = expr->sym();
   auto edgeType = qctx_->schemaMng()->toEdgeType(space_, edge);
   if (!edgeType.ok()) {
     status_ = edgeType.status();
@@ -507,8 +507,8 @@ void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
     return;
   }
 
-  const auto &prop = expr->prop();
-  auto *field = schema->field(prop);
+  const auto& prop = expr->prop();
+  auto* field = schema->field(prop);
   if (field == nullptr) {
     status_ = Status::SemanticError(
         "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
@@ -517,10 +517,10 @@ void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
   type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
-void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
-  const auto &prop = expr->prop();
+void DeduceTypeVisitor::visit(InputPropertyExpression* expr) {
+  const auto& prop = expr->prop();
   auto found = std::find_if(
-      inputs_.cbegin(), inputs_.cend(), [&prop](auto &col) { return prop == col.name; });
+      inputs_.cbegin(), inputs_.cend(), [&prop](auto& col) { return prop == col.name; });
   if (found == inputs_.cend()) {
     status_ =
         Status::SemanticError("`%s', not exist prop `%s'", expr->toString().c_str(), prop.c_str());
@@ -529,17 +529,17 @@ void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
   type_ = found->type;
 }
 
-void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
-  const auto &var = expr->sym();
+void DeduceTypeVisitor::visit(VariablePropertyExpression* expr) {
+  const auto& var = expr->sym();
   if (!vctx_->existVar(var) && !qctx_->existParameter(var)) {
     status_ = Status::SemanticError(
         "`%s', not exist variable `%s'", expr->toString().c_str(), var.c_str());
     return;
   }
-  const auto &prop = expr->prop();
+  const auto& prop = expr->prop();
   auto cols = vctx_->getVar(var);
   auto found =
-      std::find_if(cols.begin(), cols.end(), [&prop](auto &col) { return prop == col.name; });
+      std::find_if(cols.begin(), cols.end(), [&prop](auto& col) { return prop == col.name; });
   if (found == cols.end()) {
     status_ =
         Status::SemanticError("`%s', not exist prop `%s'", expr->toString().c_str(), prop.c_str());
@@ -548,43 +548,43 @@ void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   type_ = found->type;
 }
 
-void DeduceTypeVisitor::visit(DestPropertyExpression *expr) {
+void DeduceTypeVisitor::visit(DestPropertyExpression* expr) {
   visitVertexPropertyExpr(expr);
 }
 
-void DeduceTypeVisitor::visit(SourcePropertyExpression *expr) {
+void DeduceTypeVisitor::visit(SourcePropertyExpression* expr) {
   visitVertexPropertyExpr(expr);
 }
 
-void DeduceTypeVisitor::visit(EdgeSrcIdExpression *) {
+void DeduceTypeVisitor::visit(EdgeSrcIdExpression*) {
   type_ = vidType_;
 }
 
-void DeduceTypeVisitor::visit(EdgeTypeExpression *) {
+void DeduceTypeVisitor::visit(EdgeTypeExpression*) {
   type_ = Value::Type::INT;
 }
 
-void DeduceTypeVisitor::visit(EdgeRankExpression *) {
+void DeduceTypeVisitor::visit(EdgeRankExpression*) {
   type_ = Value::Type::INT;
 }
 
-void DeduceTypeVisitor::visit(EdgeDstIdExpression *) {
+void DeduceTypeVisitor::visit(EdgeDstIdExpression*) {
   type_ = vidType_;
 }
 
-void DeduceTypeVisitor::visit(VertexExpression *) {
+void DeduceTypeVisitor::visit(VertexExpression*) {
   type_ = Value::Type::VERTEX;
 }
 
-void DeduceTypeVisitor::visit(EdgeExpression *) {
+void DeduceTypeVisitor::visit(EdgeExpression*) {
   type_ = Value::Type::EDGE;
 }
 
-void DeduceTypeVisitor::visit(ColumnExpression *) {
+void DeduceTypeVisitor::visit(ColumnExpression*) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(CaseExpression *expr) {
+void DeduceTypeVisitor::visit(CaseExpression* expr) {
   if (expr->hasCondition()) {
     expr->condition()->accept(this);
     if (!ok()) return;
@@ -595,7 +595,7 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
   }
 
   std::unordered_set<Value::Type> types;
-  for (const auto &whenThen : expr->cases()) {
+  for (const auto& whenThen : expr->cases()) {
     whenThen.when->accept(this);
     if (!ok()) return;
     if (!expr->hasCondition() && type_ != Value::Type::BOOL && !isSuperiorType(type_)) {
@@ -616,7 +616,7 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
   }
 }
 
-void DeduceTypeVisitor::visit(PredicateExpression *expr) {
+void DeduceTypeVisitor::visit(PredicateExpression* expr) {
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
@@ -639,7 +639,7 @@ void DeduceTypeVisitor::visit(PredicateExpression *expr) {
   type_ = Value::Type::BOOL;
 }
 
-void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
+void DeduceTypeVisitor::visit(ListComprehensionExpression* expr) {
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
@@ -672,7 +672,7 @@ void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
   type_ = Value::Type::LIST;
 }
 
-void DeduceTypeVisitor::visit(ReduceExpression *expr) {
+void DeduceTypeVisitor::visit(ReduceExpression* expr) {
   expr->initial()->accept(this);
   if (!ok()) return;
   expr->mapping()->accept(this);
@@ -696,7 +696,7 @@ void DeduceTypeVisitor::visit(ReduceExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
+void DeduceTypeVisitor::visit(SubscriptRangeExpression* expr) {
   expr->list()->accept(this);
   if (!ok()) {
     return;
@@ -734,8 +734,8 @@ void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
   type_ = Value::Type::LIST;
 }
 
-void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
-  const auto &tag = expr->sym();
+void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression* expr) {
+  const auto& tag = expr->sym();
   auto tagId = qctx_->schemaMng()->toTagID(space_, tag);
   if (!tagId.ok()) {
     status_ = tagId.status();
@@ -747,8 +747,8 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
         Status::SemanticError("`%s', not found tag `%s'.", expr->toString().c_str(), tag.c_str());
     return;
   }
-  const auto &prop = expr->prop();
-  auto *field = schema->field(prop);
+  const auto& prop = expr->prop();
+  auto* field = schema->field(prop);
   if (field == nullptr) {
     status_ = Status::SemanticError(
         "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
@@ -757,7 +757,7 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
   type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
-void DeduceTypeVisitor::visit(PathBuildExpression *) {
+void DeduceTypeVisitor::visit(PathBuildExpression*) {
   type_ = Value::Type::PATH;
 }
 #undef DETECT_NARYEXPR_TYPE

@@ -17,7 +17,7 @@ std::string EdgeKey::toString() const {
 std::string EdgeKeys::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &key : keys_) {
+  for (auto& key : keys_) {
     buf += key->toString();
     buf += ",";
   }

@@ -12,7 +12,7 @@ namespace graph {
 
 class ShowMetaLeaderExecutor final : public Executor {
  public:
-  ShowMetaLeaderExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowMetaLeaderExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowMetaLeaderExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

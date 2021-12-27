@@ -83,7 +83,7 @@ TEST(BarrierTest, ConsecutiveTest) {
   for (auto i = 0UL; i < N; i++) {
     threads.emplace_back(cb);
   }
-  for (auto &thread : threads) {
+  for (auto& thread : threads) {
     thread.join();
   }
   ASSERT_EQ(0UL, counter.load() % N);

@@ -22,7 +22,7 @@ folly::Future<Status> InsertVerticesExecutor::execute() {
 folly::Future<Status> InsertVerticesExecutor::insertVertices() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ivNode = asNode<InsertVertices>(node());
+  auto* ivNode = asNode<InsertVertices>(node());
   time::Duration addVertTime;
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
@@ -52,7 +52,7 @@ folly::Future<Status> InsertEdgesExecutor::execute() {
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ieNode = asNode<InsertEdges>(node());
+  auto* ieNode = asNode<InsertEdges>(node());
   time::Duration addEdgeTime;
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(

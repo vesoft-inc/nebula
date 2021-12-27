@@ -10,12 +10,12 @@
 namespace nebula {
 namespace graph {
 
-/*static*/ VidExtractVisitor::VidPattern VidExtractVisitor::intersect(VidPattern &&left,
-                                                                      VidPattern &&right) {
+/*static*/ VidExtractVisitor::VidPattern VidExtractVisitor::intersect(VidPattern&& left,
+                                                                      VidPattern&& right) {
   DCHECK(left.spec == VidPattern::Special::kInUsed);
   DCHECK(right.spec == VidPattern::Special::kInUsed);
   VidPattern v{VidPattern::Special::kInUsed, {std::move(left.nodes)}};
-  for (auto &node : right.nodes) {
+  for (auto& node : right.nodes) {
     DCHECK(node.second.kind == VidPattern::Vids::Kind::kIn);
     auto find = v.nodes.find(node.first);
     if (find == v.nodes.end()) {
@@ -36,7 +36,7 @@ namespace graph {
 }
 
 /*static*/ VidExtractVisitor::VidPattern VidExtractVisitor::intersect(
-    VidPattern &&left, std::pair<std::string, VidPattern::Vids> &&right) {
+    VidPattern&& left, std::pair<std::string, VidPattern::Vids>&& right) {
   auto find = left.nodes.find(right.first);
   if (find == left.nodes.end()) {
     left.nodes.emplace(std::move(right));
@@ -55,8 +55,8 @@ namespace graph {
 }
 
 /*static*/ VidExtractVisitor::VidPattern VidExtractVisitor::intersect(
-    std::pair<std::string, VidPattern::Vids> &&left,
-    std::pair<std::string, VidPattern::Vids> &&right) {
+    std::pair<std::string, VidPattern::Vids>&& left,
+    std::pair<std::string, VidPattern::Vids>&& right) {
   VidPattern v{VidPattern::Special::kInUsed, {}};
   if (left.first != right.first) {
     v.nodes.emplace(std::move(left));
@@ -78,18 +78,18 @@ namespace graph {
   return v;
 }
 
-void VidExtractVisitor::visit(ConstantExpression *expr) {
+void VidExtractVisitor::visit(ConstantExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(UnaryExpression *expr) {
+void VidExtractVisitor::visit(UnaryExpression* expr) {
   if (expr->kind() == Expression::Kind::kUnaryNot) {
     //        const auto *expr = static_cast<const UnaryExpression *>(expr);
     expr->operand()->accept(this);
     auto operandResult = moveVidPattern();
     if (operandResult.spec == VidPattern::Special::kInUsed) {
-      for (auto &node : operandResult.nodes) {
+      for (auto& node : operandResult.nodes) {
         switch (node.second.kind) {
           case VidPattern::Vids::Kind::kOtherSource:
             break;
@@ -108,19 +108,19 @@ void VidExtractVisitor::visit(UnaryExpression *expr) {
   }
 }
 
-void VidExtractVisitor::visit(TypeCastingExpression *expr) {
+void VidExtractVisitor::visit(TypeCastingExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(LabelExpression *expr) {
+void VidExtractVisitor::visit(LabelExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(LabelAttributeExpression *expr) {
+void VidExtractVisitor::visit(LabelAttributeExpression* expr) {
   if (expr->kind() == Expression::Kind::kLabelAttribute) {
-    const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr);
+    const auto* labelExpr = static_cast<const LabelAttributeExpression*>(expr);
     vidPattern_ =
         VidPattern{VidPattern::Special::kInUsed,
                    {{labelExpr->left()->toString(), {VidPattern::Vids::Kind::kOtherSource, {}}}}};
@@ -129,17 +129,17 @@ void VidExtractVisitor::visit(LabelAttributeExpression *expr) {
   }
 }
 
-void VidExtractVisitor::visit(ArithmeticExpression *expr) {
+void VidExtractVisitor::visit(ArithmeticExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(RelationalExpression *expr) {
+void VidExtractVisitor::visit(RelationalExpression* expr) {
   if (expr->kind() == Expression::Kind::kRelIn) {
     // id(V) IN [List]
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr->left());
-      const auto &label = labelExpr->left()->toString();
+      const auto* labelExpr = static_cast<const LabelAttributeExpression*>(expr->left());
+      const auto& label = labelExpr->left()->toString();
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
@@ -152,14 +152,14 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
 
-    const auto *fCallExpr = static_cast<const FunctionCallExpression *>(expr->left());
+    const auto* fCallExpr = static_cast<const FunctionCallExpression*>(expr->left());
     if (fCallExpr->name() != "id" && fCallExpr->args()->numArgs() != 1 &&
         fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
       vidPattern_ = VidPattern{};
       return;
     }
 
-    auto *listExpr = static_cast<ListExpression *>(expr->right());
+    auto* listExpr = static_cast<ListExpression*>(expr->right());
     QueryExpressionContext ctx;
     vidPattern_ =
         VidPattern{VidPattern::Special::kInUsed,
@@ -169,8 +169,8 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
     // id(V) == vid
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr->left());
-      const auto &label = labelExpr->left()->toString();
+      const auto* labelExpr = static_cast<const LabelAttributeExpression*>(expr->left());
+      const auto& label = labelExpr->left()->toString();
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
@@ -180,13 +180,13 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       vidPattern_ = VidPattern{};
       return;
     }
-    const auto *fCallExpr = static_cast<const FunctionCallExpression *>(expr->left());
+    const auto* fCallExpr = static_cast<const FunctionCallExpression*>(expr->left());
     if (fCallExpr->name() != "id" && fCallExpr->args()->numArgs() != 1 &&
         fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
       vidPattern_ = VidPattern{};
       return;
     }
-    const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
+    const auto* constExpr = static_cast<const ConstantExpression*>(expr->right());
     if (!SchemaUtil::isValidVid(constExpr->value())) {
       vidPattern_ = VidPattern{};
       return;
@@ -201,31 +201,31 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
   }
 }
 
-void VidExtractVisitor::visit(SubscriptExpression *expr) {
+void VidExtractVisitor::visit(SubscriptExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(AttributeExpression *expr) {
+void VidExtractVisitor::visit(AttributeExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(LogicalExpression *expr) {
+void VidExtractVisitor::visit(LogicalExpression* expr) {
   if (expr->kind() == Expression::Kind::kLogicalAnd) {
     //        const auto *expr = static_cast<const LogicalExpression *>(expr);
     std::vector<VidPattern> operandsResult;
     operandsResult.reserve(expr->operands().size());
-    for (const auto &operand : expr->operands()) {
+    for (const auto& operand : expr->operands()) {
       //            operandsResult.emplace_back(reverseEvalVids(operand.get()));
       operand->accept(this);
       operandsResult.emplace_back(moveVidPattern());
     }
     VidPattern inResult{VidPattern::Special::kInUsed, {}};
     VidPattern notInResult{VidPattern::Special::kInUsed, {}};
-    for (auto &operandResult : operandsResult) {
+    for (auto& operandResult : operandsResult) {
       if (operandResult.spec == VidPattern::Special::kInUsed) {
-        for (auto &node : operandResult.nodes) {
+        for (auto& node : operandResult.nodes) {
           if (node.second.kind == VidPattern::Vids::Kind::kNotIn) {
             notInResult.nodes[node.first].vids.values.insert(
                 notInResult.nodes[node.first].vids.values.end(),
@@ -237,9 +237,9 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
     }
     // intersect all in list
     std::vector<std::pair<std::string, VidPattern::Vids>> inOperandsResult;
-    for (auto &operandResult : operandsResult) {
+    for (auto& operandResult : operandsResult) {
       if (operandResult.spec == VidPattern::Special::kInUsed) {
-        for (auto &node : operandResult.nodes) {
+        for (auto& node : operandResult.nodes) {
           if (node.second.kind == VidPattern::Vids::Kind::kIn) {
             inOperandsResult.emplace_back(std::move(node));
           }
@@ -257,11 +257,11 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
       }
     }
     // remove that not in item
-    for (auto &node : inResult.nodes) {
+    for (auto& node : inResult.nodes) {
       auto find = notInResult.nodes.find(node.first);
       if (find != notInResult.nodes.end()) {
         List removeNotIn;
-        for (auto &v : node.second.vids.values) {
+        for (auto& v : node.second.vids.values) {
           if (std::find(find->second.vids.values.begin(), find->second.vids.values.end(), v) ==
               find->second.vids.values.end()) {
             removeNotIn.emplace_back(std::move(v));
@@ -277,14 +277,14 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
     //        *>(expr);
     std::vector<VidPattern> operandsResult;
     operandsResult.reserve(expr->operands().size());
-    for (const auto &operand : expr->operands()) {
+    for (const auto& operand : expr->operands()) {
       operand->accept(this);
       operandsResult.emplace_back(moveVidPattern());
     }
     VidPattern inResult{VidPattern::Special::kInUsed, {}};
-    for (auto &result : operandsResult) {
+    for (auto& result : operandsResult) {
       if (result.spec == VidPattern::Special::kInUsed) {
-        for (auto &node : result.nodes) {
+        for (auto& node : result.nodes) {
           // Can't deduce with outher source (e.g. PropertiesIndex)
           switch (node.second.kind) {
             case VidPattern::Vids::Kind::kOtherSource:
@@ -313,150 +313,150 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
 }
 
 // function call
-void VidExtractVisitor::visit(FunctionCallExpression *expr) {
+void VidExtractVisitor::visit(FunctionCallExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(UUIDExpression *expr) {
+void VidExtractVisitor::visit(UUIDExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
 // variable expression
-void VidExtractVisitor::visit(VariableExpression *expr) {
+void VidExtractVisitor::visit(VariableExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(VersionedVariableExpression *expr) {
+void VidExtractVisitor::visit(VersionedVariableExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
 // container expression
-void VidExtractVisitor::visit(ListExpression *expr) {
+void VidExtractVisitor::visit(ListExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(SetExpression *expr) {
+void VidExtractVisitor::visit(SetExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(MapExpression *expr) {
+void VidExtractVisitor::visit(MapExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
 // property Expression
-void VidExtractVisitor::visit(TagPropertyExpression *expr) {
+void VidExtractVisitor::visit(TagPropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgePropertyExpression *expr) {
+void VidExtractVisitor::visit(EdgePropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(InputPropertyExpression *expr) {
+void VidExtractVisitor::visit(InputPropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(VariablePropertyExpression *expr) {
+void VidExtractVisitor::visit(VariablePropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(DestPropertyExpression *expr) {
+void VidExtractVisitor::visit(DestPropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(SourcePropertyExpression *expr) {
+void VidExtractVisitor::visit(SourcePropertyExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgeSrcIdExpression *expr) {
+void VidExtractVisitor::visit(EdgeSrcIdExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgeTypeExpression *expr) {
+void VidExtractVisitor::visit(EdgeTypeExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgeRankExpression *expr) {
+void VidExtractVisitor::visit(EdgeRankExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgeDstIdExpression *expr) {
+void VidExtractVisitor::visit(EdgeDstIdExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(VertexExpression *expr) {
+void VidExtractVisitor::visit(VertexExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(EdgeExpression *expr) {
+void VidExtractVisitor::visit(EdgeExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(ColumnExpression *expr) {
+void VidExtractVisitor::visit(ColumnExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(CaseExpression *expr) {
+void VidExtractVisitor::visit(CaseExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visitBinaryExpr(BinaryExpression *expr) {
+void VidExtractVisitor::visitBinaryExpr(BinaryExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(PathBuildExpression *expr) {
+void VidExtractVisitor::visit(PathBuildExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(ListComprehensionExpression *expr) {
+void VidExtractVisitor::visit(ListComprehensionExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(AggregateExpression *expr) {
+void VidExtractVisitor::visit(AggregateExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(PredicateExpression *expr) {
+void VidExtractVisitor::visit(PredicateExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(ReduceExpression *expr) {
+void VidExtractVisitor::visit(ReduceExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-void VidExtractVisitor::visit(SubscriptRangeExpression *expr) {
+void VidExtractVisitor::visit(SubscriptRangeExpression* expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }
 
-std::ostream &operator<<(std::ostream &os, const VidExtractVisitor::VidPattern &vp) {
+std::ostream& operator<<(std::ostream& os, const VidExtractVisitor::VidPattern& vp) {
   switch (vp.spec) {
     case VidExtractVisitor::VidPattern::Special::kIgnore:
       os << "Ignore.";
@@ -464,7 +464,7 @@ std::ostream &operator<<(std::ostream &os, const VidExtractVisitor::VidPattern &
 
     case VidExtractVisitor::VidPattern::Special::kInUsed:
       os << "InUsed: " << std::endl;
-      for (const auto &node : vp.nodes) {
+      for (const auto& node : vp.nodes) {
         os << node.first;
         switch (node.second.kind) {
           case VidExtractVisitor::VidPattern::Vids::Kind::kOtherSource:

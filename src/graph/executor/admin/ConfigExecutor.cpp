@@ -16,7 +16,7 @@
 namespace nebula {
 namespace graph {
 
-std::vector<Value> ConfigBaseExecutor::generateColumns(const meta::cpp2::ConfigItem &item) {
+std::vector<Value> ConfigBaseExecutor::generateColumns(const meta::cpp2::ConfigItem& item) {
   std::vector<Value> columns;
   columns.resize(5);
   auto value = item.get_value();
@@ -28,10 +28,10 @@ std::vector<Value> ConfigBaseExecutor::generateColumns(const meta::cpp2::ConfigI
   return columns;
 }
 
-DataSet ConfigBaseExecutor::generateResult(const std::vector<meta::cpp2::ConfigItem> &items) {
+DataSet ConfigBaseExecutor::generateResult(const std::vector<meta::cpp2::ConfigItem>& items) {
   DataSet result;
   result.colNames = {"module", "name", "type", "mode", "value"};
-  for (const auto &item : items) {
+  for (const auto& item : items) {
     auto columns = generateColumns(item);
     result.rows.emplace_back(std::move(columns));
   }
@@ -41,7 +41,7 @@ DataSet ConfigBaseExecutor::generateResult(const std::vector<meta::cpp2::ConfigI
 folly::Future<Status> ShowConfigsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *scNode = asNode<ShowConfigs>(node());
+  auto* scNode = asNode<ShowConfigs>(node());
   return qctx()
       ->getMetaClient()
       ->listConfigs(scNode->getModule())
@@ -62,7 +62,7 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
 folly::Future<Status> SetConfigExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *scNode = asNode<SetConfig>(node());
+  auto* scNode = asNode<SetConfig>(node());
   auto module = scNode->getModule();
   auto name = scNode->getName();
   auto value = scNode->getValue();
@@ -102,7 +102,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
 folly::Future<Status> GetConfigExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *gcNode = asNode<GetConfig>(node());
+  auto* gcNode = asNode<GetConfig>(node());
   return qctx()
       ->getMetaClient()
       ->getConfig(gcNode->getModule(), gcNode->getName())

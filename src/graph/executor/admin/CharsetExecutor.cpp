@@ -17,7 +17,7 @@ folly::Future<Status> ShowCharsetExecutor::execute() {
 
   auto charsetDesc = qctx()->getCharsetInfo()->getCharsetDesc();
 
-  for (auto &charSet : charsetDesc) {
+  for (auto& charSet : charsetDesc) {
     Row row;
     row.values.resize(4);
     row.values[0].setStr(charSet.second.charsetName_);
@@ -37,8 +37,8 @@ folly::Future<Status> ShowCollationExecutor::execute() {
 
   auto charsetDesc = qctx()->getCharsetInfo()->getCharsetDesc();
 
-  for (auto &charSet : charsetDesc) {
-    for (auto &coll : charSet.second.supportColls_) {
+  for (auto& charSet : charsetDesc) {
+    for (auto& coll : charSet.second.supportColls_) {
       Row row;
       row.values.resize(2);
       row.values[0].setStr(coll);

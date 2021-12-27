@@ -13,7 +13,7 @@ namespace encryption {
 class MD5Utils final {
  public:
   MD5Utils() = delete;
-  static std::string md5Encode(const std::string &str);
+  static std::string md5Encode(const std::string& str);
 };
 }  // namespace encryption
 }  // namespace nebula

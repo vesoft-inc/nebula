@@ -23,9 +23,9 @@ using nebula::graph::SingleDependencyNode;
 namespace nebula {
 namespace opt {
 
-Optimizer::Optimizer(std::vector<const RuleSet *> ruleSets) : ruleSets_(std::move(ruleSets)) {}
+Optimizer::Optimizer(std::vector<const RuleSet*> ruleSets) : ruleSets_(std::move(ruleSets)) {}
 
-StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
+StatusOr<const PlanNode*> Optimizer::findBestPlan(QueryContext* qctx) {
   DCHECK(qctx != nullptr);
   auto optCtx = std::make_unique<OptContext>(qctx);
 
@@ -38,12 +38,12 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   return rootGroup->getPlan();
 }
 
-StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
-  std::unordered_map<int64_t, OptGroup *> visited;
+StatusOr<OptGroup*> Optimizer::prepare(OptContext* ctx, PlanNode* root) {
+  std::unordered_map<int64_t, OptGroup*> visited;
   return convertToGroup(ctx, root, &visited);
 }
 
-Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
+Status Optimizer::doExploration(OptContext* octx, OptGroup* rootGroup) {
   int8_t appliedTimes = kMaxIterationRound;
   while (octx->changed()) {
     if (--appliedTimes < 0) break;
@@ -58,9 +58,9 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
   return Status::OK();
 }
 
-OptGroup *Optimizer::convertToGroup(OptContext *ctx,
-                                    PlanNode *node,
-                                    std::unordered_map<int64_t, OptGroup *> *visited) {
+OptGroup* Optimizer::convertToGroup(OptContext* ctx,
+                                    PlanNode* node,
+                                    std::unordered_map<int64_t, OptGroup*>* visited) {
   auto iter = visited->find(node->id());
   if (iter != visited->cend()) {
     return iter->second;
@@ -70,16 +70,16 @@ OptGroup *Optimizer::convertToGroup(OptContext *ctx,
   auto groupNode = group->makeGroupNode(node);
 
   if (node->kind() == PlanNode::Kind::kSelect) {
-    auto select = static_cast<Select *>(node);
+    auto select = static_cast<Select*>(node);
     addBodyToGroupNode(ctx, select->then(), groupNode, visited);
     addBodyToGroupNode(ctx, select->otherwise(), groupNode, visited);
   } else if (node->kind() == PlanNode::Kind::kLoop) {
-    auto loop = static_cast<Loop *>(node);
+    auto loop = static_cast<Loop*>(node);
     addBodyToGroupNode(ctx, loop->body(), groupNode, visited);
   }
 
   for (size_t i = 0; i < node->numDeps(); ++i) {
-    auto dep = const_cast<PlanNode *>(node->dep(i));
+    auto dep = const_cast<PlanNode*>(node->dep(i));
     groupNode->dependsOn(convertToGroup(ctx, dep, visited));
   }
 
@@ -87,11 +87,11 @@ OptGroup *Optimizer::convertToGroup(OptContext *ctx,
   return group;
 }
 
-void Optimizer::addBodyToGroupNode(OptContext *ctx,
-                                   const PlanNode *node,
-                                   OptGroupNode *gnode,
-                                   std::unordered_map<int64_t, OptGroup *> *visited) {
-  auto n = const_cast<PlanNode *>(node);
+void Optimizer::addBodyToGroupNode(OptContext* ctx,
+                                   const PlanNode* node,
+                                   OptGroupNode* gnode,
+                                   std::unordered_map<int64_t, OptGroup*>* visited) {
+  auto n = const_cast<PlanNode*>(node);
   auto body = convertToGroup(ctx, n, visited);
   gnode->addBody(body);
 }

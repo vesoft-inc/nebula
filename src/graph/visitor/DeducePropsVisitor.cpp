@@ -13,8 +13,8 @@ namespace nebula {
 namespace graph {
 
 // Expression properties
-void ExpressionProps::insertVarProp(const std::string &outputVar, folly::StringPiece prop) {
-  auto &props = varProps_[outputVar];
+void ExpressionProps::insertVarProp(const std::string& outputVar, folly::StringPiece prop) {
+  auto& props = varProps_[outputVar];
   props.emplace(prop);
 }
 
@@ -23,31 +23,31 @@ void ExpressionProps::insertInputProp(folly::StringPiece prop) {
 }
 
 void ExpressionProps::insertSrcTagProp(TagID tagId, folly::StringPiece prop) {
-  auto &props = srcTagProps_[tagId];
+  auto& props = srcTagProps_[tagId];
   props.emplace(prop);
 }
 
 void ExpressionProps::insertDstTagProp(TagID tagId, folly::StringPiece prop) {
-  auto &props = dstTagProps_[tagId];
+  auto& props = dstTagProps_[tagId];
   props.emplace(prop);
 }
 
 void ExpressionProps::insertEdgeProp(EdgeType edgeType, folly::StringPiece prop) {
-  auto &props = edgeProps_[edgeType];
+  auto& props = edgeProps_[edgeType];
   props.emplace(prop);
 }
 
-void ExpressionProps::insertTagNameIds(const std::string &name, TagID tagId) {
+void ExpressionProps::insertTagNameIds(const std::string& name, TagID tagId) {
   tagNameIds_.emplace(name, tagId);
 }
 
 void ExpressionProps::insertTagProp(TagID tagId, folly::StringPiece prop) {
-  auto &props = tagProps_[tagId];
+  auto& props = tagProps_[tagId];
   props.emplace(prop);
 }
 
-bool ExpressionProps::isSubsetOfInput(const std::set<folly::StringPiece> &props) {
-  for (auto &prop : props) {
+bool ExpressionProps::isSubsetOfInput(const std::set<folly::StringPiece>& props) {
+  for (auto& prop : props) {
     if (inputProps_.find(prop) == inputProps_.end()) {
       return false;
     }
@@ -55,12 +55,12 @@ bool ExpressionProps::isSubsetOfInput(const std::set<folly::StringPiece> &props)
   return true;
 }
 
-bool ExpressionProps::isSubsetOfVar(const VarPropMap &props) {
-  for (auto &iter : props) {
+bool ExpressionProps::isSubsetOfVar(const VarPropMap& props) {
+  for (auto& iter : props) {
     if (varProps_.find(iter.first) == varProps_.end()) {
       return false;
     }
-    for (auto &prop : iter.second) {
+    for (auto& prop : iter.second) {
       if (varProps_[iter.first].find(prop) == varProps_[iter.first].end()) {
         return false;
       }
@@ -75,31 +75,31 @@ void ExpressionProps::unionProps(ExpressionProps exprProps) {
                        std::make_move_iterator(exprProps.inputProps().end()));
   }
   if (!exprProps.srcTagProps().empty()) {
-    for (auto &iter : exprProps.srcTagProps()) {
+    for (auto& iter : exprProps.srcTagProps()) {
       srcTagProps_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                       std::make_move_iterator(iter.second.end()));
     }
   }
   if (!exprProps.dstTagProps().empty()) {
-    for (auto &iter : exprProps.dstTagProps()) {
+    for (auto& iter : exprProps.dstTagProps()) {
       dstTagProps_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                       std::make_move_iterator(iter.second.end()));
     }
   }
   if (!exprProps.tagProps().empty()) {
-    for (auto &iter : exprProps.tagProps()) {
+    for (auto& iter : exprProps.tagProps()) {
       tagProps_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                    std::make_move_iterator(iter.second.end()));
     }
   }
   if (!exprProps.varProps().empty()) {
-    for (auto &iter : exprProps.varProps()) {
+    for (auto& iter : exprProps.varProps()) {
       varProps_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                    std::make_move_iterator(iter.second.end()));
     }
   }
   if (!exprProps.edgeProps().empty()) {
-    for (auto &iter : exprProps.edgeProps()) {
+    for (auto& iter : exprProps.edgeProps()) {
       edgeProps_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                     std::make_move_iterator(iter.second.end()));
     }
@@ -107,12 +107,12 @@ void ExpressionProps::unionProps(ExpressionProps exprProps) {
 }
 
 // visitor
-DeducePropsVisitor::DeducePropsVisitor(QueryContext *qctx,
+DeducePropsVisitor::DeducePropsVisitor(QueryContext* qctx,
                                        GraphSpaceID space,
-                                       ExpressionProps *exprProps,
-                                       std::set<std::string> *userDefinedVarNameList,
-                                       std::vector<TagID> *tagIds,
-                                       std::vector<EdgeType> *edgeTypes)
+                                       ExpressionProps* exprProps,
+                                       std::set<std::string>* userDefinedVarNameList,
+                                       std::vector<TagID>* tagIds,
+                                       std::vector<EdgeType>* edgeTypes)
     : qctx_(qctx),
       space_(space),
       exprProps_(exprProps),
@@ -124,11 +124,11 @@ DeducePropsVisitor::DeducePropsVisitor(QueryContext *qctx,
   DCHECK(userDefinedVarNameList != nullptr);
 }
 
-void DeducePropsVisitor::visit(EdgePropertyExpression *expr) {
+void DeducePropsVisitor::visit(EdgePropertyExpression* expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(TagPropertyExpression *expr) {
+void DeducePropsVisitor::visit(TagPropertyExpression* expr) {
   auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
@@ -138,16 +138,16 @@ void DeducePropsVisitor::visit(TagPropertyExpression *expr) {
   exprProps_->insertTagProp(status.value(), expr->prop());
 }
 
-void DeducePropsVisitor::visit(InputPropertyExpression *expr) {
+void DeducePropsVisitor::visit(InputPropertyExpression* expr) {
   exprProps_->insertInputProp(expr->prop());
 }
 
-void DeducePropsVisitor::visit(VariablePropertyExpression *expr) {
+void DeducePropsVisitor::visit(VariablePropertyExpression* expr) {
   exprProps_->insertVarProp(expr->sym(), expr->prop());
   userDefinedVarNameList_->emplace(expr->sym());
 }
 
-void DeducePropsVisitor::visit(DestPropertyExpression *expr) {
+void DeducePropsVisitor::visit(DestPropertyExpression* expr) {
   auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
@@ -156,7 +156,7 @@ void DeducePropsVisitor::visit(DestPropertyExpression *expr) {
   exprProps_->insertDstTagProp(std::move(status).value(), expr->prop());
 }
 
-void DeducePropsVisitor::visit(SourcePropertyExpression *expr) {
+void DeducePropsVisitor::visit(SourcePropertyExpression* expr) {
   auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
@@ -165,58 +165,58 @@ void DeducePropsVisitor::visit(SourcePropertyExpression *expr) {
   exprProps_->insertSrcTagProp(std::move(status).value(), expr->prop());
 }
 
-void DeducePropsVisitor::visit(EdgeSrcIdExpression *expr) {
+void DeducePropsVisitor::visit(EdgeSrcIdExpression* expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(EdgeTypeExpression *expr) {
+void DeducePropsVisitor::visit(EdgeTypeExpression* expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(EdgeRankExpression *expr) {
+void DeducePropsVisitor::visit(EdgeRankExpression* expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) {
+void DeducePropsVisitor::visit(EdgeDstIdExpression* expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(UUIDExpression *expr) {
+void DeducePropsVisitor::visit(UUIDExpression* expr) {
   reportError(expr);
 }
 
-void DeducePropsVisitor::visit(VariableExpression *expr) {
+void DeducePropsVisitor::visit(VariableExpression* expr) {
   UNUSED(expr);
 }
 
-void DeducePropsVisitor::visit(VersionedVariableExpression *expr) {
+void DeducePropsVisitor::visit(VersionedVariableExpression* expr) {
   reportError(expr);
 }
 
-void DeducePropsVisitor::visit(LabelExpression *expr) {
+void DeducePropsVisitor::visit(LabelExpression* expr) {
   reportError(expr);
 }
 
-void DeducePropsVisitor::visit(LabelAttributeExpression *expr) {
+void DeducePropsVisitor::visit(LabelAttributeExpression* expr) {
   reportError(expr);
 }
 
-void DeducePropsVisitor::visit(ConstantExpression *expr) {
+void DeducePropsVisitor::visit(ConstantExpression* expr) {
   UNUSED(expr);
 }
 
-void DeducePropsVisitor::visit(ColumnExpression *expr) {
+void DeducePropsVisitor::visit(ColumnExpression* expr) {
   UNUSED(expr);
 }
 
-void DeducePropsVisitor::visit(VertexExpression *expr) {
+void DeducePropsVisitor::visit(VertexExpression* expr) {
   if (tagIds_ == nullptr) {
     UNUSED(expr);
     return;
   }
-  const auto &colName = expr->name();
-  for (const auto &tagID : *tagIds_) {
-    const auto &tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
+  const auto& colName = expr->name();
+  for (const auto& tagID : *tagIds_) {
+    const auto& tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
     if (colName == "$^") {
       exprProps_->insertSrcTagProp(tagID, nebula::kTag);
       for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
@@ -236,13 +236,13 @@ void DeducePropsVisitor::visit(VertexExpression *expr) {
   }
 }
 
-void DeducePropsVisitor::visit(EdgeExpression *expr) {
+void DeducePropsVisitor::visit(EdgeExpression* expr) {
   if (edgeTypes_ == nullptr) {
     UNUSED(expr);
     return;
   }
-  for (const auto &edgeType : *edgeTypes_) {
-    const auto &edgeSchema = qctx_->schemaMng()->getEdgeSchema(space_, std::abs(edgeType));
+  for (const auto& edgeType : *edgeTypes_) {
+    const auto& edgeSchema = qctx_->schemaMng()->getEdgeSchema(space_, std::abs(edgeType));
     exprProps_->insertEdgeProp(edgeType, kType);
     exprProps_->insertEdgeProp(edgeType, kSrc);
     exprProps_->insertEdgeProp(edgeType, kDst);
@@ -253,7 +253,7 @@ void DeducePropsVisitor::visit(EdgeExpression *expr) {
   }
 }
 
-void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
+void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression* expr) {
   auto status = qctx_->schemaMng()->toEdgeType(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
@@ -262,7 +262,7 @@ void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
   exprProps_->insertEdgeProp(status.value(), expr->prop());
 }
 
-void DeducePropsVisitor::reportError(const Expression *expr) {
+void DeducePropsVisitor::reportError(const Expression* expr) {
   std::stringstream ss;
   ss << "Not supported expression `" << expr->toString() << "' for props deduction.";
   status_ = Status::SemanticError(ss.str());

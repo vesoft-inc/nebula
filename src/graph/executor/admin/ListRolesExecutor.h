@@ -13,7 +13,7 @@ namespace graph {
 
 class ListRolesExecutor final : public Executor {
  public:
-  ListRolesExecutor(const PlanNode *node, QueryContext *qctx)
+  ListRolesExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ListRolesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

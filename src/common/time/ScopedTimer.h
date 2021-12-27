@@ -22,7 +22,7 @@ class ScopedTimer final {
   }
 
   template <typename T>
-  explicit ScopedTimer(T *value, bool paused = false)
+  explicit ScopedTimer(T* value, bool paused = false)
       : duration_(),
         callback_([value](uint64_t elapsedTime) { *value += static_cast<T>(elapsedTime); }) {
     DCHECK(value != nullptr);

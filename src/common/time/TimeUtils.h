@@ -39,8 +39,8 @@ class TimeUtils {
   template <
       typename D,
       typename = std::enable_if_t<std::is_same<D, Date>::value || std::is_same<D, DateTime>::value>>
-  static Status validateDate(const D &date) {
-    const int64_t *p = isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
+  static Status validateDate(const D& date) {
+    const int64_t* p = isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
     if ((p[date.month] - p[date.month - 1]) < date.day) {
       return Status::Error("`%s' is not a valid date.", date.toString().c_str());
     }
@@ -50,7 +50,7 @@ class TimeUtils {
   template <
       typename D,
       typename = std::enable_if_t<std::is_same<D, Time>::value || std::is_same<D, DateTime>::value>>
-  static Status validateTime(const D &time) {
+  static Status validateTime(const D& time) {
     if (time.hour < 0 || time.hour >= 24) {
       return Status::Error("Invalid hour number %d.", time.hour);
     }
@@ -66,16 +66,16 @@ class TimeUtils {
     return Status::OK();
   }
 
-  static StatusOr<DateTime> parseDateTime(const std::string &str);
+  static StatusOr<DateTime> parseDateTime(const std::string& str);
 
-  static StatusOr<DateTime> dateTimeFromMap(const Map &m);
+  static StatusOr<DateTime> dateTimeFromMap(const Map& m);
 
   // utc + offset = local
-  static DateTime dateTimeToUTC(const DateTime &dateTime) {
+  static DateTime dateTimeToUTC(const DateTime& dateTime) {
     return TimeConversion::dateTimeShift(dateTime, -Timezone::getGlobalTimezone().utcOffsetSecs());
   }
 
-  static DateTime utcToDateTime(const DateTime &dateTime) {
+  static DateTime utcToDateTime(const DateTime& dateTime) {
     return TimeConversion::dateTimeShift(dateTime, Timezone::getGlobalTimezone().utcOffsetSecs());
   }
 
@@ -94,7 +94,7 @@ class TimeUtils {
     return dt;
   }
 
-  static Value getDateTimeAttr(const DateTime &dt, const std::string &prop) {
+  static Value getDateTimeAttr(const DateTime& dt, const std::string& prop) {
     auto lowerProp = boost::algorithm::to_lower_copy(prop);
     if (lowerProp == "year") {
       return static_cast<int>(dt.year);
@@ -115,9 +115,9 @@ class TimeUtils {
     }
   }
 
-  static StatusOr<Date> dateFromMap(const Map &m);
+  static StatusOr<Date> dateFromMap(const Map& m);
 
-  static StatusOr<Date> parseDate(const std::string &str);
+  static StatusOr<Date> parseDate(const std::string& str);
 
   static StatusOr<Date> localDate() {
     Date d;
@@ -138,7 +138,7 @@ class TimeUtils {
     return TimeConversion::unixSecondsToDate(unixTime);
   }
 
-  static Value getDateAttr(const Date &d, const std::string &prop) {
+  static Value getDateAttr(const Date& d, const std::string& prop) {
     auto lowerProp = boost::algorithm::to_lower_copy(prop);
     if (lowerProp == "year") {
       return d.year;
@@ -151,16 +151,16 @@ class TimeUtils {
     }
   }
 
-  static StatusOr<Time> timeFromMap(const Map &m);
+  static StatusOr<Time> timeFromMap(const Map& m);
 
-  static StatusOr<Time> parseTime(const std::string &str);
+  static StatusOr<Time> parseTime(const std::string& str);
 
   // utc + offset = local
-  static Time timeToUTC(const Time &time) {
+  static Time timeToUTC(const Time& time) {
     return TimeConversion::timeShift(time, -Timezone::getGlobalTimezone().utcOffsetSecs());
   }
 
-  static Time utcToTime(const Time &time) {
+  static Time utcToTime(const Time& time) {
     return TimeConversion::timeShift(time, Timezone::getGlobalTimezone().utcOffsetSecs());
   }
 
@@ -179,7 +179,7 @@ class TimeUtils {
     return t;
   }
 
-  static Value getTimeAttr(const Time &t, const std::string &prop) {
+  static Value getTimeAttr(const Time& t, const std::string& prop) {
     auto lowerProp = boost::algorithm::to_lower_copy(prop);
     if (lowerProp == "hour") {
       return t.hour;
@@ -194,9 +194,9 @@ class TimeUtils {
     }
   }
 
-  static StatusOr<Value> toTimestamp(const Value &val);
+  static StatusOr<Value> toTimestamp(const Value& val);
 
-  static StatusOr<Duration> durationFromMap(const Map &m);
+  static StatusOr<Duration> durationFromMap(const Map& m);
 
  private:
   struct UnixTime {

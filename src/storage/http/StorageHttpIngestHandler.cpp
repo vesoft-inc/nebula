@@ -18,7 +18,7 @@ using proxygen::ProxygenError;
 using proxygen::ResponseBuilder;
 using proxygen::UpgradeProtocol;
 
-void StorageHttpIngestHandler::init(nebula::kvstore::KVStore *kvstore) {
+void StorageHttpIngestHandler::init(nebula::kvstore::KVStore* kvstore) {
   kvstore_ = kvstore;
   CHECK_NOTNULL(kvstore_);
 }

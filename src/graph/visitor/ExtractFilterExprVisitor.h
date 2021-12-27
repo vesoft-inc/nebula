@@ -14,29 +14,29 @@ namespace graph {
 
 class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  public:
-  explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
+  explicit ExtractFilterExprVisitor(ObjectPool* ObjPool) : pool_(ObjPool) {}
 
   bool ok() const override {
     return canBePushed_;
   }
 
-  Expression *remainedExpr() {
+  Expression* remainedExpr() {
     return remainedExpr_;
   }
 
-  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
+  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool* pool) {
     ExtractFilterExprVisitor visitor(pool);
     visitor.pushType_ = PushType::kGetNeighbors;
     return visitor;
   }
 
-  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool *pool) {
+  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool* pool) {
     ExtractFilterExprVisitor visitor(pool);
     visitor.pushType_ = PushType::kGetVertices;
     return visitor;
   }
 
-  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool *pool) {
+  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool* pool) {
     ExtractFilterExprVisitor visitor(pool);
     visitor.pushType_ = PushType::kGetEdges;
     return visitor;
@@ -45,26 +45,26 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  private:
   using ExprVisitorImpl::visit;
 
-  void visit(ConstantExpression *) override;
-  void visit(LabelExpression *) override;
-  void visit(UUIDExpression *) override;
-  void visit(VariableExpression *) override;
-  void visit(VersionedVariableExpression *) override;
-  void visit(TagPropertyExpression *) override;
-  void visit(EdgePropertyExpression *) override;
-  void visit(InputPropertyExpression *) override;
-  void visit(VariablePropertyExpression *) override;
-  void visit(DestPropertyExpression *) override;
-  void visit(SourcePropertyExpression *) override;
-  void visit(EdgeSrcIdExpression *) override;
-  void visit(EdgeTypeExpression *) override;
-  void visit(EdgeRankExpression *) override;
-  void visit(EdgeDstIdExpression *) override;
-  void visit(VertexExpression *) override;
-  void visit(EdgeExpression *) override;
-  void visit(LogicalExpression *) override;
-  void visit(ColumnExpression *) override;
-  void visit(SubscriptRangeExpression *) override;
+  void visit(ConstantExpression*) override;
+  void visit(LabelExpression*) override;
+  void visit(UUIDExpression*) override;
+  void visit(VariableExpression*) override;
+  void visit(VersionedVariableExpression*) override;
+  void visit(TagPropertyExpression*) override;
+  void visit(EdgePropertyExpression*) override;
+  void visit(InputPropertyExpression*) override;
+  void visit(VariablePropertyExpression*) override;
+  void visit(DestPropertyExpression*) override;
+  void visit(SourcePropertyExpression*) override;
+  void visit(EdgeSrcIdExpression*) override;
+  void visit(EdgeTypeExpression*) override;
+  void visit(EdgeRankExpression*) override;
+  void visit(EdgeDstIdExpression*) override;
+  void visit(VertexExpression*) override;
+  void visit(EdgeExpression*) override;
+  void visit(LogicalExpression*) override;
+  void visit(ColumnExpression*) override;
+  void visit(SubscriptRangeExpression*) override;
 
  private:
   enum class PushType {
@@ -72,21 +72,21 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
     kGetVertices,  // Get/Append/Scan Vertices
     kGetEdges,     // Get/Append/Scan Edges
   };
-  bool visitLogicalAnd(LogicalExpression *expr, std::vector<bool> &flags);
-  bool visitLogicalOr(LogicalExpression *expr);
-  void splitOrExpr(LogicalExpression *expr,
-                   std::vector<bool> &flags,
+  bool visitLogicalAnd(LogicalExpression* expr, std::vector<bool>& flags);
+  bool visitLogicalOr(LogicalExpression* expr);
+  void splitOrExpr(LogicalExpression* expr,
+                   std::vector<bool>& flags,
                    const unsigned int canNotPushedIndex);
   // void rewriteAndExpr(Expression *rewriteExpr);
-  Expression *rewriteExpr(std::vector<Expression *> rel, std::vector<Expression *> sharedExprs);
-  void ExtractRemainExpr(LogicalExpression *expr, std::vector<bool> &flags);
+  Expression* rewriteExpr(std::vector<Expression*> rel, std::vector<Expression*> sharedExprs);
+  void ExtractRemainExpr(LogicalExpression* expr, std::vector<bool>& flags);
 
-  ObjectPool *pool_;
+  ObjectPool* pool_;
   bool canBePushed_{true};
   bool isNested_{false};
   bool hasSplit{false};
   bool splitForbidden{false};
-  Expression *remainedExpr_{nullptr};
+  Expression* remainedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
 };
 

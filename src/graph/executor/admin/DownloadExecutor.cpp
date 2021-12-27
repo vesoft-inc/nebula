@@ -13,7 +13,7 @@ namespace graph {
 
 folly::Future<Status> DownloadExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *dNode = asNode<Download>(node());
+  auto* dNode = asNode<Download>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()

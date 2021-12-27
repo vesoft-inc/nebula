@@ -21,10 +21,10 @@ struct ByteOrderData {
   static ByteOrder getMachineByteOrder() {
     static int endianCheck = 1;
     return static_cast<ByteOrder>(
-        *(reinterpret_cast<char *>(&endianCheck)));  // 0 for BigEndian, 1 for LittleEndian
+        *(reinterpret_cast<char*>(&endianCheck)));  // 0 for BigEndian, 1 for LittleEndian
   }
 
-  static uint32_t getUint32(const uint8_t *buf, ByteOrder byteOrder) {
+  static uint32_t getUint32(const uint8_t* buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
       return boost::endian::load_big_u32(buf);
     } else {
@@ -33,7 +33,7 @@ struct ByteOrderData {
     }
   }
 
-  static uint64_t getUint64(const uint8_t *buf, ByteOrder byteOrder) {
+  static uint64_t getUint64(const uint8_t* buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
       return boost::endian::load_big_u64(buf);
     } else {
@@ -42,14 +42,14 @@ struct ByteOrderData {
     }
   }
 
-  static double getDouble(const uint8_t *buf, ByteOrder byteOrder) {
+  static double getDouble(const uint8_t* buf, ByteOrder byteOrder) {
     uint64_t v = getUint64(buf, byteOrder);
     double ret;
     std::memcpy(&ret, &v, sizeof(double));
     return ret;
   }
 
-  static void putUint32(uint8_t *buf, ByteOrder byteOrder, uint32_t v) {
+  static void putUint32(uint8_t* buf, ByteOrder byteOrder, uint32_t v) {
     if (byteOrder == ByteOrder::BigEndian) {
       boost::endian::store_big_u32(buf, v);
     } else {
@@ -58,7 +58,7 @@ struct ByteOrderData {
     }
   }
 
-  static void putUint64(uint8_t *buf, ByteOrder byteOrder, uint64_t v) {
+  static void putUint64(uint8_t* buf, ByteOrder byteOrder, uint64_t v) {
     if (byteOrder == ByteOrder::BigEndian) {
       boost::endian::store_big_u64(buf, v);
     } else {
@@ -67,9 +67,9 @@ struct ByteOrderData {
     }
   }
 
-  static void putDouble(uint8_t *buf, ByteOrder byteOrder, double v) {
-    const char *c = reinterpret_cast<const char *>(&v);
-    uint64_t v2 = *reinterpret_cast<const uint64_t *>(c);
+  static void putDouble(uint8_t* buf, ByteOrder byteOrder, double v) {
+    const char* c = reinterpret_cast<const char*>(&v);
+    uint64_t v2 = *reinterpret_cast<const uint64_t*>(c);
     putUint64(buf, byteOrder, v2);
   }
 };

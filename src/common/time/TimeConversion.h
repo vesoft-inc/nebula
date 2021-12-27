@@ -18,17 +18,17 @@ class TimeConversion {
  public:
   explicit TimeConversion(...) = delete;
 
-  static int64_t dateTimeDiffSeconds(const DateTime &dateTime0, const DateTime &dateTime1);
+  static int64_t dateTimeDiffSeconds(const DateTime& dateTime0, const DateTime& dateTime1);
 
   // unix time
-  static int64_t dateTimeToUnixSeconds(const DateTime &dateTime) {
+  static int64_t dateTimeToUnixSeconds(const DateTime& dateTime) {
     return dateTimeDiffSeconds(dateTime, kEpoch);
   }
 
   static DateTime unixSecondsToDateTime(int64_t seconds);
 
   // Shift the DateTime in timezone space
-  static DateTime dateTimeShift(const DateTime &dateTime, int64_t offsetSeconds) {
+  static DateTime dateTimeShift(const DateTime& dateTime, int64_t offsetSeconds) {
     if (offsetSeconds == 0) {
       return dateTime;
     }
@@ -38,7 +38,7 @@ class TimeConversion {
   }
 
   // unix time
-  static int64_t dateToUnixSeconds(const Date &date) {
+  static int64_t dateToUnixSeconds(const Date& date) {
     return dateTimeDiffSeconds(DateTime(date), kEpoch);
   }
 
@@ -48,7 +48,7 @@ class TimeConversion {
   }
 
   // Shift the DateTime in timezone space
-  static Date dateShift(const Date &date, int64_t offsetSeconds) {
+  static Date dateShift(const Date& date, int64_t offsetSeconds) {
     if (offsetSeconds == 0) {
       return date;
     }
@@ -56,7 +56,7 @@ class TimeConversion {
   }
 
   // unix time
-  static int64_t timeToSeconds(const Time &time) {
+  static int64_t timeToSeconds(const Time& time) {
     int64_t seconds = time.sec;
     seconds += (time.minute * kSecondsOfMinute);
     seconds += (time.hour * kSecondsOfHour);
@@ -73,7 +73,7 @@ class TimeConversion {
   }
 
   // Shift the Time in timezone space
-  static Time timeShift(const Time &time, int64_t offsetSeconds) {
+  static Time timeShift(const Time& time, int64_t offsetSeconds) {
     if (offsetSeconds == 0) {
       return time;
     }

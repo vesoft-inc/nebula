@@ -29,7 +29,7 @@ using nebula::opt::RuleSet;
 namespace nebula {
 namespace graph {
 
-QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *optimizer) {
+QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer* optimizer) {
   qctx_ = std::move(qctx);
   optimizer_ = DCHECK_NOTNULL(optimizer);
   scheduler_ = std::make_unique<AsyncMsgNotifyBasedScheduler>(qctx_.get());
@@ -57,19 +57,19 @@ void QueryInstance::execute() {
         }
       })
       .thenError(folly::tag_t<ExecutionError>{},
-                 [this](const ExecutionError &e) { onError(e.status()); })
+                 [this](const ExecutionError& e) { onError(e.status()); })
       .thenError(folly::tag_t<std::exception>{},
-                 [this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
+                 [this](const std::exception& e) { onError(Status::Error("%s", e.what())); });
 }
 
 Status QueryInstance::validateAndOptimize() {
-  auto *rctx = qctx()->rctx();
+  auto* rctx = qctx()->rctx();
   VLOG(1) << "Parsing query: " << rctx->query();
   auto result = GQLParser(qctx()).parse(rctx->query());
   NG_RETURN_IF_ERROR(result);
   sentence_ = std::move(result).value();
   if (sentence_->kind() == Sentence::Kind::kSequential) {
-    size_t num = static_cast<const SequentialSentences *>(sentence_.get())->numSentences();
+    size_t num = static_cast<const SequentialSentences*>(sentence_.get())->numSentences();
     stats::StatsManager::addValue(kNumSentences, num);
   } else {
     stats::StatsManager::addValue(kNumSentences);
@@ -86,16 +86,16 @@ bool QueryInstance::explainOrContinue() {
   if (sentence_->kind() != Sentence::Kind::kExplain) {
     return true;
   }
-  auto &resp = qctx_->rctx()->resp();
+  auto& resp = qctx_->rctx()->resp();
   resp.planDesc = std::make_unique<PlanDescription>();
   DCHECK_NOTNULL(qctx_->plan())->describe(resp.planDesc.get());
-  return static_cast<const ExplainSentence *>(sentence_.get())->isProfile();
+  return static_cast<const ExplainSentence*>(sentence_.get())->isProfile();
 }
 
 void QueryInstance::onFinish() {
   auto rctx = qctx()->rctx();
   VLOG(1) << "Finish query: " << rctx->query();
-  auto &spaceName = rctx->session()->space().name;
+  auto& spaceName = rctx->session()->space().name;
   rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
 
   fillRespData(&rctx->resp());
@@ -116,7 +116,7 @@ void QueryInstance::onFinish() {
 
 void QueryInstance::onError(Status status) {
   LOG(ERROR) << status;
-  auto *rctx = qctx()->rctx();
+  auto* rctx = qctx()->rctx();
   switch (status.code()) {
     case Status::Code::kOk:
       rctx->resp().errorCode = ErrorCode::SUCCEEDED;
@@ -157,7 +157,7 @@ void QueryInstance::onError(Status status) {
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }
-  auto &spaceName = rctx->session()->space().name;
+  auto& spaceName = rctx->session()->space().name;
   rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
   rctx->resp().errorMsg = std::make_unique<std::string>(status.toString());
   auto latency = rctx->duration().elapsedInUSec();
@@ -173,7 +173,7 @@ void QueryInstance::onError(Status status) {
   delete this;
 }
 
-void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string &spaceName) const {
+void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string& spaceName) const {
   stats::StatsManager::addValue(kQueryLatencyUs, latency);
   if (FLAGS_enable_space_level_metrics && spaceName != "") {
     stats::StatsManager::addValue(
@@ -192,13 +192,13 @@ void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string &space
   }
 }
 
-void QueryInstance::fillRespData(ExecutionResponse *resp) {
+void QueryInstance::fillRespData(ExecutionResponse* resp) {
   auto ectx = DCHECK_NOTNULL(qctx_->ectx());
   auto plan = DCHECK_NOTNULL(qctx_->plan());
-  const auto &name = plan->root()->outputVar();
+  const auto& name = plan->root()->outputVar();
   if (!ectx->exist(name)) return;
 
-  auto &&value = ectx->moveValue(name);
+  auto&& value = ectx->moveValue(name);
   if (!value.isDataSet()) return;
 
   // fill dataset
@@ -218,7 +218,7 @@ Status QueryInstance::findBestPlan() {
   auto rootStatus = optimizer_->findBestPlan(qctx_.get());
   NG_RETURN_IF_ERROR(rootStatus);
   auto root = std::move(rootStatus).value();
-  plan->setRoot(const_cast<PlanNode *>(root));
+  plan->setRoot(const_cast<PlanNode*>(root));
   return Status::OK();
 }
 

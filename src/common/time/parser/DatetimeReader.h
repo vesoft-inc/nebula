@@ -54,12 +54,12 @@ class DatetimeReader {
   StatusOr<DateTime> read(std::string input);
 
   std::string buffer_;
-  const char *pos_{nullptr};
-  const char *end_{nullptr};
+  const char* pos_{nullptr};
+  const char* end_{nullptr};
   DatetimeScanner scanner_;
   DatetimeParser parser_;
   std::string error_;
-  DateTime *dt_{nullptr};
+  DateTime* dt_{nullptr};
 };
 
 }  // namespace time

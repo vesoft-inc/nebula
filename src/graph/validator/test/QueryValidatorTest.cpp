@@ -19,7 +19,7 @@ class QueryValidatorTest : public ValidatorTestBase {
 using PK = nebula::graph::PlanNode::Kind;
 
 TEST_F(QueryValidatorTest, TestFirstSentence) {
-  auto testFirstSentence = [](const std::string &msg) -> bool {
+  auto testFirstSentence = [](const std::string& msg) -> bool {
     return msg.find_first_of("SyntaxError: Could not start with the statement") == 0;
   };
 

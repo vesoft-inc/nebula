@@ -31,7 +31,7 @@ Status ProcessUtils::isPidAvailable(pid_t pid) {
   return Status::OK();
 }
 
-Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
+Status ProcessUtils::isPidAvailable(const std::string& pidFile) {
   // Test existence and readability
   if (::access(pidFile.c_str(), R_OK) == -1) {
     if (errno == ENOENT) {
@@ -51,7 +51,7 @@ Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
   return isPidAvailable(folly::to<uint32_t>(iter.matched()[1].str()));
 }
 
-Status ProcessUtils::makePidFile(const std::string &pidFile, pid_t pid) {
+Status ProcessUtils::makePidFile(const std::string& pidFile, pid_t pid) {
   if (pidFile.empty()) {
     return Status::Error("Path to the pid file is empty");
   }
@@ -61,7 +61,7 @@ Status ProcessUtils::makePidFile(const std::string &pidFile, pid_t pid) {
     return Status::Error("Failed to create: `%s'", dirname.c_str());
   }
   // Open or create pid file
-  auto *file = ::fopen(pidFile.c_str(), "w");
+  auto* file = ::fopen(pidFile.c_str(), "w");
   if (file == nullptr) {
     return Status::Error("Open or create `%s': %s", pidFile.c_str(), ::strerror(errno));
   }
@@ -77,7 +77,7 @@ Status ProcessUtils::makePidFile(const std::string &pidFile, pid_t pid) {
   return Status::OK();
 }
 
-Status ProcessUtils::daemonize(const std::string &pidFile) {
+Status ProcessUtils::daemonize(const std::string& pidFile) {
   auto pid = ::fork();
   if (pid == -1) {
     return Status::Error("fork: %s", ::strerror(errno));
@@ -135,8 +135,8 @@ pid_t ProcessUtils::maxPid() {
   return folly::to<uint32_t>(iter.matched()[1].str());
 }
 
-StatusOr<std::string> ProcessUtils::runCommand(const char *command) {
-  FILE *f = popen(command, "re");
+StatusOr<std::string> ProcessUtils::runCommand(const char* command) {
+  FILE* f = popen(command, "re");
   if (f == nullptr) {
     return Status::Error("Failed to execute the command \"%s\"", command);
   }

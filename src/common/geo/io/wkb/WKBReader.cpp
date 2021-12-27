@@ -8,7 +8,7 @@
 namespace nebula {
 namespace geo {
 
-StatusOr<Geography> WKBReader::read(const std::string &wkb) {
+StatusOr<Geography> WKBReader::read(const std::string& wkb) {
   is_.setInput(wkb);
 
   auto byteOrderRet = readByteOrder();

@@ -23,8 +23,8 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
   static constexpr char kNoPartition[] = "No valid partition";
   static constexpr char kPartitionDelimiter[] = ", ";
 
-  auto *shNode = asNode<ShowHosts>(node());
-  auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
+  auto* shNode = asNode<ShowHosts>(node());
+  auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem>& hostVec) -> DataSet {
     DataSet v({"Host",
                "Port",
                "Status",
@@ -36,23 +36,23 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     std::map<std::string, int64_t> allPartsCount;
     int64_t totalLeader = 0;
 
-    for (const auto &host : hostVec) {
+    for (const auto& host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
                      apache::thrift::util::enumNameSafe(host.get_status())});
       int64_t leaderCount = 0;
-      for (const auto &spaceEntry : host.get_leader_parts()) {
+      for (const auto& spaceEntry : host.get_leader_parts()) {
         leaderCount += spaceEntry.second.size();
       }
       std::stringstream leaders;
       std::stringstream parts;
       std::size_t i = 0;
 
-      auto &leaderParts = host.get_leader_parts();
+      auto& leaderParts = host.get_leader_parts();
       std::map<std::string, std::vector<PartitionID>> lPartsCount(leaderParts.begin(),
                                                                   leaderParts.end());
 
-      for (const auto &l : lPartsCount) {
+      for (const auto& l : lPartsCount) {
         leaderPartsCount[l.first] += l.second.size();
         leaders << l.first << ":" << l.second.size();
         if (i < lPartsCount.size() - 1) {
@@ -65,9 +65,9 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       }
 
       i = 0;
-      auto &allParts = host.get_all_parts();
+      auto& allParts = host.get_all_parts();
       std::map<std::string, std::vector<PartitionID>> aPartsCount(allParts.begin(), allParts.end());
-      for (const auto &p : aPartsCount) {
+      for (const auto& p : aPartsCount) {
         allPartsCount[p.first] += p.second.size();
         parts << p.first << ":" << p.second.size();
         if (i < aPartsCount.size() - 1) {
@@ -92,7 +92,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       std::stringstream leaders;
       std::stringstream parts;
       std::size_t i = 0;
-      for (const auto &spaceEntry : leaderPartsCount) {
+      for (const auto& spaceEntry : leaderPartsCount) {
         leaders << spaceEntry.first << ":" << spaceEntry.second;
         if (i < leaderPartsCount.size() - 1) {
           leaders << kPartitionDelimiter;
@@ -100,7 +100,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         ++i;
       }
       i = 0;
-      for (const auto &spaceEntry : allPartsCount) {
+      for (const auto& spaceEntry : allPartsCount) {
         parts << spaceEntry.first << ":" << spaceEntry.second;
         if (i < allPartsCount.size() - 1) {
           parts << kPartitionDelimiter;
@@ -124,9 +124,9 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     return v;
   };
 
-  auto makeGitInfoResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
+  auto makeGitInfoResult = [&](const std::vector<meta::cpp2::HostItem>& hostVec) -> DataSet {
     DataSet v({"Host", "Port", "Status", "Role", "Git Info Sha", "Version"});
-    for (const auto &host : hostVec) {
+    for (const auto& host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
                      apache::thrift::util::enumNameSafe(host.get_status()),
@@ -143,7 +143,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       ->getMetaClient()
       ->listHosts(shNode->getType())
       .via(runner())
-      .thenValue([=, type = shNode->getType()](auto &&resp) {
+      .thenValue([=, type = shNode->getType()](auto&& resp) {
         if (!resp.ok()) {
           LOG(ERROR) << resp.status();
           return resp.status();

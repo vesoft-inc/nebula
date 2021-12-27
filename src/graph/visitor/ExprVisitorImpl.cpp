@@ -8,35 +8,35 @@
 namespace nebula {
 namespace graph {
 
-void ExprVisitorImpl::visit(UnaryExpression *expr) {
+void ExprVisitorImpl::visit(UnaryExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->operand()->accept(this);
 }
 
-void ExprVisitorImpl::visit(TypeCastingExpression *expr) {
+void ExprVisitorImpl::visit(TypeCastingExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->operand()->accept(this);
 }
 
 // binary expression
-void ExprVisitorImpl::visit(ArithmeticExpression *expr) {
+void ExprVisitorImpl::visit(ArithmeticExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void ExprVisitorImpl::visit(RelationalExpression *expr) {
+void ExprVisitorImpl::visit(RelationalExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void ExprVisitorImpl::visit(SubscriptExpression *expr) {
+void ExprVisitorImpl::visit(SubscriptExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void ExprVisitorImpl::visit(AttributeExpression *expr) {
+void ExprVisitorImpl::visit(AttributeExpression* expr) {
   visitBinaryExpr(expr);
 }
 
-void ExprVisitorImpl::visit(LogicalExpression *expr) {
-  for (auto &operand : expr->operands()) {
+void ExprVisitorImpl::visit(LogicalExpression* expr) {
+  for (auto& operand : expr->operands()) {
     operand->accept(this);
     if (!ok()) {
       break;
@@ -44,18 +44,18 @@ void ExprVisitorImpl::visit(LogicalExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(LabelAttributeExpression *expr) {
+void ExprVisitorImpl::visit(LabelAttributeExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  const_cast<LabelExpression *>(expr->left())->accept(this);
+  const_cast<LabelExpression*>(expr->left())->accept(this);
   if (ok()) {
-    const_cast<ConstantExpression *>(expr->right())->accept(this);
+    const_cast<ConstantExpression*>(expr->right())->accept(this);
   }
 }
 
 // function call
-void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
+void ExprVisitorImpl::visit(FunctionCallExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  for (const auto &arg : expr->args()->args()) {
+  for (const auto& arg : expr->args()->args()) {
     arg->accept(this);
     if (!ok()) {
       break;
@@ -63,15 +63,15 @@ void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(AggregateExpression *expr) {
+void ExprVisitorImpl::visit(AggregateExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->arg()->accept(this);
 }
 
 // container expression
-void ExprVisitorImpl::visit(ListExpression *expr) {
+void ExprVisitorImpl::visit(ListExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  for (auto &item : expr->items()) {
+  for (auto& item : expr->items()) {
     item->accept(this);
     if (!ok()) {
       break;
@@ -79,9 +79,9 @@ void ExprVisitorImpl::visit(ListExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(SetExpression *expr) {
+void ExprVisitorImpl::visit(SetExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  for (auto &item : expr->items()) {
+  for (auto& item : expr->items()) {
     item->accept(this);
     if (!ok()) {
       break;
@@ -89,9 +89,9 @@ void ExprVisitorImpl::visit(SetExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(MapExpression *expr) {
+void ExprVisitorImpl::visit(MapExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  for (auto &pair : expr->items()) {
+  for (auto& pair : expr->items()) {
     pair.second->accept(this);
     if (!ok()) {
       break;
@@ -100,7 +100,7 @@ void ExprVisitorImpl::visit(MapExpression *expr) {
 }
 
 // case expression
-void ExprVisitorImpl::visit(CaseExpression *expr) {
+void ExprVisitorImpl::visit(CaseExpression* expr) {
   DCHECK(ok()) << expr->toString();
   if (expr->hasCondition()) {
     expr->condition()->accept(this);
@@ -114,7 +114,7 @@ void ExprVisitorImpl::visit(CaseExpression *expr) {
       return;
     }
   }
-  for (const auto &whenThen : expr->cases()) {
+  for (const auto& whenThen : expr->cases()) {
     whenThen.when->accept(this);
     if (!ok()) {
       break;
@@ -126,7 +126,7 @@ void ExprVisitorImpl::visit(CaseExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
+void ExprVisitorImpl::visitBinaryExpr(BinaryExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->left()->accept(this);
   if (ok()) {
@@ -134,9 +134,9 @@ void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(PathBuildExpression *expr) {
+void ExprVisitorImpl::visit(PathBuildExpression* expr) {
   DCHECK(ok()) << expr->toString();
-  for (auto &item : expr->items()) {
+  for (auto& item : expr->items()) {
     item->accept(this);
     if (!ok()) {
       break;
@@ -144,7 +144,7 @@ void ExprVisitorImpl::visit(PathBuildExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(PredicateExpression *expr) {
+void ExprVisitorImpl::visit(PredicateExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->collection()->accept(this);
   if (!ok()) return;
@@ -156,7 +156,7 @@ void ExprVisitorImpl::visit(PredicateExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
+void ExprVisitorImpl::visit(ListComprehensionExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->collection()->accept(this);
   if (!ok()) return;
@@ -170,7 +170,7 @@ void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
   }
 }
 
-void ExprVisitorImpl::visit(ReduceExpression *expr) {
+void ExprVisitorImpl::visit(ReduceExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->initial()->accept(this);
   if (!ok()) return;
@@ -180,7 +180,7 @@ void ExprVisitorImpl::visit(ReduceExpression *expr) {
   if (!ok()) return;
 }
 
-void ExprVisitorImpl::visit(SubscriptRangeExpression *expr) {
+void ExprVisitorImpl::visit(SubscriptRangeExpression* expr) {
   DCHECK(ok()) << expr->toString();
   expr->list()->accept(this);
   if (!ok()) {

@@ -11,7 +11,7 @@ namespace graph {
 
 class ACLValidatorTest : public ValidatorTestBase {
  protected:
-  const PlanNode *getPlanRoot(const std::string query) {
+  const PlanNode* getPlanRoot(const std::string query) {
     auto qctxStatus = validate(query);
     EXPECT_TRUE(qctxStatus.ok()) << qctxStatus.status();
     auto qctx = std::move(qctxStatus).value();
@@ -35,7 +35,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kCreateUser);
-    auto createUser = static_cast<const CreateUser *>(root);
+    auto createUser = static_cast<const CreateUser*>(root);
     ASSERT_FALSE(createUser->ifNotExist());
     ASSERT_EQ(*createUser->username(), user);
     ASSERT_EQ(*createUser->password(), "");
@@ -49,7 +49,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kCreateUser);
-    auto createUser = static_cast<const CreateUser *>(root);
+    auto createUser = static_cast<const CreateUser*>(root);
     ASSERT_TRUE(createUser->ifNotExist());
     ASSERT_EQ(*createUser->username(), user);
     ASSERT_EQ(*createUser->password(), "");
@@ -64,7 +64,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kCreateUser);
-    auto createUser = static_cast<const CreateUser *>(root);
+    auto createUser = static_cast<const CreateUser*>(root);
     ASSERT_FALSE(createUser->ifNotExist());
     ASSERT_EQ(*createUser->username(), user);
     ASSERT_EQ(*createUser->password(), password);
@@ -80,7 +80,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kDropUser);
-    auto dropUser = static_cast<const DropUser *>(root);
+    auto dropUser = static_cast<const DropUser*>(root);
     ASSERT_FALSE(dropUser->ifExist());
     ASSERT_EQ(*dropUser->username(), user);
   }
@@ -93,7 +93,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kDropUser);
-    auto dropUser = static_cast<const DropUser *>(root);
+    auto dropUser = static_cast<const DropUser*>(root);
     ASSERT_TRUE(dropUser->ifExist());
     ASSERT_EQ(*dropUser->username(), user);
   }
@@ -109,7 +109,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kUpdateUser);
-    auto updateUser = static_cast<const UpdateUser *>(root);
+    auto updateUser = static_cast<const UpdateUser*>(root);
     ASSERT_EQ(*updateUser->username(), user);
     ASSERT_EQ(*updateUser->password(), password);
   }
@@ -136,7 +136,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kChangePassword);
-    auto changePassword = static_cast<const ChangePassword *>(root);
+    auto changePassword = static_cast<const ChangePassword*>(root);
     ASSERT_EQ(*changePassword->username(), user);
     ASSERT_EQ(*changePassword->password(), password);
     ASSERT_EQ(*changePassword->newPassword(), newPassword);
@@ -154,7 +154,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kGrantRole);
-    auto grantRole = static_cast<const GrantRole *>(root);
+    auto grantRole = static_cast<const GrantRole*>(root);
     ASSERT_EQ(*grantRole->username(), user);
     ASSERT_EQ(*grantRole->spaceName(), space);
     ASSERT_EQ(grantRole->role(), meta::cpp2::RoleType::ADMIN);
@@ -172,7 +172,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kRevokeRole);
-    auto revokeRole = static_cast<const RevokeRole *>(root);
+    auto revokeRole = static_cast<const RevokeRole*>(root);
     ASSERT_EQ(*revokeRole->username(), user);
     ASSERT_EQ(*revokeRole->spaceName(), space);
     ASSERT_EQ(revokeRole->role(), meta::cpp2::RoleType::ADMIN);
@@ -189,7 +189,7 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_TRUE(verifyPlan(root, expectedTop));
 
     ASSERT_EQ(root->kind(), PlanNode::Kind::kListRoles);
-    auto showRoles = static_cast<const ListRoles *>(root);
+    auto showRoles = static_cast<const ListRoles*>(root);
     ASSERT_EQ(showRoles->space(), 1);
   }
 }

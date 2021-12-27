@@ -13,7 +13,7 @@ namespace graph {
 
 class IntersectExecutor : public SetExecutor {
  public:
-  IntersectExecutor(const PlanNode *node, QueryContext *qctx)
+  IntersectExecutor(const PlanNode* node, QueryContext* qctx)
       : SetExecutor("IntersectExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

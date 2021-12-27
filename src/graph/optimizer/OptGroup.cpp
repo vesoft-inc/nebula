@@ -23,11 +23,11 @@ using nebula::graph::SingleDependencyNode;
 namespace nebula {
 namespace opt {
 
-OptGroup *OptGroup::create(OptContext *ctx) {
+OptGroup* OptGroup::create(OptContext* ctx) {
   return ctx->objPool()->add(new OptGroup(ctx));
 }
 
-void OptGroup::setUnexplored(const OptRule *rule) {
+void OptGroup::setUnexplored(const OptRule* rule) {
   auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
   if (iter != exploredRules_.end()) {
     exploredRules_.erase(iter);
@@ -37,22 +37,22 @@ void OptGroup::setUnexplored(const OptRule *rule) {
   }
 }
 
-OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
+OptGroup::OptGroup(OptContext* ctx) noexcept : ctx_(ctx) {
   DCHECK(ctx != nullptr);
 }
 
-void OptGroup::addGroupNode(OptGroupNode *groupNode) {
+void OptGroup::addGroupNode(OptGroupNode* groupNode) {
   DCHECK(groupNode != nullptr);
   DCHECK(groupNode->group() == this);
   groupNodes_.emplace_back(groupNode);
 }
 
-OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
+OptGroupNode* OptGroup::makeGroupNode(PlanNode* node) {
   groupNodes_.emplace_back(OptGroupNode::create(ctx_, node, this));
   return groupNodes_.back();
 }
 
-Status OptGroup::explore(const OptRule *rule) {
+Status OptGroup::explore(const OptRule* rule) {
   if (isExplored(rule)) {
     return Status::OK();
   }
@@ -109,7 +109,7 @@ Status OptGroup::explore(const OptRule *rule) {
   return Status::OK();
 }
 
-Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
+Status OptGroup::exploreUntilMaxRound(const OptRule* rule) {
   auto maxRound = kMaxExplorationRound;
   while (!isExplored(rule)) {
     if (0 >= maxRound--) {
@@ -121,10 +121,10 @@ Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
   return Status::OK();
 }
 
-std::pair<double, const OptGroupNode *> OptGroup::findMinCostGroupNode() const {
+std::pair<double, const OptGroupNode*> OptGroup::findMinCostGroupNode() const {
   double minCost = std::numeric_limits<double>::max();
-  const OptGroupNode *minGroupNode = nullptr;
-  for (auto &groupNode : groupNodes_) {
+  const OptGroupNode* minGroupNode = nullptr;
+  for (auto& groupNode : groupNodes_) {
     double cost = groupNode->getCost();
     if (minCost > cost) {
       minCost = cost;
@@ -138,19 +138,19 @@ double OptGroup::getCost() const {
   return findMinCostGroupNode().first;
 }
 
-const PlanNode *OptGroup::getPlan() const {
-  const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
+const PlanNode* OptGroup::getPlan() const {
+  const OptGroupNode* minGroupNode = findMinCostGroupNode().second;
   DCHECK(minGroupNode != nullptr);
   return minGroupNode->getPlan();
 }
 
-OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
+OptGroupNode* OptGroupNode::create(OptContext* ctx, PlanNode* node, const OptGroup* group) {
   auto optGNode = ctx->objPool()->add(new OptGroupNode(node, group));
   ctx->addPlanNodeAndOptGroupNode(node->id(), optGNode);
   return optGNode;
 }
 
-void OptGroupNode::setUnexplored(const OptRule *rule) {
+void OptGroupNode::setUnexplored(const OptRule* rule) {
   auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
   if (iter != exploredRules_.end()) {
     exploredRules_.erase(iter);
@@ -163,13 +163,13 @@ void OptGroupNode::setUnexplored(const OptRule *rule) {
   }
 }
 
-OptGroupNode::OptGroupNode(PlanNode *node, const OptGroup *group) noexcept
+OptGroupNode::OptGroupNode(PlanNode* node, const OptGroup* group) noexcept
     : node_(node), group_(group) {
   DCHECK(node != nullptr);
   DCHECK(group != nullptr);
 }
 
-Status OptGroupNode::explore(const OptRule *rule) {
+Status OptGroupNode::explore(const OptRule* rule) {
   if (isExplored(rule)) {
     return Status::OK();
   }
@@ -191,16 +191,16 @@ double OptGroupNode::getCost() const {
   return node_->cost();
 }
 
-const PlanNode *OptGroupNode::getPlan() const {
+const PlanNode* OptGroupNode::getPlan() const {
   if (node_->kind() == PlanNode::Kind::kSelect) {
     DCHECK_EQ(bodies_.size(), 2U);
-    auto select = static_cast<Select *>(node_);
-    select->setIf(const_cast<PlanNode *>(bodies_[0]->getPlan()));
-    select->setElse(const_cast<PlanNode *>(bodies_[1]->getPlan()));
+    auto select = static_cast<Select*>(node_);
+    select->setIf(const_cast<PlanNode*>(bodies_[0]->getPlan()));
+    select->setElse(const_cast<PlanNode*>(bodies_[1]->getPlan()));
   } else if (node_->kind() == PlanNode::Kind::kLoop) {
     DCHECK_EQ(bodies_.size(), 1U);
-    auto loop = static_cast<Loop *>(node_);
-    loop->setBody(const_cast<PlanNode *>(bodies_[0]->getPlan()));
+    auto loop = static_cast<Loop*>(node_);
+    loop->setBody(const_cast<PlanNode*>(bodies_[0]->getPlan()));
   }
   DCHECK_EQ(node_->numDeps(), dependencies_.size());
   for (size_t i = 0; i < node_->numDeps(); ++i) {

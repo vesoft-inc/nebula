@@ -8,7 +8,7 @@
 namespace nebula {
 namespace meta {
 
-void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
+void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
@@ -27,9 +27,9 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
   while (iter->valid()) {
     auto key = iter->key();
     auto val = iter->val();
-    auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
+    auto tagID = *reinterpret_cast<const TagID*>(key.data() + prefix.size());
     auto version = MetaKeyUtils::parseTagVersion(key);
-    auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
+    auto nameLen = *reinterpret_cast<const int32_t*>(val.data());
     auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
     auto schema = MetaKeyUtils::parseSchema(val);
     cpp2::TagItem item;

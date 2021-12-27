@@ -13,7 +13,7 @@ namespace graph {
 
 class AggregateExecutor final : public Executor {
  public:
-  AggregateExecutor(const PlanNode *node, QueryContext *qctx)
+  AggregateExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("AggregateExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

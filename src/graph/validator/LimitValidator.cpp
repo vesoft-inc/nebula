@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 Status LimitValidator::validateImpl() {
-  auto limitSentence = static_cast<LimitSentence *>(sentence_);
+  auto limitSentence = static_cast<LimitSentence*>(sentence_);
   offset_ = limitSentence->offset();
   count_ = limitSentence->count();
   if (offset_ < 0) {
@@ -26,10 +26,10 @@ Status LimitValidator::validateImpl() {
 }
 
 Status LimitValidator::toPlan() {
-  auto *plan = qctx_->plan();
-  auto *limitNode = Limit::make(qctx_, plan->root(), offset_, count_);
+  auto* plan = qctx_->plan();
+  auto* limitNode = Limit::make(qctx_, plan->root(), offset_, count_);
   std::vector<std::string> colNames;
-  for (auto &col : outputs_) {
+  for (auto& col : outputs_) {
     colNames.emplace_back(col.name);
   }
   limitNode->setColNames(std::move(colNames));

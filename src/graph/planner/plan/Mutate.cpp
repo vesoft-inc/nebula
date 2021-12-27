@@ -17,7 +17,7 @@ std::unique_ptr<PlanNodeDescription> InsertVertices::explain() const {
   addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
 
   folly::dynamic tagPropsArr = folly::dynamic::array();
-  for (const auto &p : tagPropNames_) {
+  for (const auto& p : tagPropNames_) {
     folly::dynamic obj = folly::dynamic::object();
     obj.insert("tagId", p.first);
     obj.insert("props", util::toJson(p.second));

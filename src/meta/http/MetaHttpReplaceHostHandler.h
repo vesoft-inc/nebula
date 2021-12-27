@@ -23,7 +23,7 @@ class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
  public:
   MetaHttpReplaceHostHandler() = default;
 
-  void init(nebula::kvstore::KVStore *kvstore);
+  void init(nebula::kvstore::KVStore* kvstore);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -44,7 +44,7 @@ class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
   std::string errMsg_;
   std::string ipv4From_;
   std::string ipv4To_;
-  nebula::kvstore::KVStore *kvstore_;
+  nebula::kvstore::KVStore* kvstore_;
 };
 
 }  // namespace meta

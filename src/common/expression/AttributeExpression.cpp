@@ -13,9 +13,9 @@
 
 namespace nebula {
 
-const Value &AttributeExpression::eval(ExpressionContext &ctx) {
-  auto &lvalue = left()->eval(ctx);
-  auto &rvalue = right()->eval(ctx);
+const Value& AttributeExpression::eval(ExpressionContext& ctx) {
+  auto& lvalue = left()->eval(ctx);
+  auto& rvalue = right()->eval(ctx);
   DCHECK(rvalue.isStr());
 
   // TODO(dutor) Take care of the builtin properties, _src, _vid, _type, etc.
@@ -27,7 +27,7 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
         result_ = lvalue.getVertex().vid;
         return result_;
       }
-      for (auto &tag : lvalue.getVertex().tags) {
+      for (auto& tag : lvalue.getVertex().tags) {
         auto iter = tag.props.find(rvalue.getStr());
         if (iter != tag.props.end()) {
           return iter->second;
@@ -69,7 +69,7 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   }
 }
 
-void AttributeExpression::accept(ExprVisitor *visitor) {
+void AttributeExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 
@@ -82,7 +82,7 @@ std::string AttributeExpression::toString() const {
   buf += '.';
   if (rhs) {
     DCHECK_EQ(rhs->kind(), Kind::kConstant);
-    auto *constant = static_cast<const ConstantExpression *>(rhs);
+    auto* constant = static_cast<const ConstantExpression*>(rhs);
     if (constant->value().isStr()) {
       buf += constant->value().getStr();
     } else {

@@ -11,26 +11,26 @@
 namespace nebula {
 namespace graph {
 Status OrderByValidator::validateImpl() {
-  auto sentence = static_cast<OrderBySentence *>(sentence_);
-  auto &factors = sentence->factors();
-  for (auto &factor : factors) {
+  auto sentence = static_cast<OrderBySentence*>(sentence_);
+  auto& factors = sentence->factors();
+  for (auto& factor : factors) {
     if (factor->expr()->kind() == Expression::Kind::kInputProperty) {
-      auto expr = static_cast<InputPropertyExpression *>(factor->expr());
+      auto expr = static_cast<InputPropertyExpression*>(factor->expr());
       NG_RETURN_IF_ERROR(deduceExprType(expr));
       NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
-      const auto &cols = inputCols();
-      auto &name = expr->prop();
-      auto eq = [&](const ColDef &col) { return col.name == name; };
+      const auto& cols = inputCols();
+      auto& name = expr->prop();
+      auto eq = [&](const ColDef& col) { return col.name == name; };
       auto iter = std::find_if(cols.cbegin(), cols.cend(), eq);
       size_t colIdx = std::distance(cols.cbegin(), iter);
       colOrderTypes_.emplace_back(std::make_pair(colIdx, factor->orderType()));
     } else if (factor->expr()->kind() == Expression::Kind::kVarProperty) {
-      auto expr = static_cast<VariablePropertyExpression *>(factor->expr());
+      auto expr = static_cast<VariablePropertyExpression*>(factor->expr());
       NG_RETURN_IF_ERROR(deduceExprType(expr));
       NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
-      const auto &cols = vctx_->getVar(expr->sym());
-      auto &name = expr->prop();
-      auto eq = [&](const ColDef &col) { return col.name == name; };
+      const auto& cols = vctx_->getVar(expr->sym());
+      auto& name = expr->prop();
+      auto eq = [&](const ColDef& col) { return col.name == name; };
       auto iter = std::find_if(cols.cbegin(), cols.cend(), eq);
       size_t colIdx = std::distance(cols.cbegin(), iter);
       colOrderTypes_.emplace_back(std::make_pair(colIdx, factor->orderType()));
@@ -58,10 +58,10 @@ Status OrderByValidator::validateImpl() {
 }
 
 Status OrderByValidator::toPlan() {
-  auto *plan = qctx_->plan();
-  auto *sortNode = Sort::make(qctx_, plan->root(), std::move(colOrderTypes_));
+  auto* plan = qctx_->plan();
+  auto* sortNode = Sort::make(qctx_, plan->root(), std::move(colOrderTypes_));
   std::vector<std::string> colNames;
-  for (auto &col : outputs_) {
+  for (auto& col : outputs_) {
     colNames.emplace_back(col.name);
   }
   sortNode->setColNames(std::move(colNames));

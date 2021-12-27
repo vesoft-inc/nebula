@@ -16,7 +16,7 @@ std::string LabelAttributeExpression::toString() const {
   std::string attr;
   if (rhs != nullptr) {
     DCHECK_EQ(rhs->kind(), Kind::kConstant);
-    auto *constant = static_cast<const ConstantExpression *>(rhs);
+    auto* constant = static_cast<const ConstantExpression*>(rhs);
     if (constant->value().isStr()) {
       attr = constant->value().getStr();
     } else {
@@ -26,7 +26,7 @@ std::string LabelAttributeExpression::toString() const {
   return label + "." + attr;
 }
 
-void LabelAttributeExpression::accept(ExprVisitor *visitor) {
+void LabelAttributeExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);
 }
 

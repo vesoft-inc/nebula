@@ -72,7 +72,7 @@ std::string SpaceOptItem::toString() const {
     case OptionType::REPLICA_FACTOR:
       return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
     case OptionType::VID_TYPE: {
-      auto &typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+      auto& typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
       return folly::stringPrintf("vid_type = %s", graph::SchemaUtil::typeToString(typeDef).c_str());
     }
     case OptionType::CHARSET:
@@ -91,7 +91,7 @@ std::string SpaceOptItem::toString() const {
 std::string SpaceOptList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &item : items_) {
+  for (auto& item : items_) {
     buf += item->toString();
     buf += ",";
   }
@@ -179,7 +179,7 @@ std::string GetConfigSentence::toString() const {
 std::string HostList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &host : hosts_) {
+  for (auto& host : hosts_) {
     buf += "\"";
     buf += host->host;
     buf += "\"";
@@ -266,7 +266,7 @@ std::string AdminJobSentence::toString() const {
           } else {
             std::string str = "SUBMIT JOB BALANCE DATA REMOVE";
             for (size_t i = 0; i < paras_.size(); i++) {
-              auto &s = paras_[i];
+              auto& s = paras_[i];
               str += i == 0 ? " " + s : ", " + s;
             }
             return str;
@@ -308,18 +308,18 @@ meta::cpp2::AdminCmd AdminJobSentence::getCmd() const {
   return cmd_;
 }
 
-const std::vector<std::string> &AdminJobSentence::getParas() const {
+const std::vector<std::string>& AdminJobSentence::getParas() const {
   return paras_;
 }
 
-void AdminJobSentence::addPara(const std::string &para) {
+void AdminJobSentence::addPara(const std::string& para) {
   paras_.emplace_back(para);
 }
 
-void AdminJobSentence::addPara(const NameLabelList &paras) {
-  const auto &labels = paras.labels();
+void AdminJobSentence::addPara(const NameLabelList& paras) {
+  const auto& labels = paras.labels();
   std::for_each(
-      labels.begin(), labels.end(), [this](const auto &para) { paras_.emplace_back(*para); });
+      labels.begin(), labels.end(), [this](const auto& para) { paras_.emplace_back(*para); });
 }
 
 std::string ShowStatsSentence::toString() const {
@@ -334,7 +334,7 @@ std::string SignInTextServiceSentence::toString() const {
   std::string buf;
   buf.reserve(256);
   buf += "SIGN IN TEXT SERVICE ";
-  for (auto &client : clients_->clients()) {
+  for (auto& client : clients_->clients()) {
     buf += "(";
     buf += client.get_host().host;
     buf += ":";

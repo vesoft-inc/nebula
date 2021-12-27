@@ -30,7 +30,6 @@ class FiveRaftTest : public RaftexTestFixture {
   FiveRaftTest() : RaftexTestFixture("five_raft_test", 5) {}
 };
 
-
 TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   FLAGS_raft_heartbeat_interval_secs = 1;
   LOG(INFO) << "=====> Start leaderCrash test";
@@ -71,7 +70,6 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   LOG(INFO) << "<===== Done leaderCrash test";
 }
 
-
 TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
   LOG(INFO) << "=====> Start ConsensusWhenFollowDisconnect test";
 
@@ -101,7 +99,6 @@ TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
 
   LOG(INFO) << "<===== Done ConsensusWhenFollowDisconnect test";
 }
-
 
 TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   LOG(INFO) << "=====> Start LeaderNetworkFailure test";
@@ -146,7 +143,6 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
 
   LOG(INFO) << "<===== Done LeaderNetworkFailure test";
 }
-
 
 TEST_F(ThreeRaftTest, Persistance) {
   LOG(INFO) << "=====> Start persistance test";

@@ -12,7 +12,7 @@ using nebula::MurmurHash2;
 std::string makeString(size_t size) {
   std::string str;
   str.resize(size);
-  for (auto &c : str) {
+  for (auto& c : str) {
     c = folly::Random::rand32() % (0x7E /*~*/ - 0x21 /*!*/) + 0x21;
   }
   return str;
@@ -88,7 +88,7 @@ BENCHMARK_DRAW_LINE();
 BENCHMARK_NAMED_PARAM_MULTI(StdHashTest, 4096Byte, 4096UL)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MurmurHash2Test, 4096Byte, 4096UL)
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   folly::runBenchmarks();
   return 0;

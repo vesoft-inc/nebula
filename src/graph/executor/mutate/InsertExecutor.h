@@ -13,7 +13,7 @@ namespace graph {
 
 class InsertVerticesExecutor final : public StorageAccessExecutor {
  public:
-  InsertVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+  InsertVerticesExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("InsertVerticesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -24,7 +24,7 @@ class InsertVerticesExecutor final : public StorageAccessExecutor {
 
 class InsertEdgesExecutor final : public StorageAccessExecutor {
  public:
-  InsertEdgesExecutor(const PlanNode *node, QueryContext *qctx)
+  InsertEdgesExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("InsertEdgesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

@@ -19,14 +19,14 @@ folly::Future<Status> ShowTSClientsExecutor::execute() {
 }
 
 folly::Future<Status> ShowTSClientsExecutor::showTSClients() {
-  return qctx()->getMetaClient()->listFTClients().via(runner()).thenValue([this](auto &&resp) {
+  return qctx()->getMetaClient()->listFTClients().via(runner()).thenValue([this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << resp.status();
       return resp.status();
     }
     auto value = std::move(resp).value();
     DataSet v({"Host", "Port", "Connection type"});
-    for (const auto &client : value) {
+    for (const auto& client : value) {
       nebula::Row r;
       r.values.emplace_back(client.host.host);
       r.values.emplace_back(client.host.port);

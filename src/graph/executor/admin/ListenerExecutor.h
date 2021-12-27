@@ -13,7 +13,7 @@ namespace graph {
 
 class AddListenerExecutor final : public Executor {
  public:
-  AddListenerExecutor(const PlanNode *node, QueryContext *qctx)
+  AddListenerExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("AddListenerExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -21,7 +21,7 @@ class AddListenerExecutor final : public Executor {
 
 class RemoveListenerExecutor final : public Executor {
  public:
-  RemoveListenerExecutor(const PlanNode *node, QueryContext *qctx)
+  RemoveListenerExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("RemoveListenerExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -29,7 +29,7 @@ class RemoveListenerExecutor final : public Executor {
 
 class ShowListenerExecutor final : public Executor {
  public:
-  ShowListenerExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowListenerExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("ShowListenerExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

@@ -169,8 +169,7 @@ void setupRaft(int32_t numCopies,
     if (!services.back()->start()) return;
     uint16_t port = services.back()->getServerPort();
     allHosts.emplace_back(ipStr, port);
-    LOG(INFO) << "[Raft Test: Setting up] started service on "
-              << ipStr << ":" << port;
+    LOG(INFO) << "[Raft Test: Setting up] started service on " << ipStr << ":" << port;
   }
 
   if (isLearner.empty()) {
@@ -263,7 +262,6 @@ bool checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
   }
   return leader->address() == copies[index]->address();
 }
-
 
 bool checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
   for (auto& c : copies) {

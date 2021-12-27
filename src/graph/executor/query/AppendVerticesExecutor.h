@@ -14,17 +14,17 @@ namespace graph {
 
 class AppendVerticesExecutor final : public GetPropExecutor {
  public:
-  AppendVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+  AppendVerticesExecutor(const PlanNode* node, QueryContext* qctx)
       : GetPropExecutor("AppendVerticesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 
  private:
-  DataSet buildRequestDataSet(const AppendVertices *gv);
+  DataSet buildRequestDataSet(const AppendVertices* gv);
 
   folly::Future<Status> appendVertices();
 
-  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse>&& rpcResp);
 };
 
 }  // namespace graph

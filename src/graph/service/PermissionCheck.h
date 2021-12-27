@@ -18,9 +18,9 @@ class PermissionCheck final {
  public:
   PermissionCheck() = delete;
 
-  static Status permissionCheck(ClientSession *session,
-                                Sentence *sentence,
-                                ValidateContext *vctx,
+  static Status permissionCheck(ClientSession* session,
+                                Sentence* sentence,
+                                ValidateContext* vctx,
                                 GraphSpaceID targetSpace = -1);
 };
 }  // namespace graph

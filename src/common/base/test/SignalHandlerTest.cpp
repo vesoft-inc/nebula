@@ -11,7 +11,7 @@
 namespace nebula {
 
 TEST(SignalHandler, Term) {
-  auto handler = [](auto *info) {
+  auto handler = [](auto* info) {
     ASSERT_EQ(SIGTERM, info->sig());
     ASSERT_EQ(::getpid(), info->pid());
     ASSERT_EQ(::getuid(), info->uid());
@@ -26,7 +26,7 @@ TEST(SignalHandler, Pipe) {
 }
 
 TEST(SignalHandler, Overwrite) {
-  auto handler = [](auto *info) {
+  auto handler = [](auto* info) {
     ASSERT_EQ(SIGHUP, info->sig());
     ASSERT_EQ(::getpid(), info->pid());
     ASSERT_EQ(::getuid(), info->uid());

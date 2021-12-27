@@ -11,11 +11,10 @@ namespace nebula {
 
 // Not thread-safe, all futures need to be on the same executor
 template <class FutureIter, typename ResultEval>
-folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
-    FutureIter first,
-    FutureIter last,
-    size_t n,
-    ResultEval&& eval) {
+folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(FutureIter first,
+                                                                     FutureIter last,
+                                                                     size_t n,
+                                                                     ResultEval&& eval) {
   using Result = SucceededResultList<FutureIter>;
   if (n == 0) {
     return folly::SemiFuture<Result>(Result());
@@ -23,9 +22,7 @@ folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
 
   struct Context {
     Context(size_t total, ResultEval&& e)
-        : eval(std::forward<ResultEval>(e))
-        , results(total)
-        , nTotal(total) {}
+        : eval(std::forward<ResultEval>(e)), results(total), nTotal(total) {}
 
     ResultEval eval;
     std::vector<folly::Optional<folly::Try<FutureReturnType<FutureIter>>>> results;
@@ -52,8 +49,7 @@ folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
   // the promise with the result list
   auto ctx = std::make_shared<Context>(total, std::forward<ResultEval>(eval));
   for (size_t index = 0; first != last; ++first, ++index) {
-    first->setCallback_([n, ctx, index](auto&&,
-                                        folly::Try<FutureReturnType<FutureIter>>&& t) {
+    first->setCallback_([n, ctx, index](auto&&, folly::Try<FutureReturnType<FutureIter>>&& t) {
       VLOG(3) << "Received the callback from the future " << index;
 
       // relaxed because this guards control but does not guard data
@@ -93,9 +89,7 @@ folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
         }
 
         // Done
-        VLOG(2) << "Set Value [total=" << ctx->nTotal
-                << ", completed=" << c
-                << ", succeeded=" << s
+        VLOG(2) << "Set Value [total=" << ctx->nTotal << ", completed=" << c << ", succeeded=" << s
                 << ", Result list size=" << collectedResults.size() << "]";
         ctx->promise.setValue(std::move(collectedResults));
       }
@@ -107,9 +101,7 @@ folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
   if (!executors.empty()) {
     VLOG(3) << "Wiring the nested executors";
     future = std::move(future).defer(
-        [](folly::Try<typename decltype(future)::value_type>&& t) {
-          return std::move(t).value();
-        });
+        [](folly::Try<typename decltype(future)::value_type>&& t) { return std::move(t).value(); });
     const auto& deferredExecutor = folly::futures::detail::getDeferredExecutor(future);
     deferredExecutor->setNestedExecutors(std::move(executors));
   }

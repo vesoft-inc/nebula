@@ -14,13 +14,13 @@
     using Type = X;                                                           \
     inline static constexpr protocol::TType thriftType();                     \
     template <class Protocol>                                                 \
-    static uint32_t write(Protocol *proto, const Type *obj);                  \
+    static uint32_t write(Protocol* proto, const Type* obj);                  \
     template <class Protocol>                                                 \
-    static void read(Protocol *proto, Type *obj);                             \
+    static void read(Protocol* proto, Type* obj);                             \
     template <class Protocol>                                                 \
-    static uint32_t serializedSize(const Protocol *proto, const Type *obj);   \
+    static uint32_t serializedSize(const Protocol* proto, const Type* obj);   \
     template <class Protocol>                                                 \
-    static uint32_t serializedSizeZC(const Protocol *proto, const Type *obj); \
+    static uint32_t serializedSizeZC(const Protocol* proto, const Type* obj); \
   }
 
 #endif  // COMMON_THRIFT_THRIFTCPP2OPS_HELPER_H_

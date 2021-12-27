@@ -8,7 +8,7 @@
 namespace nebula {
 namespace meta {
 
-void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
+void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
@@ -27,9 +27,9 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
   while (iter->valid()) {
     auto key = iter->key();
     auto val = iter->val();
-    auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
+    auto edgeType = *reinterpret_cast<const EdgeType*>(key.data() + prefix.size());
     auto version = MetaKeyUtils::parseEdgeVersion(key);
-    auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
+    auto nameLen = *reinterpret_cast<const int32_t*>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
     auto schema = MetaKeyUtils::parseSchema(val);
     cpp2::EdgeItem edge;

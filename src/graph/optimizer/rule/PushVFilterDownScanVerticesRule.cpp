@@ -32,7 +32,7 @@ PushVFilterDownScanVerticesRule::PushVFilterDownScanVerticesRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushVFilterDownScanVerticesRule::pattern() const {
+const Pattern& PushVFilterDownScanVerticesRule::pattern() const {
   static Pattern pattern = Pattern::create(PlanNode::Kind::kAppendVertices,
                                            {Pattern::create(PlanNode::Kind::kScanVertices)});
   return pattern;
@@ -41,18 +41,18 @@ const Pattern &PushVFilterDownScanVerticesRule::pattern() const {
 // AppendVertices is the leaf node to fetch data from storage, so Filter can't push over it
 // normally.
 // But in this case, if AppendVertices get vId from ScanVertices, it can be pushed down.
-bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult &matched) const {
+bool PushVFilterDownScanVerticesRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
   auto appendVerticesGroupNode = matched.node;
-  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
-  auto *src = appendVertices->src();
+  auto appendVertices = static_cast<const AppendVertices*>(appendVerticesGroupNode->node());
+  auto* src = appendVertices->src();
   if (src->kind() != Expression::Kind::kInputProperty &&
       src->kind() != Expression::Kind::kVarProperty) {
     return false;
   }
-  auto *propExpr = static_cast<const PropertyExpression *>(src);
+  auto* propExpr = static_cast<const PropertyExpression*>(src);
   if (propExpr->prop() != kVid) {
     return false;
   }
@@ -61,8 +61,8 @@ bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult
   }
   auto tagPropExprs = graph::ExpressionUtils::collectAll(appendVertices->vFilter(),
                                                          {Expression::Kind::kTagProperty});
-  for (const auto &tagPropExpr : tagPropExprs) {
-    auto tagProp = static_cast<const PropertyExpression *>(tagPropExpr);
+  for (const auto& tagPropExpr : tagPropExprs) {
+    auto tagProp = static_cast<const PropertyExpression*>(tagPropExpr);
     if (tagProp->sym() == "*") {
       return false;
     }
@@ -71,11 +71,11 @@ bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult
 }
 
 StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
-    OptContext *ctx, const MatchedResult &matched) const {
+    OptContext* ctx, const MatchedResult& matched) const {
   auto appendVerticesGroupNode = matched.node;
   auto svGroupNode = matched.dependencies.front().node;
-  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
-  auto sv = static_cast<const ScanVertices *>(svGroupNode->node());
+  auto appendVertices = static_cast<const AppendVertices*>(appendVerticesGroupNode->node());
+  auto sv = static_cast<const ScanVertices*>(svGroupNode->node());
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
   auto condition = appendVertices->vFilter()->clone();
@@ -87,7 +87,7 @@ StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
   }
 
   auto remainedExpr = std::move(visitor).remainedExpr();
-  OptGroupNode *newAppendVerticesGroupNode = nullptr;
+  OptGroupNode* newAppendVerticesGroupNode = nullptr;
   auto newAppendVertices = appendVertices->clone();
   newAppendVertices->setVertexFilter(remainedExpr);
   newAppendVertices->setOutputVar(appendVertices->outputVar());
@@ -101,7 +101,7 @@ StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
     newSVFilter = logicExpr;
   }
 
-  auto newSV = static_cast<ScanVertices *>(sv->clone());
+  auto newSV = static_cast<ScanVertices*>(sv->clone());
   newSV->setFilter(newSVFilter);
 
   auto newGroup = OptGroup::create(ctx);

@@ -34,7 +34,7 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-static void printHelp(const char *prog);
+static void printHelp(const char* prog);
 static void setupThreadManager();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
@@ -43,7 +43,7 @@ extern Status setupBreakpad();
 DECLARE_string(flagfile);
 DECLARE_bool(containerized);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   google::SetVersionString(nebula::versionString());
   if (argc == 1) {
     printHelp(argv[0]);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   FLOG_INFO("Starting nebula-graphd on %s:%d\n", localhost.host.c_str(), localhost.port);
   try {
     gServer->serve();  // Blocking wait until shut down via gServer->stop()
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
     return EXIT_FAILURE;
   }
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 Status setupSignalHandler() {
   return nebula::SignalHandler::install(
       {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
 }
 
 void signalHandler(int sig) {
@@ -215,7 +215,7 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) {
+void printHelp(const char* prog) {
   fprintf(stderr, "%s --flagfile <config_file>\n", prog);
 }
 

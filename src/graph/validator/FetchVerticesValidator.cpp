@@ -13,7 +13,7 @@ namespace nebula {
 namespace graph {
 
 Status FetchVerticesValidator::validateImpl() {
-  auto *fSentence = static_cast<FetchVerticesSentence *>(sentence_);
+  auto* fSentence = static_cast<FetchVerticesSentence*>(sentence_);
   fetchCtx_ = getContext<FetchVerticesContext>();
   fetchCtx_->inputVarName = inputVarName_;
 
@@ -23,19 +23,19 @@ Status FetchVerticesValidator::validateImpl() {
   return Status::OK();
 }
 
-Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
+Status FetchVerticesValidator::validateTag(const NameLabelList* nameLabels) {
   if (nameLabels == nullptr) {
     // all tag
-    const auto &tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
+    const auto& tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
     NG_RETURN_IF_ERROR(tagStatus);
-    for (const auto &tag : tagStatus.value()) {
+    for (const auto& tag : tagStatus.value()) {
       tagsSchema_.emplace(tag.first, tag.second);
       tagIds_.emplace_back(tag.first);
     }
   } else {
     auto labels = nameLabels->labels();
-    auto *schemaMng = qctx_->schemaMng();
-    for (const auto &label : labels) {
+    auto* schemaMng = qctx_->schemaMng();
+    for (const auto& label : labels) {
       auto tagStatus = schemaMng->toTagID(space_.id, *label);
       NG_RETURN_IF_ERROR(tagStatus);
       auto tagID = tagStatus.value();
@@ -50,7 +50,7 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   return Status::OK();
 }
 
-Status FetchVerticesValidator::validateYield(YieldClause *yield) {
+Status FetchVerticesValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
   }
@@ -59,9 +59,9 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   outputs_.reserve(size);
 
   auto pool = qctx_->objPool();
-  auto *newCols = pool->add(new YieldColumns());
+  auto* newCols = pool->add(new YieldColumns());
 
-  auto &exprProps = fetchCtx_->exprProps;
+  auto& exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
@@ -82,7 +82,7 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_));
   }
   if (exprProps.tagProps().empty()) {
-    for (const auto &tagSchema : tagsSchema_) {
+    for (const auto& tagSchema : tagsSchema_) {
       exprProps.insertTagProp(tagSchema.first, nebula::kTag);
     }
   }
@@ -95,7 +95,7 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
 
-  for (const auto &tag : exprProps.tagNameIds()) {
+  for (const auto& tag : exprProps.tagNameIds()) {
     if (tagsSchema_.find(tag.second) == tagsSchema_.end()) {
       return Status::SemanticError("mismatched tag `%s'", tag.first.c_str());
     }

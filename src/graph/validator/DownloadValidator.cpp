@@ -12,13 +12,13 @@ namespace nebula {
 namespace graph {
 
 Status DownloadValidator::toPlan() {
-  auto sentence = static_cast<DownloadSentence *>(sentence_);
+  auto sentence = static_cast<DownloadSentence*>(sentence_);
   if (sentence->host() == nullptr || sentence->port() == 0 || sentence->path() == nullptr) {
     return Status::SemanticError(
         "HDFS path illegal."
         "Should be HDFS://${HDFS_HOST}:${HDFS_PORT}/${HDFS_PATH}");
   }
-  auto *doNode =
+  auto* doNode =
       Download::make(qctx_, nullptr, *sentence->host(), sentence->port(), *sentence->path());
   root_ = doNode;
   tail_ = root_;

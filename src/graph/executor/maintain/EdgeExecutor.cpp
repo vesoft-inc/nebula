@@ -16,7 +16,7 @@ namespace graph {
 folly::Future<Status> CreateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *ceNode = asNode<CreateEdge>(node());
+  auto* ceNode = asNode<CreateEdge>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -35,7 +35,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
 folly::Future<Status> DescEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *deNode = asNode<DescEdge>(node());
+  auto* deNode = asNode<DescEdge>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -62,7 +62,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
 folly::Future<Status> DropEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *deNode = asNode<DropEdge>(node());
+  auto* deNode = asNode<DropEdge>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -93,10 +93,10 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
         DataSet dataSet;
         dataSet.colNames = {"Name"};
         std::set<std::string> orderEdgeNames;
-        for (auto &edge : edgeItems) {
+        for (auto& edge : edgeItems) {
           orderEdgeNames.emplace(edge.get_edge_name());
         }
-        for (auto &name : orderEdgeNames) {
+        for (auto& name : orderEdgeNames) {
           Row row;
           row.values.emplace_back(name);
           dataSet.rows.emplace_back(std::move(row));
@@ -111,7 +111,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
 folly::Future<Status> ShowCreateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *sceNode = asNode<ShowCreateEdge>(node());
+  auto* sceNode = asNode<ShowCreateEdge>(node());
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()
       ->getMetaClient()
@@ -136,7 +136,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
 folly::Future<Status> AlterEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *aeNode = asNode<AlterEdge>(node());
+  auto* aeNode = asNode<AlterEdge>(node());
   return qctx()
       ->getMetaClient()
       ->alterEdgeSchema(

@@ -18,7 +18,7 @@ namespace graph {
 folly::Future<Status> SwitchSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *spaceToNode = asNode<SwitchSpace>(node());
+  auto* spaceToNode = asNode<SwitchSpace>(node());
   auto spaceName = spaceToNode->getSpaceName();
   return qctx()->getMetaClient()->getSpace(spaceName).via(runner()).thenValue(
       [spaceName, this](StatusOr<meta::cpp2::SpaceItem> resp) {
@@ -28,9 +28,9 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
         }
 
         auto spaceId = resp.value().get_space_id();
-        auto *session = qctx_->rctx()->session();
+        auto* session = qctx_->rctx()->session();
         NG_RETURN_IF_ERROR(PermissionManager::canReadSpace(session, spaceId));
-        const auto &properties = resp.value().get_properties();
+        const auto& properties = resp.value().get_properties();
 
         SpaceInfo spaceInfo;
         spaceInfo.id = spaceId;

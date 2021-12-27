@@ -12,11 +12,11 @@ namespace nebula {
 
 class ExpressionList final {
  public:
-  static ExpressionList *make(ObjectPool *pool, size_t sz = 0) {
+  static ExpressionList* make(ObjectPool* pool, size_t sz = 0) {
     return pool->add(new ExpressionList(sz));
   }
 
-  ExpressionList &add(Expression *expr) {
+  ExpressionList& add(Expression* expr) {
     items_.emplace_back(expr);
     return *this;
   }
@@ -32,16 +32,16 @@ class ExpressionList final {
   }
 
  private:
-  std::vector<Expression *> items_;
+  std::vector<Expression*> items_;
 };
 
 class MapItemList final {
  public:
-  static MapItemList *make(ObjectPool *pool, size_t sz = 0) {
+  static MapItemList* make(ObjectPool* pool, size_t sz = 0) {
     return pool->add(new MapItemList(sz));
   }
 
-  MapItemList &add(const std::string &key, Expression *value) {
+  MapItemList& add(const std::string& key, Expression* value) {
     items_.emplace_back(key, value);
     return *this;
   }
@@ -57,36 +57,36 @@ class MapItemList final {
   }
 
  private:
-  using Pair = std::pair<std::string, Expression *>;
+  using Pair = std::pair<std::string, Expression*>;
   std::vector<Pair> items_;
 };
 
 class ListExpression final : public Expression {
  public:
-  ListExpression &operator=(const ListExpression &rhs) = delete;
-  ListExpression &operator=(ListExpression &&) = delete;
+  ListExpression& operator=(const ListExpression& rhs) = delete;
+  ListExpression& operator=(ListExpression&&) = delete;
 
-  static ListExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
+  static ListExpression* make(ObjectPool* pool, ExpressionList* items = nullptr) {
     return items == nullptr ? pool->add(new ListExpression(pool))
                             : pool->add(new ListExpression(pool, items));
   }
 
-  const Value &eval(ExpressionContext &ctx) override;
+  const Value& eval(ExpressionContext& ctx) override;
 
-  const std::vector<Expression *> &items() const {
+  const std::vector<Expression*>& items() const {
     return items_;
   }
 
-  void setItem(size_t index, Expression *item) {
+  void setItem(size_t index, Expression* item) {
     DCHECK_LT(index, items_.size());
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() {
+  std::vector<Expression*> get() {
     return items_;
   }
 
-  void setItems(std::vector<Expression *> items) {
+  void setItems(std::vector<Expression*> items) {
     items_ = items;
   }
 
@@ -94,15 +94,15 @@ class ListExpression final : public Expression {
     return items_.size();
   }
 
-  bool operator==(const Expression &rhs) const override;
+  bool operator==(const Expression& rhs) const override;
 
   std::string toString() const override;
 
-  void accept(ExprVisitor *visitor) override;
+  void accept(ExprVisitor* visitor) override;
 
-  Expression *clone() const override {
+  Expression* clone() const override {
     auto items = ExpressionList::make(pool_, items_.size());
-    for (auto &item : items_) {
+    for (auto& item : items_) {
       items->add(item->clone());
     }
     return ListExpression::make(pool_, items);
@@ -113,47 +113,47 @@ class ListExpression final : public Expression {
   }
 
  private:
-  explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
+  explicit ListExpression(ObjectPool* pool) : Expression(pool, Kind::kList) {}
 
-  explicit ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
+  explicit ListExpression(ObjectPool* pool, ExpressionList* items) : Expression(pool, Kind::kList) {
     items_ = items->get();
   }
 
-  void writeTo(Encoder &encoder) const override;
+  void writeTo(Encoder& encoder) const override;
 
-  void resetFrom(Decoder &decoder) override;
+  void resetFrom(Decoder& decoder) override;
 
  private:
-  std::vector<Expression *> items_;
+  std::vector<Expression*> items_;
   Value result_;
 };
 
 class SetExpression final : public Expression {
  public:
-  SetExpression &operator=(const SetExpression &rhs) = delete;
-  SetExpression &operator=(SetExpression &&) = delete;
+  SetExpression& operator=(const SetExpression& rhs) = delete;
+  SetExpression& operator=(SetExpression&&) = delete;
 
-  static SetExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
+  static SetExpression* make(ObjectPool* pool, ExpressionList* items = nullptr) {
     return items == nullptr ? pool->add(new SetExpression(pool))
                             : pool->add(new SetExpression(pool, items));
   }
 
-  const Value &eval(ExpressionContext &ctx) override;
+  const Value& eval(ExpressionContext& ctx) override;
 
-  const std::vector<Expression *> &items() const {
+  const std::vector<Expression*>& items() const {
     return items_;
   }
 
-  void setItem(size_t index, Expression *item) {
+  void setItem(size_t index, Expression* item) {
     DCHECK_LT(index, items_.size());
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() {
+  std::vector<Expression*> get() {
     return items_;
   }
 
-  void setItems(std::vector<Expression *> items) {
+  void setItems(std::vector<Expression*> items) {
     items_ = items;
   }
 
@@ -161,15 +161,15 @@ class SetExpression final : public Expression {
     return items_.size();
   }
 
-  bool operator==(const Expression &rhs) const override;
+  bool operator==(const Expression& rhs) const override;
 
   std::string toString() const override;
 
-  void accept(ExprVisitor *visitor) override;
+  void accept(ExprVisitor* visitor) override;
 
-  Expression *clone() const override {
+  Expression* clone() const override {
     auto items = ExpressionList::make(pool_, items_.size());
-    for (auto &item : items_) {
+    for (auto& item : items_) {
       items->add(item->clone());
     }
     return SetExpression::make(pool_, items);
@@ -180,36 +180,36 @@ class SetExpression final : public Expression {
   }
 
  private:
-  explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
+  explicit SetExpression(ObjectPool* pool) : Expression(pool, Kind::kSet) {}
 
-  explicit SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
+  explicit SetExpression(ObjectPool* pool, ExpressionList* items) : Expression(pool, Kind::kSet) {
     items_ = items->get();
   }
 
-  void writeTo(Encoder &encoder) const override;
+  void writeTo(Encoder& encoder) const override;
 
-  void resetFrom(Decoder &decoder) override;
+  void resetFrom(Decoder& decoder) override;
 
  private:
-  std::vector<Expression *> items_;
+  std::vector<Expression*> items_;
   Value result_;
 };
 
 class MapExpression final : public Expression {
  public:
-  MapExpression &operator=(const MapExpression &rhs) = delete;
-  MapExpression &operator=(MapExpression &&) = delete;
+  MapExpression& operator=(const MapExpression& rhs) = delete;
+  MapExpression& operator=(MapExpression&&) = delete;
 
-  static MapExpression *make(ObjectPool *pool, MapItemList *items = nullptr) {
+  static MapExpression* make(ObjectPool* pool, MapItemList* items = nullptr) {
     return items == nullptr ? pool->add(new MapExpression(pool))
                             : pool->add(new MapExpression(pool, items));
   }
 
-  using Item = std::pair<std::string, Expression *>;
+  using Item = std::pair<std::string, Expression*>;
 
-  const Value &eval(ExpressionContext &ctx) override;
+  const Value& eval(ExpressionContext& ctx) override;
 
-  const std::vector<Item> &items() const {
+  const std::vector<Item>& items() const {
     return items_;
   }
 
@@ -230,15 +230,15 @@ class MapExpression final : public Expression {
     return items_.size();
   }
 
-  bool operator==(const Expression &rhs) const override;
+  bool operator==(const Expression& rhs) const override;
 
   std::string toString() const override;
 
-  void accept(ExprVisitor *visitor) override;
+  void accept(ExprVisitor* visitor) override;
 
-  Expression *clone() const override {
+  Expression* clone() const override {
     auto items = MapItemList::make(pool_, items_.size());
-    for (auto &item : items_) {
+    for (auto& item : items_) {
       items->add(item.first, item.second->clone());
     }
     return MapExpression::make(pool_, items);
@@ -249,15 +249,15 @@ class MapExpression final : public Expression {
   }
 
  private:
-  explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
+  explicit MapExpression(ObjectPool* pool) : Expression(pool, Kind::kMap) {}
 
-  explicit MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
+  explicit MapExpression(ObjectPool* pool, MapItemList* items) : Expression(pool, Kind::kMap) {
     items_ = items->get();
   }
 
-  void writeTo(Encoder &encoder) const override;
+  void writeTo(Encoder& encoder) const override;
 
-  void resetFrom(Decoder &decoder) override;
+  void resetFrom(Decoder& decoder) override;
 
  private:
   std::vector<Item> items_;

@@ -14,17 +14,17 @@ namespace graph {
 
 class ConfigBaseExecutor : public Executor {
  public:
-  ConfigBaseExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+  ConfigBaseExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : Executor(name, node, qctx) {}
 
  protected:
-  std::vector<Value> generateColumns(const meta::cpp2::ConfigItem &item);
-  DataSet generateResult(const std::vector<meta::cpp2::ConfigItem> &items);
+  std::vector<Value> generateColumns(const meta::cpp2::ConfigItem& item);
+  DataSet generateResult(const std::vector<meta::cpp2::ConfigItem>& items);
 };
 
 class ShowConfigsExecutor final : public ConfigBaseExecutor {
  public:
-  ShowConfigsExecutor(const PlanNode *node, QueryContext *qctx)
+  ShowConfigsExecutor(const PlanNode* node, QueryContext* qctx)
       : ConfigBaseExecutor("ShowConfigsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -32,7 +32,7 @@ class ShowConfigsExecutor final : public ConfigBaseExecutor {
 
 class SetConfigExecutor final : public ConfigBaseExecutor {
  public:
-  SetConfigExecutor(const PlanNode *node, QueryContext *qctx)
+  SetConfigExecutor(const PlanNode* node, QueryContext* qctx)
       : ConfigBaseExecutor("SetConfigExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -44,7 +44,7 @@ class SetConfigExecutor final : public ConfigBaseExecutor {
 
 class GetConfigExecutor final : public ConfigBaseExecutor {
  public:
-  GetConfigExecutor(const PlanNode *node, QueryContext *qctx)
+  GetConfigExecutor(const PlanNode* node, QueryContext* qctx)
       : ConfigBaseExecutor("GetConfigExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

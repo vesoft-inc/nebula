@@ -32,36 +32,36 @@ struct TypeSignature {
 class FunctionManager final {
  public:
   using ArgType = std::reference_wrapper<const Value>;
-  using Function = std::function<Value(const std::vector<ArgType> &)>;
+  using Function = std::function<Value(const std::vector<ArgType>&)>;
 
   /**
    * To obtain a function named `func', with the actual arity.
    */
-  static StatusOr<Function> get(const std::string &func, size_t arity);
+  static StatusOr<Function> get(const std::string& func, size_t arity);
 
   /**
    * To Check the validity of the function named `func', with the actual arity.
    * Only used for parser check.
    */
-  static Status find(const std::string &func, const size_t arity);
+  static Status find(const std::string& func, const size_t arity);
 
-  static StatusOr<bool> getIsPure(const std::string &func, size_t arity);
+  static StatusOr<bool> getIsPure(const std::string& func, size_t arity);
 
   /**
    * To load a set of functions from a shared object dynamically.
    */
-  static Status load(const std::string &soname, const std::vector<std::string> &funcs);
+  static Status load(const std::string& soname, const std::vector<std::string>& funcs);
 
   /**
    * To unload a shared object.
    */
-  static Status unload(const std::string &soname, const std::vector<std::string> &funcs);
+  static Status unload(const std::string& soname, const std::vector<std::string>& funcs);
 
   /**
    * To obtain the return value type according to the parameter type
    */
-  static StatusOr<Value::Type> getReturnType(const std::string &funcName,
-                                             const std::vector<Value::Type> &argsType);
+  static StatusOr<Value::Type> getReturnType(const std::string& funcName,
+                                             const std::vector<Value::Type>& argsType);
 
  private:
   struct FunctionAttributes final {
@@ -78,13 +78,13 @@ class FunctionManager final {
    */
   FunctionManager();
 
-  static FunctionManager &instance();
+  static FunctionManager& instance();
 
   StatusOr<const FunctionAttributes> getInternal(std::string func, size_t arity) const;
 
-  Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);
+  Status loadInternal(const std::string& soname, const std::vector<std::string>& funcs);
 
-  Status unloadInternal(const std::string &soname, const std::vector<std::string> &funcs);
+  Status unloadInternal(const std::string& soname, const std::vector<std::string>& funcs);
 
   static std::unordered_map<std::string, std::vector<TypeSignature>> typeSignature_;
 

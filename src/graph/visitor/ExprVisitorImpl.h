@@ -13,39 +13,39 @@ namespace graph {
 
 class ExprVisitorImpl : public ExprVisitor {
  public:
-  void visit(UnaryExpression *expr) override;
-  void visit(TypeCastingExpression *expr) override;
-  void visit(LabelAttributeExpression *expr) override;
+  void visit(UnaryExpression* expr) override;
+  void visit(TypeCastingExpression* expr) override;
+  void visit(LabelAttributeExpression* expr) override;
   // binary expression
-  void visit(ArithmeticExpression *expr) override;
-  void visit(RelationalExpression *expr) override;
-  void visit(SubscriptExpression *expr) override;
-  void visit(AttributeExpression *expr) override;
-  void visit(LogicalExpression *expr) override;
+  void visit(ArithmeticExpression* expr) override;
+  void visit(RelationalExpression* expr) override;
+  void visit(SubscriptExpression* expr) override;
+  void visit(AttributeExpression* expr) override;
+  void visit(LogicalExpression* expr) override;
   // function call
-  void visit(FunctionCallExpression *expr) override;
-  void visit(AggregateExpression *expr) override;
+  void visit(FunctionCallExpression* expr) override;
+  void visit(AggregateExpression* expr) override;
   // container expression
-  void visit(ListExpression *expr) override;
-  void visit(SetExpression *expr) override;
-  void visit(MapExpression *expr) override;
+  void visit(ListExpression* expr) override;
+  void visit(SetExpression* expr) override;
+  void visit(MapExpression* expr) override;
   // case expression
-  void visit(CaseExpression *expr) override;
+  void visit(CaseExpression* expr) override;
   // path build expression
-  void visit(PathBuildExpression *expr) override;
+  void visit(PathBuildExpression* expr) override;
   // predicate expression
-  void visit(PredicateExpression *expr) override;
+  void visit(PredicateExpression* expr) override;
   // list comprehension expression
-  void visit(ListComprehensionExpression *expr) override;
+  void visit(ListComprehensionExpression* expr) override;
   // reduce expression
-  void visit(ReduceExpression *expr) override;
+  void visit(ReduceExpression* expr) override;
   // subscript range expression
-  void visit(SubscriptRangeExpression *expr) override;
+  void visit(SubscriptRangeExpression* expr) override;
 
  protected:
   using ExprVisitor::visit;
 
-  virtual void visitBinaryExpr(BinaryExpression *expr);
+  virtual void visitBinaryExpr(BinaryExpression* expr);
   virtual bool ok() const = 0;
 };
 

@@ -49,8 +49,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   }
 
   // Need to create a new client and insert it to client map.
-  VLOG(3) << "Cound NOT find an existing client to the host " << host
-          << ", trying to create one";
+  VLOG(3) << "Cound NOT find an existing client to the host " << host << ", trying to create one";
 
   /*
    * TODO(liuyu): folly said 'resolve' may take second to finish
@@ -67,8 +66,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
       LOG(INFO) << oss.str();
     } catch (const std::exception& e) {
       // if we resolve failed, just return a connection, we will retry later
-      LOG(WARNING) << "Failed to resolve the host address " << host
-                   << ": " << e.what();
+      LOG(WARNING) << "Failed to resolve the host address " << host << ": " << e.what();
     }
   }
 
@@ -88,11 +86,9 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
     if (timeout > 0) {
       clientChannel->setTimeout(timeout);
     }
-    client.reset(
-        new ClientType(std::move(clientChannel)),
-        [evb](auto* p) {
-          evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; });
-        });
+    client.reset(new ClientType(std::move(clientChannel)), [evb](auto* p) {
+      evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; });
+    });
   });
   VLOG(3) << "Created a new client to the host " << host;
   clientMap_->emplace(std::make_pair(host, evb), client);

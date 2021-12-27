@@ -14,13 +14,13 @@ namespace graph {
 
 class UpdateBaseExecutor : public StorageAccessExecutor {
  public:
-  UpdateBaseExecutor(const std::string &execName, const PlanNode *node, QueryContext *qctx)
+  UpdateBaseExecutor(const std::string& execName, const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor(execName, node, qctx) {}
 
   virtual ~UpdateBaseExecutor() {}
 
  protected:
-  StatusOr<DataSet> handleResult(DataSet &&data);
+  StatusOr<DataSet> handleResult(DataSet&& data);
 
  protected:
   std::vector<std::string> yieldNames_;
@@ -28,7 +28,7 @@ class UpdateBaseExecutor : public StorageAccessExecutor {
 
 class UpdateVertexExecutor final : public UpdateBaseExecutor {
  public:
-  UpdateVertexExecutor(const PlanNode *node, QueryContext *qctx)
+  UpdateVertexExecutor(const PlanNode* node, QueryContext* qctx)
       : UpdateBaseExecutor("UpdateVertexExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
@@ -36,7 +36,7 @@ class UpdateVertexExecutor final : public UpdateBaseExecutor {
 
 class UpdateEdgeExecutor final : public UpdateBaseExecutor {
  public:
-  UpdateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+  UpdateEdgeExecutor(const PlanNode* node, QueryContext* qctx)
       : UpdateBaseExecutor("UpdateEdgeExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;

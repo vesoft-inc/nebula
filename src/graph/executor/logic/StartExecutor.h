@@ -13,7 +13,7 @@ namespace graph {
 
 class StartExecutor final : public Executor {
  public:
-  StartExecutor(const PlanNode *node, QueryContext *qctx) : Executor("StartExecutor", node, qctx) {}
+  StartExecutor(const PlanNode* node, QueryContext* qctx) : Executor("StartExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

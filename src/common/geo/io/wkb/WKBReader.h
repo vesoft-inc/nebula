@@ -20,7 +20,7 @@ class WKBReader {
 
   ~WKBReader() {}
 
-  StatusOr<Geography> read(const std::string &wkb);
+  StatusOr<Geography> read(const std::string& wkb);
 
  private:
   StatusOr<Point> readPoint();

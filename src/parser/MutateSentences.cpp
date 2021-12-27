@@ -9,7 +9,7 @@ namespace nebula {
 std::string PropertyList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &prop : properties_) {
+  for (auto& prop : properties_) {
     buf += *prop;
     buf += ",";
   }
@@ -37,7 +37,7 @@ std::string VertexTagList::toString() const {
   std::string buf;
   buf.reserve(256);
 
-  for (auto &item : tagItems_) {
+  for (auto& item : tagItems_) {
     buf += item->toString();
     buf += ",";
   }
@@ -50,7 +50,7 @@ std::string VertexTagList::toString() const {
 std::string ValueList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &expr : values_) {
+  for (auto& expr : values_) {
     buf += expr->toString();
     buf += ",";
   }
@@ -74,7 +74,7 @@ std::string VertexRowItem::toString() const {
 std::string VertexRowList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &item : rows_) {
+  for (auto& item : rows_) {
     buf += item->toString();
     buf += ",";
   }
@@ -119,7 +119,7 @@ std::string EdgeRowItem::toString() const {
 std::string EdgeRowList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &item : rows_) {
+  for (auto& item : rows_) {
     buf += item->toString();
     buf += ",";
   }
@@ -165,7 +165,7 @@ StatusOr<std::string> UpdateItem::toEvaledString() const {
 std::string UpdateList::toString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &item : items_) {
+  for (auto& item : items_) {
     buf += item->toString();
     buf += ",";
   }
@@ -178,7 +178,7 @@ std::string UpdateList::toString() const {
 StatusOr<std::string> UpdateList::toEvaledString() const {
   std::string buf;
   buf.reserve(256);
-  for (auto &item : items_) {
+  for (auto& item : items_) {
     auto ret = item->toEvaledString();
     if (!ret.ok()) {
       return ret.status();

@@ -16,19 +16,19 @@ namespace graph {
 folly::Future<Status> UnwindExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *unwind = asNode<Unwind>(node());
-  auto &inputRes = ectx_->getResult(unwind->inputVar());
+  auto* unwind = asNode<Unwind>(node());
+  auto& inputRes = ectx_->getResult(unwind->inputVar());
   auto iter = inputRes.iter();
   bool emptyInput = inputRes.valuePtr()->type() == Value::Type::DATASET ? false : true;
   QueryExpressionContext ctx(ectx_);
-  auto *unwindExpr = unwind->unwindExpr();
+  auto* unwindExpr = unwind->unwindExpr();
 
   DataSet ds;
   ds.colNames = unwind->colNames();
   for (; iter->valid(); iter->next()) {
-    const Value &list = unwindExpr->eval(ctx(iter.get()));
+    const Value& list = unwindExpr->eval(ctx(iter.get()));
     std::vector<Value> vals = extractList(list);
-    for (auto &v : vals) {
+    for (auto& v : vals) {
       Row row;
       if (!emptyInput) {
         row = *(iter->row());
@@ -41,10 +41,10 @@ folly::Future<Status> UnwindExecutor::execute() {
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
-std::vector<Value> UnwindExecutor::extractList(const Value &val) {
+std::vector<Value> UnwindExecutor::extractList(const Value& val) {
   std::vector<Value> ret;
   if (val.isList()) {
-    auto &list = val.getList();
+    auto& list = val.getList();
     ret = list.values;
   } else {
     if (!(val.isNull() || val.empty())) {

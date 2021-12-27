@@ -18,80 +18,80 @@ class ObjectPool;
 namespace graph {
 class MatchValidator final : public Validator {
  public:
-  MatchValidator(Sentence *sentence, QueryContext *context);
+  MatchValidator(Sentence* sentence, QueryContext* context);
 
  private:
   Status validateImpl() override;
 
-  AstContext *getAstContext() override;
+  AstContext* getAstContext() override;
 
-  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
+  Status validatePath(const MatchPath* path, MatchClauseContext& matchClauseCtx);
 
-  Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
+  Status validateFilter(const Expression* filter, WhereClauseContext& whereClauseCtx) const;
 
-  Status validateReturn(MatchReturn *ret,
-                        const CypherClauseContextBase *cypherClauseCtx,
-                        ReturnClauseContext &retClauseCtx) const;
+  Status validateReturn(MatchReturn* ret,
+                        const CypherClauseContextBase* cypherClauseCtx,
+                        ReturnClauseContext& retClauseCtx) const;
 
-  Status validateAliases(const std::vector<const Expression *> &exprs,
-                         const std::unordered_map<std::string, AliasType> *aliases) const;
+  Status validateAliases(const std::vector<const Expression*>& exprs,
+                         const std::unordered_map<std::string, AliasType>* aliases) const;
 
-  Status validateStepRange(const MatchStepRange *range) const;
+  Status validateStepRange(const MatchStepRange* range) const;
 
-  Status validateWith(const WithClause *with,
-                      const CypherClauseContextBase *cypherClauseCtx,
-                      WithClauseContext &withClauseCtx) const;
+  Status validateWith(const WithClause* with,
+                      const CypherClauseContextBase* cypherClauseCtx,
+                      WithClauseContext& withClauseCtx) const;
 
-  Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
+  Status validateUnwind(const UnwindClause* unwind, UnwindClauseContext& unwindClauseCtx) const;
 
-  Status validatePagination(const Expression *skipExpr,
-                            const Expression *limitExpr,
-                            PaginationContext &paginationCtx) const;
+  Status validatePagination(const Expression* skipExpr,
+                            const Expression* limitExpr,
+                            PaginationContext& paginationCtx) const;
 
-  Status validateOrderBy(const OrderFactors *factors,
-                         const YieldColumns *yieldColumns,
-                         OrderByClauseContext &orderByCtx) const;
+  Status validateOrderBy(const OrderFactors* factors,
+                         const YieldColumns* yieldColumns,
+                         OrderByClauseContext& orderByCtx) const;
 
-  Status validateGroup(YieldClauseContext &yieldCtx) const;
+  Status validateGroup(YieldClauseContext& yieldCtx) const;
 
-  Status validateYield(YieldClauseContext &yieldCtx) const;
+  Status validateYield(YieldClauseContext& yieldCtx) const;
 
-  Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
-                         YieldColumns *columns) const;
+  Status includeExisting(const CypherClauseContextBase* cypherClauseCtx,
+                         YieldColumns* columns) const;
 
-  static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
+  static Expression* andConnect(ObjectPool* pool, Expression* left, Expression* right);
 
   template <typename T>
-  T *saveObject(T *obj) const {
+  T* saveObject(T* obj) const {
     return qctx_->objPool()->add(obj);
   }
 
-  Status buildNodeInfo(const MatchPath *path,
-                       std::vector<NodeInfo> &edgeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases);
+  Status buildNodeInfo(const MatchPath* path,
+                       std::vector<NodeInfo>& edgeInfos,
+                       std::unordered_map<std::string, AliasType>& aliases);
 
-  Status buildEdgeInfo(const MatchPath *path,
-                       std::vector<EdgeInfo> &nodeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases);
+  Status buildEdgeInfo(const MatchPath* path,
+                       std::vector<EdgeInfo>& nodeInfos,
+                       std::unordered_map<std::string, AliasType>& aliases);
 
-  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx);
+  Status buildPathExpr(const MatchPath* path, MatchClauseContext& matchClauseCtx);
 
-  Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
-                        const std::unordered_map<std::string, AliasType> &lastAliases) const;
+  Status combineAliases(std::unordered_map<std::string, AliasType>& curAliases,
+                        const std::unordered_map<std::string, AliasType>& lastAliases) const;
 
-  Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
+  Status combineYieldColumns(YieldColumns* yieldColumns, YieldColumns* prevYieldColumns) const;
 
-  StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType> *aliasesUsed,
-                                   const std::string &name) const;
+  StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType>* aliasesUsed,
+                                   const std::string& name) const;
 
-  Status checkAlias(const Expression *refExpr,
-                    const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
+  Status checkAlias(const Expression* refExpr,
+                    const std::unordered_map<std::string, AliasType>* aliasesUsed) const;
 
-  Status buildOutputs(const YieldColumns *yields);
+  Status buildOutputs(const YieldColumns* yields);
 
-  StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
+  StatusOr<Expression*> makeEdgeSubFilter(MapExpression* map) const;
 
-  StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
+  StatusOr<Expression*> makeNodeSubFilter(MapExpression* map, const std::string& label) const;
 
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;

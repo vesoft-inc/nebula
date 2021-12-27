@@ -149,7 +149,7 @@ TEST_F(ExpressionTest, TestExprClone) {
       &pool, VariableExpression::make(&pool, "var"), ConstantExpression::make(&pool, 0));
   ASSERT_EQ(*subExpr, *subExpr->clone());
 
-  auto *elist = ExpressionList::make(&pool);
+  auto* elist = ExpressionList::make(&pool);
   (*elist)
       .add(ConstantExpression::make(&pool, 12345))
       .add(ConstantExpression::make(&pool, "Hello"))
@@ -160,7 +160,7 @@ TEST_F(ExpressionTest, TestExprClone) {
   auto setExpr = SetExpression::make(&pool, elist);
   ASSERT_EQ(*setExpr, *setExpr->clone());
 
-  auto *mapItems = MapItemList::make(&pool);
+  auto* mapItems = MapItemList::make(&pool);
   (*mapItems)
       .add("key1", ConstantExpression::make(&pool, 12345))
       .add("key2", ConstantExpression::make(&pool, 12345))
@@ -206,7 +206,7 @@ TEST_F(ExpressionTest, TestExprClone) {
       VersionedVariableExpression::make(&pool, "VARNAME", ConstantExpression::make(&pool, 0));
   ASSERT_EQ(*verVarExpr, *verVarExpr->clone());
 
-  auto *cases = CaseList::make(&pool);
+  auto* cases = CaseList::make(&pool);
   cases->add(ConstantExpression::make(&pool, 3), ConstantExpression::make(&pool, 9));
   auto caseExpr = CaseExpression::make(&pool, cases);
   caseExpr->setCondition(ConstantExpression::make(&pool, 2));
@@ -261,7 +261,7 @@ TEST_F(ExpressionTest, TestExprClone) {
 }
 }  // namespace nebula
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);

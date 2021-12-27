@@ -14,13 +14,13 @@ namespace graph {
 
 class GetVerticesExecutor final : public GetPropExecutor {
  public:
-  GetVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+  GetVerticesExecutor(const PlanNode* node, QueryContext* qctx)
       : GetPropExecutor("GetVerticesExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 
  private:
-  DataSet buildRequestDataSet(const GetVertices *gv);
+  DataSet buildRequestDataSet(const GetVertices* gv);
 
   folly::Future<Status> getVertices();
 };

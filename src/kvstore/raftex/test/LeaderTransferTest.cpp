@@ -49,7 +49,7 @@ TEST(LeaderTransferTest, SimpleTest) {
   waitUntilLeaderElected(copies, leader);
 
   ASSERT_NE(index, leader->index());
-//  ASSERT_TRUE(checkLeadership(copies, nLeaderIndex, leader));
+  //  ASSERT_TRUE(checkLeadership(copies, nLeaderIndex, leader));
 
   // Append 100 logs
   LOG(INFO) << "=====> Start appending logs";

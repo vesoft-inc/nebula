@@ -29,7 +29,7 @@
 namespace nebula {
 
 // static
-FunctionManager &FunctionManager::instance() {
+FunctionManager& FunctionManager::instance() {
   static FunctionManager instance;
   return instance;
 }
@@ -420,8 +420,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
 };
 
 // static
-StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName,
-                                                     const std::vector<Value::Type> &argsType) {
+StatusOr<Value::Type> FunctionManager::getReturnType(const std::string& funcName,
+                                                     const std::vector<Value::Type>& argsType) {
   auto func = funcName;
   std::transform(func.begin(), func.end(), func.begin(), ::tolower);
   if (variadicFunReturnType_.find(func) != variadicFunReturnType_.end()) {
@@ -432,13 +432,13 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
     return Status::Error("Function `%s' not defined", funcName.c_str());
   }
 
-  for (const auto &args : iter->second) {
+  for (const auto& args : iter->second) {
     if (argsType == args.argsType_) {
       return args.returnType_;
     }
   }
 
-  for (auto &argType : argsType) {
+  for (auto& argType : argsType) {
     // Most functions do not accept NULL or EMPTY
     // but if the parameters are given by NULL or EMPTY ,
     // then we will tell that it returns NULL or EMPTY
@@ -453,11 +453,11 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
 FunctionManager::FunctionManager() {
   {
     // absolute value
-    auto &attr = functions_["abs"];
+    auto& attr = functions_["abs"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -475,33 +475,33 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["bit_and"];
+    auto& attr = functions_["bit_and"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() & args[1].get(); };
+    attr.body_ = [](const auto& args) -> Value { return args[0].get() & args[1].get(); };
   }
   {
-    auto &attr = functions_["bit_or"];
+    auto& attr = functions_["bit_or"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() | args[1].get(); };
+    attr.body_ = [](const auto& args) -> Value { return args[0].get() | args[1].get(); };
   }
   {
-    auto &attr = functions_["bit_xor"];
+    auto& attr = functions_["bit_xor"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() ^ args[1].get(); };
+    attr.body_ = [](const auto& args) -> Value { return args[0].get() ^ args[1].get(); };
   }
   {
     // to nearest integer value not greater than x
-    auto &attr = functions_["floor"];
+    auto& attr = functions_["floor"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -520,11 +520,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // returns the smallest floating point number that is not less than x
-    auto &attr = functions_["ceil"];
+    auto& attr = functions_["ceil"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -543,11 +543,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // to nearest integral (as a floating-point value)
-    auto &attr = functions_["round"];
+    auto& attr = functions_["round"];
     attr.minArity_ = 1;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -572,11 +572,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // square root
-    auto &attr = functions_["sqrt"];
+    auto& attr = functions_["sqrt"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -603,11 +603,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // cubic root
-    auto &attr = functions_["cbrt"];
+    auto& attr = functions_["cbrt"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -626,11 +626,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // sqrt(x^2 + y^2)
-    auto &attr = functions_["hypot"];
+    auto& attr = functions_["hypot"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
         auto x = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
         auto y = args[1].get().isInt() ? args[1].get().getInt() : args[1].get().getFloat();
@@ -641,11 +641,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // base^exp
-    auto &attr = functions_["pow"];
+    auto& attr = functions_["pow"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
         auto base = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
         auto exp = args[1].get().isInt() ? args[1].get().getInt() : args[1].get().getFloat();
@@ -660,22 +660,22 @@ FunctionManager::FunctionManager() {
   }
   {
     // return the base of natural logarithm e
-    auto &attr = functions_["e"];
+    auto& attr = functions_["e"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       UNUSED(args);
       return M_E;
     };
   }
   {
     // e^x
-    auto &attr = functions_["exp"];
+    auto& attr = functions_["exp"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -694,11 +694,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // 2^x
-    auto &attr = functions_["exp2"];
+    auto& attr = functions_["exp2"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -717,11 +717,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // e-based logarithm
-    auto &attr = functions_["log"];
+    auto& attr = functions_["log"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -748,11 +748,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // 2-based logarithm
-    auto &attr = functions_["log2"];
+    auto& attr = functions_["log2"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -779,11 +779,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // 10-based logarithm
-    auto &attr = functions_["log10"];
+    auto& attr = functions_["log10"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -810,22 +810,22 @@ FunctionManager::FunctionManager() {
   }
   {
     // return the mathematical constant PI
-    auto &attr = functions_["pi"];
+    auto& attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       UNUSED(args);
       return M_PI;
     };
   }
 
   {
-    auto &attr = functions_["radians"];
+    auto& attr = functions_["radians"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -842,11 +842,11 @@ FunctionManager::FunctionManager() {
   }
 
   {
-    auto &attr = functions_["sin"];
+    auto& attr = functions_["sin"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -864,11 +864,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["asin"];
+    auto& attr = functions_["asin"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -886,11 +886,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["cos"];
+    auto& attr = functions_["cos"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -908,11 +908,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["acos"];
+    auto& attr = functions_["acos"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -930,11 +930,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["tan"];
+    auto& attr = functions_["tan"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -952,11 +952,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["atan"];
+    auto& attr = functions_["atan"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -974,11 +974,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["sign"];
+    auto& attr = functions_["sign"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -998,22 +998,22 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["rand"];
+    auto& attr = functions_["rand"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       UNUSED(args);
       return folly::Random::randDouble01();
     };
   }
   {
     // rand32(), rand32(max), rand32(min, max)
-    auto &attr = functions_["rand32"];
+    auto& attr = functions_["rand32"];
     attr.minArity_ = 0;
     attr.maxArity_ = 2;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args.empty()) {
         auto value = folly::Random::rand32();
         return static_cast<int64_t>(static_cast<int32_t>(value));
@@ -1046,11 +1046,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // rand64(), rand64(max), rand64(min, max)
-    auto &attr = functions_["rand64"];
+    auto& attr = functions_["rand64"];
     attr.minArity_ = 0;
     attr.maxArity_ = 2;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args.empty()) {
         return static_cast<int64_t>(folly::Random::rand64());
       } else if (args.size() == 1UL) {
@@ -1077,21 +1077,21 @@ FunctionManager::FunctionManager() {
   }
   {
     // unix timestamp
-    auto &attr = functions_["now"];
+    auto& attr = functions_["now"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       UNUSED(args);
       return time::WallClock::fastNowInSec();
     };
   }
   {
-    auto &attr = functions_["strcasecmp"];
+    auto& attr = functions_["strcasecmp"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isStr() && args[1].get().isStr()) {
         return static_cast<int64_t>(
             ::strcasecmp(args[0].get().getStr().c_str(), args[1].get().getStr().c_str()));
@@ -1100,11 +1100,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["lower"];
+    auto& attr = functions_["lower"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1122,11 +1122,11 @@ FunctionManager::FunctionManager() {
     functions_["tolower"] = attr;
   }
   {
-    auto &attr = functions_["upper"];
+    auto& attr = functions_["upper"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1146,11 +1146,11 @@ FunctionManager::FunctionManager() {
     functions_["toupper"] = attr;
   }
   {
-    auto &attr = functions_["length"];
+    auto& attr = functions_["length"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1170,11 +1170,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["trim"];
+    auto& attr = functions_["trim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1190,11 +1190,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["ltrim"];
+    auto& attr = functions_["ltrim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1210,11 +1210,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["rtrim"];
+    auto& attr = functions_["rtrim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1230,11 +1230,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["left"];
+    auto& attr = functions_["left"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1258,11 +1258,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["right"];
+    auto& attr = functions_["right"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1272,7 +1272,7 @@ FunctionManager::FunctionManager() {
             // opencypher raise an error
             return Value::kNullBadType;
           }
-          auto &value = args[0].get().getStr();
+          auto& value = args[0].get().getStr();
           auto len = args[1].get().getInt();
           if (len < 0) {
             // opencypher raise an error
@@ -1290,11 +1290,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["replace"];
+    auto& attr = functions_["replace"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isNull() || args[1].get().isNull() || args[2].get().isNull()) {
         return Value::kNullValue;
       }
@@ -1308,11 +1308,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["reverse"];
+    auto& attr = functions_["reverse"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1323,7 +1323,7 @@ FunctionManager::FunctionManager() {
           return origStr;
         }
         case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
+          auto& list = args[0].get().getList();
           List result(list.values);
           std::reverse(result.values.begin(), result.values.end());
           return result;
@@ -1335,11 +1335,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["split"];
+    auto& attr = functions_["split"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1368,11 +1368,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["tostring"];
+    auto& attr = functions_["tostring"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
           return Value::kNullValue;
@@ -1409,32 +1409,32 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["toboolean"];
+    auto& attr = functions_["toboolean"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toBool(); };
+    attr.body_ = [](const auto& args) -> Value { return Value(args[0].get()).toBool(); };
   }
   {
-    auto &attr = functions_["tofloat"];
+    auto& attr = functions_["tofloat"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toFloat(); };
+    attr.body_ = [](const auto& args) -> Value { return Value(args[0].get()).toFloat(); };
   }
   {
-    auto &attr = functions_["tointeger"];
+    auto& attr = functions_["tointeger"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
+    attr.body_ = [](const auto& args) -> Value { return Value(args[0].get()).toInt(); };
   }
   {
-    auto &attr = functions_["lpad"];
+    auto& attr = functions_["lpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
         auto value = args[0].get().getStr();
         auto size = args[1].get().getInt();
@@ -1459,11 +1459,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["rpad"];
+    auto& attr = functions_["rpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
         auto value = args[0].get().getStr();
         if (args[1].get().getInt() < 0) {
@@ -1489,11 +1489,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["substr"];
+    auto& attr = functions_["substr"];
     attr.minArity_ = 2;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       auto argSize = args.size();
       if (args[0].get().isNull()) {
         return Value::kNullValue;
@@ -1524,11 +1524,11 @@ FunctionManager::FunctionManager() {
   }
   {
     // 64bit signed hash value
-    auto &attr = functions_["hash"];
+    auto& attr = functions_["hash"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
         case Value::Type::__EMPTY__:
@@ -1551,20 +1551,20 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["udf_is_in"];
+    auto& attr = functions_["udf_is_in"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       return std::find(args.begin() + 1, args.end(), args[0].get()) != args.end();
     };
   }
   {
-    auto &attr = functions_["near"];
+    auto& attr = functions_["near"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       // auto result = geo::GeoFilter::near(args);
       // if (!result.ok()) {
       //     return std::string("");
@@ -1577,11 +1577,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["cos_similarity"];
+    auto& attr = functions_["cos_similarity"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args.size() % 2 != 0) {
         LOG(ERROR) << "The number of arguments must be even.";
         // value range of cos is [-1, 1]
@@ -1611,11 +1611,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["size"];
+    auto& attr = functions_["size"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
           return Value::kNullValue;
@@ -1646,13 +1646,13 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["date"];
+    auto& attr = functions_["date"];
     // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args.size()) {
         case 0: {
           auto result = time::TimeUtils::utcDate();
@@ -1684,13 +1684,13 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["time"];
+    auto& attr = functions_["time"];
     // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args.size()) {
         case 0: {
           return Value(time::TimeUtils::utcTime());
@@ -1718,13 +1718,13 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["datetime"];
+    auto& attr = functions_["datetime"];
     // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args.size()) {
         case 0: {
           return Value(time::TimeUtils::utcDateTime());
@@ -1752,11 +1752,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["timestamp"];
+    auto& attr = functions_["timestamp"];
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
     attr.isPure_ = false;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args.size() == 0) {
         return time::WallClock::fastNowInSec();
       }
@@ -1768,11 +1768,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["range"];
+    auto& attr = functions_["range"];
     attr.minArity_ = 2;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isInt() || !args[1].get().isInt()) {
         return Value::kNullBadType;
       }
@@ -1798,11 +1798,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["id"];
+    auto& attr = functions_["id"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1817,18 +1817,18 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["tags"];
+    auto& attr = functions_["tags"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::VERTEX: {
           List tags;
-          for (auto &tag : args[0].get().getVertex().tags) {
+          for (auto& tag : args[0].get().getVertex().tags) {
             tags.emplace_back(tag.name);
           }
           return tags;
@@ -1841,18 +1841,18 @@ FunctionManager::FunctionManager() {
     functions_["labels"] = attr;
   }
   {
-    auto &attr = functions_["properties"];
+    auto& attr = functions_["properties"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::VERTEX: {
           Map props;
-          for (auto &tag : args[0].get().getVertex().tags) {
+          for (auto& tag : args[0].get().getVertex().tags) {
             props.kvs.insert(tag.props.cbegin(), tag.props.cend());
           }
           return Value(std::move(props));
@@ -1872,11 +1872,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["type"];
+    auto& attr = functions_["type"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1891,11 +1891,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["typeid"];
+    auto& attr = functions_["typeid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -1910,17 +1910,17 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["src"];
+    auto& attr = functions_["src"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
+          const auto& edge = args[0].get().getEdge();
           return edge.type > 0 ? edge.src : edge.dst;
         }
         default: {
@@ -1930,17 +1930,17 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["dst"];
+    auto& attr = functions_["dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
+          const auto& edge = args[0].get().getEdge();
           return edge.type > 0 ? edge.dst : edge.src;
         }
         default: {
@@ -1950,26 +1950,26 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["none_direct_dst"];
+    auto& attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
+          const auto& edge = args[0].get().getEdge();
           return edge.dst;
         }
         case Value::Type::VERTEX: {
-          const auto &v = args[0].get().getVertex();
+          const auto& v = args[0].get().getVertex();
           return v.vid;
         }
         case Value::Type::LIST: {
-          const auto &listVal = args[0].get().getList();
-          auto &lastVal = listVal.values.back();
+          const auto& listVal = args[0].get().getList();
+          auto& lastVal = listVal.values.back();
           if (lastVal.isEdge()) {
             return lastVal.getEdge().dst;
           } else if (lastVal.isVertex()) {
@@ -1985,11 +1985,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["rank"];
+    auto& attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -2004,11 +2004,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["startnode"];
+    auto& attr = functions_["startnode"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -2026,11 +2026,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["endnode"];
+    auto& attr = functions_["endnode"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -2039,7 +2039,7 @@ FunctionManager::FunctionManager() {
           return Vertex(args[0].get().getEdge().dst, {});
         }
         case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
+          auto& path = args[0].get().getPath();
           if (path.steps.empty()) {
             return path.src;
           }
@@ -2052,11 +2052,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["head"];
+    auto& attr = functions_["head"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -2071,11 +2071,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["last"];
+    auto& attr = functions_["last"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
@@ -2090,21 +2090,21 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["coalesce"];
+    auto& attr = functions_["coalesce"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
+          auto& list = args[0].get().getList();
           if (list.values.empty()) {
             return Value::kNullValue;
           }
-          for (auto &i : list.values) {
+          for (auto& i : list.values) {
             if (i != Value::kNullValue) {
               return i;
             }
@@ -2118,32 +2118,32 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["keys"];
+    auto& attr = functions_["keys"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       std::set<std::string> tmp;
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::VERTEX: {
-          for (auto &tag : args[0].get().getVertex().tags) {
-            for (auto &prop : tag.props) {
+          for (auto& tag : args[0].get().getVertex().tags) {
+            for (auto& prop : tag.props) {
               tmp.emplace(prop.first);
             }
           }
           break;
         }
         case Value::Type::EDGE: {
-          for (auto &prop : args[0].get().getEdge().props) {
+          for (auto& prop : args[0].get().getEdge().props) {
             tmp.emplace(prop.first);
           }
           break;
         }
         case Value::Type::MAP: {
-          for (auto &kv : args[0].get().getMap().kvs) {
+          for (auto& kv : args[0].get().getMap().kvs) {
             tmp.emplace(kv.first);
           }
           break;
@@ -2158,20 +2158,20 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["nodes"];
+    auto& attr = functions_["nodes"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
+          auto& path = args[0].get().getPath();
           List result;
           result.emplace_back(path.src);
-          for (auto &step : path.steps) {
+          for (auto& step : path.steps) {
             result.emplace_back(step.dst);
           }
           return result;
@@ -2183,17 +2183,17 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["tail"];
+    auto& attr = functions_["tail"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
+          auto& list = args[0].get().getList();
           if (list.empty()) {
             return List();
           }
@@ -2206,17 +2206,17 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["relationships"];
+    auto& attr = functions_["relationships"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
+          auto& path = args[0].get().getPath();
           List result;
           auto src = path.src.vid;
           for (size_t i = 0; i < path.steps.size(); ++i) {
@@ -2240,37 +2240,37 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["hassameedgeinpath"];
+    auto& attr = functions_["hassameedgeinpath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
       }
-      auto &path = args[0].get().getPath();
+      auto& path = args[0].get().getPath();
       return path.hasDuplicateEdges();
     };
   }
   {
-    auto &attr = functions_["hassamevertexinpath"];
+    auto& attr = functions_["hassamevertexinpath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
       }
-      auto &path = args[0].get().getPath();
+      auto& path = args[0].get().getPath();
       return path.hasDuplicateVertices();
     };
   }
   {
-    auto &attr = functions_["reversepath"];
+    auto& attr = functions_["reversepath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
       }
@@ -2280,20 +2280,20 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["datasetrowcol"];
+    auto& attr = functions_["datasetrowcol"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isDataSet() || !args[1].get().isInt() ||
           !(args[2].get().isInt() || args[2].get().isStr())) {
         return Value::kNullBadType;
       }
-      const auto &ds = args[0].get().getDataSet();
+      const auto& ds = args[0].get().getDataSet();
       if (ds.rowSize() < 1 || ds.colSize() < 1) {
         return Value::kNullBadData;
       }
-      const auto &colNames = ds.colNames;
+      const auto& colNames = ds.colNames;
       int64_t rowIndex = args[1].get().getInt();
       int64_t colIndex =
           args[2].get().isInt()
@@ -2311,11 +2311,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["concat"];
+    auto& attr = functions_["concat"];
     attr.minArity_ = 1;
     attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       std::stringstream os;
       for (size_t i = 0; i < args.size(); ++i) {
         switch (args[i].get().type()) {
@@ -2359,11 +2359,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["concat_ws"];
+    auto& attr = functions_["concat_ws"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (args[0].get().isNull() || !args[0].get().isStr()) {
         return Value::kNullValue;
       }
@@ -2397,11 +2397,11 @@ FunctionManager::FunctionManager() {
   }
   // geo constructors
   {
-    auto &attr = functions_["st_point"];
+    auto& attr = functions_["st_point"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isNumeric() || !args[1].get().isNumeric()) {
         return Value::kNullBadType;
       }
@@ -2413,15 +2413,15 @@ FunctionManager::FunctionManager() {
   }
   // geo parsers
   {
-    auto &attr = functions_["st_geogfromtext"];
+    auto& attr = functions_["st_geogfromtext"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isStr()) {
         return Value::kNullBadType;
       }
-      const std::string &wkt = args[0].get().getStr();
+      const std::string& wkt = args[0].get().getStr();
       // Parse a geography from the wkt, normalize it and then verify its validity.
       auto geogRet = Geography::fromWKT(wkt, true, true);
       if (!geogRet.ok()) {
@@ -2451,15 +2451,15 @@ FunctionManager::FunctionManager() {
   // }
   // geo formatters
   {
-    auto &attr = functions_["st_astext"];
+    auto& attr = functions_["st_astext"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
-      const Geography &g = args[0].get().getGeography();
+      const Geography& g = args[0].get().getGeography();
       return g.asWKT();
     };
   }
@@ -2478,11 +2478,11 @@ FunctionManager::FunctionManager() {
   // }
   // geo transformations
   {
-    auto &attr = functions_["st_centroid"];
+    auto& attr = functions_["st_centroid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2491,11 +2491,11 @@ FunctionManager::FunctionManager() {
   }
   // geo accessors
   {
-    auto &attr = functions_["st_isvalid"];
+    auto& attr = functions_["st_isvalid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2504,11 +2504,11 @@ FunctionManager::FunctionManager() {
   }
   // geo predicates
   {
-    auto &attr = functions_["st_intersects"];
+    auto& attr = functions_["st_intersects"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2517,11 +2517,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["st_covers"];
+    auto& attr = functions_["st_covers"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2529,11 +2529,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["st_coveredby"];
+    auto& attr = functions_["st_coveredby"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2542,11 +2542,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["st_dwithin"];
+    auto& attr = functions_["st_dwithin"];
     attr.minArity_ = 3;
     attr.maxArity_ = 4;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
           !args[2].get().isNumeric()) {
         return Value::kNullBadType;
@@ -2567,11 +2567,11 @@ FunctionManager::FunctionManager() {
   }
   // geo measures
   {
-    auto &attr = functions_["st_distance"];
+    auto& attr = functions_["st_distance"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2580,11 +2580,11 @@ FunctionManager::FunctionManager() {
   }
   // geo s2 functions
   {
-    auto &attr = functions_["s2_cellidfrompoint"];
+    auto& attr = functions_["s2_cellidfrompoint"];
     attr.minArity_ = 1;
     attr.maxArity_ = 2;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2598,24 +2598,24 @@ FunctionManager::FunctionManager() {
           return Value::kNullBadData;
         }
       }
-      const auto &geog = args[0].get().getGeography();
+      const auto& geog = args[0].get().getGeography();
       if (geog.shape() != GeoShape::POINT) {
         LOG(ERROR) << "S2_CellIdFromPoint only accepts point argument";
         return Value::kNullBadData;
       }
       // TODO(jie) Should return uint64_t Value
       uint64_t cellId = geo::GeoFunction::s2CellIdFromPoint(args[0].get().getGeography(), level);
-      const char *tmp = reinterpret_cast<const char *>(&cellId);
-      int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
+      const char* tmp = reinterpret_cast<const char*>(&cellId);
+      int64_t cellId2 = *reinterpret_cast<const int64_t*>(tmp);
       return cellId2;
     };
   }
   {
-    auto &attr = functions_["s2_coveringcellids"];
+    auto& attr = functions_["s2_coveringcellids"];
     attr.minArity_ = 1;
     attr.maxArity_ = 5;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
+    attr.body_ = [](const auto& args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
@@ -2668,27 +2668,27 @@ FunctionManager::FunctionManager() {
       std::vector<Value> vals;
       vals.reserve(cellIds.size());
       for (uint64_t cellId : cellIds) {
-        const char *tmp = reinterpret_cast<const char *>(&cellId);
-        int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
+        const char* tmp = reinterpret_cast<const char*>(&cellId);
+        int64_t cellId2 = *reinterpret_cast<const int64_t*>(tmp);
         vals.emplace_back(cellId2);
       }
       return List(vals);
     };
   }
   {
-    auto &attr = functions_["is_edge"];
+    auto& attr = functions_["is_edge"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
+    attr.body_ = [](const auto& args) -> Value { return args[0].get().isEdge(); };
   }
   {
-    auto &attr = functions_["duration"];
+    auto& attr = functions_["duration"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      const auto &arg = args[0].get();
+    attr.body_ = [](const auto& args) -> Value {
+      const auto& arg = args[0].get();
       switch (arg.type()) {
         case Value::Type::MAP: {
           auto result = time::TimeUtils::durationFromMap(arg.getMap());
@@ -2711,20 +2711,20 @@ FunctionManager::FunctionManager() {
 }  // NOLINT
 
 // static
-StatusOr<FunctionManager::Function> FunctionManager::get(const std::string &func, size_t arity) {
+StatusOr<FunctionManager::Function> FunctionManager::get(const std::string& func, size_t arity) {
   auto result = instance().getInternal(func, arity);
   NG_RETURN_IF_ERROR(result);
   return result.value().body_;
 }
 
 // static
-Status FunctionManager::find(const std::string &func, const size_t arity) {
+Status FunctionManager::find(const std::string& func, const size_t arity) {
   auto result = instance().getInternal(func, arity);
   NG_RETURN_IF_ERROR(result);
   return Status::OK();
 }
 
-/*static*/ StatusOr<bool> FunctionManager::getIsPure(const std::string &func, size_t arity) {
+/*static*/ StatusOr<bool> FunctionManager::getIsPure(const std::string& func, size_t arity) {
   auto result = instance().getInternal(func, arity);
   NG_RETURN_IF_ERROR(result);
   return result.value().isPure_;
@@ -2763,20 +2763,20 @@ Status FunctionManager::find(const std::string &func, const size_t arity) {
 }
 
 // static
-Status FunctionManager::load(const std::string &name, const std::vector<std::string> &funcs) {
+Status FunctionManager::load(const std::string& name, const std::vector<std::string>& funcs) {
   return instance().loadInternal(name, funcs);
 }
 
-Status FunctionManager::loadInternal(const std::string &, const std::vector<std::string> &) {
+Status FunctionManager::loadInternal(const std::string&, const std::vector<std::string>&) {
   return Status::Error("Dynamic function loading not supported yet");
 }
 
 // static
-Status FunctionManager::unload(const std::string &name, const std::vector<std::string> &funcs) {
+Status FunctionManager::unload(const std::string& name, const std::vector<std::string>& funcs) {
   return instance().loadInternal(name, funcs);
 }
 
-Status FunctionManager::unloadInternal(const std::string &, const std::vector<std::string> &) {
+Status FunctionManager::unloadInternal(const std::string&, const std::vector<std::string>&) {
   return Status::Error("Dynamic function unloading not supported yet");
 }
 

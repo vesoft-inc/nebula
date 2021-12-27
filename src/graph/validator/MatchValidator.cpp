@@ -11,21 +11,21 @@
 
 namespace nebula {
 namespace graph {
-MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
+MatchValidator::MatchValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
   matchCtx_ = getContext<MatchAstContext>();
 }
 
-AstContext *MatchValidator::getAstContext() {
+AstContext* MatchValidator::getAstContext() {
   return matchCtx_.get();
 }
 
 Status MatchValidator::validateImpl() {
-  auto *sentence = static_cast<MatchSentence *>(sentence_);
-  auto &clauses = sentence->clauses();
+  auto* sentence = static_cast<MatchSentence*>(sentence_);
+  auto& clauses = sentence->clauses();
 
-  std::unordered_map<std::string, AliasType> *aliasesUsed = nullptr;
-  YieldColumns *prevYieldColumns = nullptr;
+  std::unordered_map<std::string, AliasType>* aliasesUsed = nullptr;
+  YieldColumns* prevYieldColumns = nullptr;
   auto retClauseCtx = getContext<ReturnClauseContext>();
   auto retYieldCtx = getContext<YieldClauseContext>();
   retClauseCtx->yield = std::move(retYieldCtx);
@@ -39,7 +39,7 @@ Status MatchValidator::validateImpl() {
     }
     switch (kind) {
       case ReadingClause::Kind::kMatch: {
-        auto *matchClause = static_cast<MatchClause *>(clauses[i].get());
+        auto* matchClause = static_cast<MatchClause*>(clauses[i].get());
 
         if (matchClause->isOptional()) {
           return Status::SemanticError("OPTIONAL MATCH not supported");
@@ -68,7 +68,7 @@ Status MatchValidator::validateImpl() {
         break;
       }
       case ReadingClause::Kind::kUnwind: {
-        auto *unwindClause = static_cast<UnwindClause *>(clauses[i].get());
+        auto* unwindClause = static_cast<UnwindClause*>(clauses[i].get());
         auto unwindClauseCtx = getContext<UnwindClauseContext>();
         unwindClauseCtx->aliasesUsed = aliasesUsed;
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
@@ -82,7 +82,7 @@ Status MatchValidator::validateImpl() {
         break;
       }
       case ReadingClause::Kind::kWith: {
-        auto *withClause = static_cast<WithClause *>(clauses[i].get());
+        auto* withClause = static_cast<WithClause*>(clauses[i].get());
         auto withClauseCtx = getContext<WithClauseContext>();
         auto withYieldCtx = getContext<YieldClauseContext>();
         withClauseCtx->yield = std::move(withYieldCtx);
@@ -99,7 +99,7 @@ Status MatchValidator::validateImpl() {
         }
 
         aliasesUsed = &withClauseCtx->aliasesGenerated;
-        prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
+        prevYieldColumns = const_cast<YieldColumns*>(withClauseCtx->yield->yieldColumns);
 
         matchCtx_->clauses.emplace_back(std::move(withClauseCtx));
 
@@ -117,7 +117,7 @@ Status MatchValidator::validateImpl() {
   return Status::OK();
 }
 
-Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
+Status MatchValidator::validatePath(const MatchPath* path, MatchClauseContext& matchClauseCtx) {
   NG_RETURN_IF_ERROR(
       buildNodeInfo(path, matchClauseCtx.nodeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
@@ -126,8 +126,8 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
   return Status::OK();
 }
 
-Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
-  auto *pathAlias = path->alias();
+Status MatchValidator::buildPathExpr(const MatchPath* path, MatchClauseContext& matchClauseCtx) {
+  auto* pathAlias = path->alias();
   if (pathAlias == nullptr) {
     return Status::OK();
   }
@@ -135,10 +135,10 @@ Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
   }
 
-  auto &nodeInfos = matchClauseCtx.nodeInfos;
-  auto &edgeInfos = matchClauseCtx.edgeInfos;
+  auto& nodeInfos = matchClauseCtx.nodeInfos;
+  auto& edgeInfos = matchClauseCtx.edgeInfos;
 
-  auto *pool = qctx_->objPool();
+  auto* pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
     pathBuild->add(InputPropertyExpression::make(pool, nodeInfos[i].alias));
@@ -149,22 +149,22 @@ Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &
   return Status::OK();
 }
 
-Status MatchValidator::buildNodeInfo(const MatchPath *path,
-                                     std::vector<NodeInfo> &nodeInfos,
-                                     std::unordered_map<std::string, AliasType> &aliases) {
-  auto *sm = qctx_->schemaMng();
+Status MatchValidator::buildNodeInfo(const MatchPath* path,
+                                     std::vector<NodeInfo>& nodeInfos,
+                                     std::unordered_map<std::string, AliasType>& aliases) {
+  auto* sm = qctx_->schemaMng();
   auto steps = path->steps();
-  auto *pool = qctx_->objPool();
+  auto* pool = qctx_->objPool();
   nodeInfos.resize(steps + 1);
 
   for (auto i = 0u; i <= steps; i++) {
-    auto *node = path->node(i);
+    auto* node = path->node(i);
     auto alias = node->alias();
-    auto *props = node->props();
+    auto* props = node->props();
     auto anonymous = false;
     if (node->labels() != nullptr) {
-      auto &labels = node->labels()->labels();
-      for (const auto &label : labels) {
+      auto& labels = node->labels()->labels();
+      for (const auto& label : labels) {
         if (label != nullptr) {
           auto tid = sm->toTagID(space_.id, *label->label());
           if (!tid.ok()) {
@@ -183,14 +183,14 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     if (!aliases.emplace(alias, AliasType::kNode).second) {
       return Status::SemanticError("`%s': Redefined alias", alias.c_str());
     }
-    Expression *filter = nullptr;
+    Expression* filter = nullptr;
     if (props != nullptr) {
-      auto result = makeNodeSubFilter(const_cast<MapExpression *>(props), "*");
+      auto result = makeNodeSubFilter(const_cast<MapExpression*>(props), "*");
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
-      const auto &labels = node->labels()->labels();
-      for (const auto &label : labels) {
+      const auto& labels = node->labels()->labels();
+      for (const auto& label : labels) {
         auto result = makeNodeSubFilter(label->props(), *label->label());
         NG_RETURN_IF_ERROR(result);
         filter = andConnect(pool, filter, result.value());
@@ -205,22 +205,22 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
   return Status::OK();
 }
 
-Status MatchValidator::buildEdgeInfo(const MatchPath *path,
-                                     std::vector<EdgeInfo> &edgeInfos,
-                                     std::unordered_map<std::string, AliasType> &aliases) {
-  auto *sm = qctx_->schemaMng();
+Status MatchValidator::buildEdgeInfo(const MatchPath* path,
+                                     std::vector<EdgeInfo>& edgeInfos,
+                                     std::unordered_map<std::string, AliasType>& aliases) {
+  auto* sm = qctx_->schemaMng();
   auto steps = path->steps();
   edgeInfos.resize(steps);
 
   for (auto i = 0u; i < steps; i++) {
-    auto *edge = path->edge(i);
-    auto &types = edge->types();
+    auto* edge = path->edge(i);
+    auto& types = edge->types();
     auto alias = edge->alias();
-    auto *props = edge->props();
+    auto* props = edge->props();
     auto direction = edge->direction();
     auto anonymous = false;
     if (!types.empty()) {
-      for (auto &type : types) {
+      for (auto& type : types) {
         auto etype = sm->toEdgeType(space_.id, *type);
         if (!etype.ok()) {
           return Status::SemanticError("`%s': Unknown edge type", type->c_str());
@@ -232,14 +232,14 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
       const auto allEdgesResult = matchCtx_->qctx->schemaMng()->getAllVerEdgeSchema(space_.id);
       NG_RETURN_IF_ERROR(allEdgesResult);
       const auto allEdges = std::move(allEdgesResult).value();
-      for (const auto &edgeSchema : allEdges) {
+      for (const auto& edgeSchema : allEdges) {
         edgeInfos[i].edgeTypes.emplace_back(edgeSchema.first);
         auto typeName = matchCtx_->qctx->schemaMng()->toEdgeName(space_.id, edgeSchema.first);
         NG_RETURN_IF_ERROR(typeName);
         edgeInfos[i].types.emplace_back(typeName.value());
       }
     }
-    auto *stepRange = edge->range();
+    auto* stepRange = edge->range();
     if (stepRange != nullptr) {
       NG_RETURN_IF_ERROR(validateStepRange(stepRange));
       edgeInfos[i].range = stepRange;
@@ -251,9 +251,9 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
     if (!aliases.emplace(alias, AliasType::kEdge).second) {
       return Status::SemanticError("`%s': Redefined alias", alias.c_str());
     }
-    Expression *filter = nullptr;
+    Expression* filter = nullptr;
     if (props != nullptr) {
-      auto result = makeEdgeSubFilter(const_cast<MapExpression *>(props));
+      auto result = makeEdgeSubFilter(const_cast<MapExpression*>(props));
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     }
@@ -267,8 +267,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
   return Status::OK();
 }
 
-Status MatchValidator::validateFilter(const Expression *filter,
-                                      WhereClauseContext &whereClauseCtx) const {
+Status MatchValidator::validateFilter(const Expression* filter,
+                                      WhereClauseContext& whereClauseCtx) const {
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   whereClauseCtx.filter = transformRes.value();
@@ -289,8 +289,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   return Status::OK();
 }
 
-Status MatchValidator::includeExisting(const CypherClauseContextBase *cypherClauseCtx,
-                                       YieldColumns *columns) const {
+Status MatchValidator::includeExisting(const CypherClauseContextBase* cypherClauseCtx,
+                                       YieldColumns* columns) const {
   if (cypherClauseCtx == nullptr) {
     return Status::OK();
   }
@@ -299,13 +299,13 @@ Status MatchValidator::includeExisting(const CypherClauseContextBase *cypherClau
       kind != CypherClauseKind::kWith) {
     return Status::SemanticError("Must be a MATCH/UNWIND/WITH");
   }
-  auto *pool = qctx_->objPool();
-  auto makeColumn = [&pool](const std::string &name) {
-    auto *expr = LabelExpression::make(pool, name);
+  auto* pool = qctx_->objPool();
+  auto makeColumn = [&pool](const std::string& name) {
+    auto* expr = LabelExpression::make(pool, name);
     return new YieldColumn(expr, name);
   };
   if (kind == CypherClauseKind::kMatch) {
-    auto matchClauseCtx = static_cast<const MatchClauseContext *>(cypherClauseCtx);
+    auto matchClauseCtx = static_cast<const MatchClauseContext*>(cypherClauseCtx);
 
     auto steps = matchClauseCtx->edgeInfos.size();
 
@@ -322,18 +322,18 @@ Status MatchValidator::includeExisting(const CypherClauseContextBase *cypherClau
       }
     }
 
-    for (auto &aliasPair : matchClauseCtx->aliasesGenerated) {
+    for (auto& aliasPair : matchClauseCtx->aliasesGenerated) {
       if (aliasPair.second == AliasType::kPath) {
         columns->addColumn(makeColumn(aliasPair.first));
       }
     }
   } else if (kind == CypherClauseKind::kUnwind) {
-    auto unwindClauseCtx = static_cast<const UnwindClauseContext *>(cypherClauseCtx);
+    auto unwindClauseCtx = static_cast<const UnwindClauseContext*>(cypherClauseCtx);
     columns->addColumn(makeColumn(unwindClauseCtx->alias));
   } else {
     // kWith
-    auto withClauseCtx = static_cast<const WithClauseContext *>(cypherClauseCtx);
-    for (auto &aliasPair : withClauseCtx->aliasesGenerated) {
+    auto withClauseCtx = static_cast<const WithClauseContext*>(cypherClauseCtx);
+    for (auto& aliasPair : withClauseCtx->aliasesGenerated) {
       columns->addColumn(makeColumn(aliasPair.first));
     }
   }
@@ -341,10 +341,10 @@ Status MatchValidator::includeExisting(const CypherClauseContextBase *cypherClau
   return Status::OK();
 }
 
-Status MatchValidator::validateReturn(MatchReturn *ret,
-                                      const CypherClauseContextBase *cypherClauseCtx,
-                                      ReturnClauseContext &retClauseCtx) const {
-  YieldColumns *columns = saveObject(new YieldColumns());
+Status MatchValidator::validateReturn(MatchReturn* ret,
+                                      const CypherClauseContextBase* cypherClauseCtx,
+                                      ReturnClauseContext& retClauseCtx) const {
+  YieldColumns* columns = saveObject(new YieldColumns());
   if (ret->returnItems()->includeExisting()) {
     auto status = includeExisting(cypherClauseCtx, columns);
     if (!status.ok()) {
@@ -355,7 +355,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
     }
   }
   if (ret->returnItems()->columns()) {
-    for (auto *column : ret->returnItems()->columns()->columns()) {
+    for (auto* column : ret->returnItems()->columns()->columns()) {
       if (ExpressionUtils::hasAny(column->expr(),
                                   {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
         return Status::SemanticError(
@@ -369,9 +369,9 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   retClauseCtx.yield->yieldColumns = columns;
 
   // Check all referencing expressions are valid
-  std::vector<const Expression *> exprs;
+  std::vector<const Expression*> exprs;
   exprs.reserve(retClauseCtx.yield->yieldColumns->size());
-  for (auto *col : retClauseCtx.yield->yieldColumns->columns()) {
+  for (auto* col : retClauseCtx.yield->yieldColumns->columns()) {
     if (!retClauseCtx.yield->hasAgg_ &&
         ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kAggregate})) {
       retClauseCtx.yield->hasAgg_ = true;
@@ -398,8 +398,8 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
 }
 
 Status MatchValidator::validateAliases(
-    const std::vector<const Expression *> &exprs,
-    const std::unordered_map<std::string, AliasType> *aliasesUsed) const {
+    const std::vector<const Expression*>& exprs,
+    const std::unordered_map<std::string, AliasType>* aliasesUsed) const {
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
                                                              // primitive props
@@ -408,19 +408,19 @@ Status MatchValidator::validateAliases(
                                                              Expression::Kind::kEdgeRank,
                                                              Expression::Kind::kEdgeType};
 
-  for (auto *expr : exprs) {
+  for (auto* expr : exprs) {
     auto refExprs = ExpressionUtils::collectAll(expr, kinds);
     if (refExprs.empty()) {
       continue;
     }
-    for (auto *refExpr : refExprs) {
+    for (auto* refExpr : refExprs) {
       NG_RETURN_IF_ERROR(checkAlias(refExpr, aliasesUsed));
     }
   }
   return Status::OK();
 }
 
-Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
+Status MatchValidator::validateStepRange(const MatchStepRange* range) const {
   auto min = range->min();
   auto max = range->max();
   if (min > max) {
@@ -433,10 +433,10 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   return Status::OK();
 }
 
-Status MatchValidator::validateWith(const WithClause *with,
-                                    const CypherClauseContextBase *cypherClauseCtx,
-                                    WithClauseContext &withClauseCtx) const {
-  YieldColumns *columns = saveObject(new YieldColumns());
+Status MatchValidator::validateWith(const WithClause* with,
+                                    const CypherClauseContextBase* cypherClauseCtx,
+                                    WithClauseContext& withClauseCtx) const {
+  YieldColumns* columns = saveObject(new YieldColumns());
   if (with->returnItems()->includeExisting()) {
     auto status = includeExisting(cypherClauseCtx, columns);
     if (!status.ok()) {
@@ -444,20 +444,20 @@ Status MatchValidator::validateWith(const WithClause *with,
     }
   }
   if (with->returnItems()->columns()) {
-    for (auto *column : with->returnItems()->columns()->columns()) {
+    for (auto* column : with->returnItems()->columns()->columns()) {
       columns->addColumn(column->clone().release());
     }
   }
   withClauseCtx.yield->yieldColumns = columns;
 
   // Check all referencing expressions are valid
-  std::vector<const Expression *> exprs;
+  std::vector<const Expression*> exprs;
   exprs.reserve(withClauseCtx.yield->yieldColumns->size());
-  for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
+  for (auto* col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
-    for (auto *labelExpr : labelExprs) {
+    for (auto* labelExpr : labelExprs) {
       DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
-      auto label = static_cast<const LabelExpression *>(labelExpr)->name();
+      auto label = static_cast<const LabelExpression*>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesUsed || !withClauseCtx.yield->aliasesUsed->count(label)) {
         return Status::SemanticError("Variable `%s` not defined", label.c_str());
       }
@@ -498,8 +498,8 @@ Status MatchValidator::validateWith(const WithClause *with,
   return Status::OK();
 }
 
-Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
-                                      UnwindClauseContext &unwindCtx) const {
+Status MatchValidator::validateUnwind(const UnwindClause* unwindClause,
+                                      UnwindClauseContext& unwindCtx) const {
   if (unwindClause->alias().empty()) {
     return Status::SemanticError("Expression in UNWIND must be aliased (use AS)");
   }
@@ -511,9 +511,9 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   }
 
   auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
-  for (auto *labelExpr : labelExprs) {
+  for (auto* labelExpr : labelExprs) {
     DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
-    auto label = static_cast<const LabelExpression *>(labelExpr)->name();
+    auto label = static_cast<const LabelExpression*>(labelExpr)->name();
     if (!unwindCtx.aliasesUsed || !unwindCtx.aliasesUsed->count(label)) {
       return Status::SemanticError("Variable `%s` not defined", label.c_str());
     }
@@ -528,10 +528,10 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
-  auto *pool = qctx_->objPool();
+StatusOr<Expression*> MatchValidator::makeEdgeSubFilter(MapExpression* map) const {
+  auto* pool = qctx_->objPool();
   DCHECK(map != nullptr);
-  auto &items = map->items();
+  auto& items = map->items();
   DCHECK(!items.empty());
 
   auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
@@ -542,7 +542,7 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
                                  items[0].second->toString().c_str());
   }
   map->setItem(0, std::make_pair(items[0].first, foldExpr));
-  Expression *root = RelationalExpression::makeEQ(
+  Expression* root = RelationalExpression::makeEQ(
       pool, EdgePropertyExpression::make(pool, "*", items[0].first), foldExpr);
   for (auto i = 1u; i < items.size(); i++) {
     foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
@@ -553,28 +553,28 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
                                    items[i].second->toString().c_str());
     }
     map->setItem(0, std::make_pair(items[i].first, foldExpr));
-    auto *left = root;
-    auto *right = RelationalExpression::makeEQ(
+    auto* left = root;
+    auto* right = RelationalExpression::makeEQ(
         pool, EdgePropertyExpression::make(pool, "*", items[i].first), foldExpr);
     root = LogicalExpression::makeAnd(pool, left, right);
   }
   return root;
 }
 
-StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
-                                                         const std::string &label) const {
-  auto *pool = qctx_->objPool();
+StatusOr<Expression*> MatchValidator::makeNodeSubFilter(MapExpression* map,
+                                                        const std::string& label) const {
+  auto* pool = qctx_->objPool();
   // Node has tag without property
   if (!label.empty() && map == nullptr) {
     // label._tag IS NOT EMPTY
-    auto *tagExpr = TagPropertyExpression::make(pool, label, kTag);
-    auto *root = UnaryExpression::makeIsNotEmpty(pool, tagExpr);
+    auto* tagExpr = TagPropertyExpression::make(pool, label, kTag);
+    auto* root = UnaryExpression::makeIsNotEmpty(pool, tagExpr);
 
     return root;
   }
 
   DCHECK(map != nullptr);
-  auto &items = map->items();
+  auto& items = map->items();
   DCHECK(!items.empty());
 
   auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
@@ -585,7 +585,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                  items[0].second->toString().c_str());
   }
   map->setItem(0, std::make_pair(items[0].first, foldExpr));
-  Expression *root = RelationalExpression::makeEQ(
+  Expression* root = RelationalExpression::makeEQ(
       pool, TagPropertyExpression::make(pool, label, items[0].first), foldExpr);
   for (auto i = 1u; i < items.size(); i++) {
     foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
@@ -596,17 +596,17 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                    items[i].second->toString().c_str());
     }
     map->setItem(i, std::make_pair(items[i].first, foldExpr));
-    auto *left = root;
-    auto *right = RelationalExpression::makeEQ(
+    auto* left = root;
+    auto* right = RelationalExpression::makeEQ(
         pool, TagPropertyExpression::make(pool, label, items[i].first), foldExpr);
     root = LogicalExpression::makeAnd(pool, left, right);
   }
   return root;
 }
 
-/*static*/ Expression *MatchValidator::andConnect(ObjectPool *pool,
-                                                  Expression *left,
-                                                  Expression *right) {
+/*static*/ Expression* MatchValidator::andConnect(ObjectPool* pool,
+                                                  Expression* left,
+                                                  Expression* right) {
   if (left == nullptr) {
     return right;
   }
@@ -617,9 +617,9 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
 }
 
 Status MatchValidator::combineAliases(
-    std::unordered_map<std::string, AliasType> &curAliases,
-    const std::unordered_map<std::string, AliasType> &lastAliases) const {
-  for (auto &aliasPair : lastAliases) {
+    std::unordered_map<std::string, AliasType>& curAliases,
+    const std::unordered_map<std::string, AliasType>& lastAliases) const {
+  for (auto& aliasPair : lastAliases) {
     if (!curAliases.emplace(aliasPair).second) {
       return Status::SemanticError("`%s': Redefined alias", aliasPair.first.c_str());
     }
@@ -628,13 +628,13 @@ Status MatchValidator::combineAliases(
   return Status::OK();
 }
 
-Status MatchValidator::combineYieldColumns(YieldColumns *yieldColumns,
-                                           YieldColumns *prevYieldColumns) const {
-  auto *pool = qctx_->objPool();
-  const auto &prevColumns = prevYieldColumns->columns();
-  for (auto &column : prevColumns) {
+Status MatchValidator::combineYieldColumns(YieldColumns* yieldColumns,
+                                           YieldColumns* prevYieldColumns) const {
+  auto* pool = qctx_->objPool();
+  const auto& prevColumns = prevYieldColumns->columns();
+  for (auto& column : prevColumns) {
     DCHECK(!column->alias().empty());
-    auto *newColumn = new YieldColumn(VariablePropertyExpression::make(pool, "", column->alias()),
+    auto* newColumn = new YieldColumn(VariablePropertyExpression::make(pool, "", column->alias()),
                                       column->alias());
     yieldColumns->addColumn(newColumn);
   }
@@ -642,16 +642,16 @@ Status MatchValidator::combineYieldColumns(YieldColumns *yieldColumns,
   return Status::OK();
 }
 
-Status MatchValidator::validatePagination(const Expression *skipExpr,
-                                          const Expression *limitExpr,
-                                          PaginationContext &paginationCtx) const {
+Status MatchValidator::validatePagination(const Expression* skipExpr,
+                                          const Expression* limitExpr,
+                                          PaginationContext& paginationCtx) const {
   int64_t skip = 0;
   int64_t limit = std::numeric_limits<int64_t>::max();
   if (skipExpr != nullptr) {
     if (!ExpressionUtils::isEvaluableExpr(skipExpr, qctx_)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
-    auto value = const_cast<Expression *>(skipExpr)->eval(QueryExpressionContext(qctx_->ectx())());
+    auto value = const_cast<Expression*>(skipExpr)->eval(QueryExpressionContext(qctx_->ectx())());
     if (!value.isInt()) {
       return Status::SemanticError("SKIP should be of type integer");
     }
@@ -665,7 +665,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
     if (!ExpressionUtils::isEvaluableExpr(limitExpr, qctx_)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
-    auto value = const_cast<Expression *>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
+    auto value = const_cast<Expression*>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
     if (!value.isInt()) {
       return Status::SemanticError("LIMIT should be of type integer");
     }
@@ -680,13 +680,13 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   return Status::OK();
 }
 
-Status MatchValidator::validateOrderBy(const OrderFactors *factors,
-                                       const YieldColumns *yieldColumns,
-                                       OrderByClauseContext &orderByCtx) const {
+Status MatchValidator::validateOrderBy(const OrderFactors* factors,
+                                       const YieldColumns* yieldColumns,
+                                       OrderByClauseContext& orderByCtx) const {
   if (factors != nullptr) {
     std::vector<std::string> inputColList;
     inputColList.reserve(yieldColumns->columns().size());
-    for (auto *col : yieldColumns->columns()) {
+    for (auto* col : yieldColumns->columns()) {
       inputColList.emplace_back(col->name());
     }
     std::unordered_map<std::string, size_t> inputColIndices;
@@ -696,13 +696,13 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
       }
     }
 
-    for (auto &factor : factors->factors()) {
+    for (auto& factor : factors->factors()) {
       auto factorExpr = factor->expr();
       if (ExpressionUtils::isEvaluableExpr(factorExpr, qctx_)) continue;
       if (factorExpr->kind() != Expression::Kind::kLabel) {
         return Status::SemanticError("Only column name can be used as sort item");
       }
-      auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
+      auto& name = static_cast<const LabelExpression*>(factor->expr())->name();
       auto iter = inputColIndices.find(name);
       if (iter == inputColIndices.end()) {
         return Status::SemanticError("Column `%s' not found", name.c_str());
@@ -714,20 +714,20 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
   return Status::OK();
 }
 
-Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
+Status MatchValidator::validateGroup(YieldClauseContext& yieldCtx) const {
   auto cols = yieldCtx.yieldColumns->columns();
-  auto *pool = qctx_->objPool();
+  auto* pool = qctx_->objPool();
 
   DCHECK(!cols.empty());
-  for (auto *col : cols) {
-    auto *colExpr = col->expr();
+  for (auto* col : cols) {
+    auto* colExpr = col->expr();
     auto colOldName = col->name();
     if (colExpr->kind() != Expression::Kind::kAggregate) {
       auto collectAggCol = colExpr->clone();
       auto aggs = ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
-      for (auto *agg : aggs) {
+      for (auto* agg : aggs) {
         DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
-        if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(agg)).ok()) {
+        if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression*>(agg)).ok()) {
           return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
                                        colExpr->toString().c_str());
         }
@@ -738,7 +738,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
       }
       if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
+        auto* rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
         yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;
@@ -746,7 +746,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
     }
 
     if (colExpr->kind() == Expression::Kind::kAggregate) {
-      auto *aggExpr = static_cast<AggregateExpression *>(colExpr);
+      auto* aggExpr = static_cast<AggregateExpression*>(colExpr);
       NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
     } else if (!ExpressionUtils::isEvaluableExpr(colExpr, qctx_)) {
       yieldCtx.groupKeys_.emplace_back(colExpr);
@@ -763,7 +763,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
   return Status::OK();
 }
 
-Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
+Status MatchValidator::validateYield(YieldClauseContext& yieldCtx) const {
   auto cols = yieldCtx.yieldColumns->columns();
   if (cols.empty()) {
     return Status::OK();
@@ -771,7 +771,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
 
   yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
   if (!yieldCtx.hasAgg_) {
-    for (auto &col : yieldCtx.yieldColumns->columns()) {
+    for (auto& col : yieldCtx.yieldColumns->columns()) {
       yieldCtx.projCols_->addColumn(col->clone().release());
       yieldCtx.projOutputColumnNames_.emplace_back(col->name());
     }
@@ -782,7 +782,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
 }
 
 StatusOr<AliasType> MatchValidator::getAliasType(
-    const std::unordered_map<std::string, AliasType> *aliasesUsed, const std::string &name) const {
+    const std::unordered_map<std::string, AliasType>* aliasesUsed, const std::string& name) const {
   auto iter = aliasesUsed->find(name);
   if (iter == aliasesUsed->end()) {
     return Status::SemanticError("Alias used but not defined: `%s'", name.c_str());
@@ -791,14 +791,14 @@ StatusOr<AliasType> MatchValidator::getAliasType(
 }
 
 Status MatchValidator::checkAlias(
-    const Expression *refExpr,
-    const std::unordered_map<std::string, AliasType> *aliasesUsed) const {
+    const Expression* refExpr,
+    const std::unordered_map<std::string, AliasType>* aliasesUsed) const {
   auto kind = refExpr->kind();
   AliasType aliasType = AliasType::kDefault;
 
   switch (kind) {
     case Expression::Kind::kLabel: {
-      auto name = static_cast<const LabelExpression *>(refExpr)->name();
+      auto name = static_cast<const LabelExpression*>(refExpr)->name();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -806,7 +806,7 @@ Status MatchValidator::checkAlias(
       return Status::OK();
     }
     case Expression::Kind::kLabelAttribute: {
-      auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
+      auto name = static_cast<const LabelAttributeExpression*>(refExpr)->left()->name();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -814,7 +814,7 @@ Status MatchValidator::checkAlias(
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {
-      auto name = static_cast<const EdgeSrcIdExpression *>(refExpr)->sym();
+      auto name = static_cast<const EdgeSrcIdExpression*>(refExpr)->sym();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -834,7 +834,7 @@ Status MatchValidator::checkAlias(
       }
     }
     case Expression::Kind::kEdgeDst: {
-      auto name = static_cast<const EdgeDstIdExpression *>(refExpr)->sym();
+      auto name = static_cast<const EdgeDstIdExpression*>(refExpr)->sym();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -854,7 +854,7 @@ Status MatchValidator::checkAlias(
       }
     }
     case Expression::Kind::kEdgeRank: {
-      auto name = static_cast<const EdgeRankExpression *>(refExpr)->sym();
+      auto name = static_cast<const EdgeRankExpression*>(refExpr)->sym();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -876,7 +876,7 @@ Status MatchValidator::checkAlias(
       }
     }
     case Expression::Kind::kEdgeType: {
-      auto name = static_cast<const EdgeTypeExpression *>(refExpr)->sym();
+      auto name = static_cast<const EdgeTypeExpression*>(refExpr)->sym();
       auto res = getAliasType(aliasesUsed, name);
       if (!res.ok()) {
         return res.status();
@@ -902,8 +902,8 @@ Status MatchValidator::checkAlias(
                                refExpr->toString().c_str());
 }
 
-Status MatchValidator::buildOutputs(const YieldColumns *yields) {
-  for (auto *col : yields->columns()) {
+Status MatchValidator::buildOutputs(const YieldColumns* yields) {
+  for (auto* col : yields->columns()) {
     auto colName = col->name();
     auto typeStatus = deduceExprType(col->expr());
     NG_RETURN_IF_ERROR(typeStatus);

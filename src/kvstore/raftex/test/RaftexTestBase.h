@@ -114,15 +114,8 @@ class RaftexTestFixture : public ::testing::Test {
   void SetUp() override {
     walRoot_ = std::make_unique<fs::TempDir>(
         folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-    setupRaft(size_,
-              *walRoot_,
-              workers_,
-              clientPool_,
-              wals_,
-              allHosts_,
-              services_,
-              copies_,
-              leader_);
+    setupRaft(
+        size_, *walRoot_, workers_, clientPool_, wals_, allHosts_, services_, copies_, leader_);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies_, leader_);

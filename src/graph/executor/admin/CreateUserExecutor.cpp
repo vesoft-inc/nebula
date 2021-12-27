@@ -18,7 +18,7 @@ folly::Future<Status> CreateUserExecutor::execute() {
 }
 
 folly::Future<Status> CreateUserExecutor::createUser() {
-  auto *cuNode = asNode<CreateUser>(node());
+  auto* cuNode = asNode<CreateUser>(node());
   return qctx()
       ->getMetaClient()
       ->createUser(*cuNode->username(),

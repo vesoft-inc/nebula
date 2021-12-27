@@ -25,13 +25,13 @@ class OptGroupNode;
 
 class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
  public:
-  explicit OptContext(graph::QueryContext *qctx);
+  explicit OptContext(graph::QueryContext* qctx);
 
-  graph::QueryContext *qctx() const {
+  graph::QueryContext* qctx() const {
     return qctx_;
   }
 
-  ObjectPool *objPool() const {
+  ObjectPool* objPool() const {
     return objPool_.get();
   }
 
@@ -43,14 +43,14 @@ class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
     changed_ = changed;
   }
 
-  void addPlanNodeAndOptGroupNode(int64_t planNodeId, const OptGroupNode *optGroupNode);
-  const OptGroupNode *findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;
+  void addPlanNodeAndOptGroupNode(int64_t planNodeId, const OptGroupNode* optGroupNode);
+  const OptGroupNode* findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;
 
  private:
   bool changed_{true};
-  graph::QueryContext *qctx_{nullptr};
+  graph::QueryContext* qctx_{nullptr};
   std::unique_ptr<ObjectPool> objPool_;
-  std::unordered_map<int64_t, const OptGroupNode *> planNodeToOptGroupNodeMap_;
+  std::unordered_map<int64_t, const OptGroupNode*> planNodeToOptGroupNodeMap_;
 };
 
 }  // namespace opt

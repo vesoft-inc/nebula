@@ -19,7 +19,7 @@ namespace graph {
 folly::Future<Status> CreateSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *csNode = asNode<CreateSpace>(node());
+  auto* csNode = asNode<CreateSpace>(node());
   return qctx()
       ->getMetaClient()
       ->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
@@ -36,7 +36,7 @@ folly::Future<Status> CreateSpaceExecutor::execute() {
 folly::Future<Status> CreateSpaceAsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *csaNode = asNode<CreateSpaceAsNode>(node());
+  auto* csaNode = asNode<CreateSpaceAsNode>(node());
   auto oldSpace = csaNode->getOldSpaceName();
   auto newSpace = csaNode->getNewSpaceName();
   return qctx()
@@ -55,7 +55,7 @@ folly::Future<Status> CreateSpaceAsExecutor::execute() {
 folly::Future<Status> DescSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dsNode = asNode<DescSpace>(node());
+  auto* dsNode = asNode<DescSpace>(node());
   return qctx()
       ->getMetaClient()
       ->getSpace(dsNode->getSpaceName())
@@ -65,12 +65,12 @@ folly::Future<Status> DescSpaceExecutor::execute() {
           LOG(ERROR) << resp.status();
           return resp.status();
         }
-        auto &spaceItem = resp.value();
-        auto &properties = spaceItem.get_properties();
+        auto& spaceItem = resp.value();
+        auto& properties = spaceItem.get_properties();
         auto spaceId = spaceItem.get_space_id();
 
         // check permission
-        auto *session = qctx_->rctx()->session();
+        auto* session = qctx_->rctx()->session();
         NG_RETURN_IF_ERROR(PermissionManager::canReadSpace(session, spaceId));
 
         DataSet dataSet;
@@ -118,7 +118,7 @@ folly::Future<Status> DescSpaceExecutor::execute() {
 folly::Future<Status> DropSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *dsNode = asNode<DropSpace>(node());
+  auto* dsNode = asNode<DropSpace>(node());
 
   // prepare text search index before drop meta data.
   std::vector<std::string> ftIndexes;
@@ -127,7 +127,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
     auto ftIndexesRet = qctx()->getMetaClient()->getFTIndexBySpaceFromCache(spaceIdRet.value());
     NG_RETURN_IF_ERROR(ftIndexesRet);
     auto map = std::move(ftIndexesRet).value();
-    auto get = [](const auto &ptr) { return ptr.first; };
+    auto get = [](const auto& ptr) { return ptr.first; };
     std::transform(map.begin(), map.end(), std::back_inserter(ftIndexes), get);
   } else {
     LOG(WARNING) << "Get space ID failed when prepare text index: " << dsNode->getSpaceName();
@@ -155,7 +155,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
             LOG(WARNING) << "Get text search clients failed";
             return Status::OK();
           }
-          for (const auto &ftindex : ftIndexes) {
+          for (const auto& ftindex : ftIndexes) {
             auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), ftindex);
             if (!ftRet.ok()) {
               LOG(WARNING) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet.status();
@@ -166,7 +166,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
       });
 }
 
-void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string &spaceName) {
+void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string& spaceName) {
   if (FLAGS_enable_space_level_metrics && spaceName != "") {
     stats::StatsManager::removeCounterWithLabels(kNumQueries, {{"space", spaceName}});
     stats::StatsManager::removeCounterWithLabels(kNumSlowQueries, {{"space", spaceName}});
@@ -189,13 +189,13 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
 
         DataSet dataSet({"Name"});
         std::set<std::string> orderSpaceNames;
-        for (auto &space : spaceItems) {
+        for (auto& space : spaceItems) {
           if (!PermissionManager::canReadSpace(qctx_->rctx()->session(), space.first).ok()) {
             continue;
           }
           orderSpaceNames.emplace(space.second);
         }
-        for (auto &name : orderSpaceNames) {
+        for (auto& name : orderSpaceNames) {
           Row row;
           row.values.emplace_back(name);
           dataSet.rows.emplace_back(std::move(row));
@@ -210,7 +210,7 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
 folly::Future<Status> ShowCreateSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto *scsNode = asNode<ShowCreateSpace>(node());
+  auto* scsNode = asNode<ShowCreateSpace>(node());
   return qctx()
       ->getMetaClient()
       ->getSpace(scsNode->getSpaceName())

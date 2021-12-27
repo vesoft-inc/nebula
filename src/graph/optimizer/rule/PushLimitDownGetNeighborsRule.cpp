@@ -26,20 +26,20 @@ PushLimitDownGetNeighborsRule::PushLimitDownGetNeighborsRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushLimitDownGetNeighborsRule::pattern() const {
+const Pattern& PushLimitDownGetNeighborsRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
                                            {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
-    OptContext *octx, const MatchedResult &matched) const {
-  auto *qctx = octx->qctx();
+    OptContext* octx, const MatchedResult& matched) const {
+  auto* qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto gnGroupNode = matched.dependencies.front().node;
 
-  const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
+  const auto limit = static_cast<const Limit*>(limitGroupNode->node());
+  const auto gn = static_cast<const GetNeighbors*>(gnGroupNode->node());
 
   if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
     return TransformResult::noTransform();
@@ -49,10 +49,10 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
     return TransformResult::noTransform();
   }
 
-  auto newLimit = static_cast<Limit *>(limit->clone());
+  auto newLimit = static_cast<Limit*>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newGn = static_cast<GetNeighbors *>(gn->clone());
+  auto newGn = static_cast<GetNeighbors*>(gn->clone());
   newGn->setLimit(limitRows);
   auto newGnGroup = OptGroup::create(octx);
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);

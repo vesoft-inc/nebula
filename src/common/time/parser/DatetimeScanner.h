@@ -26,8 +26,8 @@ namespace time {
 
 class DatetimeScanner : public yyFlexLexer {
  public:
-  int yylex(nebula::time::DatetimeParser::semantic_type *lval,
-            nebula::time::DatetimeParser::location_type *loc) {
+  int yylex(nebula::time::DatetimeParser::semantic_type* lval,
+            nebula::time::DatetimeParser::location_type* loc) {
     yylval = lval;
     yylloc = loc;
     return yylex();
@@ -36,7 +36,7 @@ class DatetimeScanner : public yyFlexLexer {
  public:
   // Called by DatetimeReader to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
-  void setReadBuffer(std::function<int(char *, int)> readBuffer) {
+  void setReadBuffer(std::function<int(char*, int)> readBuffer) {
     readBuffer_ = readBuffer;
   }
 
@@ -46,17 +46,17 @@ class DatetimeScanner : public yyFlexLexer {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
   }
 
-  void setInput(std::string *input) {
+  void setInput(std::string* input) {
     input_ = input;
   }
 
-  std::string *input() {
+  std::string* input() {
     return input_;
   }
 
  protected:
   // Called when YY_INPUT is invoked
-  int LexerInput(char *buf, int maxSize) override {
+  int LexerInput(char* buf, int maxSize) override {
     return readBuffer_(buf, maxSize);
   }
 
@@ -66,10 +66,10 @@ class DatetimeScanner : public yyFlexLexer {
   // friend class Scanner_Basic_Test; TODO: add it
   int yylex() override;
 
-  nebula::time::DatetimeParser::semantic_type *yylval{nullptr};
-  nebula::time::DatetimeParser::location_type *yylloc{nullptr};
-  std::function<int(char *, int)> readBuffer_;
-  std::string *input_{nullptr};
+  nebula::time::DatetimeParser::semantic_type* yylval{nullptr};
+  nebula::time::DatetimeParser::location_type* yylloc{nullptr};
+  std::function<int(char*, int)> readBuffer_;
+  std::string* input_{nullptr};
 };
 
 }  // namespace time

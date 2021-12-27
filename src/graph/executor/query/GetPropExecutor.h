@@ -15,18 +15,18 @@ namespace graph {
 
 class GetPropExecutor : public StorageAccessExecutor {
  protected:
-  GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+  GetPropExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor(name, node, qctx) {}
 
   template <typename Response>
-  Status handleResp(storage::StorageRpcResponse<Response> &&rpcResp,
-                    const std::vector<std::string> &colNames) {
+  Status handleResp(storage::StorageRpcResponse<Response>&& rpcResp,
+                    const std::vector<std::string>& colNames) {
     auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
     NG_RETURN_IF_ERROR(result);
     auto state = std::move(result).value();
     // Ok, merge DataSets to one
     nebula::DataSet v;
-    for (auto &resp : rpcResp.responses()) {
+    for (auto& resp : rpcResp.responses()) {
       if (resp.props_ref().has_value()) {
         if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
           // it's impossible according to the interface

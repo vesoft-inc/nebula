@@ -25,8 +25,8 @@ class FunctionManagerTest : public ::testing::Test {
   void TearDown() override {}
 
  protected:
-  ::testing::AssertionResult testFunction(const char *expr,
-                                          const std::vector<Value> &args,
+  ::testing::AssertionResult testFunction(const char* expr,
+                                          const std::vector<Value>& args,
                                           Value expect) {
     auto argsRef = genArgsRef(args);
     auto result = FunctionManager::get(expr, args.size());
@@ -46,8 +46,8 @@ class FunctionManagerTest : public ::testing::Test {
     return ::testing::AssertionSuccess();
   }
 
-  ::testing::AssertionResult testFunction(const char *expr,
-                                          const std::vector<Value> &args,
+  ::testing::AssertionResult testFunction(const char* expr,
+                                          const std::vector<Value>& args,
                                           Value::Type expectType) {
     auto argsRef = genArgsRef(args);
     auto result = FunctionManager::get(expr, args.size());
@@ -62,7 +62,7 @@ class FunctionManagerTest : public ::testing::Test {
     return ::testing::AssertionSuccess();
   }
 
-  ::testing::AssertionResult testFunction(const char *expr, const std::vector<Value> &args) {
+  ::testing::AssertionResult testFunction(const char* expr, const std::vector<Value>& args) {
     std::vector<FunctionManager::ArgType> argsRef;
     argsRef.insert(argsRef.end(), args.begin(), args.end());
     auto result = FunctionManager::get(expr, args.size());
@@ -73,16 +73,16 @@ class FunctionManagerTest : public ::testing::Test {
     return ::testing::AssertionSuccess();
   }
 
-  std::vector<FunctionManager::ArgType> genArgsRef(const std::vector<Value> &args) {
+  std::vector<FunctionManager::ArgType> genArgsRef(const std::vector<Value>& args) {
     std::vector<FunctionManager::ArgType> argsRef;
     argsRef.insert(argsRef.end(), args.begin(), args.end());
     return argsRef;
   }
 
-  Path createPath(const Value &src, const std::vector<Value> &steps) {
+  Path createPath(const Value& src, const std::vector<Value>& steps) {
     Path path;
     path.src = Vertex(src, {});
-    for (auto &i : steps) {
+    for (auto& i : steps) {
       path.steps.emplace_back(Step(Vertex(i, {}), 1, "edge1", 0, {}));
     }
     return path;
@@ -1907,7 +1907,7 @@ TEST_F(FunctionManagerTest, DataSetRowCol) {
 
 }  // namespace nebula
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);

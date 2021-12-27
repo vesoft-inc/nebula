@@ -12,7 +12,7 @@ namespace graph {
 
 class FetchEdgesValidatorTest : public ValidatorTestBase {
  protected:
-  QueryContext *getQCtx(const std::string &query) {
+  QueryContext* getQCtx(const std::string& query) {
     auto status = validate(query);
     EXPECT_TRUE(status);
     return std::move(status).value();
@@ -26,8 +26,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
   auto dst = ColumnExpression::make(pool_.get(), 2);
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\" YIELD edge as e");
-    auto *pool = qctx->objPool();
-    auto *start = StartNode::make(qctx);
+    auto* pool = qctx->objPool();
+    auto* start = StartNode::make(qctx);
 
     auto edgeTypeResult = schemaMng_->toEdgeType(1, "like");
     ASSERT_TRUE(edgeTypeResult.ok());
@@ -38,13 +38,13 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
-    auto *ge = GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props));
-    auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
+    auto* ge = GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props));
+    auto* filter = Filter::make(qctx, ge, nullptr /*TODO*/);
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(EdgeExpression::make(pool), "e"));
-    auto *project = Project::make(qctx, filter, yieldColumns.get());
+    auto* project = Project::make(qctx, filter, yieldColumns.get());
     project->setColNames({"e"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -52,8 +52,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
   // With YIELD
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\" YIELD like.start, like.end");
-    auto *pool = qctx->objPool();
-    auto *start = StartNode::make(qctx);
+    auto* pool = qctx->objPool();
+    auto* start = StartNode::make(qctx);
 
     auto edgeTypeResult = schemaMng_->toEdgeType(1, "like");
     ASSERT_TRUE(edgeTypeResult.ok());
@@ -71,23 +71,23 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
-    auto *ge =
+    auto* ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
+    auto* filter = Filter::make(qctx, ge, nullptr /*TODO*/);
 
     // Project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "start")));
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "end")));
-    auto *project = Project::make(qctx, filter, yieldColumns.get());
+    auto* project = Project::make(qctx, filter, yieldColumns.get());
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
   // With YIELD const expression
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\" YIELD like.start, 1 + 1, like.end");
-    auto *pool = qctx->objPool();
-    auto *start = StartNode::make(qctx);
+    auto* pool = qctx->objPool();
+    auto* start = StartNode::make(qctx);
 
     // GetEdges
     auto edgeTypeResult = schemaMng_->toEdgeType(1, "like");
@@ -106,9 +106,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
-    auto *ge =
+    auto* ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
+    auto* filter = Filter::make(qctx, ge, nullptr /*TODO*/);
 
     // Project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -116,15 +116,15 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     yieldColumns->addColumn(new YieldColumn(ArithmeticExpression::makeAdd(
         pool, ConstantExpression::make(pool, 1), ConstantExpression::make(pool, 1))));
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "end")));
-    auto *project = Project::make(qctx, filter, yieldColumns.get());
+    auto* project = Project::make(qctx, filter, yieldColumns.get());
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
   // With YIELD combine properties
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\" YIELD like.start > like.end");
-    auto *pool = qctx->objPool();
-    auto *start = StartNode::make(qctx);
+    auto* pool = qctx->objPool();
+    auto* start = StartNode::make(qctx);
 
     auto edgeTypeResult = schemaMng_->toEdgeType(1, "like");
     ASSERT_TRUE(edgeTypeResult.ok());
@@ -143,9 +143,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
                                      EdgePropertyExpression::make(pool, "like", "end"))
             ->encode();
     exprs->emplace_back(std::move(expr1));
-    auto *ge =
+    auto* ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
+    auto* filter = Filter::make(qctx, ge, nullptr /*TODO*/);
 
     // project, TODO(shylock) it's could push-down to storage if it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -153,15 +153,15 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
         RelationalExpression::makeGT(pool,
                                      EdgePropertyExpression::make(pool, "like", "start"),
                                      EdgePropertyExpression::make(pool, "like", "end"))));
-    auto *project = Project::make(qctx, filter, yieldColumns.get());
+    auto* project = Project::make(qctx, filter, yieldColumns.get());
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
   // With YIELD distinct
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\" YIELD distinct like.start, like.end");
-    auto *pool = qctx->objPool();
-    auto *start = StartNode::make(qctx);
+    auto* pool = qctx->objPool();
+    auto* start = StartNode::make(qctx);
 
     auto edgeTypeResult = schemaMng_->toEdgeType(1, "like");
     ASSERT_TRUE(edgeTypeResult.ok());
@@ -179,19 +179,19 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
-    auto *ge =
+    auto* ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
+    auto* filter = Filter::make(qctx, ge, nullptr /*TODO*/);
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "start")));
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "end")));
-    auto *project = Project::make(qctx, filter, yieldColumns.get());
-    auto *dedup = Dedup::make(qctx, project);
+    auto* project = Project::make(qctx, filter, yieldColumns.get());
+    auto* dedup = Dedup::make(qctx, project);
 
     // data collect
-    auto *dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
+    auto* dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
     dataCollect->addDep(dedup);
     dataCollect->setInputVars({dedup->outputVar()});
     dataCollect->setColNames({"like.start", "like.end"});

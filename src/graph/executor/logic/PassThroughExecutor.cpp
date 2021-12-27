@@ -14,7 +14,7 @@ namespace graph {
 folly::Future<Status> PassThroughExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  const auto &result = ectx_->getResult(node()->outputVar());
+  const auto& result = ectx_->getResult(node()->outputVar());
   auto iter = result.iter();
   if (!iter->isDefaultIter() && !iter->empty()) {
     // Return directly if this pass through output result is not empty

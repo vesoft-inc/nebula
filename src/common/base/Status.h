@@ -27,11 +27,11 @@ class Status final {
 
   ~Status() = default;
 
-  Status(const Status &rhs) {
+  Status(const Status& rhs) {
     state_ = (rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get()));
   }
 
-  Status &operator=(const Status &rhs) {
+  Status& operator=(const Status& rhs) {
     // `state_ == rhs.state_' means either `this == &rhs',
     // or both `*this' and `rhs' are OK
     if (state_ != rhs.state_) {
@@ -40,11 +40,11 @@ class Status final {
     return *this;
   }
 
-  Status(Status &&rhs) noexcept {
+  Status(Status&& rhs) noexcept {
     state_ = std::move(rhs.state_);
   }
 
-  Status &operator=(Status &&rhs) noexcept {
+  Status& operator=(Status&& rhs) noexcept {
     // `state_ == rhs.state_' means either `this == &rhs',
     // or both `*this' and `rhs' are OK
     if (state_ != rhs.state_) {
@@ -53,21 +53,21 @@ class Status final {
     return *this;
   }
 
-  static Status from(const Status &s) {
+  static Status from(const Status& s) {
     return s;
   }
 
   template <typename T>
-  static Status from(StatusOr<T> &&s) {
+  static Status from(StatusOr<T>&& s) {
     return std::move(s).status();
   }
 
   template <typename T>
-  static Status from(const StatusOr<T> &s) {
+  static Status from(const StatusOr<T>& s) {
     return s.status();
   }
 
-  bool operator==(const Status &rhs) const {
+  bool operator==(const Status& rhs) const {
     // `state_ == rhs.state_' means either `this == &rhs',
     // or both `*this' and `rhs' are OK
     if (state_ == rhs.state_) {
@@ -76,7 +76,7 @@ class Status final {
     return code() == rhs.code();
   }
 
-  bool operator!=(const Status &rhs) const {
+  bool operator!=(const Status& rhs) const {
     return !(*this == rhs);
   }
 
@@ -97,7 +97,7 @@ class Status final {
     return Status(k##ERROR, msg);                                                   \
   }                                                                                 \
                                                                                     \
-  static Status ERROR(const char *fmt, ...) __attribute__((format(printf, 1, 2))) { \
+  static Status ERROR(const char* fmt, ...) __attribute__((format(printf, 1, 2))) { \
     va_list args;                                                                   \
     va_start(args, fmt);                                                            \
     auto msg = format(fmt, args);                                                   \
@@ -148,7 +148,7 @@ class Status final {
 
   std::string toString() const;
 
-  friend std::ostream &operator<<(std::ostream &os, const Status &status);
+  friend std::ostream& operator<<(std::ostream& os, const Status& status);
 
   // If some kind of error really needs to be distinguished with others using a
   // specific code, other than a general code and specific msg, you could add a
@@ -191,7 +191,7 @@ class Status final {
     if (state_ == nullptr) {
       return kOk;
     }
-    return reinterpret_cast<const Header *>(state_.get())->code_;
+    return reinterpret_cast<const Header*>(state_.get())->code_;
   }
 
   std::string message() const;
@@ -199,16 +199,16 @@ class Status final {
  private:
   // REQUIRES: stat_ != nullptr
   uint16_t size() const {
-    return reinterpret_cast<const Header *>(state_.get())->size_;
+    return reinterpret_cast<const Header*>(state_.get())->size_;
   }
 
   Status(Code code, folly::StringPiece msg);
 
-  static std::unique_ptr<const char[]> copyState(const char *state);
+  static std::unique_ptr<const char[]> copyState(const char* state);
 
-  static std::string format(const char *fmt, va_list args);
+  static std::string format(const char* fmt, va_list args);
 
-  static const char *toString(Code code);
+  static const char* toString(Code code);
 
  private:
   struct Header {
@@ -224,7 +224,7 @@ class Status final {
   std::unique_ptr<const char[]> state_;
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Status &status) {
+inline std::ostream& operator<<(std::ostream& os, const Status& status) {
   return os << status.toString();
 }
 
@@ -232,7 +232,7 @@ inline std::ostream &operator<<(std::ostream &os, const Status &status) {
 
 #define NG_RETURN_IF_ERROR(s)             \
   do {                                    \
-    const auto &__s = (s);                \
+    const auto& __s = (s);                \
     if (UNLIKELY(!__s.ok())) {            \
       return ::nebula::Status::from(__s); \
     }                                     \
@@ -240,7 +240,7 @@ inline std::ostream &operator<<(std::ostream &os, const Status &status) {
 
 #define NG_LOG_AND_RETURN_IF_ERROR(s)                          \
   do {                                                         \
-    const auto &__s = (s);                                     \
+    const auto& __s = (s);                                     \
     if (UNLIKELY(!__s.ok())) {                                 \
       ::nebula::Status __status = ::nebula::Status::from(__s); \
       LOG(ERROR) << __status;                                  \

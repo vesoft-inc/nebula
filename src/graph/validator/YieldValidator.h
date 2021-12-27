@@ -26,25 +26,25 @@ class QueryContext;
 
 class YieldValidator final : public Validator {
  public:
-  YieldValidator(Sentence *sentence, QueryContext *qctx);
+  YieldValidator(Sentence* sentence, QueryContext* qctx);
 
   Status validateImpl() override;
 
   Status toPlan() override;
 
  private:
-  Status validateYieldAndBuildOutputs(const YieldClause *clause);
-  Status validateWhere(const WhereClause *clause);
-  Status makeOutputColumn(YieldColumn *column);
+  Status validateYieldAndBuildOutputs(const YieldClause* clause);
+  Status validateWhere(const WhereClause* clause);
+  Status makeOutputColumn(YieldColumn* column);
   Status makeImplicitGroupByValidator();
   Status validateImplicitGroupBy();
   void genConstantExprValues();
 
  private:
-  YieldColumns *columns_{nullptr};
+  YieldColumns* columns_{nullptr};
   std::string constantExprVar_;
   std::string userDefinedVarName_;
-  Expression *filterCondition_{nullptr};
+  Expression* filterCondition_{nullptr};
   // validate for agg
   std::unique_ptr<GroupByValidator> groupByValidator_{nullptr};
 };

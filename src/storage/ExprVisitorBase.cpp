@@ -5,139 +5,139 @@
 #include "storage/ExprVisitorBase.h"
 namespace nebula {
 namespace storage {
-void ExprVisitorBase::visit(ConstantExpression *expr) {
+void ExprVisitorBase::visit(ConstantExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(UnaryExpression *expr) {
+void ExprVisitorBase::visit(UnaryExpression* expr) {
   expr->operand()->accept(this);
 }
-void ExprVisitorBase::visit(TypeCastingExpression *expr) {
+void ExprVisitorBase::visit(TypeCastingExpression* expr) {
   expr->operand()->accept(this);
 }
-void ExprVisitorBase::visit(LabelExpression *expr) {
+void ExprVisitorBase::visit(LabelExpression* expr) {
   fatal(expr);
 }
-void ExprVisitorBase::visit(LabelAttributeExpression *expr) {
+void ExprVisitorBase::visit(LabelAttributeExpression* expr) {
   fatal(expr);
 }
 // binary expression
-void ExprVisitorBase::visit(ArithmeticExpression *expr) {
+void ExprVisitorBase::visit(ArithmeticExpression* expr) {
   expr->left()->accept(this);
   expr->right()->accept(this);
 }
-void ExprVisitorBase::visit(RelationalExpression *expr) {
+void ExprVisitorBase::visit(RelationalExpression* expr) {
   expr->left()->accept(this);
   expr->right()->accept(this);
 }
-void ExprVisitorBase::visit(SubscriptExpression *expr) {
+void ExprVisitorBase::visit(SubscriptExpression* expr) {
   expr->left()->accept(this);
   expr->right()->accept(this);
 }
-void ExprVisitorBase::visit(AttributeExpression *expr) {
+void ExprVisitorBase::visit(AttributeExpression* expr) {
   fatal(expr);
 }
-void ExprVisitorBase::visit(LogicalExpression *expr) {
+void ExprVisitorBase::visit(LogicalExpression* expr) {
   for (auto operand : expr->operands()) {
     operand->accept(this);
   }
 }
 // function call
-void ExprVisitorBase::visit(FunctionCallExpression *expr) {
+void ExprVisitorBase::visit(FunctionCallExpression* expr) {
   for (auto arg : expr->args()->args()) {
     arg->accept(this);
   }
 }
-void ExprVisitorBase::visit(AggregateExpression *expr) {
+void ExprVisitorBase::visit(AggregateExpression* expr) {
   fatal(expr);
 }
-void ExprVisitorBase::visit(UUIDExpression *expr) {
+void ExprVisitorBase::visit(UUIDExpression* expr) {
   UNUSED(expr);
 }
 // variable expression
-void ExprVisitorBase::visit(VariableExpression *expr) {
+void ExprVisitorBase::visit(VariableExpression* expr) {
   fatal(expr);
 }
-void ExprVisitorBase::visit(VersionedVariableExpression *expr) {
+void ExprVisitorBase::visit(VersionedVariableExpression* expr) {
   fatal(expr);
 }
 // container expression
-void ExprVisitorBase::visit(ListExpression *expr) {
+void ExprVisitorBase::visit(ListExpression* expr) {
   for (auto item : expr->items()) {
     item->accept(this);
   }
 }
-void ExprVisitorBase::visit(SetExpression *expr) {
+void ExprVisitorBase::visit(SetExpression* expr) {
   for (auto item : expr->items()) {
     item->accept(this);
   }
 }
-void ExprVisitorBase::visit(MapExpression *expr) {
+void ExprVisitorBase::visit(MapExpression* expr) {
   UNUSED(expr);
 }
 // property Expression
-void ExprVisitorBase::visit(TagPropertyExpression *expr) {
+void ExprVisitorBase::visit(TagPropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgePropertyExpression *expr) {
+void ExprVisitorBase::visit(EdgePropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(InputPropertyExpression *expr) {
+void ExprVisitorBase::visit(InputPropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(VariablePropertyExpression *expr) {
+void ExprVisitorBase::visit(VariablePropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(DestPropertyExpression *expr) {
+void ExprVisitorBase::visit(DestPropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(SourcePropertyExpression *expr) {
+void ExprVisitorBase::visit(SourcePropertyExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgeSrcIdExpression *expr) {
+void ExprVisitorBase::visit(EdgeSrcIdExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgeTypeExpression *expr) {
+void ExprVisitorBase::visit(EdgeTypeExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgeRankExpression *expr) {
+void ExprVisitorBase::visit(EdgeRankExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgeDstIdExpression *expr) {
+void ExprVisitorBase::visit(EdgeDstIdExpression* expr) {
   UNUSED(expr);
 }
 // vertex/edge expression
-void ExprVisitorBase::visit(VertexExpression *expr) {
+void ExprVisitorBase::visit(VertexExpression* expr) {
   UNUSED(expr);
 }
-void ExprVisitorBase::visit(EdgeExpression *expr) {
+void ExprVisitorBase::visit(EdgeExpression* expr) {
   UNUSED(expr);
 }
 // case expression
-void ExprVisitorBase::visit(CaseExpression *expr) {
+void ExprVisitorBase::visit(CaseExpression* expr) {
   UNUSED(expr);
 }
 // path build expression
-void ExprVisitorBase::visit(PathBuildExpression *expr) {
+void ExprVisitorBase::visit(PathBuildExpression* expr) {
   fatal(expr);
 }
 // column expression
-void ExprVisitorBase::visit(ColumnExpression *expr) {
+void ExprVisitorBase::visit(ColumnExpression* expr) {
   fatal(expr);
 }
 // predicate expression
-void ExprVisitorBase::visit(PredicateExpression *expr) {
+void ExprVisitorBase::visit(PredicateExpression* expr) {
   fatal(expr);
 }
 // list comprehension expression
-void ExprVisitorBase::visit(ListComprehensionExpression *expr) {
+void ExprVisitorBase::visit(ListComprehensionExpression* expr) {
   fatal(expr);
 }
 // reduce expression
-void ExprVisitorBase::visit(ReduceExpression *expr) {
+void ExprVisitorBase::visit(ReduceExpression* expr) {
   fatal(expr);
 }
 // subscript range expression
-void ExprVisitorBase::visit(SubscriptRangeExpression *expr) {
+void ExprVisitorBase::visit(SubscriptRangeExpression* expr) {
   fatal(expr);
 }
 

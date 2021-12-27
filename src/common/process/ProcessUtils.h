@@ -23,15 +23,15 @@ class ProcessUtils final {
    * readable but has no valid pid. The pidFile contains a valid pid and no such
    * process exists.
    */
-  static Status isPidAvailable(const std::string &pidFile);
+  static Status isPidAvailable(const std::string& pidFile);
   /**
    * Write pid into file, create if not exist.
    */
-  static Status makePidFile(const std::string &path, pid_t pid = 0);
+  static Status makePidFile(const std::string& path, pid_t pid = 0);
   /**
    * Make current process a daemon and write the daemon's pid into pidFile
    */
-  static Status daemonize(const std::string &pidFile);
+  static Status daemonize(const std::string& pidFile);
   /**
    * Get the absolute path to the target process's executable.
    * Use the current process if pid == 0.
@@ -54,7 +54,7 @@ class ProcessUtils final {
   /**
    * Execute a shell command and return the standard output of the command
    */
-  static StatusOr<std::string> runCommand(const char *command);
+  static StatusOr<std::string> runCommand(const char* command);
 };
 
 }  // namespace nebula
