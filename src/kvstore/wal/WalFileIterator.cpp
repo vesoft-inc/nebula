@@ -171,7 +171,9 @@ LogIterator& WalFileIterator::operator++() {
   return *this;
 }
 
-bool WalFileIterator::valid() const { return !eof_ && currId_ <= lastId_; }
+bool WalFileIterator::valid() const {
+  return !eof_ && currId_ <= lastId_;
+}
 
 LogID WalFileIterator::logId() const {
   return currId_;

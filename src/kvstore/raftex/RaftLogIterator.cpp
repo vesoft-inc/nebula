@@ -19,7 +19,9 @@ RaftLogIterator& RaftLogIterator::operator++() {
   return *this;
 }
 
-bool RaftLogIterator::valid() const { return idx_ < logEntries_.size(); }
+bool RaftLogIterator::valid() const {
+  return idx_ < logEntries_.size();
+}
 
 LogID RaftLogIterator::logId() const {
   DCHECK(valid());
