@@ -298,14 +298,14 @@ def given_nebulacluster_with_param(
     class_fixture_variables,
     pytestconfig,
 ):
-    grpahd_param, metad_param, storaged_param = {}, {}, {}
+    graphd_param, metad_param, storaged_param = {}, {}, {}
     if params is not None:
         for param in params.splitlines():
             module, config = param.strip().split(":")
             assert module.lower() in ["graphd", "storaged", "metad"]
             key, value = config.strip().split("=")
             if module.lower() == "graphd":
-                grpahd_param[key] = value
+                graphd_param[key] = value
             elif module.lower() == "storaged":
                 storaged_param[key] = value
             else:
@@ -323,7 +323,7 @@ def given_nebulacluster_with_param(
         int(graphd_num),
     )
     for process in nebula_svc.graphd_processes:
-        process.update_param(grpahd_param)
+        process.update_param(graphd_param)
     for process in nebula_svc.storaged_processes:
         process.update_param(storaged_param)
     for process in nebula_svc.metad_processes:
@@ -338,7 +338,8 @@ def given_nebulacluster_with_param(
     graph_port = nebula_svc.graphd_processes[0].tcp_port
     pool = get_conn_pool(graph_ip, graph_port)
     sess = pool.get_session(user, password)
-    class_fixture_variables["session"] = sess
+    class_fixture_variables["current_session"] = sess
+    class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
 
@@ -355,7 +356,8 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
     sess = pool.get_session(user, password)
     # do not release original session, as we may have cases to test multiple sessions.
     # connection could be released after cluster stopped.
-    class_fixture_variables["session"] = sess
+    class_fixture_variables["current_session"] = sess
+    class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["pool"] = pool
 
 @when(parse("executing query:\n{query}"))
