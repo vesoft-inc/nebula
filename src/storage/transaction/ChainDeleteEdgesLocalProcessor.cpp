@@ -126,10 +126,10 @@ std::vector<kvstore::KV> ChainDeleteEdgesLocalProcessor::makePrime(
     auto partId = partOfKeys.first;
     for (auto& key : partOfKeys.second) {
       requests.emplace_back();
-      requests.back().set_space_id(req_.get_space_id());
+      requests.back().space_id_ref() = req_.get_space_id();
       std::unordered_map<PartitionID, std::vector<cpp2::EdgeKey>> parts;
       parts[partId].emplace_back(key);
-      requests.back().set_parts(parts);
+      requests.back().parts_ref() = parts;
       requests.back().common_ref().copy_from(req_.common_ref());
     }
   }
@@ -350,7 +350,7 @@ bool ChainDeleteEdgesLocalProcessor::checkTerm(PartitionID partId, TermID expect
 cpp2::DeleteEdgesRequest ChainDeleteEdgesLocalProcessor::reverseRequest(
     const cpp2::DeleteEdgesRequest& req) {
   cpp2::DeleteEdgesRequest reversedRequest;
-  reversedRequest.set_space_id(req.get_space_id());
+  reversedRequest.space_id_ref() = req.get_space_id();
   reversedRequest.common_ref().copy_from(req.common_ref());
   for (auto& keysOfPart : *req.parts_ref()) {
     for (auto& edgeKey : keysOfPart.second) {

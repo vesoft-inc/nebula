@@ -149,10 +149,10 @@ void InternalStorageClient::chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
   VLOG(2) << "leader host: " << leader;
 
   cpp2::ChainDeleteEdgesRequest chainReq;
-  chainReq.set_space_id(req.get_space_id());
-  chainReq.set_parts(req.get_parts());
-  chainReq.set_txn_id(txnId);
-  chainReq.set_term(termId);
+  chainReq.space_id_ref() = req.get_space_id();
+  chainReq.parts_ref() = req.get_parts();
+  chainReq.txn_id_ref() = txnId;
+  chainReq.term_ref() = termId;
   auto resp = getResponse(
       evb,
       std::make_pair(leader, chainReq),

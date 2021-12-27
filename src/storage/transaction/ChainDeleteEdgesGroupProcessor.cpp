@@ -59,9 +59,9 @@ StatusOr<SplitedRequest> ChainDeleteEdgesGroupProcessor::splitRequest(
       auto remotePartId = env_->metaClient_->partId(partNum, remoteVid);
       auto key = std::make_pair(localPartId, remotePartId);
       if (ret.count(key) == 0) {
-        ret[key].set_space_id(req.get_space_id());
+        ret[key].space_id_ref() = req.get_space_id();
         if (req.common_ref()) {
-          ret[key].set_common(req.common_ref().value());
+          ret[key].common_ref() = req.common_ref().value();
         }
       }
       ret[key].parts_ref().value()[localPartId].emplace_back(edgeKey);

@@ -169,8 +169,8 @@ std::vector<std::string> ConsistUtil::toStrKeys(const cpp2::DeleteEdgesRequest& 
 cpp2::DeleteEdgesRequest DeleteEdgesRequestHelper::toDeleteEdgesRequest(
     const cpp2::ChainDeleteEdgesRequest& req) {
   cpp2::DeleteEdgesRequest ret;
-  ret.set_space_id(req.get_space_id());
-  ret.set_parts(req.get_parts());
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
   return ret;
 }
 
@@ -182,11 +182,7 @@ cpp2::DeleteEdgesRequest DeleteEdgesRequestHelper::parseDeleteEdgesRequest(const
 
 std::string DeleteEdgesRequestHelper::explain(const cpp2::DeleteEdgesRequest& req) {
   std::stringstream oss;
-  // oss << "space = " << req.get_space_id()
-  // << ", parts.size() = " << req.get_parts().size() << " ";
   for (auto& partOfKeys : req.get_parts()) {
-    // oss << "partId = " << partOfKeys.first
-    // << ", size() = " << partOfKeys.second.size() << "keys: ";
     for (auto& key : partOfKeys.second) {
       oss << ConsistUtil::toInt(key.get_src()) << "->" << ConsistUtil::toInt(key.get_dst()) << "@"
           << key.get_ranking() << ", ";
