@@ -96,7 +96,8 @@ class Part : public raftex::RaftPart {
 
   void onDiscoverNewLeader(HostAddr nLeader) override;
 
-  cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
+  std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
+                                                                bool wait) override;
 
   bool preProcessLog(LogID logId,
                      TermID termId,
@@ -112,7 +113,7 @@ class Part : public raftex::RaftPart {
                                        LogID committedLogId,
                                        TermID committedLogTerm);
 
-  void cleanup() override;
+  nebula::cpp2::ErrorCode cleanup() override;
 
   nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 
