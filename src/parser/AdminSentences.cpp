@@ -373,13 +373,14 @@ std::string ShowSessionsSentence::toString() const {
   if (isSetSessionID()) {
     return folly::stringPrintf("SHOW SESSION %ld", sessionId_);
   }
+  if (isLocalCommand()) return "SHOW LOCAL SESSIONS";
   return "SHOW SESSIONS";
 }
 
 std::string ShowQueriesSentence::toString() const {
   std::string buf = "SHOW";
-  if (isAll()) {
-    buf += " ALL";
+  if (!isAll()) {
+    buf += " LOCAL";
   }
   buf += " QUERIES";
   return buf;

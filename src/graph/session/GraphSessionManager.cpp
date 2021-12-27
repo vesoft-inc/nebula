@@ -96,6 +96,15 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
   return metaClient_->getSession(id).via(runner).thenValue(addSession);
 }
 
+std::vector<meta::cpp2::Session> GraphSessionManager::getSessionFromLocalCache() const {
+  std::vector<meta::cpp2::Session> sessions;
+  sessions.reserve(activeSessions_.size());
+  for (auto& it : activeSessions_) {
+    sessions.emplace_back(it.second->getSession());
+  }
+  return sessions;
+}
+
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::createSession(
     const std::string userName, const std::string clientIp, folly::Executor* runner) {
   auto createCB = [this,
