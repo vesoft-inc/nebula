@@ -52,7 +52,14 @@ DEFINE_int64(max_allowed_connections,
 
 DEFINE_bool(enable_optimizer, false, "Whether to enable optimizer");
 
+#ifndef BUILD_STANDALONE
 DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
+DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
+DEFINE_string(client_white_list,
+              nebula::getOriginVersion() + ":2.5.0:2.5.1:2.6.0",
+              "A white list for different client versions, separate with colon.");
+
+#endif
 
 DEFINE_bool(accept_partial_success, false, "Whether to accept partial success, default false");
 
@@ -62,11 +69,6 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
-
-DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
-DEFINE_string(client_white_list,
-              nebula::getOriginVersion() + ":2.5.0:2.5.1:2.6.0",
-              "A white list for different client versions, separate with colon.");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
 
