@@ -5,8 +5,10 @@
 
 #ifndef SETUPLOGGING_H
 #define SETUPLOGGING_H
+
+#include <string>
+
 #include "common/base/Status.h"
-#include<string>
 /**
  * \param exe: program name.
  * \return wether successfully setupLogging.
