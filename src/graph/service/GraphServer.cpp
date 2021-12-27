@@ -13,7 +13,9 @@ namespace graph {
 
 GraphServer::GraphServer(HostAddr localHost) : localHost_(localHost) {}
 
-GraphServer::~GraphServer() { stop(); }
+GraphServer::~GraphServer() {
+  stop();
+}
 
 bool GraphServer::start() {
   auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
@@ -22,7 +24,7 @@ bool GraphServer::start() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer_->getNumIOWorkerThreads();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+      PriorityThreadManager::newPriorityThreadManager(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
 
