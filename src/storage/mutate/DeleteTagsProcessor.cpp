@@ -5,10 +5,12 @@
 
 #include "storage/mutate/DeleteTagsProcessor.h"
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -60,6 +62,7 @@ void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
         }
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumTagsDeleted, keys.size());
     }
   } else {
     for (const auto& part : parts) {
@@ -101,7 +104,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         continue;
       }
       if (!env_->verticesML_->try_lock(tup)) {
-        LOG(WARNING) << folly::format("The vertex locked : vId {}, tagId {}", vId, tagId);
+        LOG(WARNING) << folly::sformat("The vertex locked : vId {}, tagId {}", vId, tagId);
         return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
       }
 
@@ -122,8 +125,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         if (index->get_schema_id().get_tag_id() == tagId) {
           auto indexId = index->get_index_id();
 
-          const auto& cols = index->get_fields();
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             return nebula::cpp2::ErrorCode::E_INVALID_DATA;
           }
@@ -147,6 +149,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumTagsDeleted);
     }
   }
   return encodeBatchValue(batchHolder->getBatch());

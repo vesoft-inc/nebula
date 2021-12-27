@@ -10,6 +10,7 @@
 #include "common/base/ObjectPool.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
+#include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
 
@@ -63,10 +64,11 @@ std::vector<const Expression *> ExpressionUtils::collectAll(
   return std::move(visitor).results();
 }
 
-bool ExpressionUtils::checkVarExprIfExist(const Expression *expr) {
+bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryContext *qctx) {
   auto vars = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
   for (auto *var : vars) {
-    if (!static_cast<const VariableExpression *>(var)->isInner()) {
+    auto *varExpr = static_cast<const VariableExpression *>(var);
+    if (!varExpr->isInner() && !qctx->existParameter(varExpr->var())) {
       return true;
     }
   }
@@ -110,8 +112,8 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kEdge});
 }
 
-bool ExpressionUtils::isEvaluableExpr(const Expression *expr) {
-  EvaluableExprVisitor visitor;
+bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext *qctx) {
+  EvaluableExprVisitor visitor(qctx);
   const_cast<Expression *>(expr)->accept(&visitor);
   return visitor.ok();
 }
@@ -147,6 +149,21 @@ Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
+// rewrite parameter to Constant
+Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryContext *qctx) {
+  auto matcher = [qctx](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVar &&
+           qctx->existParameter(static_cast<const VariableExpression *>(e)->var());
+  };
+  auto rewriter = [qctx](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kVar);
+    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+    return ConstantExpression::make(qctx->objPool(), v);
+  };
+
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
 // rewrite LabelAttr to tagProp
@@ -437,6 +454,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
         e->kind() == Expression::Kind::kDivision)
       return false;
     auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+
     return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
            ExpressionUtils::isEvaluableExpr(arithExpr->right());
   };

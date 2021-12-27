@@ -176,7 +176,9 @@ class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
     return ChainUpdateEdgeProcessorLocal::processLocal(code);
   }
 
-  void wrapAddUnfinishedEdge(ResumeType type) { addUnfinishedEdge(type); }
+  void wrapAddUnfinishedEdge(ResumeType type) {
+    addUnfinishedEdge(type);
+  }
 
  public:
   folly::Optional<Code> rcPrepareLocal;
@@ -227,10 +229,10 @@ class MetaClientTestUpdater {
       UNUSED(ignoreItem);
     }
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
-    type.set_type_length(32);
+    type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+    type.type_length_ref() = 32;
 
-    mClient->localCache_[mockSpaceId]->spaceDesc_.set_vid_type(std::move(type));
+    mClient->localCache_[mockSpaceId]->spaceDesc_.vid_type_ref() = std::move(type);
     mClient->ready_ = true;
     return mClient;
   }
@@ -249,8 +251,8 @@ class FakeInternalStorageClient : public InternalStorageClient {
                        folly::Promise<Code>&& p,
                        folly::EventBase* evb = nullptr) override {
     cpp2::ChainUpdateEdgeRequest chainReq;
-    chainReq.set_update_edge_request(req);
-    chainReq.set_term(termOfSrc);
+    chainReq.update_edge_request_ref() = req;
+    chainReq.term_ref() = termOfSrc;
 
     auto* proc = ChainUpdateEdgeProcessorRemote::instance(env_);
     auto f = proc->getFuture();
@@ -262,7 +264,9 @@ class FakeInternalStorageClient : public InternalStorageClient {
     UNUSED(evb);
   }
 
-  void setErrorCode(Code code) { code_ = code; }
+  void setErrorCode(Code code) {
+    code_ = code;
+  }
 
   void chainAddEdges(cpp2::AddEdgesRequest& req,
                      TermID termId,
@@ -291,14 +295,16 @@ class FakeInternalStorageClient : public InternalStorageClient {
 };
 
 struct ChainUpdateEdgeTestHelper {
-  ChainUpdateEdgeTestHelper() { sEdgeType = std::to_string(std::abs(edgeType_)); }
+  ChainUpdateEdgeTestHelper() {
+    sEdgeType = std::to_string(std::abs(edgeType_));
+  }
 
   cpp2::EdgeKey defaultEdgeKey() {
     cpp2::EdgeKey ret;
-    ret.set_src(srcId_);
-    ret.set_edge_type(edgeType_);
-    ret.set_ranking(rank_);
-    ret.set_dst(dstId_);
+    ret.src_ref() = srcId_;
+    ret.edge_type_ref() = edgeType_;
+    ret.ranking_ref() = rank_;
+    ret.dst_ref() = dstId_;
     return ret;
   }
 
@@ -308,19 +314,19 @@ struct ChainUpdateEdgeTestHelper {
     std::vector<cpp2::UpdatedProp> props;
     // int: 101.teamCareer = 20
     cpp2::UpdatedProp uProp1;
-    uProp1.set_name("teamCareer");
+    uProp1.name_ref() = "teamCareer";
     // ConstantExpression val1(20);
     const auto& val1 = *ConstantExpression::make(&objPool, 20);
-    uProp1.set_value(Expression::encode(val1));
+    uProp1.value_ref() = Expression::encode(val1);
     props.emplace_back(uProp1);
 
     // bool: 101.type = trade
     cpp2::UpdatedProp uProp2;
-    uProp2.set_name("type");
+    uProp2.name_ref() = "type";
     std::string colnew("trade");
     // ConstantExpression val2(colnew);
     const auto& val2 = *ConstantExpression::make(&objPool, colnew);
-    uProp2.set_value(Expression::encode(val2));
+    uProp2.value_ref() = Expression::encode(val2);
     props.emplace_back(uProp2);
     return props;
   }
@@ -352,7 +358,7 @@ struct ChainUpdateEdgeTestHelper {
   cpp2::UpdateEdgeRequest makeInvalidRequest() {
     VertexID srcInvalid{"Spurssssssss"};
     auto edgeKey = defaultEdgeKey();
-    edgeKey.set_src(srcInvalid);
+    edgeKey.src_ref() = srcInvalid;
     auto updateProps = defaultUpdateProps();
     auto retProps = defaultRetProps();
     return makeRequest(edgeKey, updateProps, retProps);
@@ -363,12 +369,12 @@ struct ChainUpdateEdgeTestHelper {
                                       const std::vector<std::string>& retCols) {
     cpp2::UpdateEdgeRequest req;
     auto partId = std::hash<std::string>()(edgeKey.get_src().getStr()) % mockPartNum + 1;
-    req.set_space_id(mockSpaceId);
-    req.set_part_id(partId);
-    req.set_edge_key(edgeKey);
-    req.set_updated_props(updateProps);
-    req.set_return_props(retCols);
-    req.set_insertable(false);
+    req.space_id_ref() = mockSpaceId;
+    req.part_id_ref() = partId;
+    req.edge_key_ref() = edgeKey;
+    req.updated_props_ref() = updateProps;
+    req.return_props_ref() = retCols;
+    req.insertable_ref() = false;
     return req;
   }
 

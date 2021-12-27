@@ -19,9 +19,9 @@ TEST(MetaKeyUtilsTest, SpaceKeyTest) {
   auto spaceKey = MetaKeyUtils::spaceKey(101);
   ASSERT_EQ(101, MetaKeyUtils::spaceId(spaceKey));
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default");
-  spaceDesc.set_partition_num(100);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 100;
+  spaceDesc.replica_factor_ref() = 3;
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
   auto properties = MetaKeyUtils::parseSpace(spaceVal);
@@ -35,11 +35,11 @@ TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
   auto spaceKey = MetaKeyUtils::spaceKey(101);
   ASSERT_EQ(101, MetaKeyUtils::spaceId(spaceKey));
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default");
-  spaceDesc.set_partition_num(100);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 100;
+  spaceDesc.replica_factor_ref() = 3;
   std::vector<std::string> zoneNames{"z1", "z2", "z3"};
-  spaceDesc.set_zone_names(std::move(zoneNames));
+  spaceDesc.zone_names_ref() = std::move(zoneNames);
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
   auto properties = MetaKeyUtils::parseSpace(spaceVal);
@@ -89,7 +89,7 @@ TEST(MetaKeyUtilsTest, storeStrIpCodecTest) {
     auto decodedVal = MetaKeyUtils::parsePartVal(encodedVal);
     ASSERT_EQ(hosts.size(), decodedVal.size());
     for (int i = 0; i < N; i++) {
-      LOG(INFO) << folly::format("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
+      LOG(INFO) << folly::sformat("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
       ASSERT_EQ(hostnames[i], decodedVal[i].host);
       ASSERT_EQ(ports[i], decodedVal[i].port);
     }
@@ -188,23 +188,23 @@ TEST(MetaKeyUtilsTest, TagTest) {
   std::vector<meta::cpp2::ColumnDef> cols;
   for (auto i = 1; i <= 3; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(nebula::cpp2::PropertyType::INT64);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::INT64;
     cols.emplace_back(std::move(column));
   }
   for (auto i = 4; i <= 6; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(nebula::cpp2::PropertyType::FLOAT);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::FLOAT;
     cols.emplace_back(std::move(column));
   }
   for (auto i = 7; i < 10; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(nebula::cpp2::PropertyType::STRING);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::STRING;
     cols.emplace_back(std::move(column));
   }
-  schema.set_columns(std::move(cols));
+  schema.columns_ref() = std::move(cols);
   auto val = MetaKeyUtils::schemaVal("test_tag", schema);
   auto parsedSchema = MetaKeyUtils::parseSchema(val);
   ASSERT_EQ(parsedSchema, schema);

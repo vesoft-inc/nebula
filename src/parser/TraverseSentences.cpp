@@ -61,7 +61,9 @@ std::string LookupSentence::toString() const {
   return buf;
 }
 
-std::string UseSentence::toString() const { return "USE " + *space_; }
+std::string UseSentence::toString() const {
+  return "USE " + *space_;
+}
 
 std::string SetSentence::toString() const {
   std::string buf;

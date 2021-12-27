@@ -414,6 +414,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                        Value::Type::LIST),
      }},
     {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
+    {"duration",
+     {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
+      TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
 };
 
 // static
@@ -2678,6 +2681,32 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
+  }
+  {
+    auto &attr = functions_["duration"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      const auto &arg = args[0].get();
+      switch (arg.type()) {
+        case Value::Type::MAP: {
+          auto result = time::TimeUtils::durationFromMap(arg.getMap());
+          if (result.ok()) {
+            return result.value();
+          } else {
+            return Value::kNullBadData;
+          }
+        }
+        case Value::Type::STRING: {
+          // TODO
+          return Value::kNullBadType;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
   }
 }  // NOLINT
 

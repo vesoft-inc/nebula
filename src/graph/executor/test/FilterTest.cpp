@@ -16,7 +16,9 @@ namespace graph {
 
 class FilterTest : public QueryTestBase {
  public:
-  void SetUp() override { QueryTestBase::SetUp(); }
+  void SetUp() override {
+    QueryTestBase::SetUp();
+  }
 };
 
 #define FILTER_RESULT_CHECK(inputName, outputName, sentence, expected)                             \

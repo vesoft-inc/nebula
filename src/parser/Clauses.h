@@ -22,17 +22,29 @@ class StepClause final {
     nSteps_ = n;
   }
 
-  uint32_t steps() const { return mSteps_; }
+  uint32_t steps() const {
+    return mSteps_;
+  }
 
-  bool isMToN() const { return mSteps_ != nSteps_; }
+  bool isMToN() const {
+    return mSteps_ != nSteps_;
+  }
 
-  uint32_t mSteps() const { return mSteps_; }
+  uint32_t mSteps() const {
+    return mSteps_;
+  }
 
-  uint32_t nSteps() const { return nSteps_; }
+  uint32_t nSteps() const {
+    return nSteps_;
+  }
 
-  void setMSteps(uint32_t m) { mSteps_ = m; }
+  void setMSteps(uint32_t m) {
+    mSteps_ = m;
+  }
 
-  void setNSteps(uint32_t n) { nSteps_ = n; }
+  void setNSteps(uint32_t n) {
+    nSteps_ = n;
+  }
 
   std::string toString() const;
 
@@ -43,9 +55,13 @@ class StepClause final {
 
 class VertexIDList final {
  public:
-  void add(Expression *expr) { vidList_.emplace_back(expr); }
+  void add(Expression *expr) {
+    vidList_.emplace_back(expr);
+  }
 
-  const std::vector<Expression *> &vidList() const { return vidList_; }
+  const std::vector<Expression *> &vidList() const {
+    return vidList_;
+  }
 
   std::string toString() const;
 
@@ -55,15 +71,25 @@ class VertexIDList final {
 
 class VerticesClause {
  public:
-  explicit VerticesClause(VertexIDList *vidList) { vidList_.reset(vidList); }
+  explicit VerticesClause(VertexIDList *vidList) {
+    vidList_.reset(vidList);
+  }
 
-  explicit VerticesClause(Expression *ref) { ref_ = ref; }
+  explicit VerticesClause(Expression *ref) {
+    ref_ = ref;
+  }
 
-  auto vidList() const { return vidList_->vidList(); }
+  auto vidList() const {
+    return vidList_->vidList();
+  }
 
-  auto isRef() const { return ref_ != nullptr; }
+  auto isRef() const {
+    return ref_ != nullptr;
+  }
 
-  auto ref() const { return ref_; }
+  auto ref() const {
+    return ref_;
+  }
 
   std::string toString() const;
 
@@ -97,9 +123,13 @@ class OverEdge final {
     alias_.reset(alias);
   }
 
-  std::string *edge() const { return edge_.get(); }
+  std::string *edge() const {
+    return edge_.get();
+  }
 
-  std::string *alias() const { return alias_.get(); }
+  std::string *alias() const {
+    return alias_.get();
+  }
 
   std::string toString() const;
 
@@ -110,7 +140,9 @@ class OverEdge final {
 
 class OverEdges final {
  public:
-  void addEdge(OverEdge *edge) { edges_.emplace_back(edge); }
+  void addEdge(OverEdge *edge) {
+    edges_.emplace_back(edge);
+  }
 
   std::vector<OverEdge *> edges() {
     std::vector<OverEdge *> result;
@@ -143,13 +175,19 @@ class OverClause final {
     overEdges_ = std::make_unique<OverEdges>();
   }
 
-  std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+  std::vector<OverEdge *> edges() const {
+    return overEdges_->edges();
+  }
 
   std::string toString() const;
 
-  storage::cpp2::EdgeDirection direction() const { return direction_; }
+  storage::cpp2::EdgeDirection direction() const {
+    return direction_;
+  }
 
-  bool isOverAll() const { return isOverAll_; }
+  bool isOverAll() const {
+    return isOverAll_;
+  }
 
  private:
   storage::cpp2::EdgeDirection direction_;
@@ -164,13 +202,17 @@ class TruncateClause {
     isSample_ = isSample;
   }
 
-  Expression *truncate() const { return truncate_; }
+  Expression *truncate() const {
+    return truncate_;
+  }
 
   std::unique_ptr<TruncateClause> clone() const {
     return std::make_unique<TruncateClause>(truncate_->clone(), isSample_);
   }
 
-  bool isSample() const { return isSample_; }
+  bool isSample() const {
+    return isSample_;
+  }
 
   std::string toString() const;
 
@@ -181,11 +223,17 @@ class TruncateClause {
 
 class WhereClause {
  public:
-  explicit WhereClause(Expression *filter) { filter_ = filter; }
+  explicit WhereClause(Expression *filter) {
+    filter_ = filter;
+  }
 
-  Expression *filter() const { return filter_; }
+  Expression *filter() const {
+    return filter_;
+  }
 
-  void setFilter(Expression *expr) { filter_ = expr; }
+  void setFilter(Expression *expr) {
+    filter_ = expr;
+  }
 
   std::unique_ptr<WhereClause> clone() const {
     return std::make_unique<WhereClause>(filter_->clone());
@@ -215,15 +263,25 @@ class YieldColumn final {
     return std::make_unique<YieldColumn>(expr_->clone(), alias_);
   }
 
-  void setExpr(Expression *expr) { expr_ = expr; }
+  void setExpr(Expression *expr) {
+    expr_ = expr;
+  }
 
-  Expression *expr() const { return expr_; }
+  Expression *expr() const {
+    return expr_;
+  }
 
-  void setAlias(const std::string &alias) { alias_ = alias; }
+  void setAlias(const std::string &alias) {
+    alias_ = alias;
+  }
 
-  const std::string &alias() const { return alias_; }
+  const std::string &alias() const {
+    return alias_;
+  }
 
-  std::string name() const { return alias_.empty() ? toString() : alias(); }
+  std::string name() const {
+    return alias_.empty() ? toString() : alias();
+  }
 
   std::string toString() const;
 
@@ -233,11 +291,15 @@ class YieldColumn final {
 };
 
 bool operator==(const YieldColumn &l, const YieldColumn &r);
-inline bool operator!=(const YieldColumn &l, const YieldColumn &r) { return !(l == r); }
+inline bool operator!=(const YieldColumn &l, const YieldColumn &r) {
+  return !(l == r);
+}
 
 class YieldColumns final {
  public:
-  void addColumn(YieldColumn *field) { columns_.emplace_back(field); }
+  void addColumn(YieldColumn *field) {
+    columns_.emplace_back(field);
+  }
 
   std::vector<YieldColumn *> columns() const {
     std::vector<YieldColumn *> result;
@@ -256,9 +318,13 @@ class YieldColumns final {
     return names;
   }
 
-  size_t size() const { return columns_.size(); }
+  size_t size() const {
+    return columns_.size();
+  }
 
-  bool empty() const { return columns_.empty(); }
+  bool empty() const {
+    return columns_.empty();
+  }
 
   std::unique_ptr<YieldColumns> clone() const {
     auto cols = std::make_unique<YieldColumns>();
@@ -270,9 +336,13 @@ class YieldColumns final {
 
   std::string toString() const;
 
-  const YieldColumn *back() const { return columns_.back().get(); }
+  const YieldColumn *back() const {
+    return columns_.back().get();
+  }
 
-  YieldColumn *back() { return columns_.back().get(); }
+  YieldColumn *back() {
+    return columns_.back().get();
+  }
 
   bool hasAgg() const;
 
@@ -287,11 +357,17 @@ class YieldClause final {
     distinct_ = distinct;
   }
 
-  std::vector<YieldColumn *> columns() const { return yieldColumns_->columns(); }
+  std::vector<YieldColumn *> columns() const {
+    return yieldColumns_->columns();
+  }
 
-  YieldColumns *yields() const { return yieldColumns_.get(); }
+  YieldColumns *yields() const {
+    return yieldColumns_.get();
+  }
 
-  bool isDistinct() const { return distinct_; }
+  bool isDistinct() const {
+    return distinct_;
+  }
 
   std::unique_ptr<YieldClause> clone() const {
     auto cols = yieldColumns_->clone();
@@ -307,9 +383,13 @@ class YieldClause final {
 
 class GroupClause final {
  public:
-  explicit GroupClause(YieldColumns *fields) { groupColumns_.reset(fields); }
+  explicit GroupClause(YieldColumns *fields) {
+    groupColumns_.reset(fields);
+  }
 
-  std::vector<YieldColumn *> columns() const { return groupColumns_->columns(); }
+  std::vector<YieldColumn *> columns() const {
+    return groupColumns_->columns();
+  }
 
   std::string toString() const;
 
@@ -326,7 +406,9 @@ class BoundClause final {
     boundType_ = type;
   }
 
-  std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+  std::vector<OverEdge *> edges() const {
+    return overEdges_->edges();
+  }
 
   std::string toString() const;
 
@@ -343,13 +425,21 @@ class NameLabelList {
  public:
   NameLabelList() = default;
 
-  void add(std::string *label) { labels_.emplace_back(label); }
+  void add(std::string *label) {
+    labels_.emplace_back(label);
+  }
 
-  bool empty() const { return labels_.empty(); }
+  bool empty() const {
+    return labels_.empty();
+  }
 
-  std::size_t size() const { return labels_.size(); }
+  std::size_t size() const {
+    return labels_.size();
+  }
 
-  const std::string *front() const { return labels_.front().get(); }
+  const std::string *front() const {
+    return labels_.front().get();
+  }
 
   std::vector<const std::string *> labels() const {
     std::vector<const std::string *> labels;

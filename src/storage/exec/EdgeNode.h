@@ -26,9 +26,13 @@ class EdgeNode : public IterateNode<T> {
     return valueHandler(this->key(), this->reader(), props_);
   }
 
-  const std::string& getEdgeName() const { return edgeName_; }
+  const std::string& getEdgeName() const {
+    return edgeName_;
+  }
 
-  EdgeType edgeType() const { return edgeType_; }
+  EdgeType edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   EdgeNode(RuntimeContext* context,
@@ -85,15 +89,25 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     name_ = "FetchEdgeNode";
   }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
-  void next() override { valid_ = false; }
+  void next() override {
+    valid_ = false;
+  }
 
-  folly::StringPiece key() const override { return key_; }
+  folly::StringPiece key() const override {
+    return key_;
+  }
 
-  folly::StringPiece val() const override { return val_; }
+  folly::StringPiece val() const override {
+    return val_;
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
     valid_ = false;
@@ -171,17 +185,29 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
     name_ = "SingleEdgeNode";
   }
 
-  SingleEdgeIterator* iter() { return iter_.get(); }
+  SingleEdgeIterator* iter() {
+    return iter_.get();
+  }
 
-  bool valid() const override { return iter_ && iter_->valid(); }
+  bool valid() const override {
+    return iter_ && iter_->valid();
+  }
 
-  void next() override { iter_->next(); }
+  void next() override {
+    iter_->next();
+  }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return iter_->reader(); }
+  RowReader* reader() const override {
+    return iter_->reader();
+  }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     auto ret = RelNode::doExecute(partId, vId);

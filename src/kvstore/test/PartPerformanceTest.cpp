@@ -121,7 +121,9 @@ void multiThreadTest(bool useCache) {
     threads.emplace_back([db, i]() { range(i, db); });
   }
 
-  FOR_EACH(t, threads) { t->join(); }
+  FOR_EACH(t, threads) {
+    t->join();
+  }
 
   BENCHMARK_SUSPEND {
     db->Close();
@@ -150,7 +152,9 @@ void singleThreadTest(bool useCache, int32_t partnum) {
     genData(db);
   }
 
-  FOR_EACH_RANGE(i, 0, partnum) { range(i, db); }
+  FOR_EACH_RANGE(i, 0, partnum) {
+    range(i, db);
+  }
 
   BENCHMARK_SUSPEND {
     db->Close();
@@ -158,19 +162,29 @@ void singleThreadTest(bool useCache, int32_t partnum) {
   }
 }
 
-BENCHMARK(ParallelMultiplePartNoCache) { multiThreadTest(true); }
+BENCHMARK(ParallelMultiplePartNoCache) {
+  multiThreadTest(true);
+}
 
 BENCHMARK(SerialMultiplePartNoCache) {
   singleThreadTest(true, FLAGS_part_performance_test_partnum);
 }
 
-BENCHMARK(SerialSinglePartNocache) { singleThreadTest(true, 1); }
+BENCHMARK(SerialSinglePartNocache) {
+  singleThreadTest(true, 1);
+}
 
-BENCHMARK(ParallelMultiplePartCache) { multiThreadTest(false); }
+BENCHMARK(ParallelMultiplePartCache) {
+  multiThreadTest(false);
+}
 
-BENCHMARK(SerialMultiplePartCache) { singleThreadTest(false, FLAGS_part_performance_test_partnum); }
+BENCHMARK(SerialMultiplePartCache) {
+  singleThreadTest(false, FLAGS_part_performance_test_partnum);
+}
 
-BENCHMARK(SerialSinglePartCache) { singleThreadTest(false, 1); }
+BENCHMARK(SerialSinglePartCache) {
+  singleThreadTest(false, 1);
+}
 
 }  // namespace kvstore
 }  // namespace nebula
