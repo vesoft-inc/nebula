@@ -8,7 +8,7 @@
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
 
-DECLARE_int32(ft_request_retry_times);
+DECLARE_uint32(ft_request_retry_times);
 DECLARE_int32(ft_bulk_batch_size);
 
 namespace nebula {

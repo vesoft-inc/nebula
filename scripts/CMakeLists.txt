@@ -2,6 +2,8 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+if(NOT ENABLE_STANDALONE_VERSION)
+
 install(
     FILES
         nebula-storaged.service
@@ -30,6 +32,36 @@ install(
 
 install(
     FILES
+        nebula-graphd.service
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        scripts
+    COMPONENT
+        graph
+)
+
+else()
+
+install(
+    FILES
+        nebula-standalone.service
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        scripts
+    COMPONENT
+        graph
+)
+
+endif()
+
+install(
+    FILES
         nebula.service
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
@@ -52,19 +84,6 @@ install(
         scripts
     COMPONENT
         common
-)
-
-install(
-    FILES
-        nebula-graphd.service
-    PERMISSIONS
-        OWNER_EXECUTE OWNER_WRITE OWNER_READ
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ
-    DESTINATION
-        scripts
-    COMPONENT
-        graph
 )
 
 install(
