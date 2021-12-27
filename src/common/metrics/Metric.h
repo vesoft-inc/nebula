@@ -32,6 +32,30 @@ void parseStats(const folly::StringPiece stats,
 
 bool strToPct(folly::StringPiece part, double& pct);
 
+class Collector {
+ public:
+  Collector(const std::string& name,
+            const std::string& unit,
+            const std::string& desc,
+            const std::vector<StatsMethod>& methods,
+            const std::vector<std::pair<std::string, double>>& percentiles);
+
+  virtual ~Collector() = default;
+
+  virtual void collect(const std::string& name,
+                       const std::string& unit,
+                       const std::string& desc,
+                       const std::vector<StatsMethod>& methods,
+                       const std::vector<std::pair<std::string, double>>& percentiles) = 0;
+
+  virtual void collect(const std::string& name,
+                       const std::string& unit,
+                       const std::string& desc,
+                       const std::vector<StatsMethod>& methods,
+                       const std::vector<std::pair<std::string, double>>& percentiles,
+                       const std::vector<std::string>& tags) = 0;
+};
+
 class Metric {
  public:
   Metric() = default;
@@ -137,22 +161,24 @@ class MetricVec {
   MetricVec(const std::string& name, const LabelNames& labelNames, NewMetric newMetric)
       : name_(name), labelNames_(labelNames), newMetric_(newMetric) {}
 
-  T& getOrCreateMetricWithLabelValues(const LabelValues& labelValues) {
-    folly::RWSpinLock::WriteHolder wh(lock_);
+  T& getMetricWithLabelValues(const LabelValues& labelValues) {
+    if (labelValues.size() != labelNames_.size()) {
+      LOG(FATAL) << "labelValues.size() != labelNames.size()";
+    }
 
+    folly::RWSpinLock::WriteHolder wh(lock_);
     // Get the metric if it already exists
     auto it = metricMap_.find(labelValues);
     if (it != metricMap_.end()) {
       return *it->second;
     }
-
     // Create a new one if it doesn't exist
     auto it2 = metricMap_.emplace(labelValues, newMetric_());
     CHECK(it2.second);
     return *it2.first->second;
   }
 
-  void removeMetricWithLabelValues(const LabelValues& labelValues) {
+  void deleteMetricWithLabelValues(const LabelValues& labelValues) {
     folly::RWSpinLock::WriteHolder wh(lock_);
     metricMap_.erase(labelValues);
   }
@@ -172,11 +198,11 @@ class CounterVec : public Metric {
       : metricVec_(opts.name, labelNames, [opts]() { return std::make_unique<Counter>(opts); }) {}
 
   Counter& withLabelValues(const LabelValues& labelValues) {
-    return metricVec_.getOrCreateMetricWithLabelValues(labelValues);
+    return metricVec_.getMetricWithLabelValues(labelValues);
   }
 
-  void removeMetricWithLabelValues(const LabelValues& labelValues) {
-    metricVec_.removeMetricWithLabelValues(labelValues);
+  void deleteLabelValues(const LabelValues& labelValues) {
+    metricVec_.deleteMetricWithLabelValues(labelValues);
   }
 
  private:
@@ -188,12 +214,12 @@ class HistogramVec : public Metric {
   HistogramVec(const HistogramOpts& opts, const LabelNames& labelNames)
       : metricVec_(opts.name, labelNames, [opts]() { return std::make_unique<Histogram>(opts); }) {}
 
-  Histogram& withLabelValues(const LabelValues& labelValues) {
-    return metricVec_.getOrCreateMetricWithLabelValues(labelValues);
+  Histogram& with(const LabelValues& labelValues) {
+    return metricVec_.getMetricWithLabelValues(labelValues);
   }
 
-  void removeMetricWithLabelValues(const LabelValues& labelValues) {
-    metricVec_.removeMetricWithLabelValues(labelValues);
+  void deleteLabelValues(const LabelValues& labelValues) {
+    metricVec_.deleteMetricWithLabelValues(labelValues);
   }
 
  private:

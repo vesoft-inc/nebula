@@ -97,8 +97,8 @@ folly::dynamic GetStatsHandler::getStats() const {
   auto stats = folly::dynamic::array();
   if (statNames_.empty()) {
     // Read all stats
-    // StatsManager::readAllValue(stats);
-    MetricRegistry::readAllValue(stats);
+    StatsManager::readAllValue(stats);
+    // MetricRegistry::readAllValue(stats);
   } else {
     for (auto& sn : statNames_) {
       auto status = StatsManager::readValue(sn);
