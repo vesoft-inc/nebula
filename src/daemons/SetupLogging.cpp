@@ -31,7 +31,7 @@ Status setupLogging(const std::string &exe) {
     google::SetLogDestination(google::GLOG_WARNING,
                               (FLAGS_log_dir + '/' + exe + ".WARNING").c_str());
     google::SetLogDestination(google::GLOG_ERROR, (FLAGS_log_dir + '/' + exe + ".ERROR").c_str());
-    google::SetLogDestination(google::GLOG_ERROR, (FLAGS_log_dir + '/' + exe + ".FATAL").c_str());
+    google::SetLogDestination(google::GLOG_FATAL, (FLAGS_log_dir + '/' + exe + ".FATAL").c_str());
   }
 
   if (!FLAGS_redirect_stdout) {
