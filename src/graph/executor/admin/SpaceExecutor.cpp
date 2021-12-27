@@ -167,7 +167,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
 }
 
 void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string &spaceName) {
-  if (FLAGS_enable_space_level_metrics) {
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
     stats::StatsManager::removeCounterWithLabels(kNumQueries, {{"space", spaceName}});
     stats::StatsManager::removeCounterWithLabels(kNumSlowQueries, {{"space", spaceName}});
     stats::StatsManager::removeCounterWithLabels(kNumQueryErrors, {{"space", spaceName}});
