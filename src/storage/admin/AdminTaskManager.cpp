@@ -90,7 +90,7 @@ void AdminTaskManager::handleUnreportedTasks() {
                                     apache::thrift::util::enumNameSafe(errCode));
         if (seqId < env_->adminSeqId_) {
           if (jobStatus == nebula::meta::cpp2::JobStatus::RUNNING && pStats != nullptr) {
-            pStats->set_status(nebula::meta::cpp2::JobStatus::FAILED);
+            pStats->status_ref() = nebula::meta::cpp2::JobStatus::FAILED;
           }
           auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
           futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));

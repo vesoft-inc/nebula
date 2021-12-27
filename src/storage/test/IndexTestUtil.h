@@ -27,11 +27,21 @@ class MockKVIterator : public KVIterator {
 
  public:
   MockKVIterator(const KVMap& kv, KVMap::iterator&& iter) : kv_(kv), iter_(std::move(iter)) {}
-  bool valid() const { return iter_ != kv_.end() && validFunc_(iter_); }
-  void next() { iter_++; }
-  void prev() { iter_--; }
-  folly::StringPiece key() const { return folly::StringPiece(iter_->first); }
-  folly::StringPiece val() const { return folly::StringPiece(iter_->second); }
+  bool valid() const {
+    return iter_ != kv_.end() && validFunc_(iter_);
+  }
+  void next() {
+    iter_++;
+  }
+  void prev() {
+    iter_--;
+  }
+  folly::StringPiece key() const {
+    return folly::StringPiece(iter_->first);
+  }
+  folly::StringPiece val() const {
+    return folly::StringPiece(iter_->second);
+  }
   void setValidFunc(const std::function<bool(const KVMap::iterator& iter)> validFunc) {
     validFunc_ = validFunc;
   }
@@ -361,7 +371,9 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     UNUSED(property);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  void put(const std::string& key, const std::string& value) { kv_[key] = value; }
+  void put(const std::string& key, const std::string& value) {
+    kv_[key] = value;
+  }
 
  private:
   using ::nebula::kvstore::KVStore::prefix;
@@ -371,16 +383,26 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
 class MockIndexNode : public IndexNode {
  public:
   explicit MockIndexNode(RuntimeContext* context) : IndexNode(context, "MockIndexNode") {}
-  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) override { return initFunc(initCtx); }
-  std::unique_ptr<IndexNode> copy() override { LOG(FATAL) << "Unexpect"; }
+  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) override {
+    return initFunc(initCtx);
+  }
+  std::unique_ptr<IndexNode> copy() override {
+    LOG(FATAL) << "Unexpect";
+  }
   std::function<Result()> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;
   std::function<::nebula::cpp2::ErrorCode(InitContext& initCtx)> initFunc;
-  std::string identify() override { return "MockIndexNode"; }
+  std::string identify() override {
+    return "MockIndexNode";
+  }
 
  private:
-  Result doNext() override { return nextFunc(); }
-  ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override { return executeFunc(partId); };
+  Result doNext() override {
+    return nextFunc();
+  }
+  ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    return executeFunc(partId);
+  };
 };
 
 class RowParser {
@@ -427,7 +449,9 @@ class RowParser {
       rowList_.emplace_back(std::move(row));
     }
   }
-  const std::vector<Row>& getResult() { return rowList_; }
+  const std::vector<Row>& getResult() {
+    return rowList_;
+  }
 
  private:
   std::stringstream ss;
@@ -484,7 +508,9 @@ class SchemaParser {
       schema->addField(name, type, length, nullable);
     }
   }
-  std::shared_ptr<::nebula::meta::NebulaSchemaProvider> getResult() { return schema; }
+  std::shared_ptr<::nebula::meta::NebulaSchemaProvider> getResult() {
+    return schema;
+  }
 
  private:
   std::stringstream ss;
@@ -527,9 +553,9 @@ class IndexParser {
     int32_t id = std::stoi(match.str(3));
     schemaName_ = name;
     if (match.str(1) == "TAG") {
-      schemaId_.set_tag_id(id);
+      schemaId_.tag_id_ref() = id;
     } else {
-      schemaId_.set_edge_type(id);
+      schemaId_.edge_type_ref() = id;
     }
   }
   std::vector<std::shared_ptr<IndexItem>> operator()(std::shared_ptr<SchemaProvider> schema) {
@@ -544,13 +570,13 @@ class IndexParser {
   }
   std::shared_ptr<IndexItem> parse(const std::string& line) {
     auto ret = std::make_shared<IndexItem>();
-    ret->set_schema_id(schemaId_);
-    ret->set_schema_name(schemaName_);
+    ret->schema_id_ref() = schemaId_;
+    ret->schema_name_ref() = schemaName_;
     static std::regex pattern(R"(\((.+),(\d+)\):(.+))");
     std::smatch match;
     CHECK(std::regex_match(line, match, pattern));
-    ret->set_index_name(folly::trimWhitespace(folly::StringPiece(match.str(1)).toString()));
-    ret->set_index_id(std::stoi(match.str(2)));
+    ret->index_name_ref() = folly::trimWhitespace(folly::StringPiece(match.str(1)).toString());
+    ret->index_id_ref() = std::stoi(match.str(2));
     std::string columnStr = match.str(3);
     std::vector<std::string> columns;
     folly::split(",", columnStr, columns);
@@ -572,19 +598,19 @@ class IndexParser {
       }
       ::nebula::meta::cpp2::ColumnDef col;
       auto field = schema_->field(name);
-      col.set_name(name);
+      col.name_ref() = name;
       ::nebula::meta::cpp2::ColumnTypeDef type;
       if (length > 0) {
-        type.set_type_length(length);
-        type.set_type(::nebula::cpp2::PropertyType::FIXED_STRING);
+        type.type_length_ref() = length;
+        type.type_ref() = ::nebula::cpp2::PropertyType::FIXED_STRING;
       } else {
-        type.set_type(field->type());
+        type.type_ref() = field->type();
       }
-      col.set_type(type);
-      col.set_nullable(field->nullable());
+      col.type_ref() = type;
+      col.nullable_ref() = field->nullable();
       fields.emplace_back(std::move(col));
     }
-    ret->set_fields(fields);
+    ret->fields_ref() = fields;
     return ret;
   }
 

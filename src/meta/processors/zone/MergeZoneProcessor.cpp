@@ -8,7 +8,9 @@
 namespace nebula {
 namespace meta {
 
-void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) { UNUSED(req); }
+void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
+  UNUSED(req);
+}
 
 }  // namespace meta
 }  // namespace nebula

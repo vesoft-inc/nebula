@@ -22,7 +22,9 @@ void ExecutionContext::setResult(const std::string& name, Result&& result) {
   hist.emplace_back(std::move(result));
 }
 
-void ExecutionContext::dropResult(const std::string& name) { valueMap_[name].clear(); }
+void ExecutionContext::dropResult(const std::string& name) {
+  valueMap_[name].clear();
+}
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
   auto it = valueMap_.find(name);

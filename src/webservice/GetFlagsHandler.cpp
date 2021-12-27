@@ -79,7 +79,9 @@ void GetFlagsHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void GetFlagsHandler::requestComplete() noexcept { delete this; }
+void GetFlagsHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void GetFlagsHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service GetFlagsHandler got error: " << proxygen::getErrorString(err);

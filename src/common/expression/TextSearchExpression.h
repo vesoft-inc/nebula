@@ -22,29 +22,53 @@ class TextSearchArgument final {
 
   ~TextSearchArgument() = default;
 
-  void setVal(const std::string& val) { val_ = val; }
+  void setVal(const std::string& val) {
+    val_ = val;
+  }
 
-  const std::string& from() { return from_; }
+  const std::string& from() {
+    return from_;
+  }
 
-  const std::string& prop() { return prop_; }
+  const std::string& prop() {
+    return prop_;
+  }
 
-  const std::string& val() const { return val_; }
+  const std::string& val() const {
+    return val_;
+  }
 
-  void setOP(const std::string& op) { op_ = op; }
+  void setOP(const std::string& op) {
+    op_ = op;
+  }
 
-  const std::string& op() const { return op_; }
+  const std::string& op() const {
+    return op_;
+  }
 
-  void setFuzziness(int32_t fuzz) { fuzziness_ = fuzz; }
+  void setFuzziness(int32_t fuzz) {
+    fuzziness_ = fuzz;
+  }
 
-  int32_t fuzziness() { return fuzziness_; }
+  int32_t fuzziness() {
+    return fuzziness_;
+  }
 
-  void setLimit(int32_t limit) { limit_ = limit; }
+  void setLimit(int32_t limit) {
+    limit_ = limit;
+  }
 
-  int32_t limit() { return limit_; }
+  int32_t limit() {
+    return limit_;
+  }
 
-  void setTimeout(int32_t timeout) { timeout_ = timeout; }
+  void setTimeout(int32_t timeout) {
+    timeout_ = timeout;
+  }
 
-  int32_t timeout() { return timeout_; }
+  int32_t timeout() {
+    return timeout_;
+  }
 
   bool operator==(const TextSearchArgument& rhs) const;
 
@@ -89,7 +113,9 @@ class TextSearchExpression : public Expression {
     return Value::kNullBadData;
   }
 
-  void accept(ExprVisitor*) override { LOG(FATAL) << "TextSearchExpression has to be rewritten"; }
+  void accept(ExprVisitor*) override {
+    LOG(FATAL) << "TextSearchExpression has to be rewritten";
+  }
 
   std::string toString() const override;
 
@@ -98,11 +124,17 @@ class TextSearchExpression : public Expression {
     return pool_->add(new TextSearchExpression(pool_, kind_, arg));
   }
 
-  const TextSearchArgument* arg() const { return arg_; }
+  const TextSearchArgument* arg() const {
+    return arg_;
+  }
 
-  TextSearchArgument* arg() { return arg_; }
+  TextSearchArgument* arg() {
+    return arg_;
+  }
 
-  void setArgs(TextSearchArgument* arg) { arg_ = arg; }
+  void setArgs(TextSearchArgument* arg) {
+    arg_ = arg;
+  }
 
  private:
   TextSearchExpression(ObjectPool* pool, Kind kind, TextSearchArgument* arg)
@@ -114,7 +146,9 @@ class TextSearchExpression : public Expression {
     LOG(FATAL) << "TextSearchExpression has to be rewritten";
   }
 
-  void resetFrom(Decoder&) override { LOG(FATAL) << "TextSearchExpression has to be reset"; }
+  void resetFrom(Decoder&) override {
+    LOG(FATAL) << "TextSearchExpression has to be reset";
+  }
 
  private:
   TextSearchArgument* arg_{nullptr};

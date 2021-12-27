@@ -155,11 +155,17 @@ LogIterator& WalFileIterator::operator++() {
   return *this;
 }
 
-bool WalFileIterator::valid() const { return currId_ <= lastId_; }
+bool WalFileIterator::valid() const {
+  return currId_ <= lastId_;
+}
 
-LogID WalFileIterator::logId() const { return currId_; }
+LogID WalFileIterator::logId() const {
+  return currId_;
+}
 
-TermID WalFileIterator::logTerm() const { return currTerm_; }
+TermID WalFileIterator::logTerm() const {
+  return currTerm_;
+}
 
 ClusterID WalFileIterator::logSource() const {
   // Retrieve from the file

@@ -26,7 +26,9 @@ class UUIDExpression final : public Expression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return UUIDExpression::make(pool_, field_); }
+  Expression* clone() const override {
+    return UUIDExpression::make(pool_, field_);
+  }
 
  private:
   explicit UUIDExpression(ObjectPool* pool, const std::string& field = "")

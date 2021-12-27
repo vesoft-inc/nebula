@@ -129,8 +129,8 @@ TEST(ActiveHostsManTest, LeaderTest) {
 
   auto makePartInfo = [](int partId) {
     cpp2::LeaderInfo part;
-    part.set_part_id(partId);
-    part.set_term(partId * 1024);
+    part.part_id_ref() = partId;
+    part.term_ref() = partId * 1024;
     return part;
   };
 

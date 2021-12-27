@@ -42,7 +42,9 @@ StatusOr<std::string> HdfsCommandHelper::copyToLocal(const std::string& hdfsHost
   }
 }
 
-bool HdfsCommandHelper::checkHadoopPath() { return std::getenv("HADOOP_HOME") != nullptr; }
+bool HdfsCommandHelper::checkHadoopPath() {
+  return std::getenv("HADOOP_HOME") != nullptr;
+}
 
 }  // namespace hdfs
 }  // namespace nebula

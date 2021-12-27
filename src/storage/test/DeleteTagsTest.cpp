@@ -27,7 +27,7 @@ cpp2::GetPropRequest buildGetPropRequest(
     const std::vector<std::pair<TagID, std::vector<std::string>>>& tags) {
   std::hash<std::string> hash;
   cpp2::GetPropRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   for (const auto& vertex : vertices) {
     PartitionID partId = (hash(vertex) % totalParts) + 1;
     nebula::Row row;
@@ -37,18 +37,18 @@ cpp2::GetPropRequest buildGetPropRequest(
 
   std::vector<cpp2::VertexProp> vertexProps;
   if (tags.empty()) {
-    req.set_vertex_props(std::move(vertexProps));
+    req.vertex_props_ref() = std::move(vertexProps);
   } else {
     for (const auto& tag : tags) {
       TagID tagId = tag.first;
       cpp2::VertexProp tagProp;
-      tagProp.set_tag(tagId);
+      tagProp.tag_ref() = tagId;
       for (const auto& prop : tag.second) {
         (*tagProp.props_ref()).emplace_back(std::move(prop));
       }
       vertexProps.emplace_back(std::move(tagProp));
     }
-    req.set_vertex_props(std::move(vertexProps));
+    req.vertex_props_ref() = std::move(vertexProps);
   }
   return req;
 }
@@ -56,34 +56,34 @@ cpp2::GetPropRequest buildGetPropRequest(
 cpp2::LookupIndexRequest buildLookupRequest(int32_t totalParts, std::string playerName) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   nebula::cpp2::SchemaID schemaId;
-  schemaId.set_tag_id(1);
-  indices.set_schema_id(schemaId);
+  schemaId.tag_id_ref() = 1;
+  indices.schema_id_ref() = schemaId;
   std::vector<PartitionID> parts;
   for (PartitionID partId = 1; partId <= totalParts; partId++) {
     parts.emplace_back(partId);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
   returnCols.emplace_back("age");
-  req.set_return_columns(std::move(returnCols));
+  req.return_columns_ref() = std::move(returnCols);
   cpp2::IndexColumnHint columnHint;
-  columnHint.set_begin_value(Value(playerName));
-  columnHint.set_column_name("name");
-  columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+  columnHint.begin_value_ref() = Value(playerName);
+  columnHint.column_name_ref() = "name";
+  columnHint.scan_type_ref() = cpp2::ScanType::PREFIX;
   std::vector<cpp2::IndexColumnHint> columnHints;
   columnHints.emplace_back(std::move(columnHint));
   cpp2::IndexQueryContext context1;
-  context1.set_column_hints(std::move(columnHints));
-  context1.set_filter("");
-  context1.set_index_id(1);
+  context1.column_hints_ref() = std::move(columnHints);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 1;
   decltype(indices.contexts) contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
-  req.set_indices(std::move(indices));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
   return req;
 }
 
@@ -91,7 +91,7 @@ cpp2::DeleteTagsRequest buildDeleteTagsRequest(int32_t totalParts,
                                                const std::vector<cpp2::DelTags>& delTags) {
   std::hash<std::string> hash;
   cpp2::DeleteTagsRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   for (const auto& delTag : delTags) {
     PartitionID partId = (hash(delTag.get_id().getStr()) % totalParts) + 1;
     (*req.parts_ref())[partId].emplace_back(std::move(delTag));
@@ -141,7 +141,7 @@ TEST(DeleteTagsTest, SimpleTest) {
   {
     std::vector<cpp2::DelTags> delTags;
     cpp2::DelTags delTag;
-    delTag.set_id("Tim Duncan");
+    delTag.id_ref() = "Tim Duncan";
     (*delTag.tags_ref()).emplace_back(player);
     delTags.emplace_back(std::move(delTag));
     auto req = buildDeleteTagsRequest(totalParts, delTags);

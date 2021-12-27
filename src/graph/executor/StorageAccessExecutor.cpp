@@ -25,12 +25,16 @@ struct Vid;
 
 template <>
 struct Vid<int64_t> {
-  static int64_t value(const Value &v) { return v.getInt(); }
+  static int64_t value(const Value &v) {
+    return v.getInt();
+  }
 };
 
 template <>
 struct Vid<std::string> {
-  static std::string value(const Value &v) { return v.getStr(); }
+  static std::string value(const Value &v) {
+    return v.getStr();
+  }
 };
 
 template <typename VidType>

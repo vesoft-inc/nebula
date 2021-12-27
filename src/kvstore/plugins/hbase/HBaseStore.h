@@ -25,7 +25,9 @@ class HBaseRangeIter : public KVIterator {
 
   ~HBaseRangeIter() = default;
 
-  bool valid() const override { return current_ != end_; }
+  bool valid() const override {
+    return current_ != end_;
+  }
 
   void next() override {
     CHECK(current_ != end_);
@@ -37,9 +39,13 @@ class HBaseRangeIter : public KVIterator {
     current_--;
   }
 
-  folly::StringPiece key() const override { return folly::StringPiece(current_->first); }
+  folly::StringPiece key() const override {
+    return folly::StringPiece(current_->first);
+  }
 
-  folly::StringPiece val() const override { return folly::StringPiece(current_->second); }
+  folly::StringPiece val() const override {
+    return folly::StringPiece(current_->second);
+  }
 
  private:
   KVArrayIterator current_;
@@ -58,7 +64,9 @@ class HBaseStore : public KVStore {
 
   void stop() override {}
 
-  uint32_t capability() const override { return 0; }
+  uint32_t capability() const override {
+    return 0;
+  }
 
   // Return the current leader
   ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override {
@@ -172,9 +180,13 @@ class HBaseStore : public KVStore {
     return ResultCode::ERR_UNSUPPORTED;
   }
 
-  ResultCode compact(GraphSpaceID) override { return ResultCode::ERR_UNSUPPORTED; }
+  ResultCode compact(GraphSpaceID) override {
+    return ResultCode::ERR_UNSUPPORTED;
+  }
 
-  ResultCode flush(GraphSpaceID) override { return ResultCode::ERR_UNSUPPORTED; }
+  ResultCode flush(GraphSpaceID) override {
+    return ResultCode::ERR_UNSUPPORTED;
+  }
 
   ResultCode createCheckpoint(GraphSpaceID, const std::string&) override {
     return ResultCode::ERR_UNSUPPORTED;
@@ -184,7 +196,9 @@ class HBaseStore : public KVStore {
     return ResultCode::ERR_UNSUPPORTED;
   }
 
-  ResultCode setWriteBlocking(GraphSpaceID, bool) override { return ResultCode::ERR_UNSUPPORTED; }
+  ResultCode setWriteBlocking(GraphSpaceID, bool) override {
+    return ResultCode::ERR_UNSUPPORTED;
+  }
 
  private:
   std::string getRowKey(const std::string& key) {

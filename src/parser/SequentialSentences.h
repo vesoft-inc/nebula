@@ -24,7 +24,9 @@ class SequentialSentences final : public Sentence {
     sentences_.emplace_back(sentence);
   }
 
-  void addSentence(Sentence *sentence) { sentences_.emplace_back(sentence); }
+  void addSentence(Sentence *sentence) {
+    sentences_.emplace_back(sentence);
+  }
 
   auto sentences() const {
     std::vector<Sentence *> result;
@@ -32,6 +34,10 @@ class SequentialSentences final : public Sentence {
     auto get = [](auto &ptr) { return ptr.get(); };
     std::transform(sentences_.begin(), sentences_.end(), result.begin(), get);
     return result;
+  }
+
+  size_t numSentences() const {
+    return sentences_.size();
   }
 
   std::string toString() const override;

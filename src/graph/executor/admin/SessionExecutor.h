@@ -21,11 +21,16 @@ class ShowSessionsExecutor final : public Executor {
   folly::Future<Status> execute() override;
 
  private:
+  // List sessions in the cluster
   folly::Future<Status> listSessions();
+  // List sessions in the current graph node
+  folly::Future<Status> listLocalSessions();
 
   folly::Future<Status> getSession(SessionID sessionId);
+  // Add session info into dataset
+  void addSessions(const meta::cpp2::Session &session, DataSet &dataSet) const;
 
-  DateTime microSecToDateTime(int64_t microSec) {
+  DateTime microSecToDateTime(const int64_t microSec) const {
     auto dateTime = time::TimeConversion::unixSecondsToDateTime(microSec / 1000000);
     dateTime.microsec = microSec % 1000000;
     return dateTime;

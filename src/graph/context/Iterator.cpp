@@ -610,7 +610,9 @@ void SequentialIter::init(std::vector<std::unique_ptr<Iterator>>&& iterators) {
   iter_ = rows_->begin();
 }
 
-bool SequentialIter::valid() const { return Iterator::valid() && iter_ < rows_->end(); }
+bool SequentialIter::valid() const {
+  return Iterator::valid() && iter_ < rows_->end();
+}
 
 void SequentialIter::next() {
   if (valid()) {
@@ -619,7 +621,9 @@ void SequentialIter::next() {
   }
 }
 
-void SequentialIter::erase() { iter_ = rows_->erase(iter_); }
+void SequentialIter::erase() {
+  iter_ = rows_->erase(iter_);
+}
 
 void SequentialIter::unstableErase() {
   std::swap(rows_->back(), *iter_);
@@ -647,9 +651,13 @@ const Value& SequentialIter::getColumn(int32_t index) const {
   return getColumnByIndex(index, iter_);
 }
 
-Value SequentialIter::getVertex(const std::string& name) const { return getColumn(name); }
+Value SequentialIter::getVertex(const std::string& name) const {
+  return getColumn(name);
+}
 
-Value SequentialIter::getEdge() const { return getColumn("EDGE"); }
+Value SequentialIter::getEdge() const {
+  return getColumn("EDGE");
+}
 
 PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
     : SequentialIter(value, checkMemory) {
@@ -874,7 +882,9 @@ List PropIter::getEdges() {
   return edges;
 }
 
-const Value& PropIter::getColumn(int32_t index) const { return getColumnByIndex(index, iter_); }
+const Value& PropIter::getColumn(int32_t index) const {
+  return getColumnByIndex(index, iter_);
+}
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
   switch (kind) {

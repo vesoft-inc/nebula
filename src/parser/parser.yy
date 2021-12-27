@@ -3,7 +3,7 @@
 %no-lines
 %locations
 %define api.namespace { nebula }
-%define parser_class_name { GraphParser }
+%define api.parser.class { GraphParser }
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }
@@ -201,6 +201,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
+%token KW_LOCAL
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
@@ -533,6 +534,7 @@ unreserved_keyword
     | KW_S2_MAX_CELLS       { $$ = new std::string("s2_max_cells"); }
     | KW_SESSION            { $$ = new std::string("session"); }
     | KW_SESSIONS           { $$ = new std::string("sessions"); }
+    | KW_LOCAL              { $$ = new std::string("local"); }
     | KW_SAMPLE             { $$ = new std::string("sample"); }
     | KW_QUERIES            { $$ = new std::string("queries"); }
     | KW_QUERY              { $$ = new std::string("query"); }
@@ -1156,77 +1158,77 @@ geo_shape_type
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::BOOL);
+        $$->type_ref() = nebula::cpp2::PropertyType::BOOL;
     }
     | KW_INT8 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::INT8);
+        $$->type_ref() = nebula::cpp2::PropertyType::INT8;
     }
     | KW_INT16 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::INT16);
+        $$->type_ref() = nebula::cpp2::PropertyType::INT16;
     }
     | KW_INT32 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::INT32);
+        $$->type_ref() = nebula::cpp2::PropertyType::INT32;
     }
     | KW_INT64 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::INT64);
+        $$->type_ref() = nebula::cpp2::PropertyType::INT64;
     }
     | KW_INT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::INT64);
+        $$->type_ref() = nebula::cpp2::PropertyType::INT64;
     }
     | KW_FLOAT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::FLOAT);
+        $$->type_ref() = nebula::cpp2::PropertyType::FLOAT;
     }
     | KW_DOUBLE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::DOUBLE);
+        $$->type_ref() = nebula::cpp2::PropertyType::DOUBLE;
     }
     | KW_STRING {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::STRING);
+        $$->type_ref() = nebula::cpp2::PropertyType::STRING;
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::FIXED_STRING);
-        $$->set_type_length($3);
+        $$->type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+        $$->type_length_ref() = $3;
     }
     | KW_TIMESTAMP {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::TIMESTAMP);
+        $$->type_ref() = nebula::cpp2::PropertyType::TIMESTAMP;
     }
     | KW_DATE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::DATE);
+        $$->type_ref() = nebula::cpp2::PropertyType::DATE;
     }
     | KW_TIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::TIME);
+        $$->type_ref() = nebula::cpp2::PropertyType::TIME;
     }
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::DATETIME);
+        $$->type_ref() = nebula::cpp2::PropertyType::DATETIME;
     }
     | KW_GEOGRAPHY {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
-        $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
+        $$->type_ref() = nebula::cpp2::PropertyType::GEOGRAPHY;
+        $$->geo_shape_ref() = meta::cpp2::GeoShape::ANY;
     }
     | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
-        $$->set_geo_shape($3);
+        $$->type_ref() = nebula::cpp2::PropertyType::GEOGRAPHY;
+        $$->geo_shape_ref() = $3;
     }
     | KW_DURATION {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(nebula::cpp2::PropertyType::DURATION);
+        $$->type_ref() = nebula::cpp2::PropertyType::DURATION;
     }
     ;
 
@@ -1382,14 +1384,17 @@ vid
         $$ = ConstantExpression::make(qctx->objPool(), *$1);
         delete $1;
     }
+    // This reduce rule aim to report more friendly error message
     | VARIABLE {
         $$ = nullptr;
-        delete($1);
+        SCOPE_EXIT {
+            delete($1);
+        };
         if (qctx->existParameter(*$1)) {
             throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
         } else {
             throw nebula::GraphParser::syntax_error(@1, "Variable is not supported in vid");
-        } 
+        }
     }
     ;
 
@@ -1910,46 +1915,46 @@ match_limit
 text_search_client_item
     : L_PAREN host_item R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
+        $$->host_ref() = *$2;
         delete $2;
     }
     | L_PAREN host_item COMMA KW_HTTP R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
-        $$->set_conn_type("http");
+        $$->host_ref() = *$2;
+        $$->conn_type_ref() = "http";
         delete $2;
     }
     | L_PAREN host_item COMMA KW_HTTPS R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
-        $$->set_conn_type("https");
+        $$->host_ref() = *$2;
+        $$->conn_type_ref() = "https";
         delete $2;
     }
     | L_PAREN host_item COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
-        $$->set_user(*$4);
-        $$->set_pwd(*$6);
+        $$->host_ref() = *$2;
+        $$->user_ref() = *$4;
+        $$->pwd_ref() = *$6;
         delete $2;
         delete $4;
         delete $6;
     }
     | L_PAREN host_item COMMA KW_HTTP COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
-        $$->set_user(*$6);
-        $$->set_pwd(*$8);
-        $$->set_conn_type("http");
+        $$->host_ref() = *$2;
+        $$->user_ref() = *$6;
+        $$->pwd_ref() = *$8;
+        $$->conn_type_ref() = "http";
         delete $2;
         delete $6;
         delete $8;
     }
     | L_PAREN host_item COMMA KW_HTTPS COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
-        $$->set_host(*$2);
-        $$->set_user(*$6);
-        $$->set_pwd(*$8);
-        $$->set_conn_type("https");
+        $$->host_ref() = *$2;
+        $$->user_ref() = *$6;
+        $$->pwd_ref() = *$8;
+        $$->conn_type_ref() = "https";
         delete $2;
         delete $6;
         delete $8;
@@ -2587,7 +2592,7 @@ drop_edge_sentence
 index_field
     : name_label {
         $$ = new meta::cpp2::IndexFieldDef();
-        $$->set_name($1->c_str());
+        $$->name_ref() = $1->c_str();
         delete $1;
     }
     | name_label L_PAREN INTEGER R_PAREN {
@@ -2595,8 +2600,8 @@ index_field
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::IndexFieldDef();
-        $$->set_name($1->c_str());
-        $$->set_type_length($3);
+        $$->name_ref() = $1->c_str();
+        $$->type_length_ref() = $3;
         delete $1;
     }
     ;
@@ -3277,10 +3282,10 @@ job_concurrency
     ;
 
 show_queries_sentence
-    : KW_SHOW KW_QUERIES {
+    : KW_SHOW KW_LOCAL KW_QUERIES {
         $$ = new ShowQueriesSentence();
     }
-    | KW_SHOW KW_ALL KW_QUERIES {
+    | KW_SHOW KW_QUERIES {
         $$ = new ShowQueriesSentence(true);
     }
     ;
@@ -3375,8 +3380,13 @@ show_sentence
     | KW_SHOW KW_FULLTEXT KW_INDEXES {
         $$ = new ShowFTIndexesSentence();
     }
+    // List sessions in the cluster
     | KW_SHOW KW_SESSIONS {
         $$ = new ShowSessionsSentence();
+    }
+    // List sessions in the current graph node
+    | KW_SHOW KW_LOCAL KW_SESSIONS {
+        $$ = new ShowSessionsSentence(true);
     }
     | KW_SHOW KW_SESSION legal_integer {
         $$ = new ShowSessionsSentence($3);
