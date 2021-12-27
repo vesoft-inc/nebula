@@ -529,15 +529,15 @@ TEST_P(RocksEngineTest, PrefixBloomTest) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(EnablePrefixExtractor_EnableWholeKeyFilter_TableFormat,
-                        RocksEngineTest,
-                        ::testing::Values(std::make_tuple(false, false, "BlockBasedTable"),
-                                          std::make_tuple(false, true, "BlockBasedTable"),
-                                          std::make_tuple(true, false, "BlockBasedTable"),
-                                          std::make_tuple(true, true, "BlockBasedTable"),
-                                          // PlainTable will always enable prefix extractor
-                                          std::make_tuple(true, false, "PlainTable"),
-                                          std::make_tuple(true, true, "PlainTable")));
+INSTANTIATE_TEST_SUITE_P(EnablePrefixExtractor_EnableWholeKeyFilter_TableFormat,
+                         RocksEngineTest,
+                         ::testing::Values(std::make_tuple(false, false, "BlockBasedTable"),
+                                           std::make_tuple(false, true, "BlockBasedTable"),
+                                           std::make_tuple(true, false, "BlockBasedTable"),
+                                           std::make_tuple(true, true, "BlockBasedTable"),
+                                           // PlainTable will always enable prefix extractor
+                                           std::make_tuple(true, false, "PlainTable"),
+                                           std::make_tuple(true, true, "PlainTable")));
 
 TEST(PlainTableTest, BackupRestoreWithoutData) {
   fs::TempDir dataPath("/tmp/rocks_engine_test_data_path.XXXXXX");

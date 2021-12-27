@@ -669,17 +669,17 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerBasicTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerBasicTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerAdvanceTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerAdvanceTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerSnapshotTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerSnapshotTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
 }  // namespace kvstore
 }  // namespace nebula

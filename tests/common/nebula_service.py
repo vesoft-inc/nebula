@@ -200,14 +200,15 @@ class NebulaService(object):
             'expired_time_factor': 60,
         }
         if self.ca_signed:
+            _params['cert_path'] = 'share/resources/test.ca.pem'
+            _params['key_path'] = 'share/resources/test.ca.key'
+            _params['password_path'] = 'share/resources/test.ca.password'
             _params['ca_path'] = 'share/resources/test.ca.pem'
-            _params['cert_path'] = 'share/resources/test.derive.crt'
-            _params['key_path'] = 'share/resources/test.derive.key'
 
         else:
+            _params['cert_path'] = 'share/resources/test.derive.crt'
+            _params['key_path'] = 'share/resources/test.derive.key'
             _params['ca_path'] = 'share/resources/test.ca.pem'
-            _params['cert_path'] = 'share/resources/test.ca.key'
-            _params['key_path'] = 'share/resources/test.ca.password'
 
         if self.debug_log:
             _params['v'] = '4'

@@ -263,12 +263,12 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
 // the parameter pair<int, int> is
 // 1. count of edge schema version,
 // 2. how many edges will be scanned
-INSTANTIATE_TEST_CASE_P(ScanEdgePropBench,
-                        ScanEdgePropBench,
-                        ::testing::Values(std::make_pair(1, 10000),
-                                          std::make_pair(10, 10000),
-                                          std::make_pair(1, 100),
-                                          std::make_pair(10, 100)));
+INSTANTIATE_TEST_SUITE_P(ScanEdgePropBench,
+                         ScanEdgePropBench,
+                         ::testing::Values(std::make_pair(1, 10000),
+                                           std::make_pair(10, 10000),
+                                           std::make_pair(1, 100),
+                                           std::make_pair(10, 100)));
 
 }  // namespace nebula
 

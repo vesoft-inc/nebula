@@ -129,7 +129,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
       auto l = std::make_tuple(spaceId_, partId, tagId, vertex.getStr());
       if (std::find(target.begin(), target.end(), l) == target.end()) {
         if (!env_->verticesML_->try_lock(l)) {
-          LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}", tagId, vertex.getStr());
+          LOG(ERROR) << folly::sformat(
+              "The vertex locked : tag {}, vid {}", tagId, vertex.getStr());
           return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
         }
         target.emplace_back(std::move(l));
