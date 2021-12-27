@@ -61,7 +61,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       VLOG(2) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AskForVoteResponse resp;
-      resp.set_error_code(res);
+      resp.error_code_ref() = res;
       return resp;
     }
   }
@@ -101,7 +101,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       VLOG(2) << idStr_ << "The host is not in a proper status, just return";
       cpp2::AppendLogResponse r;
-      r.set_error_code(res);
+      r.error_code_ref() = res;
       return r;
     }
 
@@ -132,7 +132,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
     } else {
       // target host is waiting for a snapshot or wal not found
       cpp2::AppendLogResponse r;
-      r.set_error_code(error(result));
+      r.error_code_ref() = error(result);
       return r;
     }
   }
@@ -177,7 +177,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
               auto res = self->checkStatus();
               if (res != cpp2::ErrorCode::SUCCEEDED) {
                 cpp2::AppendLogResponse r;
-                r.set_error_code(res);
+                r.error_code_ref() = res;
                 self->setResponse(r);
                 return;
               }
@@ -193,7 +193,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                   newReq = std::move(value(result));
                 } else {
                   cpp2::AppendLogResponse r;
-                  r.set_error_code(error(result));
+                  r.error_code_ref() = error(result);
                   self->setResponse(r);
                   return;
                 }
@@ -230,7 +230,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                  [self = shared_from_this(), req](TransportException&& ex) {
                    VLOG(2) << self->idStr_ << ex.what();
                    cpp2::AppendLogResponse r;
-                   r.set_error_code(cpp2::ErrorCode::E_RPC_EXCEPTION);
+                   r.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
                    {
                      std::lock_guard<std::mutex> g(self->lock_);
                      if (ex.getType() == TransportException::TIMED_OUT) {
@@ -253,7 +253,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
       .thenError(folly::tag_t<std::exception>{}, [self = shared_from_this()](std::exception&& ex) {
         VLOG(2) << self->idStr_ << ex.what();
         cpp2::AppendLogResponse r;
-        r.set_error_code(cpp2::ErrorCode::E_RPC_EXCEPTION);
+        r.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
         {
           std::lock_guard<std::mutex> g(self->lock_);
           self->setResponse(r);
@@ -278,27 +278,27 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
   if (it->valid()) {
     auto term = it->logTerm();
     auto req = std::make_shared<cpp2::AppendLogRequest>();
-    req->set_space(part_->spaceId());
-    req->set_part(part_->partitionId());
-    req->set_current_term(logTermToSend_);
-    req->set_last_log_id(logIdToSend_);
-    req->set_leader_addr(part_->address().host);
-    req->set_leader_port(part_->address().port);
-    req->set_committed_log_id(committedLogId_);
-    req->set_last_log_term_sent(lastLogTermSent_);
-    req->set_last_log_id_sent(lastLogIdSent_);
-    req->set_log_term(term);
+    req->space_ref() = part_->spaceId();
+    req->part_ref() = part_->partitionId();
+    req->current_term_ref() = logTermToSend_;
+    req->last_log_id_ref() = logIdToSend_;
+    req->leader_addr_ref() = part_->address().host;
+    req->leader_port_ref() = part_->address().port;
+    req->committed_log_id_ref() = committedLogId_;
+    req->last_log_term_sent_ref() = lastLogTermSent_;
+    req->last_log_id_sent_ref() = lastLogIdSent_;
+    req->log_term_ref() = term;
 
     std::vector<nebula::cpp2::LogEntry> logs;
     for (size_t cnt = 0;
          it->valid() && it->logTerm() == term && cnt < FLAGS_max_appendlog_batch_size;
          ++(*it), ++cnt) {
       nebula::cpp2::LogEntry le;
-      le.set_cluster(it->logSource());
-      le.set_log_str(it->logMsg().toString());
+      le.cluster_ref() = it->logSource();
+      le.log_str_ref() = it->logMsg().toString();
       logs.emplace_back(std::move(le));
     }
-    req->set_log_str_list(std::move(logs));
+    req->log_str_list_ref() = std::move(logs);
     return req;
   } else {
     if (!sendingSnapshot_) {
@@ -342,7 +342,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AppendLogResponse resp;
-      resp.set_error_code(res);
+      resp.error_code_ref() = res;
       return resp;
     }
   }
@@ -367,15 +367,15 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
                                                            TermID lastLogTerm,
                                                            LogID lastLogId) {
   auto req = std::make_shared<cpp2::HeartbeatRequest>();
-  req->set_space(part_->spaceId());
-  req->set_part(part_->partitionId());
-  req->set_current_term(term);
-  req->set_last_log_id(latestLogId);
-  req->set_committed_log_id(commitLogId);
-  req->set_leader_addr(part_->address().host);
-  req->set_leader_port(part_->address().port);
-  req->set_last_log_term_sent(lastLogTerm);
-  req->set_last_log_id_sent(lastLogId);
+  req->space_ref() = part_->spaceId();
+  req->part_ref() = part_->partitionId();
+  req->current_term_ref() = term;
+  req->last_log_id_ref() = latestLogId;
+  req->committed_log_id_ref() = commitLogId;
+  req->leader_addr_ref() = part_->address().host;
+  req->leader_port_ref() = part_->address().port;
+  req->last_log_term_sent_ref() = lastLogTerm;
+  req->last_log_id_sent_ref() = lastLogId;
   folly::Promise<cpp2::HeartbeatResponse> promise;
   auto future = promise.getFuture();
   sendHeartbeatRequest(eb, std::move(req))
@@ -385,7 +385,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
         VLOG(3) << self->idStr_ << "heartbeat call got response";
         if (t.hasException()) {
           cpp2::HeartbeatResponse resp;
-          resp.set_error_code(cpp2::ErrorCode::E_RPC_EXCEPTION);
+          resp.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
           pro.setValue(std::move(resp));
           return;
         } else {
@@ -405,7 +405,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::HeartbeatResponse resp;
-      resp.set_error_code(res);
+      resp.error_code_ref() = res;
       return resp;
     }
   }
@@ -457,7 +457,7 @@ std::shared_ptr<cpp2::AppendLogRequest> Host::getPendingReqIfAny(std::shared_ptr
     return value(result);
   } else {
     cpp2::AppendLogResponse r;
-    r.set_error_code(error(result));
+    r.error_code_ref() = error(result);
     self->setResponse(r);
     return nullptr;
   }

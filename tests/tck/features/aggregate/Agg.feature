@@ -493,14 +493,14 @@ Feature: Basic Aggregate and GroupBy
       | 0     | 0   | NULL | NULL | NULL | NULL | NULL | NULL | NULL |
     When executing query:
       """
-      UNWIND [1,2,3] AS d RETURN d | YIELD 1 IN COLLECT($-.d) AS b
+      UNWIND [1,2,3] AS d RETURN  1 IN COLLECT(d) AS b
       """
     Then the result should be, in order, with relax comparison:
       | b    |
       | True |
     When executing query:
       """
-      UNWIND [1,2,3] AS d RETURN d | YIELD ANY(l IN COLLECT($-.d) WHERE l==1) AS b
+      UNWIND [1,2,3] AS d RETURN ANY(l IN COLLECT(d) WHERE l==1) AS b
       """
     Then the result should be, in order, with relax comparison:
       | b    |
@@ -607,7 +607,7 @@ Feature: Basic Aggregate and GroupBy
   Scenario: Distinct sum
     When executing query:
       """
-      UNWIND [1,2,3,3] AS d RETURN d | YIELD sum(distinct $-.d) AS sum
+      UNWIND [1,2,3,3] AS d RETURN sum(distinct d) AS sum
       """
     Then the result should be, in any order:
       | sum |

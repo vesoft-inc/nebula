@@ -52,6 +52,10 @@ set(storage_test_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
 )
 
 nebula_add_test(
@@ -676,21 +680,6 @@ nebula_add_executable(
         wangle
         follybenchmark
         boost_regex
-)
-
-nebula_add_test(
-    NAME
-        list_cluster_info_test
-    SOURCES
-        ListClusterInfoTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
 )
 
 nebula_add_test(

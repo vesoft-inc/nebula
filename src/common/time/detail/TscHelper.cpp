@@ -40,7 +40,9 @@ TscHelper& TscHelper::get() {
   return tscHelper;
 }
 
-uint64_t TscHelper::readTsc() { return get().readTscImpl(); }
+uint64_t TscHelper::readTsc() {
+  return get().readTscImpl();
+}
 
 uint64_t TscHelper::readTscImpl() {
 #ifdef DURATION_USE_RDTSCP

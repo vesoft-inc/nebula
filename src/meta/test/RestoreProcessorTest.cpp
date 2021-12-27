@@ -37,19 +37,16 @@ TEST(RestoreProcessorTest, RestoreTest) {
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
-  std::string groupName = "test_group";
-  properties.set_space_name("test_space");
+  properties.space_name_ref() = "test_space";
   int partNum = 10;
-  properties.set_partition_num(partNum);
-  properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
+  properties.partition_num_ref() = partNum;
+  properties.replica_factor_ref() = 3;
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
-  properties2.set_space_name("test_space2");
-  properties2.set_partition_num(partNum);
-  properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
+  properties2.space_name_ref() = "test_space2";
+  properties2.partition_num_ref() = partNum;
+  properties2.replica_factor_ref() = 3;
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -74,12 +71,8 @@ TEST(RestoreProcessorTest, RestoreTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
   }
 
-  auto groupId = 1;
   std::string zoneName = "test_zone";
   std::vector<std::string> zoneNames = {zoneName};
-  data.emplace_back(MetaKeyUtils::indexGroupKey(groupName),
-                    std::string(reinterpret_cast<const char*>(&groupId), sizeof(GroupID)));
-  data.emplace_back(MetaKeyUtils::groupKey(groupName), MetaKeyUtils::groupVal(zoneNames));
 
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
@@ -104,10 +97,10 @@ TEST(RestoreProcessorTest, RestoreTest) {
   baton.wait();
 
   std::unordered_set<GraphSpaceID> spaces = {id};
-  auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
+  auto backupName = folly::sformat("BACKUP_{}", MetaKeyUtils::genTimestampStr());
   auto spaceNames = std::make_unique<std::vector<std::string>>();
   spaceNames->emplace_back("test_space");
-  auto backupFiles = MetaServiceUtils::backupSpaces(kv.get(), spaces, backupName, spaceNames.get());
+  auto backupFiles = MetaServiceUtils::backupTables(kv.get(), spaces, backupName, spaceNames.get());
   DCHECK(nebula::hasValue(backupFiles));
   {
     cpp2::RestoreMetaReq req;
@@ -115,13 +108,13 @@ TEST(RestoreProcessorTest, RestoreTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::groupPrefix() || name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix()) {
         return true;
       }
       return false;
     });
     ASSERT_EQ(it, files.cend());
-    req.set_files(std::move(files));
+    req.files_ref() = std::move(files);
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);
@@ -133,7 +126,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
       hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
     }
 
-    req.set_hosts(std::move(hostPairs));
+    req.hosts_ref() = std::move(hostPairs);
     fs::TempDir restoreTootPath("/tmp/RestoreTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;
@@ -194,11 +187,6 @@ TEST(RestoreProcessorTest, RestoreTest) {
       }
       iter->next();
     }
-
-    prefix = MetaKeyUtils::groupPrefix();
-    result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    // ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-    ASSERT_FALSE(iter->valid());
 
     prefix = MetaKeyUtils::userPrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -262,19 +250,16 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
-  std::string groupName = "test_group";
-  properties.set_space_name("test_space");
+  properties.space_name_ref() = "test_space";
   int partNum = 10;
-  properties.set_partition_num(partNum);
-  properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
+  properties.partition_num_ref() = partNum;
+  properties.replica_factor_ref() = 3;
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
-  properties2.set_space_name("test_space2");
-  properties2.set_partition_num(partNum);
-  properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
+  properties2.space_name_ref() = "test_space2";
+  properties2.partition_num_ref() = partNum;
+  properties2.replica_factor_ref() = 3;
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -299,13 +284,8 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
   }
 
-  auto groupId = 1;
   std::string zoneName = "test_zone";
   std::vector<std::string> zoneNames = {zoneName};
-  data.emplace_back(MetaKeyUtils::indexGroupKey(groupName),
-                    std::string(reinterpret_cast<const char*>(&groupId), sizeof(GroupID)));
-  data.emplace_back(MetaKeyUtils::groupKey(groupName), MetaKeyUtils::groupVal(zoneNames));
-
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
   auto zoneId = 1;
@@ -321,8 +301,8 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   baton.wait();
 
   std::unordered_set<GraphSpaceID> spaces = {id};
-  auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
-  auto backupFiles = MetaServiceUtils::backupSpaces(kv.get(), spaces, backupName, nullptr);
+  auto backupName = folly::sformat("BACKUP_{}", MetaKeyUtils::genTimestampStr());
+  auto backupFiles = MetaServiceUtils::backupTables(kv.get(), spaces, backupName, nullptr);
   DCHECK(nebula::hasValue(backupFiles));
   {
     cpp2::RestoreMetaReq req;
@@ -330,13 +310,13 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::groupPrefix() || name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix()) {
         return true;
       }
       return false;
     });
     ASSERT_EQ(it, files.cend());
-    req.set_files(std::move(files));
+    req.files_ref() = std::move(files);
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);
@@ -348,7 +328,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
       hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
     }
 
-    req.set_hosts(std::move(hostPairs));
+    req.hosts_ref() = std::move(hostPairs);
     fs::TempDir restoreTootPath("/tmp/RestoreFullTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;
@@ -409,11 +389,6 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
       }
       iter->next();
     }
-
-    prefix = MetaKeyUtils::groupPrefix();
-    result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    // ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-    ASSERT_TRUE(iter->valid());
 
     prefix = MetaKeyUtils::userPrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);

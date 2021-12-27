@@ -35,7 +35,7 @@ void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
   std::vector<std::string> data;
   int64_t totalSize = 0;
   int64_t totalCount = 0;
-  LOG(INFO) << folly::format(
+  LOG(INFO) << folly::sformat(
       "Space {} Part {} start send snapshot, rate limited to {}, batch size is {}",
       spaceId,
       partId,

@@ -46,13 +46,21 @@ class LabelAttributeExpression final : public Expression {
                                           static_cast<ConstantExpression*>(right()->clone()));
   }
 
-  const LabelExpression* left() const { return lhs_; }
+  const LabelExpression* left() const {
+    return lhs_;
+  }
 
-  LabelExpression* left() { return lhs_; }
+  LabelExpression* left() {
+    return lhs_;
+  }
 
-  const ConstantExpression* right() const { return rhs_; }
+  const ConstantExpression* right() const {
+    return rhs_;
+  }
 
-  ConstantExpression* right() { return rhs_; }
+  ConstantExpression* right() {
+    return rhs_;
+  }
 
   std::string toString() const override;
 

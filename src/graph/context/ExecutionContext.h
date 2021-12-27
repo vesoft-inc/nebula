@@ -40,7 +40,9 @@ class ExecutionContext {
 
   virtual ~ExecutionContext() = default;
 
-  void initVar(const std::string& name) { valueMap_[name]; }
+  void initVar(const std::string& name) {
+    valueMap_[name];
+  }
 
   // Get the latest version of the value
   const Value& getValue(const std::string& name) const;
@@ -64,7 +66,9 @@ class ExecutionContext {
   // Only keep the last several versions of the Value
   void truncHistory(const std::string& name, size_t numVersionsToKeep);
 
-  bool exist(const std::string& name) const { return valueMap_.find(name) != valueMap_.end(); }
+  bool exist(const std::string& name) const {
+    return valueMap_.find(name) != valueMap_.end();
+  }
 
  private:
   friend class QueryInstance;

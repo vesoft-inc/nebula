@@ -811,7 +811,7 @@ Feature: LookUpTest_Vid_String
       CREATE TAG INDEX player_index_3 on player(name,age);
       CREATE TAG INDEX team_index_1 on team(name);
       """
-    And wait 4 seconds
+    And wait 6 seconds
     And having executed:
       """
       INSERT EDGE

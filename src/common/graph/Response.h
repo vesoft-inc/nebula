@@ -35,7 +35,7 @@
   X(E_TAG_PROP_NOT_FOUND, -10)                                                \
   X(E_ROLE_NOT_FOUND, -11)                                                    \
   X(E_CONFIG_NOT_FOUND, -12)                                                  \
-  X(E_GROUP_NOT_FOUND, -13)                                                   \
+  X(E_MACHINE_NOT_FOUND, -13)                                                 \
   X(E_ZONE_NOT_FOUND, -14)                                                    \
   X(E_LISTENER_NOT_FOUND, -15)                                                \
   X(E_PART_NOT_FOUND, -16)                                                    \
@@ -120,6 +120,7 @@
   X(E_GET_META_DIR_FAILURE, -2072)                                            \
                                                                               \
   X(E_QUERY_NOT_FOUND, -2073)                                                 \
+  X(E_AGENT_HB_FAILUE, -2074)                                                 \
   /* 3xxx for storaged */                                                     \
   X(E_CONSENSUS_ERROR, -3001)                                                 \
   X(E_KEY_HAS_EXISTS, -3002)                                                  \
@@ -215,7 +216,9 @@ struct AuthResponse {
     errorMsg = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
   bool operator==(const AuthResponse &rhs) const {
     if (errorCode != rhs.errorCode) {
@@ -241,6 +244,9 @@ struct AuthResponse {
 };
 
 struct ProfilingStats {
+  ProfilingStats() = default;
+  ProfilingStats(ProfilingStats &&) = default;
+
   void __clear() {
     rows = 0;
     execDurationInUs = 0;
@@ -248,7 +254,17 @@ struct ProfilingStats {
     otherStats = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(ProfilingStats &&rhs) {
+    this->rows = rhs.rows;
+    this->execDurationInUs = rhs.execDurationInUs;
+    this->totalDurationInUs = rhs.totalDurationInUs;
+    this->otherStats = std::move(rhs.otherStats);
+    return *this;
+  }
 
   bool operator==(const ProfilingStats &rhs) const {
     if (rows != rhs.rows) {
@@ -290,7 +306,15 @@ struct PlanNodeBranchInfo {
     conditionNodeId = -1;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(const PlanNodeBranchInfo &rhs) {
+    this->isDoBranch = rhs.isDoBranch;
+    this->conditionNodeId = rhs.conditionNodeId;
+    return *this;
+  }
 
   bool operator==(const PlanNodeBranchInfo &rhs) const {
     return isDoBranch == rhs.isDoBranch && conditionNodeId == rhs.conditionNodeId;
@@ -316,9 +340,13 @@ struct Pair {
     value.clear();
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
-  bool operator==(const Pair &rhs) const { return key == rhs.key && value == rhs.value; }
+  bool operator==(const Pair &rhs) const {
+    return key == rhs.key && value == rhs.value;
+  }
 
   std::string key;
   std::string value;
@@ -330,6 +358,9 @@ struct Pair {
 };
 
 struct PlanNodeDescription {
+  PlanNodeDescription() = default;
+  PlanNodeDescription(PlanNodeDescription &&) = default;
+
   void __clear() {
     name.clear();
     id = -1;
@@ -340,7 +371,20 @@ struct PlanNodeDescription {
     dependencies = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(PlanNodeDescription &&rhs) {
+    this->name = std::move(rhs.name);
+    this->id = rhs.id;
+    this->outputVar = std::move(rhs.outputVar);
+    this->description = std::move(rhs.description);
+    this->profiles = std::move(rhs.profiles);
+    this->branchInfo = std::move(rhs.branchInfo);
+    this->dependencies = std::move(rhs.dependencies);
+    return *this;
+  }
 
   bool operator==(const PlanNodeDescription &rhs) const;
 
@@ -383,6 +427,9 @@ struct PlanNodeDescription {
 };
 
 struct PlanDescription {
+  PlanDescription() = default;
+  PlanDescription(PlanDescription &&rhs) = default;
+
   void __clear() {
     planNodeDescs.clear();
     nodeIndexMap.clear();
@@ -390,7 +437,17 @@ struct PlanDescription {
     optimize_time_in_us = 0;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(PlanDescription &&rhs) {
+    this->planNodeDescs = std::move(rhs.planNodeDescs);
+    this->nodeIndexMap = std::move(rhs.nodeIndexMap);
+    this->format = std::move(rhs.format);
+    this->optimize_time_in_us = rhs.optimize_time_in_us;
+    return *this;
+  }
 
   bool operator==(const PlanDescription &rhs) const {
     return planNodeDescs == rhs.planNodeDescs && nodeIndexMap == rhs.nodeIndexMap &&
@@ -440,7 +497,9 @@ struct ExecutionResponse {
     comment.reset();
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
   bool operator==(const ExecutionResponse &rhs) const {
     if (errorCode != rhs.errorCode) {

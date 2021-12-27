@@ -16,26 +16,26 @@ Feature: Slow Query Test
   Scenario: Show all queries and kill all slow queries
     When executing query:
       """
-      SHOW QUERIES
+      SHOW LOCAL QUERIES
       """
     Then the execution should be successful
     When executing query:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       """
     Then the execution should be successful
     # In case that rebuild indexes cost too much time.
     And wait 10 seconds
     When executing query:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       """
     Then the result should be, in order:
       | SessionID | ExecutionPlanID | User   | Host | StartTime | DurationInUSec | Status    | Query                                                           |
       | /\d+/     | /\d+/           | "root" | /.*/ | /.*/      | /\d+/          | "RUNNING" | "GO 100000 STEPS FROM \"Tim Duncan\" OVER like YIELD like._dst" |
     When executing query:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
       """
@@ -74,7 +74,7 @@ Feature: Slow Query Test
     Then an SemanticError should be raised at runtime: `$-.eid', not exist prop `eid'
     When executing query:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.`Query` AS eid, $-.DurationInUSec AS dur WHERE $-.DurationInUSec > 10000000
       | ORDER BY $-.dur
       | KILL QUERY (session=$-.sid, plan=$-.eid)
@@ -82,7 +82,7 @@ Feature: Slow Query Test
     Then an SemanticError should be raised at runtime: $-.eid, Session ID must be an integer but was STRING
     When executing query:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO"
       | ORDER BY $-.dur

@@ -69,7 +69,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   DCHECK_EQ(nodeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple tag index seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_index_id(nodeCtx->scanInfo.indexIds.back());
+  iqctx.index_id_ref() = nodeCtx->scanInfo.indexIds.back();
   auto scan = IndexScan::make(matchClauseCtx->qctx,
                               nullptr,
                               matchClauseCtx->space.id,
@@ -119,7 +119,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
         if (canBeEmbedded2IndexScan) {
           auto* srcFilter = ExpressionUtils::rewriteLabelAttr2TagProp(flattenFilter);
           storage::cpp2::IndexQueryContext ctx;
-          ctx.set_filter(Expression::encode(*srcFilter));
+          ctx.filter_ref() = Expression::encode(*srcFilter);
           scan->setIndexQueryContext({ctx});
           whereCtx.reset();
         }
@@ -137,7 +137,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
   DCHECK_EQ(edgeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple edge indices seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_index_id(edgeCtx->scanInfo.indexIds.back());
+  iqctx.index_id_ref() = edgeCtx->scanInfo.indexIds.back();
   std::vector<std::string> columns, columnsName;
   switch (edgeCtx->scanInfo.direction) {
     case MatchEdge::Direction::OUT_EDGE:

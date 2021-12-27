@@ -236,17 +236,23 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "CartesianProduct";
     case Kind::kSubgraph:
       return "Subgraph";
-    // Group and Zone
-    case Kind::kAddZone:
-      return "AddZone";
+    case Kind::kAddHosts:
+      return "AddHosts";
+    case Kind::kDropHosts:
+      return "DropHosts";
+    // Zone
+    case Kind::kMergeZone:
+      return "MergeZone";
+    case Kind::kRenameZone:
+      return "RenameZone";
     case Kind::kDropZone:
       return "DropZone";
+    case Kind::kSplitZone:
+      return "SplitZone";
     case Kind::kDescribeZone:
       return "DescribeZone";
-    case Kind::kAddHostIntoZone:
-      return "AddHostIntoZone";
-    case Kind::kDropHostFromZone:
-      return "DropHostFromZone";
+    case Kind::kAddHostsIntoZone:
+      return "AddHostsIntoZone";
     case Kind::kShowZones:
       return "ShowZones";
     case Kind::kAddListener:
@@ -310,7 +316,9 @@ void PlanNode::readVariable(Variable* varPtr) {
   qctx_->symTable()->readBy(varPtr->name, this);
 }
 
-void PlanNode::calcCost() { VLOG(1) << "unimplemented cost calculation."; }
+void PlanNode::calcCost() {
+  VLOG(1) << "unimplemented cost calculation.";
+}
 
 void PlanNode::setOutputVar(const std::string& var) {
   DCHECK_EQ(1, outputVars_.size());

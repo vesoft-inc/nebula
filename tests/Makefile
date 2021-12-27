@@ -2,7 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-.PHONY: fmt check check-and-diff init init-all clean test tck fail up down
+.PHONY: fmt check check-and-diff init init-all clean test tck fail up down test-all
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
@@ -29,11 +29,10 @@ test_j = $(test_without_skip) -n$(J)
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
 	pip3 install --user -r $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
-
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
-		&& pip3 install --user . -i $(PYPI_MIRROR)
+		&& pip3 install --user . -i $(PYPI_MIRROR) --upgrade
 	rm -rf $(CURR_DIR)/nebula-python
 
 gherkin-fmt: install-deps
@@ -93,6 +92,8 @@ slow-query: currdir
 
 tck: jobs slow-query
 	$(test_j) tck/steps/test_tck.py
+
+test-all: test tck
 
 fail: currdir
 	python3 -m pytest \

@@ -19,7 +19,7 @@ fi
     exit 1
 }
 
-version=7.5.0
+version=9.3.0
 url_base=https://oss-cdn.nebula-graph.com.cn/toolset
 this_dir=$(dirname $(readlink -f $0))
 

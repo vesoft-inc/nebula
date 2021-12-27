@@ -56,7 +56,7 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
       << "Not supported multiple edge properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_filter(Expression::encode(*edgeCtx->scanInfo.filter));
+  iqctx.filter_ref() = Expression::encode(*edgeCtx->scanInfo.filter);
   std::vector<std::string> columns, columnsName;
   switch (edgeCtx->scanInfo.direction) {
     case MatchEdge::Direction::OUT_EDGE:
@@ -126,26 +126,30 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
   }
 
   auto* matchClauseCtx = nodeCtx->matchClauseCtx;
-  Expression* filter = nullptr;
+  Expression* filterInWhere = nullptr;
+  Expression* filterInPattern = nullptr;
   if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
-    filter = MatchSolver::makeIndexFilter(
+    filterInWhere = MatchSolver::makeIndexFilter(
         node.labels.back(), node.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx);
   }
-  if (filter == nullptr) {
-    if (node.props != nullptr && !node.props->items().empty()) {
-      filter = MatchSolver::makeIndexFilter(node.labels.back(), node.props, matchClauseCtx->qctx);
-    }
-  }
-  // TODO(yee): Refactor these index choice logic
-  if (filter == nullptr && !node.labelProps.empty()) {
+  if (!node.labelProps.empty()) {
     auto props = node.labelProps.back();
     if (props != nullptr) {
-      filter = MatchSolver::makeIndexFilter(node.labels.back(), props, matchClauseCtx->qctx);
+      filterInPattern =
+          MatchSolver::makeIndexFilter(node.labels.back(), props, matchClauseCtx->qctx);
     }
   }
 
-  if (filter == nullptr) {
+  Expression* filter = nullptr;
+  if (!filterInPattern && !filterInWhere) {
     return false;
+  } else if (!filterInPattern) {
+    filter = filterInWhere;
+  } else if (!filterInWhere) {
+    filter = filterInPattern;
+  } else {
+    filter =
+        LogicalExpression::makeAnd(matchClauseCtx->qctx->objPool(), filterInPattern, filterInWhere);
   }
 
   nodeCtx->scanInfo.filter = filter;
@@ -161,7 +165,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
   DCHECK_EQ(nodeCtx->scanInfo.schemaIds.size(), 1) << "Not supported multiple tag properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_filter(Expression::encode(*nodeCtx->scanInfo.filter));
+  iqctx.filter_ref() = Expression::encode(*nodeCtx->scanInfo.filter);
   auto scan = IndexScan::make(matchClauseCtx->qctx,
                               nullptr,
                               matchClauseCtx->space.id,

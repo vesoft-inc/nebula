@@ -12,16 +12,16 @@
 #### Special notes for your reviewer, ex. impact of this fix, etc:
 
 
-#### Additional context:
+#### Additional context/ Design document:
 
 
-#### Checklist：
-- [ ] Documentation affected （Please add the label if documentation needs to be modified.)
-- [ ] Incompatible （If it is incompatible, please describe it and add corresponding label.）
-- [ ] Need to cherry-pick （If need to cherry-pick to some branches, please label the destination version(s).)
+#### Checklist:
+- [ ] Documentation affected (Please add the label if documentation needs to be modified.)
+- [ ] Incompatibility (If it breaks the compatibility, please describe it and add the corresponding label.）
+- [ ] If it's needed to cherry-pick (If cherry-pick to some branches is required, please label the destination version(s).)
 - [ ] Performance impacted: Consumes more CPU/Memory
 
+#### Release notes:
 
-#### Release notes：
-Please confirm whether to reflect in release notes and how to describe:
+Please confirm whether to be reflected in release notes and how to describe:
 >                                                                 `

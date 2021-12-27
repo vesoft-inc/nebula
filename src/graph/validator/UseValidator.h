@@ -20,7 +20,9 @@ class UseValidator final : public Validator {
   /**
    * Will not check the space for use space sentence.
    */
-  bool spaceChosen() override { return true; }
+  bool spaceChosen() override {
+    return true;
+  }
 
   Status validateImpl() override;
 

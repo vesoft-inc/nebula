@@ -32,10 +32,10 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_parts(std::move(parts));
+  resp_.parts_ref() = std::move(parts);
   auto terms = getTerm(spaceId);
   if (!terms.empty()) {
-    resp_.set_terms(std::move(terms));
+    resp_.terms_ref() = std::move(terms);
   }
   onFinished();
 }

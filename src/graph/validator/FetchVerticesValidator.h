@@ -25,12 +25,13 @@ class FetchVerticesValidator final : public Validator {
 
   Status validateYield(YieldClause* yield);
 
-  AstContext* getAstContext() override { return fetchCtx_.get(); }
-
-  void extractVertexProp(ExpressionProps& exprProps);
+  AstContext* getAstContext() override {
+    return fetchCtx_.get();
+  }
 
  private:
   std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
+  std::vector<TagID> tagIds_;
 
   std::unique_ptr<FetchVerticesContext> fetchCtx_;
 };

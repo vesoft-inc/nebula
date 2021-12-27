@@ -51,13 +51,13 @@ Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
                                       const folly::StringPiece &val) {
   auto oldProps = meta::v1::MetaServiceUtilsV1::parseSpace(val);
   cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name(oldProps.get_space_name());
-  spaceDesc.set_partition_num(oldProps.get_partition_num());
-  spaceDesc.set_replica_factor(oldProps.get_replica_factor());
-  spaceDesc.set_charset_name(oldProps.get_charset_name());
-  spaceDesc.set_collate_name(oldProps.get_collate_name());
-  (*spaceDesc.vid_type_ref()).set_type_length(8);
-  (*spaceDesc.vid_type_ref()).set_type(nebula::cpp2::PropertyType::INT64);
+  spaceDesc.space_name_ref() = oldProps.get_space_name();
+  spaceDesc.partition_num_ref() = oldProps.get_partition_num();
+  spaceDesc.replica_factor_ref() = oldProps.get_replica_factor();
+  spaceDesc.charset_name_ref() = oldProps.get_charset_name();
+  spaceDesc.collate_name_ref() = oldProps.get_collate_name();
+  (*spaceDesc.vid_type_ref()).type_length_ref() = 8;
+  (*spaceDesc.vid_type_ref()).type_ref() = nebula::cpp2::PropertyType::INT64;
   NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaKeyUtils::spaceVal(spaceDesc)));
   return Status::OK();
 }
@@ -82,12 +82,12 @@ Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
   cpp2::SchemaProp newSchemaProps;
   auto &schemaProp = oldSchema.get_schema_prop();
   if (schemaProp.ttl_duration_ref().has_value()) {
-    newSchemaProps.set_ttl_duration(*schemaProp.get_ttl_duration());
+    newSchemaProps.ttl_duration_ref() = *schemaProp.get_ttl_duration();
   }
   if (schemaProp.ttl_col_ref().has_value()) {
-    newSchemaProps.set_ttl_col(*schemaProp.get_ttl_col());
+    newSchemaProps.ttl_col_ref() = *schemaProp.get_ttl_col();
   }
-  newSchema.set_schema_prop(std::move(newSchemaProps));
+  newSchema.schema_prop_ref() = std::move(newSchemaProps);
   NG_LOG_AND_RETURN_IF_ERROR(
       convertToNewColumns((*oldSchema.columns_ref()), (*newSchema.columns_ref())));
 
@@ -102,15 +102,15 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
   auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(val);
   cpp2::IndexItem newItem;
-  newItem.set_index_id(oldItem.get_index_id());
-  newItem.set_index_name(oldItem.get_index_name());
+  newItem.index_id_ref() = oldItem.get_index_id();
+  newItem.index_name_ref() = oldItem.get_index_name();
   nebula::cpp2::SchemaID schemaId;
   if (oldItem.get_schema_id().getType() == meta::v1::cpp2::SchemaID::Type::tag_id) {
-    schemaId.set_tag_id(oldItem.get_schema_id().get_tag_id());
+    schemaId.tag_id_ref() = oldItem.get_schema_id().get_tag_id();
   } else {
-    schemaId.set_edge_type(oldItem.get_schema_id().get_edge_type());
+    schemaId.edge_type_ref() = oldItem.get_schema_id().get_edge_type();
   }
-  newItem.set_schema_id(schemaId);
+  newItem.schema_id_ref() = schemaId;
   NG_LOG_AND_RETURN_IF_ERROR(
       convertToNewIndexColumns((*oldItem.fields_ref()), (*newItem.fields_ref())));
   NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaKeyUtils::indexVal(newItem)));
@@ -213,8 +213,9 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::Co
   auto pool = &objPool;
   for (auto &colDef : oldCols) {
     cpp2::ColumnDef columnDef;
-    columnDef.set_name(colDef.get_name());
-    columnDef.type.set_type(static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type()));
+    columnDef.name_ref() = colDef.get_name();
+    columnDef.type.type_ref() =
+        static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type());
     if (colDef.default_value_ref().has_value()) {
       std::string encodeStr;
       switch (colDef.get_type().get_type()) {
@@ -244,10 +245,10 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::Co
               apache::thrift::util::enumNameSafe(colDef.get_type().get_type()).c_str());
       }
 
-      columnDef.set_default_value(std::move(encodeStr));
+      columnDef.default_value_ref() = std::move(encodeStr);
     }
     if (FLAGS_null_type) {
-      columnDef.set_nullable(true);
+      columnDef.nullable_ref() = true;
     }
     newCols.emplace_back(std::move(columnDef));
   }
@@ -258,19 +259,19 @@ Status MetaDataUpgrade::convertToNewIndexColumns(
     const std::vector<meta::v1::cpp2::ColumnDef> &oldCols, std::vector<cpp2::ColumnDef> &newCols) {
   for (auto &colDef : oldCols) {
     cpp2::ColumnDef columnDef;
-    columnDef.set_name(colDef.get_name());
+    columnDef.name_ref() = colDef.get_name();
     if (colDef.get_type().get_type() == meta::v1::cpp2::SupportedType::STRING) {
       cpp2::ColumnTypeDef type;
-      type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
-      type.set_type_length(FLAGS_string_index_limit);
-      columnDef.set_type(std::move(type));
+      type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+      type.type_length_ref() = FLAGS_string_index_limit;
+      columnDef.type_ref() = std::move(type);
     } else {
-      columnDef.type.set_type(
-          static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type()));
+      columnDef.type.type_ref() =
+          static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type());
     }
     DCHECK(!colDef.default_value_ref().has_value());
     if (FLAGS_null_type) {
-      columnDef.set_nullable(true);
+      columnDef.nullable_ref() = true;
     }
     newCols.emplace_back(std::move(columnDef));
   }

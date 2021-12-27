@@ -23,12 +23,20 @@ QueryContext::QueryContext(RequestContextPtr rctx,
   init();
 }
 
-QueryContext::QueryContext() { init(); }
+QueryContext::QueryContext() {
+  init();
+}
 
 void QueryContext::init() {
   objPool_ = std::make_unique<ObjectPool>();
   ep_ = std::make_unique<ExecutionPlan>();
   ectx_ = std::make_unique<ExecutionContext>();
+  // copy parameterMap into ExecutionContext
+  if (rctx_) {
+    for (auto item : rctx_->parameterMap()) {
+      ectx_->setValue(std::move(item.first), std::move(item.second));
+    }
+  }
   idGen_ = std::make_unique<IdGenerator>(0);
   symTable_ = std::make_unique<SymbolTable>(objPool_.get());
   vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));

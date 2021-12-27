@@ -15,7 +15,9 @@ namespace storage {
 
 class NebulaOperator : public rocksdb::MergeOperator {
  public:
-  const char* Name() const override { return "NebulaMergeOperator"; }
+  const char* Name() const override {
+    return "NebulaMergeOperator";
+  }
 
  private:
   bool FullMergeV2(const MergeOperationInput& merge_in,
