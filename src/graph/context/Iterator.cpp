@@ -441,7 +441,6 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
 
 List GetNeighborsIter::getVertices() {
   List vertices;
-  vertices.values.reserve(size());
   valid_ = true;
   colIdx_ = -2;
   for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
@@ -513,7 +512,6 @@ Value GetNeighborsIter::getEdge() const {
 
 List GetNeighborsIter::getEdges() {
   List edges;
-  edges.values.reserve(size());
   for (; valid(); next()) {
     auto edge = getEdge();
     if (edge.isEdge()) {
@@ -862,7 +860,6 @@ Value PropIter::getEdge() const {
 List PropIter::getVertices() {
   DCHECK(iter_ == rows_->begin());
   List vertices;
-  vertices.values.reserve(size());
   for (; valid(); next()) {
     vertices.values.emplace_back(getVertex());
   }
