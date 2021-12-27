@@ -3138,6 +3138,12 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_EQ(result.value()->toString(), "SHOW SESSIONS");
   }
   {
+    std::string query = "SHOW LOCAL SESSIONS";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "SHOW LOCAL SESSIONS");
+  }
+  {
     std::string query = "SHOW SESSION 123";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -3185,10 +3191,10 @@ TEST_F(ParserTest, ShowAndKillQueryTest) {
     ASSERT_EQ(result.value()->toString(), "SHOW QUERIES");
   }
   {
-    std::string query = "SHOW ALL QUERIES";
+    std::string query = "SHOW LOCAL QUERIES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
-    ASSERT_EQ(result.value()->toString(), "SHOW ALL QUERIES");
+    ASSERT_EQ(result.value()->toString(), "SHOW LOCAL QUERIES");
   }
   {
     std::string query = "KILL QUERY (plan=123)";

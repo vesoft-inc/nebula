@@ -30,7 +30,6 @@ folly::Future<Status> SubgraphExecutor::execute() {
   VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
   DCHECK(iter && iter->isGetNeighborsIter());
-  ds.rows.reserve(iter->size());
   if (currentStep == 1) {
     for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(nebula::kVid);
