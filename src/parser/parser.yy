@@ -2916,6 +2916,9 @@ insert_vertex_sentence
     : KW_INSERT KW_VERTEX opt_if_not_exists opt_ignore_existed_index vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVerticesSentence($5, $7, $3, $4);
     }
+    | KW_INSERT KW_VERTEX opt_if_not_exists opt_ignore_existed_index KW_VALUES vertex_row_list {
+        $$ = new InsertVerticesSentence(new VertexTagList(), $6, $3, $4);
+    }
     ;
 
 vertex_tag_list
