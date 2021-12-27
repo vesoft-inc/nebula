@@ -60,24 +60,38 @@ class LogicalExpression final : public Expression {
 
   bool operator==(const Expression& rhs) const override;
 
-  auto& operands() { return operands_; }
+  auto& operands() {
+    return operands_;
+  }
 
-  const auto& operands() const { return operands_; }
+  const auto& operands() const {
+    return operands_;
+  }
 
-  auto* operand(size_t index) { return operands_[index]; }
+  auto* operand(size_t index) {
+    return operands_[index];
+  }
 
-  const auto* operand(size_t index) const { return operands_[index]; }
+  const auto* operand(size_t index) const {
+    return operands_[index];
+  }
 
-  void addOperand(Expression* expr) { operands_.emplace_back(expr); }
+  void addOperand(Expression* expr) {
+    operands_.emplace_back(expr);
+  }
 
   void setOperand(size_t i, Expression* operand) {
     DCHECK_LT(i, operands_.size());
     operands_[i] = operand;
   }
 
-  void setOperands(std::vector<Expression*> operands) { operands_ = operands; }
+  void setOperands(std::vector<Expression*> operands) {
+    operands_ = operands;
+  }
 
-  bool isLogicalExpr() const override { return true; }
+  bool isLogicalExpr() const override {
+    return true;
+  }
 
   void setDepth() override {
     for (auto& item : operands_) {

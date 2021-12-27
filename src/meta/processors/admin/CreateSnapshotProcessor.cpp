@@ -30,7 +30,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     return;
   }
 
-  auto snapshot = folly::format("SNAPSHOT_{}", MetaKeyUtils::genTimestampStr()).str();
+  auto snapshot = folly::sformat("SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
   folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);

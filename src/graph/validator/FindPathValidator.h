@@ -19,7 +19,9 @@ class FindPathValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  AstContext* getAstContext() override { return pathCtx_.get(); }
+  AstContext* getAstContext() override {
+    return pathCtx_.get();
+  }
 
   Status validateWhere(WhereClause* where);
 

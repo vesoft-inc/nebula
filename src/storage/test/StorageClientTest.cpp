@@ -346,7 +346,9 @@ class TestStorageClient : public StorageClient {
   explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
       : StorageClient(ioThreadPool, nullptr) {}
 
-  StatusOr<int32_t> partsNum(GraphSpaceID) const override { return parts_.size(); }
+  StatusOr<int32_t> partsNum(GraphSpaceID) const override {
+    return parts_.size();
+  }
 
   StatusOr<PartMeta> getPartMeta(GraphSpaceID, PartitionID partId) const override {
     auto it = parts_.find(partId);

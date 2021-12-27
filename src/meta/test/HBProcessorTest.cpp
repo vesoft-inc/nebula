@@ -32,10 +32,9 @@ TEST(HBProcessorTest, HBTest) {
   {
     for (auto i = 0; i < 5; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
-      req.set_host(HostAddr(std::to_string(i), i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.host_ref() = HostAddr(std::to_string(i), i);
+      req.cluster_id_ref() = kClusterId;
+      req.role_ref() = cpp2::HostRole::STORAGE;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -53,9 +52,9 @@ TEST(HBProcessorTest, HBTest) {
 
     LOG(INFO) << "Test for invalid host!";
     cpp2::HBReq req;
-    req.set_host(HostAddr(std::to_string(11), 11));
-    req.set_cluster_id(1);
-    req.set_role(cpp2::HostRole::STORAGE);
+    req.host_ref() = HostAddr(std::to_string(11), 11);
+    req.cluster_id_ref() = 1;
+    req.role_ref() = cpp2::HostRole::STORAGE;
     auto* processor = HBProcessor::instance(kv.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);

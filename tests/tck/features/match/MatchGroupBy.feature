@@ -137,7 +137,7 @@ Feature: Match GroupBy
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
         WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
                         sum(floor(n.age)) AS sum,
                         max(m.age) AS max,
@@ -145,7 +145,7 @@ Feature: Match GroupBy
                         avg(distinct n.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD count(*) AS count;
+        RETURN count(*) AS count;
       """
     Then the result should be, in order, with relax comparison:
       | count |
@@ -156,7 +156,7 @@ Feature: Match GroupBy
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
         WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
                         sum(floor(n.age)) AS sum,
                         max(m.age) AS max,
@@ -164,7 +164,7 @@ Feature: Match GroupBy
                         avg(distinct n.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD DISTINCT $-.min AS min, (INT)count(*) AS count;
+        RETURN DISTINCT min, (INT)count(*) AS count;
       """
     Then the result should be, in any order, with relax comparison:
       | min | count |

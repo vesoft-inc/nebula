@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
@@ -27,6 +28,7 @@
 #include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/stats/MetaStats.h"
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
@@ -59,6 +61,7 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 
 static void signalHandler(int sig);
+static void waitForStop();
 static Status setupSignalHandler();
 extern Status setupLogging();
 #if defined(__x86_64__)
@@ -82,11 +85,14 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
       apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-          FLAGS_num_worker_threads, true /*stats*/));
+          FLAGS_num_worker_threads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   nebula::kvstore::KVOptions options;
-  options.dataPaths_ = {FLAGS_data_path};
+
+  auto absolute = boost::filesystem::absolute(FLAGS_data_path);
+  options.dataPaths_ = {absolute.string()};
+
   options.partMan_ = std::move(partMan);
   auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
       std::move(options), ioPool, localhost, threadManager);
@@ -218,6 +224,9 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  // Init stats
+  nebula::initMetaStats();
+
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
@@ -345,6 +354,7 @@ int main(int argc, char* argv[]) {
       gServer->setSSLConfig(nebula::sslContextConfig());
     }
     gServer->serve();  // Will wait until the server shuts down
+    waitForStop();
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception thrown: " << e.what();
     return EXIT_FAILURE;
@@ -368,18 +378,20 @@ void signalHandler(int sig) {
       if (gServer) {
         gServer->stop();
       }
-      {
-        auto gJobMgr = nebula::meta::JobManager::getInstance();
-        if (gJobMgr) {
-          gJobMgr->shutDown();
-        }
-      }
-      if (gKVStore) {
-        gKVStore->stop();
-        gKVStore.reset();
-      }
       break;
     default:
       FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+  }
+}
+
+void waitForStop() {
+  auto jobMan = nebula::meta::JobManager::getInstance();
+  if (jobMan) {
+    jobMan->shutDown();
+  }
+
+  if (gKVStore) {
+    gKVStore->stop();
+    gKVStore.reset();
   }
 }

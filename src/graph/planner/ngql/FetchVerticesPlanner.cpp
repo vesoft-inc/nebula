@@ -19,9 +19,9 @@ std::unique_ptr<FetchVerticesPlanner::VertexProps> FetchVerticesPlanner::buildVe
   auto vertexProps = std::make_unique<VertexProps>(propsMap.size());
   auto fun = [](auto& tag) {
     VertexProp vp;
-    vp.set_tag(tag.first);
+    vp.tag_ref() = tag.first;
     std::vector<std::string> props(tag.second.begin(), tag.second.end());
-    vp.set_props(std::move(props));
+    vp.props_ref() = std::move(props);
     return vp;
   };
   std::transform(propsMap.begin(), propsMap.end(), vertexProps->begin(), fun);

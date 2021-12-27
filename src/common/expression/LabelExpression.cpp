@@ -14,7 +14,9 @@ const Value& LabelExpression::eval(ExpressionContext&) {
   return result_;
 }
 
-std::string LabelExpression::toString() const { return name_; }
+std::string LabelExpression::toString() const {
+  return name_;
+}
 
 bool LabelExpression::operator==(const Expression& rhs) const {
   if (kind_ != rhs.kind()) {
@@ -37,6 +39,8 @@ void LabelExpression::resetFrom(Decoder& decoder) {
   name_ = decoder.readStr();
 }
 
-void LabelExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void LabelExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

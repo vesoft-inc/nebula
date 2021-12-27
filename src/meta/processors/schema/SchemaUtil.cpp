@@ -122,7 +122,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
             const auto trimStr = value.getStr().substr(0, typeLen);
             value.setStr(trimStr);
             const auto& fixedValue = *ConstantExpression::make(pool, value);
-            column.set_default_value(Expression::encode(fixedValue));
+            column.default_value_ref() = Expression::encode(fixedValue);
           }
           break;
         }

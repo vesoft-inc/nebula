@@ -29,8 +29,12 @@ enum class HttpStatusCode : int32_t {
 
 class WebServiceUtils final {
  public:
-  static int32_t to(HttpStatusCode code) { return static_cast<int32_t>(code); }
-  static std::string toString(HttpStatusCode code) { return kStatusStringMap_[code]; }
+  static int32_t to(HttpStatusCode code) {
+    return static_cast<int32_t>(code);
+  }
+  static std::string toString(HttpStatusCode code) {
+    return kStatusStringMap_[code];
+  }
 
  private:
   static std::unordered_map<HttpStatusCode, std::string> kStatusStringMap_;

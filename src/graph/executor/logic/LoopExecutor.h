@@ -17,9 +17,13 @@ class LoopExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  void setLoopBody(Executor *body) { body_ = DCHECK_NOTNULL(body); }
+  void setLoopBody(Executor *body) {
+    body_ = DCHECK_NOTNULL(body);
+  }
 
-  Executor *loopBody() const { return body_; }
+  Executor *loopBody() const {
+    return body_;
+  }
 
  private:
   // Hold the last executor node of loop body executors chain

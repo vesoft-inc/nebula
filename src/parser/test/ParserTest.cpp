@@ -14,8 +14,12 @@ namespace nebula {
 using graph::QueryContext;
 class ParserTest : public ::testing::Test {
  public:
-  void SetUp() override { qctx_ = std::make_unique<graph::QueryContext>(); }
-  void TearDown() override { qctx_.reset(); }
+  void SetUp() override {
+    qctx_ = std::make_unique<graph::QueryContext>();
+  }
+  void TearDown() override {
+    qctx_.reset();
+  }
 
  protected:
   StatusOr<std::unique_ptr<Sentence>> parse(const std::string& query) {
@@ -833,6 +837,20 @@ TEST_F(ParserTest, InsertVertex) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query =
+        "INSERT VERTEX IGNORE_EXISTED_INDEX person(name, age) "
+        "VALUES \"Tom\":(\"Tom\", 30)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT VERTEX IF NOT EXISTS IGNORE_EXISTED_INDEX person(name, age) "
+        "VALUES \"Tom\":(\"Tom\", 30)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
   // Test insert empty value
   {
     std::string query =
@@ -1031,6 +1049,20 @@ TEST_F(ParserTest, InsertEdge) {
     std::string query =
         "INSERT EDGE IF NOT EXISTS transfer() "
         "VALUES \"12345\"->\"54321@1537408527\":()";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT EDGE IGNORE_EXISTED_INDEX transfer(amount, time_) "
+        "VALUES \"12345\"->\"54321@1537408527\":(3.75, 1537408527)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT EDGE IF NOT EXISTS IGNORE_EXISTED_INDEX transfer(amount, time_) "
+        "VALUES \"12345\"->\"54321@1537408527\":(3.75, 1537408527)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -3106,6 +3138,12 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_EQ(result.value()->toString(), "SHOW SESSIONS");
   }
   {
+    std::string query = "SHOW LOCAL SESSIONS";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "SHOW LOCAL SESSIONS");
+  }
+  {
     std::string query = "SHOW SESSION 123";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -3153,10 +3191,10 @@ TEST_F(ParserTest, ShowAndKillQueryTest) {
     ASSERT_EQ(result.value()->toString(), "SHOW QUERIES");
   }
   {
-    std::string query = "SHOW ALL QUERIES";
+    std::string query = "SHOW LOCAL QUERIES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
-    ASSERT_EQ(result.value()->toString(), "SHOW ALL QUERIES");
+    ASSERT_EQ(result.value()->toString(), "SHOW LOCAL QUERIES");
   }
   {
     std::string query = "KILL QUERY (plan=123)";

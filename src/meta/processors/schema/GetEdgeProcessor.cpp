@@ -61,7 +61,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
 
   VLOG(3) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version " << ver;
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaKeyUtils::parseSchema(schemaValue));
+  resp_.schema_ref() = MetaKeyUtils::parseSchema(schemaValue);
   onFinished();
 }
 
