@@ -190,7 +190,9 @@ const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
   return Value::kNullValue;
 }
 
-void LabelTagPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void LabelTagPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 std::string LabelTagPropertyExpression::toString() const {
   std::string labelStr = label_->toString();

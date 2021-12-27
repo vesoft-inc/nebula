@@ -147,9 +147,13 @@ class LabelTagPropertyExpression final : public PropertyExpression {
     return LabelTagPropertyExpression::make(pool_, label_, sym(), prop());
   }
 
-  const Expression* label() const { return label_; }
+  const Expression* label() const {
+    return label_;
+  }
 
-  Expression* label() { return label_; }
+  Expression* label() {
+    return label_;
+  }
 
  private:
   LabelTagPropertyExpression(ObjectPool* pool,
