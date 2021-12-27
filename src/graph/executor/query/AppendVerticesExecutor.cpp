@@ -98,7 +98,7 @@ Status AppendVerticesExecutor::handleResp(
     }
     Row row;
     if (av->trackPrevPath()) {
-      row = static_cast<SequentialIter *>(iter.get())->moveRow();
+      row = *iter->row();
     }
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));

@@ -62,7 +62,9 @@ Status TraverseExecutor::buildRequestDataSet() {
                    << ", space vid type: " << SchemaUtil::typeToString(vidType);
       continue;
     }
-    buildPath(prev, vid, iter->moveRow());
+    // Need copy here, Argument executor may depends on this variable.
+    auto prePath = *iter->row();
+    buildPath(prev, vid, std::move(prePath));
     if (!uniqueSet.emplace(vid).second) {
       continue;
     }

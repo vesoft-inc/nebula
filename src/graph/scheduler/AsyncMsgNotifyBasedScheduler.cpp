@@ -46,12 +46,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
     if (exe->node()->kind() == PlanNode::Kind::kArgument) {
       auto nodeInputVar = exe->node()->inputVar();
       const auto& writtenBy = qctx_->symTable()->getVar(nodeInputVar)->writtenBy;
-      VLOG(1) << "var: " << nodeInputVar
-              << "refCount: " << qctx_->symTable()->getVar(nodeInputVar)->userCount.load()
-              << "writtenBy: " << writtenBy.size() << " if Exist this node: "
-              << (writtenBy.find(const_cast<PlanNode*>(exe->node())) != writtenBy.end());
       for (auto& node : writtenBy) {
-        VLOG(1) << "register notifier to: " << node->id();
         folly::Promise<Status> p;
         futures.emplace_back(p.getFuture());
         auto& promises = promiseMap[node->id()];
