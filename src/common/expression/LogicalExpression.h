@@ -93,6 +93,16 @@ class LogicalExpression final : public Expression {
     return true;
   }
 
+  void reverseLogicalKind() {
+    if (kind_ == Kind::kLogicalAnd) {
+      kind_ = Kind::kLogicalOr;
+    } else if (kind_ == Kind::kLogicalOr) {
+      kind_ = Kind::kLogicalAnd;
+    } else {
+      LOG(FATAL) << "Should not reverse logical expression except and/or kind.";
+    }
+  }
+
  private:
   explicit LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
 
