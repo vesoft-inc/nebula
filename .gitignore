@@ -66,3 +66,4 @@ venv/
 
 #ctags
 .tags
+/.vs
