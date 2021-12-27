@@ -8,25 +8,17 @@
 namespace nebula {
 namespace graph {
 
-void ExtractFilterExprVisitor::visit(ConstantExpression *) {
-  canBePushed_ = true;
-}
+void ExtractFilterExprVisitor::visit(ConstantExpression *) { canBePushed_ = true; }
 
-void ExtractFilterExprVisitor::visit(LabelExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(LabelExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(UUIDExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(UUIDExpression *) { canBePushed_ = false; }
 
 void ExtractFilterExprVisitor::visit(VariableExpression *expr) {
   canBePushed_ = static_cast<VariableExpression *>(expr)->isInner();
 }
 
-void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) { canBePushed_ = false; }
 
 void ExtractFilterExprVisitor::visit(TagPropertyExpression *) {
   switch (pushType_) {
@@ -54,17 +46,11 @@ void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(InputPropertyExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(InputPropertyExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(DestPropertyExpression *) { canBePushed_ = false; }
 
 void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
   switch (pushType_) {
@@ -126,17 +112,11 @@ void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(VertexExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(VertexExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(EdgeExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(EdgeExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(ColumnExpression *) {
-  canBePushed_ = false;
-}
+void ExtractFilterExprVisitor::visit(ColumnExpression *) { canBePushed_ = false; }
 
 void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
   if (expr->kind() != Expression::Kind::kLogicalAnd) {
@@ -176,8 +156,8 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) {
-  canBePushed_ = false;
+void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) { 
+  canBePushed_ = false; 
 }
 
 }  // namespace graph
