@@ -269,6 +269,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "COMMENT"                   { return TokenType::KW_COMMENT; }
 "S2_MAX_LEVEL"              { return TokenType::KW_S2_MAX_LEVEL; }
 "S2_MAX_CELLS"              { return TokenType::KW_S2_MAX_CELLS; }
+"LOCAL"                     { return TokenType::KW_LOCAL; }
 "SESSIONS"                  { return TokenType::KW_SESSIONS; }
 "SESSION"                   { return TokenType::KW_SESSION; }
 "SAMPLE"                    { return TokenType::KW_SAMPLE; }
@@ -512,7 +513,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                  * including the non-ascii ones, which are negative
                                  * in terms of type of `signed char'. At the same time, because
                                  * Bison translates all negative tokens to EOF(i.e. YY_NULL),
-                                 * so we have to cast illegal characters to type of `unsinged char'
+                                 * so we have to cast illegal characters to type of `unsigned char'
                                  * This will make Bison receive an unknown token, which leads to
                                  * a syntax error.
                                  *

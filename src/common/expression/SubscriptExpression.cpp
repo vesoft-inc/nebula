@@ -105,9 +105,11 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
 std::string SubscriptExpression::toString() const {
   std::string buf;
   buf.reserve(256);
-  buf += left()->toString();
+  auto lhs = left();
+  auto rhs = right();
+  buf += lhs ? lhs->toString() : "";
   buf += '[';
-  buf += right()->toString();
+  buf += rhs ? rhs->toString() : "";
   buf += ']';
   return buf;
 }
@@ -188,7 +190,7 @@ const Value& SubscriptRangeExpression::eval(ExpressionContext& ctx) {
 std::string SubscriptRangeExpression::toString() const {
   std::string buf;
   buf.reserve(32);
-  buf += list_->toString();
+  buf += list_ ? list_->toString() : "";
   buf += '[';
   if (lo_ != nullptr) {
     buf += lo_->toString();
