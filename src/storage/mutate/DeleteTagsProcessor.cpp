@@ -104,7 +104,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         continue;
       }
       if (!env_->verticesML_->try_lock(tup)) {
-        LOG(WARNING) << folly::format("The vertex locked : vId {}, tagId {}", vId, tagId);
+        LOG(WARNING) << folly::sformat("The vertex locked : vId {}, tagId {}", vId, tagId);
         return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
       }
 

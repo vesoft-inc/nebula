@@ -127,7 +127,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // The entire process follows mostly snapshot logic.
   // step 1 : write a flag key to handle backup failed
   std::vector<kvstore::KV> data;
-  auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
+  auto backupName = folly::sformat("BACKUP_{}", MetaKeyUtils::genTimestampStr());
   data.emplace_back(
       MetaKeyUtils::snapshotKey(backupName),
       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, NetworkUtils::toHostsStr(hosts)));

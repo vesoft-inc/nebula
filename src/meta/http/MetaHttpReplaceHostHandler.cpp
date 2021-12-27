@@ -51,7 +51,7 @@ void MetaHttpReplaceHostHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
 
   ipv4To_ = headers->getQueryParam("to");
 
-  LOG(INFO) << folly::format("change host info from {} to {}", ipv4From_, ipv4To_);
+  LOG(INFO) << folly::sformat("change host info from {} to {}", ipv4From_, ipv4To_);
 }
 
 void MetaHttpReplaceHostHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {

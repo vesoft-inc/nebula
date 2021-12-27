@@ -102,19 +102,25 @@ class TestSession(NebulaTestSuite):
         time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_succeeded(resp)
-        expect_col_names = ['VariableName', 'Value']
-        expect_result = [['SessionID'],
-                         ['UserName'],
-                         ['SpaceName'],
-                         ['CreateTime'],
-                         ['UpdateTime'],
-                         ['GraphAddr'],
-                         ['Timezone'],
-                         ['ClientIp']]
+        expect_col_names = ['SessionId',
+                            'UserName',
+                            'SpaceName',
+                            'CreateTime',
+                            'UpdateTime',
+                            'GraphAddr',
+                            'Timezone',
+                            'ClientIp']
+
         self.check_column_names(resp, expect_col_names)
-        self.check_result(resp, expect_result, ignore_col=[1])
-        assert resp.rows()[1].values[1].get_sVal() == b'session_user'
-        assert resp.rows()[2].values[1].get_sVal() == b'nba'
+
+        assert len(resp.rows()) == 1
+
+        row = resp.rows()[0]
+        assert row.values[0].get_iVal() == session_id
+        assert row.values[1].get_sVal() == b'session_user'
+        assert row.values[2].get_sVal() == b'nba'
+        assert row.values[3].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
+        assert row.values[4].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
 
         # 5: test expired session
         resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 5')
@@ -190,9 +196,9 @@ class TestSession(NebulaTestSuite):
     def test_out_of_max_connections(self):
         resp = self.execute('SHOW SESSIONS')
         self.check_resp_succeeded(resp)
-        current_sessions = len(resp.rows())
+        sessions = len(resp.rows())
 
-        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(current_sessions))
+        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(sessions))
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
