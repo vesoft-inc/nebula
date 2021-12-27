@@ -27,8 +27,6 @@
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/function/FunctionManager.h"
-#include "common/id/Snowflake.h"
-
 #include "common/expression/ReduceExpression.h"
 #include "graph/util/ParserUtil.h"
 #include "graph/util/ExpressionUtils.h"
@@ -1099,7 +1097,6 @@ function_call_expression
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
         // snowflake id init worker in current machine
-        Snowflake::initWorkerId(qctx->getMetaClient());
         $$ = UUIDExpression::make(qctx->objPool());
     }
     ;

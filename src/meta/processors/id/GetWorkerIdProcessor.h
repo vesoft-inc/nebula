@@ -25,6 +25,7 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
     static bool once = [this]() {
       std::vector<kvstore::KV> data = {{idKey, "0"}};
       doPut(data);
+      return true;
     }();
     UNUSED(once);
   }

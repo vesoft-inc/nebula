@@ -12,6 +12,7 @@
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
+#include "common/id/Snowflake.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
@@ -165,6 +166,8 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // nebula::Snowflake::initWorkerId(interface->metaClient_.get());
 
   gServer->setPort(localhost.port);
   gServer->setInterface(std::move(interface));
