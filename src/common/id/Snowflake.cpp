@@ -26,7 +26,7 @@ int64_t Snowflake::getId() {
     sequence_.store(0);
   }
   lastTimestamp_ = timestamp;
-  return (timestamp - startStmp_) << timestampLeft | workerId_ << machineLeft | sequence_;
+  return (timestamp - startStmp_) << timestampLeft | workerId_ << machineLeft | sequence_.load();
 }
 
 int64_t Snowflake::getTimestamp() {

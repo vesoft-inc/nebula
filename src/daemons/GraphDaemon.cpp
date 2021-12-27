@@ -160,7 +160,6 @@ int main(int argc, char *argv[]) {
   gServer->setIOThreadPool(ioThreadPool);
 
   auto interface = std::make_shared<GraphService>();
-  LOG(INFO) << "WJ: Graph Service listening on " << localhost.toString();
   status = interface->init(ioThreadPool, localhost);
   if (!status.ok()) {
     LOG(ERROR) << status;

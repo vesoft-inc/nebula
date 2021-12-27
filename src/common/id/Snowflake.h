@@ -15,14 +15,11 @@ class Snowflake {
   Snowflake() = default;
 
   static void initWorkerId(meta::MetaClient* client) {
-    LOG(INFO) << "Initializing Snowflake workerId get Ip";
     const std::string& ip = client->getLocalIp();
-    LOG(INFO) << "Initializing Snowflake workerId get Ip done, ip: " << ip;
     auto result = client->getWorkerId(ip).get();
     if (!result.ok()) {
       LOG(FATAL) << "Failed to get workerId from meta server";
     }
-    LOG(INFO) << "Initializing Snowflake workerId done";
     workerId_ = result.value();
   }
 

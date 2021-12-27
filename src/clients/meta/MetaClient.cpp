@@ -694,7 +694,7 @@ void MetaClient::getResponse(Request req,
                   return;
                 } else {
                   LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
-                  LOG(ERROR) << "Status: " << t.exception().what().c_str();
+                  LOG(ERROR) << "RpcResponse exception: " << t.exception().what().c_str();
                   pro.setValue(
                       Status::Error("RPC failure in MetaClient: %s", t.exception().what().c_str()));
                 }

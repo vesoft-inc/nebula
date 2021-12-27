@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
 /*           Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz
 ============================================================================
-/home/jakevin.wen/code/nebula/src/common/id/test/SnowflakeBenchmark.cpprelative  time/iter  iters/s
+nebula/src/common/id/test/SnowflakeBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
 SnowflakeTest(1UL)                                         243.21ns    4.11M
 ----------------------------------------------------------------------------

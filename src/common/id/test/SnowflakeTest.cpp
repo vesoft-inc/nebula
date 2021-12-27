@@ -6,8 +6,6 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include <cstdint>
-
 #include "common/id/Snowflake.h"
 
 namespace nebula {
