@@ -144,8 +144,8 @@ RawStringFormats:
     CanonicalDelimiter: ''
     BasedOnStyle:    google
 ReflowComments:  true
-SortIncludes:    true
-SortUsingDeclarations: true
+SortIncludes:    false
+SortUsingDeclarations: false
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true
