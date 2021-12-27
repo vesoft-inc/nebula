@@ -20,7 +20,7 @@ using nebula::fs::FileUtils;
 
 Status setupLogging(const std::string & exe) {
   // If the log directory does not exist, try to create
-  if (!FileUtils::exist(FLAGS_log_dir) and !FileUtils::makeDir(FLAGS_log_dir)) {
+  if (!FileUtils::exist(FLAGS_log_dir) && !FileUtils::makeDir(FLAGS_log_dir)) {
     return Status::Error("Failed to create log directory `%s'", FLAGS_log_dir.c_str());
   }
   if (!FLAGS_timestamp_in_logfile_name)
