@@ -13,7 +13,9 @@ namespace graph {
 
 GraphServer::GraphServer(HostAddr localHost) : localHost_(localHost) {}
 
-GraphServer::~GraphServer() { stop(); }
+GraphServer::~GraphServer() {
+  stop();
+}
 
 bool GraphServer::start() {
   auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
