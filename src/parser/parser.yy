@@ -201,6 +201,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
+%token KW_LOCAL
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
@@ -533,6 +534,7 @@ unreserved_keyword
     | KW_S2_MAX_CELLS       { $$ = new std::string("s2_max_cells"); }
     | KW_SESSION            { $$ = new std::string("session"); }
     | KW_SESSIONS           { $$ = new std::string("sessions"); }
+    | KW_LOCAL              { $$ = new std::string("local"); }
     | KW_SAMPLE             { $$ = new std::string("sample"); }
     | KW_QUERIES            { $$ = new std::string("queries"); }
     | KW_QUERY              { $$ = new std::string("query"); }
@@ -3280,10 +3282,10 @@ job_concurrency
     ;
 
 show_queries_sentence
-    : KW_SHOW KW_QUERIES {
+    : KW_SHOW KW_LOCAL KW_QUERIES {
         $$ = new ShowQueriesSentence();
     }
-    | KW_SHOW KW_ALL KW_QUERIES {
+    | KW_SHOW KW_QUERIES {
         $$ = new ShowQueriesSentence(true);
     }
     ;
@@ -3378,8 +3380,13 @@ show_sentence
     | KW_SHOW KW_FULLTEXT KW_INDEXES {
         $$ = new ShowFTIndexesSentence();
     }
+    // List sessions in the cluster
     | KW_SHOW KW_SESSIONS {
         $$ = new ShowSessionsSentence();
+    }
+    // List sessions in the current graph node
+    | KW_SHOW KW_LOCAL KW_SESSIONS {
+        $$ = new ShowSessionsSentence(true);
     }
     | KW_SHOW KW_SESSION legal_integer {
         $$ = new ShowSessionsSentence($3);
