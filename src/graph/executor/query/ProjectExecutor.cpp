@@ -24,7 +24,7 @@ folly::Future<Status> ProjectExecutor::execute() {
   VLOG(1) << "input: " << project->inputVar();
   DataSet ds;
   ds.colNames = project->colNames();
-  ds.rows.reserve(iter->size());
+  ds.rows.reserve(!iter->isGetNeighborsIter() ? iter->size() : 0);
   for (; iter->valid(); iter->next()) {
     Row row;
     for (auto& col : columns) {
