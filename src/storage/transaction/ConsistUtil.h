@@ -75,7 +75,9 @@ class ConsistUtil final {
     return "u";
   }
 
-  static std::string deleteIdentifier() noexcept { return "d"; }
+  static std::string deleteIdentifier() noexcept {
+    return "d";
+  }
 
   /**
    * @brief if the vid of space is created as "Fixed string"

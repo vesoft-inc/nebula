@@ -26,7 +26,9 @@ class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::DeleteEdgesRequest& req);
 
   using HookFunction = std::function<void(HookFuncPara&)>;
-  void setHookFunc(HookFunction func) { tossHookFunc_ = func; }
+  void setHookFunc(HookFunction func) {
+    tossHookFunc_ = func;
+  }
 
  private:
   explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
