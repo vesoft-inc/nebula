@@ -8,6 +8,7 @@
 #include <folly/String.h>
 #include <gflags/gflags.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <regex>
@@ -21,7 +22,9 @@ using nebula::fs::FileUtils;
 
 namespace nebula {
 
-static const std::regex reMemAvailable(R"(^Mem(Available|Total):\s+(\d+)\skB$)");
+static const std::regex reMemAvailable(
+    R"(^Mem(Available|Free|Total):\s+(\d+)\skB$)");  // when can't use MemAvailable, use MemFree
+                                                     // instead.
 static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)");
 
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
@@ -63,13 +66,13 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       auto& sm = iter.matched();
       memorySize.emplace_back(std::stoul(sm[2].str(), NULL) << 10);
     }
-    CHECK_EQ(memorySize.size(), 2U);
-    size_t i = 0, j = 1;
-    if (memorySize[0] < memorySize[1]) {
-      std::swap(i, j);
+    std::sort(memorySize.begin(), memorySize.end());
+    if (memorySize.size() >= 2u) {
+      total = memorySize.back();
+      available = memorySize[memorySize.size() - 2];
+    } else {
+      return false;
     }
-    total = memorySize[i];
-    available = memorySize[j];
   }
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
