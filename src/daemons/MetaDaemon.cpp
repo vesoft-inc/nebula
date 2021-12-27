@@ -18,6 +18,7 @@
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "daemons/SetupLogging.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
@@ -58,7 +59,6 @@ static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 static void signalHandler(int sig);
 static void waitForStop();
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
