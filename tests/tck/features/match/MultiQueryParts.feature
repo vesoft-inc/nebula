@@ -201,6 +201,16 @@ Feature: Multi Query Parts
     Then the result should be, in order:
       | scount | lcount |
       | 19     | 110    |
+    When executing query:
+      """
+      MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
+      WITH  m,n
+      MATCH (m)--(n)
+      RETURN count(*) AS scount
+      """
+    Then the result should be, in order:
+      | scount |
+      | 270    |
     # Below scenario is not suppoted for the execution plan has a scan.
     When executing query:
       """
@@ -219,3 +229,8 @@ Feature: Multi Query Parts
       RETURN m
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `m'
+    When executing query:
+      """
+      MATCH (v:player)-[e]-(v:team) RETURN v, e
+      """
+    Then a SemanticError should be raised at runtime: `v': Redefined alias in a single path pattern.
