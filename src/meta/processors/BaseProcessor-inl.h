@@ -117,27 +117,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::allHosts() {
-  std::vector<HostAddr> hosts;
-  const auto& prefix = MetaKeyUtils::hostPrefix();
-  std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    VLOG(2) << "Can't find any hosts";
-    return code;
-  }
-
-  while (iter->valid()) {
-    HostAddr h;
-    auto hostAddrPiece = iter->key().subpiece(prefix.size());
-    memcpy(&h, hostAddrPiece.data(), hostAddrPiece.size());
-    hosts.emplace_back(std::move(h));
-    iter->next();
-  }
-  return hosts;
-}
-
-template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
   folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
   const std::string kIdKey = MetaKeyUtils::idKey();
@@ -261,12 +240,44 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::userExist(const std::string& accoun
 }
 
 template <typename RESP>
-nebula::cpp2::ErrorCode BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
-  auto ret = doGet(hostKey);
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::machineExist(const std::string& machineKey) {
+  auto ret = doGet(machineKey);
   if (nebula::ok(ret)) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   return nebula::error(ret);
+}
+
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::includeByZone(const std::vector<HostAddr>& hosts) {
+  const auto& prefix = MetaKeyUtils::zonePrefix();
+  auto iterRet = doPrefix(prefix);
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  if (!nebula::ok(iterRet)) {
+    code = nebula::error(iterRet);
+    LOG(ERROR) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(code);
+    return code;
+  }
+
+  auto iter = nebula::value(iterRet).get();
+  while (iter->valid()) {
+    auto name = MetaKeyUtils::parseZoneName(iter->key());
+    auto zoneHosts = MetaKeyUtils::parseZoneHosts(iter->val());
+    for (const auto& host : hosts) {
+      if (std::find(zoneHosts.begin(), zoneHosts.end(), host) != zoneHosts.end()) {
+        LOG(ERROR) << "Host overlap found in zone " << name;
+        code = nebula::cpp2::ErrorCode::E_CONFLICT;
+        break;
+      }
+    }
+
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      break;
+    }
+    iter->next();
+  }
+
+  return code;
 }
 
 template <typename RESP>
@@ -559,21 +570,6 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>
   }
   LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
   return true;
-}
-
-template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, GroupID> BaseProcessor<RESP>::getGroupId(
-    const std::string& groupName) {
-  auto indexKey = MetaKeyUtils::indexGroupKey(groupName);
-  auto ret = doGet(std::move(indexKey));
-  if (nebula::ok(ret)) {
-    return *reinterpret_cast<const GroupID*>(nebula::value(ret).c_str());
-  }
-  auto retCode = nebula::error(ret);
-  if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-    retCode = nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND;
-  }
-  return retCode;
 }
 
 template <typename RESP>

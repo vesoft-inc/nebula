@@ -25,13 +25,17 @@ class LabelExpression : public Expression {
 
   const Value& eval(ExpressionContext& ctx) override;
 
-  const std::string& name() const { return name_; }
+  const std::string& name() const {
+    return name_;
+  }
 
   std::string toString() const override;
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return LabelExpression::make(pool_, name()); }
+  Expression* clone() const override {
+    return LabelExpression::make(pool_, name());
+  }
 
  protected:
   explicit LabelExpression(ObjectPool* pool, const std::string& name = "")

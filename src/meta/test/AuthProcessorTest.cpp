@@ -10,6 +10,7 @@
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/user/AuthenticationProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {
@@ -20,9 +21,9 @@ TEST(AuthProcessorTest, CreateUserTest) {
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -39,9 +40,9 @@ TEST(AuthProcessorTest, CreateUserTest) {
   // Test user exists and param 'if_not_exists' == false;
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -51,9 +52,9 @@ TEST(AuthProcessorTest, CreateUserTest) {
   // Test user exists and param 'if_not_exists' == true;
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(true);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = true;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -68,9 +69,9 @@ TEST(AuthProcessorTest, AlterUserTest) {
   // create a user.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -80,8 +81,8 @@ TEST(AuthProcessorTest, AlterUserTest) {
   // Simple alter user.
   {
     cpp2::AlterUserReq req;
-    req.set_account("user1");
-    req.set_encoded_pwd("password_1");
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password_1";
     auto* processor = AlterUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -91,8 +92,8 @@ TEST(AuthProcessorTest, AlterUserTest) {
   // If user not exists
   {
     cpp2::AlterUserReq req;
-    req.set_account("user2");
-    req.set_encoded_pwd("user3");
+    req.account_ref() = "user2";
+    req.encoded_pwd_ref() = "user3";
     auto* processor = AlterUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -107,9 +108,9 @@ TEST(AuthProcessorTest, DropUserTest) {
   // create a user.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -119,8 +120,8 @@ TEST(AuthProcessorTest, DropUserTest) {
   // User not exists and 'if_exists' = false.
   {
     cpp2::DropUserReq req;
-    req.set_account("user2");
-    req.set_if_exists(false);
+    req.account_ref() = "user2";
+    req.if_exists_ref() = false;
     auto* processor = DropUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -130,8 +131,8 @@ TEST(AuthProcessorTest, DropUserTest) {
   // User not exists and 'if_exists' = true.
   {
     cpp2::DropUserReq req;
-    req.set_account("user2");
-    req.set_if_exists(true);
+    req.account_ref() = "user2";
+    req.if_exists_ref() = true;
     auto* processor = DropUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -141,8 +142,8 @@ TEST(AuthProcessorTest, DropUserTest) {
   // User exists.
   {
     cpp2::DropUserReq req;
-    req.set_account("user1");
-    req.set_if_exists(false);
+    req.account_ref() = "user1";
+    req.if_exists_ref() = false;
     auto* processor = DropUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -161,18 +162,27 @@ TEST(AuthProcessorTest, DropUserTest) {
 TEST(AuthProcessorTest, GrantRevokeTest) {
   fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  TestUtils::createSomeHosts(kv.get());
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   GraphSpaceID space1, space2;
   // create space1
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("space1");
-    properties.set_partition_num(1);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "space1";
+    properties.partition_num_ref() = 1;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -183,13 +193,13 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // create space2
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("space2");
-    properties.set_partition_num(1);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "space2";
+    properties.partition_num_ref() = 1;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -200,9 +210,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // create a user1.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -212,9 +222,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // create a user2.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user2");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user2";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -224,9 +234,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // create a user3.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user3");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user3";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -237,10 +247,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::GUEST);
-    req.set_role_item(role);
+    role.user_id_ref() = "user";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::GUEST;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -251,10 +261,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(-1);
-    role.set_role_type(cpp2::RoleType::GUEST);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = -1;
+    role.role_type_ref() = cpp2::RoleType::GUEST;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -265,10 +275,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::GUEST);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::GUEST;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -279,10 +289,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user2");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::ADMIN);
-    req.set_role_item(role);
+    role.user_id_ref() = "user2";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::ADMIN;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -293,10 +303,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user2");
-    role.set_space_id(space2);
-    role.set_role_type(cpp2::RoleType::DBA);
-    req.set_role_item(role);
+    role.user_id_ref() = "user2";
+    role.space_id_ref() = space2;
+    role.role_type_ref() = cpp2::RoleType::DBA;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -306,7 +316,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // list roles.
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space1);
+    req.space_id_ref() = space1;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -314,20 +324,20 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
     cpp2::RoleItem role;
-    role.set_space_id(space1);
-    role.set_user_id("user1");
-    role.set_role_type(cpp2::RoleType::GUEST);
+    role.space_id_ref() = space1;
+    role.user_id_ref() = "user1";
+    role.role_type_ref() = cpp2::RoleType::GUEST;
     expectRoles.emplace_back(std::move(role));
-    role.set_space_id(space1);
-    role.set_user_id("user2");
-    role.set_role_type(cpp2::RoleType::ADMIN);
+    role.space_id_ref() = space1;
+    role.user_id_ref() = "user2";
+    role.role_type_ref() = cpp2::RoleType::ADMIN;
     expectRoles.emplace_back(std::move(role));
     ASSERT_EQ(expectRoles, resp.get_roles());
   }
   // list roles.
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space2);
+    req.space_id_ref() = space2;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -335,9 +345,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
     cpp2::RoleItem role;
-    role.set_space_id(space2);
-    role.set_user_id("user2");
-    role.set_role_type(cpp2::RoleType::DBA);
+    role.space_id_ref() = space2;
+    role.user_id_ref() = "user2";
+    role.role_type_ref() = cpp2::RoleType::DBA;
     expectRoles.emplace_back(std::move(role));
     ASSERT_EQ(expectRoles, resp.get_roles());
   }
@@ -345,9 +355,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user");
-    role.set_space_id(space2);
-    req.set_role_item(role);
+    role.user_id_ref() = "user";
+    role.space_id_ref() = space2;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -358,9 +368,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(-1);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = -1;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -371,10 +381,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::ADMIN);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::ADMIN;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -385,9 +395,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -398,10 +408,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::GUEST);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::GUEST;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -411,7 +421,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // list roles.
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space1);
+    req.space_id_ref() = space1;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -419,16 +429,16 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
     cpp2::RoleItem role;
-    role.set_space_id(space1);
-    role.set_user_id("user2");
-    role.set_role_type(cpp2::RoleType::ADMIN);
+    role.space_id_ref() = space1;
+    role.user_id_ref() = "user2";
+    role.role_type_ref() = cpp2::RoleType::ADMIN;
     expectRoles.emplace_back(std::move(role));
     ASSERT_EQ(expectRoles, resp.get_roles());
   }
   // list roles.
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space2);
+    req.space_id_ref() = space2;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -436,9 +446,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
     cpp2::RoleItem role;
-    role.set_space_id(space2);
-    role.set_user_id("user2");
-    role.set_role_type(cpp2::RoleType::DBA);
+    role.space_id_ref() = space2;
+    role.user_id_ref() = "user2";
+    role.role_type_ref() = cpp2::RoleType::DBA;
     expectRoles.emplace_back(std::move(role));
     ASSERT_EQ(expectRoles, resp.get_roles());
   }
@@ -446,9 +456,9 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::RevokeRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    req.role_item_ref() = role;
     auto* processor = RevokeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -468,8 +478,8 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // role deleted after drop user
   {
     cpp2::DropUserReq req;
-    req.set_account("user2");
-    req.set_if_exists(false);
+    req.account_ref() = "user2";
+    req.if_exists_ref() = false;
     auto* processor = DropUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -479,7 +489,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // list roles.
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space2);
+    req.space_id_ref() = space2;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -491,10 +501,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   {
     cpp2::GrantRoleReq req;
     nebula::meta::cpp2::RoleItem role;
-    role.set_user_id("user1");
-    role.set_space_id(space1);
-    role.set_role_type(cpp2::RoleType::ADMIN);
-    req.set_role_item(role);
+    role.user_id_ref() = "user1";
+    role.space_id_ref() = space1;
+    role.role_type_ref() = cpp2::RoleType::ADMIN;
+    req.role_item_ref() = role;
     auto* processor = GrantProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -503,7 +513,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   }
   {
     cpp2::ListRolesReq req;
-    req.set_space_id(space1);
+    req.space_id_ref() = space1;
     auto* processor = ListRolesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -513,8 +523,8 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   }
   {
     cpp2::DropSpaceReq req;
-    req.set_space_name("space1");
-    req.set_if_exists(false);
+    req.space_name_ref() = "space1";
+    req.if_exists_ref() = false;
     auto* processor = DropSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -541,9 +551,9 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
   // create a user.
   {
     cpp2::CreateUserReq req;
-    req.set_if_not_exists(false);
-    req.set_account("user1");
-    req.set_encoded_pwd("password");
+    req.if_not_exists_ref() = false;
+    req.account_ref() = "user1";
+    req.encoded_pwd_ref() = "password";
     auto* processor = CreateUserProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -553,9 +563,9 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
   // change password, user dose not exists.
   {
     cpp2::ChangePasswordReq req;
-    req.set_account("user");
-    req.set_new_encoded_pwd("pwd1");
-    req.set_old_encoded_pwd("pwd1");
+    req.account_ref() = "user";
+    req.new_encoded_pwd_ref() = "pwd1";
+    req.old_encoded_pwd_ref() = "pwd1";
     auto* processor = ChangePasswordProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -565,9 +575,9 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
   // change password, old password is not valid.
   {
     cpp2::ChangePasswordReq req;
-    req.set_account("user1");
-    req.set_new_encoded_pwd("pwd1");
-    req.set_old_encoded_pwd("pwd1");
+    req.account_ref() = "user1";
+    req.new_encoded_pwd_ref() = "pwd1";
+    req.old_encoded_pwd_ref() = "pwd1";
     auto* processor = ChangePasswordProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -577,9 +587,9 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
   // change password, old password is valid.
   {
     cpp2::ChangePasswordReq req;
-    req.set_account("user1");
-    req.set_new_encoded_pwd("pwd1");
-    req.set_old_encoded_pwd("password");
+    req.account_ref() = "user1";
+    req.new_encoded_pwd_ref() = "pwd1";
+    req.old_encoded_pwd_ref() = "password";
     auto* processor = ChangePasswordProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -589,8 +599,8 @@ TEST(AuthProcessorTest, ChangePasswordTest) {
   // change password, old password is not need check.
   {
     cpp2::ChangePasswordReq req;
-    req.set_account("user1");
-    req.set_new_encoded_pwd("pwdpwd");
+    req.account_ref() = "user1";
+    req.new_encoded_pwd_ref() = "pwdpwd";
     auto* processor = ChangePasswordProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);

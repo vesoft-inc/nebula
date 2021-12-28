@@ -78,6 +78,9 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
     case PropertyType::GEOGRAPHY:
       size = 2 * sizeof(int32_t);  // as same as STRING
       break;
+    case PropertyType::DURATION:
+      size = sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t);
+      break;
     default:
       LOG(FATAL) << "Unknown column type";
   }

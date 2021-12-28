@@ -19,7 +19,9 @@ class ExecutionError final : public std::runtime_error {
     status_ = std::move(status);
   }
 
-  Status status() const { return status_; }
+  Status status() const {
+    return status_;
+  }
 
  private:
   Status status_;

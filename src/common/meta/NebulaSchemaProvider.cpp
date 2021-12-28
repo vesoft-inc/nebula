@@ -12,11 +12,17 @@ namespace meta {
 
 using nebula::cpp2::PropertyType;
 
-SchemaVer NebulaSchemaProvider::getVersion() const noexcept { return ver_; }
+SchemaVer NebulaSchemaProvider::getVersion() const noexcept {
+  return ver_;
+}
 
-size_t NebulaSchemaProvider::getNumFields() const noexcept { return fields_.size(); }
+size_t NebulaSchemaProvider::getNumFields() const noexcept {
+  return fields_.size();
+}
 
-size_t NebulaSchemaProvider::getNumNullableFields() const noexcept { return numNullableFields_; }
+size_t NebulaSchemaProvider::getNumNullableFields() const noexcept {
+  return numNullableFields_;
+}
 
 size_t NebulaSchemaProvider::size() const noexcept {
   if (fields_.size() > 0) {
@@ -165,6 +171,8 @@ std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixed
              sizeof(int32_t);   // microsec
     case PropertyType::GEOGRAPHY:
       return 8;  // as same as STRING
+    case PropertyType::DURATION:
+      return sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t);
     case PropertyType::UNKNOWN:
       break;
   }
@@ -175,7 +183,9 @@ void NebulaSchemaProvider::setProp(cpp2::SchemaProp schemaProp) {
   schemaProp_ = std::move(schemaProp);
 }
 
-const cpp2::SchemaProp NebulaSchemaProvider::getProp() const { return schemaProp_; }
+const cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
+  return schemaProp_;
+}
 
 StatusOr<std::pair<std::string, int64_t>> NebulaSchemaProvider::getTTLInfo() const {
   if (!schemaProp_.ttl_col_ref().has_value()) {

@@ -37,6 +37,7 @@ class LockUtils {
   GENERATE_LOCK(zone);
   GENERATE_LOCK(listener);
   GENERATE_LOCK(session);
+  GENERATE_LOCK(machine);
 
 #undef GENERATE_LOCK
 };

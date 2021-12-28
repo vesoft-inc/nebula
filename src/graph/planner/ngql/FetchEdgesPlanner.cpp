@@ -12,8 +12,8 @@ std::unique_ptr<FetchEdgesPlanner::EdgeProps> FetchEdgesPlanner::buildEdgeProps(
   const auto &edgePropsMap = fetchCtx_->exprProps.edgeProps();
   for (const auto &edgeProp : edgePropsMap) {
     EdgeProp ep;
-    ep.set_type(edgeProp.first);
-    ep.set_props(std::vector<std::string>(edgeProp.second.begin(), edgeProp.second.end()));
+    ep.type_ref() = edgeProp.first;
+    ep.props_ref() = std::vector<std::string>(edgeProp.second.begin(), edgeProp.second.end());
     eProps->emplace_back(std::move(ep));
   }
   return eProps;

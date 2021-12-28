@@ -111,6 +111,13 @@ reserved_key_words = [
     'KW_EXPLAIN',
     'KW_UNWIND',
     'KW_CASE',
+    'KW_HOSTS',
+    'KW_ZONE',
+    'KW_ZONES',
+    'KW_RENAME',
+    'KW_IGNORE_EXISTED_INDEX',
+    'KW_GEOGRAPHY',
+    'KW_DURATION',
 ]
 
 

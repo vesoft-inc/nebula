@@ -57,6 +57,48 @@ Feature: Index selecting for match statement
       | 2  | AppendVertices | 5            |                                                     |
       | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.name == "Tim Duncan" and v.name < "Zom" RETURN v.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         |
+      | "Tim Duncan" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 9  | Project        | 7            |                                                     |
+      | 7  | Filter         | 2            |                                                     |
+      | 2  | AppendVertices | 6            |                                                     |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.name=="Tim Duncan" and v.age>4 and v.name>"A" RETURN v.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         |
+      | "Tim Duncan" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 9  | Project        | 7            |                                                     |
+      | 7  | Filter         | 2            |                                                     |
+      | 2  | AppendVertices | 6            |                                                     |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player{name:"Tim Duncan"}) WHERE v.name < "Zom" RETURN v.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         |
+      | "Tim Duncan" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 9  | Project        | 7            |                                                     |
+      | 7  | Filter         | 2            |                                                     |
+      | 2  | AppendVertices | 6            |                                                     |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
     # Range Index
     When profiling query:
       """

@@ -12,16 +12,19 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
+#include "graph/executor/admin/AddHostsExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
 #include "graph/executor/admin/CreateUserExecutor.h"
 #include "graph/executor/admin/DescribeUserExecutor.h"
 #include "graph/executor/admin/DownloadExecutor.h"
+#include "graph/executor/admin/DropHostsExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
 #include "graph/executor/admin/IngestExecutor.h"
@@ -96,6 +99,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/stats/GraphStats.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;
@@ -155,9 +159,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->add(new PassThroughExecutor(node, qctx));
     }
     case PlanNode::Kind::kAggregate: {
+      stats::StatsManager::addValue(kNumAggregateExecutors);
       return pool->add(new AggregateExecutor(node, qctx));
     }
     case PlanNode::Kind::kSort: {
+      stats::StatsManager::addValue(kNumSortExecutors);
       return pool->add(new SortExecutor(node, qctx));
     }
     case PlanNode::Kind::kTopN: {
@@ -200,6 +206,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kTagIndexFullScan:
     case PlanNode::Kind::kTagIndexPrefixScan:
     case PlanNode::Kind::kTagIndexRangeScan: {
+      stats::StatsManager::addValue(kNumIndexScanExecutors);
       return pool->add(new IndexScanExecutor(node, qctx));
     }
     case PlanNode::Kind::kStart: {
@@ -442,20 +449,29 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kSubgraph: {
       return pool->add(new SubgraphExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddZone: {
-      return pool->add(new AddZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHosts: {
+      return pool->add(new AddHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kDropHosts: {
+      return pool->add(new DropHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kMergeZone: {
+      return pool->add(new MergeZoneExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kRenameZone: {
+      return pool->add(new RenameZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kDropZone: {
       return pool->add(new DropZoneExecutor(node, qctx));
     }
+    case PlanNode::Kind::kSplitZone: {
+      return pool->add(new SplitZoneExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDescribeZone: {
       return pool->add(new DescribeZoneExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddHostIntoZone: {
-      return pool->add(new AddHostIntoZoneExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropHostFromZone: {
-      return pool->add(new DropHostFromZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHostsIntoZone: {
+      return pool->add(new AddHostsIntoZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowZones: {
       return pool->add(new ListZonesExecutor(node, qctx));
@@ -562,6 +578,7 @@ Status Executor::close() {
 
 Status Executor::checkMemoryWatermark() {
   if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+    stats::StatsManager::addValue(kNumOomExecutors);
     return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
                          FLAGS_system_memory_high_watermark_ratio);
   }
@@ -593,7 +610,7 @@ void Executor::drop() {
 Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
-    numRows_ = result.size();
+    numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
     result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {

@@ -85,13 +85,61 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   return ret;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHosts(
-    kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
+bool ActiveHostsMan::machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr) {
+  auto machineKey = MetaKeyUtils::machineKey(hostAddr.host, hostAddr.port);
+  std::string machineValue;
+  auto code = kv->get(kDefaultSpaceId, kDefaultPartId, machineKey, &machineValue);
+  return code == nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<HostAddr, cpp2::HostRole>>>
+ActiveHostsMan::getServicesInHost(kvstore::KVStore* kv, std::string hostname) {
   const auto& prefix = MetaKeyUtils::hostPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Failed to getActiveHosts, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(ERROR) << "Failed to get services in the host: " << hostname << ", error "
+               << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  std::vector<std::pair<HostAddr, cpp2::HostRole>> hosts;
+  while (iter->valid()) {
+    auto addr = MetaKeyUtils::parseHostKey(iter->key());
+    HostInfo info = HostInfo::decode(iter->val());
+
+    if (addr.host == hostname) {
+      hosts.emplace_back(addr, info.role_);
+    }
+    iter->next();
+  }
+
+  return hosts;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHosts(
+    kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
+  const auto& machinePrefix = MetaKeyUtils::machinePrefix();
+  std::unique_ptr<kvstore::KVIterator> machineIter;
+  auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, machinePrefix, &machineIter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Failed to get machines, error " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  std::unordered_set<HostAddr> machines;
+  while (machineIter->valid()) {
+    auto machine = MetaKeyUtils::parseMachineKey(machineIter->key());
+    machines.emplace(std::move(machine));
+    machineIter->next();
+  }
+
+  const auto& prefix = MetaKeyUtils::hostPrefix();
+  std::unique_ptr<kvstore::KVIterator> iter;
+  retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Failed to get active hosts, error "
+               << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -103,6 +151,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   while (iter->valid()) {
     auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
+
+    if (info.role_ == cpp2::HostRole::STORAGE &&
+        std::find(machines.begin(), machines.end(), host) == machines.end()) {
+      retCode = nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND;
+      LOG(ERROR) << "Machine not found " << host;
+      break;
+    }
+
     if (info.role_ == role) {
       if (now - info.lastHBTimeInMilliSec_ < threshold) {
         hosts.emplace_back(host.host, host.port);
@@ -145,7 +201,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   return activeHosts;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHostsWithGroup(
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHostsWithZones(
     kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL) {
   std::string spaceValue;
   std::vector<HostAddr> activeHosts;
@@ -158,15 +214,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
 
   std::string groupValue;
   auto space = MetaKeyUtils::parseSpace(std::move(spaceValue));
-  auto groupKey = MetaKeyUtils::groupKey(*space.group_name_ref());
-  retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << *space.group_name_ref()
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
+  auto zoneNames = *space.zone_names_ref();
   for (const auto& zoneName : zoneNames) {
     auto hostsRet = getActiveHostsInZone(kv, zoneName, expiredTTL);
     if (!nebula::ok(hostsRet)) {
@@ -206,9 +254,18 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> ActiveHostsMan::isLived(kvstore::KVStore*
 
 ErrorOr<nebula::cpp2::ErrorCode, HostInfo> ActiveHostsMan::getHostInfo(kvstore::KVStore* kv,
                                                                        const HostAddr& host) {
+  auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
+  std::string machineValue;
+  auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, machineKey, &machineValue);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Get machine info " << host
+               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
   auto hostKey = MetaKeyUtils::hostKey(host.host, host.port);
   std::string hostValue;
-  auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, hostKey, &hostValue);
+  retCode = kv->get(kDefaultSpaceId, kDefaultPartId, hostKey, &hostValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Get host info " << host
                << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);

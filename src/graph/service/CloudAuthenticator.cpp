@@ -12,7 +12,9 @@
 namespace nebula {
 namespace graph {
 
-CloudAuthenticator::CloudAuthenticator(meta::MetaClient* client) { metaClient_ = client; }
+CloudAuthenticator::CloudAuthenticator(meta::MetaClient* client) {
+  metaClient_ = client;
+}
 
 bool CloudAuthenticator::auth(const std::string& user, const std::string& password) {
   // The shadow account on the nebula side has been created
@@ -24,13 +26,12 @@ bool CloudAuthenticator::auth(const std::string& user, const std::string& passwo
   }
 
   // Second, use user + password authentication methods
-  StatusOr<std::string> result;
   std::string userAndPasswd = user + ":" + password;
   std::string base64Str = encryption::Base64::encode(userAndPasswd);
 
   std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
   header = header + base64Str + "\"";
-  result = http::HttpClient::post(FLAGS_cloud_http_url, header);
+  auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
 
   if (!result.ok()) {
     LOG(ERROR) << result.status();

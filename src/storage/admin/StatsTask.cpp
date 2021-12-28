@@ -73,6 +73,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
                                               PartitionID part,
                                               std::unordered_map<TagID, std::string> tags,
                                               std::unordered_map<EdgeType, std::string> edges) {
+  if (UNLIKELY(canceled_)) {
+    LOG(ERROR) << "Stats task is canceled";
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+  }
+
   auto vIdLenRet = env_->schemaMan_->getSpaceVidLen(spaceId);
   if (!vIdLenRet.ok()) {
     LOG(ERROR) << "Get space vid length failed";
@@ -140,6 +145,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   // 2     5
   // 3     1
   while (vertexIter && vertexIter->valid()) {
+    if (UNLIKELY(canceled_)) {
+      LOG(ERROR) << "Stats task is canceled";
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     auto key = vertexIter->key();
     auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
     auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
@@ -168,6 +178,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   // 2    2       1    3  (invalid data, for example, edge data without edge
   // schema) 2    3       1    4 2    3       1    5
   while (edgeIter && edgeIter->valid()) {
+    if (UNLIKELY(canceled_)) {
+      LOG(ERROR) << "Stats task is canceled";
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     auto key = edgeIter->key();
 
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
@@ -221,24 +236,24 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     }
   }
 
-  statsItem.set_space_vertices(spaceVertices);
-  statsItem.set_space_edges(spaceEdges);
+  statsItem.space_vertices_ref() = spaceVertices;
+  statsItem.space_edges_ref() = spaceEdges;
   using Correlativities = std::vector<nebula::meta::cpp2::Correlativity>;
   Correlativities positiveCorrelativity;
   for (const auto& entry : positiveRelevancy) {
     nebula::meta::cpp2::Correlativity partProportion;
-    partProportion.set_part_id(entry.first);
+    partProportion.part_id_ref() = entry.first;
     double proportion = static_cast<double>(entry.second) / static_cast<double>(spaceEdges);
-    partProportion.set_proportion(proportion);
+    partProportion.proportion_ref() = proportion;
     positiveCorrelativity.emplace_back(std::move(partProportion));
   }
 
   Correlativities negativeCorrelativity;
   for (const auto& entry : negativeRelevancy) {
     nebula::meta::cpp2::Correlativity partProportion;
-    partProportion.set_part_id(entry.first);
+    partProportion.part_id_ref() = entry.first;
     double proportion = static_cast<double>(entry.second) / static_cast<double>(spaceEdges);
-    partProportion.set_proportion(proportion);
+    partProportion.proportion_ref() = proportion;
     negativeCorrelativity.emplace_back(std::move(partProportion));
   }
 
@@ -254,11 +269,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   std::unordered_map<PartitionID, Correlativities> positivePartCorrelativities;
   positivePartCorrelativities[part] = positiveCorrelativity;
-  statsItem.set_positive_part_correlativity(std::move(positivePartCorrelativities));
+  statsItem.positive_part_correlativity_ref() = std::move(positivePartCorrelativities);
 
   std::unordered_map<PartitionID, Correlativities> negativePartCorrelativities;
   negativePartCorrelativities[part] = negativeCorrelativity;
-  statsItem.set_negative_part_correlativity(std::move(negativePartCorrelativities));
+  statsItem.negative_part_correlativity_ref() = std::move(negativePartCorrelativities);
 
   statistics_.emplace(part, std::move(statsItem));
   LOG(INFO) << "Stats task finished";
@@ -271,11 +286,11 @@ void StatsTask::finish(nebula::cpp2::ErrorCode rc) {
             ctx_.taskId_,
             apache::thrift::util::enumNameSafe(rc).c_str());
   nebula::meta::cpp2::StatsItem result;
-  result.set_status(nebula::meta::cpp2::JobStatus::FAILED);
+  result.status_ref() = nebula::meta::cpp2::JobStatus::FAILED;
 
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED && statistics_.size() == subTaskSize_) {
-    result.set_space_vertices(0);
-    result.set_space_edges(0);
+    result.space_vertices_ref() = 0;
+    result.space_edges_ref() = 0;
     for (auto& elem : statistics_) {
       auto item = elem.second;
       *result.space_vertices_ref() += *item.space_vertices_ref();
@@ -308,7 +323,7 @@ void StatsTask::finish(nebula::cpp2::ErrorCode rc) {
           .insert((*item.negative_part_correlativity_ref()).begin(),
                   (*item.negative_part_correlativity_ref()).end());
     }
-    result.set_status(nebula::meta::cpp2::JobStatus::FINISHED);
+    result.status_ref() = nebula::meta::cpp2::JobStatus::FINISHED;
     ctx_.onFinish_(rc, result);
   } else if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     ctx_.onFinish_(rc, result);

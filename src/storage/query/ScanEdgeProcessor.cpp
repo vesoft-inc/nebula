@@ -86,8 +86,8 @@ void ScanEdgeProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edge
 }
 
 void ScanEdgeProcessor::onProcessFinished() {
-  resp_.set_props(std::move(resultDataSet_));
-  resp_.set_cursors(std::move(cursors_));
+  resp_.props_ref() = std::move(resultDataSet_);
+  resp_.cursors_ref() = std::move(cursors_);
 }
 
 StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
@@ -136,7 +136,8 @@ void ScanEdgeProcessor::runInSingleThread(const cpp2::ScanEdgeRequest& req) {
     auto partId = partEntry.first;
     auto cursor = partEntry.second;
 
-    auto ret = plan.go(partId, cursor.get_has_next() ? *cursor.get_next_cursor() : "");
+    auto ret = plan.go(
+        partId, cursor.next_cursor_ref().has_value() ? cursor.next_cursor_ref().value() : "");
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
         failedParts.find(partId) == failedParts.end()) {
       failedParts.emplace(partId);
@@ -158,12 +159,13 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
   for (const auto& [partId, cursor] : req.get_parts()) {
-    futures.emplace_back(runInExecutor(&contexts_[i],
-                                       &results_[i],
-                                       &cursorsOfPart_[i],
-                                       partId,
-                                       cursor.get_has_next() ? *cursor.get_next_cursor() : "",
-                                       &expCtxs_[i]));
+    futures.emplace_back(
+        runInExecutor(&contexts_[i],
+                      &results_[i],
+                      &cursorsOfPart_[i],
+                      partId,
+                      cursor.next_cursor_ref().has_value() ? cursor.next_cursor_ref().value() : "",
+                      &expCtxs_[i]));
     i++;
   }
 

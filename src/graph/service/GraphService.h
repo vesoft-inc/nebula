@@ -32,8 +32,18 @@ class GraphService final : public cpp2::GraphServiceSvIf {
 
   void signout(int64_t /*sessionId*/) override;
 
+  folly::Future<ExecutionResponse> future_executeWithParameter(
+      int64_t sessionId,
+      const std::string& stmt,
+      const std::unordered_map<std::string, Value>& parameterMap) override;
+
   folly::Future<ExecutionResponse> future_execute(int64_t sessionId,
                                                   const std::string& stmt) override;
+
+  folly::Future<std::string> future_executeJsonWithParameter(
+      int64_t sessionId,
+      const std::string& stmt,
+      const std::unordered_map<std::string, Value>& parameterMap) override;
 
   folly::Future<std::string> future_executeJson(int64_t sessionId,
                                                 const std::string& stmt) override;

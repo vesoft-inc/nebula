@@ -18,8 +18,8 @@ std::string ListExpression::toString() const {
   buf.reserve(256);
 
   buf += '[';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {
@@ -79,7 +79,9 @@ void ListExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void ListExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void ListExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 // TODO(jie): toString of set should add `SET` prefix
 std::string SetExpression::toString() const {
@@ -87,8 +89,8 @@ std::string SetExpression::toString() const {
   buf.reserve(256);
 
   buf += '{';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {
@@ -148,7 +150,9 @@ void SetExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void SetExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void SetExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 // TODO(jie): toString of map should add `MAP` prefix
 std::string MapExpression::toString() const {
@@ -159,7 +163,7 @@ std::string MapExpression::toString() const {
   for (auto &kv : items_) {
     buf += kv.first;
     buf += ":";
-    buf += kv.second->toString();
+    buf += kv.second ? kv.second->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {
@@ -225,6 +229,8 @@ void MapExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void MapExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void MapExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

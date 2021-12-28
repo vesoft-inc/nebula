@@ -216,7 +216,7 @@ Feature: Go Sentence
       """
       GO FROM $var OVER like YIELD like._dst
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Variable is not supported in vid near `$var'
 
   Scenario: distinct
     When executing query:

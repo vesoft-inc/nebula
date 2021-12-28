@@ -14,15 +14,14 @@ namespace meta {
 
 class ListClusterInfoProcessor : public BaseProcessor<cpp2::ListClusterInfoResp> {
  public:
-  static ListClusterInfoProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
-    return new ListClusterInfoProcessor(kvstore, client);
+  static ListClusterInfoProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListClusterInfoProcessor(kvstore);
   }
   void process(const cpp2::ListClusterInfoReq& req);
 
  private:
-  explicit ListClusterInfoProcessor(kvstore::KVStore* kvstore, AdminClient* client)
-      : BaseProcessor<cpp2::ListClusterInfoResp>(kvstore), client_(client) {}
-  AdminClient* client_;
+  explicit ListClusterInfoProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListClusterInfoResp>(kvstore) {}
 };
 }  // namespace meta
 }  // namespace nebula

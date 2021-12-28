@@ -26,9 +26,13 @@ class RewriteVisitor final : public ExprVisitorImpl {
                                Rewriter rewriter,
                                const std::unordered_set<Expression::Kind>& needVisitedTypes);
 
-  const Matcher matcher() const { return matcher_; }
+  const Matcher matcher() const {
+    return matcher_;
+  }
 
-  const Rewriter rewriter() const { return rewriter_; }
+  const Rewriter rewriter() const {
+    return rewriter_;
+  }
 
  private:
   explicit RewriteVisitor(Matcher matcher, Rewriter rewriter)
@@ -41,7 +45,9 @@ class RewriteVisitor final : public ExprVisitorImpl {
         rewriter_(std::move(rewriter)),
         needVisitedTypes_(std::move(needVisitedTypes)) {}
 
-  bool ok() const override { return true; }
+  bool ok() const override {
+    return true;
+  }
 
  private:
   using ExprVisitorImpl::visit;

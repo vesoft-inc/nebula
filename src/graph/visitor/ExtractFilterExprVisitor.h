@@ -16,9 +16,13 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  public:
   explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
 
-  bool ok() const override { return canBePushed_; }
+  bool ok() const override {
+    return canBePushed_;
+  }
 
-  Expression *remainedExpr() { return remainedExpr_; }
+  Expression *remainedExpr() {
+    return remainedExpr_;
+  }
 
   static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
     ExtractFilterExprVisitor visitor(pool);
@@ -68,9 +72,20 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
     kGetVertices,  // Get/Append/Scan Vertices
     kGetEdges,     // Get/Append/Scan Edges
   };
+  bool visitLogicalAnd(LogicalExpression *expr, std::vector<bool> &flags);
+  bool visitLogicalOr(LogicalExpression *expr);
+  void splitOrExpr(LogicalExpression *expr,
+                   std::vector<bool> &flags,
+                   const unsigned int canNotPushedIndex);
+  // void rewriteAndExpr(Expression *rewriteExpr);
+  Expression *rewriteExpr(std::vector<Expression *> rel, std::vector<Expression *> sharedExprs);
+  void ExtractRemainExpr(LogicalExpression *expr, std::vector<bool> &flags);
 
   ObjectPool *pool_;
   bool canBePushed_{true};
+  bool isNested_{false};
+  bool hasSplit{false};
+  bool splitForbidden{false};
   Expression *remainedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
 };

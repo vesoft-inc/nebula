@@ -253,8 +253,8 @@ void setUp(storage::StorageEnv* ev) {
 
 cpp2::AddVerticesRequest buildAddVertexReq() {
   cpp2::AddVerticesRequest req;
-  req.set_space_id(1);
-  req.set_if_not_exists(true);
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
 
   vertexId = "Tony Parker";
 
@@ -274,14 +274,14 @@ cpp2::AddVerticesRequest buildAddVertexReq() {
   props.emplace_back(2);
   props.emplace_back("France");
   props.emplace_back(5);
-  newTag.set_tag_id(1);
-  newTag.set_props(std::move(props));
+  newTag.tag_id_ref() = 1;
+  newTag.props_ref() = std::move(props);
 
   std::vector<nebula::storage::cpp2::NewTag> newTags;
   newTags.push_back(std::move(newTag));
 
-  newVertex.set_id(vertexId);
-  newVertex.set_tags(std::move(newTags));
+  newVertex.id_ref() = vertexId;
+  newVertex.tags_ref() = std::move(newTags);
   (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
   return req;
 }
@@ -290,15 +290,15 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
   cpp2::AddEdgesRequest req;
   srcId = "Tony Parker";
   dstId = "Spurs";
-  req.set_space_id(1);
-  req.set_if_not_exists(true);
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
 
   nebula::storage::cpp2::NewEdge newEdge;
   partId = std::hash<std::string>()(srcId) % parts + 1;
-  edgeKey.set_src(srcId);
-  edgeKey.set_edge_type(101);
-  edgeKey.set_ranking(0);
-  edgeKey.set_dst(dstId);
+  edgeKey.src_ref() = srcId;
+  edgeKey.edge_type_ref() = 101;
+  edgeKey.ranking_ref() = 0;
+  edgeKey.dst_ref() = dstId;
 
   std::vector<Value> props;
   props.emplace_back(srcId);
@@ -310,8 +310,8 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
   props.emplace_back(16.6);
   props.emplace_back("trade");
   props.emplace_back(4);
-  newEdge.set_key(std::move(edgeKey));
-  newEdge.set_props(std::move(props));
+  newEdge.key_ref() = std::move(edgeKey);
+  newEdge.props_ref() = std::move(props);
 
   (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
   return req;
@@ -319,34 +319,34 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
 
 cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
   cpp2::UpdateVertexRequest req;
-  req.set_space_id(spaceId);
-  req.set_tag_id(tagId);
+  req.space_id_ref() = spaceId;
+  req.tag_id_ref() = tagId;
 
   vertexId = "Tim Duncan";
   if (!isVersionV2) {
     vertexId += "v1";
   }
   partId = std::hash<std::string>()(vertexId) % parts + 1;
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
 
   // Build updated props
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 45
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& val1 = *ConstantExpression::make(pool, 45L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string col4new("China");
   const auto& val2 = *ConstantExpression::make(pool, col4new);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   // Build yield
   // Return player props: name, age, country
@@ -360,14 +360,14 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
   const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
   tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
   return req;
 }
 
 cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
   cpp2::UpdateEdgeRequest req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
 
   srcId = "Tim Duncan";
   if (!isVersionV2) {
@@ -375,34 +375,34 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
   }
 
   partId = std::hash<std::string>()(srcId) % parts + 1;
-  req.set_part_id(partId);
+  req.part_id_ref() = partId;
 
   dstId = "Spurs";
   rank = 0;
   edgeType = 101;
-  edgeKey.set_src(srcId);
-  edgeKey.set_edge_type(edgeType);
-  edgeKey.set_ranking(rank);
-  edgeKey.set_dst(dstId);
-  req.set_edge_key(edgeKey);
+  edgeKey.src_ref() = srcId;
+  edgeKey.edge_type_ref() = edgeType;
+  edgeKey.ranking_ref() = rank;
+  edgeKey.dst_ref() = dstId;
+  req.edge_key_ref() = edgeKey;
 
   // Build updated props
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: 101.teamCareer = 20
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("teamCareer");
+  uProp1.name_ref() = "teamCareer";
   const auto& val1 = *ConstantExpression::make(pool, 20L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // bool: 101.type = trade
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("type");
+  uProp2.name_ref() = "type";
   std::string colnew("trade");
   const auto& val2 = *ConstantExpression::make(pool, colnew);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   // Return serve props: playerName, teamName, teamCareer, type
   std::vector<std::string> tmpProps;
@@ -418,8 +418,8 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
   const auto& edgePropExp4 = *EdgePropertyExpression::make(pool, "101", "type");
   tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
   return req;
 }
 
@@ -428,7 +428,9 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
 
 void insertVertex(int32_t iters) {
   nebula::storage::cpp2::AddVerticesRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildAddVertexReq(); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildAddVertexReq();
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test AddVertexRequest
@@ -446,7 +448,9 @@ void insertVertex(int32_t iters) {
 
 void insertEdge(int32_t iters) {
   nebula::storage::cpp2::AddEdgesRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildAddEdgeReq(); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildAddEdgeReq();
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test AddVertexRequest
@@ -463,7 +467,9 @@ void insertEdge(int32_t iters) {
 
 void updateVertex(int32_t iters, bool isVersion2) {
   nebula::storage::cpp2::UpdateVertexRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildUpdateVertexReq(isVersion2); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildUpdateVertexReq(isVersion2);
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test UpdateVertexRequest
@@ -481,7 +487,9 @@ void updateVertex(int32_t iters, bool isVersion2) {
 
 void updateEdge(int32_t iters, bool isVersion2) {
   nebula::storage::cpp2::UpdateEdgeRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildUpdateEdgeReq(isVersion2); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildUpdateEdgeReq(isVersion2);
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test UpdateEdgeRequest
@@ -497,17 +505,29 @@ void updateEdge(int32_t iters, bool isVersion2) {
   }
 }
 
-BENCHMARK(update_vertexV1, iters) { updateVertex(iters, false); }
+BENCHMARK(update_vertexV1, iters) {
+  updateVertex(iters, false);
+}
 
-BENCHMARK_RELATIVE(update_vertexV2, iters) { updateVertex(iters, true); }
+BENCHMARK_RELATIVE(update_vertexV2, iters) {
+  updateVertex(iters, true);
+}
 
-BENCHMARK(update_edgeV1, iters) { updateEdge(iters, false); }
+BENCHMARK(update_edgeV1, iters) {
+  updateEdge(iters, false);
+}
 
-BENCHMARK_RELATIVE(update_edgeV2, iters) { updateEdge(iters, true); }
+BENCHMARK_RELATIVE(update_edgeV2, iters) {
+  updateEdge(iters, true);
+}
 
-BENCHMARK(insert_vertexV2, iters) { insertVertex(iters); }
+BENCHMARK(insert_vertexV2, iters) {
+  insertVertex(iters);
+}
 
-BENCHMARK(insert_edgeV2, iters) { insertEdge(iters); }
+BENCHMARK(insert_edgeV2, iters) {
+  insertEdge(iters);
+}
 
 int main(int argc, char** argv) {
   folly::init(&argc, &argv, true);
