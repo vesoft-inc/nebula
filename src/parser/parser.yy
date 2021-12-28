@@ -2597,6 +2597,7 @@ index_field
     }
     | name_label L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
+            delete $1;
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::IndexFieldDef();
@@ -2905,6 +2906,8 @@ match_sentences
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
         if (qctx->existParameter(*$1)) {
+            delete $1;
+            delete $3;
             throw nebula::GraphParser::syntax_error(@1, "Variable definition conflicts with a parameter");
         } else {
             $$ = new AssignmentSentence($1, $3);
