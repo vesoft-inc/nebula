@@ -21,10 +21,11 @@
 #include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "daemons/SetupLogging.h"
 #include "folly/ScopeGuard.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
@@ -32,7 +33,9 @@
 #include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/stats/MetaStats.h"
 #include "storage/StorageServer.h"
+#include "storage/stats/StorageStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
@@ -50,7 +53,6 @@ void printHelp(const char *prog);
 void stopAllDaemon();
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -105,10 +107,12 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initCounters();
+  nebula::initGraphStats();
+  nebula::initMetaStats();
+  nebula::initStorageStats();
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
@@ -437,7 +441,7 @@ void setupThreadManager() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+      PriorityThreadManager::newPriorityThreadManager(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   gServer->setThreadManager(threadManager);
