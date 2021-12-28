@@ -12,6 +12,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "storage/StorageServer.h"
 #include "storage/stats/StorageStats.h"
 #include "version/Version.h"
@@ -46,7 +47,6 @@ using nebula::network::NetworkUtils;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;

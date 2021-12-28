@@ -14,7 +14,7 @@ namespace graph {
 std::unique_ptr<FetchVerticesPlanner::VertexProps> FetchVerticesPlanner::buildVertexProps(
     const ExpressionProps::TagIDPropsMap& propsMap) {
   if (propsMap.empty()) {
-    return nullptr;
+    return std::make_unique<FetchVerticesPlanner::VertexProps>();
   }
   auto vertexProps = std::make_unique<VertexProps>(propsMap.size());
   auto fun = [](auto& tag) {

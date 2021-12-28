@@ -161,8 +161,10 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumQueries);
-    stats::StatsManager::addValue(
-        stats::StatsManager::counterWithLabels(kNumQueries, {{"space", sessionPtr->space().name}}));
+    if (FLAGS_enable_space_level_metrics && sessionPtr->space().name != "") {
+      stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+          kNumQueries, {{"space", sessionPtr->space().name}}));
+    }
     ctx->setSession(std::move(sessionPtr));
     ctx->setParameterMap(parameterMap);
     queryEngine_->execute(std::move(ctx));

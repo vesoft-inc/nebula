@@ -116,7 +116,7 @@ class StorageRpcResponse final {
 /**
  * A base class for all storage clients
  */
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 class StorageClientBase {
  public:
   StatusOr<HostAddr> getLeader(GraphSpaceID spaceId, PartitionID partId) const;
@@ -220,7 +220,7 @@ class StorageClientBase {
 
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-  std::unique_ptr<thrift::ThriftClientManager<ClientType>> clientsMan_;
+  std::unique_ptr<ClientManagerType> clientsMan_;
 };
 
 }  // namespace storage
