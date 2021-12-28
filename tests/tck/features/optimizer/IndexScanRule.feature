@@ -66,7 +66,6 @@ Feature: Match index selection
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
       | 0  | Start          |              |                                                                                                                                                |
 
-  @jmq
   Scenario: or filter embedding
     When profiling query:
       """

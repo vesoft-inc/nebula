@@ -97,11 +97,11 @@ Feature: Match By Id
       """
       MATCH (v1) -[r]-> (v2)
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.team.name AS Name
+      RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | NULL        |
+      | 'like'  | "Ray Allen" |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -110,11 +110,11 @@ Feature: Match By Id
       """
       MATCH (v1) -[r:serve|:like]-> (v2)
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.team.name AS Name
+      RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | NULL        |
+      | 'like'  | "Ray Allen" |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |

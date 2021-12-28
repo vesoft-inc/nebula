@@ -195,8 +195,8 @@ void LabelTagPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 std::string LabelTagPropertyExpression::toString() const {
-  std::string labelStr = label_->toString();
-  return labelStr.erase(0, 1) + "." + sym_ + "." + prop_;
+  std::string labelStr = label_ != nullptr ? label_->toString().erase(0, 1) : "";
+  return labelStr + "." + sym_ + "." + prop_;
 }
 
 bool LabelTagPropertyExpression::operator==(const Expression& rhs) const {

@@ -107,18 +107,20 @@ Feature: Basic match
   Scenario: One step
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.team.name AS Name
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
-      | "like"  | NULL        |
+      | "like"  | "Ray Allen" |
       | "serve" | "Cavaliers" |
       | "serve" | "Heat"      |
       | "serve" | "Lakers"    |
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2) RETURN type(r) AS Type, v2.team.name AS Name
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
@@ -126,7 +128,7 @@ Feature: Basic match
       | "serve" | "Heat"      |
       | "serve" | "Lakers"    |
       | "serve" | "Cavaliers" |
-      | "like"  | NULL        |
+      | "like"  | "Ray Allen" |
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2)
@@ -636,7 +638,8 @@ Feature: Basic match
       """
       MATCH (v:player{name:"Tim Duncan"}) return v.name
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.name', should use the format `var.tag.prop' When executing query:
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.name', should use the format `var.tag.prop'
+    When executing query:
       """
       MATCH (v:player)-[]->(b) WHERE v.age > 30 return v.player.name
       """

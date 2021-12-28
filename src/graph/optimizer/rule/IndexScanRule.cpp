@@ -401,9 +401,9 @@ Status IndexScanRule::addFilterItem(RelationalExpression* expr,
                                     QueryContext* qctx) const {
   // TODO (sky) : Check illegal filter. for example : where c1 == 1 and c1 == 2
   Expression::Kind relType;
-  if (std::is_same<E, EdgePropertyExpression>::value) {
+  if constexpr (std::is_same<E, EdgePropertyExpression>::value) {
     relType = Expression::Kind::kEdgeProperty;
-  } else if (std::is_same<E, LabelTagPropertyExpression>::value) {
+  } else if constexpr (std::is_same<E, LabelTagPropertyExpression>::value) {
     relType = Expression::Kind::kLabelTagProperty;
   } else {
     relType = Expression::Kind::kTagProperty;

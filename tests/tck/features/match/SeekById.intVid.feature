@@ -256,22 +256,6 @@ Feature: Match seek by id
     When executing query:
       """
       MATCH (v)
-      WHERE id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
-            OR v.player.age == 23
-      RETURN v.player.name AS Name
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) == hash('James Harden')
-            OR v.player.age == 23
-      RETURN v.player.name AS Name
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
-      MATCH (v)
       WHERE id(x) == hash('James Harden')
       RETURN v.player.name AS Name
       """
