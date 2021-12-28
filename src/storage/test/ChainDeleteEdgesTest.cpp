@@ -423,7 +423,6 @@ TEST(ChainDeleteEdgesTest, Test8) {
   auto delReq = delProc->makeDelRequest(addReq, limit);
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
-
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
   delProc->process(delReq);
