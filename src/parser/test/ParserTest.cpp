@@ -3304,6 +3304,21 @@ TEST_F(ParserTest, DetectMemoryLeakTest) {
     ASSERT_EQ(result.value()->toString(),
               "YIELD reduce(totalNum = 10, n IN range(1,3) | (totalNum+n))");
   }
+  {
+    std::string query = "CREATE TAG INDEX IF NOT EXISTS std_index ON t1(c1(4294967296), c2)";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+    ASSERT_EQ(result.status().toString(), "SyntaxError: Out of range: near `4294967296'");
+  }
+  {
+    std::string query = "$param = GO FROM 'Tony Parker' over like YIELD like._dst AS vv";
+    auto* ectx = qctx_->ectx();
+    ectx->setValue("param", "TestData");
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+    ASSERT_EQ(result.status().toString(),
+              "SyntaxError: Variable definition conflicts with a parameter near `$param'");
+  }
 }
 
 TEST_F(ParserTest, TestNameLabel) {
