@@ -15,6 +15,7 @@
 #include "common/meta/SchemaManager.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
+#include "storage/GraphStorageLocalServer.h"
 #include "storage/admin/AdminTaskManager.h"
 #include "storage/transaction/TransactionManager.h"
 
@@ -64,7 +65,11 @@ class StorageServer final {
   std::atomic<ServiceStatus> storageSvcStatus_{STATUS_UNINITIALIZED};
   std::atomic<ServiceStatus> adminSvcStatus_{STATUS_UNINITIALIZED};
 
+#ifndef BUILD_STANDALONE
   std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
+#else
+  std::shared_ptr<GraphStorageLocalServer> storageServer_;
+#endif
   std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
 
   std::unique_ptr<std::thread> internalStorageThread_;

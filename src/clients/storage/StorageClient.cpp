@@ -100,12 +100,11 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
     req.traverse_spec_ref() = std::move(spec);
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
-        return client->future_getNeighbors(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::GetNeighborsRequest& r) {
+                           return client->future_getNeighbors(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
@@ -140,12 +139,11 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::AddVerticesRequest& r) {
-        return client->future_addVertices(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::AddVerticesRequest& r) {
+                           return client->future_addVertices(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonRequestParam& param,
@@ -178,13 +176,13 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
     req.prop_names_ref() = propNames;
     req.common_ref() = common;
   }
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [useToss = param.useExperimentalFeature](cpp2::GraphStorageServiceAsyncClient* client,
-                                               const cpp2::AddEdgesRequest& r) {
-        return useToss ? client->future_chainAddEdges(r) : client->future_addEdges(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [useToss = param.useExperimentalFeature](ThriftClientType* client,
+                                                                  const cpp2::AddEdgesRequest& r) {
+                           return useToss ? client->future_chainAddEdges(r)
+                                          : client->future_addEdges(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
@@ -237,10 +235,10 @@ StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
     req.common_ref() = common;
   }
 
-  return collectResponse(param.evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::GetPropRequest& r) { return client->future_getProps(r); });
+  return collectResponse(
+      param.evb, std::move(requests), [](ThriftClientType* client, const cpp2::GetPropRequest& r) {
+        return client->future_getProps(r);
+      });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
@@ -268,12 +266,11 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::DeleteEdgesRequest& r) {
-        return client->future_deleteEdges(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::DeleteEdgesRequest& r) {
+                           return client->future_deleteEdges(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteVertices(
@@ -301,12 +298,11 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteVertices(
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::DeleteVerticesRequest& r) {
-        return client->future_deleteVertices(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::DeleteVerticesRequest& r) {
+                           return client->future_deleteVertices(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteTags(
@@ -334,12 +330,11 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteTags(
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::DeleteTagsRequest& r) {
-        return client->future_deleteTags(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::DeleteTagsRequest& r) {
+                           return client->future_deleteTags(r);
+                         });
 }
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVertex(
@@ -388,12 +383,11 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
   }
   request.second = std::move(req);
 
-  return getResponse(
-      param.evb,
-      std::move(request),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::UpdateVertexRequest& r) {
-        return client->future_updateVertex(r);
-      });
+  return getResponse(param.evb,
+                     std::move(request),
+                     [](ThriftClientType* client, const cpp2::UpdateVertexRequest& r) {
+                       return client->future_updateVertex(r);
+                     });
 }
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge(
@@ -441,14 +435,13 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
   }
   request.second = std::move(req);
 
-  return getResponse(
-      param.evb,
-      std::move(request),
-      [useExperimentalFeature = param.useExperimentalFeature](
-          cpp2::GraphStorageServiceAsyncClient* client, const cpp2::UpdateEdgeRequest& r) {
-        return useExperimentalFeature ? client->future_chainUpdateEdge(r)
-                                      : client->future_updateEdge(r);
-      });
+  return getResponse(param.evb,
+                     std::move(request),
+                     [useExperimentalFeature = param.useExperimentalFeature](
+                         ThriftClientType* client, const cpp2::UpdateEdgeRequest& r) {
+                       return useExperimentalFeature ? client->future_chainUpdateEdge(r)
+                                                     : client->future_updateEdge(r);
+                     });
 }
 
 folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID space,
@@ -478,11 +471,10 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID s
   req.name_ref() = name;
   request.second = std::move(req);
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::GetUUIDReq& r) {
-                       return client->future_getUUID(r);
-                     });
+  return getResponse(
+      evb, std::move(request), [](ThriftClientType* client, const cpp2::GetUUIDReq& r) {
+        return client->future_getUUID(r);
+      });
 }
 
 StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
@@ -524,12 +516,11 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
     req.limit_ref() = limit;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::LookupIndexRequest& r) {
-        return client->future_lookupIndex(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::LookupIndexRequest& r) {
+                           return client->future_lookupIndex(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTraverse(
@@ -554,12 +545,11 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTravers
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::LookupAndTraverseRequest& r) {
-        return client->future_lookupAndTraverse(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::LookupAndTraverseRequest& r) {
+                           return client->future_lookupAndTraverse(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanEdge(
@@ -587,10 +577,10 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanEdge(
     req.common_ref() = param.toReqCommon();
   }
 
-  return collectResponse(param.evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
+  return collectResponse(
+      param.evb, std::move(requests), [](ThriftClientType* client, const cpp2::ScanEdgeRequest& r) {
+        return client->future_scanEdge(r);
+      });
 }
 
 StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanVertex(
@@ -618,12 +608,11 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanVertex(
     req.common_ref() = param.toReqCommon();
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::ScanVertexRequest& r) {
-        return client->future_scanVertex(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::ScanVertexRequest& r) {
+                           return client->future_scanVertex(r);
+                         });
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> StorageClient::get(
@@ -646,10 +635,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> StorageClient::get(
     req.return_partly_ref() = returnPartly;
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVGetRequest& r) { return client->future_get(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVGetRequest& r) {
+        return client->future_get(r);
+      });
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
@@ -671,10 +660,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
     req.parts_ref() = std::move(c.second);
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVPutRequest& r) { return client->future_put(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVPutRequest& r) {
+        return client->future_put(r);
+      });
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
@@ -696,10 +685,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
     req.parts_ref() = std::move(c.second);
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVRemoveRequest& r) { return client->future_remove(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVRemoveRequest& r) {
+        return client->future_remove(r);
+      });
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> StorageClient::getIdFromRow(
