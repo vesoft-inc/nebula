@@ -139,22 +139,19 @@ class TestSession(NebulaTestSuite):
 
     def test_the_same_id_to_different_graphd(self):
         def get_connection(ip, port):
+            ssl_config = self.client_pool._ssl_configs
             try:
-                socket = TSocket.TSocket(ip, port)
-                transport = TTransport.TBufferedTransport(socket)
-                protocol = TBinaryProtocol.TBinaryProtocol(transport)
-                transport.open()
-                connection = GraphService.Client(protocol)
+                conn = Connection()
+                conn.open_SSL(ip, port, 0, ssl_config)
             except Exception as ex:
                 assert False, 'Create connection to {}:{} failed'.format(ip, port)
-            return connection
+            return conn
 
         conn1 = get_connection(self.addr_host1, self.addr_port1)
         conn2 = get_connection(self.addr_host2, self.addr_port2)
 
         resp = conn1.authenticate('root', 'nebula')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED
-        session_id = resp.session_id
+        session_id = resp.get_session_id()
 
         resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
@@ -217,8 +214,7 @@ class TestSession(NebulaTestSuite):
 
     def test_signout_and_execute(self):
         try:
-            conn = Connection()
-            conn.open(self.addr_host1, self.addr_port1, 3000)
+            conn = self.client_pool.get_connection()
             auth_result = conn.authenticate(self.user, self.password)
             session_id = auth_result.get_session_id()
             conn.signout(session_id)

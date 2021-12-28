@@ -24,8 +24,7 @@ folly::Future<Status> FilterExecutor::execute() {
   }
 
   VLOG(2) << "Get input var: " << filter->inputVar()
-          << ", iterator type: " << static_cast<int16_t>(iter->kind())
-          << ", input data size: " << iter->size();
+          << ", iterator type: " << static_cast<int16_t>(iter->kind());
 
   ResultBuilder builder;
   builder.value(result.valuePtr());

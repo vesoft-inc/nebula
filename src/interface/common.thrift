@@ -254,7 +254,7 @@ struct CheckpointInfo {
     3: binary                path,
 }
 
-// used for raft and drainer
+// used for drainer
 struct LogEntry {
     1: ClusterID cluster;
     2: binary log_str;

@@ -336,7 +336,8 @@ def given_nebulacluster_with_param(
     nebula_svc.start()
     graph_ip = nebula_svc.graphd_processes[0].host
     graph_port = nebula_svc.graphd_processes[0].tcp_port
-    pool = get_conn_pool(graph_ip, graph_port)
+    # TODO add ssl pool if tests needed
+    pool = get_conn_pool(graph_ip, graph_port, None)
     sess = pool.get_session(user, password)
     class_fixture_variables["current_session"] = sess
     class_fixture_variables["sessions"].append(sess)
@@ -352,7 +353,7 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
     assert index < len(nebula_svc.graphd_processes)
     graphd_process = nebula_svc.graphd_processes[index]
     graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
-    pool = get_conn_pool(graph_ip, graph_port)
+    pool = get_conn_pool(graph_ip, graph_port, None)
     sess = pool.get_session(user, password)
     # do not release original session, as we may have cases to test multiple sessions.
     # connection could be released after cluster stopped.
