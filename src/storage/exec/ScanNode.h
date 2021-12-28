@@ -22,14 +22,14 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
   using RelNode<Cursor>::doExecute;
 
-  explicit ScanVertexPropNode(RuntimeContext* context,
-                              std::vector<std::unique_ptr<TagNode>> tagNodes,
-                              bool enableReadFollower,
-                              int64_t limit,
-                              std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
-                              nebula::DataSet* resultDataSet,
-                              StorageExpressionContext* expCtx = nullptr,
-                              Expression* filter = nullptr)
+  ScanVertexPropNode(RuntimeContext* context,
+                     std::vector<std::unique_ptr<TagNode>> tagNodes,
+                     bool enableReadFollower,
+                     int64_t limit,
+                     std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
+                     nebula::DataSet* resultDataSet,
+                     StorageExpressionContext* expCtx = nullptr,
+                     Expression* filter = nullptr)
       : context_(context),
         tagNodes_(std::move(tagNodes)),
         enableReadFollower_(enableReadFollower),

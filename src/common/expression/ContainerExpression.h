@@ -115,7 +115,7 @@ class ListExpression final : public Expression {
  private:
   explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
 
-  explicit ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
+  ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
     items_ = items->get();
   }
 
@@ -182,7 +182,7 @@ class SetExpression final : public Expression {
  private:
   explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
 
-  explicit SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
+  SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
     items_ = items->get();
   }
 
@@ -251,7 +251,7 @@ class MapExpression final : public Expression {
  private:
   explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
 
-  explicit MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
+  MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
     items_ = items->get();
   }
 

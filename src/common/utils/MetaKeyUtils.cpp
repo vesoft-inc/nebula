@@ -69,16 +69,16 @@ static const std::string kEdgesTable          = tableMaps.at("edges").first;    
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
 static const std::string kIndexTable          = tableMaps.at("index").first;          // NOLINT
 static const std::string kIndexStatusTable    = tableMaps.at("index_status").first;   // NOLINT
-static const std::string kUsersTable          = systemTableMaps.at("users").first;          // NOLINT
+static const std::string kUsersTable          = systemTableMaps.at("users").first;    // NOLINT
 static const std::string kRolesTable          = tableMaps.at("roles").first;          // NOLINT
-static const std::string kConfigsTable        = systemTableMaps.at("configs").first;        // NOLINT
-static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;      // NOLINT
-static const std::string kLeadersTable        = tableMaps.at("leaders").first;          // NOLINT
-static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;     // NOLINT
-static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
-static const std::string kZonesTable          = systemTableMaps.at("zones").first;            // NOLINT
-static const std::string kListenerTable       = tableMaps.at("listener").first;         // NOLINT
-static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;       // NOLINT
+static const std::string kConfigsTable        = systemTableMaps.at("configs").first;  // NOLINT
+static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;// NOLINT
+static const std::string kLeadersTable        = tableMaps.at("leaders").first;        // NOLINT
+static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;   // NOLINT
+static const std::string kGroupsTable         = systemTableMaps.at("groups").first;   // NOLINT
+static const std::string kZonesTable          = systemTableMaps.at("zones").first;    // NOLINT
+static const std::string kListenerTable       = tableMaps.at("listener").first;       // NOLINT
+static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;     // NOLINT
 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space

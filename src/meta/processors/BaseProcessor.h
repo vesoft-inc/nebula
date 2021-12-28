@@ -38,6 +38,11 @@ using SignType = storage::cpp2::EngineSignType;
     return;                                             \
   }
 
+#define CHECK_CODE_AND_BREAK()                      \
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) { \
+    break;                                          \
+  }
+
 /**
  * Check segment is consist of numbers and letters and should not empty.
  * */
@@ -152,6 +157,11 @@ class BaseProcessor {
    * General multi remove function.
    **/
   void doMultiRemove(std::vector<std::string> keys);
+
+  /**
+   * General batch function.
+   **/
+  void doBatchOperation(std::string batchOp);
 
   /**
    * Get one auto-increment Id.
