@@ -156,7 +156,7 @@ class PlanNode {
     kMergeZone,
     kRenameZone,
     kDropZone,
-    kSplitZone,
+    kDivideZone,
     kAddHosts,
     kDropHosts,
     kDescribeZone,

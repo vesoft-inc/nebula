@@ -358,9 +358,9 @@ class DropZoneValidator final : public Validator {
   Status toPlan() override;
 };
 
-class SplitZoneValidator final : public Validator {
+class DivideZoneValidator final : public Validator {
  public:
-  SplitZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+  DivideZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 

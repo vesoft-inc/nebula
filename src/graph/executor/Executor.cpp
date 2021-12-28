@@ -465,8 +465,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDropZone: {
       return pool->add(new DropZoneExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSplitZone: {
-      return pool->add(new SplitZoneExecutor(node, qctx));
+    case PlanNode::Kind::kDivideZone: {
+      return pool->add(new DivideZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kDescribeZone: {
       return pool->add(new DescribeZoneExecutor(node, qctx));

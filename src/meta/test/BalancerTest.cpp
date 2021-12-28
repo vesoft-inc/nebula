@@ -274,6 +274,22 @@ TEST(BalanceTest, ExpansionZoneTest) {
     baton.wait();
   }
   {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
+    properties.zone_names_ref() = std::move(zones);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::spaceKey(1), MetaKeyUtils::spaceVal(properties));
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton.post();
+    });
+    baton.wait();
+  }
+  {
     HostParts hostParts;
     int32_t totalParts = 0;
     auto result = balancer.getHostParts(1, true, hostParts, totalParts);

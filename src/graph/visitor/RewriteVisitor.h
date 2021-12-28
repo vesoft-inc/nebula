@@ -35,12 +35,12 @@ class RewriteVisitor final : public ExprVisitorImpl {
   }
 
  private:
-  explicit RewriteVisitor(Matcher matcher, Rewriter rewriter)
+  RewriteVisitor(Matcher matcher, Rewriter rewriter)
       : matcher_(std::move(matcher)), rewriter_(std::move(rewriter)) {}
 
-  explicit RewriteVisitor(Matcher matcher,
-                          Rewriter rewriter,
-                          const std::unordered_set<Expression::Kind>& needVisitedTypes)
+  RewriteVisitor(Matcher matcher,
+                 Rewriter rewriter,
+                 const std::unordered_set<Expression::Kind>& needVisitedTypes)
       : matcher_(std::move(matcher)),
         rewriter_(std::move(rewriter)),
         needVisitedTypes_(std::move(needVisitedTypes)) {}

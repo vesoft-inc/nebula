@@ -129,6 +129,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       zoneIter->next();
     }
 
+    int32_t zoneNum = zones.size();
+    if (replicaFactor > zoneNum) {
+      LOG(ERROR) << "Replication number should less than or equal to zone number.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
+
     properties.zone_names_ref() = zones;
   } else {
     zones = properties.get_zone_names();

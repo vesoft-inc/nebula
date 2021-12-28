@@ -13,7 +13,18 @@ namespace graph {
 
 folly::Future<Status> MergeZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return Status::OK();
+  auto *mzNode = asNode<MergeZone>(node());
+  return qctx()
+      ->getMetaClient()
+      ->mergeZone(mzNode->zones(), mzNode->zoneName())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << "Merge Zone Failed :" << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
 }
 
 folly::Future<Status> RenameZoneExecutor::execute() {
@@ -48,9 +59,20 @@ folly::Future<Status> DropZoneExecutor::execute() {
       });
 }
 
-folly::Future<Status> SplitZoneExecutor::execute() {
+folly::Future<Status> DivideZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return Status::OK();
+  auto *dzNode = asNode<DivideZone>(node());
+  return qctx()
+      ->getMetaClient()
+      ->divideZone(dzNode->zoneName(), dzNode->zoneItems())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << "Split Zone Failed :" << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
 }
 
 folly::Future<Status> DescribeZoneExecutor::execute() {

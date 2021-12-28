@@ -42,7 +42,7 @@ class Iterator {
     kProp,
   };
 
-  explicit Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
+  Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
       : checkMemory_(checkMemory), kind_(kind), numRowsModN_(0), value_(value) {}
 
   virtual ~Iterator() = default;
