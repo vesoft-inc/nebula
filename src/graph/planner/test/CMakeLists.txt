@@ -2,6 +2,17 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+set(EXEC_PLAN_TEST_FLAG_DEPS
+    $<TARGET_OBJECTS:graph_flags_obj>
+)
+
+if(ENABLE_STANDALONE_VERSION)
+set(EXEC_PLAN_TEST_FLAG_DEPS 
+    ${EXEC_PLAN_TEST_FLAG_DEPS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME execution_plan_test
     SOURCES
@@ -39,7 +50,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:query_engine_obj>
         $<TARGET_OBJECTS:graph_session_obj>
-        $<TARGET_OBJECTS:graph_flags_obj>
+        ${EXEC_PLAN_TEST_FLAG_DEPS}
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>

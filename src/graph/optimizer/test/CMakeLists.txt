@@ -54,6 +54,13 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:storage_client_stats_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(OPTIMIZER_TEST_LIB 
+    ${OPTIMIZER_TEST_LIB}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME
         index_scan_rule_test

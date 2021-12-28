@@ -61,6 +61,13 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:ssl_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(VALIDATOR_TEST_LIBS 
+    ${VALIDATOR_TEST_LIBS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME
         validator_test

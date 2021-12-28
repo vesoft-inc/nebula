@@ -58,6 +58,13 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:storage_client_stats_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(EXEC_QUERY_TEST_OBJS 
+    ${EXEC_QUERY_TEST_OBJS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 SET(EXEC_QUERY_TEST_LIBS
     ${THRIFT_LIBRARIES}
     gtest

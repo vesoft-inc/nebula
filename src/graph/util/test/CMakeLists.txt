@@ -1,3 +1,14 @@
+set(UTIL_TEST_FLAG_DEPS
+    $<TARGET_OBJECTS:graph_flags_obj>
+)
+
+if(ENABLE_STANDALONE_VERSION)
+set(UTIL_TEST_FLAG_DEPS 
+    ${UTIL_TEST_FLAG_DEPS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME utils_test
     SOURCES
@@ -38,7 +49,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:graph_session_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
-        $<TARGET_OBJECTS:graph_flags_obj>
+        ${UTIL_TEST_FLAG_DEPS}
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:parser_obj>

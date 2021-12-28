@@ -49,6 +49,13 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:plan_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(PARSER_TEST_LIBS 
+    ${PARSER_TEST_LIBS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME parser_test
     SOURCES ParserTest.cpp
