@@ -21,6 +21,7 @@
 #include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "daemons/SetupLogging.h"
 #include "folly/ScopeGuard.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
@@ -52,7 +53,6 @@ void printHelp(const char *prog);
 void stopAllDaemon();
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   nebula::initStorageStats();
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
