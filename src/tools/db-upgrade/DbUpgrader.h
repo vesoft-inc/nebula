@@ -23,7 +23,7 @@ DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);
 DECLARE_string(upgrade_meta_server);
 DECLARE_uint32(write_batch_num);
-DECLARE_uint32(upgrade_version);
+DECLARE_string(upgrade_version);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
@@ -54,6 +54,9 @@ class UpgraderSpace {
 
   // Processing v2 Rc data upgrade to v2 Ga
   void doProcessV2();
+
+  // Processing v2 Ga data upgrade to v3
+  void doProcessV3();
 
   // Perform manual compact
   void doCompaction();
@@ -113,6 +116,8 @@ class UpgraderSpace {
 
   void runPartV2();
 
+  void runPartV3();
+
  public:
   // Source data path
   std::string srcPath_;
@@ -161,6 +166,9 @@ class UpgraderSpace {
   folly::UnboundedBlockingQueue<PartitionID> partQueue_;
 
   std::atomic<size_t> unFinishedPart_;
+
+  std::mutex ingest_sst_file_mut_;
+  std::vector<std::string> ingest_sst_file_;
 };
 
 // Upgrade one data path in storage conf

@@ -200,7 +200,9 @@ nebula_add_executable(
         SetupLogging.cpp
         SetupBreakpad.cpp
     OBJECTS
-        $<TARGET_OBJECTS:stats_def_obj>
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:service_obj>
         $<TARGET_OBJECTS:graph_session_obj>
