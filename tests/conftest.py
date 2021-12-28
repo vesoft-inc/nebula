@@ -259,11 +259,6 @@ def workarround_for_class(
         request.cls.drop_data()
 
 @pytest.fixture(scope="class")
-def establish_a_rare_connection(pytestconfig):
-    addr = pytestconfig.getoption("address")
-    host_addr = addr.split(":") if addr else ["localhost", get_ports()[0]]
-    socket = TSocket.TSocket(host_addr[0], host_addr[1])
-    transport = TTransport.TBufferedTransport(socket)
-    protocol = TBinaryProtocol.TBinaryProtocol(transport)
-    transport.open()
-    return GraphService.Client(protocol)
+def establish_a_rare_connection(conn_pool, pytestconfig):
+    conn = conn_pool.get_connection()
+    return conn._connection
