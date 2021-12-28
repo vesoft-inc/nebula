@@ -144,6 +144,8 @@ TEST(ChainAddEdgesTest, processRemoteFailedTest) {
   // prime key should be deleted
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, util.genDoublePrime, env));
+
+  // env->txnMan_->stop();
 }
 
 TEST(ChainAddEdgesTest, processRemoteUnknownTest) {

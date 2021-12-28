@@ -33,7 +33,9 @@ class TransactionManager {
  public:
   explicit TransactionManager(storage::StorageEnv* env);
 
-  ~TransactionManager() = default;
+  ~TransactionManager() {
+    stop();
+  }
 
   void addChainTask(ChainBaseProcessor* proc) {
     folly::async([=] {
