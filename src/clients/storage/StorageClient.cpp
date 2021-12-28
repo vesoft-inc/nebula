@@ -266,13 +266,13 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
     req.common_ref() = common;
   }
 
-  return collectResponse(
-      param.evb,
-      std::move(requests),
-      [useToss = param.useExperimentalFeature](ThriftClientType* client,
-                                               const cpp2::DeleteEdgesRequest& r) {
-        return useToss ? client->future_chainDeleteEdges(r) : client->future_deleteEdges(r);
-      });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [useToss = param.useExperimentalFeature](
+                             ThriftClientType* client, const cpp2::DeleteEdgesRequest& r) {
+                           return useToss ? client->future_chainDeleteEdges(r)
+                                          : client->future_deleteEdges(r);
+                         });
 }
 
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteVertices(
