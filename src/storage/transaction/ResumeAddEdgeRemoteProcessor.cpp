@@ -15,9 +15,9 @@ ResumeAddEdgeRemoteProcessor::ResumeAddEdgeRemoteProcessor(StorageEnv* env, cons
 }
 
 folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeAddEdgeRemoteProcessor::prepareLocal() {
-  if (!checkTerm(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_TERM";
-    return Code::E_OUTDATED_TERM;
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (code_ != Code::SUCCEEDED) {
+    return code_;
   }
 
   auto spaceId = req_.get_space_id();
@@ -37,9 +37,10 @@ folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processRemote(Code code) {
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processLocal(Code code) {
-  if (!checkTerm(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_TERM";
-    return Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_OUTDATED_TERM) {

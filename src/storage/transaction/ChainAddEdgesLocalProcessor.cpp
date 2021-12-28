@@ -103,9 +103,10 @@ folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processLocal(Code code) {
     code_ = code;
   }
 
-  if (!checkTerm(req_)) {
-    LOG(WARNING) << "E_OUTDATED_TERM";
-    code_ = Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
@@ -147,12 +148,12 @@ bool ChainAddEdgesLocalProcessor::prepareRequest(const cpp2::AddEdgesRequest& re
   }
   localPartId_ = req.get_parts().begin()->first;
   replaceNullWithDefaultValue(req_);
-  auto part = env_->kvstore_->part(spaceId_, localPartId_);
-  if (!nebula::ok(part)) {
-    pushResultCode(nebula::error(part), localPartId_);
+
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (code_ != Code::SUCCEEDED) {
+    LOG(INFO) << "get term failed";
     return false;
   }
-  restrictTerm_ = (nebula::value(part))->termId();
 
   auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
   if (!vidLen.ok()) {
@@ -217,7 +218,7 @@ void ChainAddEdgesLocalProcessor::doRpc(folly::Promise<Code>&& promise,
   auto* iClient = env_->txnMan_->getInternalClient();
   folly::Promise<Code> p;
   auto f = p.getFuture();
-  iClient->chainAddEdges(req, restrictTerm_, edgeVer_, std::move(p));
+  iClient->chainAddEdges(req, term_, edgeVer_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
     auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -334,25 +335,6 @@ bool ChainAddEdgesLocalProcessor::lockEdges(const cpp2::AddEdgesRequest& req) {
   return lk_->isLocked();
 }
 
-// we need to check term at both remote phase and local commit
-bool ChainAddEdgesLocalProcessor::checkTerm(const cpp2::AddEdgesRequest& req) {
-  auto space = req.get_space_id();
-  auto partId = req.get_parts().begin()->first;
-
-  auto part = env_->kvstore_->part(space, partId);
-  if (!nebula::ok(part)) {
-    pushResultCode(nebula::error(part), localPartId_);
-    return false;
-  }
-  auto curTerm = (nebula::value(part))->termId();
-  if (restrictTerm_ != curTerm) {
-    VLOG(1) << folly::sformat(
-        "check term failed, restrictTerm_={}, currTerm={}", restrictTerm_, curTerm);
-    return false;
-  }
-  return true;
-}
-
 std::vector<std::string> ChainAddEdgesLocalProcessor::toStrKeys(const cpp2::AddEdgesRequest& req) {
   std::vector<std::string> ret;
   for (auto& edgesOfPart : req.get_parts()) {
@@ -374,9 +356,9 @@ cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::reverseRequest(
       ConsistUtil::reverseEdgeKeyInplace(*newEdgeRef.key_ref());
     }
   }
-  reversedRequest.space_id_ref() = (req.get_space_id());
-  reversedRequest.prop_names_ref() = (req.get_prop_names());
-  reversedRequest.if_not_exists_ref() = (req.get_if_not_exists());
+  reversedRequest.space_id_ref() = req.get_space_id();
+  reversedRequest.prop_names_ref() = req.get_prop_names();
+  reversedRequest.if_not_exists_ref() = req.get_if_not_exists();
   return reversedRequest;
 }
 

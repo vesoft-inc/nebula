@@ -24,9 +24,9 @@ class ChainUpdateEdgeRemoteProcessor : public BaseProcessor<cpp2::UpdateResponse
   explicit ChainUpdateEdgeRemoteProcessor(StorageEnv* env)
       : BaseProcessor<cpp2::UpdateResponse>(env) {}
 
-  bool checkTerm(const cpp2::ChainUpdateEdgeRequest& req);
-
   void updateEdge(const cpp2::ChainUpdateEdgeRequest& req);
+
+  PartitionID getLocalPart(const cpp2::ChainUpdateEdgeRequest& req);
 
  private:
   std::unique_ptr<TransactionManager::LockGuard> lk_;

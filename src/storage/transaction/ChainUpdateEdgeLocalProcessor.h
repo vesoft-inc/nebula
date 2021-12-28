@@ -49,8 +49,6 @@ class ChainUpdateEdgeLocalProcessor
 
   void doRpc(folly::Promise<Code>&& promise, int retry = 0) noexcept;
 
-  bool checkTerm();
-
   folly::SemiFuture<Code> processNormalLocal(Code code);
 
   void abort();
@@ -80,9 +78,9 @@ class ChainUpdateEdgeLocalProcessor
  protected:
   cpp2::UpdateEdgeRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_;
-  PartitionID partId_;
+  PartitionID localPartId_;
   int retryLimit_{10};
-  TermID termOfPrepare_{-1};
+  TermID term_{-1};
 
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()

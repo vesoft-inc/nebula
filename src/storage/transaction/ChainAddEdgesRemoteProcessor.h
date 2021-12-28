@@ -22,8 +22,6 @@ class ChainAddEdgesRemoteProcessor : public BaseProcessor<cpp2::ExecResponse> {
  private:
   explicit ChainAddEdgesRemoteProcessor(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
 
-  bool checkTerm(const cpp2::ChainAddEdgesRequest& req);
-
   void commit(const cpp2::ChainAddEdgesRequest& req);
 
   std::vector<std::string> getStrEdgeKeys(const cpp2::ChainAddEdgesRequest& req);

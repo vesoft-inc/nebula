@@ -274,6 +274,8 @@ TEST(ChainDeleteEdgesTest, Test5) {
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  delete iClient;
 }
 
 // add some edges, then delete all of them, not execute local commit
@@ -307,12 +309,8 @@ TEST(ChainDeleteEdgesTest, Test6) {
 
   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
   auto delReq = delProc->makeDelRequest(addReq);
-  // delProc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-  LOG(INFO) << "Build DeleteEdgesReq...";
-  // auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
 
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
@@ -331,9 +329,11 @@ TEST(ChainDeleteEdgesTest, Test6) {
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  delete iClient;
 }
 
-// add some edges, then one of them, rpc failure
+// add some edges, delete one of them, rpc failure
 TEST(ChainDeleteEdgesTest, Test7) {
   fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
   mock::MockCluster cluster;
@@ -365,12 +365,7 @@ TEST(ChainDeleteEdgesTest, Test7) {
   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
   int32_t limit = 1;
   auto delReq = delProc->makeDelRequest(addReq, limit);
-  // delProc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
-  // delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-  LOG(INFO) << "Build DeleteEdgesReq...";
-  // auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
 
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
@@ -386,9 +381,12 @@ TEST(ChainDeleteEdgesTest, Test7) {
   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
   ChainResumeProcessor resumeProc(env);
   resumeProc.process();
+  LOG(INFO) << "after recover()";
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 166);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  delete iClient;
 }
 
 // add some edges, then one all of them, rpc failure
@@ -423,12 +421,8 @@ TEST(ChainDeleteEdgesTest, Test8) {
   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
   int32_t limit = num;
   auto delReq = delProc->makeDelRequest(addReq, limit);
-  // delProc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
-  // delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-  LOG(INFO) << "Build DeleteEdgesReq...";
-  // auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
 
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
@@ -447,6 +441,8 @@ TEST(ChainDeleteEdgesTest, Test8) {
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  delete iClient;
 }
 
 }  // namespace storage

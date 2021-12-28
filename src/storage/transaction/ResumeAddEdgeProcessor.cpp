@@ -28,10 +28,12 @@ folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeAddEdgeProcessor::prepareLocal(
     return Code::E_SPACE_NOT_FOUND;
   }
   auto& parts = req_.get_parts();
+  auto& srcId = parts.begin()->second.back().get_key().get_src().getStr();
   auto& dstId = parts.begin()->second.back().get_key().get_dst().getStr();
+  localPartId_ = env_->metaClient_->partId(numOfPart.value(), srcId);
   remotePartId_ = env_->metaClient_->partId(numOfPart.value(), dstId);
 
-  return Code::SUCCEEDED;
+  return code_;
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeProcessor::processRemote(Code code) {
@@ -43,9 +45,10 @@ folly::SemiFuture<Code> ResumeAddEdgeProcessor::processLocal(Code code) {
   VLOG(1) << uuid_ << " processRemote() " << apache::thrift::util::enumNameSafe(code);
   setErrorCode(code);
 
-  if (!checkTerm(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_TERM";
-    return Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {

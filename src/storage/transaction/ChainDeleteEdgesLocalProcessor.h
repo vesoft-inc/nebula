@@ -46,11 +46,6 @@ class ChainDeleteEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   bool lockEdges(const cpp2::DeleteEdgesRequest& req);
 
   /**
-   * @brief chekc if the current term of local part is equal to "term"
-   */
-  bool checkTerm(PartitionID partId, TermID term);
-
-  /**
    * @brief This is a hook function, inject to DeleteEdgesProcessor,
    *        called before DeleteEdgesProcessor ready to commit something
    */

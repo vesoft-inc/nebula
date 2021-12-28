@@ -79,15 +79,17 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::processLocal(Code code) 
     remoteFailed = true;
   }
 
-  if (!checkTerm(localPartId_, term_)) {
-    LOG(WARNING) << "E_OUTDATED_TERM";
-    code_ = Code::E_OUTDATED_TERM;
+  auto [currTerm, suc] = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
     for (auto& kv : primes_) {
       auto key =
           ConsistUtil::doublePrimeTable().append(kv.first.substr(ConsistUtil::primeTable().size()));
+      setDoublePrime_ = true;
       doublePrimes_.emplace_back(key, kv.second);
     }
     reportFailed(ResumeType::RESUME_REMOTE);
@@ -261,25 +263,27 @@ void ChainDeleteEdgesLocalProcessor::hookFunc(HookFuncPara& para) {
         bat.put(std::string(kv.first), std::string(kv.second));
       }
       para.result.emplace(kvstore::encodeBatchValue(bat.getBatch()));
-    }
-    if (para.batch) {
+    } else if (para.batch) {
       for (auto& kv : primes_) {
         para.batch.value()->remove(std::string(kv.first));
       }
       for (auto& kv : doublePrimes_) {
         para.batch.value()->put(std::string(kv.first), std::string(kv.second));
       }
+    } else {
+      LOG(ERROR) << "not supposed runs here";
     }
   } else {  // there is no double prime
     if (para.keys) {
       for (auto& kv : primes_) {
         para.keys.value()->emplace_back(kv.first);
       }
-    }
-    if (para.batch) {
+    } else if (para.batch) {
       for (auto& kv : primes_) {
         para.batch.value()->remove(std::string(kv.first));
       }
+    } else {
+      LOG(ERROR) << "not supposed runs here";
     }
   }
 }
@@ -321,7 +325,6 @@ bool ChainDeleteEdgesLocalProcessor::lockEdges(const cpp2::DeleteEdgesRequest& r
   std::vector<std::string> keys;
   for (auto& key : req.get_parts().begin()->second) {
     auto eKey = ConsistUtil::edgeKey(spaceVidLen_, localPartId_, key);
-    // LOG(INFO) << "eKey: " << ConsistUtil::readableKey(spaceVidLen_, eKey);
     keys.emplace_back(std::move(eKey));
   }
   bool dedup = true;
@@ -330,21 +333,6 @@ bool ChainDeleteEdgesLocalProcessor::lockEdges(const cpp2::DeleteEdgesRequest& r
     VLOG(1) << txnId_ << " conflict " << ConsistUtil::readableKey(spaceVidLen_, lk_->conflictKey());
   }
   return lk_->isLocked();
-}
-
-// we need to check term at both remote phase and local commit
-bool ChainDeleteEdgesLocalProcessor::checkTerm(PartitionID partId, TermID expectTerm) {
-  auto part = env_->kvstore_->part(spaceId_, partId);
-  if (!nebula::ok(part)) {
-    pushResultCode(nebula::error(part), localPartId_);
-    return false;
-  }
-  auto curTerm = (nebula::value(part))->termId();
-  if (expectTerm != curTerm) {
-    VLOG(1) << folly::sformat("check term failed, term_={}, currTerm={}", expectTerm, curTerm);
-    return false;
-  }
-  return true;
 }
 
 cpp2::DeleteEdgesRequest ChainDeleteEdgesLocalProcessor::reverseRequest(

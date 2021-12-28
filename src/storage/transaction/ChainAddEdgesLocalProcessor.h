@@ -53,8 +53,6 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
 
   bool lockEdges(const cpp2::AddEdgesRequest& req);
 
-  bool checkTerm(const cpp2::AddEdgesRequest& req);
-
   /**
    * @brief This is a call back function, to let AddEdgesProcessor so some
    *        addition thing for chain operation
@@ -132,8 +130,9 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   cpp2::AddEdgesRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
-  // need to restrict all the phase in the same term.
-  TermID restrictTerm_{-1};
+  // term at prepareLocal, not allowed to change during execution
+  TermID term_{-1};
+
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()
   bool primeInserted_{false};
@@ -143,6 +142,7 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   folly::Optional<int64_t> edgeVer_{folly::none};
   int64_t resumedEdgeVer_{-1};
 
+  // for debug / trace purpose
   std::string uuid_;
 
   // for debug, edge "100"->"101" will print like 2231303022->2231303122

@@ -26,19 +26,16 @@ void ChainUpdateEdgeLocalProcessor::process(const cpp2::UpdateEdgeRequest& req) 
 bool ChainUpdateEdgeLocalProcessor::prepareRequest(const cpp2::UpdateEdgeRequest& req) {
   req_ = req;
   spaceId_ = req.get_space_id();
-  partId_ = req_.get_part_id();
+  localPartId_ = req_.get_part_id();
 
   auto rc = getSpaceVidLen(spaceId_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    pushResultCode(rc, partId_);
+    pushResultCode(rc, localPartId_);
     return false;
   }
 
-  auto __term = env_->txnMan_->getTerm(req_.get_space_id(), partId_);
-  if (__term.ok()) {
-    termOfPrepare_ = __term.value();
-  } else {
-    pushResultCode(Code::E_PART_NOT_FOUND, partId_);
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (code_ != Code::SUCCEEDED) {
     return false;
   }
   return true;
@@ -54,7 +51,7 @@ folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::prepareLocal() {
     return Code::E_WRITE_WRITE_CONFLICT;
   }
 
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
 
   std::string val;
   apache::thrift::CompactSerializer::serialize(req_, &val);
@@ -63,7 +60,7 @@ folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::prepareLocal() {
   std::vector<kvstore::KV> data{{key, val}};
   auto c = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiPut(
-      spaceId_, partId_, std::move(data), [p = std::move(c.first), this](auto rc) mutable {
+      spaceId_, localPartId_, std::move(data), [p = std::move(c.first), this](auto rc) mutable {
         if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
           primeInserted_ = true;
         } else {
@@ -90,9 +87,10 @@ folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processLocal(Code code) {
     code_ = code;
   }
 
-  if (!checkTerm()) {
-    LOG(WARNING) << "checkTerm() failed";
-    return Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
@@ -123,7 +121,7 @@ void ChainUpdateEdgeLocalProcessor::doRpc(folly::Promise<Code>&& promise, int re
     auto reversedReq = reverseRequest(req_);
 
     auto f = p.getFuture();
-    iClient->chainUpdateEdge(reversedReq, termOfPrepare_, ver_, std::move(p));
+    iClient->chainUpdateEdge(reversedReq, term_, ver_, std::move(p));
     std::move(f)
         .thenTry([=, p = std::move(promise)](auto&& t) mutable {
           auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -145,12 +143,12 @@ void ChainUpdateEdgeLocalProcessor::doRpc(folly::Promise<Code>&& promise, int re
 }
 
 void ChainUpdateEdgeLocalProcessor::erasePrime() {
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
   kvErased_.emplace_back(std::move(key));
 }
 
 void ChainUpdateEdgeLocalProcessor::appendDoublePrime() {
-  auto key = ConsistUtil::doublePrime(spaceVidLen_, partId_, req_.get_edge_key());
+  auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, req_.get_edge_key());
   std::string val;
   apache::thrift::CompactSerializer::serialize(req_, &val);
   val += ConsistUtil::updateIdentifier();
@@ -190,12 +188,8 @@ void ChainUpdateEdgeLocalProcessor::finish() {
   onFinished();
 }
 
-bool ChainUpdateEdgeLocalProcessor::checkTerm() {
-  return env_->txnMan_->checkTerm(req_.get_space_id(), req_.get_part_id(), termOfPrepare_);
-}
-
 void ChainUpdateEdgeLocalProcessor::abort() {
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
   kvErased_.emplace_back(std::move(key));
 
   folly::Baton<true, std::atomic> baton;

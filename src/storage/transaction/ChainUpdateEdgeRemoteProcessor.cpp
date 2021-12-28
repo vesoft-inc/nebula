@@ -16,7 +16,10 @@ using Code = ::nebula::cpp2::ErrorCode;
 
 void ChainUpdateEdgeRemoteProcessor::process(const cpp2::ChainUpdateEdgeRequest& req) {
   auto rc = Code::SUCCEEDED;
-  if (!checkTerm(req)) {
+  auto spaceId = req.get_space_id();
+  auto localPartId = getLocalPart(req);
+  auto localTerm = req.get_term();
+  if (!env_->txnMan_->checkTermFromCache(spaceId, localPartId, localTerm)) {
     LOG(WARNING) << "invalid term";
     rc = Code::E_OUTDATED_TERM;
   }
@@ -30,9 +33,9 @@ void ChainUpdateEdgeRemoteProcessor::process(const cpp2::ChainUpdateEdgeRequest&
   onFinished();
 }
 
-bool ChainUpdateEdgeRemoteProcessor::checkTerm(const cpp2::ChainUpdateEdgeRequest& req) {
-  auto partId = req.get_update_edge_request().get_part_id();
-  return env_->txnMan_->checkTerm(req.get_space_id(), partId, req.get_term());
+PartitionID ChainUpdateEdgeRemoteProcessor::getLocalPart(const cpp2::ChainUpdateEdgeRequest& req) {
+  auto& edgeKey = req.get_update_edge_request().get_edge_key();
+  return NebulaKeyUtils::getPart(edgeKey.dst()->getStr());
 }
 
 // forward to UpdateEdgeProcessor

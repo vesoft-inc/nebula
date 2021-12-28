@@ -27,7 +27,7 @@ namespace nebula {
 namespace storage {
 
 constexpr int32_t mockSpaceId = 1;
-constexpr int32_t mockPartNum = 6;
+constexpr int32_t mockPartNum = 1;
 constexpr int32_t mockSpaceVidLen = 32;
 
 ChainTestUtils gTestUtil;
@@ -56,7 +56,7 @@ TEST(ChainResumeEdgesTest, resumeTest1) {
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   LOG(INFO) << "Build AddEdgesRequest...";
-  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, mockPartNum);
 
   auto fut = proc->getFuture();
   proc->process(req);
@@ -66,7 +66,9 @@ TEST(ChainResumeEdgesTest, resumeTest1) {
   EXPECT_EQ(334, numOfKey(req, gTestUtil.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, gTestUtil.genDoublePrime, env));
 
-  env->txnMan_->scanPrimes(1, 1);
+  for (int32_t i = 1; i <= mockPartNum; ++i) {
+    env->txnMan_->scanPrimes(1, i);
+  }
 
   auto* iClient = FakeInternalStorageClient::instance(env);
   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
@@ -76,6 +78,8 @@ TEST(ChainResumeEdgesTest, resumeTest1) {
   EXPECT_EQ(334, numOfKey(req, gTestUtil.genKey, env));
   EXPECT_EQ(0, numOfKey(req, gTestUtil.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, gTestUtil.genDoublePrime, env));
+
+  delete iClient;
 }
 
 /**
@@ -101,7 +105,7 @@ TEST(ChainResumeEdgesTest, resumeTest2) {
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   LOG(INFO) << "Build AddEdgesRequest...";
-  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, mockPartNum);
 
   LOG(INFO) << "Test AddEdgesProcessor...";
   auto fut = proc->getFuture();
@@ -122,12 +126,14 @@ TEST(ChainResumeEdgesTest, resumeTest2) {
   EXPECT_EQ(0, numOfKey(req, util.genKey, env));
   EXPECT_EQ(334, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, util.genDoublePrime, env));
+
+  delete iClient;
 }
 
 /**
- * @brief resumePrimeTest3 (resume insert prime outdated)
+ * @brief resumeTest3 (resume insert prime outdated)
  */
-TEST(ChainResumeEdgesTest, resumePrimeTest3) {
+TEST(ChainResumeEdgesTest, resumeTest3) {
   fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
@@ -141,7 +147,7 @@ TEST(ChainResumeEdgesTest, resumePrimeTest3) {
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   LOG(INFO) << "Build AddEdgesRequest...";
-  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
+  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, mockPartNum);
 
   LOG(INFO) << "Test AddEdgesProcessor...";
   auto fut = proc->getFuture();
@@ -157,7 +163,11 @@ TEST(ChainResumeEdgesTest, resumePrimeTest3) {
   auto error = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
   auto* iClient = FakeInternalStorageClient::instance(env, error);
   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  env->txnMan_->scanPrimes(1, 1);
+
+  for (auto i = 1; i <= mockPartNum; ++i) {
+    env->txnMan_->scanPrimes(1, i);
+  }
+
   ChainResumeProcessor resumeProc(env);
   resumeProc.process();
 
@@ -165,6 +175,8 @@ TEST(ChainResumeEdgesTest, resumePrimeTest3) {
   EXPECT_EQ(334, numOfKey(req, util.genKey, env));
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(334, numOfKey(req, util.genDoublePrime, env));
+
+  delete iClient;
 }
 
 /**
@@ -212,6 +224,8 @@ TEST(ChainResumeEdgesTest, resumeTest4) {
   EXPECT_EQ(334, numOfKey(req, gTestUtil.genKey, env));
   EXPECT_EQ(0, numOfKey(req, gTestUtil.genPrime, env));
   EXPECT_EQ(334, numOfKey(req, gTestUtil.genDoublePrime, env));
+
+  delete iClient;
 }
 
 /**
@@ -252,6 +266,8 @@ TEST(ChainResumeEdgesTest, resumeTest5) {
   EXPECT_EQ(334, numOfKey(req, util.genKey, env));
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(334, numOfKey(req, util.genDoublePrime, env));
+
+  delete iClient;
 }
 
 /**
@@ -285,13 +301,19 @@ TEST(ChainResumeEdgesTest, resumeTest6) {
 
   auto* iClient = FakeInternalStorageClient::instance(env);
   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  env->txnMan_->scanPrimes(1, 1);
+
+  for (auto i = 1; i <= mockPartNum; ++i) {
+    env->txnMan_->scanPrimes(1, i);
+  }
+
   ChainResumeProcessor resumeProc(env);
   resumeProc.process();
 
   EXPECT_EQ(334, numOfKey(req, util.genKey, env));
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, util.genDoublePrime, env));
+
+  delete iClient;
 }
 
 // resume an update left prime, check resume succeeded
@@ -303,7 +325,9 @@ TEST(ChainUpdateEdgeTest, resumeTest7) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
+  LOG(INFO) << "total parts: " << parts;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -326,13 +350,19 @@ TEST(ChainUpdateEdgeTest, resumeTest7) {
 
   auto* iClient = FakeInternalStorageClient::instance(env);
   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  env->txnMan_->scanPrimes(1, 1);
+
+  for (auto i = 1; i <= mockPartNum; ++i) {
+    env->txnMan_->scanPrimes(1, i);
+  }
+
   ChainResumeProcessor resumeProc(env);
   resumeProc.process();
 
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_FALSE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 
 // resume an update left prime, resume failed
@@ -344,7 +374,8 @@ TEST(ChainUpdateEdgeTest, resumeTest8) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -373,6 +404,8 @@ TEST(ChainUpdateEdgeTest, resumeTest8) {
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_TRUE(helper.primeExist(env, req));
   EXPECT_FALSE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 
 // resume an update left prime, resume outdated
@@ -384,7 +417,8 @@ TEST(ChainUpdateEdgeTest, resumeTest9) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -414,6 +448,8 @@ TEST(ChainUpdateEdgeTest, resumeTest9) {
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_TRUE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 
 // resume an update left prime, check resume succeeded
@@ -425,7 +461,8 @@ TEST(ChainUpdateEdgeTest, resumeTest10) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -452,6 +489,8 @@ TEST(ChainUpdateEdgeTest, resumeTest10) {
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_FALSE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 
 // resume an update left prime, resume failed
@@ -463,7 +502,8 @@ TEST(ChainUpdateEdgeTest, resumeTest11) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -491,6 +531,8 @@ TEST(ChainUpdateEdgeTest, resumeTest11) {
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_TRUE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 
 // resume an update left prime, resume outdated
@@ -502,7 +544,8 @@ TEST(ChainUpdateEdgeTest, resumeTest12) {
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
-  auto parts = cluster.getTotalParts();
+  // auto parts = cluster.getTotalParts();
+  auto parts = mockPartNum;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
@@ -530,6 +573,8 @@ TEST(ChainUpdateEdgeTest, resumeTest12) {
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_TRUE(helper.doublePrimeExist(env, req));
+
+  delete iClient;
 }
 }  // namespace storage
 }  // namespace nebula

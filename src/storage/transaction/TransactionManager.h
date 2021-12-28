@@ -49,19 +49,23 @@ class TransactionManager {
     return exec_.get();
   }
 
+  bool start();
+
+  void stop();
+
   LockCore* getLockCore(GraphSpaceID spaceId, PartitionID partId, bool checkWhiteList = true);
 
   InternalStorageClient* getInternalClient() {
     return iClient_;
   }
 
-  StatusOr<TermID> getTerm(GraphSpaceID spaceId, PartitionID partId);
+  // get term of part from kvstore, may fail if this part is not exist
+  std::pair<TermID, nebula::cpp2::ErrorCode> getTerm(GraphSpaceID spaceId, PartitionID partId);
 
-  bool checkTerm(GraphSpaceID spaceId, PartitionID partId, TermID term);
-
-  bool start();
-
-  void stop();
+  // check get term from local term cache
+  // this is used by Chain...RemoteProcessor,
+  // to avoid an old leader request overrider a newer leader's
+  bool checkTermFromCache(GraphSpaceID spaceId, PartitionID partId, TermID termId);
 
   void reportFailed();
 

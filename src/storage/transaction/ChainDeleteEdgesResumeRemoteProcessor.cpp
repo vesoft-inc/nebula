@@ -51,8 +51,9 @@ folly::SemiFuture<Code> ChainDeleteEdgesResumeRemoteProcessor::processLocal(Code
 
     folly::Baton<true, std::atomic> baton;
     env_->kvstore_->asyncMultiRemove(
-        spaceId_, localPartId_, std::move(doublePrimeKeys), [this](auto&& rc) {
+        spaceId_, localPartId_, std::move(doublePrimeKeys), [this, &baton](auto&& rc) {
           this->code_ = rc;
+          baton.post();
         });
     baton.wait();
   }

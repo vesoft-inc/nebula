@@ -56,6 +56,8 @@ void ChainResumeProcessor::process() {
         .thenValue([=](auto&& code) {
           if (code == Code::SUCCEEDED) {
             env_->txnMan_->delPrime(spaceId, edgeKey);
+          } else {
+            VLOG(1) << "recover failed: " << apache::thrift::util::enumNameSafe(rc);
           }
         })
         .get();

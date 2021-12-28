@@ -89,7 +89,7 @@ int numOfKey(const cpp2::AddEdgesRequest& req, KeyGenerator gen, StorageEnv* env
       std::unique_ptr<kvstore::KVIterator> iter;
       EXPECT_EQ(Code::SUCCEEDED, env->kvstore_->prefix(spaceId, partId, key, &iter));
       if (iter && iter->valid()) {
-        LOG(INFO) << "key = " << key;
+        // LOG(INFO) << "key = " << key;
         ++numOfEdges;
       } else {
         // LOG(INFO) << "key: " << key << " not exist";
@@ -325,16 +325,11 @@ class FakeInternalStorageClient : public InternalStorageClient {
     UNUSED(evb);
   }
 
-  // static FakeInternalStorageClient* instance(StorageEnv* env, Code fakeCode = Code::SUCCEEDED) {
-  //   auto pool = std::make_shared<folly::IOThreadPoolExecutor>(3);
-  //   return new FakeInternalStorageClient(env, pool, fakeCode);
-  // }
-
   static FakeInternalStorageClient* instance(StorageEnv* env, Code fakeCode = Code::SUCCEEDED) {
     auto pool = std::make_shared<folly::IOThreadPoolExecutor>(3);
-    // return new FakeInternalStorageClient(env, pool, fakeCode);
-    static FakeInternalStorageClient client(env, pool, fakeCode);
-    return &client;
+    return new FakeInternalStorageClient(env, pool, fakeCode);
+    // static FakeInternalStorageClient client(env, pool, fakeCode);
+    // return &client;
   }
 
   static void hookInternalStorageClient(StorageEnv* env, InternalStorageClient* client) {

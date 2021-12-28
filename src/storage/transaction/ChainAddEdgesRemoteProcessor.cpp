@@ -14,17 +14,20 @@ namespace storage {
 
 void ChainAddEdgesRemoteProcessor::process(const cpp2::ChainAddEdgesRequest& req) {
   uuid_ = ConsistUtil::strUUID();
-  auto partId = req.get_parts().begin()->first;
+  auto spaceId = req.get_space_id();
+  auto edgeKey = req.get_parts().begin()->second.back().key();
+  auto localPartId = NebulaKeyUtils::getPart(edgeKey->dst_ref()->getStr());
+  auto localTerm = req.get_term();
+  auto remotePartId = req.get_parts().begin()->first;
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
-    if (!checkTerm(req)) {
-      LOG(WARNING) << uuid_ << " invalid term, incoming part " << partId
+    if (!env_->txnMan_->checkTermFromCache(spaceId, localPartId, localTerm)) {
+      LOG(WARNING) << uuid_ << " invalid term, incoming part " << remotePartId
                    << ", term = " << req.get_term();
       code = nebula::cpp2::ErrorCode::E_OUTDATED_TERM;
       break;
     }
 
-    auto spaceId = req.get_space_id();
     auto vIdLen = env_->metaClient_->getSpaceVidLen(spaceId);
     if (!vIdLen.ok()) {
       code = Code::E_INVALID_SPACEVIDLEN;
@@ -44,14 +47,9 @@ void ChainAddEdgesRemoteProcessor::process(const cpp2::ChainAddEdgesRequest& req
     }
     commit(req);
   } else {
-    pushResultCode(code, partId);
+    pushResultCode(code, remotePartId);
     onFinished();
   }
-}
-
-bool ChainAddEdgesRemoteProcessor::checkTerm(const cpp2::ChainAddEdgesRequest& req) {
-  auto partId = req.get_parts().begin()->first;
-  return env_->txnMan_->checkTerm(req.get_space_id(), partId, req.get_term());
 }
 
 void ChainAddEdgesRemoteProcessor::commit(const cpp2::ChainAddEdgesRequest& req) {

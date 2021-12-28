@@ -22,7 +22,7 @@ void ChainDeleteEdgesRemoteProcessor::process(const cpp2::ChainDeleteEdgesReques
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     auto spaceId = req.get_space_id();
-    if (!env_->txnMan_->checkTerm(spaceId, partId, term)) {
+    if (!env_->txnMan_->checkTermFromCache(spaceId, partId, term)) {
       LOG(WARNING) << txnId_ << "outdate term, incoming part " << partId << ", term = " << term;
       code = nebula::cpp2::ErrorCode::E_OUTDATED_TERM;
       break;

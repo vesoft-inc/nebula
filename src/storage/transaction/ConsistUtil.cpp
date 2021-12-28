@@ -99,6 +99,7 @@ std::string ConsistUtil::ConsistUtil::edgeKey(size_t vIdLen,
                                  *key.ranking_ref(),
                                  (*key.dst_ref()).getStr());
 }
+
 cpp2::AddEdgesRequest ConsistUtil::toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req) {
   cpp2::AddEdgesRequest ret;
   ret.space_id_ref() = req.get_space_id();

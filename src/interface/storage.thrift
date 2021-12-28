@@ -865,7 +865,6 @@ struct ChainAddEdgesRequest {
     3: list<binary>                             prop_names,
     // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
-    // 5: map<common.PartitionID, i64>             term_of_parts,
     5: i64                                      term
     6: optional i64                             edge_version
     // 6: optional map<common.PartitionID, list<i64>>(

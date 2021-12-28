@@ -19,7 +19,8 @@ ResumeUpdateProcessor::ResumeUpdateProcessor(StorageEnv* env, const std::string&
 }
 
 folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeUpdateProcessor::prepareLocal() {
-  return Code::SUCCEEDED;
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  return code_;
 }
 
 folly::SemiFuture<Code> ResumeUpdateProcessor::processRemote(Code code) {
@@ -31,9 +32,10 @@ folly::SemiFuture<Code> ResumeUpdateProcessor::processLocal(Code code) {
   VLOG(1) << "processRemote()=" << apache::thrift::util::enumNameSafe(code);
   setErrorCode(code);
 
-  if (!checkTerm()) {
-    LOG(WARNING) << "E_OUTDATED_TERM";
-    return Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
@@ -43,7 +45,7 @@ folly::SemiFuture<Code> ResumeUpdateProcessor::processLocal(Code code) {
   if (code == Code::E_RPC_FAILURE || code == Code::SUCCEEDED) {
     // if there are something wrong other than rpc failure
     // we need to keep the resume retry(by not remove those prime key)
-    auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+    auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
     kvErased_.emplace_back(std::move(key));
     forwardToDelegateProcessor();
     return code_;

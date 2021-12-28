@@ -21,7 +21,7 @@ void ChainDeleteEdgesGroupProcessor::process(const cpp2::DeleteEdgesRequest& req
   auto stSplitRequest = splitRequest(req);
   if (!stSplitRequest.ok()) {
     // TODO(liuyu): change this when error code done
-    pushResultCode(Code::E_SPACE_NOT_FOUND, localPartId);
+    pushResultCode(Code::E_PART_NOT_FOUND, localPartId);
     onFinished();
   }
 

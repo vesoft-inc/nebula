@@ -33,5 +33,3 @@ class ChainDeleteEdgesRemoteProcessor : public BaseProcessor<cpp2::ExecResponse>
 
 }  // namespace storage
 }  // namespace nebula
-
-// bool checkTerm(const cpp2::ChainDeleteEdgesRequest& req);
