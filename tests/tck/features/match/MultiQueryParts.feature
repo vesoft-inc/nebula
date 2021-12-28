@@ -82,7 +82,7 @@ Feature: Multi Query Parts
       MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
       RETURN m,n,a,c
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Match
     When executing query:
@@ -169,7 +169,7 @@ Feature: Multi Query Parts
       OPTIONAL MATCH (a)<-[]-(b)
       RETURN m.name AS n1, n.name AS n2, a.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Query Parts
     When executing query:
@@ -209,7 +209,7 @@ Feature: Multi Query Parts
       MATCH (a)-[]-(b)
       RETURN a.name AS n1, b.name AS n2 ORDER BY n1, n2 LIMIT 10
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Some Erros
     When executing query:
