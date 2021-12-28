@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  // nebula::Snowflake::initWorkerId(interface->metaClient_.get());
+  nebula::Snowflake::initWorkerId(interface->metaClient_.get());
 
   gServer->setPort(localhost.port);
   gServer->setInterface(std::move(interface));

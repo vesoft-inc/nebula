@@ -16,7 +16,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     int32_t workerIdInt32 = std::stoi(workerIdStr);
 
     handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_workerid(std::move(workerIdInt32));
+    resp_.workerid_ref() = workerIdInt32;
     onFinished();
     return;
   }
@@ -36,7 +36,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(newWorkerId)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_workerid(std::move(workerIdInt32));
+  resp_.workerid_ref() = workerIdInt32;
   onFinished();
 }
 

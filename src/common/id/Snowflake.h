@@ -11,19 +11,14 @@
 
 namespace nebula {
 class Snowflake {
+  FRIEND_TEST(SnowflakeTest, TestWorkerId);
+  FRIEND_TEST(SnowflakeTest, TestConcurrency);
+  friend size_t SnowflakeTest(size_t iters);
+
  public:
   Snowflake() = default;
 
-  static void initWorkerId(meta::MetaClient* client) {
-    const std::string& ip = client->getLocalIp();
-    auto result = client->getWorkerId(ip).get();
-    if (!result.ok()) {
-      LOG(FATAL) << "Failed to get workerId from meta server";
-    }
-    workerId_ = result.value();
-  }
-
-  static void mockInitWorkerId(int32_t workerId) { workerId_ = workerId; }
+  static void initWorkerId(meta::MetaClient* client);
 
   int64_t getId();
 
@@ -31,9 +26,9 @@ class Snowflake {
   /*
    *  Snowflake id: | timestampBit 41 | workerBit 10 | sequenceBit 12 |
    */
-  int64_t lastTimestamp_ = -1;          // 41 bits
-  static inline int64_t workerId_ = 0;  // 10 bits
-  std::atomic_int64_t sequence_ = 0;    // 12 bits
+  std::atomic_int64_t lastTimestamp_{-1};  // 41 bits
+  static inline int64_t workerId_{0};      // 10 bits
+  std::atomic_int64_t sequence_{0};        // 12 bits
 
   int64_t getTimestamp();
 

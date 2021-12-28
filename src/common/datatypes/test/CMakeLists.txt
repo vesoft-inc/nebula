@@ -39,21 +39,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:snowflake_obj>
-        $<TARGET_OBJECTS:meta_client_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:meta_obj>
-        $<TARGET_OBJECTS:ssl_obj>
-        $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
@@ -125,21 +110,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:snowflake_obj>
-        $<TARGET_OBJECTS:meta_client_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:meta_obj>
-        $<TARGET_OBJECTS:ssl_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:function_manager_obj>

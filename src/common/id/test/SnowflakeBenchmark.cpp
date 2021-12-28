@@ -12,7 +12,6 @@ size_t SnowflakeTest(size_t iters) {
   constexpr size_t ops = 1000000UL;
 
   nebula::Snowflake generator;
-  generator.mockInitWorkerId(0);
   auto i = 0UL;
   while (i++ < ops * iters) {
     int64_t id = generator.getId();

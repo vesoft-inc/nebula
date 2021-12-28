@@ -121,8 +121,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:snowflake_obj>
         $<TARGET_OBJECTS:encryption_obj>
-        ${expression_test_common_libs}
     LIBRARIES
         follybenchmark
         boost_regex
@@ -138,21 +138,6 @@ nebula_add_executable(
     OBJECTS
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:snowflake_obj>
-        $<TARGET_OBJECTS:meta_client_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:meta_obj>
-        $<TARGET_OBJECTS:ssl_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
