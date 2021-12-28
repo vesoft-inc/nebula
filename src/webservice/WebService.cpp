@@ -22,6 +22,10 @@ DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
 DEFINE_string(ws_ip, "0.0.0.0", "IP/Hostname to bind to");
 DEFINE_int32(ws_threads, 4, "Number of threads for the web service.");
 
+#ifdef BUILD_STANDALONE
+DEFINE_int32(ws_storage_threads, 4, "Number of threads for the web service.");
+#endif
+
 namespace nebula {
 namespace {
 
@@ -57,7 +61,7 @@ WebService::~WebService() {
   wsThread_->join();
 }
 
-Status WebService::start() {
+Status WebService::start(uint16_t httpPort, uint16_t h2Port) {
   if (started_) {
     LOG(INFO) << "Web service has been started.";
     return Status::OK();
@@ -87,8 +91,8 @@ Status WebService::start() {
   started_ = true;
 
   std::vector<HTTPServer::IPConfig> ips = {
-      {SocketAddress(FLAGS_ws_ip, FLAGS_ws_http_port, true), HTTPServer::Protocol::HTTP},
-      {SocketAddress(FLAGS_ws_ip, FLAGS_ws_h2_port, true), HTTPServer::Protocol::HTTP2},
+      {SocketAddress(FLAGS_ws_ip, httpPort, true), HTTPServer::Protocol::HTTP},
+      {SocketAddress(FLAGS_ws_ip, h2Port, true), HTTPServer::Protocol::HTTP2},
   };
 
   CHECK_GT(FLAGS_ws_threads, 0) << "The number of webservice threads must be greater than zero";

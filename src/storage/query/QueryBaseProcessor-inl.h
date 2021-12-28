@@ -176,7 +176,7 @@ void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
     auto ttlInfo = edgeSchema->getTTLInfo();
     if (ttlInfo.ok()) {
       VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
-      edgeContext_.ttlInfo_.emplace(edgeType, std::move(ttlInfo).value());
+      edgeContext_.ttlInfo_.emplace(std::abs(edgeType), std::move(ttlInfo).value());
     }
   }
 }

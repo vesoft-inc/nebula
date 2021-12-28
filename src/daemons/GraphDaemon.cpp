@@ -17,6 +17,7 @@
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
 #include "graph/stats/GraphStats.h"
@@ -34,7 +35,6 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
 #if defined(__x86_64__)
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
