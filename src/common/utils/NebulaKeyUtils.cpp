@@ -261,4 +261,8 @@ std::string NebulaKeyUtils::adminTaskKey(int32_t seqId, JobID jobId, TaskID task
   return key;
 }
 
+std::string NebulaKeyUtils::dataVersionKey() {
+  return "\xFF\xFF\xFF\xFF";
+}
+
 }  // namespace nebula
