@@ -62,6 +62,7 @@ if(ENABLE_STANDALONE_VERSION)
 set(EXEC_QUERY_TEST_OBJS 
     ${EXEC_QUERY_TEST_OBJS}
     $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+    $<TARGET_OBJECTS:storage_local_server_obj>
 )
 endif()
 

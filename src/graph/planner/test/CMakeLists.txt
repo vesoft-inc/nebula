@@ -10,6 +10,7 @@ if(ENABLE_STANDALONE_VERSION)
 set(EXEC_PLAN_TEST_FLAG_DEPS 
     ${EXEC_PLAN_TEST_FLAG_DEPS}
     $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+    $<TARGET_OBJECTS:storage_local_server_obj>
 )
 endif()
 
