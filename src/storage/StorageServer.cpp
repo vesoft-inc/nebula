@@ -198,6 +198,9 @@ bool StorageServer::start() {
   LOG(INFO) << "Init kvstore";
   kvstore_ = getStoreInstance();
 
+  LOG(INFO) << "Init LogMonitor";
+  logMonitor_ = std::make_unique<LogMonitor>();
+
   if (nullptr == kvstore_) {
     LOG(ERROR) << "Init kvstore failed";
     return false;
