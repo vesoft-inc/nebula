@@ -933,6 +933,7 @@ TEST(GetNeighborsTest, TtlTest) {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
   TagID player = 1;
+  TagID team = 2;
   EdgeType serve = 101;
 
   {
@@ -952,6 +953,24 @@ TEST(GetNeighborsTest, TtlTest) {
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
     // vId, stat, player, serve, expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
+  }
+  {
+    LOG(INFO) << "InEdgeReturnAllProperty";
+    std::vector<VertexID> vertices = {"Spurs"};
+    std::vector<EdgeType> over = {-serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(team, std::vector<std::string>{"name"});
+    edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, team, - serve, expr
     QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
   }
   {
@@ -996,6 +1015,33 @@ TEST(GetNeighborsTest, TtlTest) {
     ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[1].type());
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[2].type());
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type());
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
+  }
+  {
+    LOG(INFO) << "InEdgeReturnAllProperty";
+    std::vector<VertexID> vertices = {"Spurs"};
+    std::vector<EdgeType> over = {-serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(team, std::vector<std::string>{"name"});
+    edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+    // vId, stat, team, - serve, expr
+    ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+    ASSERT_EQ("Spurs", (*resp.vertices_ref()).rows[0].values[0].getStr());
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[1].type());
+    // team still exists (team hasn't set ttl)
+    ASSERT_EQ(Value::Type::LIST, (*resp.vertices_ref()).rows[0].values[2].type());
+    // - serve expired
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type());
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
   }

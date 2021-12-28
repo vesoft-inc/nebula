@@ -77,6 +77,13 @@ fi
 ACTION=${1}
 TARGET=${2}
 
+if [ -e ${INSTALL_ROOT}/bin/nebula-standalone ]
+then
+    ALLTARGET=(standalone)
+else
+    ALLTARGET=(metad graphd storaged)
+fi
+
 # Collect the daemons on which we perform the action on
 case ${TARGET} in
     metad)
@@ -88,8 +95,11 @@ case ${TARGET} in
     storaged)
         TARGETS=(${TARGET})
         ;;
+    standalone)
+        TARGETS=(${TARGET})
+        ;;
     all)
-        TARGETS=(metad graphd storaged)
+        TARGETS=${ALLTARGET[*]}
         ;;
     *)
         ERROR "Unknown daemon \`${DAEMON}'"

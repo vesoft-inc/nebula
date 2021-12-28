@@ -1469,7 +1469,7 @@ Feature: Match seek by edge
       MATCH (p1)-[:teammate]->(p2)
       RETURN p1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario Outline: seek by edge in a single edge type space
     Given an empty graph
@@ -1490,16 +1490,16 @@ Feature: Match seek by edge
       MATCH (p1)-[]->(p2)
       RETURN p1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (p1)-[b]->(p2)
       RETURN p1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (p1)-[:edge_1]->(p2)
       RETURN p1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
