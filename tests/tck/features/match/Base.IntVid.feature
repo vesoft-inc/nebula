@@ -66,7 +66,31 @@ Feature: Basic match
       """
     Then a SemanticError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
 
-  Scenario: Une step
+  Scenario: One step
+    When executing query:
+      """
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.tea.name IS NOT NULL THEN v2.tea.name WHEN v2.playe.name IS NOT NULL THEN v2.playe.name ELSE "abc" END AS Name
+      """
+    Then the result should be, in any order:
+      | Type    | Name  |
+      | "like"  | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+    When executing query:
+      """
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.tea.name IS NOT NULL THEN v2.tea.name WHEN v2.playe.name IS NOT NULL THEN v2.playe.name END AS Name
+      """
+    Then the result should be, in any order:
+      | Type    | Name |
+      | "like"  | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)

@@ -108,6 +108,30 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.tea.name IS NOT NULL THEN v2.tea.name WHEN v2.playe.name IS NOT NULL THEN v2.playe.name ELSE "abc" END AS Name
+      """
+    Then the result should be, in any order:
+      | Type    | Name  |
+      | "like"  | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+      | "serve" | "abc" |
+    When executing query:
+      """
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
+      RETURN type(r) AS Type, CASE WHEN v2.tea.name IS NOT NULL THEN v2.tea.name WHEN v2.playe.name IS NOT NULL THEN v2.playe.name END AS Name
+      """
+    Then the result should be, in any order:
+      | Type    | Name |
+      | "like"  | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
+      | "serve" | NULL |
+    When executing query:
+      """
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2)
       RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order:
