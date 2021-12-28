@@ -11,7 +11,7 @@ import logging
 
 from tests.common.configs import all_configs
 from tests.common.types import SpaceDesc
-from tests.common.utils import get_conn_pool
+from tests.common.utils import get_conn_pool, get_ssl_config
 from tests.common.constants import NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR, NEBULA_HOME
 from tests.common.nebula_service import NebulaService
 
@@ -110,6 +110,17 @@ def get_ports():
             raise Exception(f"Invalid port: {port}")
         return port
 
+def get_ssl_config_from_tmp():
+    with open(NB_TMP_PATH, "r") as f:
+        data = json.loads(f.readline())
+        is_graph_ssl = (
+            data.get("enable_ssl", "false").upper() == "TRUE"
+            or data.get("enable_graph_ssl", "false").upper() == "TRUE"
+        )
+        ca_signed = data.get("ca_signed", "false").upper() == "TRUE"
+        return get_ssl_config(is_graph_ssl, ca_signed)
+
+
 @pytest.fixture(scope="class")
 def class_fixture_variables():
     """save class scope fixture, used for session update.
@@ -140,7 +151,8 @@ def conn_pool_to_first_graph_service(pytestconfig):
     addr = pytestconfig.getoption("address")
     host_addr = addr.split(":") if addr else ["localhost", get_ports()[0]]
     assert len(host_addr) == 2
-    pool = get_conn_pool(host_addr[0], host_addr[1])
+    ssl_config = get_ssl_config_from_tmp()
+    pool = get_conn_pool(host_addr[0], host_addr[1], ssl_config)
     yield pool
     pool.close()
 
@@ -150,7 +162,8 @@ def conn_pool_to_second_graph_service(pytestconfig):
     addr = pytestconfig.getoption("address")
     host_addr = ["localhost", get_ports()[1]]
     assert len(host_addr) == 2
-    pool = get_conn_pool(host_addr[0], host_addr[1])
+    ssl_config = get_ssl_config_from_tmp()
+    pool = get_conn_pool(host_addr[0], host_addr[1], ssl_config)
     yield pool
     pool.close()
 
@@ -246,11 +259,6 @@ def workarround_for_class(
         request.cls.drop_data()
 
 @pytest.fixture(scope="class")
-def establish_a_rare_connection(pytestconfig):
-    addr = pytestconfig.getoption("address")
-    host_addr = addr.split(":") if addr else ["localhost", get_ports()[0]]
-    socket = TSocket.TSocket(host_addr[0], host_addr[1])
-    transport = TTransport.TBufferedTransport(socket)
-    protocol = TBinaryProtocol.TBinaryProtocol(transport)
-    transport.open()
-    return GraphService.Client(protocol)
+def establish_a_rare_connection(conn_pool, pytestconfig):
+    conn = conn_pool.get_connection()
+    return conn._connection
