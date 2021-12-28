@@ -42,8 +42,8 @@ DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times
 DEFINE_uint32(failed_login_attempts,
               5,
               "how many consecutive incorrect passwords cause the account to become locked");
-DEFINE_uint32(password_lock_time,
-              5,
+DEFINE_uint32(password_lock_time_in_secs,
+              10,
               "how long to lock the account after too many consecutive login attempts provide an "
               "incorrect password.");
 
@@ -2414,25 +2414,27 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
 
   folly::RWSpinLock::WriteHolder holder(localCacheLock_);
 
-  auto& passwordAttemtRemain =
-      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
-  // // If the remaining attempts is 0 and login retry is limitied, the user should be blocked
-  // bool isUserLocked = passwordAttemtRemain == 0 && FLAGS_failed_login_attempts != 0;
-
   auto& lockedSince = const_cast<ThreadLocalInfo&>(threadLocalInfo).userLoginLockTime_[account];
 
   // lockedSince is non-zero means the account has been locked
   if (lockedSince != 0) {
     auto remainingLockTime =
-        (lockedSince + FLAGS_password_lock_time * 3600) - time::WallClock::fastNowInSec();
-    return Status::Error(
-        "%d times consecutive incorrect passwords has been input, user name: %s has been "
-        "locked, try again in %ld seconds",
-        FLAGS_failed_login_attempts,
-        account.c_str(),
-        remainingLockTime);
+        (lockedSince + FLAGS_password_lock_time_in_secs) - time::WallClock::fastNowInSec();
+    // If the account is still locked, there is no need to check the password
+    if (remainingLockTime > 0) {
+      return Status::Error(
+          "%d times consecutive incorrect passwords has been input, user name: %s has been "
+          "locked, try again in %ld seconds",
+          FLAGS_failed_login_attempts,
+          account.c_str(),
+          remainingLockTime);
+    }
+    // Clear lock state
+    lockedSince = 0;
   }
 
+  auto& passwordAttemtRemain =
+      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
   if (iter->second != password) {
     // By default there is no limit of login attempts
     if (FLAGS_failed_login_attempts == 0) {
@@ -2452,21 +2454,11 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
             "blocked, try again in %d seconds",
             FLAGS_failed_login_attempts,
             account.c_str(),
-            lockedSince + FLAGS_password_lock_time * 3600);
+            FLAGS_password_lock_time_in_secs);
       }
       LOG(ERROR) << "Invalid password, remaining attempts: " << passwordAttemtRemain;
       return Status::Error("Invalid password, remaining attempts: %d", passwordAttemtRemain);
     }
-  }
-
-  // Authentication succeed, check if the account has been locked
-  auto curTimestamp = time::WallClock::fastNowInSec();
-  if (curTimestamp < lockedSince + FLAGS_password_lock_time * 3600) {
-    return Status::Error(
-        "%d times consecutive incorrect passwords has been input, user name: %s has been "
-        "locked",
-        FLAGS_failed_login_attempts,
-        account.c_str());
   }
 
   // Reset password attempts remained

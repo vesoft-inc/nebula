@@ -20,8 +20,6 @@ class PasswordAuthenticator final : public Authenticator {
 
  private:
   meta::MetaClient* metaClient_;
-  uint32 maxFailedLoginAttempts_ = 0;
-  uint32 passwordLocalTime_ = 0;
 };
 
 }  // namespace graph
