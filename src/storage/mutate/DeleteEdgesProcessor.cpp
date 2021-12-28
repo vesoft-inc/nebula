@@ -145,6 +145,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     auto key = NebulaKeyUtils::edgeKey(spaceVidLen_, partId, srcId, type, rank, dstId);
     std::string val;
     auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
+    auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(type));
 
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
       /**
@@ -162,7 +163,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValues(reader.get(), index.get(), schema.get());
           if (!valuesRet.ok()) {
             continue;
           }

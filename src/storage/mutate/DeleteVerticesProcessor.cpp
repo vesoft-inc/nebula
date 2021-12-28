@@ -134,6 +134,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
         }
         target.emplace_back(std::move(l));
       }
+      auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
       RowReaderWrapper reader;
       for (auto& index : indexes_) {
         if (index->get_schema_id().get_tag_id() == tagId) {
@@ -147,7 +148,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValues(reader.get(), index.get(), schema.get());
           if (!valuesRet.ok()) {
             continue;
           }
