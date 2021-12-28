@@ -4,6 +4,7 @@
  */
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include <cstdint>
 #include <mutex>
 #include <thread>
 
@@ -33,10 +34,10 @@ class GraphServer {
 
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
-  std::unique_ptr<apache::thrift::ThriftServer> gServer_;
+  std::unique_ptr<apache::thrift::ThriftServer> thriftServer_;
   std::unique_ptr<std::thread> graphThread_;
 
-  enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };
+  enum ServiceStatus : uint8_t { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };
   std::atomic<ServiceStatus> serverStatus_{STATUS_UNINITIALIZED};
   std::mutex muStop_;
   std::condition_variable cvStop_;

@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
 
   if (!gServer->start()) {
     LOG(ERROR) << "The graph server start failed";
-    gServer->stop();
     return EXIT_FAILURE;
   }
 
