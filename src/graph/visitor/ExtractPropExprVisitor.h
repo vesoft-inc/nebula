@@ -45,6 +45,7 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
   void visit(VariableExpression *) override;
   void visit(VersionedVariableExpression *) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *) override;
   void visit(TagPropertyExpression *) override;
   void visit(EdgePropertyExpression *) override;
   void visit(InputPropertyExpression *) override;

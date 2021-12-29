@@ -426,7 +426,7 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       MATCH (v:player)-[:like]-(m:player)
-      WITH m.age AS age, count(m.age) AS count
+      WITH m.player.age AS age, count(m.player.age) AS count
       RETURN age, count
       ORDER BY age, count
       """
@@ -459,8 +459,8 @@ Feature: Basic Aggregate and GroupBy
       """
       MATCH (v:player{name:"Tim Duncan"})-[:like]->(m)
       RETURN
-        m.name as dst,
-        (INT)(sum(m.age)/count(m.age))+avg(distinct m.age+1)+1 AS statistics
+        m.player.name as dst,
+        (INT)(sum(m.player.age)/count(m.player.age))+avg(distinct m.player.age+1)+1 AS statistics
       """
     Then the result should be, in any order, with relax comparison:
       | dst             | statistics |
@@ -469,7 +469,7 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       MATCH (v:player {name:"noexist"})-[:like]-(m:player)
-      WITH m.age AS age, count(m.age) AS count
+      WITH m.player.age AS age, count(m.player.age) AS count
       RETURN age, count
       ORDER BY age, count
       """
@@ -478,15 +478,15 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       MATCH (v:player {name:"noexist"})-[:like]-(m:player)
-      RETURN count(m.age) AS count,
-             sum(m.age) AS sum,
-             avg(m.age) AS avg,
-             min(m.age) AS min,
-             max(m.age) AS max,
-             std(m.age) AS std,
-             bit_and(m.age) AS b1,
-             bit_or(m.age) AS b2,
-             bit_xor(m.age) AS b3
+      RETURN count(m.player.age) AS count,
+             sum(m.player.age) AS sum,
+             avg(m.player.age) AS avg,
+             min(m.player.age) AS min,
+             max(m.player.age) AS max,
+             std(m.player.age) AS std,
+             bit_and(m.player.age) AS b1,
+             bit_or(m.player.age) AS b2,
+             bit_xor(m.player.age) AS b3
       """
     Then the result should be, in order, with relax comparison:
       | count | sum | avg  | min  | max  | std  | b1   | b2   | b3   |
@@ -771,26 +771,26 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       MATCH (v:player)
-      WHERE avg(v.age) > 1
-      RETURN v.age
+      WHERE avg(v.player.age) > 1
+      RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
     When executing query:
       """
       MATCH (v:player)
       WITH v
-      WHERE avg(v.age) > 1
-      RETURN v.age
+      WHERE avg(v.player.age) > 1
+      RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
     When executing query:
       """
       MATCH (v:player)
       WITH DISTINCT v
-      WHERE avg(v.age) > 1
-      RETURN v.age
+      WHERE avg(v.player.age) > 1
+      RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
 
 # When executing query:
 # """

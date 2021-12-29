@@ -10,8 +10,8 @@ Feature: Collapse Project Rule
     When profiling query:
       """
       MATCH (v:player)
-      WHERE v.age > 38
-      WITH v, v.age AS age, v.age/10 AS iage, v.age%10 AS mage,v.name AS name
+      WHERE v.player.age > 38
+      WITH v, v.player.age AS age, v.player.age/10 AS iage, v.player.age%10 AS mage,v.player.name AS name
       RETURN iage
       """
     Then the result should be, in any order:

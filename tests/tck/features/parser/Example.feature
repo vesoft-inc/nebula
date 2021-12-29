@@ -14,7 +14,7 @@ Feature: Feature examples
     When executing query:
       """
       MATCH (v:player{name: "Tim Duncan"})
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name         |

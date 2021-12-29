@@ -59,21 +59,21 @@ Feature: Function Call Expression
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN  concat(a.name,c.name)
+      WHERE a.player.age > 45
+      RETURN  concat(a.player.name, c.team.name)
       """
     Then the result should be, in any order:
-      | concat(a.name,c.name)    |
-      | "Shaquille O'NealLakers" |
+      | concat(a.player.name,c.team.name) |
+      | "Shaquille O'NealLakers"          |
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN  concat(a.name, "hello")
+      WHERE a.player.age > 45
+      RETURN  concat(a.player.name, "hello")
       """
     Then the result should be, in any order:
-      | concat(a.name,"hello")  |
-      | "Shaquille O'Nealhello" |
+      | concat(a.player.name,"hello") |
+      | "Shaquille O'Nealhello"       |
 
   Scenario: concat_ws
     When executing query:
@@ -87,8 +87,8 @@ Feature: Function Call Expression
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN concat_ws("@",a.name, "hello", b.likeness, c.name) as result
+      WHERE a.player.age > 45
+      RETURN concat_ws("@",a.player.name, "hello", b.likeness, c.team.name) as result
       """
     Then the result should be, in any order:
       | result                          |
@@ -96,8 +96,8 @@ Feature: Function Call Expression
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN concat_ws("@",a.name, NULL, "hello", b.likeness, c.name) as result
+      WHERE a.player.age > 45
+      RETURN concat_ws("@",a.player.name, NULL, "hello", b.likeness, c.team.name) as result
       """
     Then the result should be, in any order:
       | result                          |
@@ -105,8 +105,8 @@ Feature: Function Call Expression
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN concat_ws(1,a.name, NULL, "hello", b.likeness, c.name) as result
+      WHERE a.player.age > 45
+      RETURN concat_ws(1,a.player.name, NULL, "hello", b.likeness, c.team.name) as result
       """
     Then the result should be, in any order:
       | result |
@@ -114,8 +114,8 @@ Feature: Function Call Expression
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
-      WHERE a.age > 45
-      RETURN concat_ws(NULL ,a.name, NULL, "hello", b.likeness, c.name) as result
+      WHERE a.player.age > 45
+      RETURN concat_ws(NULL ,a.player.name, NULL, "hello", b.likeness, c.team.name) as result
       """
     Then the result should be, in any order:
       | result |

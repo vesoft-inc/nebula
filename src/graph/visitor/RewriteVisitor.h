@@ -7,7 +7,6 @@
 #define GRAPH_VISITOR_REWRITEVISITOR_H_
 
 #include <functional>
-#include <vector>
 
 #include "graph/visitor/ExprVisitorImpl.h"
 
@@ -73,6 +72,7 @@ class RewriteVisitor final : public ExprVisitorImpl {
   void visit(LabelExpression*) override {}
   void visit(UUIDExpression*) override {}
   void visit(LabelAttributeExpression*) override {}
+  void visit(LabelTagPropertyExpression*) override {}
   void visit(VariableExpression*) override {}
   void visit(VersionedVariableExpression*) override {}
   void visit(TagPropertyExpression*) override {}
