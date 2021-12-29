@@ -12,6 +12,7 @@
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(agent_heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
@@ -144,9 +145,12 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   }
 
   std::vector<HostAddr> hosts;
-  int64_t threshold =
-      (expiredTTL == 0 ? FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor : expiredTTL) *
-      1000;
+  int64_t expiredTime =
+      FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor;  // meta/storage/graph
+  if (role == cpp2::HostRole::AGENT) {
+    expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor;
+  }
+  int64_t threshold = (expiredTTL == 0 ? expiredTime : expiredTTL) * 1000;
   auto now = time::WallClock::fastNowInMilliSec();
   while (iter->valid()) {
     auto host = MetaKeyUtils::parseHostKey(iter->key());

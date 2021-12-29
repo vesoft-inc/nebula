@@ -17,7 +17,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
-  auto iterRet = doPrefix(spacePrefix);
+  auto iterRet = doPrefix(spacePrefix, direct);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
     LOG(ERROR) << "Space prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -37,7 +37,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
 
   for (const auto& spaceId : allSpaceId) {
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
-    auto iterPartRet = doPrefix(partPrefix);
+    auto iterPartRet = doPrefix(partPrefix, direct);
     if (!nebula::ok(iterPartRet)) {
       retCode = nebula::error(iterPartRet);
       LOG(ERROR) << "Part prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -87,7 +87,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
   const auto& zonePrefix = MetaKeyUtils::zonePrefix();
-  auto iterRet = doPrefix(zonePrefix);
+  auto iterRet = doPrefix(zonePrefix, direct);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
     LOG(ERROR) << "Zone prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -153,6 +153,10 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
   auto replaceHosts = req.get_hosts();
   if (!replaceHosts.empty()) {
     for (auto h : replaceHosts) {
+      if (h.get_from_host() == h.get_to_host()) {
+        continue;
+      }
+
       auto result = replaceHostInPartition(h.get_from_host(), h.get_to_host(), true);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "replaceHost in partition fails when recovered";

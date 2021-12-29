@@ -32,6 +32,7 @@ DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
+DEFINE_int32(agent_heartbeat_interval_secs, 60, "Agent heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
@@ -873,8 +874,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("list cluster failure!");
     case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_GET_ABS_PATH_FAILURE:
       return Status::Error("Failed to get the absolute path!");
-    case nebula::cpp2::ErrorCode::E_GET_META_DIR_FAILURE:
-      return Status::Error("Failed to get meta dir!");
+    case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE:
+      return Status::Error("There is no agent!");
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:

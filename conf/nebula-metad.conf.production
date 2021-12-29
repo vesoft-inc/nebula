@@ -52,6 +52,7 @@
 --default_replica_factor=1
 
 --heartbeat_interval_secs=10
+--agent_heartbeat_interval_secs=60
 
 ############## rocksdb Options ##############
 --rocksdb_wal_sync=true
