@@ -6,17 +6,19 @@
 
 import os
 import re
+import json
 import random
 import string
 import time
 import yaml
 from typing import Pattern
 
-from nebula2.Config import Config
+from nebula2.Config import Config, SSL_config
 from nebula2.common import ttypes as CommonTtypes
 from nebula2.gclient.net import Session
 from nebula2.gclient.net import ConnectionPool
 
+from tests.common.constants import NB_TMP_PATH, NEBULA_HOME
 from tests.common.csv_import import CSVImporter
 from tests.common.path_value import PathVal
 from tests.common.types import SpaceDesc
@@ -113,9 +115,12 @@ def compare_value(real, expect):
         if eedge.type < 0:
             esrc, edst = edst, esrc
         # ignore props comparison
-        return rsrc == esrc and rdst == edst \
-            and redge.ranking == eedge.ranking \
+        return (
+            rsrc == esrc
+            and rdst == edst
+            and redge.ranking == eedge.ranking
             and redge.name == eedge.name
+        )
 
     return real == expect
 
@@ -433,13 +438,13 @@ def load_csv_data(
         return space_desc
 
 
-def get_conn_pool(host: str, port: int):
+def get_conn_pool(host: str, port: int, ssl_config: SSL_config):
     config = Config()
     config.max_connection_pool_size = 20
     config.timeout = 180000
     # init connection pool
     pool = ConnectionPool()
-    if not pool.init([(host, port)], config):
+    if not pool.init([(host, port)], config, ssl_config):
         raise Exception("Fail to init connection pool.")
     return pool
 
@@ -450,3 +455,18 @@ def parse_service_index(name: str):
     if m and len(m.groups()) == 2:
         return int(m.groups()[1])
     return None
+
+def get_ssl_config(is_graph_ssl: bool, ca_signed: bool):
+    if not is_graph_ssl:
+        return None
+    ssl_config = SSL_config()
+
+    if ca_signed:
+        ssl_config.ca_certs = os.path.join(NEBULA_HOME, 'tests/cert/test.ca.pem')
+        ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
+        ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
+    else:
+        ssl_config.ca_certs = os.path.join(NEBULA_HOME, 'tests/cert/test.ca.pem')
+        ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
+        ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
+    return ssl_config

@@ -24,7 +24,7 @@ class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::KVRemoveRequest& req);
 
  private:
-  explicit RemoveProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  RemoveProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 

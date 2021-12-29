@@ -9,8 +9,14 @@ import json
 import os
 import shutil
 from tests.common.nebula_service import NebulaService
-from tests.common.utils import get_conn_pool, load_csv_data
-from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR
+from tests.common.utils import get_conn_pool, load_csv_data, get_ssl_config
+from tests.common.constants import (
+    NEBULA_HOME,
+    TMP_DIR,
+    NB_TMP_PATH,
+    SPACE_TMP_PATH,
+    BUILD_DIR,
+)
 
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -100,8 +106,12 @@ def start_nebula(nb, configs):
         address = "localhost"
         ports = nb.start()
 
+    is_graph_ssl = opt_is(configs.enable_ssl, "true") or opt_is(
+        configs.enable_graph_ssl, "true"
+    )
+    ca_signed = opt_is(configs.enable_ssl, "true")
     # Load csv data
-    pool = get_conn_pool(address, ports[0])
+    pool = get_conn_pool(address, ports[0], get_ssl_config(is_graph_ssl, ca_signed))
     sess = pool.get_session(configs.user, configs.password)
 
     if not os.path.exists(TMP_DIR):
@@ -119,7 +129,14 @@ def start_nebula(nb, configs):
         f.write(json.dumps(spaces))
 
     with open(NB_TMP_PATH, "w") as f:
-        data = {"ip": "localhost", "port": ports, "work_dir": nb.work_dir}
+        data = {
+            "ip": "localhost",
+            "port": ports,
+            "work_dir": nb.work_dir,
+            "enable_ssl": configs.enable_ssl,
+            "enable_graph_ssl": configs.enable_graph_ssl,
+            "ca_signed": configs.ca_signed,
+        }
         f.write(json.dumps(data))
     print('Start nebula successfully')
 

@@ -140,9 +140,9 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   virtual void process(const REQ& req) = 0;
 
  protected:
-  explicit QueryBaseProcessor(StorageEnv* env,
-                              const ProcessorCounters* counters,
-                              folly::Executor* executor = nullptr)
+  QueryBaseProcessor(StorageEnv* env,
+                     const ProcessorCounters* counters,
+                     folly::Executor* executor = nullptr)
       : BaseProcessor<RESP>(env, counters), executor_(executor) {}
 
   virtual nebula::cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;

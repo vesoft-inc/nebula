@@ -436,14 +436,13 @@ std::string DropZoneSentence::toString() const {
   return folly::stringPrintf("DROP ZONE \"%s\"", zoneName_.get()->c_str());
 }
 
-std::string SplitZoneSentence::toString() const {
+std::string DivideZoneSentence::toString() const {
   std::string buf;
   buf.reserve(128);
-  buf += "SPLIT ZONE \"";
+  buf += "DIVIDE ZONE \"";
   buf += *zoneName_;
-  buf += "\" INTO \"";
-  buf += zoneNames_->toString();
-  buf += "\"";
+  buf += "\" INTO ";
+  buf += zoneItems_->toString();
   return buf;
 }
 

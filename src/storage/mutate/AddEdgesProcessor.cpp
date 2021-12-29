@@ -252,7 +252,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 1 , Delete old version index if exists.
              */
             if (oReader != nullptr) {
-              auto ois = indexKeys(partId, oReader.get(), key, index);
+              auto ois = indexKeys(partId, oReader.get(), key, index, schema.get());
               if (!ois.empty()) {
                 // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
@@ -276,7 +276,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 2 , Insert new edge index
              */
             if (nReader != nullptr) {
-              auto niks = indexKeys(partId, nReader.get(), key, index);
+              auto niks = indexKeys(partId, nReader.get(), key, index, schema.get());
               if (!niks.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -384,7 +384,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
         }
 
         if (!val.empty()) {
-          auto ois = indexKeys(partId, oReader.get(), e.first, index);
+          auto ois = indexKeys(partId, oReader.get(), e.first, index, schema.get());
           if (!ois.empty()) {
             // Check the index is building for the specified partition or not.
             auto indexState = env_->getIndexState(spaceId_, partId);
@@ -416,7 +416,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
           }
         }
 
-        auto niks = indexKeys(partId, nReader.get(), e.first, index);
+        auto niks = indexKeys(partId, nReader.get(), e.first, index, schema.get());
         if (!niks.empty()) {
           auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
           auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -473,8 +473,9 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
     PartitionID partId,
     RowReader* reader,
     const folly::StringPiece& rawKey,
-    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
   }

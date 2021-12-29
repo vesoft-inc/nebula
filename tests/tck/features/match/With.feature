@@ -143,8 +143,8 @@ Feature: With clause
       RETURN *, v2.name
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                                     | age | v2                                                                                                          | v2.name      |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | 136 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | "Tim Duncan" |
+      | v                                                     | v2                                                                                                          | age | v2.name      |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | 136 | "Tim Duncan" |
     When executing query:
       """
       MATCH (:player)-[:like]->()
@@ -262,4 +262,4 @@ Feature: With clause
       WITH a, a+b AS c
       RETURN a
       """
-    Then a SemanticError should be raised at runtime:  Variable `b` not defined
+    Then a SemanticError should be raised at runtime:  Alias `b` not defined

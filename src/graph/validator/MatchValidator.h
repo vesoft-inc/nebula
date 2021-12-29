@@ -30,16 +30,16 @@ class MatchValidator final : public Validator {
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
   Status validateReturn(MatchReturn *ret,
-                        const CypherClauseContextBase *cypherClauseCtx,
+                        const std::vector<QueryPart> &queryParts,
                         ReturnClauseContext &retClauseCtx) const;
 
   Status validateAliases(const std::vector<const Expression *> &exprs,
-                         const std::unordered_map<std::string, AliasType> *aliases) const;
+                         const std::unordered_map<std::string, AliasType> &aliases) const;
 
   Status validateStepRange(const MatchStepRange *range) const;
 
   Status validateWith(const WithClause *with,
-                      const CypherClauseContextBase *cypherClauseCtx,
+                      const std::vector<QueryPart> &queryParts,
                       WithClauseContext &withClauseCtx) const;
 
   Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
@@ -56,8 +56,8 @@ class MatchValidator final : public Validator {
 
   Status validateYield(YieldClauseContext &yieldCtx) const;
 
-  Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
-                         YieldColumns *columns) const;
+  Status buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
+                                        YieldColumns *columns) const;
 
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
@@ -81,11 +81,12 @@ class MatchValidator final : public Validator {
 
   Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
 
-  StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType> *aliasesUsed,
-                                   const std::string &name) const;
+  StatusOr<AliasType> getAliasType(
+      const std::unordered_map<std::string, AliasType> &aliasesAvailable,
+      const std::string &name) const;
 
   Status checkAlias(const Expression *refExpr,
-                    const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
+                    const std::unordered_map<std::string, AliasType> &aliasesAvailable) const;
 
   Status buildOutputs(const YieldColumns *yields);
 
@@ -94,7 +95,7 @@ class MatchValidator final : public Validator {
   StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
 
  private:
-  std::unique_ptr<MatchAstContext> matchCtx_;
+  std::unique_ptr<CypherContext> cypherCtx_;
 };
 
 }  // namespace graph

@@ -174,11 +174,11 @@ std::string MatchPath::toString() const {
 
 std::string MatchReturnItems::toString() const {
   std::string buf;
-  if (includeExisting_) {
+  if (allNamedAliases_) {
     buf += '*';
   }
   if (columns_) {
-    if (includeExisting_) {
+    if (allNamedAliases_) {
       buf += ',';
     }
     buf += columns_->toString();

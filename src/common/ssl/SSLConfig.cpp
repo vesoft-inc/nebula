@@ -18,6 +18,7 @@ namespace nebula {
 std::shared_ptr<wangle::SSLContextConfig> sslContextConfig() {
   auto sslCfg = std::make_shared<wangle::SSLContextConfig>();
   sslCfg->addCertificate(FLAGS_cert_path, FLAGS_key_path, FLAGS_password_path);
+  sslCfg->clientVerification = folly::SSLContext::VerifyClientCertificate::DO_NOT_REQUEST;
   sslCfg->isDefault = true;
   return sslCfg;
 }

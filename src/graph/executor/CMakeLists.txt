@@ -10,6 +10,7 @@ nebula_add_library(
     logic/PassThroughExecutor.cpp
     logic/StartExecutor.cpp
     logic/SelectExecutor.cpp
+    logic/ArgumentExecutor.cpp
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp

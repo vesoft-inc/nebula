@@ -62,7 +62,7 @@ class AdminTask {
  public:
   AdminTask() = default;
 
-  explicit AdminTask(StorageEnv* env, TaskContext&& ctx) : env_(env), ctx_(ctx) {}
+  AdminTask(StorageEnv* env, TaskContext&& ctx) : env_(env), ctx_(ctx) {}
 
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() = 0;
 

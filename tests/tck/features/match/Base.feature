@@ -450,6 +450,7 @@ Feature: Basic match
     Then the result should be, in any order, with relax comparison:
       | p |
 
+  @skip
   Scenario: Unsupported combination of some cypher clauses
     When executing query:
       """

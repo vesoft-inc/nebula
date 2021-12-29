@@ -60,7 +60,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kMergeZone:
     case Sentence::Kind::kRenameZone:
     case Sentence::Kind::kDropZone:
-    case Sentence::Kind::kSplitZone:
+    case Sentence::Kind::kDivideZone:
     case Sentence::Kind::kDescribeZone:
     case Sentence::Kind::kListZones:
     case Sentence::Kind::kAddHostsIntoZone:
