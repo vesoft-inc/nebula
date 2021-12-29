@@ -1,0 +1,36 @@
+name: "✨ Enhancement"
+description: "Suggest an enhancement to make the code neat or more efficient."
+labels: "type/enhancement"
+body:
+  - type: checkboxes
+    id: no-duplicate-issues
+    attributes:
+      label: "⚠️ Please verify that this enhancement request has NOT been suggested before."
+      description: "Search in the issues sections by clicking [HERE](https://github.com/vesoft-inc/nebula/issues?q=)"
+      options:
+        - label: "I checked and didn't find similar enhancement request"
+          required: true
+  - type: textarea
+    id: feature-intro
+    attributes:
+      label: "🔖 Introduction"
+      description: "Concise introduction to problem, motivation, and overview of proposed solution"
+      placeholder: "..."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    validations:
+      required: false
+    attributes:
+      label: "📝 Context"
+      description: "Please describe the enhancement what you want in this sectio."
+      placeholder: "..."
+  - type: textarea
+    id: related-work
+    validations:
+      required: false
+    attributes:
+      label: "🌐 Related work"
+      description: "In this section you can add other related tasks to help assigner to complete the task more easily"
+      placeholder: "..."
