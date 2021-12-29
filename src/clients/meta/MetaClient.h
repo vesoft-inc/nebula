@@ -799,8 +799,6 @@ class MetaClient {
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
     UserPasswordMap userPasswordMap_;
-    UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
-    UserLoginLockTime userLoginLockTime_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();

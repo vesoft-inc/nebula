@@ -618,7 +618,6 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.storageHosts_ = storageHosts_;
     threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
     threadLocalInfo.userPasswordMap_ = userPasswordMap_;
-    threadLocalInfo.userPasswordAttemptsRemain_ = userPasswordAttemptsRemain_;
   }
 
   return threadLocalInfo;
@@ -2414,8 +2413,10 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
 
   folly::RWSpinLock::WriteHolder holder(localCacheLock_);
 
-  auto& lockedSince = const_cast<ThreadLocalInfo&>(threadLocalInfo).userLoginLockTime_[account];
-
+  auto& lockedSince = userLoginLockTime_[account];
+  auto& passwordAttemtRemain = userPasswordAttemptsRemain_[account];
+  LOG(INFO) << "Thread id: " << std::this_thread::get_id()
+            << " ,passwordAttemtRemain: " << passwordAttemtRemain;
   // lockedSince is non-zero means the account has been locked
   if (lockedSince != 0) {
     auto remainingLockTime =
@@ -2429,12 +2430,11 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
           account.c_str(),
           remainingLockTime);
     }
-    // Clear lock state
+    // Clear lock state and reset attempts
     lockedSince = 0;
+    passwordAttemtRemain = FLAGS_failed_login_attempts;
   }
 
-  auto& passwordAttemtRemain =
-      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
   if (iter->second != password) {
     // By default there is no limit of login attempts
     if (FLAGS_failed_login_attempts == 0) {
