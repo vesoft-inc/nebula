@@ -26,7 +26,6 @@ set(common_deps
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:snowflake_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
@@ -144,6 +143,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:snowflake_obj>
         ${common_deps}
     LIBRARIES
         ${PROXYGEN_LIBRARIES}

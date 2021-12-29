@@ -7,45 +7,50 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
+#include <iostream>
 #include <thread>
 
+#include "common/base/Logging.h"
 #include "common/id/Snowflake.h"
 
 namespace nebula {
 
-int64_t getSequence(int64_t workerId) {
-  return workerId & 0xfff;
+int64_t getSequence(int64_t id) {
+  return id & Snowflake::maxSequence;
 }
 int64_t getWorkerId(int64_t id) {
-  return (id >> 12) & 0x3ff;
+  return (id >> Snowflake::sequenceBit) & Snowflake::maxWorkerId;
 }
 int64_t getTimestamp(int64_t id) {
-  return id >> 22;
+  return id >> (Snowflake::sequenceBit + Snowflake::workerBit);
 }
 
 TEST(SnowflakeTest, TestWorkerId) {
-  int64_t workerId = 0;
+  int64_t maxWorkerId = 1023;
 
   Snowflake generator;
-  Snowflake::workerId_ = 0;
-  int64_t id = generator.getId();
 
-  ASSERT_EQ(getSequence(id), workerId);
+  for (int i = 0; i < maxWorkerId; i++) {
+    Snowflake::workerId_ = i;
+    int64_t id = generator.getId();
+
+    ASSERT_EQ(getWorkerId(id), i);
+  }
 }
 
 void proc(Snowflake& generator, folly::ConcurrentHashMap<int64_t, int>& map) {
-  int times = 10000;
+  int times = 1000;
 
   for (int i = 0; i < times; i++) {
     int64_t id = generator.getId();
-    ASSERT_FALSE(map.find(id) == map.end());
+    ASSERT_TRUE(map.find(id) == map.end()) << "id: " << id;
     map.insert(id, 0);
   }
 }
 
 TEST(SnowflakeTest, TestConcurrency) {
   Snowflake::workerId_ = 0;
-  int threadNum = 32;
+  int threadNum = 16;
 
   Snowflake generator;
   folly::ConcurrentHashMap<int64_t, int> map;

@@ -8,7 +8,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:snowflake_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>

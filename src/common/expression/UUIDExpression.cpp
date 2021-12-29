@@ -6,11 +6,12 @@
 #include "common/expression/UUIDExpression.h"
 
 #include "common/expression/ExprVisitor.h"
-#include "common/id/Snowflake.h"
 
 namespace nebula {
 
-bool UUIDExpression::operator==(const Expression& rhs) const { return kind_ == rhs.kind(); }
+bool UUIDExpression::operator==(const Expression& rhs) const {
+  return kind_ == rhs.kind();
+}
 
 void UUIDExpression::writeTo(Encoder& encoder) const {
   // kind_
@@ -18,16 +19,20 @@ void UUIDExpression::writeTo(Encoder& encoder) const {
   encoder << kind_;
 }
 
-void UUIDExpression::resetFrom(Decoder& decoder) { UNUSED(decoder); }
+void UUIDExpression::resetFrom(Decoder& decoder) {
+  UNUSED(decoder);
+}
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
-  Snowflake generator;
-  result_ = generator.getId();
+  // Snowflake generator;
+  // result_ = generator.getId();
   return result_;
 }
 
-std::string UUIDExpression::toString() const { return folly::stringPrintf("uuid()"); }
+std::string UUIDExpression::toString() const {
+  return folly::stringPrintf("uuid()");
+}
 
 void UUIDExpression::accept(ExprVisitor* visitor) {
   visitor->visit(this);

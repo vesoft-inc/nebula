@@ -17,28 +17,28 @@ void Snowflake::initWorkerId(meta::MetaClient* client) {
 }
 
 int64_t Snowflake::getId() {
+  std::lock_guard<std::mutex> guard(mutex_);
+
   int64_t timestamp = getTimestamp();
   if (timestamp < lastTimestamp_) {
     // TODO
     LOG(FATAL) << "Clock back";
-    return sequence_.load();
+    return -1;
   }
 
-  // TODO(jackwener): memory order
   // if it is the same time, then the microsecond sequence
   if (lastTimestamp_ == timestamp) {
-    sequence_.fetch_add(1);
+    sequence_ = (sequence_ + 1) & maxSequence;
     // if the microsecond sequence overflow
-    if (sequence_ >> sequenceBit_ > 0) {
+    if (sequence_ == 0) {
       // block to the next millisecond, get the new timestamp
       timestamp = nextTimestamp();
     }
   } else {
-    sequence_.store(0);
+    lastTimestamp_ = timestamp;
+    sequence_ = 0;
   }
-  lastTimestamp_ = timestamp;
-  return (timestamp - startStmp_) << timestampLeft | workerId_ << machineLeft |
-         sequence_.load() >> sequenceBit_;
+  return (timestamp - startStmp) << timestampLeft | workerId_ << workerLeft | sequence_;
 }
 
 int64_t Snowflake::getTimestamp() {
