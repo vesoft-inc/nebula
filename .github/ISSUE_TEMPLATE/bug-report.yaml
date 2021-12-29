@@ -7,7 +7,9 @@ body:
     id: no-duplicate-issues
     attributes:
       label: "⚠️ Please verify that this bug has NOT been raised before."
-      description: "Search in the issues sections by clicking [HERE](https://github.com/vesoft-inc/nebula/issues?q=). Please check the [FAQ](https://docs.nebula-graph.com.cn/master/20.appendix/0.FAQ/) documentation before raising an issue in case someone has asked the same question that you are asking."
+      description: |
+        Search in the issues sections by clicking [HERE](https://github.com/vesoft-inc/nebula/issues?q=).
+        Please check the [FAQ](https://docs.nebula-graph.com.cn/master/20.appendix/0.FAQ/) documentation before raising an issue in case someone has asked the same question that you are asking.
       options:
         - label: "I checked issues and [FAQ](https://docs.nebula-graph.com.cn/master/20.appendix/0.FAQ/) and didn't find similar issue"
           required: true
