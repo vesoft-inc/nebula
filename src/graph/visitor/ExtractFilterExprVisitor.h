@@ -51,6 +51,7 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   void visit(VariableExpression *) override;
   void visit(VersionedVariableExpression *) override;
   void visit(TagPropertyExpression *) override;
+  void visit(LabelTagPropertyExpression *) override;
   void visit(EdgePropertyExpression *) override;
   void visit(InputPropertyExpression *) override;
   void visit(VariablePropertyExpression *) override;

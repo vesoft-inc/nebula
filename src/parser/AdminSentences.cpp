@@ -132,6 +132,15 @@ std::string DropSpaceSentence::toString() const {
   return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
 }
 
+std::string AlterSpaceSentence::toString() const {
+  std::string zones = paras_.front();
+  for (size_t i = 1; i < paras_.size(); i++) {
+    zones += "," + paras_[i];
+  }
+  return folly::stringPrintf(
+      "ALTER SPACE %s ADD ZONE %s", spaceName_.get()->c_str(), zones.c_str());
+}
+
 std::string DescribeSpaceSentence::toString() const {
   return folly::stringPrintf("DESCRIBE SPACE %s", spaceName_.get()->c_str());
 }
@@ -262,9 +271,20 @@ std::string AdminJobSentence::toString() const {
           return "INGEST";
         case meta::cpp2::AdminCmd::DATA_BALANCE:
           if (paras_.empty()) {
-            return "SUBMIT JOB BALANCE DATA";
+            return "SUBMIT JOB BALANCE IN ZONE";
           } else {
-            std::string str = "SUBMIT JOB BALANCE DATA REMOVE";
+            std::string str = "SUBMIT JOB BALANCE IN ZONE REMOVE";
+            for (size_t i = 0; i < paras_.size(); i++) {
+              auto &s = paras_[i];
+              str += i == 0 ? " " + s : ", " + s;
+            }
+            return str;
+          }
+        case meta::cpp2::AdminCmd::ZONE_BALANCE:
+          if (paras_.empty()) {
+            return "SUBMIT JOB BALANCE ACROSS ZONE";
+          } else {
+            std::string str = "SUBMIT JOB BALANCE ACROSS ZONE REMOVE";
             for (size_t i = 0; i < paras_.size(); i++) {
               auto &s = paras_[i];
               str += i == 0 ? " " + s : ", " + s;

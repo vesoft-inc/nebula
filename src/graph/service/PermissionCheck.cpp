@@ -51,6 +51,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       return Status::OK();
     }
     case Sentence::Kind::kCreateSpace:
+    case Sentence::Kind::kAlterSpace:
     case Sentence::Kind::kCreateSpaceAs:
     case Sentence::Kind::kDropSpace:
     case Sentence::Kind::kCreateSnapshot:

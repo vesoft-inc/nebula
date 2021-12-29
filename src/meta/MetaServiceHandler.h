@@ -34,6 +34,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::ExecResp> future_createSpace(const cpp2::CreateSpaceReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_alterSpace(const cpp2::AlterSpaceReq& req) override;
+
   folly::Future<cpp2::ExecResp> future_createSpaceAs(const cpp2::CreateSpaceAsReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_dropSpace(const cpp2::DropSpaceReq& req) override;

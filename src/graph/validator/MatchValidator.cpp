@@ -272,7 +272,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
-  whereClauseCtx.filter = transformRes.value();
+  // rewrite Attribute to LabelTagProperty
+  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value());
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -368,7 +369,9 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
       return Status::SemanticError("RETURN * is not allowed when there are no variables in scope");
     }
   }
+  std::vector<const Expression *> exprs;
   if (ret->returnItems()->columns()) {
+    exprs.reserve(ret->returnItems()->columns()->size());
     for (auto *column : ret->returnItems()->columns()->columns()) {
       if (ExpressionUtils::hasAny(column->expr(),
                                   {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
@@ -376,22 +379,18 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
             "keywords: vertex and edge are not supported in return clause `%s'",
             column->toString().c_str());
       }
+      if (!retClauseCtx.yield->hasAgg_ &&
+          ExpressionUtils::hasAny(column->expr(), {Expression::Kind::kAggregate})) {
+        retClauseCtx.yield->hasAgg_ = true;
+      }
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      exprs.push_back(column->expr());
       columns->addColumn(column->clone().release());
     }
   }
   DCHECK(!columns->empty());
   retClauseCtx.yield->yieldColumns = columns;
 
-  // Check all referencing expressions are valid
-  std::vector<const Expression *> exprs;
-  exprs.reserve(retClauseCtx.yield->yieldColumns->size());
-  for (auto *col : retClauseCtx.yield->yieldColumns->columns()) {
-    if (!retClauseCtx.yield->hasAgg_ &&
-        ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kAggregate})) {
-      retClauseCtx.yield->hasAgg_ = true;
-    }
-    exprs.push_back(col->expr());
-  }
   NG_RETURN_IF_ERROR(validateAliases(exprs, retClauseCtx.yield->aliasesAvailable));
   NG_RETURN_IF_ERROR(validateYield(*retClauseCtx.yield));
 
@@ -416,6 +415,7 @@ Status MatchValidator::validateAliases(
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
+                                                             Expression::Kind::kLabelTagProperty,
                                                              // primitive props
                                                              Expression::Kind::kEdgeSrc,
                                                              Expression::Kind::kEdgeDst,
@@ -459,6 +459,7 @@ Status MatchValidator::validateWith(const WithClause *with,
   }
   if (with->returnItems()->columns()) {
     for (auto *column : with->returnItems()->columns()->columns()) {
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
       columns->addColumn(column->clone().release());
     }
   }
@@ -469,12 +470,13 @@ Status MatchValidator::validateWith(const WithClause *with,
   exprs.reserve(withClauseCtx.yield->yieldColumns->size());
   for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
+    auto aliasType = AliasType::kDefault;
     for (auto *labelExpr : labelExprs) {
-      DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
+      aliasType = withClauseCtx.yield->aliasesAvailable.at(label);
     }
     if (col->alias().empty()) {
       if (col->expr()->kind() == Expression::Kind::kLabel) {
@@ -491,7 +493,7 @@ Status MatchValidator::validateWith(const WithClause *with,
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
       }
     } else {
-      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), AliasType::kDefault).second) {
+      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
       }
     }
@@ -809,25 +811,34 @@ Status MatchValidator::checkAlias(
     case Expression::Kind::kLabel: {
       auto name = static_cast<const LabelExpression *>(refExpr)->name();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
+      NG_RETURN_IF_ERROR(res);
+      return Status::OK();
+    }
+    case Expression::Kind::kLabelTagProperty: {
+      auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
+      auto res = getAliasType(aliasesAvailable, name);
+      NG_RETURN_IF_ERROR(res);
+      if (res.value() != AliasType::kNode) {
+        return Status::SemanticError("The type of `%s' should be tag", name.c_str());
       }
       return Status::OK();
     }
     case Expression::Kind::kLabelAttribute: {
       auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
+      NG_RETURN_IF_ERROR(res);
+      if (res.value() == AliasType::kNode) {
+        return Status::SemanticError(
+            "To get the property of the vertex in `%s', should use the format `var.tag.prop'",
+            refExpr->toString().c_str());
       }
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {
       auto name = static_cast<const EdgeSrcIdExpression *>(refExpr)->sym();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -845,9 +856,7 @@ Status MatchValidator::checkAlias(
     case Expression::Kind::kEdgeDst: {
       auto name = static_cast<const EdgeDstIdExpression *>(refExpr)->sym();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -865,9 +874,7 @@ Status MatchValidator::checkAlias(
     case Expression::Kind::kEdgeRank: {
       auto name = static_cast<const EdgeRankExpression *>(refExpr)->sym();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -887,9 +894,7 @@ Status MatchValidator::checkAlias(
     case Expression::Kind::kEdgeType: {
       auto name = static_cast<const EdgeTypeExpression *>(refExpr)->sym();
       auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
