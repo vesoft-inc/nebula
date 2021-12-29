@@ -209,6 +209,16 @@ struct ExecResp {
     3: common.HostAddr  leader,
 }
 
+enum AlterSpaceOp {
+    ADD_ZONE    = 0x01,
+} (cpp.enum_strict)
+
+struct AlterSpaceReq {
+    1: binary           space_name,
+    2: AlterSpaceOp     op,
+    3: list<binary>     paras,
+}
+
 // Job related data structures
 enum AdminJobOp {
     ADD         = 0x01,
@@ -235,6 +245,7 @@ enum AdminCmd {
     DOWNLOAD                 = 7,
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
+    ZONE_BALANCE             = 10,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -1168,6 +1179,7 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+    ExecResp alterSpace(1: AlterSpaceReq req);
 
     ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 

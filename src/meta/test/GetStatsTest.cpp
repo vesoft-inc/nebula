@@ -67,6 +67,7 @@ struct JobCallBack {
     item.space_vertices_ref() = 2 * n_;
     item.space_edges_ref() = 2 * n_;
     req.stats_ref() = item;
+    jobMgr_->muJobFinished_.unlock();
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }
