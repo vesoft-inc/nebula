@@ -13,7 +13,7 @@ Feature: Push Filter down Project rule
       """
       MATCH (a:player)--(b)--(c)
       WITH a AS a, b AS b, c AS c
-      WHERE a.age < 25 AND b.age < 25 AND c.age < 25
+      WHERE a.player.age < 25 AND b.player.age < 25 AND c.player.age < 25
       RETURN a
       """
     Then the result should be, in any order:
@@ -45,8 +45,8 @@ Feature: Push Filter down Project rule
     When profiling query:
       """
       MATCH (a:player)--(b)--(c)
-      WITH a, b, c.age+1 AS cage
-      WHERE a.name == 'Tim Duncan' AND b.age > 40
+      WITH a, b, c.player.age+1 AS cage
+      WHERE a.player.name == 'Tim Duncan' AND b.player.age > 40
       RETURN DISTINCT a, b, cage
       """
     Then the result should be, in any order:

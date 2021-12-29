@@ -12,7 +12,7 @@ Feature: merge get neighbors, dedup and project rule
     When profiling query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[:like*0..1]->(v2)
-      RETURN v2.name AS Name
+      RETURN v2.player.name AS Name
       """
     Then the result should be, in any order:
       | Name            |

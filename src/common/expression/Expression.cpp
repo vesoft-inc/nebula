@@ -354,6 +354,11 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
+    case Expression::Kind::kLabelTagProperty: {
+      exp = LabelTagPropertyExpression::make(pool);
+      exp->resetFrom(decoder);
+      return exp;
+    }
     case Expression::Kind::kLabelAttribute: {
       exp = LabelAttributeExpression::make(pool);
       exp->resetFrom(decoder);
@@ -394,7 +399,8 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kVarProperty: {
-      LOG(FATAL) << "Should not decode variable property expression";
+      exp = VariablePropertyExpression::make(pool);
+      exp->resetFrom(decoder);
       return exp;
     }
     case Expression::Kind::kDstProperty: {
@@ -625,6 +631,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kLabelAttribute:
       os << "LabelAttribute";
+      break;
+    case Expression::Kind::kLabelTagProperty:
+      os << "LabelTagProperty";
       break;
     case Expression::Kind::kLogicalAnd:
       os << "LogicalAnd";
