@@ -18,14 +18,14 @@ body:
     validations:
       required: true
     attributes:
-      label: "Description"
+      label: "🔖 Description"
       description: "A clear and concise description of what the bug is."
   - type: textarea
     id: environment-and-version
     validations:
       required: true
     attributes:
-      label: "Environment"
+      label: "💻 Environment"
       description: "Please provide your environment and version information."
       placeholder: |
         * OS: `uname -a`
