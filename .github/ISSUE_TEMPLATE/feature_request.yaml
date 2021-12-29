@@ -10,10 +10,10 @@ body:
       options:
         - label: "I checked and didn't find similar feature request"
           required: true
-  - type: dropdown
+  - type: textarea
     id: feature-description
     attributes:
-      label: "🔖 Feature Request Type"
+      label: "🔖 Feature Request Description"
       description: "Is your feature request related to a problem?"
       placeholder: "A clear and concise description of what the problem is. Ex. I'm always frustrated when..."
     validations:
