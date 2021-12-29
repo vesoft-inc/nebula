@@ -7,7 +7,7 @@
 
 #include "storage/StorageFlags.h"
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 #include "storage/transaction/TransactionManager.h"
 
@@ -23,7 +23,7 @@ void ChainAddEdgesGroupProcessor::process(const cpp2::AddEdgesRequest& req) {
 
   auto delegateProcess = [&](auto& item) {
     auto localPartId = item.first.first;
-    auto* proc = ChainAddEdgesProcessorLocal::instance(env_);
+    auto* proc = ChainAddEdgesLocalProcessor::instance(env_);
     proc->setRemotePartId(item.first.second);
     proc->getFuture().thenValue([=](auto&& resp) {
       auto code = resp.get_result().get_failed_parts().empty()

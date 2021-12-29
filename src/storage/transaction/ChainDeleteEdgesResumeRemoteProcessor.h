@@ -5,15 +5,15 @@
 
 #pragma once
 
-#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
+#include "storage/transaction/ChainDeleteEdgesLocalProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-class ResumeAddEdgeProcessor : public ChainAddEdgesLocalProcessor {
+class ChainDeleteEdgesResumeRemoteProcessor : public ChainDeleteEdgesLocalProcessor {
  public:
-  static ResumeAddEdgeProcessor* instance(StorageEnv* env, const std::string& val) {
-    return new ResumeAddEdgeProcessor(env, val);
+  static ChainDeleteEdgesResumeRemoteProcessor* instance(StorageEnv* env, const std::string& val) {
+    return new ChainDeleteEdgesResumeRemoteProcessor(env, val);
   }
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> prepareLocal() override;
@@ -22,10 +22,10 @@ class ResumeAddEdgeProcessor : public ChainAddEdgesLocalProcessor {
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> processLocal(nebula::cpp2::ErrorCode code) override;
 
-  virtual ~ResumeAddEdgeProcessor() = default;
+  virtual ~ChainDeleteEdgesResumeRemoteProcessor() = default;
 
  protected:
-  ResumeAddEdgeProcessor(StorageEnv* env, const std::string& val);
+  ChainDeleteEdgesResumeRemoteProcessor(StorageEnv* env, const std::string& val);
 };
 
 }  // namespace storage

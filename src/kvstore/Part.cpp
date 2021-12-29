@@ -252,7 +252,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         // Make the number of values are an even number
         DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
-          VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+          VLOG(2) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
                   << ", val = " << folly::hexlify(kvs[i + 1]);
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -295,7 +295,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       case OP_BATCH_WRITE: {
         auto data = decodeBatchValue(log);
         for (auto& op : data) {
-          VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
+          VLOG(2) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
                   << ", val=" << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
