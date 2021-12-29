@@ -26,13 +26,13 @@ stats::CounterId kNumSentences;
 stats::CounterId kQueryLatencyUs;
 stats::CounterId kSlowQueryLatencyUs;
 stats::CounterId kNumKilledQueries;
+stats::CounterId kNumQueriesHitMemoryWatermark;
 
 stats::CounterId kOptimizerLatencyUs;
 
 stats::CounterId kNumAggregateExecutors;
 stats::CounterId kNumSortExecutors;
 stats::CounterId kNumIndexScanExecutors;
-stats::CounterId kNumOomExecutors;
 
 stats::CounterId kNumOpenedSessions;
 stats::CounterId kNumAuthFailedSessions;
@@ -54,6 +54,8 @@ void initGraphStats() {
   kSlowQueryLatencyUs = stats::StatsManager::registerHisto(
       "slow_query_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
   kNumKilledQueries = stats::StatsManager::registerStats("num_killed_queries", "rate, sum");
+  kNumQueriesHitMemoryWatermark =
+      stats::StatsManager::registerStats("num_queries_hit_memory_watermark", "rate, sum");
 
   kOptimizerLatencyUs = stats::StatsManager::registerHisto(
       "optimizer_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
@@ -63,7 +65,6 @@ void initGraphStats() {
   kNumSortExecutors = stats::StatsManager::registerStats("num_sort_executors", "rate, sum");
   kNumIndexScanExecutors =
       stats::StatsManager::registerStats("num_indexscan_executors", "rate, sum");
-  kNumOomExecutors = stats::StatsManager::registerStats("num_oom_executors", "rate, sum");
 
   kNumOpenedSessions = stats::StatsManager::registerStats("num_opened_sessions", "rate, sum");
   kNumAuthFailedSessions =
