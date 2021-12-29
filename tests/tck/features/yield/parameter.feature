@@ -52,8 +52,8 @@ Feature: Parameter
       RETURN *
       """
     Then the result should be, in any order:
-      | sval           | fval | ival | bval  |
-      | "Tim Duncanef" | 4.1  | 2    | false |
+      | ival | bval  | sval           | fval |
+      | 2    | false | "Tim Duncanef" | 4.1  |
     When executing query:
       """
       MATCH (v:player)
@@ -145,3 +145,4 @@ Feature: Parameter
       MATCH (v:player) WHERE $var RETURN  v,$var LIMIT $p6
       """
     Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
+    Then clear the used parameters

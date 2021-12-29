@@ -351,9 +351,13 @@ std::string DropEdgeIndexSentence::toString() const {
   return folly::stringPrintf("DROP EDGE INDEX %s", indexName_.get()->c_str());
 }
 
-std::string ShowTagsSentence::toString() const { return folly::stringPrintf("SHOW TAGS"); }
+std::string ShowTagsSentence::toString() const {
+  return folly::stringPrintf("SHOW TAGS");
+}
 
-std::string ShowEdgesSentence::toString() const { return folly::stringPrintf("SHOW EDGES"); }
+std::string ShowEdgesSentence::toString() const {
+  return folly::stringPrintf("SHOW EDGES");
+}
 
 std::string ShowCreateTagSentence::toString() const {
   return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
@@ -432,14 +436,13 @@ std::string DropZoneSentence::toString() const {
   return folly::stringPrintf("DROP ZONE \"%s\"", zoneName_.get()->c_str());
 }
 
-std::string SplitZoneSentence::toString() const {
+std::string DivideZoneSentence::toString() const {
   std::string buf;
   buf.reserve(128);
-  buf += "SPLIT ZONE \"";
+  buf += "DIVIDE ZONE \"";
   buf += *zoneName_;
-  buf += "\" INTO \"";
-  buf += zoneNames_->toString();
-  buf += "\"";
+  buf += "\" INTO ";
+  buf += zoneItems_->toString();
   return buf;
 }
 
@@ -458,7 +461,9 @@ std::string DescribeZoneSentence::toString() const {
   return folly::stringPrintf("DESCRIBE ZONE \"%s\"", zoneName_.get()->c_str());
 }
 
-std::string ListZonesSentence::toString() const { return folly::stringPrintf("SHOW ZONES"); }
+std::string ListZonesSentence::toString() const {
+  return folly::stringPrintf("SHOW ZONES");
+}
 
 std::string AddHostsIntoZoneSentence::toString() const {
   std::string buf;
@@ -504,6 +509,8 @@ std::string DropFTIndexSentence::toString() const {
   return folly::stringPrintf("DROP FULLTEXT INDEX %s", indexName_.get()->c_str());
 }
 
-std::string ShowFTIndexesSentence::toString() const { return "SHOW FULLTEXT INDEXES"; }
+std::string ShowFTIndexesSentence::toString() const {
+  return "SHOW FULLTEXT INDEXES";
+}
 
 }  // namespace nebula

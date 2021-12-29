@@ -13,13 +13,7 @@ namespace nebula {
 namespace wal {
 
 WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startId, LogID lastId)
-    : wal_(wal), currId_(startId) {
-  if (lastId >= 0 && lastId <= wal_->lastLogId()) {
-    lastId_ = lastId;
-  } else {
-    lastId_ = wal_->lastLogId();
-  }
-
+    : wal_(wal), lastId_(lastId), currId_(startId) {
   if (currId_ > lastId_) {
     LOG(ERROR) << wal_->idStr_ << "The log " << currId_ << " is out of range, the lastLogId is "
                << lastId_;
@@ -60,11 +54,11 @@ WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startI
   }
 
   nextFirstId_ = getFirstIdInNextFile();
+  // log in range [startId, lastId] is located in last wal, however, the wal is rollbacked during
+  // building the iterator
   if (currId_ > idRanges_.front().second) {
-    LOG(FATAL) << wal_->idStr_ << "currId_ " << currId_ << ", idRanges.front firstLogId "
-               << idRanges_.front().first << ", idRanges.front lastLogId "
-               << idRanges_.front().second << ", idRanges size " << idRanges_.size() << ", lastId_ "
-               << lastId_ << ", nextFirstId_ " << nextFirstId_;
+    currId_ = lastId_ + 1;
+    return;
   }
 
   if (!idRanges_.empty()) {
@@ -74,18 +68,27 @@ WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startI
       LogID logId;
       // Read the logID
       int fd = fds_.front();
-      CHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), currPos_),
-               static_cast<ssize_t>(sizeof(LogID)));
+      if (pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), currPos_) !=
+          static_cast<ssize_t>(sizeof(LogID))) {
+        eof_ = true;
+        break;
+      }
       // Read the termID
-      CHECK_EQ(
-          pread(fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)),
-          static_cast<ssize_t>(sizeof(TermID)));
+      if (pread(
+              fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)) !=
+          static_cast<ssize_t>(sizeof(TermID))) {
+        eof_ = true;
+        break;
+      }
       // Read the log length
-      CHECK_EQ(pread(fd,
-                     reinterpret_cast<char*>(&currMsgLen_),
-                     sizeof(int32_t),
-                     currPos_ + sizeof(LogID) + sizeof(TermID)),
-               static_cast<ssize_t>(sizeof(int32_t)));
+      if (pread(fd,
+                reinterpret_cast<char*>(&currMsgLen_),
+                sizeof(int32_t),
+                currPos_ + sizeof(LogID) + sizeof(TermID)) !=
+          static_cast<ssize_t>(sizeof(int32_t))) {
+        eof_ = true;
+        break;
+      }
       if (logId == currId_) {
         break;
       }
@@ -135,31 +138,50 @@ LogIterator& WalFileIterator::operator++() {
   } else {
     LogID logId;
     int fd = fds_.front();
-    // Read the logID
-    CHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), currPos_),
-             static_cast<ssize_t>(sizeof(LogID)))
-        << "currPos = " << currPos_;
-    CHECK_EQ(currId_, logId);
-    // Read the termID
-    CHECK_EQ(
-        pread(fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)),
-        static_cast<ssize_t>(sizeof(TermID)));
-    // Read the log length
-    CHECK_EQ(pread(fd,
-                   reinterpret_cast<char*>(&currMsgLen_),
-                   sizeof(int32_t),
-                   currPos_ + sizeof(TermID) + sizeof(LogID)),
-             static_cast<ssize_t>(sizeof(int32_t)));
+    do {
+      // Read the logID
+      if (pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), currPos_) !=
+          static_cast<ssize_t>(sizeof(LogID))) {
+        LOG(WARNING) << "Failed to read logId currPos = " << currPos_;
+        eof_ = true;
+        break;
+      }
+      CHECK_EQ(currId_, logId);
+      // Read the termID
+      if (pread(
+              fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)) !=
+          static_cast<ssize_t>(sizeof(TermID))) {
+        LOG(WARNING) << "Failed to read term currPos = " << currPos_;
+        eof_ = true;
+        break;
+      }
+      // Read the log length
+      if (pread(fd,
+                reinterpret_cast<char*>(&currMsgLen_),
+                sizeof(int32_t),
+                currPos_ + sizeof(TermID) + sizeof(LogID)) !=
+          static_cast<ssize_t>(sizeof(int32_t))) {
+        LOG(WARNING) << "Failed to read log length currPos = " << currPos_;
+        eof_ = true;
+        break;
+      }
+    } while (false);
   }
 
   return *this;
 }
 
-bool WalFileIterator::valid() const { return currId_ <= lastId_; }
+bool WalFileIterator::valid() const {
+  return !eof_ && currId_ <= lastId_;
+}
 
-LogID WalFileIterator::logId() const { return currId_; }
+LogID WalFileIterator::logId() const {
+  return currId_;
+}
 
-TermID WalFileIterator::logTerm() const { return currTerm_; }
+TermID WalFileIterator::logTerm() const {
+  return currTerm_;
+}
 
 ClusterID WalFileIterator::logSource() const {
   // Retrieve from the file

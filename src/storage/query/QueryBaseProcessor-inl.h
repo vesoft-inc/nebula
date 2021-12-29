@@ -176,7 +176,7 @@ void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
     auto ttlInfo = edgeSchema->getTTLInfo();
     if (ttlInfo.ok()) {
       VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
-      edgeContext_.ttlInfo_.emplace(edgeType, std::move(ttlInfo).value());
+      edgeContext_.ttlInfo_.emplace(std::abs(edgeType), std::move(ttlInfo).value());
     }
   }
 }
@@ -186,7 +186,7 @@ std::vector<cpp2::VertexProp> QueryBaseProcessor<REQ, RESP>::buildAllTagProps() 
   std::vector<cpp2::VertexProp> result;
   for (const auto& entry : tagContext_.schemas_) {
     cpp2::VertexProp tagProp;
-    tagProp.set_tag(entry.first);
+    tagProp.tag_ref() = entry.first;
     const auto& schema = entry.second.back();
     auto count = schema->getNumFields();
     for (size_t i = 0; i < count; i++) {
@@ -207,9 +207,9 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
   std::vector<cpp2::EdgeProp> result;
   for (const auto& entry : edgeContext_.schemas_) {
     cpp2::EdgeProp edgeProp;
-    edgeProp.set_type(entry.first);
+    edgeProp.type_ref() = entry.first;
     if (direction == cpp2::EdgeDirection::IN_EDGE) {
-      edgeProp.set_type(-edgeProp.get_type());
+      edgeProp.type_ref() = -edgeProp.get_type();
     }
     const auto& schema = entry.second.back();
     auto count = schema->getNumFields();
@@ -219,7 +219,7 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
     }
     if (direction == cpp2::EdgeDirection::BOTH) {
       cpp2::EdgeProp reverse = edgeProp;
-      reverse.set_type(-edgeProp.get_type());
+      reverse.type_ref() = -edgeProp.get_type();
       result.emplace_back(std::move(reverse));
     }
     result.emplace_back(std::move(edgeProp));

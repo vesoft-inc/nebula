@@ -25,7 +25,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       LOG(ERROR) << "Create Space Failed : Space " << spaceName << " have existed!";
       ret = nebula::cpp2::ErrorCode::E_EXISTED;
     }
-    resp_.set_id(to(nebula::value(spaceRet), EntryType::SPACE));
+    resp_.id_ref() = to(nebula::value(spaceRet), EntryType::SPACE);
     handleErrorCode(ret);
     onFinished();
     return;
@@ -59,7 +59,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_partition_num(partitionNum);
+    properties.partition_num_ref() = partitionNum;
   }
 
   if (replicaFactor == 0) {
@@ -72,7 +72,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_replica_factor(replicaFactor);
+    properties.replica_factor_ref() = replicaFactor;
   }
 
   if (vidSize == 0) {
@@ -98,7 +98,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     return;
   }
 
-  properties.vid_type_ref().value().set_type_length(vidSize);
+  properties.vid_type_ref().value().type_length_ref() = vidSize;
   auto idRet = autoIncrementId();
   if (!nebula::ok(idRet)) {
     LOG(ERROR) << "Create Space Failed : Get space id failed";
@@ -129,7 +129,15 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       zoneIter->next();
     }
 
-    properties.set_zone_names(zones);
+    int32_t zoneNum = zones.size();
+    if (replicaFactor > zoneNum) {
+      LOG(ERROR) << "Replication number should less than or equal to zone number.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
+
+    properties.zone_names_ref() = zones;
   } else {
     zones = properties.get_zone_names();
   }
@@ -251,7 +259,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     return;
   }
 
-  resp_.set_id(to(spaceId, EntryType::SPACE));
+  resp_.id_ref() = to(spaceId, EntryType::SPACE);
   doSyncPutAndUpdate(std::move(data));
   LOG(INFO) << "Create space " << spaceName;
 }

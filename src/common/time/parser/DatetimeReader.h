@@ -20,13 +20,21 @@ class DatetimeReader {
     if (dt_ != nullptr) delete dt_;
   }
 
-  static inline DatetimeReader makeDateReader() { return DatetimeReader(Type::kDate); }
+  static inline DatetimeReader makeDateReader() {
+    return DatetimeReader(Type::kDate);
+  }
 
-  static inline DatetimeReader makeTimeReader() { return DatetimeReader(Type::kTime); }
+  static inline DatetimeReader makeTimeReader() {
+    return DatetimeReader(Type::kTime);
+  }
 
-  static inline DatetimeReader makeDateTimeReader() { return DatetimeReader(Type::kDateTime); }
+  static inline DatetimeReader makeDateTimeReader() {
+    return DatetimeReader(Type::kDateTime);
+  }
 
-  StatusOr<DateTime> readDatetime(std::string input) { return read(std::move(input)); }
+  StatusOr<DateTime> readDatetime(std::string input) {
+    return read(std::move(input));
+  }
 
   StatusOr<Date> readDate(std::string input) {
     auto result = read(std::move(input));

@@ -42,18 +42,28 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
     queue.pop();
     queue2.push(exe);
 
-    std::vector<folly::Future<Status>> futures;
-    for (auto* dep : exe->depends()) {
-      auto notVisited = visited.emplace(dep).second;
-      if (notVisited) {
-        queue.push(dep);
+    std::vector<folly::Future<Status>>& futures = futureMap[exe->id()];
+    if (exe->node()->kind() == PlanNode::Kind::kArgument) {
+      auto nodeInputVar = exe->node()->inputVar();
+      const auto& writtenBy = qctx_->symTable()->getVar(nodeInputVar)->writtenBy;
+      for (auto& node : writtenBy) {
+        folly::Promise<Status> p;
+        futures.emplace_back(p.getFuture());
+        auto& promises = promiseMap[node->id()];
+        promises.emplace_back(std::move(p));
       }
-      folly::Promise<Status> p;
-      futures.emplace_back(p.getFuture());
-      auto& promises = promiseMap[dep->id()];
-      promises.emplace_back(std::move(p));
+    } else {
+      for (auto* dep : exe->depends()) {
+        auto notVisited = visited.emplace(dep).second;
+        if (notVisited) {
+          queue.push(dep);
+        }
+        folly::Promise<Status> p;
+        futures.emplace_back(p.getFuture());
+        auto& promises = promiseMap[dep->id()];
+        promises.emplace_back(std::move(p));
+      }
     }
-    futureMap.emplace(exe->id(), std::move(futures));
   }
 
   while (!queue2.empty()) {
@@ -88,6 +98,10 @@ void AsyncMsgNotifyBasedScheduler::scheduleExecutor(
     case PlanNode::Kind::kLoop: {
       auto loop = static_cast<LoopExecutor*>(exe);
       runLoop(std::move(futures), loop, runner, std::move(promises));
+      break;
+    }
+    case PlanNode::Kind::kArgument: {
+      runExecutor(std::move(futures), exe, runner, std::move(promises));
       break;
     }
     default: {

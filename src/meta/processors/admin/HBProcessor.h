@@ -52,7 +52,7 @@ class HBProcessor : public BaseProcessor<cpp2::HBResp> {
   void onFinished() override;
 
  private:
-  explicit HBProcessor(kvstore::KVStore* kvstore, const HBCounters* counters, ClusterID clusterId)
+  HBProcessor(kvstore::KVStore* kvstore, const HBCounters* counters, ClusterID clusterId)
       : BaseProcessor<cpp2::HBResp>(kvstore), clusterId_(clusterId), counters_(counters) {}
 
   ClusterID clusterId_{0};

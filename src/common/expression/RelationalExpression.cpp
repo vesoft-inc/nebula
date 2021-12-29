@@ -252,10 +252,12 @@ std::string RelationalExpression::toString() const {
       op = " illegal symbol ";
   }
   std::stringstream out;
-  out << "(" << lhs_->toString() << op << rhs_->toString() << ")";
+  out << "(" << (lhs_ ? lhs_->toString() : "") << op << (rhs_ ? rhs_->toString() : "") << ")";
   return out.str();
 }
 
-void RelationalExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void RelationalExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

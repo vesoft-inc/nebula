@@ -27,7 +27,6 @@ set(common_deps
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
@@ -38,6 +37,11 @@ set(common_deps
 
 set(storage_meta_deps
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
@@ -51,6 +55,8 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:geo_index_obj>
 )
+
+if(NOT ENABLE_STANDALONE_VERSION)
 
 nebula_add_executable(
     NAME
@@ -84,6 +90,7 @@ nebula_add_executable(
         nebula-metad
     SOURCES
         MetaDaemon.cpp
+        MetaDaemonInit.cpp
         SetupLogging.cpp
         SetupBreakpad.cpp
     OBJECTS
@@ -109,7 +116,9 @@ nebula_add_executable(
         SetupLogging.cpp
         SetupBreakpad.cpp
     OBJECTS
-        $<TARGET_OBJECTS:stats_def_obj>
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:service_obj>
         $<TARGET_OBJECTS:graph_session_obj>
@@ -179,3 +188,79 @@ install(
     COMPONENT
         meta
 )
+
+else()
+
+nebula_add_executable(
+    NAME
+        nebula-standalone
+    SOURCES
+        StandAloneDaemon.cpp
+        MetaDaemonInit.cpp
+        SetupLogging.cpp
+        SetupBreakpad.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
+        $<TARGET_OBJECTS:util_obj>
+        $<TARGET_OBJECTS:service_obj>
+        $<TARGET_OBJECTS:graph_session_obj>
+        $<TARGET_OBJECTS:query_engine_obj>
+        $<TARGET_OBJECTS:parser_obj>
+        $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:expr_visitor_obj>
+        $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:plan_obj>
+        $<TARGET_OBJECTS:executor_obj>
+        $<TARGET_OBJECTS:scheduler_obj>
+        $<TARGET_OBJECTS:idgenerator_obj>
+        $<TARGET_OBJECTS:graph_context_obj>
+        $<TARGET_OBJECTS:graph_flags_obj>
+        $<TARGET_OBJECTS:graph_auth_obj>
+        $<TARGET_OBJECTS:graph_thrift_obj>
+        $<TARGET_OBJECTS:storage_client_base_obj>
+        $<TARGET_OBJECTS:storage_client_obj>
+        $<TARGET_OBJECTS:concurrent_obj>
+        $<TARGET_OBJECTS:charset_obj>
+        $<TARGET_OBJECTS:graph_obj>
+        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:storage_server>
+        $<TARGET_OBJECTS:internal_storage_service_handler>
+        $<TARGET_OBJECTS:graph_storage_service_handler>
+        $<TARGET_OBJECTS:storage_admin_service_handler>
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:storage_transaction_executor>
+        $<TARGET_OBJECTS:internal_storage_client_obj>
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:storage_local_server_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:meta_http_handler>
+        $<TARGET_OBJECTS:meta_version_man_obj>
+        $<TARGET_OBJECTS:meta_data_upgrade_obj>
+        $<TARGET_OBJECTS:meta_v1_thrift_obj>
+        ${storage_meta_deps}
+        ${common_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+)
+
+install(
+    TARGETS
+        nebula-standalone
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        bin
+    COMPONENT
+        graph ## tmp use graph component
+)
+
+endif()

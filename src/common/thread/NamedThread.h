@@ -36,9 +36,13 @@ class NamedThread final : public std::thread {
       set(name);
     }
 
-    ~Nominator() { set(prevName_); }
+    ~Nominator() {
+      set(prevName_);
+    }
 
-    static void set(const std::string &name) { ::prctl(PR_SET_NAME, name.c_str(), 0, 0, 0); }
+    static void set(const std::string &name) {
+      ::prctl(PR_SET_NAME, name.c_str(), 0, 0, 0);
+    }
 
     static void get(std::string &name) {
       char buf[64];

@@ -64,9 +64,13 @@ bool Coordinate::isValid() const {
 
 void Point::normalize() {}
 
-bool Point::isValid() const { return coord.isValid(); }
+bool Point::isValid() const {
+  return coord.isValid();
+}
 
-void LineString::normalize() { geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList); }
+void LineString::normalize() {
+  geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList);
+}
 
 bool LineString::isValid() const {
   // LineString must have at least 2 coordinates;
@@ -267,11 +271,17 @@ Point Geography::centroid() const {
   }
 }
 
-std::string Geography::asWKT() const { return geo::WKTWriter().write(*this); }
+std::string Geography::asWKT() const {
+  return geo::WKTWriter().write(*this);
+}
 
-std::string Geography::asWKB() const { return geo::WKBWriter().write(*this); }
+std::string Geography::asWKB() const {
+  return geo::WKBWriter().write(*this);
+}
 
-std::string Geography::asWKBHex() const { return folly::hexlify(geo::WKBWriter().write(*this)); }
+std::string Geography::asWKBHex() const {
+  return folly::hexlify(geo::WKBWriter().write(*this));
+}
 
 std::unique_ptr<S2Region> Geography::asS2() const {
   return geo::GeoUtils::s2RegionFromGeography(*this);

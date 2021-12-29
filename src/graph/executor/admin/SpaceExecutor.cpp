@@ -5,10 +5,12 @@
 
 #include "graph/executor/admin/SpaceExecutor.h"
 
+#include "common/stats/StatsManager.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
+#include "graph/stats/GraphStats.h"
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -140,6 +142,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
           LOG(ERROR) << "Drop space `" << dsNode->getSpaceName() << "' failed: " << resp.status();
           return resp.status();
         }
+        unRegisterSpaceLevelMetrics(dsNode->getSpaceName());
         if (dsNode->getSpaceName() == qctx()->rctx()->session()->space().name) {
           SpaceInfo spaceInfo;
           spaceInfo.name = "";
@@ -161,6 +164,16 @@ folly::Future<Status> DropSpaceExecutor::execute() {
         }
         return Status::OK();
       });
+}
+
+void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string &spaceName) {
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::removeCounterWithLabels(kNumQueries, {{"space", spaceName}});
+    stats::StatsManager::removeCounterWithLabels(kNumSlowQueries, {{"space", spaceName}});
+    stats::StatsManager::removeCounterWithLabels(kNumQueryErrors, {{"space", spaceName}});
+    stats::StatsManager::removeHistoWithLabels(kQueryLatencyUs, {{"space", spaceName}});
+    stats::StatsManager::removeHistoWithLabels(kSlowQueryLatencyUs, {{"space", spaceName}});
+  }
 }
 
 folly::Future<Status> ShowSpacesExecutor::execute() {

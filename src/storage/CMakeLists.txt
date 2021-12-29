@@ -21,7 +21,6 @@ nebula_add_library(
     admin/RebuildEdgeIndexTask.cpp
     admin/RebuildFTIndexTask.cpp
     admin/StatsTask.cpp
-    admin/ListClusterInfoProcessor.cpp
 )
 
 nebula_add_library(
@@ -90,4 +89,11 @@ nebula_add_library(
     StorageServer.cpp
 )
 
+
+nebula_add_library(
+    storage_local_server_obj OBJECT
+    GraphStorageLocalServer.cpp
+)
+
+nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

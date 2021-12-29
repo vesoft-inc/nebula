@@ -66,15 +66,23 @@ void writeDataV2(SchemaWriter* schema, int32_t iters) {
 /*************************
  * Beginning of benchmarks
  ************************/
-BENCHMARK(WriteShortRowV1, iters) { writeDataV1(&schemaShort, iters); }
+BENCHMARK(WriteShortRowV1, iters) {
+  writeDataV1(&schemaShort, iters);
+}
 
-BENCHMARK_RELATIVE(WriteShortRowV2, iters) { writeDataV2(&schemaShort, iters); }
+BENCHMARK_RELATIVE(WriteShortRowV2, iters) {
+  writeDataV2(&schemaShort, iters);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(WriteLongRowV1, iters) { writeDataV1(&schemaLong, iters); }
+BENCHMARK(WriteLongRowV1, iters) {
+  writeDataV1(&schemaLong, iters);
+}
 
-BENCHMARK_RELATIVE(WriteLongRowV2, iters) { writeDataV2(&schemaLong, iters); }
+BENCHMARK_RELATIVE(WriteLongRowV2, iters) {
+  writeDataV2(&schemaLong, iters);
+}
 /*************************
  * End of benchmarks
  ************************/

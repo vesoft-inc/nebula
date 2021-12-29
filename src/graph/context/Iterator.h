@@ -42,16 +42,20 @@ class Iterator {
     kProp,
   };
 
-  explicit Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
+  Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
       : checkMemory_(checkMemory), kind_(kind), numRowsModN_(0), value_(value) {}
 
   virtual ~Iterator() = default;
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
   virtual std::unique_ptr<Iterator> copy() const = 0;
 
-  virtual bool valid() const { return !hitsSysMemoryHighWatermark(); }
+  virtual bool valid() const {
+    return !hitsSysMemoryHighWatermark();
+  }
 
   virtual void next() = 0;
 
@@ -82,21 +86,35 @@ class Iterator {
 
   virtual void clear() = 0;
 
-  void operator++() { next(); }
+  void operator++() {
+    next();
+  }
 
-  virtual std::shared_ptr<Value> valuePtr() const { return value_; }
+  virtual std::shared_ptr<Value> valuePtr() const {
+    return value_;
+  }
 
   virtual size_t size() const = 0;
 
-  bool empty() const { return size() == 0; }
+  bool empty() const {
+    return size() == 0;
+  }
 
-  bool isDefaultIter() const { return kind_ == Kind::kDefault; }
+  bool isDefaultIter() const {
+    return kind_ == Kind::kDefault;
+  }
 
-  bool isGetNeighborsIter() const { return kind_ == Kind::kGetNeighbors; }
+  bool isGetNeighborsIter() const {
+    return kind_ == Kind::kGetNeighbors;
+  }
 
-  bool isSequentialIter() const { return kind_ == Kind::kSequential; }
+  bool isSequentialIter() const {
+    return kind_ == Kind::kSequential;
+  }
 
-  bool isPropIter() const { return kind_ == Kind::kProp; }
+  bool isPropIter() const {
+    return kind_ == Kind::kProp;
+  }
 
   // The derived class should rewrite get prop if the Value is kind of dataset.
   virtual const Value& getColumn(const std::string& col) const = 0;
@@ -127,10 +145,16 @@ class Iterator {
     return Value();
   }
 
-  virtual Value getEdge() const { return Value(); }
+  virtual Value getEdge() const {
+    return Value();
+  }
 
-  bool checkMemory() const { return checkMemory_; }
-  void setCheckMemory(bool checkMemory) { checkMemory_ = checkMemory; }
+  bool checkMemory() const {
+    return checkMemory_;
+  }
+  void setCheckMemory(bool checkMemory) {
+    checkMemory_ = checkMemory;
+  }
 
  protected:
   virtual void doReset(size_t pos) = 0;
@@ -147,33 +171,47 @@ class DefaultIter final : public Iterator {
   explicit DefaultIter(std::shared_ptr<Value> value, bool checkMemory = false)
       : Iterator(value, Kind::kDefault, checkMemory) {}
 
-  std::unique_ptr<Iterator> copy() const override { return std::make_unique<DefaultIter>(*this); }
+  std::unique_ptr<Iterator> copy() const override {
+    return std::make_unique<DefaultIter>(*this);
+  }
 
-  bool valid() const override { return Iterator::valid() && !(counter_ > 0); }
+  bool valid() const override {
+    return Iterator::valid() && !(counter_ > 0);
+  }
 
   void next() override {
     numRowsModN_++;
     counter_++;
   }
 
-  void erase() override { counter_--; }
+  void erase() override {
+    counter_--;
+  }
 
   void unstableErase() override {
     DLOG(ERROR) << "Unimplemented default iterator.";
     counter_--;
   }
 
-  void eraseRange(size_t, size_t) override { return; }
+  void eraseRange(size_t, size_t) override {
+    return;
+  }
 
   void select(std::size_t, std::size_t) override {
     DLOG(FATAL) << "Unimplemented method for default iterator.";
   }
 
-  void sample(int64_t) override { DLOG(FATAL) << "Unimplemented default iterator."; }
+  void sample(int64_t) override {
+    DLOG(FATAL) << "Unimplemented default iterator.";
+  }
 
-  void clear() override { reset(); }
+  void clear() override {
+    reset();
+  }
 
-  size_t size() const override { return 1; }
+  size_t size() const override {
+    return 1;
+  }
 
   const Value& getColumn(const std::string& /* col */) const override {
     DLOG(FATAL) << "This method should not be invoked";
@@ -221,7 +259,9 @@ class GetNeighborsIter final : public Iterator {
 
   void erase() override;
 
-  void unstableErase() override { erase(); }
+  void unstableErase() override {
+    erase();
+  }
 
   // erase [first, last)
   void eraseRange(size_t first, size_t last) override {
@@ -248,7 +288,9 @@ class GetNeighborsIter final : public Iterator {
 
   void sample(int64_t count) override;
 
-  size_t size() const override { return 0; }
+  size_t size() const override {
+    LOG(FATAL) << "Unimplemented method for Get Neighbros iterator.";
+  }
 
   const Value& getColumn(const std::string& col) const override;
 
@@ -270,7 +312,9 @@ class GetNeighborsIter final : public Iterator {
   List getEdges();
 
   // only return currentEdge, not currentRow, for test
-  const Row* row() const override { return currentEdge_; }
+  const Row* row() const override {
+    return currentEdge_;
+  }
 
  private:
   void doReset(size_t pos) override {
@@ -285,7 +329,9 @@ class GetNeighborsIter final : public Iterator {
     return currentDs_->tagEdgeNameIndices.find(colIdx_)->second;
   }
 
-  bool colValid() { return !noEdge_ && valid(); }
+  bool colValid() {
+    return !noEdge_ && valid();
+  }
 
   // move to next List of Edge data
   void nextCol();
@@ -403,27 +449,23 @@ class SequentialIter : public Iterator {
     reset();
   }
 
-  std::vector<Row>::iterator begin() { return rows_->begin(); }
-
-  std::vector<Row>::iterator end() { return rows_->end(); }
-
-  const std::unordered_map<std::string, size_t>& getColIndices() const { return colIndices_; }
-
-  size_t size() const override { return rows_->size(); }
-
-  const Value& getColumn(const std::string& col) const override {
-    if (!valid()) {
-      return Value::kNullValue;
-    }
-    auto& row = *iter_;
-    auto index = colIndices_.find(col);
-    if (index == colIndices_.end()) {
-      return Value::kNullValue;
-    }
-
-    DCHECK_LT(index->second, row.values.size());
-    return row.values[index->second];
+  std::vector<Row>::iterator begin() {
+    return rows_->begin();
   }
+
+  std::vector<Row>::iterator end() {
+    return rows_->end();
+  }
+
+  const std::unordered_map<std::string, size_t>& getColIndices() const {
+    return colIndices_;
+  }
+
+  size_t size() const override {
+    return rows_->size();
+  }
+
+  const Value& getColumn(const std::string& col) const override;
 
   const Value& getColumn(int32_t index) const override;
 
@@ -432,13 +474,17 @@ class SequentialIter : public Iterator {
   Value getEdge() const override;
 
  protected:
-  const Row* row() const override { return &*iter_; }
+  const Row* row() const override {
+    return &*iter_;
+  }
 
   // Notice: We only use this interface when return results to client.
   friend class DataCollectExecutor;
   friend class AppendVerticesExecutor;
   friend class TraverseExecutor;
-  Row&& moveRow() { return std::move(*iter_); }
+  Row&& moveRow() {
+    return std::move(*iter_);
+  }
 
   void doReset(size_t pos) override;
 
@@ -524,7 +570,9 @@ struct equal_to<const nebula::Row*> {
 
 template <>
 struct hash<const nebula::Row*> {
-  size_t operator()(const nebula::Row* row) const { return !row ? 0 : hash<nebula::Row>()(*row); }
+  size_t operator()(const nebula::Row* row) const {
+    return !row ? 0 : hash<nebula::Row>()(*row);
+  }
 };
 
 }  // namespace std

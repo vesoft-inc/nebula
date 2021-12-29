@@ -119,6 +119,7 @@ union Value {
     14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
     16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
+    17: Duration (cpp.type = "nebula::Duration")     duVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
@@ -226,6 +227,8 @@ struct KeyValue {
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
 
+// !! Struct Duration has a shadow data type defined in the Duration.h
+// So any change here needs to be reflected to the shadow type there
 struct Duration {
     1: i64 seconds;
     2: i32 microseconds;
@@ -244,22 +247,14 @@ struct DirInfo {
     2: list<binary>             data,
 }
 
-struct NodeInfo {
-    1: HostAddr      host,
-    2: DirInfo       dir,
-}
-
-struct PartitionBackupInfo {
-    1: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map")  info,
-}
-
 struct CheckpointInfo {
-    1: PartitionBackupInfo   partition_info,
+    1: GraphSpaceID          space_id,
+    2: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map") parts,
     // storage checkpoint directory name
-    2: binary                path,
+    3: binary                path,
 }
 
-// used for raft and drainer
+// used for drainer
 struct LogEntry {
     1: ClusterID cluster;
     2: binary log_str;
@@ -410,6 +405,7 @@ enum ErrorCode {
     E_GET_META_DIR_FAILURE              = -2072,
 
     E_QUERY_NOT_FOUND                 = -2073,
+    E_AGENT_HB_FAILUE                 = -2074,
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,

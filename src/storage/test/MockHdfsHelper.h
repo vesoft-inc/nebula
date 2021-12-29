@@ -35,7 +35,9 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
     return "";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 class MockHdfsExistHelper : public nebula::hdfs::HdfsHelper {
@@ -62,7 +64,9 @@ class MockHdfsExistHelper : public nebula::hdfs::HdfsHelper {
     return "copyToLocal: `/data/': File exists";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 }  // namespace storage

@@ -192,7 +192,9 @@ class IndexKeyUtils final {
     return val;
   }
 
-  static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
+  static std::string encodeRank(EdgeRanking rank) {
+    return IndexKeyUtils::encodeInt64(rank);
+  }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
     return IndexKeyUtils::decodeInt64(raw);
@@ -324,7 +326,9 @@ class IndexKeyUtils final {
   // NOTE(jie): The decoded data is not the original Geography data, but the uint64 type S2CellID.
   // decodeValue() should not call this function, it should turn for the data table instead.
   // It's only used for tests.
-  static uint64_t decodeGeography(const folly::StringPiece& raw) { return decodeUint64(raw); }
+  static uint64_t decodeGeography(const folly::StringPiece& raw) {
+    return decodeUint64(raw);
+  }
 
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
@@ -541,10 +545,16 @@ class IndexKeyUtils final {
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
   static StatusOr<std::vector<std::string>> collectIndexValues(
-      RowReader* reader, const meta::cpp2::IndexItem* indexItem);
+      RowReader* reader,
+      const meta::cpp2::IndexItem* indexItem,
+      const meta::SchemaProviderIf* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
+
+  static StatusOr<Value> readValueWithLatestSche(RowReader* reader,
+                                                 const std::string propName,
+                                                 const meta::SchemaProviderIf* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };

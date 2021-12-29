@@ -20,7 +20,9 @@ TEST(NamedThread, ThreadName) {
   ASSERT_EQ(setname, getname);
 }
 
-TEST(NamedThread, ThreadID) { ASSERT_EQ(::getpid(), nebula::thread::gettid()); }
+TEST(NamedThread, ThreadID) {
+  ASSERT_EQ(::getpid(), nebula::thread::gettid());
+}
 
 }  // namespace thread
 }  // namespace nebula

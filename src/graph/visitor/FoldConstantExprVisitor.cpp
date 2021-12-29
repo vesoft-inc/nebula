@@ -50,11 +50,17 @@ void FoldConstantExprVisitor::visit(LabelAttributeExpression *expr) {
 }
 
 // binary expression
-void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(SubscriptExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
   UNUSED(expr);

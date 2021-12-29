@@ -55,7 +55,9 @@ void StatusHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StatusHandler::requestComplete() noexcept { delete this; }
+void StatusHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StatusHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web service StorageHttpHandler got error: " << proxygen::getErrorString(error);

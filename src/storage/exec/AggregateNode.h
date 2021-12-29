@@ -86,13 +86,21 @@ class AggregateNode : public IterateNode<T> {
   }
 
  private:
-  VertexIDSlice srcId() const { return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key()); }
+  VertexIDSlice srcId() const {
+    return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key());
+  }
 
-  EdgeType edgeType() const { return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key()); }
+  EdgeType edgeType() const {
+    return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key());
+  }
 
-  EdgeRanking edgeRank() const { return NebulaKeyUtils::getRank(context_->vIdLen(), this->key()); }
+  EdgeRanking edgeRank() const {
+    return NebulaKeyUtils::getRank(context_->vIdLen(), this->key());
+  }
 
-  VertexIDSlice dstId() const { return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key()); }
+  VertexIDSlice dstId() const {
+    return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key());
+  }
 
   void initStatValue(EdgeContext* edgeContext) {
     stats_.clear();

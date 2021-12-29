@@ -19,17 +19,29 @@ class BinaryExpression : public Expression {
  public:
   bool operator==(const Expression& rhs) const override;
 
-  const Expression* left() const { return lhs_; }
+  const Expression* left() const {
+    return lhs_;
+  }
 
-  Expression* left() { return lhs_; }
+  Expression* left() {
+    return lhs_;
+  }
 
-  void setLeft(Expression* expr) { lhs_ = expr; }
+  void setLeft(Expression* expr) {
+    lhs_ = expr;
+  }
 
-  const Expression* right() const { return rhs_; }
+  const Expression* right() const {
+    return rhs_;
+  }
 
-  Expression* right() { return rhs_; }
+  Expression* right() {
+    return rhs_;
+  }
 
-  void setRight(Expression* expr) { rhs_ = expr; }
+  void setRight(Expression* expr) {
+    rhs_ = expr;
+  }
 
  protected:
   BinaryExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)

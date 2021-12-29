@@ -25,7 +25,7 @@ class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::DeleteEdgesRequest& req);
 
  private:
-  explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteEdges(

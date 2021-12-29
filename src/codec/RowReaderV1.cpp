@@ -224,7 +224,9 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
   }
 }
 
-int64_t RowReaderV1::getTimestamp() const noexcept { return std::numeric_limits<int64_t>::max(); }
+int64_t RowReaderV1::getTimestamp() const noexcept {
+  return std::numeric_limits<int64_t>::max();
+}
 
 /************************************************************
  *

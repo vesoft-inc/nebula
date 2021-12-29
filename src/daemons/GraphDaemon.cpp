@@ -16,9 +16,10 @@
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
@@ -33,7 +34,6 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
 #if defined(__x86_64__)
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initCounters();
+  nebula::initGraphStats();
 
   if (FLAGS_flagfile.empty()) {
     printHelp(argv[0]);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
@@ -215,13 +215,15 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) { fprintf(stderr, "%s --flagfile <config_file>\n", prog); }
+void printHelp(const char *prog) {
+  fprintf(stderr, "%s --flagfile <config_file>\n", prog);
+}
 
 void setupThreadManager() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+      PriorityThreadManager::newPriorityThreadManager(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   gServer->setThreadManager(threadManager);

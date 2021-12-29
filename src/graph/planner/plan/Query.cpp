@@ -281,7 +281,9 @@ void Filter::cloneMembers(const Filter& f) {
   needStableFilter_ = f.needStableFilter();
 }
 
-void SetOp::cloneMembers(const SetOp& s) { BinaryInputNode::cloneMembers(s); }
+void SetOp::cloneMembers(const SetOp& s) {
+  BinaryInputNode::cloneMembers(s);
+}
 
 PlanNode* Union::clone() const {
   auto* newUnion = Union::make(qctx_, nullptr, nullptr);
@@ -289,7 +291,9 @@ PlanNode* Union::clone() const {
   return newUnion;
 }
 
-void Union::cloneMembers(const Union& f) { SetOp::cloneMembers(f); }
+void Union::cloneMembers(const Union& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Intersect::clone() const {
   auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
@@ -297,7 +301,9 @@ PlanNode* Intersect::clone() const {
   return newIntersect;
 }
 
-void Intersect::cloneMembers(const Intersect& f) { SetOp::cloneMembers(f); }
+void Intersect::cloneMembers(const Intersect& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Minus::clone() const {
   auto* newMinus = Minus::make(qctx_, nullptr, nullptr);
@@ -305,7 +311,9 @@ PlanNode* Minus::clone() const {
   return newMinus;
 }
 
-void Minus::cloneMembers(const Minus& f) { SetOp::cloneMembers(f); }
+void Minus::cloneMembers(const Minus& f) {
+  SetOp::cloneMembers(f);
+}
 
 Project::Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
     : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) {
@@ -514,7 +522,9 @@ PlanNode* SwitchSpace::clone() const {
   return newSs;
 }
 
-void SwitchSpace::cloneMembers(const SwitchSpace& l) { SingleInputNode::cloneMembers(l); }
+void SwitchSpace::cloneMembers(const SwitchSpace& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 Dedup::Dedup(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kDedup, input) {
   copyInputColNames(input);
@@ -526,7 +536,9 @@ PlanNode* Dedup::clone() const {
   return newDedup;
 }
 
-void Dedup::cloneMembers(const Dedup& l) { SingleInputNode::cloneMembers(l); }
+void Dedup::cloneMembers(const Dedup& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
   auto desc = VariableDependencyNode::explain();
@@ -635,7 +647,9 @@ PlanNode* LeftJoin::clone() const {
   return newLeftJoin;
 }
 
-void LeftJoin::cloneMembers(const LeftJoin& l) { Join::cloneMembers(l); }
+void LeftJoin::cloneMembers(const LeftJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
   auto desc = Join::explain();
@@ -649,7 +663,9 @@ PlanNode* InnerJoin::clone() const {
   return newInnerJoin;
 }
 
-void InnerJoin::cloneMembers(const InnerJoin& l) { Join::cloneMembers(l); }
+void InnerJoin::cloneMembers(const InnerJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();
@@ -699,6 +715,7 @@ void Traverse::cloneMembers(const Traverse& g) {
   setStepRange(g.range_);
   setVertexFilter(g.vFilter_->clone());
   setEdgeFilter(g.eFilter_->clone());
+  setTrackPrevPath(g.trackPrevPath_);
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -712,6 +729,7 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   if (eFilter_ != nullptr) {
     addDescription("edge filter", eFilter_->toString(), desc.get());
   }
+  addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
 }
 
@@ -729,14 +747,87 @@ void AppendVertices::cloneMembers(const AppendVertices& a) {
   } else {
     setVertexFilter(nullptr);
   }
+  setTrackPrevPath(a.trackPrevPath_);
 }
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
   if (vFilter_ != nullptr) {
-    addDescription("vertex filter", vFilter_->toString(), desc.get());
+    addDescription("vertex_filter", vFilter_->toString(), desc.get());
   }
+  addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
 }
+
+std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
+  addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+  return desc;
+}
+
+void BiJoin::cloneMembers(const BiJoin& j) {
+  BinaryInputNode::cloneMembers(j);
+
+  std::vector<Expression*> hKeys;
+  for (auto* item : j.hashKeys()) {
+    hKeys.emplace_back(item->clone());
+  }
+  hashKeys_ = std::move(hKeys);
+
+  std::vector<Expression*> pKeys;
+  for (auto* item : j.probeKeys()) {
+    pKeys.emplace_back(item->clone());
+  }
+  probeKeys_ = std::move(pKeys);
+}
+
+BiJoin::BiJoin(QueryContext* qctx,
+               Kind kind,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> hashKeys,
+               std::vector<Expression*> probeKeys)
+    : BinaryInputNode(qctx, kind, left, right),
+      hashKeys_(std::move(hashKeys)),
+      probeKeys_(std::move(probeKeys)) {
+  auto lColNames = left->colNames();
+  auto rColNames = right->colNames();
+  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
+  setColNames(lColNames);
+}
+
+std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
+  auto desc = BiJoin::explain();
+  addDescription("kind", "LeftJoin", desc.get());
+  return desc;
+}
+
+PlanNode* BiLeftJoin::clone() const {
+  auto* newLeftJoin = BiLeftJoin::make(qctx_, nullptr, nullptr);
+  newLeftJoin->cloneMembers(*this);
+  return newLeftJoin;
+}
+
+void BiLeftJoin::cloneMembers(const BiLeftJoin& l) {
+  BiJoin::cloneMembers(l);
+}
+
+std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
+  auto desc = BiJoin::explain();
+  addDescription("kind", "InnerJoin", desc.get());
+  return desc;
+}
+
+PlanNode* BiInnerJoin::clone() const {
+  auto* newInnerJoin = BiInnerJoin::make(qctx_, nullptr, nullptr);
+  newInnerJoin->cloneMembers(*this);
+  return newInnerJoin;
+}
+
+void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
+  BiJoin::cloneMembers(l);
+}
+
 }  // namespace graph
 }  // namespace nebula

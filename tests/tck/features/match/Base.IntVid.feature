@@ -487,36 +487,36 @@ Feature: Basic match
       """
       MATCH (v) return v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v{name: "Tim Duncan"}) return v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v:player:bachelor) RETURN v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v:player{age:23}:bachelor) RETURN v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH () -[]-> (v) return *
       """
-    Then a ExecutionError should be raised at runtime: Scan edges must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH () --> (v) --> () return *
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     # The 0 step means node scan in fact, but p and t has no label or properties for index seek
     # So it's not workable now
     When executing query:
       """
       MATCH (p)-[:serve*0..3]->(t) RETURN p
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
