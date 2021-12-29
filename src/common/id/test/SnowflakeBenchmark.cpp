@@ -23,29 +23,6 @@ size_t SnowflakeTest(size_t iters) {
 
   return iters * ops;
 }
-// size_t ComplexQuery(size_t iters, size_t nrThreads) {
-//   constexpr size_t ops = 500000UL;
-
-//   auto parse = [&]() {
-//     auto n = iters * ops;
-//     for (auto i = 0UL; i < n; i++) {
-//       // static thread_local GQLParser parser;
-//       GQLParser parser(qctx.get());
-//       auto result = parser.parse(complexQuery);
-//       folly::doNotOptimizeAway(result);
-//     }
-//   };
-
-//   std::vector<std::thread> workers;
-//   for (auto i = 0u; i < nrThreads; i++) {
-//     workers.emplace_back(parse);
-//   }
-//   for (auto i = 0u; i < nrThreads; i++) {
-//     workers[i].join();
-//   }
-
-//   return iters * ops;
-// }
 
 size_t SnowflakeCurrencyTest(size_t iters, int threadNum) {
   constexpr size_t ops = 100000UL;
@@ -70,7 +47,7 @@ size_t SnowflakeCurrencyTest(size_t iters, int threadNum) {
     threads[i].join();
   }
 
-  return iters * ops;
+  return iters * ops * threadNum;
 }
 
 BENCHMARK_NAMED_PARAM_MULTI(SnowflakeTest, 1UL)
@@ -92,13 +69,13 @@ int main(int argc, char** argv) {
 ============================================================================
 nebula/src/common/id/test/SnowflakeBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
-SnowflakeTest(1UL)                                          68.79ns   14.54M
+SnowflakeTest(1UL)                                          68.77ns   14.54M
 ----------------------------------------------------------------------------
-SnowflakeCurrencyTest(1_thread)                            238.94ns    4.19M
-SnowflakeCurrencyTest(2_thread)                   49.84%   479.43ns    2.09M
-SnowflakeCurrencyTest(4_thread)                   24.64%   969.60ns    1.03M
-SnowflakeCurrencyTest(8_thread)                   12.18%     1.96us  509.73K
-SnowflakeCurrencyTest(16_thread)                   4.94%     4.83us  206.92K
-SnowflakeCurrencyTest(32_thread)                   2.09%    11.44us   87.42K
+SnowflakeCurrencyTest(1_thread)                            238.87ns    4.19M
+SnowflakeCurrencyTest(2_thread)                   99.34%   240.45ns    4.16M
+SnowflakeCurrencyTest(4_thread)                   98.37%   242.82ns    4.12M
+SnowflakeCurrencyTest(8_thread)                   85.46%   279.52ns    3.58M
+SnowflakeCurrencyTest(16_thread)                  66.53%   359.06ns    2.79M
+SnowflakeCurrencyTest(32_thread)                  54.80%   435.90ns    2.29M
 ============================================================================
 */
