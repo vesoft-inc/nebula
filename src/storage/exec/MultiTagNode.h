@@ -85,12 +85,13 @@ class MultiTagNode : public IterateNode<VertexID> {
   }
 
   bool valid() const override {
-    // return valid_;
     auto ret = tagNodes_.back()->valid();
     return ret;
   }
 
-  void next() override { tagNodes_.back()->next(); }
+  void next() override {
+    tagNodes_.back()->next();
+  }
 
   folly::StringPiece key() const override {
     LOG(FATAL) << "not allowed to do this";

@@ -64,7 +64,9 @@ class FilterNode : public IterateNode<T> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  void setFilterMode(FilterMode mode) { mode_ = mode; }
+  void setFilterMode(FilterMode mode) {
+    mode_ = mode;
+  }
 
  private:
   bool check() override {

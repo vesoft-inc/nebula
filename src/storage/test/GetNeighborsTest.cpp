@@ -207,7 +207,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, - teammate, - serve, expr
+    // vId, stat, player, expr
     size_t expectColumnCount = 4;
     QueryTestUtils::checkResponse(
         *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
@@ -1120,14 +1120,7 @@ TEST(GetNeighborsTest, TtlTest) {
     }
     ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
     ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());   // stat
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());   // expr player expired
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[3].empty());   // team not exists
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[4].empty());   // general tag not exists
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[5].isList());  // - teammate valid
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[5].empty());  // - serve expired
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[7].empty());   // + serve expired
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[8].isList());  // + teammate valid
-    // ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[9].empty());   // expr
+    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());   // expr
   }
   FLAGS_mock_ttl_col = false;
 }
@@ -1476,7 +1469,7 @@ TEST(GetNeighborsTest, MultiTagNodeTest) {
           pool,
           SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
           ConstantExpression::make(pool, Value(9999)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1509,7 +1502,7 @@ TEST(GetNeighborsTest, MultiTagNodeTest) {
           pool,
           SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
           ConstantExpression::make(pool, Value(19)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1603,7 +1596,8 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
           ConstantExpression::make(pool, Value(18)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      // (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
