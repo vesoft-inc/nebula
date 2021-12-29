@@ -16,15 +16,15 @@
 namespace nebula {
 namespace storage {
 
-class ChainUpdateEdgeProcessorLocal
+class ChainUpdateEdgeLocalProcessor
     : public QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse>,
       public ChainBaseProcessor {
   friend struct ChainUpdateEdgeTestHelper;
 
  public:
   using Code = ::nebula::cpp2::ErrorCode;
-  static ChainUpdateEdgeProcessorLocal* instance(StorageEnv* env) {
-    return new ChainUpdateEdgeProcessorLocal(env);
+  static ChainUpdateEdgeLocalProcessor* instance(StorageEnv* env) {
+    return new ChainUpdateEdgeLocalProcessor(env);
   }
 
   void process(const cpp2::UpdateEdgeRequest& req) override;
@@ -39,19 +39,15 @@ class ChainUpdateEdgeProcessorLocal
 
   void finish() override;
 
-  virtual ~ChainUpdateEdgeProcessorLocal() = default;
+  virtual ~ChainUpdateEdgeLocalProcessor() = default;
 
  protected:
-  explicit ChainUpdateEdgeProcessorLocal(StorageEnv* env)
+  explicit ChainUpdateEdgeLocalProcessor(StorageEnv* env)
       : QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse>(env, nullptr) {}
 
   std::string edgeKey(const cpp2::UpdateEdgeRequest& req);
 
   void doRpc(folly::Promise<Code>&& promise, int retry = 0) noexcept;
-
-  bool checkTerm();
-
-  bool checkVersion();
 
   folly::SemiFuture<Code> processNormalLocal(Code code);
 
@@ -82,9 +78,9 @@ class ChainUpdateEdgeProcessorLocal
  protected:
   cpp2::UpdateEdgeRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_;
-  PartitionID partId_;
+  PartitionID localPartId_;
   int retryLimit_{10};
-  TermID termOfPrepare_{-1};
+  TermID term_{-1};
 
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()

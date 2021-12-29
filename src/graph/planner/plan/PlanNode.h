@@ -96,6 +96,7 @@ class PlanNode {
     kDropSpace,
     kDropTag,
     kDropEdge,
+    kAlterSpace,
 
     // index related
     kCreateTagIndex,
@@ -167,11 +168,11 @@ class PlanNode {
     kRemoveListener,
     kShowListener,
 
-    // text service related
-    kShowTSClients,
+    // service related
+    kShowServiceClients,
     kShowFTIndexes,
-    kSignInTSService,
-    kSignOutTSService,
+    kSignInService,
+    kSignOutService,
     kDownload,
     kIngest,
     kShowSessions,

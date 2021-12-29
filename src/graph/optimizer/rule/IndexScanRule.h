@@ -135,6 +135,7 @@ class IndexScanRule final : public OptRule {
 
   template <typename E,
             typename = std::enable_if_t<std::is_same<E, EdgePropertyExpression>::value ||
+                                        std::is_same<E, LabelTagPropertyExpression>::value ||
                                         std::is_same<E, TagPropertyExpression>::value>>
   Status addFilterItem(RelationalExpression* expr, FilterItems* items, QueryContext* qctx) const;
 

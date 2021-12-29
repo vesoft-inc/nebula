@@ -79,7 +79,7 @@ class MockCluster {
                      SchemaVer schemaVerCount = 1,
                      bool hasProp = true,
                      bool hasListener = false,
-                     const std::vector<meta::cpp2::FTClient>& clients = {},
+                     const std::vector<meta::cpp2::ServiceClient>& clients = {},
                      bool needCffBuilder = false);
 
   std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers();

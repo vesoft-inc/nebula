@@ -36,6 +36,8 @@ class EvaluableExprVisitor : public ExprVisitorImpl {
 
   void visit(EdgePropertyExpression *) override;
 
+  void visit(LabelTagPropertyExpression *) override;
+
   void visit(InputPropertyExpression *) override;
 
   void visit(VariablePropertyExpression *) override;

@@ -117,10 +117,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 OR n.start_year <= 2010.0
-            OR e.likeness <> 90 OR n.nonExistTag <> null
-            OR e.likeness >= "12" OR n.age <= true
-      RETURN DISTINCT m.name AS player, m.age AS age
+      WHERE n.player.age >= 33 OR n.player.start_year <= 2010.0
+            OR e.likeness <> 90 OR n.player.nonExistTag <> null
+            OR e.likeness >= "12" OR n.player.age <= true
+      RETURN DISTINCT m.player.name AS player, m.player.age AS age
              ORDER BY player, age
       """
     Then the result should be, in any order, with relax comparison:
@@ -164,10 +164,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 OR n.name <= "2010.0"
-            AND e.likeness <> 90 OR n.nonExistTag <> null
-            OR e.likeness >= "12" OR n.age <= true
-      RETURN DISTINCT m.name AS player, m.age AS age
+      WHERE n.player.age >= 33 OR n.player.name <= "2010.0"
+            AND e.likeness <> 90 OR n.player.nonExistTag <> null
+            OR e.likeness >= "12" OR n.player.age <= true
+      RETURN DISTINCT m.player.name AS player, m.player.age AS age
              ORDER BY player, age
       """
     Then the result should be, in any order, with relax comparison:
@@ -207,10 +207,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 AND n.name <> "2010.0"
-            AND e.likeness == 90 AND n.nonExistTag <> null
+      WHERE n.player.age >= 33 AND n.player.name <> "2010.0"
+            AND e.likeness == 90 AND n.player.nonExistTag <> null
             AND e.likeness >= "12"
-      RETURN n.name AS player, n.age AS age
+      RETURN n.player.name AS player, n.player.age AS age
       """
     Then the result should be, in any order, with relax comparison:
       | player | age |
@@ -218,7 +218,7 @@ Feature: RelationalExpression
   Scenario: Transform Relational expr in MATCH clause
     When profiling query:
       """
-      MATCH (v:player) WHERE v.age - 5 >= 40 RETURN v
+      MATCH (v:player) WHERE v.player.age - 5 >= 40 RETURN v
       """
     Then the result should be, in any order:
       | v                                                               |
