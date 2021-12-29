@@ -52,8 +52,8 @@ Feature: Parameter
       RETURN *
       """
     Then the result should be, in any order:
-      | sval           | fval | ival | bval  |
-      | "Tim Duncanef" | 4.1  | 2    | false |
+      | ival | bval  | sval           | fval |
+      | 2    | false | "Tim Duncanef" | 4.1  |
     When executing query:
       """
       MATCH (v:player)

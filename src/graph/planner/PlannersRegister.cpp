@@ -7,6 +7,7 @@
 
 #include "graph/planner/Planner.h"
 #include "graph/planner/SequentialPlanner.h"
+#include "graph/planner/match/ArgumentFinder.h"
 #include "graph/planner/match/LabelIndexSeek.h"
 #include "graph/planner/match/MatchPlanner.h"
 #include "graph/planner/match/PropIndexSeek.h"
@@ -89,6 +90,10 @@ void PlannersRegister::registerMatch() {
 
   // MATCH(n) WHERE id(n) = value RETURN n
   startVidFinders.emplace_back(&VertexIdSeek::make);
+
+  // MATCH (n)-[]-(l), (l)-[]-(m) return n,l,m
+  // MATCH (n)-[]-(l) MATCH (l)-[]-(m) return n,l,m
+  startVidFinders.emplace_back(&ArgumentFinder::make);
 
   // MATCH(n:Tag{prop:value}) RETURN n
   // MATCH(n:Tag) WHERE n.prop = value RETURN n
