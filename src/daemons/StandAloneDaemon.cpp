@@ -107,9 +107,6 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initGraphStats();
-  nebula::initMetaStats();
-  nebula::initStorageStats();
 
   // Setup logging
   auto status = setupLogging(argv[0]);
@@ -133,6 +130,10 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  nebula::initGraphStats();
+  nebula::initMetaStats();
+  nebula::initStorageStats();
 
   if (FLAGS_daemonize) {
     google::SetStderrLogging(google::FATAL);
