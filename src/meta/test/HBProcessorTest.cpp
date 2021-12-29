@@ -15,6 +15,7 @@ namespace nebula {
 namespace meta {
 
 TEST(HBProcessorTest, HBTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
 
