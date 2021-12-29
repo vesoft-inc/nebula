@@ -21,11 +21,14 @@ int64_t Snowflake::getId() {
 
   int64_t timestamp = getTimestamp();
   if (timestamp < lastTimestamp_) {
-    // TODO
     LOG(FATAL) << "Clock back";
-    return -1;
+    return firstBitRevert & getIdByTs(timestamp);
   }
 
+  return getIdByTs(timestamp);
+}
+
+int64_t Snowflake::getIdByTs(int64_t timestamp) {
   // if it is the same time, then the microsecond sequence
   if (lastTimestamp_ == timestamp) {
     sequence_ = (sequence_ + 1) & maxSequence;

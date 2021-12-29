@@ -187,12 +187,12 @@ void DeducePropsVisitor::visit(EdgeRankExpression *expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(UUIDExpression *expr) {
-  reportError(expr);
-}
-
 void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) {
   visitEdgePropExpr(expr);
+}
+
+void DeducePropsVisitor::visit(UUIDExpression *expr) {
+  reportError(expr);
 }
 
 void DeducePropsVisitor::visit(VariableExpression *expr) {

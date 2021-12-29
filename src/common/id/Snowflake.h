@@ -27,15 +27,19 @@ class Snowflake {
 
  private:
   /*
-   *  Snowflake id: | timestampBit 41 | workerBit 10 | sequenceBit 12 |
+   *  Snowflake id:
+   *  timestampBit 38 bits (8.6 years) |
+   *  workerBit 13 bits (8k workerid) |
+   *  sequenceBit 12 bits (4 million per second) |
    */
-  int64_t lastTimestamp_{-1};          // 41 bits
-  static inline int64_t workerId_{0};  // 10 bits
-  int64_t sequence_{0};                // 12 bits
+  int64_t lastTimestamp_{-1};
+  static inline int64_t workerId_{0};
+  int64_t sequence_{0};
 
   static int64_t getTimestamp();
 
   int64_t nextTimestamp();
+  int64_t getIdByTs(int64_t timestamp);
 
   std::mutex mutex_;
 
@@ -49,6 +53,8 @@ class Snowflake {
 
   static constexpr int64_t workerLeft = sequenceBit;
   static constexpr int64_t timestampLeft = sequenceBit + workerBit;
+
+  static constexpr int64_t firstBitRevert = 0x9000000000000000;
 };
 
 }  // namespace nebula

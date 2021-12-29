@@ -25,8 +25,6 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
-  // Snowflake generator;
-  // result_ = generator.getId();
   return result_;
 }
 
