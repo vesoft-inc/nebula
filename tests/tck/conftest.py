@@ -14,6 +14,7 @@ import json
 
 from nebula2.common.ttypes import NList, NMap, Value, ErrorCode
 from nebula2.data.DataObject import ValueWrapper
+from nebula2.Exception import AuthFailedException
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -360,6 +361,26 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
     class_fixture_variables["current_session"] = sess
     class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["pool"] = pool
+
+# This is a workaround to test login retry because nebula-python treats
+# authentication failure as exception instead of error.
+# TODO(Aiee) This should be removed once nebula-python updated.
+@when(parse('login "{graph}" with "{user}" and "{password}" should fail:\n{msg}'))
+def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
+    index = parse_service_index(graph)
+    assert index is not None, "Invalid graph name, name is {}".format(graph)
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    assert index < len(nebula_svc.graphd_processes)
+    graphd_process = nebula_svc.graphd_processes[index]
+    graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
+    pool = get_conn_pool(graph_ip, graph_port, None)
+    try:
+        sess = pool.get_session(user, password)
+    except AuthFailedException as e:
+        assert msg in e.message
+    except:
+        raise
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):

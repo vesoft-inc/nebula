@@ -41,11 +41,12 @@ DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
 DEFINE_uint32(failed_login_attempts,
               5,
-              "how many consecutive incorrect passwords cause the account to become locked");
-DEFINE_uint32(password_lock_time_in_secs,
-              10,
-              "how long to lock the account after too many consecutive login attempts provide an "
-              "incorrect password.");
+              "how many consecutive incorrect passwords input cause the account to become locked");
+DEFINE_uint32(
+    password_lock_time_in_secs,
+    10,
+    "how long in seconds to lock the account after too many consecutive login attempts provide an "
+    "incorrect password.");
 
 namespace nebula {
 namespace meta {
@@ -2436,8 +2437,8 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
   }
 
   if (iter->second != password) {
-    // By default there is no limit of login attempts
-    if (FLAGS_failed_login_attempts == 0) {
+    // By default there is no limit of login attempts if any of these 2 flags is unset
+    if (FLAGS_failed_login_attempts == 0 || FLAGS_password_lock_time_in_secs == 0) {
       return Status::Error("Invalid password");
     }
 
@@ -2461,7 +2462,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     }
   }
 
-  // Reset password attempts remained
+  // Reset password attempts
   passwordAttemtRemain = FLAGS_failed_login_attempts;
   lockedSince = 0;
   return Status::OK();
