@@ -21,11 +21,18 @@ from nebula2.fbthrift.protocol import TBinaryProtocol
 from nebula2.gclient.net import Connection
 from nebula2.graph import GraphService
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)-4s [%(filename)s:%(lineno)d]:%(message)s',
+)
 
 tests_collected = set()
 tests_executed = set()
 data_dir = os.getenv('NEBULA_DATA_DIR')
 
+pytest_plugins = [
+   "tests.tck.lib.zone"
+]
 
 # pytest hook to handle test collection when xdist is used (parallel tests)
 # https://github.com/pytest-dev/pytest-xdist/pull/35/commits (No official documentation available)
@@ -40,6 +47,16 @@ def pytest_collection_modifyitems(items):
     for item in items:
         tests_collected.add(item.nodeid)
 
+# link to pytest_runtest_makereport
+# https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+    # set a report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+    setattr(item, "rep_" + rep.when, rep)
 
 # link to pytest_runtest_logreport
 # https://docs.pytest.org/en/5.3.2/reference.html#_pytest.hookspec.pytest_runtest_logreport
@@ -122,7 +139,7 @@ def get_ssl_config_from_tmp():
 
 
 @pytest.fixture(scope="class")
-def class_fixture_variables():
+def class_fixture_variables(request):
     """save class scope fixture, used for session update.
     """
     # cluster is the instance of NebulaService
@@ -143,7 +160,14 @@ def class_fixture_variables():
     if res["cluster"] is not None:
         _cluster = res["cluster"]
         assert isinstance(_cluster, NebulaService)
-        _cluster.stop()
+    else:
+        return
+
+    # do not stop nebula cluster if case is failed
+    if not hasattr(request.node, "rep_call"):
+        _cluster.stop(True)
+    elif not request.node.rep_call.failed:
+        _cluster.stop(True)
 
 
 @pytest.fixture(scope="session")

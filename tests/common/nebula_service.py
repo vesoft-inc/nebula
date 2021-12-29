@@ -20,6 +20,7 @@ from contextlib import closing
 
 from tests.common.constants import TMP_DIR
 from tests.common.utils import get_ssl_config
+from tests.common.logger import logger
 from nebula2.gclient.net import ConnectionPool
 from nebula2.Config import Config
 
@@ -69,12 +70,21 @@ class NebulaProcess(object):
 
     def start(self):
         cmd = self._format_nebula_command()
-        print("exec: " + cmd)
+        logger.info("exec: " + cmd)
         p = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE)
         p.wait()
         if p.returncode != 0:
-            print("error: " + bytes.decode(p.communicate()[0]))
-        self.pid = p.pid
+            logger.info("start process error: " + bytes.decode(p.communicate()[0]))
+        proc1 = subprocess.Popen(['ps', 'x'], stdout=subprocess.PIPE)
+        proc2 = subprocess.Popen(['grep', str(self.tcp_port)], stdin=proc1.stdout,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc1.stdout.close()
+        stdout, _ = proc2.communicate()
+        pid = None
+        for line in bytes.decode(stdout).splitlines():
+            pid = line.lstrip().split(' ')[0]
+            break
+        assert pid is not None
+        self.pid = int(pid)
 
     def kill(self, sig):
         if not self.is_alive():
@@ -82,7 +92,18 @@ class NebulaProcess(object):
         try:
             os.kill(self.pid, sig)
         except OSError as err:
-            print("stop nebula-{} {} failed: {}".format(self.name, self.pid, str(err)))
+            logger.info(
+                "stop nebula-{} {} failed: {}".format(self.name, self.pid, str(err))
+            )
+
+    def force_kill(self, timeout=3):
+        for _ in range(timeout):
+            self.kill(signal.SIGTERM)
+            if not self.is_alive():
+                break
+            time.sleep(1)
+        if self.is_alive():
+            self.kill(signal.SIGKILL)
 
     def is_alive(self):
         if self.pid is None:
@@ -333,42 +354,51 @@ class NebulaService(object):
             self.work_dir = work_dir
         if os.path.exists(self.work_dir):
             shutil.rmtree(self.work_dir)
-        os.mkdir(self.work_dir)
-        print("work directory: " + self.work_dir)
+        Path(self.work_dir).mkdir(exist_ok=True)
+        logger.info("work directory: " + self.work_dir)
         os.chdir(self.work_dir)
         installed_files = ['bin', 'conf', 'scripts']
         for f in installed_files:
-            os.mkdir(self.work_dir + '/' + f)
+            Path(self.work_dir + '/' + f).mkdir(exist_ok=True)
         self._copy_nebula_conf()
         max_suffix = max([self.graphd_num, self.storaged_num, self.metad_num])
         for i in range(max_suffix):
-            os.mkdir(self.work_dir + '/logs{}'.format(i))
-            os.mkdir(self.work_dir + '/pids{}'.format(i))
+            Path(self.work_dir + '/logs{}'.format(i)).mkdir(exist_ok=True)
+            Path(self.work_dir + '/pids{}'.format(i)).mkdir(exist_ok=True)
 
-    def _check_servers_status(self, ports):
-        ports_status = {}
+    def _check_servers_status(self, ports, times=20):
+        failed_ports = set()
         for port in ports:
-            ports_status[port] = False
+            failed_ports.add(port)
 
-        for i in range(0, 20):
-            for port in ports_status:
-                if ports_status[port]:
+        for i in range(0, times):
+            if len(failed_ports) == 0:
+                break
+            ports = copy.copy(failed_ports)
+            for port in ports:
+                if not self._telnet_port(port):
                     continue
-                if self._telnet_port(port):
-                    ports_status[port] = True
-            is_ok = True
-            for port in ports_status:
-                if not ports_status[port]:
-                    is_ok = False
-            if is_ok:
-                return True
+                if port in failed_ports:
+                    failed_ports.remove(port)
+
             time.sleep(1)
-        return False
+
+        return len(failed_ports) == 0, failed_ports
 
     def start(self):
         os.chdir(self.work_dir)
         start_time = time.time()
-        for p in self.all_processes:
+
+        for p in self.metad_processes:
+            p.start()
+        # if metad is not ready, graphd would exit after 3 heartbeat.
+        # so start metad, and then wait for 2 seconds
+        for _ in range(10):
+            if all([self.is_port_in_use(p.tcp_port) for p in self.metad_processes]):
+                break
+            time.sleep(1)
+
+        for p in self.storaged_processes + self.graphd_processes:
             p.start()
 
         config = Config()
@@ -378,7 +408,7 @@ class NebulaService(object):
         client_pool = ConnectionPool()
         # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
         ssl_config = get_ssl_config(self.is_graph_ssl, self.ca_signed)
-        print("begin to add hosts")
+        logger.info("begin to add hosts")
         ok = False
         # wait graph is ready, and then add hosts
         for _ in range(20):
@@ -405,18 +435,23 @@ class NebulaService(object):
             ]
         )
         cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
-        print("add hosts cmd is {}".format(cmd))
+        logger.info("add hosts cmd is {}".format(cmd))
         resp = client.execute(cmd)
         assert resp.is_succeeded(), resp.error_msg()
         client.release()
 
         # wait nebula start
         server_ports = [p.tcp_port for p in self.all_processes]
-        if not self._check_servers_status(server_ports):
+        status, failed_ports = self._check_servers_status(server_ports)
+        if not status:
             self._collect_pids()
             self.kill_all(signal.SIGKILL)
             elapse = time.time() - start_time
-            raise Exception(f'nebula servers not ready in {elapse}s')
+            raise Exception(
+                'nebula servers not ready in {}s, failed ports are {}'.format(
+                    elapse, failed_ports
+                )
+            )
 
         self._collect_pids()
 
@@ -428,19 +463,24 @@ class NebulaService(object):
                 self.pids[f.name] = int(f.readline())
 
     def stop(self, cleanup=True):
-        print("try to stop nebula services...")
+        logger.info("try to stop nebula services...")
         self._collect_pids()
         if len(self.pids) == 0:
-            print("the cluster has been stopped and deleted.")
+            logger.info("the cluster has been stopped and deleted.")
             return
         self.kill_all(signal.SIGTERM)
 
-        max_retries = 20
+        max_retries = 10
         while self.is_procs_alive() and max_retries >= 0:
             time.sleep(1)
             max_retries = max_retries - 1
 
         if self.is_procs_alive():
+            logger.warning(
+                "cannot stop process via sigterm, alived processes are {}, force kill!".format(
+                    self.alive_procs()
+                )
+            )
             self.kill_all(signal.SIGKILL)
 
         # thread safe
@@ -468,10 +508,19 @@ class NebulaService(object):
         try:
             os.kill(self.pids[pid], sig)
         except OSError as err:
-            print("stop nebula {} failed: {}".format(pid, str(err)))
+            logger.info("stop nebula {} failed: {}".format(pid, str(err)))
 
     def is_procs_alive(self):
-        return any(self.is_proc_alive(pid) for pid in self.pids)
+        return len(self.alive_procs()) != 0
+
+    def alive_procs(self):
+        self._collect_pids()
+        procs = []
+        for pid in self.pids:
+            if self.is_proc_alive(pid):
+                procs.append(pid)
+
+        return procs
 
     def is_proc_alive(self, pid):
         process = subprocess.Popen(
@@ -483,3 +532,33 @@ class NebulaService(object):
             if str(p) == str(self.pids[pid]):
                 return True
         return False
+
+    def add_process(self, process_type, params=None):
+        if params is None:
+            params = {}
+        process = None
+        if process_type.lower() not in ["graphd", "graph", "storaged", "storage"]:
+            raise Exception("process type could only be graphd or storaged")
+
+        ports = self._find_free_port(4)
+
+        if process_type.lower() in ["graphd", "graph"]:
+            original_params = self.graphd_processes[0].params
+            params.update(original_params)
+            index = self.graphd_num
+            process = NebulaProcess("graphd", ports, index, params)
+            self.graphd_num += 1
+            self.graphd_processes.append(process)
+            self.all_processes.append(process)
+
+        elif process_type.lower() in ["storaged", "storage"]:
+            original_params = self.storaged_processes[0].params
+            params.update(original_params)
+            index = self.storaged_num
+            process = NebulaProcess("storaged", ports, index, params)
+            self.storaged_num += 1
+            self.storaged_processes.append(process)
+            self.all_processes.append(process)
+
+        Path(self.work_dir + '/logs{}'.format(index)).mkdir(exist_ok=True)
+        Path(self.work_dir + '/pids{}'.format(index)).mkdir(exist_ok=True)

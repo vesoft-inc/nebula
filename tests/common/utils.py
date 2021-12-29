@@ -15,7 +15,7 @@ from typing import Pattern
 
 from nebula2.Config import Config, SSL_config
 from nebula2.common import ttypes as CommonTtypes
-from nebula2.gclient.net import Session
+from nebula2.gclient.net import Session, ResultSet
 from nebula2.gclient.net import ConnectionPool
 
 from tests.common.constants import NB_TMP_PATH, NEBULA_HOME
@@ -470,3 +470,31 @@ def get_ssl_config(is_graph_ssl: bool, ca_signed: bool):
         ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
         ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
     return ssl_config
+
+def resultset_to_dict_str(result: ResultSet) -> dict:
+    """convert result set to a dict, key: colume, value: [recond1, recond2]"""
+    assert result.is_succeeded(), "execute statement failed, error message is {}".format(
+        result.error_msg()
+    )
+    keys = result.keys()
+    d = {k: [] for k in keys}
+    for record in result:
+        for index, value in enumerate(record):
+            key = keys[index]
+            d[key].append(value_to_string(value))
+    return d
+
+def get_hosts_in_zones(session, zones):
+    """get all storage hosts in zones, key: "ip:port", values: "zone" """
+    result = {}
+    zone_list = zones.split(",")
+    res = session.execute("SHOW ZONES")
+    res_dict = resultset_to_dict_str(res)
+    for index, zone_name in enumerate(res_dict["Name"]):
+        name = zone_name.replace('"', "")
+        if name in zone_list:
+            host = res_dict["Host"][index].replace('"', "")
+            port = res_dict["Port"][index]
+            key = "{}:{}".format(host, port)
+            result[key] = zone_name
+    return result

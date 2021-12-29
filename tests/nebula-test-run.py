@@ -17,6 +17,7 @@ from tests.common.constants import (
     SPACE_TMP_PATH,
     BUILD_DIR,
 )
+from tests.common.logger import logger
 
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -108,7 +109,7 @@ def opt_is(val, expect):
 
 def start_nebula(nb, configs):
     if configs.address is not None and configs.address != "":
-        print('test remote nebula graph, address is {}'.format(configs.address))
+        logging.info('test remote nebula graph, address is {}'.format(configs.address))
         if len(configs.address.split(':')) != 2:
             raise Exception('Invalid address, address is {}'.format(configs.address))
         address, port = configs.address.split(':')
@@ -150,12 +151,12 @@ def start_nebula(nb, configs):
             "ca_signed": configs.ca_signed,
         }
         f.write(json.dumps(data))
-    print('Start nebula successfully')
+    logger.info('Start nebula successfully')
 
 
 def stop_nebula(nb, configs=None):
     if configs.address is not None and configs.address != "":
-        print('test remote nebula graph, no need to stop nebula.')
+        logger.info('test remote nebula graph, no need to stop nebula.')
         return
 
     with open(NB_TMP_PATH, "r") as f:
@@ -166,10 +167,16 @@ def stop_nebula(nb, configs=None):
     nb.stop(cleanup)
 
     shutil.rmtree(TMP_DIR, ignore_errors=True)
-    print('nebula services have been stopped.')
+    logger.info('nebula services have been stopped.')
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] %(levelname)-4s [%(filename)s:%(lineno)d]:%(message)s',
+    )
     try:
         parser = init_parser()
         (configs, opts) = parser.parse_args()
@@ -195,7 +202,7 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"Invalid parser args: {configs.cmd}")
     except Exception as x:
-        print('\033[31m' + str(x) + '\033[0m')
+        logger.info('\033[31m' + str(x) + '\033[0m')
         import traceback
 
-        print(traceback.format_exc())
+        logger.info(traceback.format_exc())

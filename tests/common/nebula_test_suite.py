@@ -23,6 +23,7 @@ from tests.common.utils import (
     value_to_string,
     find_in_rows,
 )
+from tests.common.logger import logger
 
 
 T_EMPTY = CommonTtypes.Value()
@@ -66,7 +67,7 @@ class NebulaTestSuite(object):
         # pathlist = Path(self.data_dir).rglob('*.ngql')
         pathlist = [Path(self.data_dir).joinpath("data/nba.ngql")]
         for path in pathlist:
-            print("open: ", path)
+            logger.info("open: ", path)
             with open(path, 'r') as data_file:
                 space_name = path.name.split('.')[0] + datetime.datetime.now().strftime('%H_%M_%S_%f')
                 self.spaces.append(space_name)

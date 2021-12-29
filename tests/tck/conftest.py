@@ -32,8 +32,11 @@ from tests.common.utils import (
     resp_ok,
     params,
     parse_service_index,
+    resultset_to_dict_str,
+    get_hosts_in_zones,
 )
 from tests.common.nebula_service import NebulaService
+from tests.common.logger import logger
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
@@ -120,39 +123,41 @@ def wait_indexes_ready(sess):
 def graph_spaces():
     return dict(result_set=None)
 
+
 @given(parse('parameters: {parameters}'))
-def preload_parameters(
-    parameters
-):
+def preload_parameters(parameters):
     try:
         paramMap = json.loads(parameters)
-        for (k,v) in paramMap.items():
-            params[k]=value(v)
+        for (k, v) in paramMap.items():
+            params[k] = value(v)
     except:
         raise ValueError("preload parameters failed!")
+
 
 @then("clear the used parameters")
 def clear_parameters():
     params = {}
 
+
 # construct python-type to nebula.Value
 def value(any):
     v = Value()
-    if (isinstance(any, bool)):
+    if isinstance(any, bool):
         v.set_bVal(any)
-    elif (isinstance(any, int)):
+    elif isinstance(any, int):
         v.set_iVal(any)
-    elif (isinstance(any, str)):
+    elif isinstance(any, str):
         v.set_sVal(any)
-    elif (isinstance(any, float)):
+    elif isinstance(any, float):
         v.set_fVal(any)
-    elif (isinstance(any, list)):
+    elif isinstance(any, list):
         v.set_lVal(list2Nlist(any))
-    elif (isinstance(any, dict)):
+    elif isinstance(any, dict):
         v.set_mVal(map2NMap(any))
     else:
-        raise TypeError("Do not support convert "+str(type(any))+" to nebula.Value")
+        raise TypeError("Do not support convert " + str(type(any)) + " to nebula.Value")
     return v
+
 
 def list2Nlist(list):
     nlist = NList()
@@ -161,12 +166,14 @@ def list2Nlist(list):
         nlist.values.append(value(item))
     return nlist
 
+
 def map2NMap(map):
     nmap = NMap()
-    nmap.kvs={}
-    for k,v in map.items():
-        nmap.kvs[k]=value(v)
+    nmap.kvs = {}
+    for k, v in map.items():
+        nmap.kvs[k] = value(v)
     return nmap
+
 
 @given(parse('a graph with space named "{space}"'))
 def preload_space(
@@ -331,7 +338,9 @@ def given_nebulacluster_with_param(
         process.update_param(metad_param)
     work_dir = os.path.join(
         build_dir,
-        "C" + space_generator() + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),
+        "tck_"
+        + space_generator()
+        + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),
     )
     nebula_svc.install(work_dir)
     nebula_svc.start()
@@ -344,6 +353,7 @@ def given_nebulacluster_with_param(
     class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
+
 
 @when(parse('login "{graph}" with "{user}" and "{password}"'))
 def when_login_graphd(graph, user, password, class_fixture_variables, pytestconfig):
@@ -381,17 +391,92 @@ def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
     except:
         raise
 
+
+@when(parse('operating process, "{operate}" "{process_name}"'))
+def when_operate_process(operate, process_name, class_fixture_variables, pytestconfig):
+    assert operate in ["start", "stop", "retart"]
+    index = parse_service_index(process_name)
+    assert index is not None
+    process = None
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    if process_name.startswith("graphd"):
+        process = nebula_svc.graphd_processes[index]
+    elif process_name.startswith("storaged"):
+        process = nebula_svc.storaged_processes[index]
+    elif process_name.startswith("metad"):
+        process = nebula_svc.metad_processes[index]
+    else:
+        raise Exception("invalid process name")
+
+    if operate == "start":
+        if not process.is_alive():
+            process.start()
+    elif operate == "stop":
+        process.force_kill(3)
+    elif operate == "restart":
+        process.force_kill(3)
+        process.start()
+
+
+@when(parse('operating process, "{operate}" a new "{process_name}"'))
+def when_operate_new_process(
+    operate, process_name, class_fixture_variables, pytestconfig
+):
+    when_operate_new_process_with_param(
+        operate, process_name, None, class_fixture_variables, pytestconfig
+    )
+
+
+@when(parse('operating process, "{operate}" a new "{process_name}":\n{params}'))
+def when_operate_new_process_with_param(
+    operate, process_name, params, class_fixture_variables, pytestconfig
+):
+    params_dict = {}
+    if params is not None:
+        for param in params.splitlines():
+            key, value = param.strip().split("=")
+            params_dict[key] = value
+
+    assert operate in ["start"]
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    if process_name.startswith("graphd"):
+        index = nebula_svc.graphd_num
+        process_name = "graphd[{}]".format(index)
+        nebula_svc.add_process("graphd", params_dict)
+    elif process_name.startswith("storaged"):
+        index = nebula_svc.storaged_num
+        process_name = "storaged[{}]".format(index)
+        nebula_svc.add_process("storaged", params_dict)
+    else:
+        raise Exception("invalid process name")
+
+    class_fixture_variables["cluster"] = nebula_svc
+    when_operate_process(operate, process_name, class_fixture_variables, pytestconfig)
+
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
+
+@when(parse("executing query, replace the holders with cluster info:\n{query}"))
+def executing_query(query, graph_spaces, session, request, class_fixture_variables):
+    query = replace_result_with_cluster_info(query, class_fixture_variables)
+    ngql = combine_query(query)
+    exec_query(request, ngql, session, graph_spaces)
+
+
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
-def executing_query(username, password, conn_pool_to_first_graph_service, query, graph_spaces, request):
+def executing_query(
+    username, password, conn_pool_to_first_graph_service, query, graph_spaces, request
+):
     sess = conn_pool_to_first_graph_service.get_session(username, password)
     ngql = combine_query(query)
     exec_query(request, ngql, sess, graph_spaces)
     sess.release()
+
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
@@ -650,8 +735,12 @@ def result_should_contain(request, result, graph_spaces):
     )
 
 
-@then(parse("the result should contain, replace the holders with cluster info:\n{result}"))
-def then_result_should_contain_replace(request, result, graph_spaces, class_fixture_variables):
+@then(
+    parse("the result should contain, replace the holders with cluster info:\n{result}")
+)
+def then_result_should_contain_replace(
+    request, result, graph_spaces, class_fixture_variables
+):
     result = replace_result_with_cluster_info(result, class_fixture_variables)
     cmp_dataset(
         request,
@@ -665,6 +754,23 @@ def then_result_should_contain_replace(request, result, graph_spaces, class_fixt
 
 @then(parse("the result should not contain:\n{result}"))
 def result_should_not_contain(request, result, graph_spaces):
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=CmpType.NOT_CONTAINS,
+    )
+
+
+@then(
+    parse(
+        "the result should not contain, replace the holders with cluster info:\n{result}"
+    )
+)
+def result_should_not_contain(request, result, graph_spaces, class_fixture_variables):
+    result = replace_result_with_cluster_info(result, class_fixture_variables)
     cmp_dataset(
         request,
         graph_spaces,

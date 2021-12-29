@@ -7,6 +7,7 @@ import functools
 import time
 
 from pytest_bdd import scenarios, given, when, then, parsers
+from tests.common.logger import logger
 
 parse = functools.partial(parsers.parse)
 scenarios('cluster')
@@ -14,15 +15,15 @@ scenarios('cluster')
 
 @when('the cluster was terminated')
 def stop_nebula_cluster(request, class_fixture_variables, pytestconfig):
-    print('stopping nebula cluster...')
+    logger.info('stopping nebula cluster...')
     cluster = class_fixture_variables["cluster"]
     cluster.kill_all(signal.SIGTERM)
-    print('nebula cluster stopped...')
+    logger.info('nebula cluster stopped...')
 
 
 @then(parse('no service should still running after {duration}s'))
 def check_nebula_cluster_stop(request, class_fixture_variables, duration, pytestconfig):
-    print('check cluster status...')
+    logger.info('check cluster status...')
     time.sleep(int(duration))
     cluster = class_fixture_variables["cluster"]
     stopped = not cluster.is_procs_alive()
