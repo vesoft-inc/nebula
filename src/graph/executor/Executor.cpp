@@ -155,16 +155,25 @@ Executor *Executor::makeExecutor(const PlanNode *node,
 // static
 Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
   auto pool = qctx->objPool();
+  auto &spaceName = qctx->rctx() ? qctx->rctx()->session()->spaceName() : "";
   switch (node->kind()) {
     case PlanNode::Kind::kPassThrough: {
       return pool->add(new PassThroughExecutor(node, qctx));
     }
     case PlanNode::Kind::kAggregate: {
       stats::StatsManager::addValue(kNumAggregateExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumAggregateExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new AggregateExecutor(node, qctx));
     }
     case PlanNode::Kind::kSort: {
       stats::StatsManager::addValue(kNumSortExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumSortExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new SortExecutor(node, qctx));
     }
     case PlanNode::Kind::kTopN: {
@@ -208,6 +217,10 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kTagIndexPrefixScan:
     case PlanNode::Kind::kTagIndexRangeScan: {
       stats::StatsManager::addValue(kNumIndexScanExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumIndexScanExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new IndexScanExecutor(node, qctx));
     }
     case PlanNode::Kind::kStart: {
@@ -594,7 +607,12 @@ Status Executor::close() {
 
 Status Executor::checkMemoryWatermark() {
   if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
-    stats::StatsManager::addValue(kNumOomExecutors);
+    stats::StatsManager::addValue(kNumQueriesHitMemoryWatermark);
+    auto &spaceName = qctx()->rctx() ? qctx()->rctx()->session()->spaceName() : "";
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+          kNumQueriesHitMemoryWatermark, {{"space", spaceName}}));
+    }
     return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
                          FLAGS_system_memory_high_watermark_ratio);
   }
