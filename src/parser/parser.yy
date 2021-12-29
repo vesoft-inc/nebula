@@ -1100,7 +1100,6 @@ function_call_expression
 
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
-        // snowflake id init worker in current machine
         $$ = UUIDExpression::make(qctx->objPool());
     }
     ;
