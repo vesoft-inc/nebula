@@ -39,4 +39,4 @@ Affects:
 #### Release notes:
 
 Please confirm whether to be reflected in release notes and how to describe:
->                                                                   `
+> ex. Fixed the bug .....
