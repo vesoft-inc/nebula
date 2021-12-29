@@ -126,6 +126,7 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
+      std::vector<storage::cpp2::OrderBy> orderBy,
       int64_t limit);
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
