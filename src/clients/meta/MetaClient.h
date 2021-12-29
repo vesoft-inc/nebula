@@ -266,6 +266,10 @@ class MetaClient {
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
 
+  folly::Future<StatusOr<bool>> alterSpace(const std::string& spaceName,
+                                           meta::cpp2::AlterSpaceOp op,
+                                           const std::vector<std::string>& paras);
+
   folly::Future<StatusOr<std::vector<cpp2::PartItem>>> listParts(GraphSpaceID spaceId,
                                                                  std::vector<PartitionID> partIds);
 
