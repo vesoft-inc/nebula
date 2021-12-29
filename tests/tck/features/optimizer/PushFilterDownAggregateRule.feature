@@ -13,8 +13,8 @@ Feature: Push Filter down Aggregate rule
       """
       MATCH (v:player)
       WITH
-        v.age+1 AS age,
-        COUNT(v.age) as count
+        v.player.age+1 AS age,
+        COUNT(v.player.age) as count
       WHERE age<30
       RETURN age, count
       ORDER BY age

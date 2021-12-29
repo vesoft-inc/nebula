@@ -55,6 +55,7 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(ConstantExpression* expr) override;
   void visit(EdgePropertyExpression* expr) override;
   void visit(TagPropertyExpression* expr) override;
+  void visit(LabelTagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
   void visit(SourcePropertyExpression* expr) override;

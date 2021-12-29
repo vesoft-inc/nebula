@@ -65,6 +65,10 @@ class PlanNode {
     kDataCollect,
     kLeftJoin,
     kInnerJoin,
+    kBiLeftJoin,
+    kBiInnerJoin,
+    kBiCartesianProduct,
+    kArgument,
 
     // Logic
     kStart,
@@ -92,6 +96,7 @@ class PlanNode {
     kDropSpace,
     kDropTag,
     kDropEdge,
+    kAlterSpace,
 
     // index related
     kCreateTagIndex,
@@ -163,11 +168,11 @@ class PlanNode {
     kRemoveListener,
     kShowListener,
 
-    // text service related
-    kShowTSClients,
+    // service related
+    kShowServiceClients,
     kShowFTIndexes,
-    kSignInTSService,
-    kSignOutTSService,
+    kSignInService,
+    kSignOutService,
     kDownload,
     kIngest,
     kShowSessions,
@@ -227,9 +232,7 @@ class PlanNode {
     id_ = id;
   }
 
-  void setColNames(std::vector<std::string> cols) {
-    outputVarPtr(0)->colNames = std::move(cols);
-  }
+  void setColNames(std::vector<std::string> cols);
 
   const auto& dependencies() const {
     return dependencies_;

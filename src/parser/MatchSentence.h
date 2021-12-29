@@ -280,11 +280,11 @@ class MatchPathList final {
 
 class MatchReturnItems final {
  public:
-  explicit MatchReturnItems(bool includeExisting, YieldColumns* columns = nullptr)
-      : includeExisting_(includeExisting), columns_(columns) {}
+  explicit MatchReturnItems(bool allNamedAliases, YieldColumns* columns = nullptr)
+      : allNamedAliases_(allNamedAliases), columns_(columns) {}
 
-  bool includeExisting() const {
-    return includeExisting_;
+  bool allNamedAliases() const {
+    return allNamedAliases_;
   }
 
   YieldColumns* columns() {
@@ -298,7 +298,7 @@ class MatchReturnItems final {
   std::string toString() const;
 
  private:
-  bool includeExisting_{false};  // `*` indicates include all existing variables
+  bool allNamedAliases_{false};  // `*` indicates include all existing variables
   std::unique_ptr<YieldColumns> columns_;
 };
 

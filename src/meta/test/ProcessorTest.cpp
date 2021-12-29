@@ -13,6 +13,7 @@
 #include "meta/processors/kv/RemoveProcessor.h"
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
+#include "meta/processors/parts/AlterSpaceProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -2680,6 +2681,7 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
 }
 
 TEST(ProcessorTest, HostsTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -2881,6 +2883,7 @@ TEST(ProcessorTest, HostsTest) {
 }
 
 TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -2982,6 +2985,7 @@ TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
 }
 
 TEST(ProcessorTest, AddHostsIntoZoneTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -3152,6 +3156,7 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
 }
 
 TEST(ProcessorTest, DropHostsTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/DropHostsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -4359,6 +4364,70 @@ TEST(ProcessorTest, DropZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+}
+
+TEST(ProcessorTest, AlterSpaceTest) {
+  fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  TestUtils::assembleSpaceWithZone(kv, 1, 8, 1, 8, 8);
+  TestUtils::assembleZone(kv,
+                          {{"9", {HostAddr("127.0.0.1", 9)}},
+                           {"10", {HostAddr("127.0.0.1", 10)}},
+                           {"11", {HostAddr("127.0.0.1", 11)}}});
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"12"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "aaa";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"9"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"8"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"9", "10", "11"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    std::string spaceKey = MetaKeyUtils::spaceKey(1);
+    std::string spaceVal;
+    kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+    meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+    const std::vector<std::string>& zones = properties.get_zone_names();
+    const std::vector<std::string>& res = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+    std::set<std::string> result(zones.begin(), zones.end());
+    std::set<std::string> expected(res.begin(), res.end());
+    ASSERT_EQ(result, expected);
   }
 }
 

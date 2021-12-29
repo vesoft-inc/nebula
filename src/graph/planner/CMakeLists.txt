@@ -9,10 +9,6 @@ nebula_add_library(
     SequentialPlanner.cpp
     match/MatchSolver.cpp
     match/SegmentsConnector.cpp
-    match/InnerJoinStrategy.cpp
-    match/AddDependencyStrategy.cpp
-    match/AddInputStrategy.cpp
-    match/CartesianProductStrategy.cpp
     match/MatchPlanner.cpp
     match/MatchClausePlanner.cpp
     match/UnwindClausePlanner.cpp
@@ -27,6 +23,7 @@ nebula_add_library(
     match/VertexIdSeek.cpp
     match/LabelIndexSeek.cpp
     match/ScanSeek.cpp
+    match/ArgumentFinder.cpp
     ngql/PathPlanner.cpp
     ngql/GoPlanner.cpp
     ngql/SubgraphPlanner.cpp

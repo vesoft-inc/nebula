@@ -10,27 +10,35 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/visitor/RewriteVisitor.h"
 
-using JoinStrategyPos = nebula::graph::InnerJoinStrategy::JoinPos;
-
 namespace nebula {
 namespace graph {
 static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
                                                     const NodeInfo& node,
-                                                    const EdgeInfo& edge) {
-  auto cols = inputCols;
+                                                    const EdgeInfo& edge,
+                                                    bool trackPrev) {
+  std::vector<std::string> cols;
+  if (trackPrev) {
+    cols = inputCols;
+  }
   cols.emplace_back(node.alias);
   cols.emplace_back(edge.alias);
   return cols;
 }
 
 static std::vector<std::string> genAppendVColNames(const std::vector<std::string>& inputCols,
-                                                   const NodeInfo& node) {
-  auto cols = inputCols;
+                                                   const NodeInfo& node,
+                                                   bool trackPrev) {
+  std::vector<std::string> cols;
+  if (trackPrev) {
+    cols = inputCols;
+  }
   cols.emplace_back(node.alias);
   return cols;
 }
@@ -108,32 +116,54 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   }
 
   auto* matchClauseCtx = static_cast<MatchClauseContext*>(clauseCtx);
-  auto& nodeInfos = matchClauseCtx->nodeInfos;
-  auto& edgeInfos = matchClauseCtx->edgeInfos;
   SubPlan matchClausePlan;
-  size_t startIndex = 0;
-  bool startFromEdge = false;
+  // All nodes ever seen in current match clause
+  std::unordered_set<std::string> nodeAliasesSeen;
+  // TODO: Maybe it is better to rebuild the graph and find all connected components.
+  auto& pathInfos = matchClauseCtx->paths;
+  for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
+    auto& nodeInfos = iter->nodeInfos;
+    auto& edgeInfos = iter->edgeInfos;
+    SubPlan subplan;
+    size_t startIndex = 0;
+    bool startFromEdge = false;
 
-  NG_RETURN_IF_ERROR(findStarts(matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
-  NG_RETURN_IF_ERROR(
-      expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
+    NG_RETURN_IF_ERROR(findStarts(
+        nodeInfos, edgeInfos, matchClauseCtx, nodeAliasesSeen, startFromEdge, startIndex, subplan));
+    NG_RETURN_IF_ERROR(
+        expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
+    NG_RETURN_IF_ERROR(
+        connectPathPlan(nodeInfos, matchClauseCtx, subplan, nodeAliasesSeen, matchClausePlan));
+  }
   NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, matchClausePlan));
   NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
   return matchClausePlan;
 }
 
-Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
+Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
+                                      std::vector<EdgeInfo>& edgeInfos,
+                                      MatchClauseContext* matchClauseCtx,
+                                      std::unordered_set<std::string> nodeAliasesSeen,
                                       bool& startFromEdge,
                                       size_t& startIndex,
                                       SubPlan& matchClausePlan) {
-  auto& nodeInfos = matchClauseCtx->nodeInfos;
-  auto& edgeInfos = matchClauseCtx->edgeInfos;
   auto& startVidFinders = StartVidFinder::finders();
   bool foundStart = false;
+  std::unordered_set<std::string> allNodeAliasesAvailable;
+  allNodeAliasesAvailable.merge(nodeAliasesSeen);
+  std::for_each(matchClauseCtx->aliasesAvailable.begin(),
+                matchClauseCtx->aliasesAvailable.end(),
+                [&allNodeAliasesAvailable](auto& kv) {
+                  if (kv.second == AliasType::kNode) {
+                    allNodeAliasesAvailable.emplace(kv.first);
+                  }
+                });
+
   // Find the start plan node
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
       auto nodeCtx = NodeContext(matchClauseCtx, &nodeInfos[i]);
+      nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);
@@ -174,6 +204,12 @@ Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
   if (!foundStart) {
     return Status::SemanticError("Can't solve the start vids from the sentence: %s",
                                  matchClauseCtx->sentence->toString().c_str());
+  }
+
+  if (matchClausePlan.tail->isSingleInput()) {
+    auto start = StartNode::make(matchClauseCtx->qctx);
+    matchClausePlan.tail->setDep(0, start);
+    matchClausePlan.tail = start;
   }
 
   return Status::OK();
@@ -248,9 +284,16 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
     traverse->setStepRange(edge.range);
     traverse->setDedup();
+    // If start from end of the path pattern, the first traverse would not
+    // track the previos path, otherwise, it should.
+    traverse->setTrackPrevPath(startIndex + 1 == nodeInfos.size() ? i != startIndex : true);
+    traverse->setColNames(
+        genTraverseColNames(subplan.root->colNames(),
+                            node,
+                            edge,
+                            startIndex + 1 == nodeInfos.size() ? i != startIndex : true));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -264,8 +307,9 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   appendV->setDedup();
+  appendV->setTrackPrevPath(!edgeInfos.empty());
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
 
   VLOG(1) << subplan;
@@ -294,9 +338,11 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
     traverse->setStepRange(edge.range);
     traverse->setDedup();
+    traverse->setTrackPrevPath(i != startIndex);
+    traverse->setColNames(
+        genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -310,8 +356,9 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   appendV->setDedup();
+  appendV->setTrackPrevPath(!edgeInfos.empty());
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
 
   VLOG(1) << subplan;
@@ -329,42 +376,44 @@ Status MatchClausePlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
                                                    SubPlan& plan) {
   auto qctx = matchClauseCtx->qctx;
-  auto& nodeInfos = matchClauseCtx->nodeInfos;
-  auto& edgeInfos = matchClauseCtx->edgeInfos;
   auto columns = qctx->objPool()->add(new YieldColumns);
   std::vector<std::string> colNames;
+  for (auto& path : matchClauseCtx->paths) {
+    auto& nodeInfos = path.nodeInfos;
+    auto& edgeInfos = path.edgeInfos;
 
-  auto addNode = [this, columns, &colNames, matchClauseCtx](auto& nodeInfo) {
-    if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
-      columns->addColumn(buildVertexColumn(matchClauseCtx, nodeInfo.alias));
-      colNames.emplace_back(nodeInfo.alias);
+    auto addNode = [this, columns, &colNames, matchClauseCtx](auto& nodeInfo) {
+      if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
+        columns->addColumn(buildVertexColumn(matchClauseCtx, nodeInfo.alias));
+        colNames.emplace_back(nodeInfo.alias);
+      }
+    };
+
+    auto addEdge = [this, columns, &colNames, matchClauseCtx](auto& edgeInfo) {
+      if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
+        columns->addColumn(buildEdgeColumn(matchClauseCtx, edgeInfo));
+        colNames.emplace_back(edgeInfo.alias);
+      }
+    };
+
+    for (size_t i = 0; i < edgeInfos.size(); i++) {
+      addNode(nodeInfos[i]);
+      addEdge(edgeInfos[i]);
     }
-  };
 
-  auto addEdge = [this, columns, &colNames, matchClauseCtx](auto& edgeInfo) {
-    if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      columns->addColumn(buildEdgeColumn(matchClauseCtx, edgeInfo));
-      colNames.emplace_back(edgeInfo.alias);
+    // last vertex
+    DCHECK(!nodeInfos.empty());
+    addNode(nodeInfos.back());
+
+    const auto& aliases = matchClauseCtx->aliasesGenerated;
+    auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
+      return alias.second == AliasType::kPath;
+    });
+    if (iter != aliases.end()) {
+      auto& alias = iter->first;
+      columns->addColumn(buildPathColumn(path.pathBuild, alias));
+      colNames.emplace_back(alias);
     }
-  };
-
-  for (size_t i = 0; i < edgeInfos.size(); i++) {
-    addNode(nodeInfos[i]);
-    addEdge(edgeInfos[i]);
-  }
-
-  // last vertex
-  DCHECK(!nodeInfos.empty());
-  addNode(nodeInfos.back());
-
-  const auto& aliases = matchClauseCtx->aliasesGenerated;
-  auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
-    return alias.second == AliasType::kPath;
-  });
-  if (iter != aliases.end()) {
-    auto& alias = iter->first;
-    columns->addColumn(buildPathColumn(matchClauseCtx, alias));
-    colNames.emplace_back(alias);
   }
 
   auto project = Project::make(qctx, plan.root, columns);
@@ -398,9 +447,9 @@ YieldColumn* MatchClausePlanner::buildEdgeColumn(MatchClauseContext* matchClause
   return new YieldColumn(expr, edge.alias);
 }
 
-YieldColumn* MatchClausePlanner::buildPathColumn(MatchClauseContext* matchClauseCtx,
+YieldColumn* MatchClausePlanner::buildPathColumn(Expression* pathBuild,
                                                  const std::string& alias) const {
-  return new YieldColumn(matchClauseCtx->pathBuild, alias);
+  return new YieldColumn(pathBuild, alias);
 }
 
 Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan) {
@@ -411,9 +460,40 @@ Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, 
   auto wherePlan = std::make_unique<WhereClausePlanner>()->transform(matchClauseCtx->where.get());
   NG_RETURN_IF_ERROR(wherePlan);
   auto plan = std::move(wherePlan).value();
-  SegmentsConnector::addInput(plan.tail, subplan.root, true);
-  subplan.root = plan.root;
+  subplan = SegmentsConnector::addInput(plan, subplan, true);
   VLOG(1) << subplan;
+  return Status::OK();
+}
+
+Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
+                                           MatchClauseContext* matchClauseCtx,
+                                           const SubPlan& subplan,
+                                           std::unordered_set<std::string>& nodeAliasesSeen,
+                                           SubPlan& matchClausePlan) {
+  std::unordered_set<std::string> intersectedAliases;
+  std::for_each(
+      nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
+        if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
+          intersectedAliases.emplace(info.alias);
+        }
+      });
+  std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
+    if (!info.anonymous) {
+      nodeAliasesSeen.emplace(info.alias);
+    }
+  });
+  if (matchClausePlan.root == nullptr) {
+    matchClausePlan = subplan;
+  } else {
+    if (intersectedAliases.empty()) {
+      matchClausePlan =
+          SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
+    } else {
+      // TODO: Actually a natural join would be much easy use.
+      matchClausePlan = SegmentsConnector::innerJoin(
+          matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
+    }
+  }
   return Status::OK();
 }
 }  // namespace graph

@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 
-class InnerJoinExecutor final : public JoinExecutor {
+class InnerJoinExecutor : public JoinExecutor {
  public:
   InnerJoinExecutor(const PlanNode* node, QueryContext* qctx)
       : JoinExecutor("InnerJoinExecutor", node, qctx) {}
@@ -20,8 +20,10 @@ class InnerJoinExecutor final : public JoinExecutor {
 
   Status close() override;
 
- private:
-  folly::Future<Status> join();
+ protected:
+  folly::Future<Status> join(const std::vector<Expression*>& hashKeys,
+                             const std::vector<Expression*>& probeKeys,
+                             const std::vector<std::string>& colNames);
 
   DataSet probe(const std::vector<Expression*>& probeKeys,
                 Iterator* probeIter,
@@ -39,6 +41,17 @@ class InnerJoinExecutor final : public JoinExecutor {
 
  private:
   bool exchange_{false};
+};
+
+/**
+ * No diffrence with inner join in processing data, but the dependencies would be executed in
+ * paralell.
+ */
+class BiInnerJoinExecutor final : public InnerJoinExecutor {
+ public:
+  BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);
+
+  folly::Future<Status> execute() override;
 };
 }  // namespace graph
 }  // namespace nebula
