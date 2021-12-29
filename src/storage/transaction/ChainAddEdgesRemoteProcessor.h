@@ -11,22 +11,18 @@
 namespace nebula {
 namespace storage {
 
-class ChainAddEdgesProcessorRemote : public BaseProcessor<cpp2::ExecResponse> {
+class ChainAddEdgesRemoteProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:
-  static ChainAddEdgesProcessorRemote* instance(StorageEnv* env) {
-    return new ChainAddEdgesProcessorRemote(env);
+  static ChainAddEdgesRemoteProcessor* instance(StorageEnv* env) {
+    return new ChainAddEdgesRemoteProcessor(env);
   }
 
   void process(const cpp2::ChainAddEdgesRequest& req);
 
  private:
-  explicit ChainAddEdgesProcessorRemote(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
+  explicit ChainAddEdgesRemoteProcessor(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
 
-  bool checkTerm(const cpp2::ChainAddEdgesRequest& req);
-
-  bool checkVersion(const cpp2::ChainAddEdgesRequest& req);
-
-  void forwardRequest(const cpp2::ChainAddEdgesRequest& req);
+  void commit(const cpp2::ChainAddEdgesRequest& req);
 
   std::vector<std::string> getStrEdgeKeys(const cpp2::ChainAddEdgesRequest& req);
 

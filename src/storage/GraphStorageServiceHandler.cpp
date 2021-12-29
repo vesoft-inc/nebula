@@ -21,7 +21,8 @@
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainDeleteEdgesGroupProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -112,7 +113,7 @@ folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_updateEdg
 
 folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_chainUpdateEdge(
     const cpp2::UpdateEdgeRequest& req) {
-  auto* proc = ChainUpdateEdgeProcessorLocal::instance(env_);
+  auto* proc = ChainUpdateEdgeLocalProcessor::instance(env_);
   RETURN_FUTURE(proc);
 }
 
@@ -157,6 +158,12 @@ folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
 folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainAddEdges(
     const cpp2::AddEdgesRequest& req) {
   auto* processor = ChainAddEdgesGroupProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainDeleteEdges(
+    const cpp2::DeleteEdgesRequest& req) {
+  auto* processor = ChainDeleteEdgesGroupProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
