@@ -1,9 +1,7 @@
 ---
 name: "🐛 Bug Report"
-about: I want to report a bug.
-title: ''
-labels: type/bug
-assignees: ''
+description: "I want to report a bug."
+labels: [type/bug]
 body:
   - type: checkboxes
     id: no-duplicate-issues
