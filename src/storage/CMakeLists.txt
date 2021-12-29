@@ -75,14 +75,13 @@ nebula_add_library(
     transaction/ConsistUtil.cpp
     transaction/ChainUpdateEdgeLocalProcessor.cpp
     transaction/ChainUpdateEdgeRemoteProcessor.cpp
-    transaction/ChainResumeProcessor.cpp
     transaction/ChainAddEdgesGroupProcessor.cpp
     transaction/ChainAddEdgesLocalProcessor.cpp
     transaction/ChainAddEdgesRemoteProcessor.cpp
-    transaction/ResumeAddEdgeProcessor.cpp
-    transaction/ResumeAddEdgeRemoteProcessor.cpp
-    transaction/ResumeUpdateProcessor.cpp
-    transaction/ResumeUpdateRemoteProcessor.cpp
+    transaction/ChainResumeAddPrimeProcessor.cpp
+    transaction/ChainResumeAddDoublePrimeProcessor.cpp
+    transaction/ChainResumeUpdatePrimeProcessor.cpp
+    transaction/ChainResumeUpdateDoublePrimeProcessor.cpp
     transaction/ChainProcessorFactory.cpp
     transaction/ChainDeleteEdgesGroupProcessor.cpp
     transaction/ChainDeleteEdgesLocalProcessor.cpp

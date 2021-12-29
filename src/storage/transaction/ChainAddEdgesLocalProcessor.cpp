@@ -22,61 +22,42 @@ void ChainAddEdgesLocalProcessor::process(const cpp2::AddEdgesRequest& req) {
     finish();
     return;
   }
+
+  uuid_ = ConsistUtil::strUUID();
+  execDesc_ = ", AddEdges, ";
   env_->txnMan_->addChainTask(this);
 }
 
-/**
- * @brief
- * 1. check term
- * 2. set mem lock
- * 3. write edge prime(key = edge prime, val = )
- */
 folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::prepareLocal() {
-  if (FLAGS_trace_toss) {
-    uuid_ = ConsistUtil::strUUID();
-    readableEdgeDesc_ = makeReadableEdge(req_);
-    if (!readableEdgeDesc_.empty()) {
-      uuid_.append(" ").append(readableEdgeDesc_);
-    }
+  VLOG(2) << uuid_ << __func__ << "()";
+  std::tie(term_, rcPrepare_) = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    finish();
+    return rcPrepare_;
   }
 
   if (!lockEdges(req_)) {
+    rcPrepare_ = Code::E_WRITE_WRITE_CONFLICT;
     return Code::E_WRITE_WRITE_CONFLICT;
   }
+  replaceNullWithDefaultValue(req_);
 
   auto [pro, fut] = folly::makePromiseContract<Code>();
   auto primes = makePrime();
-  std::vector<kvstore::KV> debugPrimes;
-  if (FLAGS_trace_toss) {
-    debugPrimes = primes;
-  }
 
   erasePrime();
   env_->kvstore_->asyncMultiPut(
-      spaceId_,
-      localPartId_,
-      std::move(primes),
-      [p = std::move(pro), debugPrimes, this](auto rc) mutable {
-        if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
-          primeInserted_ = true;
-          if (FLAGS_trace_toss) {
-            for (auto& kv : debugPrimes) {
-              VLOG(1) << uuid_ << " put prime " << folly::hexlify(kv.first);
-            }
-          }
-        } else {
-          LOG(WARNING) << uuid_ << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
-        }
-
+      spaceId_, localPartId_, std::move(primes), [p = std::move(pro), this](auto rc) mutable {
+        rcPrepare_ = rc;
         p.setValue(rc);
       });
   return std::move(fut);
 }
 
 folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processRemote(Code code) {
-  VLOG(1) << uuid_ << " prepareLocal(), code = " << apache::thrift::util::enumNameSafe(code);
-  if (code != Code::SUCCEEDED) {
-    return code;
+  VLOG(2) << uuid_ << " prepareLocal() " << apache::thrift::util::enumNameSafe(code);
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    return rcPrepare_;
   }
   CHECK_EQ(req_.get_parts().size(), 1);
   auto reversedRequest = reverseRequest(req_);
@@ -86,52 +67,39 @@ folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processRemote(Code code) {
   return std::move(fut);
 }
 
-folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processLocal(Code code) {
-  if (FLAGS_trace_toss) {
-    VLOG(1) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processLocal(Code) {
+  VLOG(2) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(rcRemote_);
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    return rcPrepare_;
   }
 
-  bool remoteFailed{true};
-
-  if (code == Code::SUCCEEDED) {
-    // do nothing
-    remoteFailed = false;
-  } else if (code == Code::E_RPC_FAILURE) {
-    code_ = Code::SUCCEEDED;
-    remoteFailed = false;
-  } else {
-    code_ = code;
-  }
-
-  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  auto currTerm = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
   if (currTerm.first != term_) {
-    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
-    code_ = Code::E_LEADER_CHANGED;
+    rcCommit_ = Code::E_LEADER_CHANGED;
+    return rcCommit_;
   }
 
-  if (code == Code::E_RPC_FAILURE) {
+  if (rcRemote_ == Code::E_RPC_FAILURE) {
     kvAppend_ = makeDoublePrime();
-    addUnfinishedEdge(ResumeType::RESUME_REMOTE);
   }
 
-  if (code_ == Code::SUCCEEDED) {
-    return forwardToDelegateProcessor();
-  } else {
-    if (primeInserted_ && remoteFailed) {
-      return abort();
-    }
+  if (rcRemote_ != Code::SUCCEEDED && rcRemote_ != Code::E_RPC_FAILURE) {
+    // prepare succeed and remote failed
+    return abort();
   }
 
-  return code_;
+  return commit();
 }
 
-void ChainAddEdgesLocalProcessor::addUnfinishedEdge(ResumeType type) {
+void ChainAddEdgesLocalProcessor::reportFailed(ResumeType type) {
   if (lk_ != nullptr) {
-    lk_->forceUnlock();
+    lk_->setAutoUnlock(false);
   }
+  execDesc_ += ", reportFailed";
   auto keys = toStrKeys(req_);
   for (auto& key : keys) {
-    env_->txnMan_->addPrime(spaceId_, key, type);
+    VLOG(1) << uuid_ << " term=" << term_ << ", reportFailed(), " << folly::hexlify(key);
+    env_->txnMan_->addPrime(spaceId_, localPartId_, term_, key, type);
   }
 }
 
@@ -139,34 +107,11 @@ bool ChainAddEdgesLocalProcessor::prepareRequest(const cpp2::AddEdgesRequest& re
   CHECK_EQ(req.get_parts().size(), 1);
   req_ = req;
   spaceId_ = req_.get_space_id();
-  auto vidType = env_->metaClient_->getSpaceVidType(spaceId_);
-  if (!vidType.ok()) {
-    LOG(WARNING) << "can't get vidType";
-    return false;
-  } else {
-    spaceVidType_ = vidType.value();
-  }
   localPartId_ = req.get_parts().begin()->first;
-  replaceNullWithDefaultValue(req_);
-
-  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
-  if (code_ != Code::SUCCEEDED) {
-    LOG(INFO) << "get term failed";
-    return false;
-  }
-
-  auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
-  if (!vidLen.ok()) {
-    LOG(ERROR) << "getSpaceVidLen failed, spaceId_: " << spaceId_
-               << ", status: " << vidLen.status();
-    setErrorCode(Code::E_INVALID_SPACEVIDLEN);
-    return false;
-  }
-  spaceVidLen_ = vidLen.value();
-  return true;
+  return getSpaceVidLen(spaceId_) == Code::SUCCEEDED;
 }
 
-folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::forwardToDelegateProcessor() {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::commit() {
   auto* proc = AddEdgesProcessor::instance(env_, nullptr);
   proc->consistOp_ = [&](kvstore::BatchHolder& a, std::vector<kvstore::KV>* b) {
     callbackOfChainOp(a, b);
@@ -174,26 +119,15 @@ folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::forwardToDelegateProcessor(
   auto futProc = proc->getFuture();
   auto [pro, fut] = folly::makePromiseContract<Code>();
   std::move(futProc).thenTry([&, p = std::move(pro)](auto&& t) mutable {
-    auto rc = Code::SUCCEEDED;
+    execDesc_ += ", commit(), ";
     if (t.hasException()) {
       LOG(INFO) << "catch ex: " << t.exception().what();
-      rc = Code::E_UNKNOWN;
+      rcCommit_ = Code::E_UNKNOWN;
     } else {
       auto& resp = t.value();
-      rc = extractRpcError(resp);
-      if (rc == Code::SUCCEEDED) {
-        if (FLAGS_trace_toss) {
-          for (auto& k : kvErased_) {
-            VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
-          }
-        }
-      } else {
-        VLOG(1) << uuid_ << " forwardToDelegateProcessor(), code = "
-                << apache::thrift::util::enumNameSafe(rc);
-        addUnfinishedEdge(ResumeType::RESUME_CHAIN);
-      }
+      rcCommit_ = extractRpcError(resp);
     }
-    p.setValue(rc);
+    p.setValue(rcCommit_);
   });
   proc->process(req_);
   return std::move(fut);
@@ -215,22 +149,22 @@ void ChainAddEdgesLocalProcessor::doRpc(folly::Promise<Code>&& promise,
     promise.setValue(Code::E_LEADER_CHANGED);
     return;
   }
-  auto* iClient = env_->txnMan_->getInternalClient();
+  auto* iClient = env_->interClient_;
   folly::Promise<Code> p;
   auto f = p.getFuture();
   iClient->chainAddEdges(req, term_, edgeVer_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
-    auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
-    switch (code) {
+    rcRemote_ = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
+    switch (rcRemote_) {
       case Code::E_LEADER_CHANGED:
         doRpc(std::move(p), std::move(req), ++retry);
         break;
       default:
-        p.setValue(code);
+        p.setValue(rcRemote_);
         break;
     }
-    return code;
+    return rcRemote_;
   });
 }
 
@@ -260,23 +194,14 @@ folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::abort() {
   }
 
   auto [pro, fut] = folly::makePromiseContract<Code>();
-  env_->kvstore_->asyncMultiRemove(
-      req_.get_space_id(),
-      localPartId_,
-      std::move(kvErased_),
-      [p = std::move(pro), debugErased, this](auto rc) mutable {
-        VLOG(1) << uuid_ << " abort()=" << apache::thrift::util::enumNameSafe(rc);
-        if (rc == Code::SUCCEEDED) {
-          if (FLAGS_trace_toss) {
-            for (auto& k : debugErased) {
-              VLOG(1) << uuid_ << "erase prime " << folly::hexlify(k);
-            }
-          }
-        } else {
-          addUnfinishedEdge(ResumeType::RESUME_CHAIN);
-        }
-        p.setValue(rc);
-      });
+  env_->kvstore_->asyncMultiRemove(req_.get_space_id(),
+                                   localPartId_,
+                                   std::move(kvErased_),
+                                   [p = std::move(pro), debugErased, this](auto rc) mutable {
+                                     execDesc_ += ", abort(), ";
+                                     this->rcCommit_ = rc;
+                                     p.setValue(rc);
+                                   });
   return std::move(fut);
 }
 
@@ -322,8 +247,8 @@ void ChainAddEdgesLocalProcessor::erasePrime() {
 
 bool ChainAddEdgesLocalProcessor::lockEdges(const cpp2::AddEdgesRequest& req) {
   auto partId = req.get_parts().begin()->first;
-  auto* lockCore = env_->txnMan_->getLockCore(req.get_space_id(), partId);
-  if (!lockCore) {
+  lkCore_ = env_->txnMan_->getLockCore(req.get_space_id(), partId, term_);
+  if (!lkCore_) {
     return false;
   }
 
@@ -331,7 +256,7 @@ bool ChainAddEdgesLocalProcessor::lockEdges(const cpp2::AddEdgesRequest& req) {
   for (auto& edge : req.get_parts().begin()->second) {
     keys.emplace_back(ConsistUtil::edgeKey(spaceVidLen_, partId, edge.get_key()));
   }
-  lk_ = std::make_unique<TransactionManager::LockGuard>(lockCore, keys);
+  lk_ = std::make_unique<TransactionManager::LockGuard>(lkCore_.get(), keys);
   return lk_->isLocked();
 }
 
@@ -363,9 +288,31 @@ cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::reverseRequest(
 }
 
 void ChainAddEdgesLocalProcessor::finish() {
-  VLOG(1) << uuid_ << " commitLocal(), code_ = " << apache::thrift::util::enumNameSafe(code_);
-  pushResultCode(code_, localPartId_);
-  finished_.setValue(code_);
+  auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
+  if (rcPrepare_ == Code::SUCCEEDED) {
+    VLOG(1) << uuid_ << execDesc_ << makeReadableEdge(req_)
+            << ", rcPrepare_=" << apache::thrift::util::enumNameSafe(rcPrepare_)
+            << ", rcRemote_=" << apache::thrift::util::enumNameSafe(rcRemote_)
+            << ", rcCommit_=" << apache::thrift::util::enumNameSafe(rcCommit_);
+  }
+  do {
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      break;  // nothing written, no need to recover.
+    }
+
+    if (rcCommit_ != Code::SUCCEEDED) {
+      reportFailed(ResumeType::RESUME_CHAIN);
+      break;
+    }
+
+    if (rcRemote_ == Code::E_RPC_FAILURE) {
+      reportFailed(ResumeType::RESUME_REMOTE);
+      break;
+    }
+  } while (0);
+
+  pushResultCode(rc, localPartId_);
+  finished_.setValue(rc);
   onFinished();
 }
 
@@ -383,36 +330,15 @@ cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::makeSingleEdgeRequest(
   return req;
 }
 
-int64_t ChainAddEdgesLocalProcessor::toInt(const ::nebula::Value& val) {
-  if (spaceVidType_ == nebula::cpp2::PropertyType::FIXED_STRING) {
-    auto str = val.toString();
-    if (str.size() < 3) {
-      return 0;
-    }
-    auto str2 = str.substr(1, str.size() - 2);
-    return atoll(str2.c_str());
-  } else if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
-    return *reinterpret_cast<int64_t*>(const_cast<char*>(val.toString().c_str() + 1));
-  }
-  return 0;
-}
-
 std::string ChainAddEdgesLocalProcessor::makeReadableEdge(const cpp2::AddEdgesRequest& req) {
-  if (req.get_parts().size() != 1) {
-    LOG(INFO) << req.get_parts().size();
-    return "";
-  }
-  if (req.get_parts().begin()->second.size() != 1) {
-    LOG(INFO) << req.get_parts().begin()->second.size();
-    return "";
-  }
-  auto& edge = req.get_parts().begin()->second.back();
-
-  int64_t isrc = toInt(edge.get_key().get_src());
-  int64_t idst = toInt(edge.get_key().get_dst());
-
   std::stringstream oss;
-  oss << isrc << "->" << idst << ", val: ";
+  oss << "term=" << term_ << ", ";
+  auto rawKeyVec = toStrKeys(req);
+  for (auto& rawKey : rawKeyVec) {
+    oss << ConsistUtil::readableKey(spaceVidLen_, isIntId_, rawKey) << ", ";
+  }
+
+  auto& edge = req.get_parts().begin()->second.back();
   for (auto& val : edge.get_props()) {
     oss << val.toString() << " ";
   }

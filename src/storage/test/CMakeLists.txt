@@ -754,20 +754,20 @@ nebula_add_executable(
         gtest
 )
 
-nebula_add_executable(
-    NAME
-        chain_resume_edge_test
-    SOURCES
-        ChainResumeEdgeTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
+# nebula_add_executable(
+#     NAME
+#         chain_resume_edge_test
+#     SOURCES
+#         ChainResumeEdgeTest.cpp
+#     OBJECTS
+#         ${storage_test_deps}
+#     LIBRARIES
+#         ${ROCKSDB_LIBRARIES}
+#         ${THRIFT_LIBRARIES}
+#         ${PROXYGEN_LIBRARIES}
+#         wangle
+#         gtest
+# )
 
 nebula_add_executable(
     NAME

@@ -29,10 +29,10 @@ void ChainDeleteEdgesLocalProcessor::process(const cpp2::DeleteEdgesRequest& req
 
 folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::prepareLocal() {
   txnId_ = ConsistUtil::strUUID();
-  VLOG(1) << txnId_ << " prepareLocal(): " << DeleteEdgesRequestHelper::explain(req_);
 
   if (!lockEdges(req_)) {
-    return Code::E_WRITE_WRITE_CONFLICT;
+    rcPrepare_ = Code::E_WRITE_WRITE_CONFLICT;
+    return rcPrepare_;
   }
 
   primes_ = makePrime(req_);
@@ -42,12 +42,7 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::prepareLocal() {
   auto [pro, fut] = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiPut(
       spaceId_, localPartId_, std::move(primes), [p = std::move(pro), this](auto rc) mutable {
-        if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
-          setPrime_ = true;
-        } else {
-          LOG(WARNING) << txnId_ << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
-        }
-
+        rcPrepare_ = rc;
         p.setValue(rc);
       });
   return std::move(fut);
@@ -55,8 +50,8 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::prepareLocal() {
 
 folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::processRemote(Code code) {
   VLOG(1) << txnId_ << " prepareLocal(), code = " << apache::thrift::util::enumNameSafe(code);
-  if (code != Code::SUCCEEDED) {
-    return code;
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    return rcPrepare_;
   }
   DCHECK_EQ(req_.get_parts().size(), 1);
   auto reversedRequest = reverseRequest(req_);
@@ -68,53 +63,45 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::processRemote(Code code)
 
 folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::processLocal(Code code) {
   VLOG(1) << txnId_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
-
-  bool remoteFailed{false};
-  if (code == Code::SUCCEEDED) {
-    // do nothing
-  } else if (code == Code::E_RPC_FAILURE) {
-    code_ = Code::SUCCEEDED;
-  } else {
-    code_ = code;
-    remoteFailed = true;
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    return rcPrepare_;
   }
 
-  auto [currTerm, suc] = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  auto [currTerm, suc] = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
   if (currTerm != term_) {
     LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
-    code_ = Code::E_LEADER_CHANGED;
+    rcCommit_ = Code::E_LEADER_CHANGED;
+    return rcCommit_;
   }
 
-  if (code == Code::E_RPC_FAILURE) {
+  if (rcRemote_ == Code::E_RPC_FAILURE) {
+    auto keyPrefix = ConsistUtil::doublePrimeTable(localPartId_);
+    setDoublePrime_ = true;
     for (auto& kv : primes_) {
-      auto key =
-          ConsistUtil::doublePrimeTable().append(kv.first.substr(ConsistUtil::primeTable().size()));
-      setDoublePrime_ = true;
+      auto key = keyPrefix + kv.first.substr(sizeof(PartitionID));
       doublePrimes_.emplace_back(key, kv.second);
     }
-    reportFailed(ResumeType::RESUME_REMOTE);
   }
 
-  if (code_ == Code::SUCCEEDED) {
+  if (rcRemote_ == Code::SUCCEEDED || rcRemote_ == Code::E_RPC_FAILURE) {
     return commitLocal();
   } else {
-    if (setPrime_ && remoteFailed) {
-      return abort();
-    }
+    return abort();
   }
 
-  return code_;
+  // actually, should return either commit() or abort()
+  return rcRemote_;
 }
 
 void ChainDeleteEdgesLocalProcessor::reportFailed(ResumeType type) {
   if (lk_ != nullptr) {
-    lk_->forceUnlock();
+    lk_->setAutoUnlock(false);
   }
   for (auto& edgesOfPart : req_.get_parts()) {
     auto partId = edgesOfPart.first;
     for (auto& key : edgesOfPart.second) {
       auto strKey = ConsistUtil::edgeKey(spaceVidLen_, partId, key);
-      env_->txnMan_->addPrime(spaceId_, strKey, type);
+      env_->txnMan_->addPrime(spaceId_, localPartId_, term_, strKey, type);
     }
   }
 }
@@ -142,7 +129,7 @@ std::vector<kvstore::KV> ChainDeleteEdgesLocalProcessor::makePrime(
     val += ConsistUtil::deleteIdentifier();
     auto partId = singleReq.get_parts().begin()->first;
     auto& edgeKey = singleReq.get_parts().begin()->second.back();
-    auto key = ConsistUtil::primeTable();
+    auto key = ConsistUtil::primeTable(partId);
     key += ConsistUtil::edgeKey(spaceVidLen_, partId, edgeKey);
     ret.emplace_back(std::make_pair(key, val));
   }
@@ -154,15 +141,13 @@ Code ChainDeleteEdgesLocalProcessor::checkRequest(const cpp2::DeleteEdgesRequest
   req_ = req;
   DCHECK(!req_.get_parts().empty());
   spaceId_ = req_.get_space_id();
-
-  auto vidType = env_->metaClient_->getSpaceVidType(spaceId_);
-  if (!vidType.ok()) {
-    LOG(WARNING) << "can't get vidType, spaceId_ = " << spaceId_;
-    return Code::E_SPACE_NOT_FOUND;
-  } else {
-    spaceVidType_ = vidType.value();
-  }
   localPartId_ = req.get_parts().begin()->first;
+
+  auto rc = getSpaceVidLen(spaceId_);
+  if (rc != Code::SUCCEEDED) {
+    return rc;
+  }
+
   auto part = env_->kvstore_->part(spaceId_, localPartId_);
   if (!nebula::ok(part)) {
     pushResultCode(nebula::error(part), localPartId_);
@@ -180,13 +165,6 @@ Code ChainDeleteEdgesLocalProcessor::checkRequest(const cpp2::DeleteEdgesRequest
 
   term_ = (nebula::value(part))->termId();
 
-  auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
-  if (!vidLen.ok()) {
-    LOG(ERROR) << "getSpaceVidLen failed, spaceId_: " << spaceId_
-               << ", status: " << vidLen.status();
-    return Code::E_INVALID_SPACEVIDLEN;
-  }
-  spaceVidLen_ = vidLen.value();
   return Code::SUCCEEDED;
 }
 
@@ -199,12 +177,7 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::commitLocal() {
   auto [pro, fut] = folly::makePromiseContract<Code>();
   std::move(futProc).thenValue([&, p = std::move(pro)](auto&& resp) mutable {
     auto rc = ConsistUtil::getErrorCode(resp);
-    VLOG(1) << txnId_ << " commitLocal() " << apache::thrift::util::enumNameSafe(rc);
-    if (rc == Code::SUCCEEDED) {
-      // do nothing
-    } else {
-      reportFailed(ResumeType::RESUME_CHAIN);
-    }
+    rcCommit_ = rc;
     p.setValue(rc);
   });
   proc->process(req_);
@@ -218,22 +191,22 @@ void ChainDeleteEdgesLocalProcessor::doRpc(folly::Promise<Code>&& promise,
     promise.setValue(Code::E_LEADER_CHANGED);
     return;
   }
-  auto* iClient = env_->txnMan_->getInternalClient();
+  auto* iClient = env_->interClient_;
   folly::Promise<Code> p;
   auto f = p.getFuture();
   iClient->chainDeleteEdges(req, txnId_, term_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
-    auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
-    switch (code) {
+    rcRemote_ = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
+    switch (rcRemote_) {
       case Code::E_LEADER_CHANGED:
         doRpc(std::move(p), std::move(req), ++retry);
         break;
       default:
-        p.setValue(code);
+        p.setValue(rcRemote_);
         break;
     }
-    return code;
+    return rcRemote_;
   });
 }
 
@@ -305,19 +278,15 @@ folly::SemiFuture<Code> ChainDeleteEdgesLocalProcessor::abort() {
       std::move(keyRemoved),
       [p = std::move(pro), this](auto rc) mutable {
         VLOG(1) << txnId_ << " abort()=" << apache::thrift::util::enumNameSafe(rc);
-        if (rc == Code::SUCCEEDED) {
-          // do nothing
-        } else {
-          reportFailed(ResumeType::RESUME_CHAIN);
-        }
+        rcCommit_ = rc;
         p.setValue(rc);
       });
   return std::move(fut);
 }
 
 bool ChainDeleteEdgesLocalProcessor::lockEdges(const cpp2::DeleteEdgesRequest& req) {
-  auto* lockCore = env_->txnMan_->getLockCore(req.get_space_id(), localPartId_);
-  if (!lockCore) {
+  lkCore_ = env_->txnMan_->getLockCore(req.get_space_id(), localPartId_, term_);
+  if (!lkCore_) {
     VLOG(1) << txnId_ << "get lock failed.";
     return false;
   }
@@ -328,9 +297,10 @@ bool ChainDeleteEdgesLocalProcessor::lockEdges(const cpp2::DeleteEdgesRequest& r
     keys.emplace_back(std::move(eKey));
   }
   bool dedup = true;
-  lk_ = std::make_unique<TransactionManager::LockGuard>(lockCore, keys, dedup);
+  lk_ = std::make_unique<TransactionManager::LockGuard>(lkCore_.get(), keys, dedup);
   if (!lk_->isLocked()) {
-    VLOG(1) << txnId_ << " conflict " << ConsistUtil::readableKey(spaceVidLen_, lk_->conflictKey());
+    VLOG(1) << txnId_ << "term=" << term_ << ", conflict key = "
+            << ConsistUtil::readableKey(spaceVidLen_, isIntId_, lk_->conflictKey());
   }
   return lk_->isLocked();
 }
@@ -350,9 +320,33 @@ cpp2::DeleteEdgesRequest ChainDeleteEdgesLocalProcessor::reverseRequest(
 }
 
 void ChainDeleteEdgesLocalProcessor::finish() {
-  VLOG(1) << txnId_ << " commitLocal(), code_ = " << apache::thrift::util::enumNameSafe(code_);
-  pushResultCode(code_, localPartId_);
-  finished_.setValue(code_);
+  VLOG(1) << txnId_ << " commitLocal() = " << apache::thrift::util::enumNameSafe(rcCommit_);
+  TermID currTerm = 0;
+  std::tie(currTerm, std::ignore) = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
+  do {
+    if (term_ != currTerm) {
+      // transaction manager will do the clean.
+      break;
+    }
+
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      break;  // nothing written, no need to recover.
+    }
+
+    if (rcCommit_ != Code::SUCCEEDED) {
+      reportFailed(ResumeType::RESUME_CHAIN);
+      break;
+    }
+
+    if (rcRemote_ == Code::E_RPC_FAILURE) {
+      reportFailed(ResumeType::RESUME_REMOTE);
+      break;
+    }
+  } while (0);
+
+  auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
+  pushResultCode(rc, localPartId_);
+  finished_.setValue(rc);
   onFinished();
 }
 

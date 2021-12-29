@@ -16,13 +16,15 @@ class ChainDeleteEdgesResumeRemoteProcessor : public ChainDeleteEdgesLocalProces
     return new ChainDeleteEdgesResumeRemoteProcessor(env, val);
   }
 
+  virtual ~ChainDeleteEdgesResumeRemoteProcessor() = default;
+
   folly::SemiFuture<nebula::cpp2::ErrorCode> prepareLocal() override;
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> processRemote(nebula::cpp2::ErrorCode code) override;
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> processLocal(nebula::cpp2::ErrorCode code) override;
 
-  virtual ~ChainDeleteEdgesResumeRemoteProcessor() = default;
+  void finish() override;
 
  protected:
   ChainDeleteEdgesResumeRemoteProcessor(StorageEnv* env, const std::string& val);
