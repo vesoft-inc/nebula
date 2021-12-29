@@ -439,6 +439,36 @@ class DropSpaceSentence final : public DropSentence {
   std::unique_ptr<std::string> clusterName_;
 };
 
+class AlterSpaceSentence final : public Sentence {
+ public:
+  AlterSpaceSentence(std::string* spaceName, meta::cpp2::AlterSpaceOp op)
+      : op_(op), spaceName_(spaceName) {
+    kind_ = Kind::kAlterSpace;
+  }
+  void addPara(const std::string& para) {
+    paras_.push_back(para);
+  }
+
+  std::string spaceName() const {
+    return *spaceName_;
+  }
+
+  const std::vector<std::string>& paras() const {
+    return paras_;
+  }
+
+  meta::cpp2::AlterSpaceOp alterSpaceOp() const {
+    return op_;
+  }
+
+  std::string toString() const override;
+
+ private:
+  meta::cpp2::AlterSpaceOp op_;
+  std::unique_ptr<std::string> spaceName_;
+  std::vector<std::string> paras_;
+};
+
 class DescribeSpaceSentence final : public Sentence {
  public:
   explicit DescribeSpaceSentence(std::string* spaceName) {

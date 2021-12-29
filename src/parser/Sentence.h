@@ -132,6 +132,7 @@ class Sentence {
     kShowQueries,
     kKillQuery,
     kShowMetaLeader,
+    kAlterSpace,
   };
 
   Kind kind() const {
