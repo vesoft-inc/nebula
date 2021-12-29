@@ -1,20 +1,47 @@
 ---
-name: Feature Request
+name: 🚀 Feature Request
 about: Suggest a feature for this project.
 title: ''
 labels: type/feature req
 assignees: ''
-
----
-
-**Is your feature request related to a problem? Please describe.**
-<!-- A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]  -->
-
-**Describe the solution you'd like**
-<!-- A clear and concise description of what you want to happen. -->
-
-**Describe alternatives you've considered**
-<!-- A clear and concise description of any alternative solutions or features you've considered. -->
-
-**Additional context**
-<!-- Add any other context or screenshots about the feature request here. -->
+body:
+  - type: checkboxes
+    id: no-duplicate-issues
+    attributes:
+      label: "⚠️ Please verify that this feature request has NOT been suggested before."
+      description: "Search in the issues sections by clicking [HERE](https://github.com/vesoft-inc/nebula/issues?q=)"
+      options:
+        - label: "I checked and didn't find similar feature request"
+          required: true
+  - type: dropdown
+    id: feature-description
+    attributes:
+      label: "🔖 Feature Request Type"
+      description: "Is your feature request related to a problem?"
+      placeholder: "<A clear and concise description of what the problem is. Ex. I'm always frustrated when...>"
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    validations:
+      required: true
+    attributes:
+      label: "✔️ Solution"
+      description: "Describe the solution you'd like."
+      placeholder: "<A clear and concise description of what you want to happen.>"
+  - type: textarea
+    id: alternatives
+    validations:
+      required: false
+    attributes:
+      label: "❓ Alternatives"
+      description: "A clear and concise description of any alternative solutions or features you've considered."
+      placeholder: "I have considered ..."
+  - type: textarea
+    id: additional-context
+    validations:
+      required: false
+    attributes:
+      label: "📝 Additional Context"
+      description: "Add any other context or screenshots about the feature request here."
+      placeholder: "..."
