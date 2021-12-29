@@ -4,7 +4,7 @@
 Feature: Test Authentication
 
   Background:
-    Given a nebulacluster with 3 graphd and 1 metad and 1 storaged
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged
 
   Scenario: Test login with invalid password
     When executing query:
@@ -16,28 +16,29 @@ Feature: Test Authentication
       """
     Then the execution should be successful
     And wait 3 seconds
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
       Invalid password, remaining attempts: 4
       """
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
       Invalid password, remaining attempts: 3
       """
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
       Invalid password, remaining attempts: 2
       """
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
       Invalid password, remaining attempts: 1
       """
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
-      5 times consecutive incorrect passwords has been input, user name: user2 has been blocked, try again in 10 seconds
+      5 times consecutive incorrect passwords has been input, user name: user1 has been blocked, try again in 10 seconds
       """
+    # Wail the account to be unlocked
     Then wait 11 seconds
-    When login "graphd[1]" with "user1" and "wrongPassword" should fail:
+    When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
       Invalid password, remaining attempts: 4
       """

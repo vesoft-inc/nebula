@@ -69,7 +69,9 @@ up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--failed_login_attempts=5 \
+		--password_lock_time_in_secs=10
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)

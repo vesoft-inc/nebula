@@ -40,13 +40,26 @@ DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
 DEFINE_uint32(failed_login_attempts,
-              5,
-              "how many consecutive incorrect passwords input cause the account to become locked");
+              0,
+              "how many consecutive incorrect passwords input to a SINGLE graph service node cause "
+              "the account to become locked.");
 DEFINE_uint32(
     password_lock_time_in_secs,
-    10,
+    0,
     "how long in seconds to lock the account after too many consecutive login attempts provide an "
     "incorrect password.");
+
+// Sanity-checking Flag Values
+static bool ValidateFailedLoginAttempts(const char* flagname, uint32_t value) {
+  if (value <= 32767)  // value is ok
+    return true;
+
+  FLOG_WARN("Invalid value for --%s: %d, the timeout should be an integer between 0 and 32767\n",
+            flagname,
+            (int)value);
+  return false;
+}
+DEFINE_validator(failed_login_attempts, &ValidateFailedLoginAttempts);
 
 namespace nebula {
 namespace meta {
