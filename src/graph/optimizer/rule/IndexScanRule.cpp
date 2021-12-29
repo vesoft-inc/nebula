@@ -5,9 +5,6 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
-#include "common/expression/LabelAttributeExpression.h"
-#include "common/expression/VariableExpression.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
@@ -18,10 +15,10 @@
 #include "graph/util/IndexUtil.h"
 #include "graph/visitor/RewriteVisitor.h"
 
+using nebula::graph::ExpressionUtils;
 using nebula::graph::IndexScan;
 using nebula::graph::IndexUtil;
 using nebula::graph::OptimizerUtils;
-
 using IndexQueryCtx = std::vector<nebula::graph::IndexScan::IndexQueryContext>;
 
 namespace nebula {
@@ -378,9 +375,13 @@ Status IndexScanRule::analyzeExpression(
     case Expression::Kind::kRelGT:
     case Expression::Kind::kRelNE: {
       auto* rExpr = static_cast<RelationalExpression*>(expr);
-      auto ret = isEdge ? addFilterItem<EdgePropertyExpression>(rExpr, items, qctx)
-                        : addFilterItem<TagPropertyExpression>(rExpr, items, qctx);
-      NG_RETURN_IF_ERROR(ret);
+      if (isEdge) {
+        NG_RETURN_IF_ERROR(addFilterItem<EdgePropertyExpression>(rExpr, items, qctx));
+      } else if (ExpressionUtils::hasAny(rExpr, {Expression::Kind::kLabelTagProperty})) {
+        NG_RETURN_IF_ERROR(addFilterItem<LabelTagPropertyExpression>(rExpr, items, qctx));
+      } else {
+        NG_RETURN_IF_ERROR(addFilterItem<TagPropertyExpression>(rExpr, items, qctx));
+      }
       if (kind->getKind() == ScanKind::Kind::kMultipleScan &&
           expr->kind() == Expression::Kind::kRelNE) {
         kind->setKind(ScanKind::Kind::kSingleScan);
@@ -400,8 +401,14 @@ Status IndexScanRule::addFilterItem(RelationalExpression* expr,
                                     FilterItems* items,
                                     QueryContext* qctx) const {
   // TODO (sky) : Check illegal filter. for example : where c1 == 1 and c1 == 2
-  auto relType = std::is_same<E, EdgePropertyExpression>::value ? Expression::Kind::kEdgeProperty
-                                                                : Expression::Kind::kTagProperty;
+  Expression::Kind relType;
+  if constexpr (std::is_same<E, EdgePropertyExpression>::value) {
+    relType = Expression::Kind::kEdgeProperty;
+  } else if constexpr (std::is_same<E, LabelTagPropertyExpression>::value) {
+    relType = Expression::Kind::kLabelTagProperty;
+  } else {
+    relType = Expression::Kind::kTagProperty;
+  }
   if (expr->left()->kind() == relType &&
       graph::ExpressionUtils::isEvaluableExpr(expr->right(), qctx)) {
     auto* l = static_cast<const E*>(expr->left());
@@ -515,7 +522,7 @@ std::vector<IndexItem> IndexScanRule::findValidIndex(graph::QueryContext* qctx,
         return item.col_ == fields[0].get_name();
       });
       if (it == items.items.end()) {
-        validIndexes.erase(index);
+        index = validIndexes.erase(index);
       } else {
         index++;
       }

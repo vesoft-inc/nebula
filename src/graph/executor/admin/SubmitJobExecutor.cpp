@@ -109,7 +109,8 @@ Value SubmitJobExecutor::convertJobTimestampToDateTime(int64_t timestamp) {
 
 nebula::DataSet SubmitJobExecutor::buildShowResultData(
     const nebula::meta::cpp2::JobDesc &jd, const std::vector<nebula::meta::cpp2::TaskDesc> &td) {
-  if (jd.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE) {
+  if (jd.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
+      jd.get_cmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
     nebula::DataSet v(
         {"Job Id(spaceId:partId)", "Command(src->dst)", "Status", "Start Time", "Stop Time"});
     const auto &paras = jd.get_paras();

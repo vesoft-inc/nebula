@@ -48,6 +48,12 @@ class InternalStorageClient
                              folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                              folly::EventBase* evb = nullptr);
 
+  virtual void chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
+                                const std::string& txnId,
+                                TermID termId,
+                                folly::Promise<::nebula::cpp2::ErrorCode>&& p,
+                                folly::EventBase* evb = nullptr);
+
  private:
   cpp2::ChainAddEdgesRequest makeChainAddReq(const cpp2::AddEdgesRequest& req,
                                              TermID termId,

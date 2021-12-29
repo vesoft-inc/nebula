@@ -108,7 +108,8 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return allLatestVerEdgeSchemas;
   }
 
-  StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() override;
+  StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+      meta::cpp2::ExternalServiceType type) override;
 
   StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
     LOG(FATAL) << "Unimplemented.";

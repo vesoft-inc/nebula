@@ -2026,7 +2026,6 @@ void RaftPart::checkRemoteListeners(const std::set<HostAddr>& expected) {
     }
   }
 }
-
 bool RaftPart::leaseValid() {
   std::lock_guard<std::mutex> g(raftLock_);
   if (hosts_.empty()) {

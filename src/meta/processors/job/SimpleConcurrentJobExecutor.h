@@ -7,12 +7,12 @@
 #define META_SIMPLECONCURRENTJOBEXECUTOR_H_
 
 #include "interface/gen-cpp2/common_types.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 
 namespace nebula {
 namespace meta {
 
-class SimpleConcurrentJobExecutor : public MetaJobExecutor {
+class SimpleConcurrentJobExecutor : public StorageJobExecutor {
  public:
   SimpleConcurrentJobExecutor(JobID jobId,
                               kvstore::KVStore* kvstore,
