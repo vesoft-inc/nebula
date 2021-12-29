@@ -23,7 +23,7 @@ DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);
 DECLARE_string(upgrade_meta_server);
 DECLARE_uint32(write_batch_num);
-DECLARE_uint32(upgrade_version);
+DECLARE_string(upgrade_version);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
@@ -55,6 +55,9 @@ class UpgraderSpace {
   // Processing v2 Rc data upgrade to v2 Ga
   void doProcessV2();
 
+  // Processing v2 Ga data upgrade to v3
+  void doProcessV3();
+
   // Perform manual compact
   void doCompaction();
 
@@ -84,7 +87,8 @@ class UpgraderSpace {
   std::vector<std::string> indexVertexKeys(PartitionID partId,
                                            VertexID& vId,
                                            RowReader* reader,
-                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                           const meta::SchemaProviderIf* latestSchema);
 
   void encodeEdgeValue(PartitionID partId,
                        RowReader* reader,
@@ -101,7 +105,8 @@ class UpgraderSpace {
                                          VertexID& svId,
                                          EdgeRanking rank,
                                          VertexID& dstId,
-                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                         const meta::SchemaProviderIf* latestSchema);
 
   WriteResult convertValue(const meta::NebulaSchemaProvider* newSchema,
                            const meta::SchemaProviderIf* oldSchema,
@@ -110,6 +115,8 @@ class UpgraderSpace {
   void runPartV1();
 
   void runPartV2();
+
+  void runPartV3();
 
  public:
   // Source data path
@@ -159,6 +166,9 @@ class UpgraderSpace {
   folly::UnboundedBlockingQueue<PartitionID> partQueue_;
 
   std::atomic<size_t> unFinishedPart_;
+
+  std::mutex ingest_sst_file_mut_;
+  std::vector<std::string> ingest_sst_file_;
 };
 
 // Upgrade one data path in storage conf

@@ -93,7 +93,7 @@ class CreateUserSentence final : public Sentence {
 
 class AlterUserSentence final : public Sentence {
  public:
-  explicit AlterUserSentence(std::string* account, std::string* password) {
+  AlterUserSentence(std::string* account, std::string* password) {
     account_.reset(account);
     password_.reset(password);
     kind_ = Kind::kAlterUser;
@@ -116,7 +116,7 @@ class AlterUserSentence final : public Sentence {
 
 class DropUserSentence final : public Sentence {
  public:
-  explicit DropUserSentence(std::string* account, bool ifExists) {
+  DropUserSentence(std::string* account, bool ifExists) {
     account_.reset(account);
     ifExists_ = ifExists;
     kind_ = Kind::kDropUser;

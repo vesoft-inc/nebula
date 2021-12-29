@@ -986,3 +986,154 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     Then drop the used space
+
+  Scenario: IndexTest rebuild tag index with old schema version value
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG student(name string, age int);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX
+        student(name, age)
+      VALUES
+        "Alen"  :  ("Alen",  18),
+        "Bob"   :  ("Bob", 28),
+        "Candy" :  ("Candy",  38)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG student ADD (teacher string)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG student ADD (alias string default "abc")
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      CREATE TAG INDEX student_name_teacher ON student(name(10), teacher(10))
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX student_teacher ON student(teacher(10))
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX student_alias ON student(alias(10))
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX student_ta ON student(alias(10), teacher(10))
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When submit a job:
+      """
+      REBUILD TAG INDEX student_name_teacher
+      """
+    Then wait the job to finish
+    When submit a job:
+      """
+      REBUILD TAG INDEX student_teacher
+      """
+    Then wait the job to finish
+    When submit a job:
+      """
+      REBUILD TAG INDEX student_alias
+      """
+    Then wait the job to finish
+    When submit a job:
+      """
+      REBUILD TAG INDEX student_ta
+      """
+    Then wait the job to finish
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.alias == "abc" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id      |
+      | "Alen"  |
+      | "Bob"   |
+      | "Candy" |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.name < "a" YIELD id(vertex) as id, student.name as name, student.age as age
+      """
+    Then the result should be, in any order:
+      | id      | name    | age |
+      | "Alen"  | "Alen"  | 18  |
+      | "Bob"   | "Bob"   | 28  |
+      | "Candy" | "Candy" | 38  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.teacher < "a" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.teacher > "a" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.teacher == "a" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      UPDATE VERTEX ON student "Alen" SET teacher = "Bob"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX
+        student(age, alias, name, teacher)
+      VALUES
+        "Bob" : (28, "abc", "Bob", "Candy")
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.teacher < "a" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id     |
+      | "Alen" |
+      | "Bob"  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.alias == "abc" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id      |
+      | "Alen"  |
+      | "Bob"   |
+      | "Candy" |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.alias < "b" and student.teacher < "abc" YIELD DISTINCT id(vertex) as id, student.teacher, student.alias
+      """
+    Then the result should be, in any order:
+      | id     | student.teacher | student.alias |
+      | "Alen" | "Bob"           | "abc"         |
+      | "Bob"  | "Candy"         | "abc"         |
+    Then drop the used space

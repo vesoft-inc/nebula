@@ -87,6 +87,20 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
 }
 
 template <typename RESP>
+void BaseProcessor<RESP>::doBatchOperation(std::string batchOp) {
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncAppendBatch(kDefaultSpaceId,
+                             kDefaultPartId,
+                             std::move(batchOp),
+                             [this, &baton](nebula::cpp2::ErrorCode code) {
+                               this->handleErrorCode(code);
+                               baton.post();
+                             });
+  baton.wait();
+  this->onFinished();
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start, const std::string& end) {
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncRemoveRange(

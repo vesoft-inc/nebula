@@ -212,8 +212,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<RenameZoneValidator>(sentence, context);
     case Sentence::Kind::kDropZone:
       return std::make_unique<DropZoneValidator>(sentence, context);
-    case Sentence::Kind::kSplitZone:
-      return std::make_unique<SplitZoneValidator>(sentence, context);
+    case Sentence::Kind::kDivideZone:
+      return std::make_unique<DivideZoneValidator>(sentence, context);
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:

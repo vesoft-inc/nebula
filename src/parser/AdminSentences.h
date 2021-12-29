@@ -506,7 +506,7 @@ class ConfigRowItem {
 
 class ConfigBaseSentence : public Sentence {
  public:
-  explicit ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
+  ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
     kind_ = kind;
     configItem_.reset(item);
   }

@@ -117,7 +117,7 @@ class Sentence {
     kMergeZone,
     kRenameZone,
     kDropZone,
-    kSplitZone,
+    kDivideZone,
     kDescribeZone,
     kListZones,
     kAddHostsIntoZone,
@@ -228,6 +228,74 @@ class ZoneNameList final {
 
  private:
   std::vector<std::unique_ptr<std::string>> zones_;
+};
+
+class ZoneItem final {
+ public:
+  ZoneItem(std::string *zone, HostList *hosts) {
+    zone_.reset(zone);
+    hosts_.reset(hosts);
+  }
+
+  explicit ZoneItem(ZoneItem *other)
+      : zone_(std::move(other->zone_)), hosts_(std::move(other->hosts_)) {}
+
+  std::string toString() const {
+    std::string buf;
+    buf += "\"";
+    buf += *zone_;
+    buf += "\"";
+    buf += " (";
+    buf += hosts_->toString();
+    buf += ")";
+    return buf;
+  }
+
+  std::string *zone() {
+    return zone_.get();
+  }
+
+  HostList *hosts() {
+    return hosts_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> zone_;
+  std::unique_ptr<HostList> hosts_;
+};
+
+class ZoneItemList final {
+ public:
+  ZoneItemList() = default;
+
+  void addZoneItem(ZoneItem *zoneItem) {
+    zoneItems_.emplace_back(zoneItem);
+  }
+
+  std::unordered_map<std::string, std::vector<HostAddr>> zoneItems() const {
+    std::unordered_map<std::string, std::vector<HostAddr>> result;
+    for (const auto &item : zoneItems_) {
+      result.emplace(*item->zone(), item->hosts()->hosts());
+    }
+    return result;
+  }
+
+  std::string toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : zoneItems_) {
+      buf += item->toString();
+      buf += " ";
+    }
+
+    if (!buf.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
+
+ private:
+  std::vector<std::unique_ptr<ZoneItem>> zoneItems_;
 };
 
 }  // namespace nebula

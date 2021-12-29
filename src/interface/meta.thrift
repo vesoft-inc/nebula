@@ -866,8 +866,9 @@ struct DropZoneReq {
     1: binary                 zone_name,
 }
 
-struct SplitZoneReq {
-    1: binary            zone_name,
+struct DivideZoneReq {
+    1: binary                                                                   zone_name,
+    2: map<binary, list<common.HostAddr>> (cpp.template = "std::unordered_map") zone_items,
 }
 
 struct RenameZoneReq {
@@ -1236,7 +1237,7 @@ service MetaService {
 
     ExecResp       mergeZone(1: MergeZoneReq req);
     ExecResp       dropZone(1: DropZoneReq req);
-    ExecResp       splitZone(1: SplitZoneReq req);
+    ExecResp       divideZone(1: DivideZoneReq req);
     ExecResp       renameZone(1: RenameZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);

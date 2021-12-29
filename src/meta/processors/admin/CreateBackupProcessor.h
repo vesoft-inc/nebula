@@ -23,7 +23,7 @@ class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
   void process(const cpp2::CreateBackupReq& req);
 
  private:
-  explicit CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
+  CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
       : BaseProcessor<cpp2::CreateBackupResp>(kvstore), client_(client) {}
 
   nebula::cpp2::ErrorCode cancelWriteBlocking();
