@@ -228,14 +228,14 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowListenerValidator>(sentence, context);
     case Sentence::Kind::kShowStats:
       return std::make_unique<ShowStatusValidator>(sentence, context);
-    case Sentence::Kind::kShowTSClients:
-      return std::make_unique<ShowTSClientsValidator>(sentence, context);
+    case Sentence::Kind::kShowServiceClients:
+      return std::make_unique<ShowServiceClientsValidator>(sentence, context);
     case Sentence::Kind::kShowFTIndexes:
       return std::make_unique<ShowFTIndexesValidator>(sentence, context);
-    case Sentence::Kind::kSignInTSService:
-      return std::make_unique<SignInTSServiceValidator>(sentence, context);
-    case Sentence::Kind::kSignOutTSService:
-      return std::make_unique<SignOutTSServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignInService:
+      return std::make_unique<SignInServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignOutService:
+      return std::make_unique<SignOutServiceValidator>(sentence, context);
     case Sentence::Kind::kDownload:
       return std::make_unique<DownloadValidator>(sentence, context);
     case Sentence::Kind::kIngest:

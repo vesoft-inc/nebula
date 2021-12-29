@@ -3,25 +3,28 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/executor/admin/SignOutTSServiceExecutor.h"
+#include "graph/executor/admin/SignOutServiceExecutor.h"
 
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> SignOutTSServiceExecutor::execute() {
+folly::Future<Status> SignOutServiceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return signOutTSService();
+  return signOutService();
 }
 
-folly::Future<Status> SignOutTSServiceExecutor::signOutTSService() {
-  return qctx()->getMetaClient()->signOutFTService().via(runner()).thenValue(
+folly::Future<Status> SignOutServiceExecutor::signOutService() {
+  auto *siNode = asNode<SignOutService>(node());
+  auto type = siNode->type();
+
+  return qctx()->getMetaClient()->signOutService(type).via(runner()).thenValue(
       [this](StatusOr<bool> resp) {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(resp);
         if (!resp.value()) {
-          return Status::Error("Sign out text service failed!");
+          return Status::Error("Sign out service failed!");
         }
         return Status::OK();
       });

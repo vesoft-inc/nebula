@@ -35,7 +35,7 @@ nebula_add_library(
     processors/index/DropEdgeIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
-    processors/index/FTServiceProcessor.cpp
+    processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
     processors/kv/GetProcessor.cpp
     processors/kv/MultiGetProcessor.cpp

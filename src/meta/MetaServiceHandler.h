@@ -122,14 +122,12 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ListIndexStatusResp> future_listEdgeIndexStatus(
       const cpp2::ListIndexStatusReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_signInFTService(
-      const cpp2::SignInFTServiceReq& req) override;
+  folly::Future<cpp2::ExecResp> future_signInService(const cpp2::SignInServiceReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_signOutFTService(
-      const cpp2::SignOutFTServiceReq& req) override;
+  folly::Future<cpp2::ExecResp> future_signOutService(const cpp2::SignOutServiceReq& req) override;
 
-  folly::Future<cpp2::ListFTClientsResp> future_listFTClients(
-      const cpp2::ListFTClientsReq& req) override;
+  folly::Future<cpp2::ListServiceClientsResp> future_listServiceClients(
+      const cpp2::ListServiceClientsReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_createFTIndex(const cpp2::CreateFTIndexReq& req) override;
 
