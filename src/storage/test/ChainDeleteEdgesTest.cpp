@@ -29,21 +29,6 @@ constexpr int32_t mockSpaceId = 1;
 constexpr int32_t mockPartNum = 1;
 constexpr int32_t gTerm = 1;
 
-class GlobalCluster {
- public:
-  static mock::MockCluster* get() {
-    static mock::MockCluster cluster;
-    static fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
-    static bool init = false;
-    if (!init) {
-      cluster.initStorageKV(rootPath.path());
-      init = true;
-    }
-    return &cluster;
-  }
-};
-
-// class FakeChainDeleteEdgesProcessor;
 class FakeChainDeleteEdgesProcessor : public ChainDeleteEdgesLocalProcessor {
  public:
   explicit FakeChainDeleteEdgesProcessor(StorageEnv* env);
@@ -83,12 +68,8 @@ TEST(ChainDeleteEdgesTest, TestUtilsTest) {
   auto fut = proc->getFuture();
   proc->process(req);
   auto resp = std::move(fut).get();
-  // EXPECT_EQ(0, resp.result.failed_parts.size());
 
   LOG(INFO) << "Check data in kv store...";
-  // sleep(1);
-  // The number of data in serve is 334
-  // checkAddEdgesData(req, env, 0, 0);
 }
 
 // delete a not exist edge
@@ -103,9 +84,7 @@ TEST(ChainDeleteEdgesTest, Test2) {
 
   auto* proc = new FakeChainDeleteEdgesProcessor(env);
 
-  // proc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
-  // proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   LOG(INFO) << "Build DeleteEdgesReq...";
   auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
@@ -151,12 +130,7 @@ TEST(ChainDeleteEdgesTest, Test3) {
 
   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
   auto delReq = delProc->makeDelRequest(addReq);
-  // delProc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
-  // delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-  LOG(INFO) << "Build DeleteEdgesReq...";
-  // auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
 
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
@@ -201,12 +175,7 @@ TEST(ChainDeleteEdgesTest, Test4) {
   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
   int32_t limit = 1;
   auto delReq = delProc->makeDelRequest(addReq, limit);
-  // delProc->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
-  // delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-  LOG(INFO) << "Build DeleteEdgesReq...";
-  // auto req = mock::MockData::mockDeleteEdgesReq(mockPartNum);
 
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
@@ -219,60 +188,60 @@ TEST(ChainDeleteEdgesTest, Test4) {
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 }
 
-// // add some edges, then delete one of them, not execute local commit
-// TEST(ChainDeleteEdgesTest, Test5) {
-//   fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
-//   mock::MockCluster cluster;
-//   cluster.initStorageKV(rootPath.path());
-//   auto* env = cluster.storageEnv_.get();
-//   auto mClient = MetaClientTestUpdater::makeDefault();
-//   env->metaClient_ = mClient.get();
-//   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, gTerm);
+// add some edges, then delete one of them, not execute local commit
+TEST(ChainDeleteEdgesTest, DISABLED_Test5) {
+  fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto mClient = MetaClientTestUpdater::makeDefault();
+  env->metaClient_ = mClient.get();
+  MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, gTerm);
 
-//   auto* addProc = new FakeChainAddEdgesLocalProcessor(env);
-//   addProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto* addProc = new FakeChainAddEdgesLocalProcessor(env);
+  addProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-//   bool upperPropVal = false;
-//   int32_t partNum = 1;
-//   bool hasInEdges = false;
-//   auto addReq = mock::MockData::mockAddEdgesReq(upperPropVal, partNum, hasInEdges);
+  bool upperPropVal = false;
+  int32_t partNum = 1;
+  bool hasInEdges = false;
+  auto addReq = mock::MockData::mockAddEdgesReq(upperPropVal, partNum, hasInEdges);
 
-//   LOG(INFO) << "Run FakeChainAddEdgesLocalProcessor...";
-//   auto fut = addProc->getFuture();
-//   addProc->process(addReq);
-//   auto resp = std::move(fut).get();
+  LOG(INFO) << "Run FakeChainAddEdgesLocalProcessor...";
+  auto fut = addProc->getFuture();
+  addProc->process(addReq);
+  auto resp = std::move(fut).get();
 
-//   ChainTestUtils util;
-//   auto edgeKeys = util.genEdgeKeys(addReq, util.genKey);
-//   auto num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
-//   EXPECT_EQ(num, 167);
-//   LOG(INFO) << "after add(), edge num = " << num;
+  ChainTestUtils util;
+  auto edgeKeys = util.genEdgeKeys(addReq, util.genKey);
+  auto num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
+  EXPECT_EQ(num, 167);
+  LOG(INFO) << "after add(), edge num = " << num;
 
-//   auto* delProc = new FakeChainDeleteEdgesProcessor(env);
-//   auto delReq = delProc->makeDelRequest(addReq);
-//   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
-//   delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto* delProc = new FakeChainDeleteEdgesProcessor(env);
+  auto delReq = delProc->makeDelRequest(addReq);
+  delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
+  delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-//   LOG(INFO) << "Run DeleteEdgesReq...";
-//   auto futDel = delProc->getFuture();
-//   delProc->process(delReq);
-//   std::move(futDel).get();
+  LOG(INFO) << "Run DeleteEdgesReq...";
+  auto futDel = delProc->getFuture();
+  delProc->process(delReq);
+  std::move(futDel).get();
 
-//   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
-//   LOG(INFO) << "after del(), edge num = " << num;
-//   EXPECT_EQ(num, 167);
+  num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
+  LOG(INFO) << "after del(), edge num = " << num;
+  EXPECT_EQ(num, 167);
 
-//   env->txnMan_->scanAll();
-//   auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
-//   FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-//   ChainResumeProcessor resumeProc(env);
-//   resumeProc.process();
-//   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
-//   EXPECT_EQ(num, 0);
-//   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  env->txnMan_->scanAll();
+  auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
+  ChainResumeProcessor resumeProc(env);
+  resumeProc.process();
+  // std::this_thread::sleep_for(std::chrono::milliseconds());
+  num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
+  EXPECT_EQ(num, 0);
 
-//   delete iClient;
-// }
+  delete iClient;
+}
 
 // add some edges, then delete all of them, not execute local commit
 TEST(ChainDeleteEdgesTest, Test6) {
