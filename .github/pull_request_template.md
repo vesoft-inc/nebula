@@ -24,7 +24,7 @@ Description:
 
 #### Checklist:
 Tests:
-- [ ] Unit test(normal and abnormal processes)
+- [ ] Unit test(positive and negative cases)
 - [ ] Function test
 - [ ] Perfomance test
 - [ ] N/A
