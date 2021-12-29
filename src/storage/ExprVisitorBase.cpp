@@ -105,6 +105,9 @@ void ExprVisitorBase::visit(EdgeRankExpression *expr) {
 void ExprVisitorBase::visit(EdgeDstIdExpression *expr) {
   UNUSED(expr);
 }
+void ExprVisitorBase::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+}
 // vertex/edge expression
 void ExprVisitorBase::visit(VertexExpression *expr) {
   UNUSED(expr);

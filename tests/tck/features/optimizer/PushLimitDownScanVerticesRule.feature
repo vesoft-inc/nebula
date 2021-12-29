@@ -10,13 +10,13 @@ Feature: Push Limit down scan vertices rule
     When profiling query:
       """
       MATCH (v)
-      RETURN v.name LIMIT 3
+      RETURN v.person.name LIMIT 3
       """
     Then the result should be, in any order:
-      | v.name |
-      | /\w+/  |
-      | /\w+/  |
-      | /\w+/  |
+      | v.person.name |
+      | /\w+/         |
+      | /\w+/         |
+      | /\w+/         |
     And the execution plan should be:
       | id | name           | dependencies | operator info  |
       | 9  | DataCollect    | 19           |                |
@@ -28,13 +28,13 @@ Feature: Push Limit down scan vertices rule
     When profiling query:
       """
       MATCH (v:person)
-      RETURN v.name LIMIT 3
+      RETURN v.person.name LIMIT 3
       """
     Then the result should be, in any order:
-      | v.name |
-      | /\w+/  |
-      | /\w+/  |
-      | /\w+/  |
+      | v.person.name |
+      | /\w+/         |
+      | /\w+/         |
+      | /\w+/         |
     And the execution plan should be:
       | id | name           | dependencies | operator info  |
       | 9  | DataCollect    | 19           |                |

@@ -40,6 +40,10 @@ void EvaluableExprVisitor::visit(EdgePropertyExpression *) {
   isEvaluable_ = false;
 }
 
+void EvaluableExprVisitor::visit(LabelTagPropertyExpression *) {
+  isEvaluable_ = false;
+}
+
 void EvaluableExprVisitor::visit(InputPropertyExpression *) {
   isEvaluable_ = false;
 }

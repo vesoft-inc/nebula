@@ -44,6 +44,11 @@ void FoldConstantExprVisitor::visit(LabelExpression *expr) {
   canBeFolded_ = false;
 }
 
+void FoldConstantExprVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  canBeFolded_ = false;
+}
+
 void FoldConstantExprVisitor::visit(LabelAttributeExpression *expr) {
   UNUSED(expr);
   canBeFolded_ = false;
