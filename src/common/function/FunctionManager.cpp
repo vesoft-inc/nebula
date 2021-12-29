@@ -182,6 +182,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
       TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+    {"toset",
+     {TypeSignature({Value::Type::LIST}, Value::Type::SET),
+      TypeSignature({Value::Type::SET}, Value::Type::SET)}},
     {"hash",
      {TypeSignature({Value::Type::INT}, Value::Type::INT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
@@ -1428,6 +1431,13 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
+  }
+  {
+    auto &attr = functions_["toset"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
   }
   {
     auto &attr = functions_["lpad"];
