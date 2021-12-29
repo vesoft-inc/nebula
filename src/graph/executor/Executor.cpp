@@ -39,10 +39,10 @@
 #include "graph/executor/admin/ShowHostsExecutor.h"
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
+#include "graph/executor/admin/ShowServiceClientsExecutor.h"
 #include "graph/executor/admin/ShowStatsExecutor.h"
-#include "graph/executor/admin/ShowTSClientsExecutor.h"
-#include "graph/executor/admin/SignInTSServiceExecutor.h"
-#include "graph/executor/admin/SignOutTSServiceExecutor.h"
+#include "graph/executor/admin/SignInServiceExecutor.h"
+#include "graph/executor/admin/SignOutServiceExecutor.h"
 #include "graph/executor/admin/SnapshotExecutor.h"
 #include "graph/executor/admin/SpaceExecutor.h"
 #include "graph/executor/admin/SubmitJobExecutor.h"
@@ -489,17 +489,17 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShowStats: {
       return pool->add(new ShowStatsExecutor(node, qctx));
     }
-    case PlanNode::Kind::kShowTSClients: {
-      return pool->add(new ShowTSClientsExecutor(node, qctx));
+    case PlanNode::Kind::kShowServiceClients: {
+      return pool->add(new ShowServiceClientsExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowFTIndexes: {
       return pool->add(new ShowFTIndexesExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSignInTSService: {
-      return pool->add(new SignInTSServiceExecutor(node, qctx));
+    case PlanNode::Kind::kSignInService: {
+      return pool->add(new SignInServiceExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSignOutTSService: {
-      return pool->add(new SignOutTSServiceExecutor(node, qctx));
+    case PlanNode::Kind::kSignOutService: {
+      return pool->add(new SignOutServiceExecutor(node, qctx));
     }
     case PlanNode::Kind::kDownload: {
       return pool->add(new DownloadExecutor(node, qctx));

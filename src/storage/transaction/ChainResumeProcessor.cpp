@@ -5,9 +5,9 @@
 
 #include "storage/transaction/ChainResumeProcessor.h"
 
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ChainProcessorFactory.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 #include "storage/transaction/TransactionManager.h"
 
@@ -15,7 +15,7 @@ namespace nebula {
 namespace storage {
 
 void ChainResumeProcessor::process() {
-  auto* table = env_->txnMan_->getReserveTable();
+  auto* table = env_->txnMan_->getDangleEdges();
   std::unique_ptr<kvstore::KVIterator> iter;
   for (auto it = table->begin(); it != table->end(); ++it) {
     auto spaceId = *reinterpret_cast<GraphSpaceID*>(const_cast<char*>(it->first.c_str()));
@@ -40,10 +40,14 @@ void ChainResumeProcessor::process() {
         env_->txnMan_->delPrime(spaceId, edgeKey);
       }
       continue;
+    } else if (rc == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      // raft may rollback want we scanned.
+      env_->txnMan_->delPrime(spaceId, edgeKey);
     } else {
       LOG(WARNING) << "kvstore->get() failed, " << apache::thrift::util::enumNameSafe(rc);
       continue;
     }
+
     ResumeOptions opt(it->second, val);
     auto* proc = ChainProcessorFactory::makeProcessor(env_, opt);
     auto fut = proc->getFinished();
@@ -52,6 +56,8 @@ void ChainResumeProcessor::process() {
         .thenValue([=](auto&& code) {
           if (code == Code::SUCCEEDED) {
             env_->txnMan_->delPrime(spaceId, edgeKey);
+          } else {
+            VLOG(1) << "recover failed: " << apache::thrift::util::enumNameSafe(rc);
           }
         })
         .get();

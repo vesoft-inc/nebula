@@ -70,8 +70,8 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kGetConfig:
     case Sentence::Kind::kIngest:
     case Sentence::Kind::kDownload:
-    case Sentence::Kind::kSignOutTSService:
-    case Sentence::Kind::kSignInTSService: {
+    case Sentence::Kind::kSignOutService:
+    case Sentence::Kind::kSignInService: {
       return PermissionManager::canWriteSpace(session);
     }
     case Sentence::Kind::kCreateTag:
@@ -184,7 +184,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kDescribeUser:
     case Sentence::Kind::kShowUsers:
     case Sentence::Kind::kShowSnapshots:
-    case Sentence::Kind::kShowTSClients:
+    case Sentence::Kind::kShowServiceClients:
     case Sentence::Kind::kShowSessions: {
       /**
        * Only GOD role can be show.
@@ -192,7 +192,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       if (session->isGod()) {
         return Status::OK();
       } else {
-        return Status::PermissionError("No permission to show users/snapshots/textClients");
+        return Status::PermissionError("No permission to show users/snapshots/serviceClients");
       }
     }
     case Sentence::Kind::kChangePassword: {

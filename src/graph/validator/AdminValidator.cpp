@@ -531,39 +531,44 @@ Status ShowStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowTSClientsValidator::validateImpl() {
+Status ShowServiceClientsValidator::validateImpl() {
   return Status::OK();
 }
 
-Status ShowTSClientsValidator::toPlan() {
-  auto *doNode = ShowTSClients::make(qctx_, nullptr);
+Status ShowServiceClientsValidator::toPlan() {
+  auto sentence = static_cast<ShowServiceClientsSentence *>(sentence_);
+  auto type = sentence->getType();
+  auto *doNode = ShowServiceClients::make(qctx_, nullptr, type);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
 }
 
-Status SignInTSServiceValidator::validateImpl() {
+Status SignInServiceValidator::validateImpl() {
   return Status::OK();
 }
 
-Status SignInTSServiceValidator::toPlan() {
-  auto sentence = static_cast<SignInTextServiceSentence *>(sentence_);
-  std::vector<meta::cpp2::FTClient> clients;
+Status SignInServiceValidator::toPlan() {
+  auto sentence = static_cast<SignInServiceSentence *>(sentence_);
+  std::vector<meta::cpp2::ServiceClient> clients;
   if (sentence->clients() != nullptr) {
     clients = sentence->clients()->clients();
   }
-  auto *node = SignInTSService::make(qctx_, nullptr, std::move(clients));
+  auto type = sentence->getType();
+  auto *node = SignInService::make(qctx_, nullptr, std::move(clients), type);
   root_ = node;
   tail_ = root_;
   return Status::OK();
 }
 
-Status SignOutTSServiceValidator::validateImpl() {
+Status SignOutServiceValidator::validateImpl() {
   return Status::OK();
 }
 
-Status SignOutTSServiceValidator::toPlan() {
-  auto *node = SignOutTSService::make(qctx_, nullptr);
+Status SignOutServiceValidator::toPlan() {
+  auto sentence = static_cast<SignOutServiceSentence *>(sentence_);
+  auto type = sentence->getType();
+  auto *node = SignOutService::make(qctx_, nullptr, type);
   root_ = node;
   tail_ = root_;
   return Status::OK();
