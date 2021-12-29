@@ -152,8 +152,8 @@ Feature: With clause
       RETURN *, v2.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                                     | v2                                                                                                          | age | v2.name      |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | 136 | "Tim Duncan" |
+      | v                                                     | v2                                                                                                          | age | v2.player.name |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | 136 | "Tim Duncan"   |
     When executing query:
       """
       MATCH (:player)-[:like]->()

@@ -95,29 +95,6 @@ Feature: Match seek by id
       | 'Jonathon Simmons' |
       | 'Klay Thompson'    |
       | 'Dejounte Murray'  |
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
-            OR v.player.age == 23
-      RETURN v.player.name AS Name
-      """
-    Then the result should be, in any order:
-      | Name               |
-      | 'James Harden'     |
-      | 'Jonathon Simmons' |
-      | 'Klay Thompson'    |
-      | 'Dejounte Murray'  |
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) == hash('James Harden')
-            OR v.player.age == 23
-      RETURN v.player.name AS Name
-      """
-    Then the result should be, in any order:
-      | Name           |
-      | 'James Harden' |
 
   Scenario: basic logical with noise
     When executing query:
@@ -267,6 +244,43 @@ Feature: Match seek by id
       RETURN v.player.name AS Name
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
+  @skip
+  Scenario: test OR logic (reason = "or logic optimization error")
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name                 |
+      | 'James Harden'       |
+      | 'Jonathon Simmons'   |
+      | 'Klay Thompson'      |
+      | 'Dejounte Murray'    |
+      | 'Kristaps Porzingis' |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) == hash('James Harden')
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name                 |
+      | 'James Harden'       |
+      | 'Kristaps Porzingis' |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) == hash('James Harden')
+            OR v.player.age != 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name |
 
   Scenario: with arithmetic
     When executing query:
