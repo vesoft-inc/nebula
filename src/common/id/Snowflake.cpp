@@ -21,13 +21,15 @@ int64_t Snowflake::getId() {
 
   int64_t timestamp = getTimestamp();
   if (timestamp < lastTimestamp_) {
-    LOG(FATAL) << "Clock back";
+    LOG(ERROR) << "Clock back";
     return firstBitRevert & getIdByTs(timestamp);
   }
 
   return getIdByTs(timestamp);
 }
 
+// get snowflake id by timestamp
+// update lastTimestamp_ or sequence_
 int64_t Snowflake::getIdByTs(int64_t timestamp) {
   // if it is the same time, then the microsecond sequence
   if (lastTimestamp_ == timestamp) {
@@ -41,7 +43,7 @@ int64_t Snowflake::getIdByTs(int64_t timestamp) {
     lastTimestamp_ = timestamp;
     sequence_ = 0;
   }
-  return (timestamp - startStmp) << timestampLeft | workerId_ << workerLeft | sequence_;
+  return (timestamp - startStmp) << timestampLeft | workerId_ << workerIdLeft | sequence_;
 }
 
 int64_t Snowflake::getTimestamp() {
@@ -50,6 +52,7 @@ int64_t Snowflake::getTimestamp() {
       .count();
 }
 
+// wait for the next millisecond
 int64_t Snowflake::nextTimestamp() {
   int64_t timestamp = getTimestamp();
   while (timestamp <= lastTimestamp_) {

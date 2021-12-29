@@ -1291,7 +1291,7 @@ TEST_F(ParserTest, FetchVertex) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = R"FETCH PROP ON person uuid("")";
+    std::string query = "FETCH PROP ON person uuid(\"\")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

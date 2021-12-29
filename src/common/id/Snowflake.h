@@ -26,6 +26,14 @@ class Snowflake {
   int64_t getId();
 
  private:
+  static int64_t getTimestamp();
+
+  int64_t nextTimestamp();
+
+  int64_t getIdByTs(int64_t timestamp);
+
+  std::mutex mutex_;
+
   /*
    *  Snowflake id:
    *  timestampBit 38 bits (8.6 years) |
@@ -36,25 +44,17 @@ class Snowflake {
   static inline int64_t workerId_{0};
   int64_t sequence_{0};
 
-  static int64_t getTimestamp();
+  static constexpr int64_t startStmp = 1577808000000;  // start time: 2020-01-01 00:00:00
+  static constexpr int64_t workerBit = 13;             // worker id bit
+  static constexpr int64_t sequenceBit = 12;           // sequence bit
 
-  int64_t nextTimestamp();
-  int64_t getIdByTs(int64_t timestamp);
-
-  std::mutex mutex_;
-
-  // start
-  static constexpr int64_t startStmp = 1577808000000;  // 2020-01-01 00:00:00
-  static constexpr int64_t workerBit = 12;
-  static constexpr int64_t sequenceBit = 14;
-
-  static constexpr int64_t maxWorkerId = (1 << workerBit) - 1;
+  static constexpr int64_t maxWorkerId = (1 << workerBit) - 1;  // as worker id mask
   static constexpr int64_t maxSequence = (1 << sequenceBit) - 1;
 
-  static constexpr int64_t workerLeft = sequenceBit;
+  static constexpr int64_t workerIdLeft = sequenceBit;  // workerId left bits
   static constexpr int64_t timestampLeft = sequenceBit + workerBit;
 
-  static constexpr int64_t firstBitRevert = 0x9000000000000000;
+  static constexpr int64_t firstBitRevert = 0x9000000000000000;  // revert the first bit
 };
 
 }  // namespace nebula

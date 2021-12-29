@@ -24,7 +24,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::workerIdLock());
   auto newResult = doGet(idKey);
   if (!nebula::ok(newResult)) {
-    // TODO handleErrorCode(nebula::cpp2::ErrorCode::E_GET_WORKER_ID_FAILED);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_WORKER_ID_FAILED);
     onFinished();
     return;
   }
