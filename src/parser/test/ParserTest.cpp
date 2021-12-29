@@ -1291,7 +1291,7 @@ TEST_F(ParserTest, FetchVertex) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "FETCH PROP ON person uuid(\"Tom\")";
+    std::string query = R"FETCH PROP ON person uuid("")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1740,11 +1740,6 @@ TEST_F(ParserTest, UnreservedKeywords) {
   }
   {
     std::string query = "GO FROM \"123\" OVER guest WHERE $-.EMAIL";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "GO FROM UUID(\"tom\") OVER guest WHERE $-.EMAIL";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
