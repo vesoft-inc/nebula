@@ -288,6 +288,14 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Traverse";
     case Kind::kAppendVertices:
       return "AppendVertices";
+    case Kind::kBiLeftJoin:
+      return "BiLeftJoin";
+    case Kind::kBiInnerJoin:
+      return "BiInnerJoin";
+    case Kind::kBiCartesianProduct:
+      return "BiCartesianProduct";
+    case Kind::kArgument:
+      return "Argument";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
@@ -417,5 +425,9 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
   return desc;
 }
 
+void PlanNode::setColNames(std::vector<std::string> cols) {
+  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr(0)->name);
+  outputVarPtr(0)->colNames = std::move(cols);
+}
 }  // namespace graph
 }  // namespace nebula
