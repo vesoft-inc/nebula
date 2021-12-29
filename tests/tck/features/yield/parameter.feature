@@ -19,8 +19,8 @@ Feature: Parameter
   Scenario: cypher with parameters
     When executing query:
       """
-      MATCH (v:player)-[:like]->(n) WHERE id(v)==$p3 and n.age>$p1+29
-      RETURN n.name AS dst LIMIT $p1+1
+      MATCH (v:player)-[:like]->(n) WHERE id(v)==$p3 and n.player.age>$p1+29
+      RETURN n.player.name AS dst LIMIT $p1+1
       """
     Then the result should be, in any order:
       | dst             |
@@ -29,7 +29,7 @@ Feature: Parameter
     When executing query:
       """
       MATCH (v:player)-[:like]->(n{name:$p7.a.b.c})
-      RETURN n.name AS dst LIMIT $p7.a.b.d[0]
+      RETURN n.player.name AS dst LIMIT $p7.a.b.d[0]
       """
     Then the result should be, in any order:
       | dst          |
@@ -57,8 +57,8 @@ Feature: Parameter
     When executing query:
       """
       MATCH (v:player)
-      WITH v AS v WHERE v.name in [$p1,$p2,$p3,"Tony Parker",$p4,$p5,$p6]
-      RETURN v.name AS v ORDER BY v, $p3 LIMIT $p1
+      WITH v AS v WHERE v.player.name in [$p1,$p2,$p3,"Tony Parker",$p4,$p5,$p6]
+      RETURN v.player.name AS v ORDER BY v, $p3 LIMIT $p1
       """
     Then the result should be, in order:
       | v            |

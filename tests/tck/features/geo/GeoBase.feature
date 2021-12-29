@@ -324,10 +324,10 @@ Feature: Geo base
     # Match with geo index
     When executing query:
       """
-      MATCH (v:any_shape) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)                |
+      | ST_ASText(v.any_shape.geo)      |
       | "POINT(3 8)"                    |
       | "LINESTRING(3 8, 4.7 73.23)"    |
       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
@@ -482,10 +482,10 @@ Feature: Geo base
     # Match with geo predicate
     When executing query:
       """
-      MATCH (v:any_shape) WHERE ST_Intersects(v.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) WHERE ST_Intersects(v.any_shape.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)             |
+      | ST_ASText(v.any_shape.geo)   |
       | "POINT(3 8)"                 |
       | "LINESTRING(3 8, 4.7 73.23)" |
     # ST_Distance

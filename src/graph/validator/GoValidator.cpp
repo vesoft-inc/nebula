@@ -5,7 +5,6 @@
 
 #include "graph/validator/GoValidator.h"
 
-#include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"

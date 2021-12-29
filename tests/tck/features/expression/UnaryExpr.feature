@@ -40,7 +40,7 @@ Feature: UnaryExpression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name IS NULL AND v.age < 0
+      WHERE v.player.name IS NULL AND v.player.age < 0
       RETURN v
       """
     Then the result should be, in any order, with relax comparison:
@@ -52,7 +52,7 @@ Feature: UnaryExpression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name IS NOT NULL AND v.age > 34
+      WHERE v.player.name IS NOT NULL AND v.player.age > 34
       RETURN v
       """
     Then the result should be, in any order, with relax comparison:
@@ -79,7 +79,7 @@ Feature: UnaryExpression
   Scenario: Unary reduce
     When profiling query:
       """
-      MATCH (v:player) WHERE !!(v.age>=40)
+      MATCH (v:player) WHERE !!(v.player.age>=40)
       RETURN v
       """
     Then the result should be, in any order:

@@ -64,6 +64,7 @@ class Expression {
     kFunctionCall,
     // Vertex/Edge/Path
     kTagProperty,
+    kLabelTagProperty,
     kEdgeProperty,
     kInputProperty,
     kVarProperty,

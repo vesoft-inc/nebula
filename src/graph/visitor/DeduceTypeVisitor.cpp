@@ -352,6 +352,13 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
+// in order to be consistent with the behavior in the opencypher, the schema is not checked
+void DeduceTypeVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  type_ = Value::Type::__EMPTY__;
+  return;
+}
+
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
   expr->left()->accept(this);
   if (!ok()) return;
@@ -442,6 +449,7 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
     if (!ok()) return;
     argsTypeList.push_back(type_);
   }
+
   auto funName = expr->name();
   if (funName == "id" || funName == "src" || funName == "dst") {
     type_ = vidType_;
@@ -617,6 +625,10 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
+  if (expr->name() == "exists") {
+    type_ = Value::Type::BOOL;
+    return;
+  }
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
