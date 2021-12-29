@@ -55,6 +55,7 @@
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
+#include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/PassThroughExecutor.h"
 #include "graph/executor/logic/SelectExecutor.h"
@@ -464,8 +465,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDropZone: {
       return pool->add(new DropZoneExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSplitZone: {
-      return pool->add(new SplitZoneExecutor(node, qctx));
+    case PlanNode::Kind::kDivideZone: {
+      return pool->add(new DivideZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kDescribeZone: {
       return pool->add(new DescribeZoneExecutor(node, qctx));
@@ -523,6 +524,18 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kAppendVertices: {
       return pool->add(new AppendVerticesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiLeftJoin: {
+      return pool->add(new BiLeftJoinExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiInnerJoin: {
+      return pool->add(new BiInnerJoinExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiCartesianProduct: {
+      return pool->add(new BiCartesianProductExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kArgument: {
+      return pool->add(new ArgumentExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

@@ -22,7 +22,7 @@ class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
   void process(const cpp2::AdminJobReq& req);
 
  protected:
-  explicit AdminJobProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
+  AdminJobProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
       : BaseProcessor<cpp2::AdminJobResp>(kvstore), adminClient_(adminClient) {}
 
  protected:

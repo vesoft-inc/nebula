@@ -139,18 +139,18 @@ Feature: In Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE "Parker" IN split(v.name, " ")
-      RETURN v.name
+      WHERE "Parker" IN split(v.player.name, " ")
+      RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name        |
+      | v.player.name |
       | "Tony Parker" |
     When executing query:
       """
       MATCH (v:player)
-      WHERE "ing" IN [n IN split(v.name, "M") WHERE true]
-      RETURN v.name
+      WHERE "ing" IN [n IN split(v.player.name, "M") WHERE true]
+      RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |

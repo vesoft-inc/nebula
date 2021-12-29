@@ -78,7 +78,7 @@ struct WhereClauseContext final : CypherClauseContextBase {
   WhereClauseContext() : CypherClauseContextBase(CypherClauseKind::kWhere) {}
 
   Expression* filter{nullptr};
-  std::unordered_map<std::string, AliasType>* aliasesUsed{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct OrderByClauseContext final : CypherClauseContextBase {
@@ -99,7 +99,7 @@ struct YieldClauseContext final : CypherClauseContextBase {
 
   bool distinct{false};
   const YieldColumns* yieldColumns{nullptr};
-  std::unordered_map<std::string, AliasType>* aliasesUsed{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 
   bool hasAgg_{false};
   bool needGenProject_{false};
@@ -128,14 +128,19 @@ struct WithClauseContext final : CypherClauseContextBase {
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
-struct MatchClauseContext final : CypherClauseContextBase {
-  MatchClauseContext() : CypherClauseContextBase(CypherClauseKind::kMatch) {}
-
+struct Path final {
   std::vector<NodeInfo> nodeInfos;
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
+};
+
+struct MatchClauseContext final : CypherClauseContextBase {
+  MatchClauseContext() : CypherClauseContextBase(CypherClauseKind::kMatch) {}
+
+  bool isOptional{false};
+  std::vector<Path> paths;
   std::unique_ptr<WhereClauseContext> where;
-  std::unordered_map<std::string, AliasType>* aliasesUsed{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -145,14 +150,25 @@ struct UnwindClauseContext final : CypherClauseContextBase {
   Expression* unwindExpr{nullptr};
   std::string alias;
 
-  // TODO: refactor alias
-  std::unordered_map<std::string, AliasType>* aliasesUsed{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
-struct MatchAstContext final : AstContext {
-  // Alternative of Match/Unwind/With and ends with Return.
-  std::vector<std::unique_ptr<CypherClauseContextBase>> clauses;
+// A QueryPart begin with an arbitrary number of MATCH clauses, followed by either
+// (1) WITH and an optional UNWIND,
+// (2) a single UNWIND,
+// (3) a RETURN in case of the last query part.
+struct QueryPart final {
+  std::vector<std::unique_ptr<MatchClauseContext>> matchs;
+  // A with/unwind/return
+  std::unique_ptr<CypherClauseContextBase> boundary;
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
+  std::unordered_map<std::string, AliasType> aliasesGenerated;
+};
+
+// A cypher query is made up of many QueryPart
+struct CypherContext final : AstContext {
+  std::vector<QueryPart> queryParts;
 };
 
 struct PatternContext {
@@ -166,6 +182,7 @@ struct NodeContext final : PatternContext {
       : PatternContext(PatternKind::kNode, m), info(i) {}
 
   NodeInfo* info{nullptr};
+  std::unordered_set<std::string>* nodeAliasesAvailable;
 
   // Output fields
   ScanInfo scanInfo;

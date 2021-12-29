@@ -1175,7 +1175,7 @@ TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (v1:person{name: \"LeBron James\"}) -[r]-> (v2) "
-        "RETURN type(r) AS Type, v2.name AS Name";
+        "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kProject,
@@ -1189,7 +1189,7 @@ TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (:person{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3) "
-        "RETURN DISTINCT v3.name AS Name";
+        "RETURN DISTINCT v3.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
         PK::kDedup,
@@ -1207,7 +1207,7 @@ TEST_F(QueryValidatorTest, TestMatch) {
     std::string query =
         "MATCH (v1) -[r]-> (v2) "
         "WHERE id(v1) == \"LeBron James\""
-        "RETURN type(r) AS Type, v2.name AS Name";
+        "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,

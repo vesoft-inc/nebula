@@ -660,7 +660,7 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKeys = indexVertexKeys(partId, strVid, nReader.get(), index);
+      auto newIndexKeys = indexVertexKeys(partId, strVid, nReader.get(), index, schema);
       for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
@@ -997,8 +997,9 @@ std::vector<std::string> UpgraderSpace::indexVertexKeys(
     PartitionID partId,
     VertexID& vId,
     RowReader* reader,
-    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
   }
@@ -1039,7 +1040,7 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKeys = indexEdgeKeys(partId, nReader.get(), svId, rank, dstId, index);
+      auto newIndexKeys = indexEdgeKeys(partId, nReader.get(), svId, rank, dstId, index, schema);
       for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
@@ -1053,8 +1054,9 @@ std::vector<std::string> UpgraderSpace::indexEdgeKeys(
     VertexID& svId,
     EdgeRanking rank,
     VertexID& dstId,
-    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
   }

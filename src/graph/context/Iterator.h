@@ -42,7 +42,7 @@ class Iterator {
     kProp,
   };
 
-  explicit Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
+  Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
       : checkMemory_(checkMemory), kind_(kind), numRowsModN_(0), value_(value) {}
 
   virtual ~Iterator() = default;
@@ -465,19 +465,7 @@ class SequentialIter : public Iterator {
     return rows_->size();
   }
 
-  const Value& getColumn(const std::string& col) const override {
-    if (!valid()) {
-      return Value::kNullValue;
-    }
-    auto& row = *iter_;
-    auto index = colIndices_.find(col);
-    if (index == colIndices_.end()) {
-      return Value::kNullValue;
-    }
-
-    DCHECK_LT(index->second, row.values.size());
-    return row.values[index->second];
-  }
+  const Value& getColumn(const std::string& col) const override;
 
   const Value& getColumn(int32_t index) const override;
 

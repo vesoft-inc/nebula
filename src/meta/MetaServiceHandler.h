@@ -194,7 +194,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_mergeZone(const cpp2::MergeZoneReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_splitZone(const cpp2::SplitZoneReq& req) override;
+  folly::Future<cpp2::ExecResp> future_divideZone(const cpp2::DivideZoneReq& req) override;
 
   folly::Future<cpp2::ListZonesResp> future_listZones(const cpp2::ListZonesReq& req) override;
 

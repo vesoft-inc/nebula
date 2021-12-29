@@ -89,7 +89,7 @@ nebula_add_library(
     processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
     processors/zone/MergeZoneProcessor.cpp
-    processors/zone/SplitZoneProcessor.cpp
+    processors/zone/DivideZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp

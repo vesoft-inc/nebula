@@ -26,8 +26,12 @@ StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
   for (auto iter = validators.begin(); iter < validators.end() - 1; ++iter) {
     NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
   }
-  subPlan.tail = seqCtx->startNode;
-  NG_RETURN_IF_ERROR(validators.front()->appendPlan(subPlan.tail));
+  if (validators.front()->tail()->isSingleInput()) {
+    subPlan.tail = seqCtx->startNode;
+    NG_RETURN_IF_ERROR(validators.front()->appendPlan(subPlan.tail));
+  } else {
+    subPlan.tail = validators.front()->tail();
+  }
   VLOG(1) << subPlan;
   return subPlan;
 }

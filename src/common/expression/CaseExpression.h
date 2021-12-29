@@ -130,7 +130,7 @@ class CaseExpression final : public Expression {
  private:
   explicit CaseExpression(ObjectPool* pool) : Expression(pool, Kind::kCase), isGeneric_(true) {}
 
-  explicit CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)
+  CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)
       : Expression(pool, Kind::kCase), isGeneric_(isGeneric) {
     cases_ = cases->items();
   }

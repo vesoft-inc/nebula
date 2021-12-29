@@ -65,13 +65,13 @@
 #include "meta/processors/user/AuthenticationProcessor.h"
 #include "meta/processors/zone/AddHostsIntoZoneProcessor.h"
 #include "meta/processors/zone/AddHostsProcessor.h"
+#include "meta/processors/zone/DivideZoneProcessor.h"
 #include "meta/processors/zone/DropHostsProcessor.h"
 #include "meta/processors/zone/DropZoneProcessor.h"
 #include "meta/processors/zone/GetZoneProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
 #include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
-#include "meta/processors/zone/SplitZoneProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -460,8 +460,9 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_mergeZone(const cpp2::M
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_splitZone(const cpp2::SplitZoneReq& req) {
-  auto* processor = SplitZoneProcessor::instance(kvstore_);
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_divideZone(
+    const cpp2::DivideZoneReq& req) {
+  auto* processor = DivideZoneProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
