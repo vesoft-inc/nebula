@@ -59,6 +59,7 @@ BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SnowflakeCurrencyTest, 4_thread, 4)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SnowflakeCurrencyTest, 8_thread, 8)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SnowflakeCurrencyTest, 16_thread, 16)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SnowflakeCurrencyTest, 32_thread, 32)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SnowflakeCurrencyTest, 64_thread, 64)
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -69,13 +70,14 @@ int main(int argc, char** argv) {
 ============================================================================
 nebula/src/common/id/test/SnowflakeBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
-SnowflakeTest(1UL)                                          68.77ns   14.54M
+SnowflakeTest(1UL)                                          68.03ns   14.70M
 ----------------------------------------------------------------------------
-SnowflakeCurrencyTest(1_thread)                            238.87ns    4.19M
-SnowflakeCurrencyTest(2_thread)                   99.34%   240.45ns    4.16M
-SnowflakeCurrencyTest(4_thread)                   98.37%   242.82ns    4.12M
-SnowflakeCurrencyTest(8_thread)                   85.46%   279.52ns    3.58M
-SnowflakeCurrencyTest(16_thread)                  66.53%   359.06ns    2.79M
-SnowflakeCurrencyTest(32_thread)                  54.80%   435.90ns    2.29M
+SnowflakeCurrencyTest(1_thread)                            239.12ns    4.18M
+SnowflakeCurrencyTest(2_thread)                   99.77%   239.66ns    4.17M
+SnowflakeCurrencyTest(4_thread)                   98.65%   242.39ns    4.13M
+SnowflakeCurrencyTest(8_thread)                   90.01%   265.67ns    3.76M
+SnowflakeCurrencyTest(16_thread)                  68.23%   350.46ns    2.85M
+SnowflakeCurrencyTest(32_thread)                  60.05%   398.22ns    2.51M
+SnowflakeCurrencyTest(64_thread)                  52.51%   455.38ns    2.20M
 ============================================================================
 */
