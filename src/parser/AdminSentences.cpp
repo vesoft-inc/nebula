@@ -346,14 +346,26 @@ std::string ShowStatsSentence::toString() const {
   return folly::stringPrintf("SHOW STATS");
 }
 
-std::string ShowTSClientsSentence::toString() const {
-  return "SHOW TEXT SEARCH CLIENTS";
+std::string ShowServiceClientsSentence::toString() const {
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      return "SHOW TEXT SEARCH CLIENTS";
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
 }
 
-std::string SignInTextServiceSentence::toString() const {
+std::string SignInServiceSentence::toString() const {
   std::string buf;
   buf.reserve(256);
-  buf += "SIGN IN TEXT SERVICE ";
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      buf += "SIGN IN TEXT SERVICE ";
+      break;
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
+
   for (auto &client : clients_->clients()) {
     buf += "(";
     buf += client.get_host().host;
@@ -385,8 +397,13 @@ std::string SignInTextServiceSentence::toString() const {
   return buf;
 }
 
-std::string SignOutTextServiceSentence::toString() const {
-  return "SIGN OUT TEXT SERVICE";
+std::string SignOutServiceSentence::toString() const {
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      return "SIGN OUT TEXT SERVICE";
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
 }
 
 std::string ShowSessionsSentence::toString() const {

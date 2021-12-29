@@ -3,29 +3,30 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/executor/admin/SignInTSServiceExecutor.h"
+#include "graph/executor/admin/SignInServiceExecutor.h"
 
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> SignInTSServiceExecutor::execute() {
+folly::Future<Status> SignInServiceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return signInTSService();
+  return signInService();
 }
 
-folly::Future<Status> SignInTSServiceExecutor::signInTSService() {
-  auto *siNode = asNode<SignInTSService>(node());
+folly::Future<Status> SignInServiceExecutor::signInService() {
+  auto *siNode = asNode<SignInService>(node());
+  auto type = siNode->type();
   return qctx()
       ->getMetaClient()
-      ->signInFTService(siNode->type(), siNode->clients())
+      ->signInService(type, siNode->clients())
       .via(runner())
       .thenValue([this](StatusOr<bool> resp) {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(resp);
         if (!resp.value()) {
-          return Status::Error("Sign in text service failed!");
+          return Status::Error("Sign in service failed!");
         }
         return Status::OK();
       });
