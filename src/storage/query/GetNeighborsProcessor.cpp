@@ -186,24 +186,32 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
                                                        bool random) {
   /*
   The StoragePlan looks like this:
-               +--------+---------+
-               | GetNeighborsNode |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |   AggregateNode  |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |    FilterNode    |
-               +--------+---------+
-                        |
-               +--------+---------+
-           +-->+   HashJoinNode   +<----+
-           |   +------------------+     |
-  +--------+---------+        +---------+--------+
-  |     TagNodes     |        |     EdgeNodes    |
-  +------------------+        +------------------+
+             +------------------+                      or, if there is no edge:
+             | GetNeighborsNode |
+             +--------+---------+                            +-----------------+
+                      |                                      |GetNeighborsNode |
+             +--------+---------+                            +--------+--------+
+             |   AggregateNode  |                                     |
+             +--------+---------+                              +------+------+
+                      |                                        |AggregateNode|
+             +--------+---------+                              +------+------+
+             |    FilterNode    |                                     |
+             +--------+---------+                               +-----+----+
+                      |                                         |FilterNode|
+             +--------+---------+                               +-----+----+
+         +-->+   HashJoinNode   +<----+                               |
+         |   +------------------+     |                        +------+-----+
++--------+---------+        +---------+--------+               |HashJoinNode|
+|     TagNodes     |        |     EdgeNodes    |               +------+-----+
++------------------+        +------------------+                      |
+                                                               +------+-----+
+                                                               |MultiTagNode|
+                                                               +------+-----+
+                                                                      |
+                                                                 +----+---+
+                                                                 |TagNodes|
+                                                                 +--------+
+
   */
   StoragePlan<VertexID> plan;
   std::vector<TagNode*> tags;
