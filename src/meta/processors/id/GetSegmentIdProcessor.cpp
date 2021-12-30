@@ -16,7 +16,7 @@ void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& re
   LOG(INFO) << "SegmentId enter: Get segment id, length: " << length;
   folly::SharedMutex::WriteHolder wHolder(LockUtils::segmentIdLock());
 
-  auto curIdResult = doGet(idKey);
+  auto curIdResult = doGet(kIdKey);
   if (!nebula::ok(curIdResult)) {
     LOG(ERROR) << "Get step or current id failed during get segment id";
   }
@@ -26,8 +26,8 @@ void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& re
   LOG(INFO) << "SegmentId: current id: " << curIdInt;
   LOG(INFO) << "SegmentId: insert current: " << curIdInt + length;
 
-  doPut(std::vector<kvstore::KV>{{idKey, std::to_string(curIdInt + length)}});
-  auto test = doGet(idKey);
+  doPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(curIdInt + length)}});
+  auto test = doGet(kIdKey);
   if (!nebula::ok(curIdResult)) {
     LOG(ERROR) << "get test failed";
   }

@@ -23,8 +23,9 @@ class GetSegmentIdProcessor : public BaseProcessor<cpp2::GetSegmentIdResp> {
  private:
   explicit GetSegmentIdProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetSegmentIdResp>(kvstore) {
+    // initialize segment id in kvstore just once
     static bool once = [this]() {
-      std::vector<kvstore::KV> kv = {{idKey, std::to_string(0)}};
+      std::vector<kvstore::KV> kv = {{kIdKey, std::to_string(0)}};
       doPut(kv);
       return true;
     }();
@@ -33,7 +34,7 @@ class GetSegmentIdProcessor : public BaseProcessor<cpp2::GetSegmentIdResp> {
 
   void doPut(std::vector<kvstore::KV> data);
 
-  inline static const string idKey = "segment_cur_id";
+  inline static const string kIdKey = "segment_cur_id";
 };
 
 }  // namespace meta
