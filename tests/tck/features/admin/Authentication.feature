@@ -37,7 +37,12 @@ Feature: Test Authentication
       """
     When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
-      5 times consecutive incorrect passwords has been input, user name: user1 has been blocked, try again in 5 seconds
+      5 times consecutive incorrect passwords has been input, user name: user1 has been locked, try again in 5 seconds
+      """
+    # Login with the correct password when the user is locked should fail
+    When login "graphd[0]" with "user1" and "nebula1" should fail:
+      """
+      5 times consecutive incorrect passwords has been input, user name: user1 has been locked
       """
     # Wail the account to be unlocked
     Then wait 6 seconds
@@ -96,7 +101,7 @@ Feature: Test Authentication
     # User1 lock
     When login "graphd[0]" with "user1" and "wrongPassword" should fail:
       """
-      5 times consecutive incorrect passwords has been input, user name: user1 has been blocked, try again in 5 seconds
+      5 times consecutive incorrect passwords has been input, user name: user1 has been locked, try again in 5 seconds
       """
     Then wait 6 seconds
     When login "graphd[0]" with "user2" and "wrongPassword" should fail:

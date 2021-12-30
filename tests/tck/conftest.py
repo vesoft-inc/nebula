@@ -364,7 +364,6 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
 
 # This is a workaround to test login retry because nebula-python treats
 # authentication failure as exception instead of error.
-# TODO(Aiee) This should be removed once nebula-python updated.
 @when(parse('login "{graph}" with "{user}" and "{password}" should fail:\n{msg}'))
 def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
     index = parse_service_index(graph)

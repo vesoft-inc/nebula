@@ -2465,7 +2465,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
         lockedSince = time::WallClock::fastNowInSec();
         return Status::Error(
             "%d times consecutive incorrect passwords has been input, user name: %s has been "
-            "blocked, try again in %d seconds",
+            "locked, try again in %d seconds",
             FLAGS_failed_login_attempts,
             account.c_str(),
             FLAGS_password_lock_time_in_secs);
