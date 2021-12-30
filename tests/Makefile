@@ -19,6 +19,8 @@ ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 CONTAINERIZED ?= false
+FAILED_LOGIN_ATTEMPTS ?= 0
+PASSWORD_LOCK_TIME_IN_SECS ?= 0
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
@@ -70,8 +72,8 @@ up: clean
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
 		--containerized=$(CONTAINERIZED) \
-		--failed_login_attempts=5 \
-		--password_lock_time_in_secs=10
+		--failed_login_attempts=${FAILED_LOGIN_ATTEMPTS} \
+		--password_lock_time_in_secs=${PASSWORD_LOCK_TIME_IN_SECS}
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)
