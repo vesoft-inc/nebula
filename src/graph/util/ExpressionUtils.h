@@ -55,6 +55,8 @@ class ExpressionUtils {
 
   static bool isEvaluableExpr(const Expression* expr, const QueryContext* qctx = nullptr);
 
+  static Expression* rewriteAttr2LabelTagProp(const Expression* expr);
+
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
   static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr);
@@ -166,7 +168,7 @@ class ExpressionUtils {
   static bool checkExprDepth(const Expression* expr);
 
  private:
-  static constexpr int32_t MAX_DEPTH = 512;
+  static constexpr int32_t kMaxDepth = 512;
 };
 
 }  // namespace graph

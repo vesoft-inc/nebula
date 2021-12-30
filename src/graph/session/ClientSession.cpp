@@ -78,6 +78,10 @@ void ClientSession::markQueryKilled(nebula::ExecutionPlanID epId) {
   }
   context->second->markKilled();
   stats::StatsManager::addValue(kNumKilledQueries);
+  if (FLAGS_enable_space_level_metrics && space_.name != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumKilledQueries, {{"space", space_.name}}));
+  }
   VLOG(1) << "Mark query killed in local cache, epId: " << epId;
 
   auto query = session_.queries_ref()->find(epId);
@@ -95,6 +99,11 @@ void ClientSession::markAllQueryKilled() {
     session_.queries_ref()->clear();
   }
   stats::StatsManager::addValue(kNumKilledQueries, contexts_.size());
+  if (FLAGS_enable_space_level_metrics && space_.name != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumKilledQueries, {{"space", space_.name}}),
+        contexts_.size());
+  }
 }
 }  // namespace graph
 }  // namespace nebula

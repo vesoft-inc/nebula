@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
@@ -17,7 +17,7 @@
 namespace nebula {
 namespace storage {
 
-void ChainAddEdgesProcessorLocal::process(const cpp2::AddEdgesRequest& req) {
+void ChainAddEdgesLocalProcessor::process(const cpp2::AddEdgesRequest& req) {
   if (!prepareRequest(req)) {
     finish();
     return;
@@ -31,7 +31,7 @@ void ChainAddEdgesProcessorLocal::process(const cpp2::AddEdgesRequest& req) {
  * 2. set mem lock
  * 3. write edge prime(key = edge prime, val = )
  */
-folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::prepareLocal() {
   if (FLAGS_trace_toss) {
     uuid_ = ConsistUtil::strUUID();
     readableEdgeDesc_ = makeReadableEdge(req_);
@@ -73,7 +73,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
   return std::move(fut);
 }
 
-folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processRemote(Code code) {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processRemote(Code code) {
   VLOG(1) << uuid_ << " prepareLocal(), code = " << apache::thrift::util::enumNameSafe(code);
   if (code != Code::SUCCEEDED) {
     return code;
@@ -86,7 +86,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processRemote(Code code) {
   return std::move(fut);
 }
 
-folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processLocal(Code code) {
   if (FLAGS_trace_toss) {
     VLOG(1) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
   }
@@ -103,9 +103,10 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
     code_ = code;
   }
 
-  if (!checkTerm(req_)) {
-    LOG(WARNING) << "E_OUTDATED_TERM";
-    code_ = Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
@@ -124,17 +125,17 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
   return code_;
 }
 
-void ChainAddEdgesProcessorLocal::addUnfinishedEdge(ResumeType type) {
+void ChainAddEdgesLocalProcessor::addUnfinishedEdge(ResumeType type) {
   if (lk_ != nullptr) {
     lk_->forceUnlock();
   }
-  auto keys = sEdgeKey(req_);
+  auto keys = toStrKeys(req_);
   for (auto& key : keys) {
     env_->txnMan_->addPrime(spaceId_, key, type);
   }
 }
 
-bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& req) {
+bool ChainAddEdgesLocalProcessor::prepareRequest(const cpp2::AddEdgesRequest& req) {
   CHECK_EQ(req.get_parts().size(), 1);
   req_ = req;
   spaceId_ = req_.get_space_id();
@@ -147,12 +148,12 @@ bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& re
   }
   localPartId_ = req.get_parts().begin()->first;
   replaceNullWithDefaultValue(req_);
-  auto part = env_->kvstore_->part(spaceId_, localPartId_);
-  if (!nebula::ok(part)) {
-    pushResultCode(nebula::error(part), localPartId_);
+
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (code_ != Code::SUCCEEDED) {
+    LOG(INFO) << "get term failed";
     return false;
   }
-  restrictTerm_ = (nebula::value(part))->termId();
 
   auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
   if (!vidLen.ok()) {
@@ -165,7 +166,7 @@ bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& re
   return true;
 }
 
-folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor() {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::forwardToDelegateProcessor() {
   auto* proc = AddEdgesProcessor::instance(env_, nullptr);
   proc->consistOp_ = [&](kvstore::BatchHolder& a, std::vector<kvstore::KV>* b) {
     callbackOfChainOp(a, b);
@@ -198,7 +199,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
   return std::move(fut);
 }
 
-Code ChainAddEdgesProcessorLocal::extractRpcError(const cpp2::ExecResponse& resp) {
+Code ChainAddEdgesLocalProcessor::extractRpcError(const cpp2::ExecResponse& resp) {
   Code ret = Code::SUCCEEDED;
   auto& respComn = resp.get_result();
   for (auto& part : respComn.get_failed_parts()) {
@@ -207,7 +208,7 @@ Code ChainAddEdgesProcessorLocal::extractRpcError(const cpp2::ExecResponse& resp
   return ret;
 }
 
-void ChainAddEdgesProcessorLocal::doRpc(folly::Promise<Code>&& promise,
+void ChainAddEdgesLocalProcessor::doRpc(folly::Promise<Code>&& promise,
                                         cpp2::AddEdgesRequest&& req,
                                         int retry) noexcept {
   if (retry > retryLimit_) {
@@ -217,7 +218,7 @@ void ChainAddEdgesProcessorLocal::doRpc(folly::Promise<Code>&& promise,
   auto* iClient = env_->txnMan_->getInternalClient();
   folly::Promise<Code> p;
   auto f = p.getFuture();
-  iClient->chainAddEdges(req, restrictTerm_, edgeVer_, std::move(p));
+  iClient->chainAddEdges(req, term_, edgeVer_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
     auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -233,7 +234,7 @@ void ChainAddEdgesProcessorLocal::doRpc(folly::Promise<Code>&& promise,
   });
 }
 
-void ChainAddEdgesProcessorLocal::callbackOfChainOp(kvstore::BatchHolder& batch,
+void ChainAddEdgesLocalProcessor::callbackOfChainOp(kvstore::BatchHolder& batch,
                                                     std::vector<kvstore::KV>* pData) {
   if (pData != nullptr) {
     for (auto& kv : *pData) {
@@ -248,7 +249,7 @@ void ChainAddEdgesProcessorLocal::callbackOfChainOp(kvstore::BatchHolder& batch,
   }
 }
 
-folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::abort() {
+folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::abort() {
   if (kvErased_.empty()) {
     return Code::SUCCEEDED;
   }
@@ -279,7 +280,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::abort() {
   return std::move(fut);
 }
 
-std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makePrime() {
+std::vector<kvstore::KV> ChainAddEdgesLocalProcessor::makePrime() {
   std::vector<kvstore::KV> ret;
   for (auto& edge : req_.get_parts().begin()->second) {
     auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, edge.get_key());
@@ -294,7 +295,7 @@ std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makePrime() {
   return ret;
 }
 
-std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makeDoublePrime() {
+std::vector<kvstore::KV> ChainAddEdgesLocalProcessor::makeDoublePrime() {
   std::vector<kvstore::KV> ret;
   for (auto& edge : req_.get_parts().begin()->second) {
     auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, edge.get_key());
@@ -309,7 +310,7 @@ std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makeDoublePrime() {
   return ret;
 }
 
-void ChainAddEdgesProcessorLocal::erasePrime() {
+void ChainAddEdgesLocalProcessor::erasePrime() {
   auto fn = [&](const cpp2::NewEdge& edge) {
     auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, edge.get_key());
     return key;
@@ -319,17 +320,7 @@ void ChainAddEdgesProcessorLocal::erasePrime() {
   }
 }
 
-void ChainAddEdgesProcessorLocal::eraseDoublePrime() {
-  auto fn = [&](const cpp2::NewEdge& edge) {
-    auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, edge.get_key());
-    return key;
-  };
-  for (auto& edge : req_.get_parts().begin()->second) {
-    kvErased_.push_back(fn(edge));
-  }
-}
-
-bool ChainAddEdgesProcessorLocal::lockEdges(const cpp2::AddEdgesRequest& req) {
+bool ChainAddEdgesLocalProcessor::lockEdges(const cpp2::AddEdgesRequest& req) {
   auto partId = req.get_parts().begin()->first;
   auto* lockCore = env_->txnMan_->getLockCore(req.get_space_id(), partId);
   if (!lockCore) {
@@ -344,40 +335,7 @@ bool ChainAddEdgesProcessorLocal::lockEdges(const cpp2::AddEdgesRequest& req) {
   return lk_->isLocked();
 }
 
-// we need to check term at both remote phase and local commit
-bool ChainAddEdgesProcessorLocal::checkTerm(const cpp2::AddEdgesRequest& req) {
-  auto space = req.get_space_id();
-  auto partId = req.get_parts().begin()->first;
-
-  auto part = env_->kvstore_->part(space, partId);
-  if (!nebula::ok(part)) {
-    pushResultCode(nebula::error(part), localPartId_);
-    return false;
-  }
-  auto curTerm = (nebula::value(part))->termId();
-  if (restrictTerm_ != curTerm) {
-    VLOG(1) << folly::sformat(
-        "check term failed, restrictTerm_={}, currTerm={}", restrictTerm_, curTerm);
-    return false;
-  }
-  return true;
-}
-
-// check if current edge is not newer than the one trying to resume.
-// this function only take effect in resume mode
-bool ChainAddEdgesProcessorLocal::checkVersion(const cpp2::AddEdgesRequest& req) {
-  auto part = req.get_parts().begin()->first;
-  auto sKeys = sEdgeKey(req);
-  auto currVer = ConsistUtil::getMultiEdgeVers(env_->kvstore_, spaceId_, part, sKeys);
-  for (auto i = 0U; i != currVer.size(); ++i) {
-    if (currVer[i] < resumedEdgeVer_) {
-      return false;
-    }
-  }
-  return true;
-}
-
-std::vector<std::string> ChainAddEdgesProcessorLocal::sEdgeKey(const cpp2::AddEdgesRequest& req) {
+std::vector<std::string> ChainAddEdgesLocalProcessor::toStrKeys(const cpp2::AddEdgesRequest& req) {
   std::vector<std::string> ret;
   for (auto& edgesOfPart : req.get_parts()) {
     auto partId = edgesOfPart.first;
@@ -388,7 +346,7 @@ std::vector<std::string> ChainAddEdgesProcessorLocal::sEdgeKey(const cpp2::AddEd
   return ret;
 }
 
-cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::reverseRequest(
+cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::reverseRequest(
     const cpp2::AddEdgesRequest& req) {
   cpp2::AddEdgesRequest reversedRequest;
   for (auto& edgesOfPart : *req.parts_ref()) {
@@ -398,20 +356,20 @@ cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::reverseRequest(
       ConsistUtil::reverseEdgeKeyInplace(*newEdgeRef.key_ref());
     }
   }
-  reversedRequest.space_id_ref() = (req.get_space_id());
-  reversedRequest.prop_names_ref() = (req.get_prop_names());
-  reversedRequest.if_not_exists_ref() = (req.get_if_not_exists());
+  reversedRequest.space_id_ref() = req.get_space_id();
+  reversedRequest.prop_names_ref() = req.get_prop_names();
+  reversedRequest.if_not_exists_ref() = req.get_if_not_exists();
   return reversedRequest;
 }
 
-void ChainAddEdgesProcessorLocal::finish() {
+void ChainAddEdgesLocalProcessor::finish() {
   VLOG(1) << uuid_ << " commitLocal(), code_ = " << apache::thrift::util::enumNameSafe(code_);
   pushResultCode(code_, localPartId_);
   finished_.setValue(code_);
   onFinished();
 }
 
-cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::makeSingleEdgeRequest(
+cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::makeSingleEdgeRequest(
     PartitionID partId, const cpp2::NewEdge& edge) {
   cpp2::AddEdgesRequest req;
   req.space_id_ref() = (req_.get_space_id());
@@ -425,7 +383,7 @@ cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::makeSingleEdgeRequest(
   return req;
 }
 
-int64_t ChainAddEdgesProcessorLocal::toInt(const ::nebula::Value& val) {
+int64_t ChainAddEdgesLocalProcessor::toInt(const ::nebula::Value& val) {
   if (spaceVidType_ == nebula::cpp2::PropertyType::FIXED_STRING) {
     auto str = val.toString();
     if (str.size() < 3) {
@@ -439,7 +397,7 @@ int64_t ChainAddEdgesProcessorLocal::toInt(const ::nebula::Value& val) {
   return 0;
 }
 
-std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRequest& req) {
+std::string ChainAddEdgesLocalProcessor::makeReadableEdge(const cpp2::AddEdgesRequest& req) {
   if (req.get_parts().size() != 1) {
     LOG(INFO) << req.get_parts().size();
     return "";
@@ -461,6 +419,16 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
   return oss.str();
 }
 
+void ChainAddEdgesLocalProcessor::eraseDoublePrime() {
+  auto fn = [&](const cpp2::NewEdge& edge) {
+    auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, edge.get_key());
+    return key;
+  };
+  for (auto& edge : req_.get_parts().begin()->second) {
+    kvErased_.push_back(fn(edge));
+  }
+}
+
 /*** consider the following case:
  *
  * create edge known(kdate datetime default datetime(), degree int);
@@ -473,7 +441,7 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
  * that's why we need to replace the inconsistency prone value
  * at the moment the request comes
  * */
-void ChainAddEdgesProcessorLocal::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
+void ChainAddEdgesLocalProcessor::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
   auto& edgesOfPart = *req.parts_ref();
   if (edgesOfPart.empty()) {
     return;

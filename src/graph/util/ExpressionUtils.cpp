@@ -23,6 +23,7 @@ bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
   auto kind = expr->kind();
 
   return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
+                                              Expression::Kind::kLabelTagProperty,
                                               Expression::Kind::kEdgeProperty,
                                               Expression::Kind::kInputProperty,
                                               Expression::Kind::kVarProperty,
@@ -80,6 +81,7 @@ bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryCon
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
+                     Expression::Kind::kLabelTagProperty,
                      Expression::Kind::kEdgeProperty,
                      Expression::Kind::kDstProperty,
                      Expression::Kind::kSrcProperty,
@@ -102,6 +104,7 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kVar,
                   Expression::Kind::kVersionedVar,
                   Expression::Kind::kLabelAttribute,
+                  Expression::Kind::kLabelTagProperty,
                   Expression::Kind::kTagProperty,
                   Expression::Kind::kEdgeProperty,
                   Expression::Kind::kDstProperty,
@@ -120,6 +123,38 @@ bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext
   return visitor.ok();
 }
 
+// rewrite Attribute to LabelTagProp
+Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
+  ObjectPool *pool = expr->getObjPool();
+
+  auto matcher = [](const Expression *e) -> bool {
+    if (e->kind() == Expression::Kind::kAttribute) {
+      auto attrExpr = static_cast<const AttributeExpression *>(e);
+      if (attrExpr->left()->kind() == Expression::Kind::kLabelAttribute &&
+          attrExpr->right()->kind() == Expression::Kind::kConstant) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    auto attrExpr = static_cast<const AttributeExpression *>(e);
+    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(attrExpr->left());
+    auto labelExpr = const_cast<LabelExpression *>(labelAttrExpr->left());
+    auto tagExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
+    auto propExpr = static_cast<const LabelExpression *>(attrExpr->right());
+    QueryExpressionContext ctx(nullptr);
+    const auto &labelVal = labelExpr->eval(ctx);
+    auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
+    const auto &tag = tagExpr->eval(ctx);
+    const auto &prop = const_cast<LabelExpression *>(propExpr)->eval(ctx);
+    return LabelTagPropertyExpression::make(pool, label, tag.getStr(), prop.getStr());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 // rewrite LabelAttr to EdgeProp
 Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
@@ -127,7 +162,6 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
   auto rewriter = [pool](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
@@ -144,7 +178,6 @@ Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string
     return e->kind() == Expression::Kind::kVarProperty;
   };
   auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
     auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
     auto newProp = varPropExpr->prop();
     return VariablePropertyExpression::make(pool, newVar, newProp);
@@ -175,7 +208,6 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
   auto rewriter = [pool](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
@@ -425,8 +457,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     return nullptr;
   };
 
-  std::function<Expression *(const Expression *)> rewriter =
-      [&](const Expression *e) -> Expression * {
+  auto rewriter = [&](const Expression *e) -> Expression * {
     auto exprCopy = e->clone();
     auto relExpr = static_cast<RelationalExpression *>(exprCopy);
     auto lExpr = relExpr->left();
@@ -956,14 +987,14 @@ bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
 }
 
 bool ExpressionUtils::checkExprDepth(const Expression *expr) {
-  std::queue<const Expression *> expr_queue;
-  expr_queue.emplace(expr);
+  std::queue<const Expression *> exprQueue;
+  exprQueue.emplace(expr);
   int depth = 0;
-  while (!expr_queue.empty()) {
-    int size = expr_queue.size();
+  while (!exprQueue.empty()) {
+    int size = exprQueue.size();
     while (size > 0) {
-      const Expression *cur = expr_queue.front();
-      expr_queue.pop();
+      const Expression *cur = exprQueue.front();
+      exprQueue.pop();
       switch (cur->kind()) {
         case Expression::Kind::kConstant:
         case Expression::Kind::kVar: {
@@ -975,8 +1006,8 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
         case Expression::Kind::kDivision:
         case Expression::Kind::kMod: {
           auto *ariExpr = static_cast<const ArithmeticExpression *>(cur);
-          expr_queue.emplace(ariExpr->left());
-          expr_queue.emplace(ariExpr->right());
+          exprQueue.emplace(ariExpr->left());
+          exprQueue.emplace(ariExpr->right());
           break;
         }
         case Expression::Kind::kIsNull:
@@ -989,7 +1020,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
         case Expression::Kind::kUnaryIncr:
         case Expression::Kind::kUnaryDecr: {
           auto *unaExpr = static_cast<const UnaryExpression *>(cur);
-          expr_queue.emplace(unaExpr->operand());
+          exprQueue.emplace(unaExpr->operand());
           break;
         }
         case Expression::Kind::kRelEQ:
@@ -1008,66 +1039,68 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
         case Expression::Kind::kRelNotIn:
         case Expression::Kind::kRelIn: {
           auto *relExpr = static_cast<const RelationalExpression *>(cur);
-          expr_queue.emplace(relExpr->left());
-          expr_queue.emplace(relExpr->right());
+          exprQueue.emplace(relExpr->left());
+          exprQueue.emplace(relExpr->right());
           break;
         }
         case Expression::Kind::kList: {
           auto *listExpr = static_cast<const ListExpression *>(cur);
           for (auto &item : listExpr->items()) {
-            expr_queue.emplace(item);
+            exprQueue.emplace(item);
           }
           break;
         }
         case Expression::Kind::kSet: {
           auto *setExpr = static_cast<const SetExpression *>(cur);
           for (auto &item : setExpr->items()) {
-            expr_queue.emplace(item);
+            exprQueue.emplace(item);
           }
           break;
         }
         case Expression::Kind::kMap: {
           auto *mapExpr = static_cast<const MapExpression *>(cur);
           for (auto &item : mapExpr->items()) {
-            expr_queue.emplace(item.second);
+            exprQueue.emplace(item.second);
           }
           break;
         }
         case Expression::Kind::kCase: {
           auto *caseExpr = static_cast<const CaseExpression *>(cur);
           if (caseExpr->hasCondition()) {
-            expr_queue.emplace(caseExpr->condition());
+            exprQueue.emplace(caseExpr->condition());
           }
           if (caseExpr->hasDefault()) {
-            expr_queue.emplace(caseExpr->defaultResult());
+            exprQueue.emplace(caseExpr->defaultResult());
           }
           for (auto &whenThen : caseExpr->cases()) {
-            expr_queue.emplace(whenThen.when);
-            expr_queue.emplace(whenThen.then);
+            exprQueue.emplace(whenThen.when);
+            exprQueue.emplace(whenThen.then);
           }
           break;
         }
         case Expression::Kind::kListComprehension: {
           auto *lcExpr = static_cast<const ListComprehensionExpression *>(cur);
-          expr_queue.emplace(lcExpr->collection());
+          exprQueue.emplace(lcExpr->collection());
           if (lcExpr->hasFilter()) {
-            expr_queue.emplace(lcExpr->filter());
+            exprQueue.emplace(lcExpr->filter());
           }
           if (lcExpr->hasMapping()) {
-            expr_queue.emplace(lcExpr->mapping());
+            exprQueue.emplace(lcExpr->mapping());
           }
           break;
         }
         case Expression::Kind::kPredicate: {
           auto *predExpr = static_cast<const PredicateExpression *>(cur);
-          expr_queue.emplace(predExpr->collection());
-          expr_queue.emplace(predExpr->filter());
+          exprQueue.emplace(predExpr->collection());
+          if (predExpr->hasFilter()) {
+            exprQueue.emplace(predExpr->filter());
+          }
           break;
         }
         case Expression::Kind::kReduce: {
           auto *reduceExpr = static_cast<const ReduceExpression *>(cur);
-          expr_queue.emplace(reduceExpr->collection());
-          expr_queue.emplace(reduceExpr->mapping());
+          exprQueue.emplace(reduceExpr->collection());
+          exprQueue.emplace(reduceExpr->mapping());
           break;
         }
         case Expression::Kind::kLogicalAnd:
@@ -1075,20 +1108,20 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
         case Expression::Kind::kLogicalXor: {
           auto *logExpr = static_cast<const LogicalExpression *>(cur);
           for (auto &op : logExpr->operands()) {
-            expr_queue.emplace(op);
+            exprQueue.emplace(op);
           }
           break;
         }
         case Expression::Kind::kTypeCasting: {
           auto *typExpr = static_cast<const TypeCastingExpression *>(cur);
-          expr_queue.emplace(typExpr->operand());
+          exprQueue.emplace(typExpr->operand());
           break;
         }
         case Expression::Kind::kFunctionCall: {
           auto *funExpr = static_cast<const FunctionCallExpression *>(cur);
           auto &args = funExpr->args()->args();
           for (auto iter = args.begin(); iter < args.end(); ++iter) {
-            expr_queue.emplace(*iter);
+            exprQueue.emplace(*iter);
           }
           break;
         }
@@ -1125,7 +1158,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
     }
     depth += 1;
   }
-  return depth < ExpressionUtils::MAX_DEPTH;
+  return depth < ExpressionUtils::kMaxDepth;
 }  // namespace graph
 
 }  // namespace graph

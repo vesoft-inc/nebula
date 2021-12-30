@@ -62,6 +62,7 @@ class ExprVisitor {
   virtual void visit(MapExpression *expr) = 0;
   // property Expression
   virtual void visit(TagPropertyExpression *expr) = 0;
+  virtual void visit(LabelTagPropertyExpression *expr) = 0;
   virtual void visit(EdgePropertyExpression *expr) = 0;
   virtual void visit(InputPropertyExpression *expr) = 0;
   virtual void visit(VariablePropertyExpression *expr) = 0;

@@ -33,6 +33,7 @@ class ExprVisitorBase : public ::nebula::ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;

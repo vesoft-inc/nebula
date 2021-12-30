@@ -18,7 +18,13 @@ std::unordered_map<std::string, PredicateExpression::Type> PredicateExpression::
 
 const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
   DCHECK(collection_->kind() == Expression::Kind::kAttribute ||
-         collection_->kind() == Expression::Kind::kSubscript);
+         collection_->kind() == Expression::Kind::kSubscript ||
+         collection_->kind() == Expression::Kind::kLabelTagProperty);
+
+  if (collection_->kind() == Expression::Kind::kLabelTagProperty) {
+    result_ = !collection_->eval(ctx).isNull();
+    return result_;
+  }
 
   auto* attributeExpr = static_cast<BinaryExpression*>(collection_);
   auto& container = attributeExpr->left()->eval(ctx);

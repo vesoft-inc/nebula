@@ -134,8 +134,6 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
   ctx->setRunner(getThreadManager());
   ctx->setSessionMgr(sessionManager_.get());
   auto future = ctx->future();
-  stats::StatsManager::addValue(kNumQueries);
-  stats::StatsManager::addValue(kNumActiveQueries);
   // When the sessionId is 0, it means the clients to ping the connection is ok
   if (sessionId == 0) {
     ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
@@ -161,14 +159,22 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumQueries);
+    stats::StatsManager::addValue(kNumActiveQueries);
     if (FLAGS_enable_space_level_metrics && sessionPtr->space().name != "") {
       stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
           kNumQueries, {{"space", sessionPtr->space().name}}));
+      stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+          kNumActiveQueries, {{"space", sessionPtr->space().name}}));
     }
+    auto& spaceName = sessionPtr->space().name;
     ctx->setSession(std::move(sessionPtr));
     ctx->setParameterMap(parameterMap);
     queryEngine_->execute(std::move(ctx));
     stats::StatsManager::decValue(kNumActiveQueries);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::decValue(
+          stats::StatsManager::counterWithLabels(kNumActiveQueries, {{"space", spaceName}}));
+    }
   };
   sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
   return future;

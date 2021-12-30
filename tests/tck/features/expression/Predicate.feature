@@ -71,7 +71,7 @@ Feature: Predicate
     When executing query:
       """
       MATCH(n:player) WHERE EXISTS(n['name'])
-      RETURN n.name AS name ORDER BY name LIMIT 10
+      RETURN n.player.name AS name ORDER BY name LIMIT 10
       """
     Then the result should be, in order:
       | name                |
@@ -138,7 +138,7 @@ Feature: Predicate
     When executing query:
       """
       MATCH(n:player) WHERE EXISTS("abc")
-      RETURN n.name AS name ORDER BY name LIMIT 10
+      RETURN n.player.name AS name ORDER BY name LIMIT 10
       """
     Then a SyntaxError should be raised at runtime: The exists only accept LabelAttribute, Attribute and Subscript
     Then drop the used space
@@ -147,7 +147,7 @@ Feature: Predicate
     Given a graph with space named "nba"
     When executing query:
       """
-      MATCH (v:player) WHERE not exists(v.name) RETURN id(v)
+      MATCH (v:player) WHERE not exists(v.player.name) RETURN id(v)
       """
     Then the result should be, in any order:
       | id(v)   |

@@ -50,6 +50,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
     auto varProps = graph::ExpressionUtils::collectAll(e,
                                                        {Expression::Kind::kTagProperty,
+                                                        Expression::Kind::kLabelTagProperty,
                                                         Expression::Kind::kEdgeProperty,
                                                         Expression::Kind::kInputProperty,
                                                         Expression::Kind::kVarProperty,
