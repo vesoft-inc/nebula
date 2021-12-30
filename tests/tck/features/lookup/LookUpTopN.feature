@@ -180,6 +180,21 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start            |              |                 |
     When profiling query:
       """
+      LOOKUP ON player WHERE player.age==30 YIELD player.name as name | ORDER BY $-.name desc | Limit 2
+      """
+    Then the result should be, in any order:
+      | name                |
+      | "Russell Westbrook" |
+      | "Kevin Durant"      |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info   |
+      | 4  | DataCollect        | 5            |                 |
+      | 5  | TopN               | 6            | {"count": "2"}  |
+      | 6  | Project            | 7            |                 |
+      | 7  | TagIndexPrefixScan | 0            | {"limit": "2" } |
+      | 0  | Start              |              |                 |
+    When profiling query:
+      """
       LOOKUP ON player WHERE player.age==30 YIELD player.name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
@@ -216,6 +231,21 @@ Feature: Push TopN down IndexScan Rule
       | likeness |
       | -1       |
       | -1       |
+    And the execution plan should be:
+      | id | name              | dependencies | operator info   |
+      | 4  | DataCollect       | 5            |                 |
+      | 5  | TopN              | 6            | {"count": "2"}  |
+      | 6  | Project           | 7            |                 |
+      | 7  | EdgeIndexFullScan | 0            | {"limit": "2" } |
+      | 0  | Start             |              |                 |
+    When profiling query:
+      """
+      LOOKUP ON like YIELD like.likeness as likeness | ORDER BY $-.likeness desc | Limit 2
+      """
+    Then the result should be, in any order:
+      | likeness |
+      | 100      |
+      | 100      |
     And the execution plan should be:
       | id | name              | dependencies | operator info   |
       | 4  | DataCollect       | 5            |                 |
