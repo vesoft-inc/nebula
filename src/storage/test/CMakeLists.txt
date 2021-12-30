@@ -58,6 +58,13 @@ set(storage_test_deps
     $<TARGET_OBJECTS:kv_stats_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(storage_test_deps
+    ${storage_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
+
 nebula_add_test(
     NAME
         task_manager_test

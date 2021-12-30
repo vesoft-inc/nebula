@@ -174,6 +174,13 @@ set(meta_test_deps
     $<TARGET_OBJECTS:storage_stats_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(meta_test_deps
+    ${meta_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
+
 nebula_add_subdirectory(http)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)

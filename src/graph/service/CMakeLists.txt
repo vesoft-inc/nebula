@@ -26,3 +26,4 @@ nebula_add_library(
     CloudAuthenticator.cpp
 )
 
+nebula_add_subdirectory(test)
