@@ -12,9 +12,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player YIELD id(vertex) as id | ORDER BY $-.id | Limit 2
       """
     Then the result should be, in any order:
-      | id            |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | id                  |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info                     |
       | 4  | DataCollect      | 5            |                                   |
@@ -34,9 +34,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player WHERE player.age==30 YIELD id(vertex) as id | ORDER BY $-.id | Limit 2
       """
     Then the result should be, in any order:
-      | id            |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | id               |
+      | "Blake Griffin"  |
+      | "DeAndre Jordan" |
     And the execution plan should be:
       | id | name               | dependencies | operator info                     |
       | 4  | DataCollect        | 5            |                                   |
@@ -56,9 +56,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player WHERE player.name > "Ti" YIELD id(vertex) as id | ORDER BY $-.id | Limit 2
       """
     Then the result should be, in any order:
-      | id            |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | id               |
+      | "Tiago Splitter" |
+      | "Tim Duncan"     |
     And the execution plan should be:
       | id | name              | dependencies | operator info                     |
       | 4  | DataCollect       | 5            |                                   |
@@ -78,9 +78,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player YIELD properties(vertex).name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
-      | name          |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | name                |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info                     |
       | 4  | DataCollect      | 5            |                                   |
@@ -100,9 +100,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON like YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | ORDER BY $-.src | Limit 2
       """
     Then the result should be, in any order:
-      | src           | dst           | rank  |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | src                 | dst          | rank |
+      | "Amar'e Stoudemire" | "Steve Nash" | 0    |
+      | "Aron Baynes"       | "Tim Duncan" | 0    |
     And the execution plan should be:
       | id | name              | dependencies | operator info                     |
       | 4  | DataCollect       | 5            |                                   |
@@ -122,9 +122,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | ORDER BY $-.src | Limit 2
       """
     Then the result should be, in any order:
-      | src           | dst           | rank  |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | src                 | dst          | rank |
+      | "Amar'e Stoudemire" | "Steve Nash" | 0    |
+      | "Carmelo Anthony"   | "Chris Paul" | 0    |
     And the execution plan should be:
       | id | name                | dependencies | operator info                     |
       | 4  | DataCollect         | 5            |                                   |
@@ -144,9 +144,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON like WHERE like.likeness > 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | ORDER BY $-.src | Limit 2
       """
     Then the result should be, in any order:
-      | src           | dst           | rank  |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | src               | dst           | rank |
+      | "Dejounte Murray" | "Danny Green" | 0    |
+      | "Dejounte Murray" | "Chris Paul"  | 0    |
     And the execution plan should be:
       | id | name               | dependencies | operator info                     |
       | 4  | DataCollect        | 5            |                                   |
@@ -168,9 +168,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player YIELD player.name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
-      | name          |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | name                |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info   |
       | 4  | DataCollect      | 5            |                 |
@@ -183,9 +183,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player WHERE player.age==30 YIELD player.name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
-      | name          |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | name             |
+      | "Blake Griffin"  |
+      | "DeAndre Jordan" |
     And the execution plan should be:
       | id | name               | dependencies | operator info   |
       | 4  | DataCollect        | 5            |                 |
@@ -198,9 +198,9 @@ Feature: Push TopN down IndexScan Rule
       LOOKUP ON player WHERE player.name > "Ti" YIELD player.name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
-      | name          |
-      | /[a-zA-Z ']+/ |
-      | /[a-zA-Z ']+/ |
+      | name             |
+      | "Tiago Splitter" |
+      | "Tim Duncan"     |
     And the execution plan should be:
       | id | name              | dependencies | operator info   |
       | 4  | DataCollect       | 5            |                 |
