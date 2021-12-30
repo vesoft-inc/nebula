@@ -13,7 +13,6 @@ namespace nebula {
 class Snowflake {
   FRIEND_TEST(SnowflakeTest, TestWorkerId);
   FRIEND_TEST(SnowflakeTest, TestConcurrency);
-  friend size_t SnowflakeTest(size_t iters);
   friend int64_t getSequence(int64_t id);
   friend int64_t getWorkerId(int64_t id);
   friend int64_t getTimestamp(int64_t id);
@@ -33,7 +32,6 @@ class Snowflake {
   int64_t getIdByTs(int64_t timestamp);
 
   std::mutex mutex_;
-
   /*
    *  Snowflake id:
    *  timestampBit 38 bits (8.6 years) |
@@ -44,17 +42,17 @@ class Snowflake {
   static inline int64_t workerId_{0};
   int64_t sequence_{0};
 
-  static constexpr int64_t startStmp = 1577808000000;  // start time: 2020-01-01 00:00:00
-  static constexpr int64_t workerBit = 13;             // worker id bit
-  static constexpr int64_t sequenceBit = 12;           // sequence bit
+  static constexpr int64_t kStartStmp = 1577808000000;  // start time: 2020-01-01 00:00:00
+  static constexpr int64_t kWorkerBit = 13;             // worker id bit
+  static constexpr int64_t kSequenceBit = 12;           // sequence bit
 
-  static constexpr int64_t maxWorkerId = (1 << workerBit) - 1;  // as worker id mask
-  static constexpr int64_t maxSequence = (1 << sequenceBit) - 1;
+  static constexpr int64_t kMaxWorkerId = (1 << kWorkerBit) - 1;  // as worker id mask
+  static constexpr int64_t kMaxSequence = (1 << kSequenceBit) - 1;
 
-  static constexpr int64_t workerIdLeft = sequenceBit;  // workerId left bits
-  static constexpr int64_t timestampLeft = sequenceBit + workerBit;
+  static constexpr int64_t kWorkerIdLeft = kSequenceBit;  // workerId left bits
+  static constexpr int64_t kTimestampLeft = kSequenceBit + kWorkerBit;
 
-  static constexpr int64_t firstBitRevert = 0x9000000000000000;  // revert the first bit
+  static constexpr int64_t kFirstBitRevert = 0x9000000000000000;  // revert the first bit
 };
 
 }  // namespace nebula

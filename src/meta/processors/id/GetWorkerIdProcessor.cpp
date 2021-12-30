@@ -28,13 +28,12 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     return;
   }
 
-  string workerIdStr = std::move(nebula::value(newResult));
-  int64_t workerIdInt32 = std::stoi(workerIdStr);
-
-  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerIdInt32 + 1)}});
+  int64_t workerId = std::stoi(std::move(nebula::value(newResult)));
+  // TODO: (jackwener) limit worker, add LOG ERROR
+  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.workerid_ref() = workerIdInt32;
+  resp_.workerid_ref() = workerId;
   onFinished();
 }
 

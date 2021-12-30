@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
   folly::runBenchmarks();
   return 0;
 }
+
 /*           Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz
 ============================================================================
 nebula/src/common/id/test/SnowflakeBenchmark.cpprelative  time/iter  iters/s

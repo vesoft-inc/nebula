@@ -33,7 +33,7 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
 
   void doPut(std::vector<kvstore::KV> data);
 
-  inline static const string idKey = "snowflake_worker_id";
+  inline static const string kIdKey = "snowflake_worker_id";
 };
 
 }  // namespace meta

@@ -16,13 +16,13 @@
 namespace nebula {
 
 int64_t getSequence(int64_t id) {
-  return id & Snowflake::maxSequence;
+  return id & Snowflake::kMaxSequence;
 }
 int64_t getWorkerId(int64_t id) {
-  return (id >> Snowflake::sequenceBit) & Snowflake::maxWorkerId;
+  return (id >> Snowflake::kSequenceBit) & Snowflake::kMaxWorkerId;
 }
 int64_t getTimestamp(int64_t id) {
-  return id >> (Snowflake::sequenceBit + Snowflake::workerBit);
+  return id >> (Snowflake::kSequenceBit + Snowflake::kWorkerBit);
 }
 
 TEST(SnowflakeTest, TestWorkerId) {
@@ -38,27 +38,26 @@ TEST(SnowflakeTest, TestWorkerId) {
   }
 }
 
-void proc(Snowflake& generator, folly::ConcurrentHashMap<int64_t, int>& map) {
-  int times = 1000;
-
-  for (int i = 0; i < times; i++) {
-    int64_t id = generator.getId();
-    ASSERT_TRUE(map.find(id) == map.end()) << "id: " << id;
-    map.insert(id, 0);
-  }
-}
-
 TEST(SnowflakeTest, TestConcurrency) {
   Snowflake::workerId_ = 0;
   int threadNum = 16;
+  int times = 1000;
 
   Snowflake generator;
   folly::ConcurrentHashMap<int64_t, int> map;
   std::vector<std::thread> threads;
   threads.reserve(threadNum);
 
+  auto proc = [&]() {
+    for (int i = 0; i < times; i++) {
+      int64_t id = generator.getId();
+      ASSERT_TRUE(map.find(id) == map.end()) << "id: " << id;
+      map.insert(id, 0);
+    }
+  };
+
   for (int i = 0; i < threadNum; i++) {
-    threads.emplace_back(std::thread(proc, std::ref(generator), std::ref(map)));
+    threads.emplace_back(std::thread(proc));
   }
 
   for (int i = 0; i < threadNum; i++) {
