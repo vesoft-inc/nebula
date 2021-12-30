@@ -744,7 +744,7 @@ std::vector<VertexID> MockData::mockPlayerVerticeIds() {
   return ret;
 }
 
-std::vector<EdgeData> MockData::mockEdges(bool upper) {
+std::vector<EdgeData> MockData::mockEdges(bool upper, bool hasInEdges) {
   std::vector<EdgeData> ret;
   // Use serve data, positive edgeType is 101, reverse edgeType is -101
   for (auto& serve : serves_) {
@@ -788,7 +788,9 @@ std::vector<EdgeData> MockData::mockEdges(bool upper) {
     positiveEdge.props_ = std::move(props);
     auto reverseData = getReverseEdge(positiveEdge);
     ret.emplace_back(std::move(positiveEdge));
-    ret.emplace_back(std::move(reverseData));
+    if (hasInEdges) {
+      ret.emplace_back(std::move(reverseData));
+    }
   }
   return ret;
 }
@@ -947,11 +949,13 @@ nebula::storage::cpp2::DeleteVerticesRequest MockData::mockDeleteVerticesReq(int
   return req;
 }
 
-nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(bool upper, int32_t parts) {
+nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(bool upper,
+                                                                 int32_t parts,
+                                                                 bool hasInEdges) {
   nebula::storage::cpp2::AddEdgesRequest req;
   req.space_id_ref() = 1;
   req.if_not_exists_ref() = true;
-  auto retRecs = mockEdges(upper);
+  auto retRecs = mockEdges(upper, hasInEdges);
   for (auto& rec : retRecs) {
     nebula::storage::cpp2::NewEdge newEdge;
     nebula::storage::cpp2::EdgeKey edgeKey;

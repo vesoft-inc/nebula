@@ -79,7 +79,7 @@ class Sentence {
     kShowGroups,
     kShowZones,
     kShowStats,
-    kShowTSClients,
+    kShowServiceClients,
     kShowFTIndexes,
     kDescribeUser,
     kDeleteVertices,
@@ -124,14 +124,15 @@ class Sentence {
     kAddListener,
     kRemoveListener,
     kShowListener,
-    kSignInTSService,
-    kSignOutTSService,
+    kSignInService,
+    kSignOutService,
     kCreateFTIndex,
     kDropFTIndex,
     kShowSessions,
     kShowQueries,
     kKillQuery,
     kShowMetaLeader,
+    kAlterSpace,
   };
 
   Kind kind() const {

@@ -15,7 +15,7 @@ SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(JobID jobId,
                                                          kvstore::KVStore* kvstore,
                                                          AdminClient* adminClient,
                                                          const std::vector<std::string>& paras)
-    : MetaJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : StorageJobExecutor(jobId, kvstore, adminClient, paras) {}
 
 bool SimpleConcurrentJobExecutor::check() {
   auto parasNum = paras_.size();

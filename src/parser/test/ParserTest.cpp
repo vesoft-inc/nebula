@@ -2016,22 +2016,22 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA";
+    std::string query = "BALANCE IN ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA 1234567890";
+    std::string query = "BALANCE ACROSS ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,\"localhost\":50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -3207,10 +3207,10 @@ TEST_F(ParserTest, JobTest) {
   checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
-  checkTest("SUBMIT JOB BALANCE DATA", "SUBMIT JOB BALANCE DATA");
+  checkTest("SUBMIT JOB BALANCE IN ZONE", "SUBMIT JOB BALANCE IN ZONE");
   checkTest(
-      "SUBMIT JOB BALANCE DATA REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
-      "SUBMIT JOB BALANCE DATA REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
+      "SUBMIT JOB BALANCE IN ZONE REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
+      "SUBMIT JOB BALANCE IN ZONE REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
       "\"192.168.0.1\":50002");
   checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");

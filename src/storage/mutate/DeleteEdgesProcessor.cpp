@@ -77,8 +77,22 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         handleAsync(spaceId_, partId, code);
         continue;
       }
-      doRemove(spaceId_, partId, std::move(keys));
-      stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
+
+      HookFuncPara para;
+      if (tossHookFunc_) {
+        para.keys.emplace(&keys);
+        (*tossHookFunc_)(para);
+      }
+      if (para.result) {
+        env_->kvstore_->asyncAppendBatch(
+            spaceId_,
+            partId,
+            std::move(para.result.value()),
+            [partId, this](nebula::cpp2::ErrorCode rc) { handleAsync(spaceId_, partId, rc); });
+      } else {
+        doRemove(spaceId_, partId, std::move(keys));
+        stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
+      }
     }
   } else {
     for (auto& part : partEdges) {
@@ -198,6 +212,11 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     }
   }
 
+  if (tossHookFunc_) {
+    HookFuncPara para;
+    para.batch.emplace(batchHolder.get());
+    (*tossHookFunc_)(para);
+  }
   return encodeBatchValue(batchHolder->getBatch());
 }
 
