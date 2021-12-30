@@ -167,7 +167,6 @@ class ExpressionUtils {
 
   static bool checkExprDepth(const Expression* expr);
 
- private:
   static constexpr int32_t kMaxDepth = 512;
 };
 

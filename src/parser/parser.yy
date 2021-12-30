@@ -558,7 +558,9 @@ expression
     : expression_internal {
         if(!graph::ExpressionUtils::checkExprDepth($1)){
             delete $1;
-            throw nebula::GraphParser::syntax_error(@1, "The above expression's depth exceeds the maximum depth:512!");
+            std::ostringstream errStr;
+            errStr << "The above expression's depth exceeds the maximum depth:" << graph::ExpressionUtils::kMaxDepth;
+            throw nebula::GraphParser::syntax_error(@1, errStr.str());
         }
         $$ = $1;
     }

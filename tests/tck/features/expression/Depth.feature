@@ -75,7 +75,7 @@ Feature: Check Expression Depth
       1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 +
       1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 AS result
       """
-    Then a SyntaxError should be raised at runtime: The above expression's depth exceeds the maximum depth!
+    Then a SyntaxError should be raised at runtime: The above expression's depth exceeds the maximum depth
     When executing query:
       """
       YIELD 1 IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS
@@ -156,4 +156,4 @@ Feature: Check Expression Depth
       NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS
       NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL IS NULL AS result
       """
-    Then a SyntaxError should be raised at runtime: The above expression's depth exceeds the maximum depth!
+    Then a SyntaxError should be raised at runtime: The above expression's depth exceeds the maximum depth
