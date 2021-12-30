@@ -26,7 +26,8 @@ void BalanceTask::invoke() {
   if (ret_ == BalanceTaskResult::INVALID) {
     endTimeMs_ = time::WallClock::fastNowInSec();
     saveInStore();
-    LOG(ERROR) << taskIdStr_ << " Task invalid, status " << static_cast<int32_t>(status_);
+    LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Task invalid, status "
+               << static_cast<int32_t>(status_);
     // When a plan is stopped or dst is not alive any more, a task will be
     // marked as INVALID, the task will not be executed again. Balancer will
     // start a new plan instead.
@@ -35,11 +36,12 @@ void BalanceTask::invoke() {
   } else if (ret_ == BalanceTaskResult::FAILED) {
     endTimeMs_ = time::WallClock::fastNowInSec();
     saveInStore();
-    LOG(ERROR) << taskIdStr_ << " Task failed, status " << static_cast<int32_t>(status_);
+    LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Task failed, status "
+               << static_cast<int32_t>(status_);
     onError_();
     return;
   } else {
-    VLOG(3) << taskIdStr_ << " still in processing";
+    VLOG(3) << taskIdStr_ + "," + commandStr_ << " still in processing";
   }
 
   switch (status_) {
@@ -50,7 +52,8 @@ void BalanceTask::invoke() {
       SAVE_STATE();
       client_->checkPeers(spaceId_, partId_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Check the peers failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Check the peers failed, status "
+                     << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::CHANGE_LEADER;
@@ -61,7 +64,7 @@ void BalanceTask::invoke() {
     }
     // fallthrough
     case BalanceTaskStatus::CHANGE_LEADER: {
-      LOG(INFO) << taskIdStr_ << " Ask the src to give up the leadership.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Ask the src to give up the leadership.";
       SAVE_STATE();
       auto srcLivedRet = ActiveHostsMan::isLived(kv_, src_);
       if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
@@ -73,7 +76,8 @@ void BalanceTask::invoke() {
               LOG(WARNING) << "Can't find part " << partId_ << " on " << src_;
               status_ = BalanceTaskStatus::ADD_PART_ON_DST;
             } else {
-              LOG(ERROR) << taskIdStr_ << " Transfer leader failed, status " << resp;
+              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Transfer leader failed, status "
+                         << resp;
               ret_ = BalanceTaskResult::FAILED;
             }
           } else {
@@ -83,17 +87,18 @@ void BalanceTask::invoke() {
         });
         break;
       } else {
-        LOG(INFO) << taskIdStr_ << " Src host has been lost, so no need to transfer leader";
+        LOG(INFO) << taskIdStr_ + "," + commandStr_
+                  << " Src host has been lost, so no need to transfer leader";
         status_ = BalanceTaskStatus::ADD_PART_ON_DST;
       }
     }
     // fallthrough
     case BalanceTaskStatus::ADD_PART_ON_DST: {
-      LOG(INFO) << taskIdStr_ << " Open the part as learner on dst.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open the part as learner on dst.";
       SAVE_STATE();
       client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Open part failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Open part failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::ADD_LEARNER;
@@ -103,11 +108,11 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::ADD_LEARNER: {
-      LOG(INFO) << taskIdStr_ << " Add learner dst.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add learner dst.";
       SAVE_STATE();
       client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Add learner failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Add learner failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::CATCH_UP_DATA;
@@ -117,11 +122,11 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::CATCH_UP_DATA: {
-      LOG(INFO) << taskIdStr_ << " Waiting for the data catch up.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Waiting for the data catch up.";
       SAVE_STATE();
       client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Catchup data failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
@@ -131,12 +136,12 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::MEMBER_CHANGE_ADD: {
-      LOG(INFO) << taskIdStr_ << " Send member change request to the leader"
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Send member change request to the leader"
                 << ", it will add the new member on dst host";
       SAVE_STATE();
       client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Add peer failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Add peer failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::MEMBER_CHANGE_REMOVE;
@@ -146,12 +151,12 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::MEMBER_CHANGE_REMOVE: {
-      LOG(INFO) << taskIdStr_ << " Send member change request to the leader"
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Send member change request to the leader"
                 << ", it will remove the old member on src host";
       SAVE_STATE();
       client_->memberChange(spaceId_, partId_, src_, false).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Remove peer failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::UPDATE_PART_META;
@@ -161,16 +166,16 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::UPDATE_PART_META: {
-      LOG(INFO) << taskIdStr_ << " Update meta for part.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta for part.";
       SAVE_STATE();
       client_->updateMeta(spaceId_, partId_, src_, dst_).thenValue([this](auto&& resp) {
         // The callback will be called inside raft set value. So don't call
         // invoke directly here.
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Update meta failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
-          LOG(INFO) << taskIdStr_ << " Update meta succeeded!";
+          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta succeeded!";
           status_ = BalanceTaskStatus::REMOVE_PART_ON_SRC;
         }
         invoke();
@@ -179,12 +184,12 @@ void BalanceTask::invoke() {
     }
     case BalanceTaskStatus::REMOVE_PART_ON_SRC: {
       auto srcLivedRet = ActiveHostsMan::isLived(kv_, src_);
-      LOG(INFO) << taskIdStr_ << " Close part on src host, srcLived.";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Close part on src host, srcLived.";
       SAVE_STATE();
       if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
         client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
           if (!resp.ok()) {
-            LOG(ERROR) << taskIdStr_ << " Remove part failed, status " << resp;
+            LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Remove part failed, status " << resp;
             ret_ = BalanceTaskResult::FAILED;
           } else {
             status_ = BalanceTaskStatus::CHECK;
@@ -193,17 +198,18 @@ void BalanceTask::invoke() {
         });
         break;
       } else {
-        LOG(INFO) << taskIdStr_ << " Don't remove part on src " << src_;
+        LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Don't remove part on src " << src_;
         status_ = BalanceTaskStatus::CHECK;
       }
     }
     // fallthrough
     case BalanceTaskStatus::CHECK: {
-      LOG(INFO) << taskIdStr_ << " Check the peers...";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Check the peers...";
       SAVE_STATE();
       client_->checkPeers(spaceId_, partId_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << taskIdStr_ << " Check the peers failed, status " << resp;
+          LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Check the peers failed, status "
+                     << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
           status_ = BalanceTaskStatus::END;
@@ -213,7 +219,7 @@ void BalanceTask::invoke() {
       break;
     }
     case BalanceTaskStatus::END: {
-      LOG(INFO) << taskIdStr_ << " Part has been moved successfully!";
+      LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Part has been moved successfully!";
       endTimeMs_ = time::WallClock::fastNowInSec();
       ret_ = BalanceTaskResult::SUCCEEDED;
       SAVE_STATE();
@@ -250,6 +256,9 @@ bool BalanceTask::saveInStore() {
                        baton.post();
                      });
   baton.wait();
+  if (ret_ == BalanceTaskResult::INVALID)
+    LOG(INFO) << taskIdStr_ + "," + commandStr_ << " save task: " << static_cast<int32_t>(status_)
+              << " " << static_cast<int32_t>(ret_);
   return ret;
 }
 

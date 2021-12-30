@@ -16,11 +16,13 @@ class JoinExecutor : public Executor {
   JoinExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : Executor(name, node, qctx) {}
 
+ protected:
   Status checkInputDataSets();
 
   void buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter);
 
- protected:
+  Status checkBiInputDataSets();
+
   void buildHashTable(const std::vector<Expression*>& hashKeys,
                       Iterator* iter,
                       std::unordered_map<List, std::vector<const Row*>>& hashTable) const;

@@ -583,6 +583,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kSubscript:
     case Expression::Kind::kAttribute:
+    case Expression::Kind::kLabelTagProperty:
     case Expression::Kind::kLabelAttribute:
     case Expression::Kind::kVertex:
     case Expression::Kind::kEdge:

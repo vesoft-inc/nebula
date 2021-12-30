@@ -1069,8 +1069,8 @@ TEST(MetaClientTest, FTServiceTest) {
   std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
   TestUtils::registerHB(kv, hosts);
 
-  std::vector<cpp2::FTClient> clients;
-  cpp2::FTClient c1, c2;
+  std::vector<cpp2::ServiceClient> clients;
+  cpp2::ServiceClient c1, c2;
   c1.host_ref() = {"0", 0};
   c1.user_ref() = "u1";
   c1.pwd_ref() = "pwd";
@@ -1079,21 +1079,21 @@ TEST(MetaClientTest, FTServiceTest) {
   c2.user_ref() = "u2";
   clients.emplace_back(c2);
   {
-    cpp2::FTServiceType type = cpp2::FTServiceType::ELASTICSEARCH;
-    auto result = client->signInFTService(type, clients).get();
+    cpp2::ExternalServiceType type = cpp2::ExternalServiceType::ELASTICSEARCH;
+    auto result = client->signInService(type, clients).get();
     ASSERT_TRUE(result.ok());
   }
   {
-    auto result = client->listFTClients().get();
+    auto result = client->listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
-    ASSERT_EQ(clients, result.value());
+    ASSERT_EQ(clients, result.value()[cpp2::ExternalServiceType::ELASTICSEARCH]);
   }
   {
-    auto result = client->signOutFTService().get();
+    auto result = client->signOutService(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
   }
   {
-    auto result = client->listFTClients().get();
+    auto result = client->listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
     ASSERT_TRUE(result.value().empty());
   }

@@ -647,6 +647,20 @@ void SequentialIter::doReset(size_t pos) {
   iter_ = rows_->begin() + pos;
 }
 
+const Value& SequentialIter::getColumn(const std::string& col) const {
+  if (!valid()) {
+    return Value::kNullValue;
+  }
+  auto& row = *iter_;
+  auto index = colIndices_.find(col);
+  if (index == colIndices_.end()) {
+    return Value::kNullValue;
+  }
+
+  DCHECK_LT(index->second, row.values.size()) << "index: " << index->second << " row" << row;
+  return row.values[index->second];
+}
+
 const Value& SequentialIter::getColumn(int32_t index) const {
   return getColumnByIndex(index, iter_);
 }

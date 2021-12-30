@@ -8,18 +8,18 @@
 
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 
 namespace nebula {
 namespace meta {
 
-class StatsJobExecutor : public MetaJobExecutor {
+class StatsJobExecutor : public StorageJobExecutor {
  public:
   StatsJobExecutor(JobID jobId,
                    kvstore::KVStore* kvstore,
                    AdminClient* adminClient,
                    const std::vector<std::string>& paras)
-      : MetaJobExecutor(jobId, kvstore, adminClient, paras) {
+      : StorageJobExecutor(jobId, kvstore, adminClient, paras) {
     toHost_ = TargetHosts::LEADER;
   }
 

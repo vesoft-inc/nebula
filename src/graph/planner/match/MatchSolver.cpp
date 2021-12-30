@@ -78,7 +78,6 @@ Expression* MatchSolver::doRewrite(QueryContext* qctx,
     auto alias = aliases.find(labelExpr->name());
     DCHECK(alias != aliases.end());
   }
-
   return rewriteLabel2VarProp(qctx, expr);
 }
 
@@ -141,32 +140,52 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     auto* binary = static_cast<const BinaryExpression*>(item);
     auto* left = binary->left();
     auto* right = binary->right();
-    const LabelAttributeExpression* la = nullptr;
     const ConstantExpression* constant = nullptr;
+    std::string propName;
     // TODO(aiee) extract the logic that applies to both match and lookup
-    if (left->kind() == Expression::Kind::kLabelAttribute &&
-        right->kind() == Expression::Kind::kConstant) {
-      la = static_cast<const LabelAttributeExpression*>(left);
-      constant = static_cast<const ConstantExpression*>(right);
-    } else if (right->kind() == Expression::Kind::kLabelAttribute &&
-               left->kind() == Expression::Kind::kConstant) {
-      la = static_cast<const LabelAttributeExpression*>(right);
-      constant = static_cast<const ConstantExpression*>(left);
+    if (isEdgeProperties) {
+      const LabelAttributeExpression* la = nullptr;
+      if (left->kind() == Expression::Kind::kLabelAttribute &&
+          right->kind() == Expression::Kind::kConstant) {
+        la = static_cast<const LabelAttributeExpression*>(left);
+        constant = static_cast<const ConstantExpression*>(right);
+      } else if (right->kind() == Expression::Kind::kLabelAttribute &&
+                 left->kind() == Expression::Kind::kConstant) {
+        la = static_cast<const LabelAttributeExpression*>(right);
+        constant = static_cast<const ConstantExpression*>(left);
+      } else {
+        continue;
+      }
+      if (la->left()->name() != alias) {
+        continue;
+      }
+      propName = la->right()->value().getStr();
     } else {
-      continue;
+      const LabelTagPropertyExpression* la = nullptr;
+      if (left->kind() == Expression::Kind::kLabelTagProperty &&
+          right->kind() == Expression::Kind::kConstant) {
+        la = static_cast<const LabelTagPropertyExpression*>(left);
+        constant = static_cast<const ConstantExpression*>(right);
+      } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
+                 left->kind() == Expression::Kind::kConstant) {
+        la = static_cast<const LabelTagPropertyExpression*>(right);
+        constant = static_cast<const ConstantExpression*>(left);
+      } else {
+        continue;
+      }
+      if (static_cast<const PropertyExpression*>(la->label())->prop() != alias ||
+          la->sym() != label) {
+        continue;
+      }
+      propName = la->prop();
     }
 
-    if (la->left()->name() != alias) {
-      continue;
-    }
-
-    const auto& value = la->right()->value();
     auto* tpExpr =
         isEdgeProperties
-            ? static_cast<Expression*>(EdgePropertyExpression::make(pool, label, value.getStr()))
-            : static_cast<Expression*>(TagPropertyExpression::make(pool, label, value.getStr()));
+            ? static_cast<Expression*>(EdgePropertyExpression::make(pool, label, propName))
+            : static_cast<Expression*>(TagPropertyExpression::make(pool, label, propName));
     auto* newConstant = constant->clone();
-    if (left->kind() == Expression::Kind::kLabelAttribute) {
+    if (right->kind() == Expression::Kind::kConstant) {
       auto* rel = RelationalExpression::makeKind(pool, item->kind(), tpExpr, newConstant);
       relationals.emplace_back(rel);
     } else {

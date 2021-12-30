@@ -104,6 +104,7 @@ class DeducePropsVisitor : public ExprVisitorImpl {
  private:
   using ExprVisitorImpl::visit;
   void visit(EdgePropertyExpression* expr) override;
+  void visit(LabelTagPropertyExpression* expr) override;
   void visit(TagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;

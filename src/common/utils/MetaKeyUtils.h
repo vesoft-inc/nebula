@@ -346,12 +346,15 @@ class MetaKeyUtils final {
 
   static GraphSpaceID parseStatsSpace(folly::StringPiece rawData);
 
-  static std::string fulltextServiceKey();
+  static std::string serviceKey(const meta::cpp2::ExternalServiceType& type);
 
-  static std::string fulltextServiceVal(meta::cpp2::FTServiceType type,
-                                        const std::vector<meta::cpp2::FTClient>& clients);
+  static std::string serviceVal(const std::vector<meta::cpp2::ServiceClient>& client);
 
-  static std::vector<meta::cpp2::FTClient> parseFTClients(folly::StringPiece rawData);
+  static const std::string& servicePrefix();
+
+  static meta::cpp2::ExternalServiceType parseServiceType(folly::StringPiece rawData);
+
+  static std::vector<meta::cpp2::ServiceClient> parseServiceClients(folly::StringPiece rawData);
 
   static const std::string& sessionPrefix();
 
