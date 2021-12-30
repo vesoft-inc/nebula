@@ -225,6 +225,9 @@ class NebulaService(object):
         self.graphd_param['system_memory_high_watermark_ratio'] = '0.95'
         self.graphd_param['num_rows_to_check_memory'] = '4'
         self.graphd_param['session_reclaim_interval_secs'] = '2'
+        # Login retry
+        self.graphd_param['failed_login_attempts'] = '5'
+        self.graphd_param['password_lock_time_in_secs'] = '10'
 
         self.storaged_param = copy.copy(_params)
         self.storaged_param['local_config'] = 'false'

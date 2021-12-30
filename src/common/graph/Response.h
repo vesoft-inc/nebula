@@ -233,7 +233,7 @@ struct AuthResponse {
     if (!checkPointer(timeZoneOffsetSeconds.get(), rhs.timeZoneOffsetSeconds.get())) {
       return false;
     }
-    return checkPointer(timeZoneName.get(), timeZoneName.get());
+    return checkPointer(timeZoneName.get(), rhs.timeZoneName.get());
   }
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
