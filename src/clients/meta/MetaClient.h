@@ -656,12 +656,18 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
+  folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
+
   HostAddr getMetaLeader() {
     return leader_;
   }
 
   int64_t HeartbeatTime() {
     return heartbeatTime_;
+  }
+
+  std::string getLocalIp() {
+    return options_.localHost_.toString();
   }
 
  protected:

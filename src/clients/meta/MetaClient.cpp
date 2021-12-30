@@ -751,6 +751,7 @@ void MetaClient::getResponse(Request req,
                   return;
                 } else {
                   LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
+                  LOG(ERROR) << "RpcResponse exception: " << t.exception().what().c_str();
                   pro.setValue(
                       Status::Error("RPC failure in MetaClient: %s", t.exception().what().c_str()));
                 }
@@ -3643,6 +3644,21 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
       std::move(req),
       [](auto client, auto request) { return client->future_killQuery(request); },
       [](cpp2::ExecResp&& resp) -> decltype(auto) { return std::move(resp); },
+      std::move(promise),
+      true);
+  return future;
+}
+
+folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
+  cpp2::GetWorkerIdReq req;
+  req.host_ref() = std::move(ipAddr);
+
+  folly::Promise<StatusOr<int64_t>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getWorkerId(request); },
+      [](cpp2::GetWorkerIdResp&& resp) -> int64_t { return std::move(resp).get_workerid(); },
       std::move(promise),
       true);
   return future;
