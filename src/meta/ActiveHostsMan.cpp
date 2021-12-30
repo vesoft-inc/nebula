@@ -12,7 +12,7 @@
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
-DECLARE_int32(agent_heartbeat_interval_secs);
+DEFINE_int32(agent_heartbeat_interval_secs, 60, "Agent heartbeat interval in seconds");
 DECLARE_uint32(expired_time_factor);
 
 namespace nebula {

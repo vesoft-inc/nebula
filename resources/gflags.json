@@ -3,7 +3,6 @@
         "minloglevel",
         "v",
         "heartbeat_interval_secs",
-        "agent_heartbeat_interval_secs",
         "meta_client_retry_times",
         "slow_op_threshold_ms",
         "clean_wal_interval_secs",
