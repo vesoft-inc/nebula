@@ -29,7 +29,13 @@ struct LocalServer {
              uint16_t port,
              std::shared_ptr<apache::thrift::ServerInterface> handler) {
     UNUSED(port);
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers =
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
+    workers->setNamePrefix("executor");
+    workers->start();
+
     server_ = storage::GraphStorageLocalServer::getInstance();
+    server_->setThreadManager(workers);
     server_->setInterface(std::move(handler));
     thread_ = std::make_unique<thread::NamedThread>(name, [this, name] {
       server_->serve();
