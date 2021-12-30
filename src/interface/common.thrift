@@ -470,6 +470,8 @@ enum ErrorCode {
     E_WRITE_WRITE_CONFLICT            = -3073,
 
     E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
+    // get worker id
+    E_WORKER_ID_FAILED                = -3062,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
