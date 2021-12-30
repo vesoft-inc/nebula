@@ -14,6 +14,7 @@
 #include <gtest/gtest_prod.h>
 
 #include <atomic>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -143,6 +144,10 @@ using IndexStatus = std::tuple<std::string, std::string, std::string>;
 using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>>;
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
+// Mapping of user name and remaining wrong password attempts
+using UserPasswordAttemptsRemain = std::unordered_map<std::string, uint32>;
+// Mapping of user name and the timestamp when the account is locked
+using UserLoginLockTime = std::unordered_map<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
@@ -199,13 +204,13 @@ struct MetaClientOptions {
   std::string serviceName_ = "";
   // Whether to skip the config manager
   bool skipConfig_ = false;
-  // host role(graph/meta/storage) using this client
+  // Host role(graph/meta/storage) using this client
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
-  // data path list, used in storaged
+  // Data path list, used in storaged
   std::vector<std::string> dataPaths_;
-  // install path, used in metad/graphd/storaged
+  // Install path, used in metad/graphd/storaged
   std::string rootPath_;
 };
 
@@ -593,7 +598,7 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password);
+  Status authCheckFromCache(const std::string& account, const std::string& password);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
@@ -821,6 +826,8 @@ class MetaClient {
 
   UserRolesMap userRolesMap_;
   UserPasswordMap userPasswordMap_;
+  UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
+  UserLoginLockTime userLoginLockTime_;
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;

@@ -12,11 +12,13 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include <boost/filesystem.hpp>
+#include <unordered_set>
 
 #include "clients/meta/FileBasedClusterIdMan.h"
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
+#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -37,6 +39,27 @@ DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval bet
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
+DEFINE_uint32(failed_login_attempts,
+              0,
+              "how many consecutive incorrect passwords input to a SINGLE graph service node cause "
+              "the account to become locked.");
+DEFINE_uint32(
+    password_lock_time_in_secs,
+    0,
+    "how long in seconds to lock the account after too many consecutive login attempts provide an "
+    "incorrect password.");
+
+// Sanity-checking Flag Values
+static bool ValidateFailedLoginAttempts(const char* flagname, uint32_t value) {
+  if (value <= 32767)  // value is ok
+    return true;
+
+  FLOG_WARN("Invalid value for --%s: %d, the timeout should be an integer between 0 and 32767\n",
+            flagname,
+            (int)value);
+  return false;
+}
+DEFINE_validator(failed_login_attempts, &ValidateFailedLoginAttempts);
 
 namespace nebula {
 namespace meta {
@@ -152,6 +175,11 @@ bool MetaClient::loadUsersAndRoles() {
   }
   decltype(userRolesMap_) userRolesMap;
   decltype(userPasswordMap_) userPasswordMap;
+  decltype(userPasswordAttemptsRemain_) userPasswordAttemptsRemain;
+  decltype(userLoginLockTime_) userLoginLockTime;
+  // List of username
+  std::unordered_set<std::string> userNameList;
+
   for (auto& user : userRoleRet.value()) {
     auto rolesRet = getUserRoles(user.first).get();
     if (!rolesRet.ok()) {
@@ -160,11 +188,40 @@ bool MetaClient::loadUsersAndRoles() {
     }
     userRolesMap[user.first] = rolesRet.value();
     userPasswordMap[user.first] = user.second;
+    userPasswordAttemptsRemain[user.first] = FLAGS_failed_login_attempts;
+    userLoginLockTime[user.first] = 0;
+    userNameList.emplace(user.first);
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
     userRolesMap_ = std::move(userRolesMap);
     userPasswordMap_ = std::move(userPasswordMap);
+
+    // This method is called periodically by the heartbeat thread, but we don't want to reset the
+    // failed login attempts every time. Remove expired users from cache
+    for (auto& ele : userPasswordAttemptsRemain) {
+      if (userNameList.count(ele.first) == 0) {
+        userPasswordAttemptsRemain.erase(ele.first);
+      }
+    }
+    for (auto& ele : userLoginLockTime) {
+      if (userNameList.count(ele.first) == 0) {
+        userLoginLockTime.erase(ele.first);
+      }
+    }
+
+    // If the user is not in the map, insert value with the default value
+    for (const auto& user : userNameList) {
+      if (userPasswordAttemptsRemain.count(user) == 0) {
+        userPasswordAttemptsRemain[user] = FLAGS_failed_login_attempts;
+      }
+      if (userLoginLockTime.count(user) == 0) {
+        userLoginLockTime[user] = 0;
+      }
+    }
+
+    userPasswordAttemptsRemain_ = std::move(userPasswordAttemptsRemain);
+    userLoginLockTime_ = std::move(userLoginLockTime);
   }
   return true;
 }
@@ -1370,6 +1427,8 @@ folly::Future<StatusOr<bool>> MetaClient::multiPut(
 
   cpp2::MultiPutReq req;
   std::vector<nebula::KeyValue> data;
+  data.reserve(pairs.size());
+
   for (auto& element : pairs) {
     data.emplace_back(std::move(element));
   }
@@ -2354,16 +2413,73 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   return iter->second;
 }
 
-bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+  // Check meta service status
   if (!ready_) {
-    return false;
+    return Status::Error("Meta Service not ready");
   }
+
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  // Check user existence
   auto iter = threadLocalInfo.userPasswordMap_.find(account);
   if (iter == threadLocalInfo.userPasswordMap_.end()) {
-    return false;
+    return Status::Error("User not exist");
   }
-  return iter->second == password;
+
+  folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+
+  auto& lockedSince = userLoginLockTime_[account];
+  auto& passwordAttemtRemain = userPasswordAttemptsRemain_[account];
+  LOG(INFO) << "Thread id: " << std::this_thread::get_id()
+            << " ,passwordAttemtRemain: " << passwordAttemtRemain;
+  // lockedSince is non-zero means the account has been locked
+  if (lockedSince != 0) {
+    auto remainingLockTime =
+        (lockedSince + FLAGS_password_lock_time_in_secs) - time::WallClock::fastNowInSec();
+    // If the account is still locked, there is no need to check the password
+    if (remainingLockTime > 0) {
+      return Status::Error(
+          "%d times consecutive incorrect passwords has been input, user name: %s has been "
+          "locked, try again in %ld seconds",
+          FLAGS_failed_login_attempts,
+          account.c_str(),
+          remainingLockTime);
+    }
+    // Clear lock state and reset attempts
+    lockedSince = 0;
+    passwordAttemtRemain = FLAGS_failed_login_attempts;
+  }
+
+  if (iter->second != password) {
+    // By default there is no limit of login attempts if any of these 2 flags is unset
+    if (FLAGS_failed_login_attempts == 0 || FLAGS_password_lock_time_in_secs == 0) {
+      return Status::Error("Invalid password");
+    }
+
+    // If the password is not correct and passwordAttemtRemain > 0,
+    // Allow another attemp
+    if (passwordAttemtRemain > 0) {
+      --passwordAttemtRemain;
+      if (passwordAttemtRemain == 0) {
+        // If the remaining attemps is 0, failed to authenticate
+        // Block user login
+        lockedSince = time::WallClock::fastNowInSec();
+        return Status::Error(
+            "%d times consecutive incorrect passwords has been input, user name: %s has been "
+            "locked, try again in %d seconds",
+            FLAGS_failed_login_attempts,
+            account.c_str(),
+            FLAGS_password_lock_time_in_secs);
+      }
+      LOG(ERROR) << "Invalid password, remaining attempts: " << passwordAttemtRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", passwordAttemtRemain);
+    }
+  }
+
+  // Reset password attempts
+  passwordAttemtRemain = FLAGS_failed_login_attempts;
+  lockedSince = 0;
+  return Status::OK();
 }
 
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) {

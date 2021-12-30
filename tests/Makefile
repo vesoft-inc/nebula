@@ -19,6 +19,8 @@ ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 CONTAINERIZED ?= false
+FAILED_LOGIN_ATTEMPTS ?= 0
+PASSWORD_LOCK_TIME_IN_SECS ?= 0
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
