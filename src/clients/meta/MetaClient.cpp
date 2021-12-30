@@ -377,7 +377,7 @@ bool MetaClient::loadData() {
   newMetaData->userPasswordMap_ = userPasswordMap_;
   newMetaData->sessionMap_ = std::move(sessionMap_);
   newMetaData->killedPlans_ = std::move(killedPlans_);
-  newMetaData->fulltextClientList_ = std::move(fulltextClientList_);
+  newMetaData->serviceClientList_ = std::move(serviceClientList_);
   auto oldMetaData = metadata_.load();
   metadata_.store(newMetaData);
   folly::rcu_retire(oldMetaData);
