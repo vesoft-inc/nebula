@@ -521,7 +521,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
     // case Expression::Kind::kMultiply:
     // case Expression::Kind::kDivision:
     default:
-      LOG(FATAL) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+      DLOG(ERROR) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
       break;
   }
 
@@ -529,6 +529,13 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
+  // If the filter contains more than one LabelAttribute expr, this filter cannot be pushed down
+  auto LabelAttributeExprs =
+      ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelAttribute});
+  if (LabelAttributeExprs.size() > 1) {
+    return const_cast<Expression *>(filter);
+  }
+
   auto rewrittenExpr = const_cast<Expression *>(filter);
   // Rewrite relational expression
   rewrittenExpr = rewriteRelExpr(rewrittenExpr);

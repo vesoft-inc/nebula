@@ -23,6 +23,9 @@ TEST_F(FilterTransformTest, TestComplexExprRewrite) {
   ASSERT_EQ(*res.value(), *expected) << res.value()->toString() << " vs. " << expected->toString();
 }
 
+// TODO(Aiee) Some of these cases should not pass, such as (v.age - 1 < 9223372036854775807)  =>
+// overflow
+// If the expression tranformation causes an overflow, it should not be done.
 TEST_F(FilterTransformTest, TestCalculationOverflow) {
   // (v.age - 1 < 9223372036854775807)  =>  overflow
   {
@@ -89,6 +92,15 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     ASSERT(!res.status().ok());
     ASSERT_EQ(res.status(), expected) << res.status().toString() << " vs. " << expected.toString();
   }
+}
+
+TEST_F(FilterTransformTest, TestNoRewrite) {
+  // (v.age - 1 < v2.age + 2)  =>  Unchanged
+  auto expr = ltExpr(minusExpr(laExpr("v", "age"), constantExpr(1)),
+                     addExpr(laExpr("v", "age"), constantExpr(40)));
+  auto res = ExpressionUtils::filterTransform(expr);
+  auto expected = expr;
+  ASSERT_EQ(*res.value(), *expected) << res.value()->toString() << " vs. " << expected->toString();
 }
 
 }  // namespace graph
