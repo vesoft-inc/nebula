@@ -545,6 +545,7 @@ struct LookupIndexRequest {
     5: optional RequestCommon               common,
     // max row count of each partition in this response
     6: optional i64                         limit,
+    7: optional list<OrderBy>               order_by,
 }
 
 
