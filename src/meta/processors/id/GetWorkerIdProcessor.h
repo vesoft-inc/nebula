@@ -22,6 +22,7 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
  private:
   explicit GetWorkerIdProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetWorkerIdResp>(kvstore) {
+    // initialize worker id in kvstore just once
     static bool once = [this]() {
       std::vector<kvstore::KV> data = {{idKey, "0"}};
       doPut(data);

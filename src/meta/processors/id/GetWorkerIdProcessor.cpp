@@ -12,11 +12,10 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   const string& ipAddr = req.get_host();
   auto result = doGet(ipAddr);
   if (nebula::ok(result)) {
-    string workerIdStr = std::move(nebula::value(result));
-    int32_t workerIdInt32 = std::stoi(workerIdStr);
+    int64_t workerId = std::stoi(std::move(nebula::value(result)));
 
     handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-    resp_.workerid_ref() = workerIdInt32;
+    resp_.workerid_ref() = workerId;
     onFinished();
     return;
   }
@@ -30,10 +29,9 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   }
 
   string workerIdStr = std::move(nebula::value(newResult));
-  int32_t workerIdInt32 = std::stoi(workerIdStr);
+  int64_t workerIdInt32 = std::stoi(workerIdStr);
 
-  int32_t newWorkerId = workerIdInt32 + 1;
-  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(newWorkerId)}});
+  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerIdInt32 + 1)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   resp_.workerid_ref() = workerIdInt32;
