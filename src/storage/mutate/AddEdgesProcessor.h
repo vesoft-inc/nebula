@@ -19,7 +19,7 @@ extern ProcessorCounters kAddEdgesCounters;
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   friend class TransactionManager;
-  friend class ChainAddEdgesProcessorLocal;
+  friend class ChainAddEdgesLocalProcessor;
 
  public:
   static AddEdgesProcessor* instance(StorageEnv* env,

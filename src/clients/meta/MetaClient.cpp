@@ -185,8 +185,8 @@ bool MetaClient::loadData() {
     return false;
   }
 
-  if (!loadFulltextClients()) {
-    LOG(ERROR) << "Load fulltext services Failed";
+  if (!loadGlobalServiceClients()) {
+    LOG(ERROR) << "Load global services Failed";
     return false;
   }
 
@@ -519,15 +519,15 @@ bool MetaClient::loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCa
   return true;
 }
 
-bool MetaClient::loadFulltextClients() {
-  auto ftRet = listFTClients().get();
-  if (!ftRet.ok()) {
-    LOG(ERROR) << "List fulltext services failed, status:" << ftRet.status();
+bool MetaClient::loadGlobalServiceClients() {
+  auto ret = listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
+  if (!ret.ok()) {
+    LOG(ERROR) << "List services failed, status:" << ret.status();
     return false;
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
-    fulltextClientList_ = std::move(ftRet).value();
+    serviceClientList_ = std::move(ret).value();
   }
   return true;
 }
@@ -3277,16 +3277,16 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
   return fut;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::signInFTService(
-    cpp2::FTServiceType type, const std::vector<cpp2::FTClient>& clients) {
-  cpp2::SignInFTServiceReq req;
+folly::Future<StatusOr<bool>> MetaClient::signInService(
+    const cpp2::ExternalServiceType& type, const std::vector<cpp2::ServiceClient>& clients) {
+  cpp2::SignInServiceReq req;
   req.type_ref() = type;
   req.clients_ref() = clients;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_signInFTService(request); },
+      [](auto client, auto request) { return client->future_signInService(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3295,13 +3295,14 @@ folly::Future<StatusOr<bool>> MetaClient::signInFTService(
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::signOutFTService() {
-  cpp2::SignOutFTServiceReq req;
+folly::Future<StatusOr<bool>> MetaClient::signOutService(const cpp2::ExternalServiceType& type) {
+  cpp2::SignOutServiceReq req;
+  req.type_ref() = type;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_signOutFTService(request); },
+      [](auto client, auto request) { return client->future_signOutService(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3310,25 +3311,36 @@ folly::Future<StatusOr<bool>> MetaClient::signOutFTService() {
   return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::FTClient>>> MetaClient::listFTClients() {
-  cpp2::ListFTClientsReq req;
-  folly::Promise<StatusOr<std::vector<cpp2::FTClient>>> promise;
+folly::Future<StatusOr<ServiceClientsList>> MetaClient::listServiceClients(
+    const cpp2::ExternalServiceType& type) {
+  cpp2::ListServiceClientsReq req;
+  req.type_ref() = type;
+  folly::Promise<StatusOr<ServiceClientsList>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_listFTClients(request); },
-      [](cpp2::ListFTClientsResp&& resp) -> decltype(auto) {
+      [](auto client, auto request) { return client->future_listServiceClients(request); },
+      [](cpp2::ListServiceClientsResp&& resp) -> decltype(auto) {
         return std::move(resp).get_clients();
       },
       std::move(promise));
   return future;
 }
 
-StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
+StatusOr<std::vector<cpp2::ServiceClient>> MetaClient::getServiceClientsFromCache(
+    const cpp2::ExternalServiceType& type) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  return fulltextClientList_;
+
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  if (type == cpp2::ExternalServiceType::ELASTICSEARCH) {
+    auto sIter = serviceClientList_.find(type);
+    if (sIter != serviceClientList_.end()) {
+      return sIter->second;
+    }
+  }
+  return Status::Error("Service not found!");
 }
 
 folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,

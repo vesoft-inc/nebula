@@ -14,15 +14,15 @@
 namespace nebula {
 namespace storage {
 
-class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
+class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
                                     public ChainBaseProcessor {
   friend class ChainResumeProcessorTestHelper;  // for test friendly
  public:
-  static ChainAddEdgesProcessorLocal* instance(StorageEnv* env) {
-    return new ChainAddEdgesProcessorLocal(env);
+  static ChainAddEdgesLocalProcessor* instance(StorageEnv* env) {
+    return new ChainAddEdgesLocalProcessor(env);
   }
 
-  virtual ~ChainAddEdgesProcessorLocal() = default;
+  virtual ~ChainAddEdgesLocalProcessor() = default;
 
   virtual void process(const cpp2::AddEdgesRequest& req);
 
@@ -39,7 +39,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   void finish() override;
 
  protected:
-  explicit ChainAddEdgesProcessorLocal(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
+  explicit ChainAddEdgesLocalProcessor(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
 
   bool prepareRequest(const cpp2::AddEdgesRequest& req);
 
@@ -53,10 +53,6 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
 
   bool lockEdges(const cpp2::AddEdgesRequest& req);
 
-  bool checkTerm(const cpp2::AddEdgesRequest& req);
-
-  bool checkVersion(const cpp2::AddEdgesRequest& req);
-
   /**
    * @brief This is a call back function, to let AddEdgesProcessor so some
    *        addition thing for chain operation
@@ -68,7 +64,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   /**
    * @brief helper function to generate string form of keys of request
    */
-  std::vector<std::string> sEdgeKey(const cpp2::AddEdgesRequest& req);
+  std::vector<std::string> toStrKeys(const cpp2::AddEdgesRequest& req);
 
   /**
    * @brief normally, the prime/double prime keys will be deleted at AddEdgeProcessor
@@ -134,8 +130,9 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   cpp2::AddEdgesRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
-  // need to restrict all the phase in the same term.
-  TermID restrictTerm_{-1};
+  // term at prepareLocal, not allowed to change during execution
+  TermID term_{-1};
+
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()
   bool primeInserted_{false};
@@ -145,6 +142,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   folly::Optional<int64_t> edgeVer_{folly::none};
   int64_t resumedEdgeVer_{-1};
 
+  // for debug / trace purpose
   std::string uuid_;
 
   // for debug, edge "100"->"101" will print like 2231303022->2231303122

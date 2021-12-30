@@ -72,6 +72,10 @@ using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 using Listeners =
     std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
 
+// Get services
+using ServiceClientsList =
+    std::unordered_map<cpp2::ExternalServiceType, std::vector<cpp2::ServiceClient>>;
+
 struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
   PartsAlloc partsAlloc_;
@@ -143,9 +147,6 @@ using UserPasswordMap = std::unordered_map<std::string, std::string>;
 // config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
-
-// get fulltext services
-using FulltextClientsList = std::vector<cpp2::FTClient>;
 
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
@@ -447,15 +448,17 @@ class MetaClient {
   StatusOr<std::vector<RemoteListenerInfo>> getListenerHostTypeBySpacePartType(GraphSpaceID spaceId,
                                                                                PartitionID partId);
 
-  // Operations for fulltext services
-  folly::Future<StatusOr<bool>> signInFTService(cpp2::FTServiceType type,
-                                                const std::vector<cpp2::FTClient>& clients);
+  // Operations for services
+  folly::Future<StatusOr<bool>> signInService(const cpp2::ExternalServiceType& type,
+                                              const std::vector<cpp2::ServiceClient>& clients);
 
-  folly::Future<StatusOr<bool>> signOutFTService();
+  folly::Future<StatusOr<bool>> signOutService(const cpp2::ExternalServiceType& type);
 
-  folly::Future<StatusOr<std::vector<cpp2::FTClient>>> listFTClients();
+  folly::Future<StatusOr<ServiceClientsList>> listServiceClients(
+      const cpp2::ExternalServiceType& type);
 
-  StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
+  StatusOr<std::vector<cpp2::ServiceClient>> getServiceClientsFromCache(
+      const cpp2::ExternalServiceType& type);
 
   // Operations for fulltext index.
 
@@ -682,7 +685,7 @@ class MetaClient {
 
   bool loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 
-  bool loadFulltextClients();
+  bool loadGlobalServiceClients();
 
   bool loadFulltextIndexes();
 
@@ -815,7 +818,9 @@ class MetaClient {
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
-  FulltextClientsList fulltextClientList_;
+
+  // Global service client
+  ServiceClientsList serviceClientList_;
   FTIndexMap fulltextIndexMap_;
 
   mutable folly::RWSpinLock localCacheLock_;
