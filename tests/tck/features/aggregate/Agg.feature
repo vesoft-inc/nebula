@@ -696,7 +696,7 @@ Feature: Basic Aggregate and GroupBy
       """
       GO FROM "Tim Duncan" OVER like where COUNT(*) > 2 YIELD like._dst
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `count(*) > 2'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `COUNT(*) > 2'
     When executing query:
       """
       GO FROM "Marco Belinelli" OVER serve

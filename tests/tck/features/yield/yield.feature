@@ -476,7 +476,7 @@ Feature: Yield Sentence
       """
       $var = go from "Tim Duncan" over like yield like._dst as id, $$ as dst; yield $var.dst where count($var.id) > 2
       """
-    Then a SemanticError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($var.id) > 2'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($var.id) > 2'
 
   Scenario: DuplicateColumn
     When executing query:
