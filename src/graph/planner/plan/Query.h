@@ -507,6 +507,10 @@ class IndexScan : public Explore {
     return isEmptyResultSet_;
   }
 
+  YieldColumns* yieldColumns() const {
+    return yieldColumns_;
+  }
+
   void setEmptyResultSet(bool isEmptyResultSet) {
     isEmptyResultSet_ = isEmptyResultSet;
   }
@@ -521,6 +525,10 @@ class IndexScan : public Explore {
 
   void setIsEdge(bool isEdge) {
     isEdge_ = isEdge;
+  }
+
+  void setYieldColumns(YieldColumns* yieldColumns) {
+    yieldColumns_ = yieldColumns;
   }
 
   PlanNode* clone() const override;
@@ -558,6 +566,7 @@ class IndexScan : public Explore {
 
   // TODO(yee): Generate special plan for this scenario
   bool isEmptyResultSet_{false};
+  YieldColumns* yieldColumns_;
 };
 
 /**
@@ -971,8 +980,8 @@ class TopN final : public SingleInputNode {
   static TopN* make(QueryContext* qctx,
                     PlanNode* input,
                     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors = {},
-                    int64_t offset = -1,
-                    int64_t count = -1) {
+                    int64_t offset = 0,
+                    int64_t count = 0) {
     return qctx->objPool()->add(new TopN(qctx, input, std::move(factors), offset, count));
   }
 
