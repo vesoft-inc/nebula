@@ -130,17 +130,25 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       zoneIter->next();
     }
 
-    int32_t zoneNum = zones.size();
-    if (replicaFactor > zoneNum) {
-      LOG(ERROR) << "Replication number should less than or equal to zone number.";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-      onFinished();
-      return;
-    }
-
     properties.zone_names_ref() = zones;
   } else {
     zones = properties.get_zone_names();
+  }
+
+  auto it = std::unique(zones.begin(), zones.end());
+  if (it != zones.end()) {
+    LOG(ERROR) << "Zones have duplicated.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  int32_t zoneNum = zones.size();
+  if (replicaFactor > zoneNum) {
+    LOG(ERROR) << "Replication number should less than or equal to zone number.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
   }
 
   data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
@@ -162,15 +170,6 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Create space failed";
     handleErrorCode(code);
-    onFinished();
-    return;
-  }
-
-  int32_t zoneNum = zones.size();
-  if (replicaFactor > zoneNum) {
-    LOG(ERROR) << "Replication number should less than or equal to zone number.";
-    LOG(ERROR) << "Replication number: " << replicaFactor << ", Zones size: " << zones.size();
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
