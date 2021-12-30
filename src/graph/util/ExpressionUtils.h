@@ -55,6 +55,8 @@ class ExpressionUtils {
 
   static bool isEvaluableExpr(const Expression* expr, const QueryContext* qctx = nullptr);
 
+  static Expression* rewriteAttr2LabelTagProp(const Expression* expr);
+
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
   static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr);

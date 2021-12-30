@@ -152,6 +152,11 @@ void RewriteSymExprVisitor::visit(TagPropertyExpression *expr) {
   hasWrongType_ = true;
 }
 
+void RewriteSymExprVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  hasWrongType_ = true;
+}
+
 void RewriteSymExprVisitor::visit(EdgePropertyExpression *expr) {
   UNUSED(expr);
   if (!isEdge_) {

@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
@@ -15,7 +15,7 @@
 namespace nebula {
 namespace storage {
 
-void ChainUpdateEdgeProcessorLocal::process(const cpp2::UpdateEdgeRequest& req) {
+void ChainUpdateEdgeLocalProcessor::process(const cpp2::UpdateEdgeRequest& req) {
   if (!prepareRequest(req)) {
     onFinished();
   }
@@ -23,22 +23,19 @@ void ChainUpdateEdgeProcessorLocal::process(const cpp2::UpdateEdgeRequest& req) 
   env_->txnMan_->addChainTask(this);
 }
 
-bool ChainUpdateEdgeProcessorLocal::prepareRequest(const cpp2::UpdateEdgeRequest& req) {
+bool ChainUpdateEdgeLocalProcessor::prepareRequest(const cpp2::UpdateEdgeRequest& req) {
   req_ = req;
   spaceId_ = req.get_space_id();
-  partId_ = req_.get_part_id();
+  localPartId_ = req_.get_part_id();
 
   auto rc = getSpaceVidLen(spaceId_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    pushResultCode(rc, partId_);
+    pushResultCode(rc, localPartId_);
     return false;
   }
 
-  auto __term = env_->txnMan_->getTerm(req_.get_space_id(), partId_);
-  if (__term.ok()) {
-    termOfPrepare_ = __term.value();
-  } else {
-    pushResultCode(Code::E_PART_NOT_FOUND, partId_);
+  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (code_ != Code::SUCCEEDED) {
     return false;
   }
   return true;
@@ -48,13 +45,13 @@ bool ChainUpdateEdgeProcessorLocal::prepareRequest(const cpp2::UpdateEdgeRequest
  * 1. set mem lock
  * 2. set edge prime
  * */
-folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::prepareLocal() {
+folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::prepareLocal() {
   if (!setLock()) {
     LOG(INFO) << "set lock failed, return E_WRITE_WRITE_CONFLICT";
     return Code::E_WRITE_WRITE_CONFLICT;
   }
 
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
 
   std::string val;
   apache::thrift::CompactSerializer::serialize(req_, &val);
@@ -63,7 +60,7 @@ folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::prepareLocal() {
   std::vector<kvstore::KV> data{{key, val}};
   auto c = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiPut(
-      spaceId_, partId_, std::move(data), [p = std::move(c.first), this](auto rc) mutable {
+      spaceId_, localPartId_, std::move(data), [p = std::move(c.first), this](auto rc) mutable {
         if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
           primeInserted_ = true;
         } else {
@@ -74,7 +71,7 @@ folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::prepareLocal() {
   return std::move(c.second);
 }
 
-folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processRemote(Code code) {
+folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processRemote(Code code) {
   LOG(INFO) << "prepareLocal()=" << apache::thrift::util::enumNameSafe(code);
   if (code != Code::SUCCEEDED) {
     return code;
@@ -84,15 +81,16 @@ folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processRemote(Code code) 
   return std::move(fut);
 }
 
-folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processLocal(Code code) {
+folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processLocal(Code code) {
   LOG(INFO) << "processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
   if (code != Code::SUCCEEDED && code_ == Code::SUCCEEDED) {
     code_ = code;
   }
 
-  if (!checkTerm()) {
-    LOG(WARNING) << "checkTerm() failed";
-    return Code::E_OUTDATED_TERM;
+  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  if (currTerm.first != term_) {
+    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
+    code_ = Code::E_LEADER_CHANGED;
   }
 
   if (code == Code::E_RPC_FAILURE) {
@@ -112,7 +110,7 @@ folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processLocal(Code code) {
   return code_;
 }
 
-void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int retry) noexcept {
+void ChainUpdateEdgeLocalProcessor::doRpc(folly::Promise<Code>&& promise, int retry) noexcept {
   try {
     if (retry > retryLimit_) {
       promise.setValue(Code::E_LEADER_CHANGED);
@@ -123,7 +121,7 @@ void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int re
     auto reversedReq = reverseRequest(req_);
 
     auto f = p.getFuture();
-    iClient->chainUpdateEdge(reversedReq, termOfPrepare_, ver_, std::move(p));
+    iClient->chainUpdateEdge(reversedReq, term_, ver_, std::move(p));
     std::move(f)
         .thenTry([=, p = std::move(promise)](auto&& t) mutable {
           auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -144,20 +142,20 @@ void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int re
   }
 }
 
-void ChainUpdateEdgeProcessorLocal::erasePrime() {
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+void ChainUpdateEdgeLocalProcessor::erasePrime() {
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
   kvErased_.emplace_back(std::move(key));
 }
 
-void ChainUpdateEdgeProcessorLocal::appendDoublePrime() {
-  auto key = ConsistUtil::doublePrime(spaceVidLen_, partId_, req_.get_edge_key());
+void ChainUpdateEdgeLocalProcessor::appendDoublePrime() {
+  auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, req_.get_edge_key());
   std::string val;
   apache::thrift::CompactSerializer::serialize(req_, &val);
   val += ConsistUtil::updateIdentifier();
   kvAppend_.emplace_back(std::make_pair(std::move(key), std::move(val)));
 }
 
-void ChainUpdateEdgeProcessorLocal::forwardToDelegateProcessor() {
+void ChainUpdateEdgeLocalProcessor::forwardToDelegateProcessor() {
   kUpdateEdgeCounters.init("update_edge");
   UpdateEdgeProcessor::ContextAdjuster fn = [=](EdgeContext& ctx) {
     ctx.kvAppend = std::move(kvAppend_);
@@ -176,37 +174,22 @@ void ChainUpdateEdgeProcessorLocal::forwardToDelegateProcessor() {
   std::swap(resp_, resp);
 }
 
-Code ChainUpdateEdgeProcessorLocal::checkAndBuildContexts(const cpp2::UpdateEdgeRequest&) {
+Code ChainUpdateEdgeLocalProcessor::checkAndBuildContexts(const cpp2::UpdateEdgeRequest&) {
   return Code::SUCCEEDED;
 }
 
-std::string ChainUpdateEdgeProcessorLocal::sEdgeKey(const cpp2::UpdateEdgeRequest& req) {
+std::string ChainUpdateEdgeLocalProcessor::sEdgeKey(const cpp2::UpdateEdgeRequest& req) {
   return ConsistUtil::edgeKey(spaceVidLen_, req.get_part_id(), req.get_edge_key());
 }
 
-void ChainUpdateEdgeProcessorLocal::finish() {
-  LOG(INFO) << "ChainUpdateEdgeProcessorLocal::finish()";
+void ChainUpdateEdgeLocalProcessor::finish() {
+  LOG(INFO) << "ChainUpdateEdgeLocalProcessor::finish()";
   pushResultCode(code_, req_.get_part_id());
   onFinished();
 }
 
-bool ChainUpdateEdgeProcessorLocal::checkTerm() {
-  return env_->txnMan_->checkTerm(req_.get_space_id(), req_.get_part_id(), termOfPrepare_);
-}
-
-bool ChainUpdateEdgeProcessorLocal::checkVersion() {
-  if (!ver_) {
-    return true;
-  }
-  auto [ver, rc] = ConsistUtil::versionOfUpdateReq(env_, req_);
-  if (rc != Code::SUCCEEDED) {
-    return false;
-  }
-  return *ver_ == ver;
-}
-
-void ChainUpdateEdgeProcessorLocal::abort() {
-  auto key = ConsistUtil::primeKey(spaceVidLen_, partId_, req_.get_edge_key());
+void ChainUpdateEdgeLocalProcessor::abort() {
+  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
   kvErased_.emplace_back(std::move(key));
 
   folly::Baton<true, std::atomic> baton;
@@ -221,7 +204,7 @@ void ChainUpdateEdgeProcessorLocal::abort() {
   baton.wait();
 }
 
-cpp2::UpdateEdgeRequest ChainUpdateEdgeProcessorLocal::reverseRequest(
+cpp2::UpdateEdgeRequest ChainUpdateEdgeLocalProcessor::reverseRequest(
     const cpp2::UpdateEdgeRequest& req) {
   cpp2::UpdateEdgeRequest reversedRequest(req);
   auto reversedEdgeKey = ConsistUtil::reverseEdgeKey(req.get_edge_key());
@@ -236,7 +219,7 @@ cpp2::UpdateEdgeRequest ChainUpdateEdgeProcessorLocal::reverseRequest(
   return reversedRequest;
 }
 
-bool ChainUpdateEdgeProcessorLocal::setLock() {
+bool ChainUpdateEdgeLocalProcessor::setLock() {
   auto spaceId = req_.get_space_id();
   auto* lockCore = env_->txnMan_->getLockCore(spaceId, req_.get_part_id());
   if (lockCore == nullptr) {
@@ -247,20 +230,7 @@ bool ChainUpdateEdgeProcessorLocal::setLock() {
   return lk_->isLocked();
 }
 
-int64_t ChainUpdateEdgeProcessorLocal::getVersion(const cpp2::UpdateEdgeRequest& req) {
-  int64_t invalidVer = -1;
-  auto spaceId = req.get_space_id();
-  auto vIdLen = env_->metaClient_->getSpaceVidLen(spaceId);
-  if (!vIdLen.ok()) {
-    LOG(WARNING) << vIdLen.status().toString();
-    return invalidVer;
-  }
-  auto partId = req.get_part_id();
-  auto key = ConsistUtil::edgeKey(vIdLen.value(), partId, req.get_edge_key());
-  return ConsistUtil::getSingleEdgeVer(env_->kvstore_, spaceId, partId, key);
-}
-
-nebula::cpp2::ErrorCode ChainUpdateEdgeProcessorLocal::getErrorCode(
+nebula::cpp2::ErrorCode ChainUpdateEdgeLocalProcessor::getErrorCode(
     const cpp2::UpdateResponse& resp) {
   auto& respCommon = resp.get_result();
   auto& parts = respCommon.get_failed_parts();
@@ -270,7 +240,7 @@ nebula::cpp2::ErrorCode ChainUpdateEdgeProcessorLocal::getErrorCode(
   return parts.front().get_code();
 }
 
-void ChainUpdateEdgeProcessorLocal::addUnfinishedEdge(ResumeType type) {
+void ChainUpdateEdgeLocalProcessor::addUnfinishedEdge(ResumeType type) {
   LOG(INFO) << "addUnfinishedEdge()";
   if (lk_ != nullptr) {
     lk_->forceUnlock();

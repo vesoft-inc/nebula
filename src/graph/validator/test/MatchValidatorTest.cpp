@@ -34,7 +34,7 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   }
   // non empty properties index with extend
   {
-    std::string query = "MATCH (p:person)-[:like]->(b:book) RETURN b.name AS book;";
+    std::string query = "MATCH (p:person)-[:like]->(b:book) RETURN b.book.name AS book;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAppendVertices,
@@ -77,10 +77,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)"
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(n.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(n.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(n) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kProject,
@@ -94,10 +94,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)"
         "RETURN id(n) AS id,"
         "count(*) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(n.age) AS max,"
-        "min(n.age) AS min,"
-        "(INT)avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(n.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "(INT)avg(distinct n.person.age)+1 AS age,"
         "labels(n) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
@@ -112,10 +112,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)"
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(n.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(n.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age)+1 AS age,"
         "labels(n) AS lb "
         "ORDER BY id;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
@@ -133,10 +133,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)"
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(n.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(n.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age)+1 AS age,"
         "labels(n) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
@@ -156,10 +156,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)-[:like]->(m) "
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kProject,
@@ -174,10 +174,10 @@ TEST_F(MatchValidatorTest, groupby) {
         "MATCH(n:person)-[:like]->(m) "
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age)+1 AS age,"
         "labels(m) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
@@ -191,13 +191,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb ";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
@@ -211,13 +211,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb "
         "SKIP 10 LIMIT 20;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
@@ -234,13 +234,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN DISTINCT id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
                                             PlanNode::Kind::kDedup,
@@ -256,13 +256,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age)+1 AS age,"
         "labels(m) AS lb "
         "SKIP 10 LIMIT 20;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
@@ -280,13 +280,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN DISTINCT id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age)+1 AS age,"
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
@@ -307,13 +307,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m) "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN DISTINCT id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "avg(distinct n.age) AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
@@ -333,13 +333,13 @@ TEST_F(MatchValidatorTest, groupby) {
   {
     std::string query =
         "MATCH(n:person)-[:like]->(m)-[:serve]-() "
-        "WHERE n.age > 35 "
+        "WHERE n.person.age > 35 "
         "RETURN DISTINCT id(n) AS id,"
         "count(n) AS count,"
-        "sum(floor(n.age)) AS sum,"
-        "max(m.age) AS max,"
-        "min(n.age) AS min,"
-        "(INT)avg(distinct n.age)+1 AS age,"
+        "sum(floor(n.person.age)) AS sum,"
+        "max(m.person.age) AS max,"
+        "min(n.person.age) AS min,"
+        "(INT)avg(distinct n.person.age)+1 AS age,"
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
@@ -364,7 +364,7 @@ TEST_F(MatchValidatorTest, with) {
   {
     std::string query =
         "MATCH (v :person{name:\"Tim Duncan\"})-[]-(v2) "
-        "WITH abs(avg(v2.age)) as average_age "
+        "WITH abs(avg(v2.person.age)) as average_age "
         "RETURN average_age";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kProject,

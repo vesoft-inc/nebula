@@ -46,9 +46,11 @@ class BalanceTask {
         partId_(partId),
         src_(src),
         dst_(dst),
-        taskIdStr_(buildTaskId()),
         kv_(kv),
-        client_(client) {}
+        client_(client) {
+    taskIdStr_ = buildTaskId();
+    commandStr_ = buildCommand();
+  }
 
   const std::string& taskIdStr() const {
     return taskIdStr_;

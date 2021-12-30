@@ -10,7 +10,6 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "common/base/Base.h"
-#include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
@@ -18,6 +17,7 @@
 #include "common/time/TimezoneInfo.h"
 #include "daemons/SetupLogging.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/service/GraphServer.h"
 #include "graph/service/GraphService.h"
 #include "graph/stats/GraphStats.h"
 #include "version/Version.h"
@@ -30,18 +30,17 @@ using nebula::fs::FileUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
 
-static std::unique_ptr<apache::thrift::ThriftServer> gServer;
-
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 static void printHelp(const char *prog);
-static void setupThreadManager();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
 
 DECLARE_string(flagfile);
 DECLARE_bool(containerized);
+
+std::unique_ptr<nebula::graph::GraphServer> gServer;
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -60,7 +59,6 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initGraphStats();
 
   if (FLAGS_flagfile.empty()) {
     printHelp(argv[0]);
@@ -89,6 +87,8 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  nebula::initGraphStats();
 
   if (FLAGS_daemonize) {
     status = ProcessUtils::daemonize(pidPath);
@@ -153,30 +153,6 @@ int main(int argc, char *argv[]) {
   }
   LOG(INFO) << "Number of worker threads: " << FLAGS_num_worker_threads;
 
-  auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
-  auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_netio_threads,
-                                                                    std::move(threadFactory));
-  gServer = std::make_unique<apache::thrift::ThriftServer>();
-  gServer->setIOThreadPool(ioThreadPool);
-
-  auto interface = std::make_shared<GraphService>();
-  status = interface->init(ioThreadPool, localhost);
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return EXIT_FAILURE;
-  }
-
-  gServer->setPort(localhost.port);
-  gServer->setInterface(std::move(interface));
-  gServer->setReusePort(FLAGS_reuse_port);
-  gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
-  gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
-  gServer->setListenBacklog(FLAGS_listen_backlog);
-  if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl) {
-    gServer->setSSLConfig(nebula::sslContextConfig());
-  }
-  setupThreadManager();
-
   // Setup the signal handlers
   status = setupSignalHandler();
   if (!status.ok()) {
@@ -184,16 +160,15 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  FLOG_INFO("Starting nebula-graphd on %s:%d\n", localhost.host.c_str(), localhost.port);
-  try {
-    gServer->serve();  // Blocking wait until shut down via gServer->stop()
-  } catch (const std::exception &e) {
-    FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
+  gServer = std::make_unique<nebula::graph::GraphServer>(localhost);
+
+  if (!gServer->start()) {
+    LOG(ERROR) << "The graph server start failed";
     return EXIT_FAILURE;
   }
 
-  FLOG_INFO("nebula-graphd on %s:%d has been stopped", localhost.host.c_str(), localhost.port);
-
+  gServer->waitUntilStop();
+  LOG(INFO) << "The graph Daemon stopped";
   return EXIT_SUCCESS;
 }
 
@@ -208,7 +183,7 @@ void signalHandler(int sig) {
     case SIGINT:
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-      gServer->stop();
+      gServer->notifyStop();
       break;
     default:
       FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
@@ -217,14 +192,4 @@ void signalHandler(int sig) {
 
 void printHelp(const char *prog) {
   fprintf(stderr, "%s --flagfile <config_file>\n", prog);
-}
-
-void setupThreadManager() {
-  int numThreads =
-      FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads));
-  threadManager->setNamePrefix("executor");
-  threadManager->start();
-  gServer->setThreadManager(threadManager);
 }

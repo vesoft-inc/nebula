@@ -59,6 +59,10 @@ void ExtractPropExprVisitor::visit(LabelAttributeExpression* expr) {
   reportError(expr);
 }
 
+void ExtractPropExprVisitor::visit(LabelTagPropertyExpression* expr) {
+  reportError(expr);
+}
+
 void ExtractPropExprVisitor::visit(VersionedVariableExpression* expr) {
   reportError(expr);
 }

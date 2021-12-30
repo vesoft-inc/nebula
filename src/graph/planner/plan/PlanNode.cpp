@@ -174,6 +174,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropEdge";
     case Kind::kShowSpaces:
       return "ShowSpaces";
+    case Kind::kAlterSpace:
+      return "AlterSpaces";
     case Kind::kShowTags:
       return "ShowTags";
     case Kind::kShowEdges:
@@ -263,15 +265,15 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowListener";
     case Kind::kShowStats:
       return "ShowStats";
-    // text search
-    case Kind::kShowTSClients:
-      return "ShowTSClients";
+    // service search
+    case Kind::kShowServiceClients:
+      return "ShowServiceClients";
     case Kind::kShowFTIndexes:
       return "ShowFTIndexes";
-    case Kind::kSignInTSService:
-      return "SignInTSService";
-    case Kind::kSignOutTSService:
-      return "SignOutTSService";
+    case Kind::kSignInService:
+      return "SignInService";
+    case Kind::kSignOutService:
+      return "SignOutService";
     case Kind::kDownload:
       return "Download";
     case Kind::kIngest:
