@@ -6,8 +6,10 @@
 #include "graph/util/ExpressionUtils.h"
 
 #include <memory>
+#include <queue>
 
 #include "common/base/ObjectPool.h"
+#include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
 #include "graph/context/QueryContext.h"
@@ -952,6 +954,179 @@ bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
 
   return false;
 }
+
+bool ExpressionUtils::checkExprDepth(const Expression *expr) {
+  std::queue<const Expression *> expr_queue;
+  expr_queue.emplace(expr);
+  int depth = 0;
+  while (!expr_queue.empty()) {
+    int size = expr_queue.size();
+    while (size > 0) {
+      const Expression *cur = expr_queue.front();
+      expr_queue.pop();
+      switch (cur->kind()) {
+        case Expression::Kind::kConstant:
+        case Expression::Kind::kVar: {
+          break;
+        }
+        case Expression::Kind::kAdd:
+        case Expression::Kind::kMinus:
+        case Expression::Kind::kMultiply:
+        case Expression::Kind::kDivision:
+        case Expression::Kind::kMod: {
+          auto *ariExpr = static_cast<const ArithmeticExpression *>(cur);
+          expr_queue.emplace(ariExpr->left());
+          expr_queue.emplace(ariExpr->right());
+          break;
+        }
+        case Expression::Kind::kIsNull:
+        case Expression::Kind::kIsNotNull:
+        case Expression::Kind::kIsEmpty:
+        case Expression::Kind::kIsNotEmpty:
+        case Expression::Kind::kUnaryPlus:
+        case Expression::Kind::kUnaryNegate:
+        case Expression::Kind::kUnaryNot:
+        case Expression::Kind::kUnaryIncr:
+        case Expression::Kind::kUnaryDecr: {
+          auto *unaExpr = static_cast<const UnaryExpression *>(cur);
+          expr_queue.emplace(unaExpr->operand());
+          break;
+        }
+        case Expression::Kind::kRelEQ:
+        case Expression::Kind::kRelNE:
+        case Expression::Kind::kRelLT:
+        case Expression::Kind::kRelLE:
+        case Expression::Kind::kRelGT:
+        case Expression::Kind::kRelGE:
+        case Expression::Kind::kRelREG:
+        case Expression::Kind::kContains:
+        case Expression::Kind::kNotContains:
+        case Expression::Kind::kStartsWith:
+        case Expression::Kind::kNotStartsWith:
+        case Expression::Kind::kEndsWith:
+        case Expression::Kind::kNotEndsWith:
+        case Expression::Kind::kRelNotIn:
+        case Expression::Kind::kRelIn: {
+          auto *relExpr = static_cast<const RelationalExpression *>(cur);
+          expr_queue.emplace(relExpr->left());
+          expr_queue.emplace(relExpr->right());
+          break;
+        }
+        case Expression::Kind::kList: {
+          auto *listExpr = static_cast<const ListExpression *>(cur);
+          for (auto &item : listExpr->items()) {
+            expr_queue.emplace(item);
+          }
+          break;
+        }
+        case Expression::Kind::kSet: {
+          auto *setExpr = static_cast<const SetExpression *>(cur);
+          for (auto &item : setExpr->items()) {
+            expr_queue.emplace(item);
+          }
+          break;
+        }
+        case Expression::Kind::kMap: {
+          auto *mapExpr = static_cast<const MapExpression *>(cur);
+          for (auto &item : mapExpr->items()) {
+            expr_queue.emplace(item.second);
+          }
+          break;
+        }
+        case Expression::Kind::kCase: {
+          auto *caseExpr = static_cast<const CaseExpression *>(cur);
+          if (caseExpr->hasCondition()) {
+            expr_queue.emplace(caseExpr->condition());
+          }
+          if (caseExpr->hasDefault()) {
+            expr_queue.emplace(caseExpr->defaultResult());
+          }
+          for (auto &whenThen : caseExpr->cases()) {
+            expr_queue.emplace(whenThen.when);
+            expr_queue.emplace(whenThen.then);
+          }
+          break;
+        }
+        case Expression::Kind::kListComprehension: {
+          auto *lcExpr = static_cast<const ListComprehensionExpression *>(cur);
+          expr_queue.emplace(lcExpr->collection());
+          if (lcExpr->hasFilter()) {
+            expr_queue.emplace(lcExpr->filter());
+          }
+          if (lcExpr->hasMapping()) {
+            expr_queue.emplace(lcExpr->mapping());
+          }
+          break;
+        }
+        case Expression::Kind::kPredicate: {
+          auto *predExpr = static_cast<const PredicateExpression *>(cur);
+          expr_queue.emplace(predExpr->collection());
+          expr_queue.emplace(predExpr->filter());
+          break;
+        }
+        case Expression::Kind::kReduce: {
+          auto *reduceExpr = static_cast<const ReduceExpression *>(cur);
+          expr_queue.emplace(reduceExpr->collection());
+          expr_queue.emplace(reduceExpr->mapping());
+          break;
+        }
+        case Expression::Kind::kLogicalAnd:
+        case Expression::Kind::kLogicalOr:
+        case Expression::Kind::kLogicalXor: {
+          auto *logExpr = static_cast<const LogicalExpression *>(cur);
+          for (auto &op : logExpr->operands()) {
+            expr_queue.emplace(op);
+          }
+          break;
+        }
+        case Expression::Kind::kTypeCasting: {
+          auto *typExpr = static_cast<const TypeCastingExpression *>(cur);
+          expr_queue.emplace(typExpr->operand());
+          break;
+        }
+        case Expression::Kind::kFunctionCall: {
+          auto *funExpr = static_cast<const FunctionCallExpression *>(cur);
+          auto &args = funExpr->args()->args();
+          for (auto iter = args.begin(); iter < args.end(); ++iter) {
+            expr_queue.emplace(*iter);
+          }
+          break;
+        }
+        case Expression::Kind::kTagProperty:
+        case Expression::Kind::kSrcProperty:
+        case Expression::Kind::kEdgeRank:
+        case Expression::Kind::kEdgeDst:
+        case Expression::Kind::kEdgeSrc:
+        case Expression::Kind::kEdgeType:
+        case Expression::Kind::kEdgeProperty:
+        case Expression::Kind::kInputProperty:
+        case Expression::Kind::kSubscript:
+        case Expression::Kind::kAttribute:
+        case Expression::Kind::kLabelAttribute:
+        case Expression::Kind::kVertex:
+        case Expression::Kind::kEdge:
+        case Expression::Kind::kLabel:
+        case Expression::Kind::kVarProperty:
+        case Expression::Kind::kDstProperty:
+        case Expression::Kind::kUUID:
+        case Expression::Kind::kPathBuild:
+        case Expression::Kind::kColumn:
+        case Expression::Kind::kTSPrefix:
+        case Expression::Kind::kTSWildcard:
+        case Expression::Kind::kTSRegexp:
+        case Expression::Kind::kTSFuzzy:
+        case Expression::Kind::kAggregate:
+        case Expression::Kind::kSubscriptRange:
+        case Expression::Kind::kVersionedVar:
+        default:
+          break;
+      }
+      size -= 1;
+    }
+    depth += 1;
+  }
+  return depth < ExpressionUtils::MAX_DEPTH;
+}  // namespace graph
 
 }  // namespace graph
 }  // namespace nebula
