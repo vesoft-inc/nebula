@@ -107,11 +107,12 @@ class DummyListener : public Listener {
     return lastApplyLogId_;
   }
 
-  void cleanup() override {
+  nebula::cpp2::ErrorCode cleanup() override {
     data_.clear();
     leaderCommitId_ = 0;
     lastApplyLogId_ = 0;
     snapshotBatchCount_ = 0;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
  private:

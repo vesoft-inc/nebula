@@ -162,6 +162,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "PROFILE"                   { return TokenType::KW_PROFILE; }
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
+"ACROSS"                    { return TokenType::KW_ACROSS; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,
@@ -284,6 +285,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
+"DIVIDE"                    { return TokenType::KW_DIVIDE; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

@@ -7,7 +7,6 @@
 #define GRAPH_VISITOR_REWRITEVISITOR_H_
 
 #include <functional>
-#include <vector>
 
 #include "graph/visitor/ExprVisitorImpl.h"
 
@@ -35,12 +34,12 @@ class RewriteVisitor final : public ExprVisitorImpl {
   }
 
  private:
-  explicit RewriteVisitor(Matcher matcher, Rewriter rewriter)
+  RewriteVisitor(Matcher matcher, Rewriter rewriter)
       : matcher_(std::move(matcher)), rewriter_(std::move(rewriter)) {}
 
-  explicit RewriteVisitor(Matcher matcher,
-                          Rewriter rewriter,
-                          const std::unordered_set<Expression::Kind>& needVisitedTypes)
+  RewriteVisitor(Matcher matcher,
+                 Rewriter rewriter,
+                 const std::unordered_set<Expression::Kind>& needVisitedTypes)
       : matcher_(std::move(matcher)),
         rewriter_(std::move(rewriter)),
         needVisitedTypes_(std::move(needVisitedTypes)) {}
@@ -73,6 +72,7 @@ class RewriteVisitor final : public ExprVisitorImpl {
   void visit(LabelExpression*) override {}
   void visit(UUIDExpression*) override {}
   void visit(LabelAttributeExpression*) override {}
+  void visit(LabelTagPropertyExpression*) override {}
   void visit(VariableExpression*) override {}
   void visit(VersionedVariableExpression*) override {}
   void visit(TagPropertyExpression*) override {}

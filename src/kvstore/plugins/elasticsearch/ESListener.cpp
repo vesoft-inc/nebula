@@ -8,7 +8,7 @@
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
 
-DECLARE_int32(ft_request_retry_times);
+DECLARE_uint32(ft_request_retry_times);
 DECLARE_int32(ft_bulk_batch_size);
 
 namespace nebula {
@@ -20,7 +20,7 @@ void ESListener::init() {
   }
   vIdLen_ = vRet.value();
 
-  auto cRet = schemaMan_->getFTClients();
+  auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!cRet.ok() || cRet.value().empty()) {
     LOG(FATAL) << "elasticsearch clients error";
   }

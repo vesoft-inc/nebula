@@ -52,74 +52,29 @@ struct Variable {
 
 class SymbolTable final {
  public:
-  explicit SymbolTable(ObjectPool* objPool) {
-    DCHECK(objPool != nullptr);
-    objPool_ = objPool;
-  }
+  explicit SymbolTable(ObjectPool* objPool);
 
-  Variable* newVariable(std::string name) {
-    VLOG(1) << "New variable for: " << name;
-    auto* variable = objPool_->makeAndAdd<Variable>(name);
-    addVar(std::move(name), variable);
-    return variable;
-  }
+  Variable* newVariable(std::string name);
 
-  void addVar(std::string varName, Variable* variable) {
-    vars_.emplace(std::move(varName), variable);
-  }
+  void addVar(std::string varName, Variable* variable);
 
-  bool readBy(const std::string& varName, PlanNode* node) {
-    auto var = vars_.find(varName);
-    if (var == vars_.end()) {
-      return false;
-    }
-    var->second->readBy.emplace(node);
-    return true;
-  }
+  bool readBy(const std::string& varName, PlanNode* node);
 
-  bool writtenBy(const std::string& varName, PlanNode* node) {
-    auto var = vars_.find(varName);
-    if (var == vars_.end()) {
-      return false;
-    }
-    var->second->writtenBy.emplace(node);
-    return true;
-  }
+  bool writtenBy(const std::string& varName, PlanNode* node);
 
-  bool deleteReadBy(const std::string& varName, PlanNode* node) {
-    auto var = vars_.find(varName);
-    if (var == vars_.end()) {
-      return false;
-    }
-    var->second->readBy.erase(node);
-    return true;
-  }
+  bool deleteReadBy(const std::string& varName, PlanNode* node);
 
-  bool deleteWrittenBy(const std::string& varName, PlanNode* node) {
-    auto var = vars_.find(varName);
-    if (var == vars_.end()) {
-      return false;
-    }
-    var->second->writtenBy.erase(node);
-    return true;
-  }
+  bool deleteWrittenBy(const std::string& varName, PlanNode* node);
 
-  bool updateReadBy(const std::string& oldVar, const std::string& newVar, PlanNode* node) {
-    return deleteReadBy(oldVar, node) && readBy(newVar, node);
-  }
+  bool updateReadBy(const std::string& oldVar, const std::string& newVar, PlanNode* node);
 
-  bool updateWrittenBy(const std::string& oldVar, const std::string& newVar, PlanNode* node) {
-    return deleteWrittenBy(oldVar, node) && writtenBy(newVar, node);
-  }
+  bool updateWrittenBy(const std::string& oldVar, const std::string& newVar, PlanNode* node);
 
-  Variable* getVar(const std::string& varName) {
-    auto var = vars_.find(varName);
-    if (var == vars_.end()) {
-      return nullptr;
-    } else {
-      return var->second;
-    }
-  }
+  Variable* getVar(const std::string& varName);
+
+  void setAliasGeneratedBy(const std::vector<std::string>& aliases, const std::string& varName);
+
+  StatusOr<std::string> getAliasGeneratedBy(const std::string& alias);
 
   std::string toString() const;
 
@@ -127,6 +82,8 @@ class SymbolTable final {
   ObjectPool* objPool_{nullptr};
   // var name -> variable
   std::unordered_map<std::string, Variable*> vars_;
+  // alias -> first variable that generate the alias
+  std::unordered_map<std::string, std::string> aliasGeneratedBy_;
 };
 
 }  // namespace graph

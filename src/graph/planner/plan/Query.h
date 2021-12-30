@@ -1483,6 +1483,10 @@ class Traverse final : public GetNeighbors {
     return eFilter_;
   }
 
+  bool trackPrevPath() const {
+    return trackPrevPath_;
+  }
+
   void setStepRange(MatchStepRange* range) {
     range_ = range;
   }
@@ -1493,6 +1497,10 @@ class Traverse final : public GetNeighbors {
 
   void setEdgeFilter(Expression* eFilter) {
     eFilter_ = eFilter;
+  }
+
+  void setTrackPrevPath(bool track = true) {
+    trackPrevPath_ = track;
   }
 
  private:
@@ -1507,6 +1515,7 @@ class Traverse final : public GetNeighbors {
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
+  bool trackPrevPath_{true};
 };
 
 class AppendVertices final : public GetVertices {
@@ -1523,8 +1532,16 @@ class AppendVertices final : public GetVertices {
     return vFilter_;
   }
 
+  bool trackPrevPath() const {
+    return trackPrevPath_;
+  }
+
   void setVertexFilter(Expression* vFilter) {
     vFilter_ = vFilter;
+  }
+
+  void setTrackPrevPath(bool track = true) {
+    trackPrevPath_ = track;
   }
 
  private:
@@ -1544,7 +1561,101 @@ class AppendVertices final : public GetVertices {
   void cloneMembers(const AppendVertices& a);
 
   Expression* vFilter_;
+
+  bool trackPrevPath_{true};
 };
+
+class BiJoin : public BinaryInputNode {
+ public:
+  const std::vector<Expression*>& hashKeys() const {
+    return hashKeys_;
+  }
+
+  const std::vector<Expression*>& probeKeys() const {
+    return probeKeys_;
+  }
+
+  void setHashKeys(std::vector<Expression*> newHashKeys) {
+    hashKeys_ = newHashKeys;
+  }
+
+  void setProbeKeys(std::vector<Expression*> newProbeKeys) {
+    probeKeys_ = newProbeKeys;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  BiJoin(QueryContext* qctx,
+         Kind kind,
+         PlanNode* left,
+         PlanNode* right,
+         std::vector<Expression*> hashKeys,
+         std::vector<Expression*> probeKeys);
+
+  void cloneMembers(const BiJoin&);
+
+ protected:
+  std::vector<Expression*> hashKeys_;
+  std::vector<Expression*> probeKeys_;
+};
+
+/*
+ *  left join
+ */
+class BiLeftJoin final : public BiJoin {
+ public:
+  static BiLeftJoin* make(QueryContext* qctx,
+                          PlanNode* left,
+                          PlanNode* right,
+                          std::vector<Expression*> hashKeys = {},
+                          std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->add(
+        new BiLeftJoin(qctx, left, right, std::move(hashKeys), std::move(probeKeys)));
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  BiLeftJoin(QueryContext* qctx,
+             PlanNode* left,
+             PlanNode* right,
+             std::vector<Expression*> hashKeys,
+             std::vector<Expression*> probeKeys)
+      : BiJoin(qctx, Kind::kBiLeftJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+
+  void cloneMembers(const BiLeftJoin&);
+};
+
+/*
+ *  inner join
+ */
+class BiInnerJoin final : public BiJoin {
+ public:
+  static BiInnerJoin* make(QueryContext* qctx,
+                           PlanNode* left,
+                           PlanNode* right,
+                           std::vector<Expression*> hashKeys = {},
+                           std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->add(
+        new BiInnerJoin(qctx, left, right, std::move(hashKeys), std::move(probeKeys)));
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  BiInnerJoin(QueryContext* qctx,
+              PlanNode* left,
+              PlanNode* right,
+              std::vector<Expression*> hashKeys,
+              std::vector<Expression*> probeKeys)
+      : BiJoin(qctx, Kind::kBiInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+
+  void cloneMembers(const BiInnerJoin&);
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

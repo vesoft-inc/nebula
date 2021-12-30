@@ -131,7 +131,7 @@ class DeleteEdgesValidator final : public Validator {
 
 class UpdateValidator : public Validator {
  public:
-  explicit UpdateValidator(Sentence* sentence, QueryContext* context, bool isEdge = false)
+  UpdateValidator(Sentence* sentence, QueryContext* context, bool isEdge = false)
       : Validator(sentence, context) {
     sentence_ = static_cast<UpdateBaseSentence*>(sentence);
     isEdge_ = isEdge;

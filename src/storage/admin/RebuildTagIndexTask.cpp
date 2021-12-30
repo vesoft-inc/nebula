@@ -127,7 +127,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_tag_id() == tagID) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get());
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get(), schema);
         if (!valuesRet.ok()) {
           LOG(WARNING) << "Collect index value failed";
           continue;

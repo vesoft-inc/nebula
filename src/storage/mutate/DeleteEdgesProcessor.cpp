@@ -77,8 +77,22 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         handleAsync(spaceId_, partId, code);
         continue;
       }
-      doRemove(spaceId_, partId, std::move(keys));
-      stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
+
+      HookFuncPara para;
+      if (tossHookFunc_) {
+        para.keys.emplace(&keys);
+        (*tossHookFunc_)(para);
+      }
+      if (para.result) {
+        env_->kvstore_->asyncAppendBatch(
+            spaceId_,
+            partId,
+            std::move(para.result.value()),
+            [partId, this](nebula::cpp2::ErrorCode rc) { handleAsync(spaceId_, partId, rc); });
+      } else {
+        doRemove(spaceId_, partId, std::move(keys));
+        stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
+      }
     }
   } else {
     for (auto& part : partEdges) {
@@ -145,6 +159,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     auto key = NebulaKeyUtils::edgeKey(spaceVidLen_, partId, srcId, type, rank, dstId);
     std::string val;
     auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
+    auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(type));
 
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
       /**
@@ -162,7 +177,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValues(reader.get(), index.get(), schema.get());
           if (!valuesRet.ok()) {
             continue;
           }
@@ -196,6 +212,11 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     }
   }
 
+  if (tossHookFunc_) {
+    HookFuncPara para;
+    para.batch.emplace(batchHolder.get());
+    (*tossHookFunc_)(para);
+  }
   return encodeBatchValue(batchHolder->getBatch());
 }
 

@@ -212,8 +212,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<RenameZoneValidator>(sentence, context);
     case Sentence::Kind::kDropZone:
       return std::make_unique<DropZoneValidator>(sentence, context);
-    case Sentence::Kind::kSplitZone:
-      return std::make_unique<SplitZoneValidator>(sentence, context);
+    case Sentence::Kind::kDivideZone:
+      return std::make_unique<DivideZoneValidator>(sentence, context);
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:
@@ -228,14 +228,14 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowListenerValidator>(sentence, context);
     case Sentence::Kind::kShowStats:
       return std::make_unique<ShowStatusValidator>(sentence, context);
-    case Sentence::Kind::kShowTSClients:
-      return std::make_unique<ShowTSClientsValidator>(sentence, context);
+    case Sentence::Kind::kShowServiceClients:
+      return std::make_unique<ShowServiceClientsValidator>(sentence, context);
     case Sentence::Kind::kShowFTIndexes:
       return std::make_unique<ShowFTIndexesValidator>(sentence, context);
-    case Sentence::Kind::kSignInTSService:
-      return std::make_unique<SignInTSServiceValidator>(sentence, context);
-    case Sentence::Kind::kSignOutTSService:
-      return std::make_unique<SignOutTSServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignInService:
+      return std::make_unique<SignInServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignOutService:
+      return std::make_unique<SignOutServiceValidator>(sentence, context);
     case Sentence::Kind::kDownload:
       return std::make_unique<DownloadValidator>(sentence, context);
     case Sentence::Kind::kIngest:
@@ -252,6 +252,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowQueriesValidator>(sentence, context);
     case Sentence::Kind::kKillQuery:
       return std::make_unique<KillQueryValidator>(sentence, context);
+    case Sentence::Kind::kAlterSpace:
+      return std::make_unique<AlterSpaceValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing

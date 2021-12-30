@@ -52,5 +52,22 @@ void CartesianProductExecutor::doCartesianProduct(const DataSet& lds,
   }
 }
 
+BiCartesianProductExecutor::BiCartesianProductExecutor(const PlanNode* node, QueryContext* qctx)
+    : CartesianProductExecutor(node, qctx) {
+  name_ = "BiCartesianProductExecutor";
+}
+
+folly::Future<Status> BiCartesianProductExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto* BiCP = asNode<BiCartesianProduct>(node());
+  const auto& lds = ectx_->getResult(BiCP->leftInputVar()).value().getDataSet();
+  const auto& rds = ectx_->getResult(BiCP->rightInputVar()).value().getDataSet();
+  DataSet result;
+  doCartesianProduct(lds, rds, result);
+  result.colNames = BiCP->colNames();
+  VLOG(1) << "Cartesian Product is : " << result;
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
+}
 }  // namespace graph
 }  // namespace nebula

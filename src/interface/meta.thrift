@@ -209,6 +209,16 @@ struct ExecResp {
     3: common.HostAddr  leader,
 }
 
+enum AlterSpaceOp {
+    ADD_ZONE    = 0x01,
+} (cpp.enum_strict)
+
+struct AlterSpaceReq {
+    1: binary           space_name,
+    2: AlterSpaceOp     op,
+    3: list<binary>     paras,
+}
+
 // Job related data structures
 enum AdminJobOp {
     ADD         = 0x01,
@@ -235,6 +245,7 @@ enum AdminCmd {
     DOWNLOAD                 = 7,
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
+    ZONE_BALANCE             = 10,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -866,8 +877,9 @@ struct DropZoneReq {
     1: binary                 zone_name,
 }
 
-struct SplitZoneReq {
-    1: binary            zone_name,
+struct DivideZoneReq {
+    1: binary                                                                   zone_name,
+    2: map<binary, list<common.HostAddr>> (cpp.template = "std::unordered_map") zone_items,
 }
 
 struct RenameZoneReq {
@@ -993,32 +1005,35 @@ struct RestoreMetaReq {
     2: list<HostPair>   hosts,
 }
 
-enum FTServiceType {
+enum ExternalServiceType {
     ELASTICSEARCH = 0x01,
 } (cpp.enum_strict)
 
-struct FTClient {
+struct ServiceClient {
     1: required common.HostAddr    host,
     2: optional binary             user,
     3: optional binary             pwd,
     4: optional binary             conn_type,
 }
 
-struct SignInFTServiceReq {
-    1: FTServiceType                type,
-    2: list<FTClient>               clients,
+struct SignInServiceReq {
+    1: ExternalServiceType type,
+    2: list<ServiceClient> clients,
 }
 
-struct SignOutFTServiceReq {
+struct SignOutServiceReq {
+    1: ExternalServiceType type,
 }
 
-struct ListFTClientsReq {
+struct ListServiceClientsReq {
+    1: ExternalServiceType type,
 }
 
-struct ListFTClientsResp {
+struct ListServiceClientsResp {
     1: common.ErrorCode    code,
     2: common.HostAddr     leader,
-    3: list<FTClient>      clients,
+    3: map<ExternalServiceType, list<ServiceClient>>
+    (cpp.template = "std::unordered_map") clients,
 }
 
 struct FTIndex {
@@ -1167,6 +1182,7 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+    ExecResp alterSpace(1: AlterSpaceReq req);
 
     ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 
@@ -1236,7 +1252,7 @@ service MetaService {
 
     ExecResp       mergeZone(1: MergeZoneReq req);
     ExecResp       dropZone(1: DropZoneReq req);
-    ExecResp       splitZone(1: SplitZoneReq req);
+    ExecResp       divideZone(1: DivideZoneReq req);
     ExecResp       renameZone(1: RenameZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
@@ -1246,9 +1262,9 @@ service MetaService {
     ListListenerResp listListener(1: ListListenerReq req);
 
     GetStatsResp  getStats(1: GetStatsReq req);
-    ExecResp signInFTService(1: SignInFTServiceReq req);
-    ExecResp signOutFTService(1: SignOutFTServiceReq req);
-    ListFTClientsResp listFTClients(1: ListFTClientsReq req);
+    ExecResp signInService(1: SignInServiceReq req);
+    ExecResp signOutService(1: SignOutServiceReq req);
+    ListServiceClientsResp listServiceClients(1: ListServiceClientsReq req);
 
     ExecResp createFTIndex(1: CreateFTIndexReq req);
     ExecResp dropFTIndex(1: DropFTIndexReq req);

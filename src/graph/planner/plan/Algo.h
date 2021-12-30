@@ -169,6 +169,17 @@ class Subgraph final : public SingleInputNode {
   uint32_t steps_;
 };
 
+class BiCartesianProduct final : public BinaryInputNode {
+ public:
+  static BiCartesianProduct* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->add(new BiCartesianProduct(qctx, left, right));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_ALGO_H_

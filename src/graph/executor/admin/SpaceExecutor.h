@@ -60,6 +60,14 @@ class ShowCreateSpaceExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 };
+
+class AlterSpaceExecutor final : public Executor {
+ public:
+  AlterSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("AlterSpaceExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
 }  // namespace graph
 }  // namespace nebula
 

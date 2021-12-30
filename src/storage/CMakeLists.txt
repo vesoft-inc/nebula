@@ -72,22 +72,33 @@ nebula_add_library(
     storage_transaction_executor OBJECT
     transaction/TransactionManager.cpp
     transaction/ConsistUtil.cpp
-    transaction/ChainUpdateEdgeProcessorLocal.cpp
-    transaction/ChainUpdateEdgeProcessorRemote.cpp
+    transaction/ChainUpdateEdgeLocalProcessor.cpp
+    transaction/ChainUpdateEdgeRemoteProcessor.cpp
     transaction/ChainResumeProcessor.cpp
     transaction/ChainAddEdgesGroupProcessor.cpp
-    transaction/ChainAddEdgesProcessorLocal.cpp
-    transaction/ChainAddEdgesProcessorRemote.cpp
+    transaction/ChainAddEdgesLocalProcessor.cpp
+    transaction/ChainAddEdgesRemoteProcessor.cpp
     transaction/ResumeAddEdgeProcessor.cpp
     transaction/ResumeAddEdgeRemoteProcessor.cpp
     transaction/ResumeUpdateProcessor.cpp
     transaction/ResumeUpdateRemoteProcessor.cpp
     transaction/ChainProcessorFactory.cpp
+    transaction/ChainDeleteEdgesGroupProcessor.cpp
+    transaction/ChainDeleteEdgesLocalProcessor.cpp
+    transaction/ChainDeleteEdgesRemoteProcessor.cpp
+    transaction/ChainDeleteEdgesResumeProcessor.cpp
+    transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
 
 nebula_add_library(
     storage_server OBJECT
     StorageServer.cpp
+)
+
+
+nebula_add_library(
+    storage_local_server_obj OBJECT
+    GraphStorageLocalServer.cpp
 )
 
 nebula_add_subdirectory(stats)

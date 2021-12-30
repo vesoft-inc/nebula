@@ -10,6 +10,7 @@
 #include <folly/system/ThreadName.h>
 #include <thrift/lib/cpp2/async/RocketClientChannel.h>
 
+#include "common/base/Base.h"
 #include "common/network/NetworkUtils.h"
 #include "common/ssl/SSLConfig.h"
 
@@ -17,7 +18,6 @@ DECLARE_int32(conn_timeout_ms);
 
 namespace nebula {
 namespace thrift {
-
 template <class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAddr& host,
                                                                     folly::EventBase* evb,

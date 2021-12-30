@@ -167,7 +167,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
 }
 
 void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string &spaceName) {
-  if (FLAGS_enable_space_level_metrics) {
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
     stats::StatsManager::removeCounterWithLabels(kNumQueries, {{"space", spaceName}});
     stats::StatsManager::removeCounterWithLabels(kNumSlowQueries, {{"space", spaceName}});
     stats::StatsManager::removeCounterWithLabels(kNumQueryErrors, {{"space", spaceName}});
@@ -268,6 +268,23 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
+      });
+}
+
+folly::Future<Status> AlterSpaceExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  auto *asnode = asNode<AlterSpace>(node());
+  return qctx()
+      ->getMetaClient()
+      ->alterSpace(asnode->getSpaceName(), asnode->getAlterSpaceOp(), asnode->getParas())
+      .via(runner())
+      .thenValue([this](StatusOr<bool> &&resp) {
+        SCOPED_TIMER(&execTime_);
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status().toString();
+          return std::move(resp).status();
+        }
+        return Status::OK();
       });
 }
 }  // namespace graph

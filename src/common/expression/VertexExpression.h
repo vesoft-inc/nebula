@@ -43,7 +43,7 @@ class VertexExpression final : public Expression {
   bool operator==(const Expression &expr) const override;
 
  private:
-  explicit VertexExpression(ObjectPool *pool, const std::string &name)
+  VertexExpression(ObjectPool *pool, const std::string &name)
       : Expression(pool, Kind::kVertex), name_(name) {}
 
   void writeTo(Encoder &encoder) const override;

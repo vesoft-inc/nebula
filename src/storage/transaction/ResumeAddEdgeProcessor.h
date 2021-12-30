@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-class ResumeAddEdgeProcessor : public ChainAddEdgesProcessorLocal {
+class ResumeAddEdgeProcessor : public ChainAddEdgesLocalProcessor {
  public:
   static ResumeAddEdgeProcessor* instance(StorageEnv* env, const std::string& val) {
     return new ResumeAddEdgeProcessor(env, val);

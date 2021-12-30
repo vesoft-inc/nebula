@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
+#include "storage/transaction/ConsistTypes.h"
 
 namespace nebula {
 namespace storage {
@@ -24,8 +25,13 @@ class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 
   void process(const cpp2::DeleteEdgesRequest& req);
 
+  using HookFunction = std::function<void(HookFuncPara&)>;
+  void setHookFunc(HookFunction func) {
+    tossHookFunc_ = func;
+  }
+
  private:
-  explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteEdges(
@@ -34,6 +40,11 @@ class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
  private:
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+
+ protected:
+  // TOSS use this hook function to append some delete operation
+  // or may append some put operation
+  std::optional<HookFunction> tossHookFunc_;
 };
 
 }  // namespace storage

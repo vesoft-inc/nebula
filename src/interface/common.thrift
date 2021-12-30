@@ -254,7 +254,7 @@ struct CheckpointInfo {
     3: binary                path,
 }
 
-// used for raft and drainer
+// used for drainer
 struct LogEntry {
     1: ClusterID cluster;
     2: binary log_str;
@@ -321,6 +321,7 @@ enum ErrorCode {
     E_KEY_NOT_FOUND                   = -17,
     E_USER_NOT_FOUND                  = -18,
     E_STATS_NOT_FOUND                 = -19,
+    E_SERVICE_NOT_FOUND               = -20,
 
     // backup failed
     E_BACKUP_FAILED                   = -24,

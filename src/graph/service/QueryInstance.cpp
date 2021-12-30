@@ -64,6 +64,7 @@ void QueryInstance::execute() {
 
 Status QueryInstance::validateAndOptimize() {
   auto *rctx = qctx()->rctx();
+  auto &spaceName = rctx->session()->space().name;
   VLOG(1) << "Parsing query: " << rctx->query();
   auto result = GQLParser(qctx()).parse(rctx->query());
   NG_RETURN_IF_ERROR(result);
@@ -71,13 +72,25 @@ Status QueryInstance::validateAndOptimize() {
   if (sentence_->kind() == Sentence::Kind::kSequential) {
     size_t num = static_cast<const SequentialSentences *>(sentence_.get())->numSentences();
     stats::StatsManager::addValue(kNumSentences, num);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSentences, {{"space", spaceName}}), num);
+    }
   } else {
     stats::StatsManager::addValue(kNumSentences);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSentences, {{"space", spaceName}}));
+    }
   }
 
   NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
   NG_RETURN_IF_ERROR(findBestPlan());
   stats::StatsManager::addValue(kOptimizerLatencyUs, *(qctx_->plan()->optimizeTimeInUs()));
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::histoWithLabels(kOptimizerLatencyUs, {{"space", spaceName}}));
+  }
 
   return Status::OK();
 }
@@ -117,6 +130,7 @@ void QueryInstance::onFinish() {
 void QueryInstance::onError(Status status) {
   LOG(ERROR) << status;
   auto *rctx = qctx()->rctx();
+  auto &spaceName = rctx->session()->space().name;
   switch (status.code()) {
     case Status::Code::kOk:
       rctx->resp().errorCode = ErrorCode::SUCCEEDED;
@@ -135,6 +149,10 @@ void QueryInstance::onError(Status status) {
       break;
     case Status::Code::kLeaderChanged:
       stats::StatsManager::addValue(kNumQueryErrorsLeaderChanges);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+            kNumQueryErrorsLeaderChanges, {{"space", spaceName}}));
+      }
       [[fallthrough]];
     case Status::Code::kBalanced:
     case Status::Code::kEdgeNotFound:
@@ -157,14 +175,15 @@ void QueryInstance::onError(Status status) {
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }
-  auto &spaceName = rctx->session()->space().name;
   rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
   rctx->resp().errorMsg = std::make_unique<std::string>(status.toString());
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;
   stats::StatsManager::addValue(kNumQueryErrors);
-  stats::StatsManager::addValue(
-      stats::StatsManager::counterWithLabels(kNumQueryErrors, {{"space", spaceName}}));
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumQueryErrors, {{"space", spaceName}}));
+  }
   addSlowQueryStats(latency, spaceName);
   rctx->session()->deleteQuery(qctx_.get());
   rctx->finish();
@@ -173,14 +192,14 @@ void QueryInstance::onError(Status status) {
 
 void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string &spaceName) const {
   stats::StatsManager::addValue(kQueryLatencyUs, latency);
-  if (FLAGS_enable_space_level_metrics) {
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
     stats::StatsManager::addValue(
         stats::StatsManager::histoWithLabels(kQueryLatencyUs, {{"space", spaceName}}), latency);
   }
   if (latency > static_cast<uint64_t>(FLAGS_slow_query_threshold_us)) {
     stats::StatsManager::addValue(kNumSlowQueries);
     stats::StatsManager::addValue(kSlowQueryLatencyUs, latency);
-    if (FLAGS_enable_space_level_metrics) {
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
       stats::StatsManager::addValue(
           stats::StatsManager::counterWithLabels(kNumSlowQueries, {{"space", spaceName}}));
       stats::StatsManager::addValue(

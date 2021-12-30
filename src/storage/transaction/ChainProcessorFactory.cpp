@@ -5,6 +5,8 @@
 
 #include "storage/transaction/ChainProcessorFactory.h"
 
+#include "storage/transaction/ChainDeleteEdgesResumeProcessor.h"
+#include "storage/transaction/ChainDeleteEdgesResumeRemoteProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 #include "storage/transaction/ResumeAddEdgeProcessor.h"
 #include "storage/transaction/ResumeAddEdgeRemoteProcessor.h"
@@ -43,6 +45,22 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
         }
         case ResumeType::RESUME_REMOTE: {
           ret = ResumeUpdateRemoteProcessor::instance(env, options.primeValue);
+          break;
+        }
+        case ResumeType::UNKNOWN: {
+          LOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+        }
+      }
+      break;
+    }
+    case RequestType::DELETE: {
+      switch (options.resumeType) {
+        case ResumeType::RESUME_CHAIN: {
+          ret = ChainDeleteEdgesResumeProcessor::instance(env, options.primeValue);
+          break;
+        }
+        case ResumeType::RESUME_REMOTE: {
+          ret = ChainDeleteEdgesResumeRemoteProcessor::instance(env, options.primeValue);
           break;
         }
         case ResumeType::UNKNOWN: {

@@ -60,6 +60,20 @@ void ExtractFilterExprVisitor::visit(InputPropertyExpression *) {
   canBePushed_ = false;
 }
 
+void ExtractFilterExprVisitor::visit(LabelTagPropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+      canBePushed_ = false;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+  }
+}
+
 void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
   canBePushed_ = false;
 }
@@ -368,7 +382,9 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
   return;
 }
 
-void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) {
+  canBePushed_ = false;
+}
 
 }  // namespace graph
 }  // namespace nebula
