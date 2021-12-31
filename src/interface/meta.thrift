@@ -463,6 +463,7 @@ enum ListHostType {
     GRAPH       = 0x01,
     META        = 0x02,
     STORAGE     = 0x03,
+    AGENT       = 0x04,
 } (cpp.enum_strict)
 
 struct ListHostsReq {

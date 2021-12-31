@@ -52,3 +52,4 @@
 --default_replica_factor=1
 
 --heartbeat_interval_secs=10
+--agent_heartbeat_interval_secs=60

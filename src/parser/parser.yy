@@ -176,7 +176,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
-%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
@@ -486,6 +486,7 @@ unreserved_keyword
     | KW_GRAPH              { $$ = new std::string("graph"); }
     | KW_META               { $$ = new std::string("meta"); }
     | KW_STORAGE            { $$ = new std::string("storage"); }
+    | KW_AGENT              { $$ = new std::string("agent"); }
     | KW_ALL                { $$ = new std::string("all"); }
     | KW_ANY                { $$ = new std::string("any"); }
     | KW_SINGLE             { $$ = new std::string("single"); }
@@ -3456,6 +3457,7 @@ list_host_type
     : KW_GRAPH      { $$ = meta::cpp2::ListHostType::GRAPH; }
     | KW_META       { $$ = meta::cpp2::ListHostType::META; }
     | KW_STORAGE    { $$ = meta::cpp2::ListHostType::STORAGE; }
+    | KW_AGENT      { $$ = meta::cpp2::ListHostType::AGENT; }
     ;
 
 config_module_enum
