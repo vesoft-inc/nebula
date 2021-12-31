@@ -220,6 +220,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "TTL_COL"                   { return TokenType::KW_TTL_COL; }
 "GRAPH"                     { return TokenType::KW_GRAPH; }
 "META"                      { return TokenType::KW_META; }
+"AGENT"                     { return TokenType::KW_AGENT; }
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }

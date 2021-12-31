@@ -92,7 +92,7 @@ class DropHosts final : public SingleDependencyNode {
 };
 
 class ShowHosts final : public SingleDependencyNode {
-  // TODO(shylock) meta/storage/graph enumerate
+  // TODO(shylock) meta/storage/graph/agent enumerate
  public:
   static ShowHosts* make(QueryContext* qctx, PlanNode* dep, meta::cpp2::ListHostType type) {
     return qctx->objPool()->add(new ShowHosts(qctx, dep, type));

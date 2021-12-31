@@ -27,7 +27,6 @@
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/function/FunctionManager.h"
-
 #include "common/expression/ReduceExpression.h"
 #include "graph/util/ParserUtil.h"
 #include "graph/util/ExpressionUtils.h"
@@ -85,6 +84,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::WhereClause                    *lookup_where_clause;
     nebula::WhenClause                     *when_clause;
     nebula::YieldClause                    *yield_clause;
+    nebula::YieldClause                    *group_by_yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
     nebula::TruncateClause                 *truncate_clause;
@@ -177,7 +177,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
-%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
@@ -263,7 +263,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <lookup_where_clause> lookup_where_clause
 %type <when_clause> when_clause
 %type <truncate_clause> truncate_clause
-%type <yield_clause> yield_clause
+%type <yield_clause> yield_clause group_by_yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
 %type <vertex_tag_list> vertex_tag_list
@@ -487,6 +487,7 @@ unreserved_keyword
     | KW_GRAPH              { $$ = new std::string("graph"); }
     | KW_META               { $$ = new std::string("meta"); }
     | KW_STORAGE            { $$ = new std::string("storage"); }
+    | KW_AGENT              { $$ = new std::string("agent"); }
     | KW_ALL                { $$ = new std::string("all"); }
     | KW_ANY                { $$ = new std::string("any"); }
     | KW_SINGLE             { $$ = new std::string("single"); }
@@ -684,6 +685,9 @@ expression
         $$ = $1;
     }
     | reduce_expression {
+        $$ = $1;
+    }
+    | uuid_expression {
         $$ = $1;
     }
     ;
@@ -1097,9 +1101,8 @@ function_call_expression
     ;
 
 uuid_expression
-    : KW_UUID L_PAREN STRING R_PAREN {
-        $$ = UUIDExpression::make(qctx->objPool(), *$3);
-        delete $3;
+    : KW_UUID L_PAREN R_PAREN {
+        $$ = UUIDExpression::make(qctx->objPool());
     }
     ;
 
@@ -1470,7 +1473,12 @@ over_clause
 
 where_clause
     : %empty { $$ = nullptr; }
-    | KW_WHERE expression { $$ = new WhereClause($2); }
+    | KW_WHERE expression {
+        if (graph::ExpressionUtils::findAny($2, {Expression::Kind::kAggregate})) {
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in where clause.");
+        }
+        $$ = new WhereClause($2);
+    }
     ;
 
 when_clause
@@ -1480,8 +1488,20 @@ when_clause
 
 yield_clause
     : %empty { $$ = nullptr; }
-    | KW_YIELD yield_columns { $$ = new YieldClause($2); }
-    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
+    | KW_YIELD yield_columns {
+        if ($2->hasAgg()) {
+            delete($2);
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in yield clause.");
+        }
+        $$ = new YieldClause($2);
+    }
+    | KW_YIELD KW_DISTINCT yield_columns {
+        if ($3->hasAgg()) {
+            delete($3);
+            throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in yield clause.");
+        }
+        $$ = new YieldClause($3, true);
+    }
     ;
 
 yield_columns
@@ -2302,8 +2322,13 @@ limit_sentence
     }
     ;
 
+group_by_yield_clause
+    : KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
+    ;
+
 group_by_sentence
-    : KW_GROUP KW_BY group_clause yield_clause {
+    : KW_GROUP KW_BY group_clause group_by_yield_clause {
         auto group = new GroupBySentence();
         group->setGroupClause($3);
         group->setYieldClause($4);
@@ -3443,6 +3468,7 @@ list_host_type
     : KW_GRAPH      { $$ = meta::cpp2::ListHostType::GRAPH; }
     | KW_META       { $$ = meta::cpp2::ListHostType::META; }
     | KW_STORAGE    { $$ = meta::cpp2::ListHostType::STORAGE; }
+    | KW_AGENT      { $$ = meta::cpp2::ListHostType::AGENT; }
     ;
 
 config_module_enum

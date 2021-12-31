@@ -69,9 +69,10 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
   auto ctx = std::make_unique<RequestContext<AuthResponse>>();
   auto future = ctx->future();
   // check username and password failed
-  if (!auth(username, password)) {
+  auto authResult = auth(username, password);
+  if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
-    ctx->resp().errorMsg.reset(new std::string("Bad username/password"));
+    ctx->resp().errorMsg.reset(new std::string(authResult.toString()));
     ctx->finish();
     stats::StatsManager::addValue(kNumAuthFailedSessions);
     stats::StatsManager::addValue(kNumAuthFailedSessionsBadUserNamePassword);
@@ -200,9 +201,9 @@ folly::Future<std::string> GraphService::future_executeJsonWithParameter(
   });
 }
 
-bool GraphService::auth(const std::string& username, const std::string& password) {
+Status GraphService::auth(const std::string& username, const std::string& password) {
   if (!FLAGS_enable_authorize) {
-    return true;
+    return Status::OK();
   }
 
   if (FLAGS_auth_type == "password") {
@@ -214,14 +215,12 @@ bool GraphService::auth(const std::string& username, const std::string& password
     // There is no way to identify which one is in the graph layer，
     // let's check the native user's password first, then cloud user.
     auto pwdAuth = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
-    if (pwdAuth->auth(username, encryption::MD5Utils::md5Encode(password))) {
-      return true;
-    }
+    return pwdAuth->auth(username, encryption::MD5Utils::md5Encode(password));
     auto cloudAuth = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
     return cloudAuth->auth(username, password);
   }
   LOG(WARNING) << "Unknown auth type: " << FLAGS_auth_type;
-  return false;
+  return Status::Error("Unknown auth type: %s", FLAGS_auth_type.c_str());
 }
 
 folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVersion(

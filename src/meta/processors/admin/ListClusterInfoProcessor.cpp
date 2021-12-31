@@ -97,9 +97,9 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
         agentCount++;
       }
     }
-    if (agentCount != 1) {
+    if (agentCount < 1) {
       LOG(ERROR) << folly::sformat("There are {} agent count is host {}", agentCount, host);
-      handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
+      handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE);
       onFinished();
       return;
     }

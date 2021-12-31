@@ -10,6 +10,7 @@
 #include "version/Version.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(agent_heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
 DEFINE_int32(removed_threshold_sec,
              24 * 60 * 60,
@@ -26,6 +27,8 @@ static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
       return cpp2::HostRole::META;
     case cpp2::ListHostType::STORAGE:
       return cpp2::HostRole::STORAGE;
+    case cpp2::ListHostType::AGENT:
+      return cpp2::HostRole::AGENT;
     default:
       return cpp2::HostRole::UNKNOWN;
   }
@@ -133,10 +136,14 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     }
 
     if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
+      int64_t expiredTime =
+          FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000;  // meta/storage/graph
+      if (info.role_ == cpp2::HostRole::AGENT) {
+        expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000;
+      }
       // If meta didn't receive heartbeat with 2 periods, regard hosts as
       // offline. Same as ActiveHostsMan::getActiveHosts
-      if (now - info.lastHBTimeInMilliSec_ <
-          FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
+      if (now - info.lastHBTimeInMilliSec_ < expiredTime) {
         item.status_ref() = cpp2::HostStatus::ONLINE;
       } else {
         item.status_ref() = cpp2::HostStatus::OFFLINE;
