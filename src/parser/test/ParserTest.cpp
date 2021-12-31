@@ -1291,7 +1291,7 @@ TEST_F(ParserTest, FetchVertex) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "FETCH PROP ON person uuid(\"Tom\")";
+    std::string query = "FETCH PROP ON person uuid()";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1744,7 +1744,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "GO FROM UUID(\"tom\") OVER guest WHERE $-.EMAIL";
+    std::string query = "GO FROM UUID() OVER guest WHERE $-.EMAIL";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1758,7 +1758,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
   }
   {
     std::string query =
-        "GO FROM UUID(\"tom\") OVER like YIELD $$.tag1.EMAIL, like.users,"
+        "GO FROM UUID() OVER like YIELD $$.tag1.EMAIL, like.users,"
         "like._src, like._dst, like.type, $^.tag2.SPACE "
         "| ORDER BY $-.SPACE";
     auto result = parse(query);
@@ -1770,7 +1770,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
+    std::string query = "$var = GO FROM UUID() OVER like;GO FROM $var.SPACE OVER like";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
