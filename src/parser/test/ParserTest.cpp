@@ -2721,8 +2721,7 @@ TEST_F(ParserTest, MatchErrorCheck) {
     auto result = parse(query);
     ASSERT_FALSE(result.ok());
     auto error =
-        "SyntaxError: Invalid use of aggregating "
-        "function in this context. near `WHERE count(v)>1'";
+        "SyntaxError: Invalid use of aggregating function in where clause. near `count(v)>1'";
     ASSERT_EQ(error, result.status().toString());
   }
 }
