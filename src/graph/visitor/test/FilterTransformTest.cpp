@@ -96,16 +96,16 @@ TEST_F(FilterTransformTest, TestNoRewrite) {
     ASSERT_EQ(res.value()->toString(), expected->toString())
         << res.value()->toString() << " vs. " << expected->toString();
   }
-  // // Do not rewrite if the arithmetic expression contains string/char constant
-  // {
-  //   // (v.name - "ab" < "name")  =>  Unchanged
-  //   auto expr = ltExpr(minusExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
-  //   auto res = ExpressionUtils::filterTransform(expr);
-  //   ASSERT(res.ok());
-  //   auto expected = expr;
-  //   ASSERT_EQ(res.value()->toString(), expected->toString())
-  //       << res.value()->toString() << " vs. " << expected->toString();
-  // }
+  // Do not rewrite if the arithmetic expression contains string/char constant
+  {
+    // (v.name - "ab" < "name")  =>  Unchanged
+    auto expr = ltExpr(minusExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
+    auto res = ExpressionUtils::filterTransform(expr);
+    ASSERT(res.ok());
+    auto expected = expr;
+    ASSERT_EQ(res.value()->toString(), expected->toString())
+        << res.value()->toString() << " vs. " << expected->toString();
+  }
 }
 
 }  // namespace graph

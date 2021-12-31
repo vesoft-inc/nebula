@@ -437,8 +437,12 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 
   // Match relational expressions following these rules:
   // 1. the right operand of rel expr should be evaluable
-  // 2. the left operand of rel expr should be an arithmetic expr that does not contains string and
-  // has at least one operand that is evaluable
+  // 2. the left operand of rel expr should be:
+  // 2.a an arithmetic expr that does not contains string and has at least one operand that is
+  // evaluable
+  // OR
+  // 2.b an relational expr so that it might could be simplified:
+  // ((v.age > 40 == true)  => (v.age > 40))
   auto matcher = [&checkArithmExpr](const Expression *e) -> bool {
     if (!e->isRelExpr()) {
       return false;
@@ -446,19 +450,22 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 
     auto relExpr = static_cast<const RelationalExpression *>(e);
     bool checkRightOperand = isEvaluableExpr(relExpr->right());
+    if (!checkRightOperand) return false;
 
     bool checkLeftOperand = true;
     auto lExpr = relExpr->left();
-    if (!lExpr->isArithmeticExpr()) {
-      return false;
+
+    // Left operand is arithmetical expr
+    if (lExpr->isArithmeticExpr()) {
+      auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+      auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
+      QueryExpressionContext ctx(nullptr);
+
+      // If the arithExpr has constant expr as member that is a string, do not rewrite
+      checkLeftOperand = checkArithmExpr(arithmExpr);
+    } else if (lExpr->isRelExpr()) {  // for expressions that contain boolean literals
+      checkLeftOperand = true;
     }
-
-    auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
-    auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
-    QueryExpressionContext ctx(nullptr);
-
-    // If the arithExpr has constant expr as member that is a string, do not rewrite
-    checkLeftOperand = checkArithmExpr(arithmExpr);
     return checkLeftOperand && checkRightOperand;
   };
 
