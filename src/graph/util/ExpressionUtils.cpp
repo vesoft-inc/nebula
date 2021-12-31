@@ -426,6 +426,17 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
       auto lExpr = relExpr->left();
       if (lExpr->isArithmeticExpr()) {
         auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+        auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
+        QueryExpressionContext ctx(nullptr);
+
+        // If the arithExpr has constant expr as member that is a string, do not rewrite
+        for (auto iter : constExprList) {
+          auto constExpr = static_cast<ConstantExpression *>(const_cast<Expression *>(iter));
+          if (constExpr->eval(ctx).isStr()) {
+            return false;
+          }
+        }
+
         return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
       }
     }
@@ -529,20 +540,33 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  // If the filter contains more than one LabelAttribute expr, this filter cannot be pushed down
-  auto LabelAttributeExprs =
-      ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelAttribute});
-  if (LabelAttributeExprs.size() > 1) {
+  // If the filter contains more than one different LabelAttribute expr, this filter cannot be
+  // pushed down
+  auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
+  // Deduplicate the list
+  auto dedupPropExprsLisststd =
+      std::unordered_set<const Expression *>(propExprs.begin(), propExprs.end());
+  if (dedupPropExprsLisststd.size() > 1) {
     return const_cast<Expression *>(filter);
   }
 
-  auto rewrittenExpr = const_cast<Expression *>(filter);
+  // Check if any overflow happen before filter tranform
+  auto initilConstFold = foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(initilConstFold);
+
   // Rewrite relational expression
+  auto rewrittenExpr = const_cast<Expression *>(filter);
   rewrittenExpr = rewriteRelExpr(rewrittenExpr);
+
   // Fold constant expression
   auto constantFoldRes = foldConstantExpr(rewrittenExpr);
-  NG_RETURN_IF_ERROR(constantFoldRes);
+  // If errors like overflow happened during the constant fold, stop transferming and return the
+  // original expression
+  if (!constantFoldRes.ok()) {
+    return const_cast<Expression *>(filter);
+  }
   rewrittenExpr = constantFoldRes.value();
+
   // Reduce Unary expression
   rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr);
   return rewrittenExpr;
@@ -887,11 +911,12 @@ Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kin
       return Expression::Kind::kDivision;
     case Expression::Kind::kDivision:
       return Expression::Kind::kMultiply;
+    // There is no oppsite operation to Mod, return itself
     case Expression::Kind::kMod:
-      LOG(FATAL) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+      return Expression::Kind::kMod;
       break;
     default:
-      LOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
+      DLOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
       break;
   }
 }
