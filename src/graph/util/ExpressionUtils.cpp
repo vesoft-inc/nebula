@@ -942,7 +942,7 @@ Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kin
       return Expression::Kind::kMod;
       break;
     default:
-      DLOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
+      LOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
       break;
   }
 }
