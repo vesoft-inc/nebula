@@ -7,6 +7,7 @@ set(common_deps
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:snowflake_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
