@@ -117,7 +117,7 @@
   /* ListClusterInfo Failure */                                               \
   X(E_LIST_CLUSTER_FAILURE, -2070)                                            \
   X(E_LIST_CLUSTER_GET_ABS_PATH_FAILURE, -2071)                               \
-  X(E_GET_META_DIR_FAILURE, -2072)                                            \
+  X(E_LIST_CLUSTER_NO_AGENT_FAILURE, -2072)                                   \
                                                                               \
   X(E_QUERY_NOT_FOUND, -2073)                                                 \
   X(E_AGENT_HB_FAILUE, -2074)                                                 \
