@@ -767,14 +767,14 @@ Feature: Basic Aggregate and GroupBy
          YIELD $$.team.name AS name,
                COUNT(serve._dst) AS id
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `COUNT(serve._dst) AS id'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `$$.team.name AS name, COUNT(serve._dst) AS id'
     When executing query:
       """
       MATCH (v:player)
       WHERE avg(v.player.age) > 1
       RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `avg(v.player.age) > 1'
     When executing query:
       """
       MATCH (v:player)
@@ -782,7 +782,7 @@ Feature: Basic Aggregate and GroupBy
       WHERE avg(v.player.age) > 1
       RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `avg(v.player.age) > 1'
     When executing query:
       """
       MATCH (v:player)
@@ -790,7 +790,7 @@ Feature: Basic Aggregate and GroupBy
       WHERE avg(v.player.age) > 1
       RETURN v.player.age
       """
-    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.player.age) > 1'
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `avg(v.player.age) > 1'
 
 # When executing query:
 # """
