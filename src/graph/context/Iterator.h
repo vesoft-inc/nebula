@@ -450,11 +450,11 @@ class SequentialIter : public Iterator {
   }
 
   std::vector<Row>::iterator begin() {
-    return rows_->begin();
+    return CHECK_NOTNULL(rows_)->begin();
   }
 
   std::vector<Row>::iterator end() {
-    return rows_->end();
+    return CHECK_NOTNULL(rows_)->end();
   }
 
   const std::unordered_map<std::string, size_t>& getColIndices() const {

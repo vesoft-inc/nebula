@@ -15,6 +15,7 @@ nebula_add_library(
     processors/parts/ListSpacesProcessor.cpp
     processors/parts/DropSpaceProcessor.cpp
     processors/parts/GetPartsAllocProcessor.cpp
+    processors/parts/AlterSpaceProcessor.cpp
     processors/schema/CreateTagProcessor.cpp
     processors/schema/AlterTagProcessor.cpp
     processors/schema/GetTagProcessor.cpp
@@ -26,6 +27,7 @@ nebula_add_library(
     processors/schema/ListEdgesProcessor.cpp
     processors/schema/DropEdgeProcessor.cpp
     processors/schema/SchemaUtil.cpp
+    processors/id/GetWorkerIdProcessor.cpp
     processors/index/CreateTagIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
@@ -34,7 +36,7 @@ nebula_add_library(
     processors/index/DropEdgeIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
-    processors/index/FTServiceProcessor.cpp
+    processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
     processors/kv/GetProcessor.cpp
     processors/kv/MultiGetProcessor.cpp
@@ -68,11 +70,16 @@ nebula_add_library(
     processors/job/AdminJobProcessor.cpp
     processors/job/ReportTaskProcessor.cpp
     processors/job/JobUtils.cpp
+    processors/job/StorageJobExecutor.cpp
+    processors/job/JobExecutor.cpp
     processors/job/MetaJobExecutor.cpp
     processors/job/SimpleConcurrentJobExecutor.cpp
     processors/job/CompactJobExecutor.cpp
     processors/job/FlushJobExecutor.cpp
     processors/job/BalanceJobExecutor.cpp
+    processors/job/ZoneBalanceJobExecutor.cpp
+    processors/job/DataBalanceJobExecutor.cpp
+    processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp

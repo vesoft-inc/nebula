@@ -167,7 +167,7 @@ class ElasticSearchBasicTest : public ::testing::Test {
 
 TEST_F(ElasticSearchBasicTest, SimpleTest) {
   FLAGS_heartbeat_interval_secs = 1;
-  meta::cpp2::FTClient ftClient;
+  meta::cpp2::ServiceClient ftClient;
   ftClient.host_ref() = HostAddr("127.0.0.1", esPort_);
   const nebula::ClusterID kClusterId = 10;
   mock::MockCluster cluster;

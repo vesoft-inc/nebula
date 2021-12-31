@@ -92,7 +92,7 @@ class DropHosts final : public SingleDependencyNode {
 };
 
 class ShowHosts final : public SingleDependencyNode {
-  // TODO(shylock) meta/storage/graph enumerate
+  // TODO(shylock) meta/storage/graph/agent enumerate
  public:
   static ShowHosts* make(QueryContext* qctx, PlanNode* dep, meta::cpp2::ListHostType type) {
     return qctx->objPool()->add(new ShowHosts(qctx, dep, type));
@@ -214,6 +214,44 @@ class DropSpace final : public SingleDependencyNode {
  private:
   std::string spaceName_;
   bool ifExists_;
+};
+
+class AlterSpace final : public SingleDependencyNode {
+ public:
+  static AlterSpace* make(QueryContext* qctx,
+                          PlanNode* input,
+                          const std::string& spaceName,
+                          meta::cpp2::AlterSpaceOp op,
+                          const std::vector<std::string>& paras) {
+    return qctx->objPool()->add(new AlterSpace(qctx, input, spaceName, op, paras));
+  }
+  const std::string& getSpaceName() const {
+    return spaceName_;
+  }
+
+  meta::cpp2::AlterSpaceOp getAlterSpaceOp() const {
+    return op_;
+  }
+
+  const std::vector<std::string>& getParas() const {
+    return paras_;
+  }
+
+ private:
+  AlterSpace(QueryContext* qctx,
+             PlanNode* input,
+             const std::string& spaceName,
+             meta::cpp2::AlterSpaceOp op,
+             const std::vector<std::string>& paras)
+      : SingleDependencyNode(qctx, Kind::kAlterSpace, input),
+        spaceName_(spaceName),
+        op_(op),
+        paras_(paras) {}
+
+ private:
+  std::string spaceName_;
+  meta::cpp2::AlterSpaceOp op_;
+  std::vector<std::string> paras_;
 };
 
 class DescSpace final : public SingleDependencyNode {
@@ -1111,49 +1149,75 @@ class ShowStats final : public SingleDependencyNode {
       : SingleDependencyNode(qctx, Kind::kShowStats, input) {}
 };
 
-class ShowTSClients final : public SingleDependencyNode {
+class ShowServiceClients final : public SingleDependencyNode {
  public:
-  static ShowTSClients* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ShowTSClients(qctx, input));
+  static ShowServiceClients* make(QueryContext* qctx,
+                                  PlanNode* input,
+                                  meta::cpp2::ExternalServiceType type) {
+    return qctx->objPool()->add(new ShowServiceClients(qctx, input, type));
+  }
+
+  meta::cpp2::ExternalServiceType type() const {
+    return type_;
   }
 
  private:
-  ShowTSClients(QueryContext* qctx, PlanNode* input)
-      : SingleDependencyNode(qctx, Kind::kShowTSClients, input) {}
+  ShowServiceClients(QueryContext* qctx, PlanNode* input, meta::cpp2::ExternalServiceType type)
+      : SingleDependencyNode(qctx, Kind::kShowServiceClients, input), type_(type) {}
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignInTSService final : public SingleDependencyNode {
+class SignInService final : public SingleDependencyNode {
  public:
-  static SignInTSService* make(QueryContext* qctx,
-                               PlanNode* input,
-                               std::vector<meta::cpp2::FTClient> clients) {
-    return qctx->objPool()->add(new SignInTSService(qctx, input, std::move(clients)));
+  static SignInService* make(QueryContext* qctx,
+                             PlanNode* input,
+                             std::vector<meta::cpp2::ServiceClient> clients,
+                             meta::cpp2::ExternalServiceType type) {
+    return qctx->objPool()->add(new SignInService(qctx, input, std::move(clients), type));
   }
 
-  const std::vector<meta::cpp2::FTClient>& clients() const {
+  const std::vector<meta::cpp2::ServiceClient>& clients() const {
     return clients_;
   }
 
-  meta::cpp2::FTServiceType type() const {
-    return meta::cpp2::FTServiceType::ELASTICSEARCH;
+  meta::cpp2::ExternalServiceType type() const {
+    return type_;
   }
 
  private:
-  SignInTSService(QueryContext* qctx, PlanNode* input, std::vector<meta::cpp2::FTClient> clients)
-      : SingleDependencyNode(qctx, Kind::kSignInTSService, input), clients_(std::move(clients)) {}
+  SignInService(QueryContext* qctx,
+                PlanNode* input,
+                std::vector<meta::cpp2::ServiceClient> clients,
+                meta::cpp2::ExternalServiceType type)
+      : SingleDependencyNode(qctx, Kind::kSignInService, input),
+        clients_(std::move(clients)),
+        type_(type) {}
 
-  std::vector<meta::cpp2::FTClient> clients_;
+ private:
+  std::vector<meta::cpp2::ServiceClient> clients_;
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignOutTSService final : public SingleDependencyNode {
+class SignOutService final : public SingleDependencyNode {
  public:
-  static SignOutTSService* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new SignOutTSService(qctx, input));
+  static SignOutService* make(QueryContext* qctx,
+                              PlanNode* input,
+                              meta::cpp2::ExternalServiceType type) {
+    return qctx->objPool()->add(new SignOutService(qctx, input, type));
+  }
+
+  meta::cpp2::ExternalServiceType type() const {
+    return type_;
   }
 
  private:
-  SignOutTSService(QueryContext* qctx, PlanNode* input)
-      : SingleDependencyNode(qctx, Kind::kSignOutTSService, input) {}
+  SignOutService(QueryContext* qctx, PlanNode* input, meta::cpp2::ExternalServiceType type)
+      : SingleDependencyNode(qctx, Kind::kSignOutService, input), type_(type) {}
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
 class ShowSessions final : public SingleInputNode {

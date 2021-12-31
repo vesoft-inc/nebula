@@ -194,6 +194,7 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   isEdge_ = g.isEdge();
   schemaId_ = g.schemaId();
   isEmptyResultSet_ = g.isEmptyResultSet();
+  yieldColumns_ = g.yieldColumns();
 }
 
 std::unique_ptr<PlanNodeDescription> ScanVertices::explain() const {

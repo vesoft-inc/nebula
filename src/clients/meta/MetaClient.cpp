@@ -12,11 +12,13 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include <boost/filesystem.hpp>
+#include <unordered_set>
 
 #include "clients/meta/FileBasedClusterIdMan.h"
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
+#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -37,6 +39,27 @@ DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval bet
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
+DEFINE_uint32(failed_login_attempts,
+              0,
+              "how many consecutive incorrect passwords input to a SINGLE graph service node cause "
+              "the account to become locked.");
+DEFINE_uint32(
+    password_lock_time_in_secs,
+    0,
+    "how long in seconds to lock the account after too many consecutive login attempts provide an "
+    "incorrect password.");
+
+// Sanity-checking Flag Values
+static bool ValidateFailedLoginAttempts(const char* flagname, uint32_t value) {
+  if (value <= 32767)  // value is ok
+    return true;
+
+  FLOG_WARN("Invalid value for --%s: %d, the timeout should be an integer between 0 and 32767\n",
+            flagname,
+            (int)value);
+  return false;
+}
+DEFINE_validator(failed_login_attempts, &ValidateFailedLoginAttempts);
 
 namespace nebula {
 namespace meta {
@@ -152,6 +175,11 @@ bool MetaClient::loadUsersAndRoles() {
   }
   decltype(userRolesMap_) userRolesMap;
   decltype(userPasswordMap_) userPasswordMap;
+  decltype(userPasswordAttemptsRemain_) userPasswordAttemptsRemain;
+  decltype(userLoginLockTime_) userLoginLockTime;
+  // List of username
+  std::unordered_set<std::string> userNameList;
+
   for (auto& user : userRoleRet.value()) {
     auto rolesRet = getUserRoles(user.first).get();
     if (!rolesRet.ok()) {
@@ -160,11 +188,40 @@ bool MetaClient::loadUsersAndRoles() {
     }
     userRolesMap[user.first] = rolesRet.value();
     userPasswordMap[user.first] = user.second;
+    userPasswordAttemptsRemain[user.first] = FLAGS_failed_login_attempts;
+    userLoginLockTime[user.first] = 0;
+    userNameList.emplace(user.first);
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
     userRolesMap_ = std::move(userRolesMap);
     userPasswordMap_ = std::move(userPasswordMap);
+
+    // This method is called periodically by the heartbeat thread, but we don't want to reset the
+    // failed login attempts every time. Remove expired users from cache
+    for (auto& ele : userPasswordAttemptsRemain) {
+      if (userNameList.count(ele.first) == 0) {
+        userPasswordAttemptsRemain.erase(ele.first);
+      }
+    }
+    for (auto& ele : userLoginLockTime) {
+      if (userNameList.count(ele.first) == 0) {
+        userLoginLockTime.erase(ele.first);
+      }
+    }
+
+    // If the user is not in the map, insert value with the default value
+    for (const auto& user : userNameList) {
+      if (userPasswordAttemptsRemain.count(user) == 0) {
+        userPasswordAttemptsRemain[user] = FLAGS_failed_login_attempts;
+      }
+      if (userLoginLockTime.count(user) == 0) {
+        userLoginLockTime[user] = 0;
+      }
+    }
+
+    userPasswordAttemptsRemain_ = std::move(userPasswordAttemptsRemain);
+    userLoginLockTime_ = std::move(userLoginLockTime);
   }
   return true;
 }
@@ -184,8 +241,8 @@ bool MetaClient::loadData() {
     return false;
   }
 
-  if (!loadFulltextClients()) {
-    LOG(ERROR) << "Load fulltext services Failed";
+  if (!loadGlobalServiceClients()) {
+    LOG(ERROR) << "Load global services Failed";
     return false;
   }
 
@@ -518,15 +575,15 @@ bool MetaClient::loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCa
   return true;
 }
 
-bool MetaClient::loadFulltextClients() {
-  auto ftRet = listFTClients().get();
-  if (!ftRet.ok()) {
-    LOG(ERROR) << "List fulltext services failed, status:" << ftRet.status();
+bool MetaClient::loadGlobalServiceClients() {
+  auto ret = listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
+  if (!ret.ok()) {
+    LOG(ERROR) << "List services failed, status:" << ret.status();
     return false;
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
-    fulltextClientList_ = std::move(ftRet).value();
+    serviceClientList_ = std::move(ret).value();
   }
   return true;
 }
@@ -694,6 +751,7 @@ void MetaClient::getResponse(Request req,
                   return;
                 } else {
                   LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
+                  LOG(ERROR) << "RpcResponse exception: " << t.exception().what().c_str();
                   pro.setValue(
                       Status::Error("RPC failure in MetaClient: %s", t.exception().what().c_str()));
                 }
@@ -873,8 +931,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("list cluster failure!");
     case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_GET_ABS_PATH_FAILURE:
       return Status::Error("Failed to get the absolute path!");
-    case nebula::cpp2::ErrorCode::E_GET_META_DIR_FAILURE:
-      return Status::Error("Failed to get meta dir!");
+    case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE:
+      return Status::Error("There is no agent!");
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
@@ -1213,6 +1271,25 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2:
   return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::alterSpace(const std::string& spaceName,
+                                                     meta::cpp2::AlterSpaceOp op,
+                                                     const std::vector<std::string>& paras) {
+  cpp2::AlterSpaceReq req;
+  req.op_ref() = op;
+  req.space_name_ref() = spaceName;
+  req.paras_ref() = paras;
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_alterSpace(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
     GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
   cpp2::ListPartsReq req;
@@ -1350,6 +1427,8 @@ folly::Future<StatusOr<bool>> MetaClient::multiPut(
 
   cpp2::MultiPutReq req;
   std::vector<nebula::KeyValue> data;
+  data.reserve(pairs.size());
+
   for (auto& element : pairs) {
     data.emplace_back(std::move(element));
   }
@@ -2334,16 +2413,73 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   return iter->second;
 }
 
-bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+  // Check meta service status
   if (!ready_) {
-    return false;
+    return Status::Error("Meta Service not ready");
   }
+
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  // Check user existence
   auto iter = threadLocalInfo.userPasswordMap_.find(account);
   if (iter == threadLocalInfo.userPasswordMap_.end()) {
-    return false;
+    return Status::Error("User not exist");
   }
-  return iter->second == password;
+
+  folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+
+  auto& lockedSince = userLoginLockTime_[account];
+  auto& passwordAttemtRemain = userPasswordAttemptsRemain_[account];
+  LOG(INFO) << "Thread id: " << std::this_thread::get_id()
+            << " ,passwordAttemtRemain: " << passwordAttemtRemain;
+  // lockedSince is non-zero means the account has been locked
+  if (lockedSince != 0) {
+    auto remainingLockTime =
+        (lockedSince + FLAGS_password_lock_time_in_secs) - time::WallClock::fastNowInSec();
+    // If the account is still locked, there is no need to check the password
+    if (remainingLockTime > 0) {
+      return Status::Error(
+          "%d times consecutive incorrect passwords has been input, user name: %s has been "
+          "locked, try again in %ld seconds",
+          FLAGS_failed_login_attempts,
+          account.c_str(),
+          remainingLockTime);
+    }
+    // Clear lock state and reset attempts
+    lockedSince = 0;
+    passwordAttemtRemain = FLAGS_failed_login_attempts;
+  }
+
+  if (iter->second != password) {
+    // By default there is no limit of login attempts if any of these 2 flags is unset
+    if (FLAGS_failed_login_attempts == 0 || FLAGS_password_lock_time_in_secs == 0) {
+      return Status::Error("Invalid password");
+    }
+
+    // If the password is not correct and passwordAttemtRemain > 0,
+    // Allow another attemp
+    if (passwordAttemtRemain > 0) {
+      --passwordAttemtRemain;
+      if (passwordAttemtRemain == 0) {
+        // If the remaining attemps is 0, failed to authenticate
+        // Block user login
+        lockedSince = time::WallClock::fastNowInSec();
+        return Status::Error(
+            "%d times consecutive incorrect passwords has been input, user name: %s has been "
+            "locked, try again in %d seconds",
+            FLAGS_failed_login_attempts,
+            account.c_str(),
+            FLAGS_password_lock_time_in_secs);
+      }
+      LOG(ERROR) << "Invalid password, remaining attempts: " << passwordAttemtRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", passwordAttemtRemain);
+    }
+  }
+
+  // Reset password attempts
+  passwordAttemtRemain = FLAGS_failed_login_attempts;
+  lockedSince = 0;
+  return Status::OK();
 }
 
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
@@ -3257,16 +3393,16 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
   return fut;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::signInFTService(
-    cpp2::FTServiceType type, const std::vector<cpp2::FTClient>& clients) {
-  cpp2::SignInFTServiceReq req;
+folly::Future<StatusOr<bool>> MetaClient::signInService(
+    const cpp2::ExternalServiceType& type, const std::vector<cpp2::ServiceClient>& clients) {
+  cpp2::SignInServiceReq req;
   req.type_ref() = type;
   req.clients_ref() = clients;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_signInFTService(request); },
+      [](auto client, auto request) { return client->future_signInService(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3275,13 +3411,14 @@ folly::Future<StatusOr<bool>> MetaClient::signInFTService(
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::signOutFTService() {
-  cpp2::SignOutFTServiceReq req;
+folly::Future<StatusOr<bool>> MetaClient::signOutService(const cpp2::ExternalServiceType& type) {
+  cpp2::SignOutServiceReq req;
+  req.type_ref() = type;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_signOutFTService(request); },
+      [](auto client, auto request) { return client->future_signOutService(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3290,25 +3427,36 @@ folly::Future<StatusOr<bool>> MetaClient::signOutFTService() {
   return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::FTClient>>> MetaClient::listFTClients() {
-  cpp2::ListFTClientsReq req;
-  folly::Promise<StatusOr<std::vector<cpp2::FTClient>>> promise;
+folly::Future<StatusOr<ServiceClientsList>> MetaClient::listServiceClients(
+    const cpp2::ExternalServiceType& type) {
+  cpp2::ListServiceClientsReq req;
+  req.type_ref() = type;
+  folly::Promise<StatusOr<ServiceClientsList>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_listFTClients(request); },
-      [](cpp2::ListFTClientsResp&& resp) -> decltype(auto) {
+      [](auto client, auto request) { return client->future_listServiceClients(request); },
+      [](cpp2::ListServiceClientsResp&& resp) -> decltype(auto) {
         return std::move(resp).get_clients();
       },
       std::move(promise));
   return future;
 }
 
-StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
+StatusOr<std::vector<cpp2::ServiceClient>> MetaClient::getServiceClientsFromCache(
+    const cpp2::ExternalServiceType& type) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  return fulltextClientList_;
+
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  if (type == cpp2::ExternalServiceType::ELASTICSEARCH) {
+    auto sIter = serviceClientList_.find(type);
+    if (sIter != serviceClientList_.end()) {
+      return sIter->second;
+    }
+  }
+  return Status::Error("Service not found!");
 }
 
 folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,
@@ -3496,6 +3644,21 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
       std::move(req),
       [](auto client, auto request) { return client->future_killQuery(request); },
       [](cpp2::ExecResp&& resp) -> decltype(auto) { return std::move(resp); },
+      std::move(promise),
+      true);
+  return future;
+}
+
+folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
+  cpp2::GetWorkerIdReq req;
+  req.host_ref() = std::move(ipAddr);
+
+  folly::Promise<StatusOr<int64_t>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getWorkerId(request); },
+      [](cpp2::GetWorkerIdResp&& resp) -> int64_t { return std::move(resp).get_workerid(); },
       std::move(promise),
       true);
   return future;

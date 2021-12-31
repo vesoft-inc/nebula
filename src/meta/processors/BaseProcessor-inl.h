@@ -26,9 +26,9 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
-BaseProcessor<RESP>::doPrefix(const std::string& key) {
+BaseProcessor<RESP>::doPrefix(const std::string& key, bool canReadFromFollower) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
+  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter, canReadFromFollower);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(2) << "Prefix Failed";
     return code;

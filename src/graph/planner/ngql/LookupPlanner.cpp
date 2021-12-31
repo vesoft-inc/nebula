@@ -37,6 +37,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                       lookupCtx->idxReturnCols,
                                                       lookupCtx->schemaId,
                                                       lookupCtx->isEmptyResultSet);
+    edgeIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
     plan.tail = edgeIndexFullScan;
     plan.root = edgeIndexFullScan;
   } else {
@@ -48,6 +49,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                     lookupCtx->idxReturnCols,
                                                     lookupCtx->schemaId,
                                                     lookupCtx->isEmptyResultSet);
+    tagIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
     plan.tail = tagIndexFullScan;
     plan.root = tagIndexFullScan;
   }

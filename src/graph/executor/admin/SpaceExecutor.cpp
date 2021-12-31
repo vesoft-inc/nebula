@@ -270,5 +270,22 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                           .build());
       });
 }
+
+folly::Future<Status> AlterSpaceExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  auto *asnode = asNode<AlterSpace>(node());
+  return qctx()
+      ->getMetaClient()
+      ->alterSpace(asnode->getSpaceName(), asnode->getAlterSpaceOp(), asnode->getParas())
+      .via(runner())
+      .thenValue([this](StatusOr<bool> &&resp) {
+        SCOPED_TIMER(&execTime_);
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status().toString();
+          return std::move(resp).status();
+        }
+        return Status::OK();
+      });
+}
 }  // namespace graph
 }  // namespace nebula

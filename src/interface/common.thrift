@@ -321,6 +321,7 @@ enum ErrorCode {
     E_KEY_NOT_FOUND                   = -17,
     E_USER_NOT_FOUND                  = -18,
     E_STATS_NOT_FOUND                 = -19,
+    E_SERVICE_NOT_FOUND               = -20,
 
     // backup failed
     E_BACKUP_FAILED                   = -24,
@@ -402,7 +403,7 @@ enum ErrorCode {
     // ListClusterInfo Failure
     E_LIST_CLUSTER_FAILURE              = -2070,
     E_LIST_CLUSTER_GET_ABS_PATH_FAILURE = -2071,
-    E_GET_META_DIR_FAILURE              = -2072,
+    E_LIST_CLUSTER_NO_AGENT_FAILURE     = -2072,
 
     E_QUERY_NOT_FOUND                 = -2073,
     E_AGENT_HB_FAILUE                 = -2074,
@@ -469,6 +470,8 @@ enum ErrorCode {
     E_WRITE_WRITE_CONFLICT            = -3073,
 
     E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
+    // get worker id
+    E_WORKER_ID_FAILED                = -3062,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

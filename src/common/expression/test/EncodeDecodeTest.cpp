@@ -205,7 +205,7 @@ TEST(ExpressionEncodeDecode, TypeCastingExpression) {
 }
 
 TEST(ExpressionEncodeDecode, UUIDExpression) {
-  const auto& uuidEx = *UUIDExpression::make(&pool, "field");
+  const auto& uuidEx = *UUIDExpression::make(&pool);
   std::string encoded = Expression::encode(uuidEx);
   auto decoded = Expression::decode(&pool, folly::StringPiece(encoded.data(), encoded.size()));
   EXPECT_EQ(uuidEx, *decoded);

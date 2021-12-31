@@ -7,9 +7,9 @@
 
 #include "clients/storage/InternalStorageClient.h"
 #include "common/utils/NebulaKeyUtils.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ChainBaseProcessor.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 #include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
