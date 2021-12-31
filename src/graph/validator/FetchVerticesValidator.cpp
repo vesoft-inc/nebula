@@ -63,8 +63,7 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
 
   auto &exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
