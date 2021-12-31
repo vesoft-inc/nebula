@@ -10,6 +10,7 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/expression/Expression.h"
+#include "common/expression/ArithmeticExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
 #include "graph/context/QueryContext.h"
@@ -415,32 +416,50 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
-  // Match relational expressions containing at least one arithmetic expr
-  auto matcher = [](const Expression *e) -> bool {
-    if (e->isRelExpr()) {
-      auto relExpr = static_cast<const RelationalExpression *>(e);
-      if (isEvaluableExpr(relExpr->right())) {
-        return true;
-      }
-      // TODO: To match arithmetic expression on both side
-      auto lExpr = relExpr->left();
-      if (lExpr->isArithmeticExpr()) {
-        auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
-        auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
-        QueryExpressionContext ctx(nullptr);
 
-        // If the arithExpr has constant expr as member that is a string, do not rewrite
-        for (auto iter : constExprList) {
-          auto constExpr = static_cast<ConstantExpression *>(const_cast<Expression *>(iter));
-          if (constExpr->eval(ctx).isStr()) {
-            return false;
-          }
-        }
+  auto checkArithmExpr = [](const ArithmeticExpression *arithmExpr) -> bool {
+    auto lExpr = const_cast<Expression *>(arithmExpr->left());
+    auto rExpr = const_cast<Expression *>(arithmExpr->right());
+    QueryExpressionContext ctx(nullptr);
 
-        return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
+    if (lExpr->kind() == Expression::Kind::kConstant) {
+      if (static_cast<ConstantExpression *>(lExpr)->eval(ctx).isStr()) {
+        return false;
       }
     }
-    return false;
+    if (rExpr->kind() == Expression::Kind::kConstant) {
+      if (static_cast<ConstantExpression *>(rExpr)->eval(ctx).isStr()) {
+        return false;
+      }
+    }
+    return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
+  };
+
+  // Match relational expressions following these rules:
+  // 1. the right operand of rel expr should be evaluable
+  // 2. the left operand of rel expr should be an arithmetic expr that does not contains string and
+  // has at least one operand that is evaluable
+  auto matcher = [&checkArithmExpr](const Expression *e) -> bool {
+    if (!e->isRelExpr()) {
+      return false;
+    }
+
+    auto relExpr = static_cast<const RelationalExpression *>(e);
+    bool checkRightOperand = isEvaluableExpr(relExpr->right());
+
+    bool checkLeftOperand = true;
+    auto lExpr = relExpr->left();
+    if (!lExpr->isArithmeticExpr()) {
+      return false;
+    }
+
+    auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+    auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
+    QueryExpressionContext ctx(nullptr);
+
+    // If the arithExpr has constant expr as member that is a string, do not rewrite
+    checkLeftOperand = checkArithmExpr(arithmExpr);
+    return checkLeftOperand && checkRightOperand;
   };
 
   // Simplify relational expressions involving boolean literals
@@ -544,9 +563,9 @@ StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter
   // pushed down
   auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
   // Deduplicate the list
-  auto dedupPropExprsLisststd =
+  auto dedupPropExprsList =
       std::unordered_set<const Expression *>(propExprs.begin(), propExprs.end());
-  if (dedupPropExprsLisststd.size() > 1) {
+  if (dedupPropExprsList.size() > 1) {
     return const_cast<Expression *>(filter);
   }
 

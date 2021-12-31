@@ -234,5 +234,23 @@ TEST_F(RewriteRelExprVisitorTest, TestContainer) {
   }
 }
 
+TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExprWithStr) {
+  // Do not rewrite if the arithmetic expression contains string/char constant
+  {
+    // (v.name - "ab" < "name")  =>  Unchanged
+    auto expr = ltExpr(minusExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
+    auto res = ExpressionUtils::rewriteRelExpr(expr);
+    auto expected = expr;
+    ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
+  }
+  {
+    // (v.name + "ab" < "name")  =>  Unchanged
+    auto expr = ltExpr(addExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
+    auto res = ExpressionUtils::rewriteRelExpr(expr);
+    auto expected = expr;
+    ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
+  }
+}
+
 }  // namespace graph
 }  // namespace nebula
