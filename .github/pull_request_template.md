@@ -1,5 +1,5 @@
 <!--
-Thanks for your contributing!
+Thanks for your contribution!
 In order to review PR more efficiently, please add information according to the template.
 -->
 
@@ -8,13 +8,13 @@ In order to review PR more efficiently, please add information according to the 
 - [ ] feature
 - [ ] enhancement
 
-#### What problem does this PR slove?
+#### What problem(s) does this PR solve?
 Issue(s) number: 
 
 Description:
 
 
-#### How do you slove it?
+#### How do you solve it?
 
 
   
@@ -26,7 +26,7 @@ Description:
 Tests:
 - [ ] Unit test(positive and negative cases)
 - [ ] Function test
-- [ ] Perfomance test
+- [ ] Performance test
 - [ ] N/A
 
 Affects:
