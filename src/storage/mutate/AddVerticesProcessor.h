@@ -41,12 +41,14 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
                                      RowReader* reader,
-                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                     const meta::SchemaProviderIf* latestSchema);
 
  private:
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
 };
 
 }  // namespace storage

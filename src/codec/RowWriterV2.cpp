@@ -5,6 +5,8 @@
 
 #include "codec/RowWriterV2.h"
 
+#include <cmath>
+
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "common/utils/DefaultValueContext.h"
@@ -130,6 +132,9 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
       case Value::Type::GEOGRAPHY:
         set(i, v.moveGeography());
         break;
+      case Value::Type::DURATION:
+        set(i, v.moveDuration());
+        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
     }
@@ -209,6 +214,8 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
       return write(index, val.getDateTime());
     case Value::Type::GEOGRAPHY:
       return write(index, val.getGeography());
+    case Value::Type::DURATION:
+      return write(index, val.getDuration());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -281,7 +288,7 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
       if (v > std::numeric_limits<int8_t>::max() || v < std::numeric_limits<int8_t>::min()) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int8_t iv = v;
+      int8_t iv = std::round(v);
       buf_[offset] = iv;
       break;
     }
@@ -289,7 +296,7 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
       if (v > std::numeric_limits<int16_t>::max() || v < std::numeric_limits<int16_t>::min()) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int16_t iv = v;
+      int16_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int16_t));
       break;
     }
@@ -298,7 +305,7 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
           v < static_cast<float>(std::numeric_limits<int32_t>::min())) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int32_t iv = v;
+      int32_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int32_t));
       break;
     }
@@ -307,7 +314,7 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
           v < static_cast<float>(std::numeric_limits<int64_t>::min())) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int64_t iv = v;
+      int64_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int64_t));
       break;
     }
@@ -338,7 +345,7 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
       if (v > std::numeric_limits<int8_t>::max() || v < std::numeric_limits<int8_t>::min()) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int8_t iv = v;
+      int8_t iv = std::round(v);
       buf_[offset] = iv;
       break;
     }
@@ -346,7 +353,7 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
       if (v > std::numeric_limits<int16_t>::max() || v < std::numeric_limits<int16_t>::min()) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int16_t iv = v;
+      int16_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int16_t));
       break;
     }
@@ -354,7 +361,7 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
       if (v > std::numeric_limits<int32_t>::max() || v < std::numeric_limits<int32_t>::min()) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int32_t iv = v;
+      int32_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int32_t));
       break;
     }
@@ -363,7 +370,7 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
           v < static_cast<double>(std::numeric_limits<int64_t>::min())) {
         return WriteResult::OUT_OF_RANGE;
       }
-      int64_t iv = v;
+      int64_t iv = std::round(v);
       memcpy(&buf_[offset], reinterpret_cast<void*>(&iv), sizeof(int64_t));
       break;
     }
@@ -762,6 +769,29 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const Duration& v) noexcept {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+  switch (field->type()) {
+    case PropertyType::DURATION:
+      memcpy(&buf_[offset], reinterpret_cast<const void*>(&v.seconds), sizeof(int64_t));
+      memcpy(&buf_[offset + sizeof(int64_t)],
+             reinterpret_cast<const void*>(&v.microseconds),
+             sizeof(int32_t));
+      memcpy(&buf_[offset + sizeof(int64_t) + sizeof(int32_t)],
+             reinterpret_cast<const void*>(&v.months),
+             sizeof(int32_t));
+      break;
+    default:
+      return WriteResult::TYPE_MISMATCH;
+  }
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+
 WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
   auto field = schema_->field(index);
   auto geoShape = field->geoShape();
@@ -814,6 +844,9 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             break;
           case Value::Type::GEOGRAPHY:
             r = write(i, defVal.getGeography());
+            break;
+          case Value::Type::DURATION:
+            r = write(i, defVal.getDuration());
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

@@ -6,6 +6,7 @@
 #include "graph/util/FTIndexUtils.h"
 
 #include "common/expression/Expression.h"
+#include "graph/util/ExpressionUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
 
@@ -27,7 +28,7 @@ bool FTIndexUtils::needTextSearch(const Expression* expr) {
 
 StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
     meta::MetaClient* client) {
-  auto tcs = client->getFTClientsFromCache();
+  auto tcs = client->getServiceClientsFromCache(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!tcs.ok()) {
     return tcs.status();
   }

@@ -7,6 +7,8 @@
 
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
+#include <boost/filesystem.hpp>
+
 #include "clients/storage/InternalStorageClient.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/meta/ServerBasedIndexManager.h"
@@ -19,6 +21,7 @@
 #include "kvstore/RocksEngine.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CompactionFilter.h"
+#include "storage/GraphStorageLocalServer.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/InternalStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
@@ -33,12 +36,18 @@
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
 
+#ifndef BUILD_STANDALONE
 DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
-DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+#else
+DEFINE_int32(storage_port, 44501, "Storage daemon listening port");
+DEFINE_int32(storage_num_worker_threads, 32, "Number of workers");
+DECLARE_bool(local_config);
+#endif
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
+DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 
 namespace nebula {
 namespace storage {
@@ -54,7 +63,9 @@ StorageServer::StorageServer(HostAddr localHost,
       walPath_(std::move(walPath)),
       listenerPath_(std::move(listenerPath)) {}
 
-StorageServer::~StorageServer() { stop(); }
+StorageServer::~StorageServer() {
+  stop();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;
@@ -113,7 +124,11 @@ bool StorageServer::initWebService() {
     return new storage::StorageHttpPropertyHandler(schemaMan_.get(), kvstore_.get());
   });
 
+#ifndef BUILD_STANDALONE
   auto status = webSvc_->start();
+#else
+  auto status = webSvc_->start(FLAGS_ws_storage_http_port, FLAGS_ws_storage_h2_port);
+#endif
   return status.ok();
 }
 
@@ -144,8 +159,13 @@ int32_t StorageServer::getAdminStoreSeqId() {
 
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+#ifndef BUILD_STANDALONE
+  const int32_t numWorkerThreads = FLAGS_num_worker_threads;
+#else
+  const int32_t numWorkerThreads = FLAGS_storage_num_worker_threads;
+#endif
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
+      numWorkerThreads);
   workers_->setNamePrefix("executor");
   workers_->start();
 
@@ -160,6 +180,8 @@ bool StorageServer::start() {
     options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
   }
   options.gitInfoSHA_ = gitInfoSha();
+  options.rootPath_ = boost::filesystem::current_path().string();
+  options.dataPaths_ = dataPaths_;
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_, metaAddrs_, options);
   if (!metaClient_->waitForMetadReady()) {
@@ -216,17 +238,21 @@ bool StorageServer::start() {
   storageThread_.reset(new std::thread([this] {
     try {
       auto handler = std::make_shared<GraphStorageServiceHandler>(env_.get());
+#ifndef BUILD_STANDALONE
       storageServer_ = std::make_unique<apache::thrift::ThriftServer>();
       storageServer_->setPort(FLAGS_port);
       storageServer_->setIdleTimeout(std::chrono::seconds(0));
       storageServer_->setIOThreadPool(ioThreadPool_);
-      storageServer_->setThreadManager(workers_);
       storageServer_->setStopWorkersOnStopListening(false);
-      storageServer_->setInterface(std::move(handler));
       if (FLAGS_enable_ssl) {
         storageServer_->setSSLConfig(nebula::sslContextConfig());
       }
+#else
+      storageServer_ = GraphStorageLocalServer::getInstance();
+#endif
 
+      storageServer_->setThreadManager(workers_);
+      storageServer_->setInterface(std::move(handler));
       ServiceStatus expected = STATUS_UNINITIALIZED;
       if (!storageSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
         LOG(ERROR) << "Impossible! How could it happen!";
@@ -305,13 +331,38 @@ bool StorageServer::start() {
       internalStorageSvcStatus_.load() != STATUS_RUNNING) {
     return false;
   }
+  {
+    std::lock_guard<std::mutex> lkStop(muStop_);
+    if (serverStatus_ != STATUS_UNINITIALIZED) {
+      // stop() called during start()
+      return false;
+    }
+    serverStatus_ = STATUS_RUNNING;
+  }
   return true;
 }
 
 void StorageServer::waitUntilStop() {
+  {
+    std::unique_lock<std::mutex> lkStop(muStop_);
+    while (serverStatus_ == STATUS_RUNNING) {
+      cvStop_.wait(lkStop);
+    }
+  }
+
+  this->stop();
+
   adminThread_->join();
   storageThread_->join();
   internalStorageThread_->join();
+}
+
+void StorageServer::notifyStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  if (serverStatus_ == STATUS_RUNNING) {
+    serverStatus_ = STATUS_STOPPED;
+    cvStop_.notify_one();
+  }
 }
 
 void StorageServer::stop() {

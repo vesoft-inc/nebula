@@ -9,6 +9,7 @@
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;
@@ -19,7 +20,9 @@ namespace opt {
 std::unique_ptr<OptRule> CollapseProjectRule::kInstance =
     std::unique_ptr<CollapseProjectRule>(new CollapseProjectRule());
 
-CollapseProjectRule::CollapseProjectRule() { RuleSet::QueryRules().addRule(this); }
+CollapseProjectRule::CollapseProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& CollapseProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kProject,
@@ -110,7 +113,9 @@ bool CollapseProjectRule::match(OptContext* octx, const MatchedResult& matched) 
   return OptRule::match(octx, matched);
 }
 
-std::string CollapseProjectRule::toString() const { return "CollapseProjectRule"; }
+std::string CollapseProjectRule::toString() const {
+  return "CollapseProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

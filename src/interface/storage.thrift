@@ -39,7 +39,7 @@ struct ResponseCommon {
     // Only contains the partition that returns error
     1: required list<PartitionResult>   failed_parts,
     // Query latency from storage service
-    2: required i32                     latency_in_us,
+    2: required i64                     latency_in_us,
     3: optional map<string,i32>         latency_detail_us,
 }
 
@@ -343,7 +343,8 @@ struct AddVerticesRequest {
         (cpp.template = "std::unordered_map")   prop_names,
     // if true, when (vertexID,tagID) already exists, do nothing
     4: bool                                     if_not_exists,
-    5: optional RequestCommon                   common,
+    5: bool                                     ignore_existed_index = false,
+    6: optional RequestCommon                   common,
 }
 
 struct AddEdgesRequest {
@@ -356,7 +357,9 @@ struct AddEdgesRequest {
     3: list<binary>                             prop_names,
     // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
-    5: optional RequestCommon                   common,
+    // If true, existed index won't be removed
+    5: bool                                     ignore_existed_index = false,
+    6: optional RequestCommon                   common,
 }
 
 /*
@@ -542,6 +545,7 @@ struct LookupIndexRequest {
     5: optional RequestCommon               common,
     // max row count of each partition in this response
     6: optional i64                         limit,
+    7: optional list<OrderBy>               order_by,
 }
 
 
@@ -561,9 +565,8 @@ struct LookupAndTraverseRequest {
  */
 
 struct ScanCursor {
-    3: bool                                 has_next,
     // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    1: optional binary                      next_cursor,
 }
 
 struct ScanVertexRequest {
@@ -585,21 +588,11 @@ struct ScanVertexRequest {
     10: optional RequestCommon              common,
 }
 
-struct ScanVertexResponse {
-    1: required ResponseCommon              result,
-    // The data will return as a dataset. The format is as follows:
-    // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
-    // in the same order which specified in VertexProp in request.
-    2: common.DataSet                       vertex_data,
-    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
-                                            cursors;
-}
-
 struct ScanEdgeRequest {
     1: common.GraphSpaceID                  space_id,
     2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
                                             parts,
-    3: EdgeProp                             return_columns,
+    3: list<EdgeProp>                       return_columns,
     // max row count of edge in this response
     4: i64                                  limit,
     // only return data in time range [start_time, end_time)
@@ -614,12 +607,13 @@ struct ScanEdgeRequest {
     10: optional RequestCommon              common,
 }
 
-struct ScanEdgeResponse {
+struct ScanResponse {
     1: required ResponseCommon              result,
     // The data will return as a dataset. The format is as follows:
-    // Each column represents one property. the column name is in the form of "edge_name.prop_alias"
-    // in the same order which specified in EdgeProp in requests.
-    2: common.DataSet                       edge_data,
+    // Each column represents one property. the column name is in the form of "edge/tag_name.prop_alias"
+    // in the same order which specified in VertexProp/EdgeProp in request
+    // Should keep same with result of GetProps
+    2: optional common.DataSet              props,
     3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
                                             cursors;
 }
@@ -679,8 +673,8 @@ service GraphStorageService {
     UpdateResponse updateVertex(1: UpdateVertexRequest req);
     UpdateResponse updateEdge(1: UpdateEdgeRequest req);
 
-    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
-    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanResponse scanVertex(1: ScanVertexRequest req)
+    ScanResponse scanEdge(1: ScanEdgeRequest req)
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
 
@@ -691,6 +685,7 @@ service GraphStorageService {
 
     UpdateResponse chainUpdateEdge(1: UpdateEdgeRequest req);
     ExecResponse chainAddEdges(1: AddEdgesRequest req);
+    ExecResponse chainDeleteEdges(1: DeleteEdgesRequest req);
 
     KVGetResponse   get(1: KVGetRequest req);
     ExecResponse    put(1: KVPutRequest req);
@@ -757,14 +752,14 @@ struct GetLeaderReq {
 }
 
 struct CreateCPRequest {
-    1: common.GraphSpaceID  space_id,
-    2: binary               name,
+    1: list<common.GraphSpaceID>  space_ids,
+    2: binary                     name,
 }
 
 
 struct DropCPRequest {
-    1: common.GraphSpaceID  space_id,
-    2: binary               name,
+    1: list<common.GraphSpaceID>  space_ids,
+    2: binary                     name,
 }
 
 
@@ -775,8 +770,8 @@ enum EngineSignType {
 
 
 struct BlockingSignRequest {
-    1: common.GraphSpaceID      space_id,
-    2: required EngineSignType  sign,
+    1: list<common.GraphSpaceID>    space_ids,
+    2: required EngineSignType      sign,
 }
 
 
@@ -852,8 +847,6 @@ service StorageAdminService {
 
     AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
     AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
-
-    ListClusterInfoResp listClusterInfo(1: ListClusterInfoReq req);
 }
 
 
@@ -862,17 +855,6 @@ service StorageAdminService {
 //  Requests, responses for the InternalStorageService
 //
 //////////////////////////////////////////////////////////
-
-// transaction request
-struct InternalTxnRequest {
-    1: i64                                      txn_id,
-    2: map<common.PartitionID, i64>             term_of_parts,
-    3: optional AddEdgesRequest                 add_edge_req,
-    4: optional UpdateEdgeRequest               upd_edge_req,
-    5: optional map<common.PartitionID, list<i64>>(
-        cpp.template = "std::unordered_map")    edge_ver,
-}
-
 
 struct ChainAddEdgesRequest {
     1: common.GraphSpaceID                      space_id,
@@ -884,7 +866,6 @@ struct ChainAddEdgesRequest {
     3: list<binary>                             prop_names,
     // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
-    // 5: map<common.PartitionID, i64>             term_of_parts,
     5: i64                                      term
     6: optional i64                             edge_version
     // 6: optional map<common.PartitionID, list<i64>>(
@@ -900,7 +881,17 @@ struct ChainUpdateEdgeRequest {
     5: required list<common.PartitionID>        parts,
 }
 
+struct ChainDeleteEdgesRequest {
+    1: common.GraphSpaceID                      space_id,
+    // partId => edgeKeys
+    2: map<common.PartitionID, list<EdgeKey>>
+        (cpp.template = "std::unordered_map")   parts,
+    3: binary                                   txn_id
+    4: i64                                      term,
+}
+
 service InternalStorageService {
     ExecResponse chainAddEdges(1: ChainAddEdgesRequest req);
     UpdateResponse chainUpdateEdge(1: ChainUpdateEdgeRequest req);
+    ExecResponse chainDeleteEdges(1: ChainDeleteEdgesRequest req);
 }

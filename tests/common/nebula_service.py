@@ -14,10 +14,14 @@ import glob
 import signal
 import copy
 import fcntl
+import logging
 from pathlib import Path
 from contextlib import closing
 
 from tests.common.constants import TMP_DIR
+from tests.common.utils import get_ssl_config
+from nebula2.gclient.net import ConnectionPool
+from nebula2.Config import Config
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
@@ -128,7 +132,14 @@ class NebulaService(object):
         self.all_processes = []
         self.all_ports = []
         self.metad_param, self.storaged_param, self.graphd_param = {}, {}, {}
+        self.storaged_port = 0
+        self.graphd_port = 0
         self.ca_signed = ca_signed
+        self.is_graph_ssl = (
+            kwargs.get("enable_graph_ssl", "false").upper() == "TRUE"
+            or kwargs.get("enable_ssl", "false").upper() == "TRUE"
+        )
+
         self.debug_log = debug_log
         self.ports_per_process = 4
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
@@ -161,6 +172,8 @@ class NebulaService(object):
             )
             self.storaged_processes.append(storaged)
             index += self.ports_per_process
+            if suffix_index == 0:
+                self.storaged_port = self.all_ports[0]
 
         for suffix_index in range(self.graphd_num):
             graphd = NebulaProcess(
@@ -171,6 +184,8 @@ class NebulaService(object):
             )
             self.graphd_processes.append(graphd)
             index += self.ports_per_process
+            if suffix_index == 0:
+                self.graphd_port = self.all_ports[0]
 
         self.all_processes = (
             self.metad_processes + self.storaged_processes + self.graphd_processes
@@ -192,14 +207,14 @@ class NebulaService(object):
             'expired_time_factor': 60,
         }
         if self.ca_signed:
-            _params['ca_path'] = 'share/resources/test.ca.pem'
             _params['cert_path'] = 'share/resources/test.derive.crt'
             _params['key_path'] = 'share/resources/test.derive.key'
+            _params['ca_path'] = 'share/resources/test.ca.pem'
 
         else:
-            _params['ca_path'] = 'share/resources/test.ca.pem'
-            _params['cert_path'] = 'share/resources/test.ca.key'
-            _params['key_path'] = 'share/resources/test.ca.password'
+            _params['cert_path'] = 'share/resources/test.ca.pem'
+            _params['key_path'] = 'share/resources/test.ca.key'
+            _params['password_path'] = 'share/resources/test.ca.password'
 
         if self.debug_log:
             _params['v'] = '4'
@@ -210,6 +225,10 @@ class NebulaService(object):
         self.graphd_param['system_memory_high_watermark_ratio'] = '0.95'
         self.graphd_param['num_rows_to_check_memory'] = '4'
         self.graphd_param['session_reclaim_interval_secs'] = '2'
+        # Login retry
+        self.graphd_param['failed_login_attempts'] = '5'
+        self.graphd_param['password_lock_time_in_secs'] = '10'
+
         self.storaged_param = copy.copy(_params)
         self.storaged_param['local_config'] = 'false'
         self.storaged_param['raft_heartbeat_interval_secs'] = '30'
@@ -232,10 +251,13 @@ class NebulaService(object):
                 self.work_dir + '/conf/{}.conf'.format(item),
             )
 
-        # gflags.json
         resources_dir = self.work_dir + '/share/resources/'
         os.makedirs(resources_dir)
 
+        # timezone file
+        shutil.copy(
+            self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir
+        )
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
         # cert files
         shutil.copy(self.src_dir + '/tests/cert/test.ca.key', resources_dir)
@@ -348,6 +370,45 @@ class NebulaService(object):
         start_time = time.time()
         for p in self.all_processes:
             p.start()
+
+        config = Config()
+        config.max_connection_pool_size = 20
+        config.timeout = 60000
+        # init connection pool
+        client_pool = ConnectionPool()
+        # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
+        ssl_config = get_ssl_config(self.is_graph_ssl, self.ca_signed)
+        print("begin to add hosts")
+        ok = False
+        # wait graph is ready, and then add hosts
+        for _ in range(20):
+            try:
+                ok = client_pool.init(
+                    [("127.0.0.1", self.graphd_processes[0].tcp_port)],
+                    config,
+                    ssl_config,
+                )
+                if ok:
+                    break
+            except:
+                pass
+            time.sleep(1)
+
+        assert ok, "graph is not ready"
+        # get session from the pool
+        client = client_pool.get_session('root', 'nebula')
+
+        hosts = ",".join(
+            [
+                "127.0.0.1:{}".format(str(storaged.tcp_port))
+                for storaged in self.storaged_processes
+            ]
+        )
+        cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
+        print("add hosts cmd is {}".format(cmd))
+        resp = client.execute(cmd)
+        assert resp.is_succeeded(), resp.error_msg()
+        client.release()
 
         # wait nebula start
         server_ports = [p.tcp_port for p in self.all_processes]

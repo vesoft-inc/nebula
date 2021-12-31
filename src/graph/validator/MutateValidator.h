@@ -35,6 +35,7 @@ class InsertVerticesValidator final : public Validator {
   std::vector<std::pair<TagID, TagSchema>> schemas_;
   uint16_t propSize_{0};
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
   std::vector<storage::cpp2::NewVertex> vertices_;
 };
 
@@ -54,6 +55,7 @@ class InsertEdgesValidator final : public Validator {
  private:
   GraphSpaceID spaceId_{-1};
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
   EdgeType edgeType_{-1};
   std::shared_ptr<const meta::SchemaProviderIf> schema_;
   std::vector<std::string> propNames_;
@@ -83,6 +85,7 @@ class DeleteVerticesValidator final : public Validator {
   std::vector<EdgeType> edgeTypes_;
   std::vector<std::string> edgeNames_;
   std::vector<EdgeKeyRef*> edgeKeyRefs_;
+  bool withEdge_{true};
 };
 
 class DeleteTagsValidator final : public Validator {
@@ -128,7 +131,7 @@ class DeleteEdgesValidator final : public Validator {
 
 class UpdateValidator : public Validator {
  public:
-  explicit UpdateValidator(Sentence* sentence, QueryContext* context, bool isEdge = false)
+  UpdateValidator(Sentence* sentence, QueryContext* context, bool isEdge = false)
       : Validator(sentence, context) {
     sentence_ = static_cast<UpdateBaseSentence*>(sentence);
     isEdge_ = isEdge;

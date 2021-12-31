@@ -9,15 +9,19 @@
 #include "clients/meta/MetaClient.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/AdminSentences.h"
 
 namespace nebula {
 namespace graph {
+
 class CreateTagValidator final : public Validator {
  public:
   CreateTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return createCtx_.get(); }
+  AstContext* getAstContext() override {
+    return createCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -29,7 +33,9 @@ class CreateEdgeValidator final : public Validator {
  public:
   CreateEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return createCtx_.get(); }
+  AstContext* getAstContext() override {
+    return createCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -83,7 +89,9 @@ class AlterTagValidator final : public Validator {
  public:
   AlterTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return alterCtx_.get(); }
+  AstContext* getAstContext() override {
+    return alterCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -95,7 +103,9 @@ class AlterEdgeValidator final : public Validator {
  public:
   AlterEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return alterCtx_.get(); }
+  AstContext* getAstContext() override {
+    return alterCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -157,6 +167,7 @@ class CreateTagIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
+  std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
 };
 
 class CreateEdgeIndexValidator final : public Validator {
@@ -173,6 +184,7 @@ class CreateEdgeIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
+  std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
 };
 
 class DropTagIndexValidator final : public Validator {
@@ -310,9 +322,21 @@ class ShowEdgeIndexStatusValidator final : public Validator {
   Status toPlan() override;
 };
 
-class AddZoneValidator final : public Validator {
+class MergeZoneValidator final : public Validator {
  public:
-  AddZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+  MergeZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class RenameZoneValidator final : public Validator {
+ public:
+  RenameZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 
@@ -325,6 +349,18 @@ class AddZoneValidator final : public Validator {
 class DropZoneValidator final : public Validator {
  public:
   DropZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class DivideZoneValidator final : public Validator {
+ public:
+  DivideZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 
@@ -358,22 +394,9 @@ class ListZonesValidator final : public Validator {
   Status toPlan() override;
 };
 
-class AddHostIntoZoneValidator final : public Validator {
+class AddHostsIntoZoneValidator final : public Validator {
  public:
-  AddHostIntoZoneValidator(Sentence* sentence, QueryContext* context)
-      : Validator(sentence, context) {
-    setNoSpaceRequired();
-  }
-
- private:
-  Status validateImpl() override;
-
-  Status toPlan() override;
-};
-
-class DropHostFromZoneValidator final : public Validator {
- public:
-  DropHostFromZoneValidator(Sentence* sentence, QueryContext* context)
+  AddHostsIntoZoneValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {
     setNoSpaceRequired();
   }

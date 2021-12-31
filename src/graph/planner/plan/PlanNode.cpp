@@ -55,6 +55,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "EdgeIndexRangeScan";
     case Kind::kEdgeIndexPrefixScan:
       return "EdgeIndexPrefixScan";
+    case Kind::kScanVertices:
+      return "ScanVertices";
+    case Kind::kScanEdges:
+      return "ScanEdges";
     case Kind::kFilter:
       return "Filter";
     case Kind::kUnion:
@@ -170,6 +174,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropEdge";
     case Kind::kShowSpaces:
       return "ShowSpaces";
+    case Kind::kAlterSpace:
+      return "AlterSpaces";
     case Kind::kShowTags:
       return "ShowTags";
     case Kind::kShowEdges:
@@ -232,17 +238,23 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "CartesianProduct";
     case Kind::kSubgraph:
       return "Subgraph";
-    // Group and Zone
-    case Kind::kAddZone:
-      return "AddZone";
+    case Kind::kAddHosts:
+      return "AddHosts";
+    case Kind::kDropHosts:
+      return "DropHosts";
+    // Zone
+    case Kind::kMergeZone:
+      return "MergeZone";
+    case Kind::kRenameZone:
+      return "RenameZone";
     case Kind::kDropZone:
       return "DropZone";
+    case Kind::kDivideZone:
+      return "DivideZone";
     case Kind::kDescribeZone:
       return "DescribeZone";
-    case Kind::kAddHostIntoZone:
-      return "AddHostIntoZone";
-    case Kind::kDropHostFromZone:
-      return "DropHostFromZone";
+    case Kind::kAddHostsIntoZone:
+      return "AddHostsIntoZone";
     case Kind::kShowZones:
       return "ShowZones";
     case Kind::kAddListener:
@@ -253,15 +265,15 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowListener";
     case Kind::kShowStats:
       return "ShowStats";
-    // text search
-    case Kind::kShowTSClients:
-      return "ShowTSClients";
+    // service search
+    case Kind::kShowServiceClients:
+      return "ShowServiceClients";
     case Kind::kShowFTIndexes:
       return "ShowFTIndexes";
-    case Kind::kSignInTSService:
-      return "SignInTSService";
-    case Kind::kSignOutTSService:
-      return "SignOutTSService";
+    case Kind::kSignInService:
+      return "SignInService";
+    case Kind::kSignOutService:
+      return "SignOutService";
     case Kind::kDownload:
       return "Download";
     case Kind::kIngest:
@@ -278,6 +290,14 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Traverse";
     case Kind::kAppendVertices:
       return "AppendVertices";
+    case Kind::kBiLeftJoin:
+      return "BiLeftJoin";
+    case Kind::kBiInnerJoin:
+      return "BiInnerJoin";
+    case Kind::kBiCartesianProduct:
+      return "BiCartesianProduct";
+    case Kind::kArgument:
+      return "Argument";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
@@ -306,7 +326,9 @@ void PlanNode::readVariable(Variable* varPtr) {
   qctx_->symTable()->readBy(varPtr->name, this);
 }
 
-void PlanNode::calcCost() { VLOG(1) << "unimplemented cost calculation."; }
+void PlanNode::calcCost() {
+  VLOG(1) << "unimplemented cost calculation.";
+}
 
 void PlanNode::setOutputVar(const std::string& var) {
   DCHECK_EQ(1, outputVars_.size());
@@ -405,5 +427,9 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
   return desc;
 }
 
+void PlanNode::setColNames(std::vector<std::string> cols) {
+  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr(0)->name);
+  outputVarPtr(0)->colNames = std::move(cols);
+}
 }  // namespace graph
 }  // namespace nebula

@@ -20,7 +20,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownLeftJoinRule::kInstance =
     std::unique_ptr<PushFilterDownLeftJoinRule>(new PushFilterDownLeftJoinRule());
 
-PushFilterDownLeftJoinRule::PushFilterDownLeftJoinRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownLeftJoinRule::PushFilterDownLeftJoinRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& PushFilterDownLeftJoinRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
@@ -124,7 +126,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
   return result;
 }
 
-std::string PushFilterDownLeftJoinRule::toString() const { return "PushFilterDownLeftJoinRule"; }
+std::string PushFilterDownLeftJoinRule::toString() const {
+  return "PushFilterDownLeftJoinRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

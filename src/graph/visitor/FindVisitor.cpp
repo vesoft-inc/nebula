@@ -129,35 +129,65 @@ void FindVisitor::visit(LogicalExpression* expr) {
   }
 }
 
-void FindVisitor::visit(ConstantExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(ConstantExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgePropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgePropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(TagPropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(TagPropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(InputPropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(InputPropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(VariablePropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(VariablePropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(SourcePropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(SourcePropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(DestPropertyExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(DestPropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgeSrcIdExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgeSrcIdExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgeTypeExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgeTypeExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgeRankExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgeRankExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgeDstIdExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgeDstIdExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(UUIDExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(UUIDExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(VariableExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(VariableExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(VersionedVariableExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(VersionedVariableExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(LabelExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(LabelExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
 void FindVisitor::visit(LabelAttributeExpression* expr) {
   findInCurrentExpr(expr);
@@ -167,11 +197,23 @@ void FindVisitor::visit(LabelAttributeExpression* expr) {
   expr->right()->accept(this);
 }
 
-void FindVisitor::visit(VertexExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(VertexExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
-void FindVisitor::visit(EdgeExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(LabelTagPropertyExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  expr->label()->accept(this);
+}
 
-void FindVisitor::visit(ColumnExpression* expr) { findInCurrentExpr(expr); }
+void FindVisitor::visit(EdgeExpression* expr) {
+  findInCurrentExpr(expr);
+}
+
+void FindVisitor::visit(ColumnExpression* expr) {
+  findInCurrentExpr(expr);
+}
 
 void FindVisitor::visit(PathBuildExpression* expr) {
   findInCurrentExpr(expr);

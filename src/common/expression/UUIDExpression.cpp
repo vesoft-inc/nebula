@@ -10,38 +10,30 @@
 namespace nebula {
 
 bool UUIDExpression::operator==(const Expression& rhs) const {
-  if (kind_ != rhs.kind()) {
-    return false;
-  }
-
-  const auto& r = static_cast<const UUIDExpression&>(rhs);
-  return field_ == r.field_;
+  return kind_ == rhs.kind();
 }
 
 void UUIDExpression::writeTo(Encoder& encoder) const {
   // kind_
+  UNUSED(encoder);
   encoder << kind_;
-
-  // field_
-  CHECK(!field_.empty());
-  encoder << field_;
 }
 
 void UUIDExpression::resetFrom(Decoder& decoder) {
-  // Read field_
-  field_ = decoder.readStr();
+  UNUSED(decoder);
 }
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
-  // TODO
   UNUSED(ctx);
   return result_;
 }
 
 std::string UUIDExpression::toString() const {
-  return folly::stringPrintf("uuid(\"%s\")", field_.c_str());
+  return folly::stringPrintf("uuid()");
 }
 
-void UUIDExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void UUIDExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

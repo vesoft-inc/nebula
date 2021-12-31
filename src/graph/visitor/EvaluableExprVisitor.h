@@ -10,61 +10,62 @@
 
 namespace nebula {
 namespace graph {
+class QueryContext;
 
 class EvaluableExprVisitor : public ExprVisitorImpl {
  public:
-  bool ok() const override { return isEvaluable_; }
+  explicit EvaluableExprVisitor(const QueryContext *qctx = nullptr);
+  bool ok() const override {
+    return isEvaluable_;
+  }
 
  private:
   using ExprVisitorImpl::visit;
 
-  void visit(ConstantExpression *) override { isEvaluable_ = true; }
+  void visit(ConstantExpression *) override;
 
-  void visit(LabelExpression *) override { isEvaluable_ = false; }
+  void visit(LabelExpression *) override;
 
-  void visit(UUIDExpression *) override { isEvaluable_ = false; }
+  void visit(UUIDExpression *) override;
 
-  void visit(VariableExpression *) override { isEvaluable_ = false; }
+  void visit(VariableExpression *) override;
 
-  void visit(VersionedVariableExpression *) override { isEvaluable_ = false; }
+  void visit(VersionedVariableExpression *) override;
 
-  void visit(TagPropertyExpression *) override { isEvaluable_ = false; }
+  void visit(TagPropertyExpression *) override;
 
-  void visit(EdgePropertyExpression *) override { isEvaluable_ = false; }
+  void visit(EdgePropertyExpression *) override;
 
-  void visit(InputPropertyExpression *) override { isEvaluable_ = false; }
+  void visit(LabelTagPropertyExpression *) override;
 
-  void visit(VariablePropertyExpression *) override { isEvaluable_ = false; }
+  void visit(InputPropertyExpression *) override;
 
-  void visit(DestPropertyExpression *) override { isEvaluable_ = false; }
+  void visit(VariablePropertyExpression *) override;
 
-  void visit(SourcePropertyExpression *) override { isEvaluable_ = false; }
+  void visit(DestPropertyExpression *) override;
 
-  void visit(EdgeSrcIdExpression *) override { isEvaluable_ = false; }
+  void visit(SourcePropertyExpression *) override;
 
-  void visit(EdgeTypeExpression *) override { isEvaluable_ = false; }
+  void visit(EdgeSrcIdExpression *) override;
 
-  void visit(EdgeRankExpression *) override { isEvaluable_ = false; }
+  void visit(EdgeTypeExpression *) override;
 
-  void visit(EdgeDstIdExpression *) override { isEvaluable_ = false; }
+  void visit(EdgeRankExpression *) override;
 
-  void visit(VertexExpression *) override { isEvaluable_ = false; }
+  void visit(EdgeDstIdExpression *) override;
 
-  void visit(EdgeExpression *) override { isEvaluable_ = false; }
+  void visit(VertexExpression *) override;
 
-  void visit(ColumnExpression *) override { isEvaluable_ = false; }
+  void visit(EdgeExpression *) override;
 
-  void visit(SubscriptRangeExpression *) override { isEvaluable_ = false; }
+  void visit(ColumnExpression *) override;
 
-  void visitBinaryExpr(BinaryExpression *expr) override {
-    expr->left()->accept(this);
-    // Evaluable sub-expression should be obscured by the non-evaluable sub-expression.
-    if (isEvaluable_) {
-      expr->right()->accept(this);
-    }
-  }
+  void visit(SubscriptRangeExpression *) override;
+
+  void visitBinaryExpr(BinaryExpression *) override;
 
   bool isEvaluable_{true};
+  const QueryContext *qctx_{nullptr};
 };
 
 }  // namespace graph

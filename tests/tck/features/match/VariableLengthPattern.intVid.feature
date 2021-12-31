@@ -125,11 +125,10 @@ Feature: Integer Vid Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(e)
       """
     Then the result should be, in any order:
-      | COUNT(*) |
+      | COUNT(e) |
       | 292      |
 
   Scenario: Integer Vid  single direction edge without properties
@@ -195,11 +194,10 @@ Feature: Integer Vid Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(e)
       """
     Then the result should be, in any order:
-      | COUNT(*) |
+      | COUNT(e) |
       | 927      |
 
   Scenario: Integer Vid  multiple direction edge without properties
@@ -330,28 +328,28 @@ Feature: Integer Vid Variable length Pattern match (m to n)
   Scenario: Over expand end
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |
+      | "Yao Ming"    |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name |
+      | v.player.name |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name |
+      | v.player.name |

@@ -102,19 +102,25 @@ class TestSession(NebulaTestSuite):
         time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_succeeded(resp)
-        expect_col_names = ['VariableName', 'Value']
-        expect_result = [['SessionID'],
-                         ['UserName'],
-                         ['SpaceName'],
-                         ['CreateTime'],
-                         ['UpdateTime'],
-                         ['GraphAddr'],
-                         ['Timezone'],
-                         ['ClientIp']]
+        expect_col_names = ['SessionId',
+                            'UserName',
+                            'SpaceName',
+                            'CreateTime',
+                            'UpdateTime',
+                            'GraphAddr',
+                            'Timezone',
+                            'ClientIp']
+
         self.check_column_names(resp, expect_col_names)
-        self.check_result(resp, expect_result, ignore_col=[1])
-        assert resp.rows()[1].values[1].get_sVal() == b'session_user'
-        assert resp.rows()[2].values[1].get_sVal() == b'nba'
+
+        assert len(resp.rows()) == 1
+
+        row = resp.rows()[0]
+        assert row.values[0].get_iVal() == session_id
+        assert row.values[1].get_sVal() == b'session_user'
+        assert row.values[2].get_sVal() == b'nba'
+        assert row.values[3].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
+        assert row.values[4].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
 
         # 5: test expired session
         resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 5')
@@ -133,22 +139,19 @@ class TestSession(NebulaTestSuite):
 
     def test_the_same_id_to_different_graphd(self):
         def get_connection(ip, port):
+            ssl_config = self.client_pool._ssl_configs
             try:
-                socket = TSocket.TSocket(ip, port)
-                transport = TTransport.TBufferedTransport(socket)
-                protocol = TBinaryProtocol.TBinaryProtocol(transport)
-                transport.open()
-                connection = GraphService.Client(protocol)
+                conn = Connection()
+                conn.open_SSL(ip, port, 0, ssl_config)
             except Exception as ex:
                 assert False, 'Create connection to {}:{} failed'.format(ip, port)
-            return connection
+            return conn
 
         conn1 = get_connection(self.addr_host1, self.addr_port1)
         conn2 = get_connection(self.addr_host2, self.addr_port2)
 
         resp = conn1.authenticate('root', 'nebula')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED
-        session_id = resp.session_id
+        session_id = resp.get_session_id()
 
         resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
@@ -190,9 +193,9 @@ class TestSession(NebulaTestSuite):
     def test_out_of_max_connections(self):
         resp = self.execute('SHOW SESSIONS')
         self.check_resp_succeeded(resp)
-        current_sessions = len(resp.rows())
+        sessions = len(resp.rows())
 
-        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(current_sessions))
+        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(sessions))
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
@@ -211,8 +214,7 @@ class TestSession(NebulaTestSuite):
 
     def test_signout_and_execute(self):
         try:
-            conn = Connection()
-            conn.open(self.addr_host1, self.addr_port1, 3000)
+            conn = self.client_pool.get_connection()
             auth_result = conn.authenticate(self.user, self.password)
             session_id = auth_result.get_session_id()
             conn.signout(session_id)

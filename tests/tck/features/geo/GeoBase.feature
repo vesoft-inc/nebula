@@ -220,17 +220,17 @@ Feature: Geo base
     # Create index on geo column
     When executing query:
       """
-      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo);
+      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo) with (s2_max_level=30, s2_max_cells=8) comment "test";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_point_geo_index ON only_point(geo);
+      CREATE TAG INDEX only_point_geo_index ON only_point(geo) comment "test2";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo);
+      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo) with (s2_max_cells=12) comment "test3";
       """
     Then the execution should be successful
     When executing query:
@@ -240,10 +240,18 @@ Feature: Geo base
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo);
+      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo) with (s2_max_level=23);
       """
     Then the execution should be successful
     And wait 3 seconds
+    # Show create tag index
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX any_shape_geo_index;
+      """
+    Then the result should be, in any order:
+      | Tag Index Name        | Create Tag Index                                                                                                                 |
+      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) WITH (s2_max_level = 30, s2_max_cells = 8) comment \"test\"" |
     # Rebuild the geo index
     When submit a job:
       """
@@ -316,10 +324,10 @@ Feature: Geo base
     # Match with geo index
     When executing query:
       """
-      MATCH (v:any_shape) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)                |
+      | ST_ASText(v.any_shape.geo)      |
       | "POINT(3 8)"                    |
       | "LINESTRING(3 8, 4.7 73.23)"    |
       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
@@ -474,10 +482,10 @@ Feature: Geo base
     # Match with geo predicate
     When executing query:
       """
-      MATCH (v:any_shape) WHERE ST_Intersects(v.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) WHERE ST_Intersects(v.any_shape.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)             |
+      | ST_ASText(v.any_shape.geo)   |
       | "POINT(3 8)"                 |
       | "LINESTRING(3 8, 4.7 73.23)" |
     # ST_Distance
@@ -676,7 +684,7 @@ Feature: Geo base
     # Delete vertex with index
     When executing query:
       """
-      DELETE VERTEX "101";
+      DELETE VERTEX "101" WITH EDGE;
       """
     Then the execution should be successful
     When executing query:

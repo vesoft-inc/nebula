@@ -17,7 +17,7 @@ Feature: Truncated string index
       create tag index p1 on person(name(3));
       """
     Then the execution should be successful
-    And wait 4 seconds
+    And wait 6 seconds
     When executing query:
       """
       insert vertex person(name) values "1":("abc1"),"2":("abc2");
@@ -37,13 +37,13 @@ Feature: Truncated string index
       | person.name |
     When executing query:
       """
-      match (v:person) where v.name == "abc" return v;
+      match (v:person) where v.person.name == "abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
       | v |
     When executing query:
       """
-      match (v:person) where v.name >= "abc" return v;
+      match (v:person) where v.person.name >= "abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
       | v                           |
@@ -58,7 +58,7 @@ Feature: Truncated string index
       | ("1" :person{name: "abc1"}) |
     When executing query:
       """
-      match (v:person) where v.name>"abc" return v;
+      match (v:person) where v.person.name>"abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
       | v                           |
@@ -66,7 +66,7 @@ Feature: Truncated string index
       | ("2" :person{name: "abc2"}) |
     When executing query:
       """
-      match (v:person) where v.name<="abc2" return v;
+      match (v:person) where v.person.name<="abc2" return v;
       """
     Then the result should be, in any order, with relax comparison:
       | v                           |

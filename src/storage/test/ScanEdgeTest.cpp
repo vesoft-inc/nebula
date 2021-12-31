@@ -14,35 +14,41 @@
 namespace nebula {
 namespace storage {
 
-cpp2::ScanEdgeRequest buildRequest(std::vector<PartitionID> partIds,
-                                   std::vector<std::string> cursors,
-                                   const std::pair<EdgeType, std::vector<std::string>>& edge,
-                                   int64_t rowLimit = 100,
-                                   int64_t startTime = 0,
-                                   int64_t endTime = std::numeric_limits<int64_t>::max(),
-                                   bool onlyLatestVer = false) {
+cpp2::ScanEdgeRequest buildRequest(
+    std::vector<PartitionID> partIds,
+    std::vector<std::string> cursors,
+    const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges,
+    int64_t rowLimit = 100,
+    int64_t startTime = 0,
+    int64_t endTime = std::numeric_limits<int64_t>::max(),
+    bool onlyLatestVer = false) {
   cpp2::ScanEdgeRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   cpp2::ScanCursor c;
   CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
   for (std::size_t i = 0; i < partIds.size(); ++i) {
-    c.set_has_next(!cursors[i].empty());
-    c.set_next_cursor(cursors[i]);
+    if (!cursors[i].empty()) {
+      c.next_cursor_ref() = cursors[i];
+    }
     parts.emplace(partIds[i], c);
   }
-  req.set_parts(std::move(parts));
-  EdgeType edgeType = edge.first;
-  cpp2::EdgeProp edgeProp;
-  edgeProp.set_type(edgeType);
-  for (const auto& prop : edge.second) {
-    (*edgeProp.props_ref()).emplace_back(std::move(prop));
+  req.parts_ref() = std::move(parts);
+  std::vector<cpp2::EdgeProp> edgeProps;
+  for (const auto& edge : edges) {
+    EdgeType edgeType = edge.first;
+    cpp2::EdgeProp edgeProp;
+    edgeProp.type_ref() = edgeType;
+    for (const auto& prop : edge.second) {
+      (*edgeProp.props_ref()).emplace_back(std::move(prop));
+    }
+    edgeProps.emplace_back(std::move(edgeProp));
   }
-  req.set_return_columns(std::move(edgeProp));
-  req.set_limit(rowLimit);
-  req.set_start_time(startTime);
-  req.set_end_time(endTime);
-  req.set_only_latest_version(onlyLatestVer);
+  req.return_columns_ref() = std::move(edgeProps);
+  req.limit_ref() = rowLimit;
+  req.start_time_ref() = startTime;
+  req.end_time_ref() = endTime;
+  req.only_latest_version_ref() = onlyLatestVer;
   return req;
 }
 
@@ -104,14 +110,14 @@ TEST(ScanEdgeTest, PropertyTest) {
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest({partId}, {""}, edge);
+      auto req = buildRequest({partId}, {""}, {edge});
       auto* processor = ScanEdgeProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
       auto resp = std::move(f).get();
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
-      checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+      checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
     }
     CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
   }
@@ -120,7 +126,7 @@ TEST(ScanEdgeTest, PropertyTest) {
     size_t totalRowCount = 0;
     auto edge = std::make_pair(serve, std::vector<std::string>{});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest({partId}, {""}, edge);
+      auto req = buildRequest({partId}, {""}, {edge});
       auto* processor = ScanEdgeProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -128,7 +134,7 @@ TEST(ScanEdgeTest, PropertyTest) {
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
       // all 9 columns in value
-      checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+      checkResponse(*resp.props_ref(), edge, 9, totalRowCount);
     }
     CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
   }
@@ -155,15 +161,15 @@ TEST(ScanEdgeTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest({partId}, {cursor}, edge, 5);
+        auto req = buildRequest({partId}, {cursor}, {edge}, 5);
         auto* processor = ScanEdgeProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
@@ -182,15 +188,15 @@ TEST(ScanEdgeTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest({partId}, {cursor}, edge, 1);
+        auto req = buildRequest({partId}, {cursor}, {edge}, 1);
         auto* processor = ScanEdgeProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
@@ -218,20 +224,20 @@ TEST(ScanEdgeTest, MultiplePartsTest) {
     auto edge = std::make_pair(
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-    auto req = buildRequest({1, 3}, {"", ""}, edge);
+    auto req = buildRequest({1, 3}, {"", ""}, {edge});
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+    checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
   }
   {
     LOG(INFO) << "Scan one edge with all properties in one batch";
     size_t totalRowCount = 0;
     auto edge = std::make_pair(serve, std::vector<std::string>{});
-    auto req = buildRequest({1, 3}, {"", ""}, edge);
+    auto req = buildRequest({1, 3}, {"", ""}, {edge});
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -239,7 +245,7 @@ TEST(ScanEdgeTest, MultiplePartsTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 9 columns in value
-    checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+    checkResponse(*resp.props_ref(), edge, 9, totalRowCount);
   }
 }
 
@@ -261,14 +267,14 @@ TEST(ScanEdgeTest, LimitTest) {
     auto edge = std::make_pair(
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-    auto req = buildRequest({1}, {""}, edge, limit);
+    auto req = buildRequest({1}, {""}, {edge}, limit);
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+    checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
   {
@@ -276,7 +282,7 @@ TEST(ScanEdgeTest, LimitTest) {
     constexpr std::size_t limit = 3;
     size_t totalRowCount = 0;
     auto edge = std::make_pair(serve, std::vector<std::string>{});
-    auto req = buildRequest({1}, {""}, edge, limit);
+    auto req = buildRequest({1}, {""}, {edge}, limit);
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -284,7 +290,7 @@ TEST(ScanEdgeTest, LimitTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 9 columns in value
-    checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+    checkResponse(*resp.props_ref(), edge, 9, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
 }
@@ -307,11 +313,11 @@ TEST(ScanEdgeTest, FilterTest) {
     auto edge = std::make_pair(
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-    auto req = buildRequest({1}, {""}, edge, limit);
+    auto req = buildRequest({1}, {""}, {edge}, limit);
     Expression* filter = EdgePropertyExpression::make(&pool, "101", kSrc);
     filter = RelationalExpression::makeEQ(
         &pool, filter, ConstantExpression::make(&pool, "Damian Lillard"));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -328,7 +334,7 @@ TEST(ScanEdgeTest, FilterTest) {
                       "101.endYear"});
     expected.emplace_back(
         List({"Damian Lillard", 101, 2012, "Trail Blazers", "Trail Blazers", 2012, 2020}));
-    EXPECT_EQ(*resp.edge_data_ref(), expected);
+    EXPECT_EQ(*resp.props_ref(), expected);
   }
 }
 

@@ -8,6 +8,7 @@
 #include <folly/String.h>
 #include <gflags/gflags.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <regex>
@@ -21,7 +22,9 @@ using nebula::fs::FileUtils;
 
 namespace nebula {
 
-static const std::regex reMemAvailable(R"(^Mem(Available|Total):\s+(\d+)\skB$)");
+static const std::regex reMemAvailable(
+    R"(^Mem(Available|Free|Total):\s+(\d+)\skB$)");  // when can't use MemAvailable, use MemFree
+                                                     // instead.
 static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)");
 
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
@@ -32,18 +35,25 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   }
   double available = 0.0, total = 0.0;
   if (FLAGS_containerized) {
-    FileUtils::FileLineIterator iter("/sys/fs/cgroup/memory/memory.stat", &reTotalCache);
+    bool cgroupsv2 = FileUtils::exist("/sys/fs/cgroup/cgroup.controllers");
+    std::string statPath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.stat" : "/sys/fs/cgroup/memory/memory.stat";
+    FileUtils::FileLineIterator iter(statPath, &reTotalCache);
     uint64_t cacheSize = 0;
     for (; iter.valid(); ++iter) {
       auto& sm = iter.matched();
       cacheSize += std::stoul(sm[2].str(), NULL);
     }
 
-    auto limitStatus = MemoryUtils::readSysContents("/sys/fs/cgroup/memory/memory.limit_in_bytes");
+    std::string limitPath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.max" : "/sys/fs/cgroup/memory/memory.limit_in_bytes";
+    auto limitStatus = MemoryUtils::readSysContents(limitPath);
     NG_RETURN_IF_ERROR(limitStatus);
     uint64_t limitInBytes = std::move(limitStatus).value();
 
-    auto usageStatus = MemoryUtils::readSysContents("/sys/fs/cgroup/memory/memory.usage_in_bytes");
+    std::string usagePath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.current" : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
+    auto usageStatus = MemoryUtils::readSysContents(usagePath);
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
 
@@ -56,13 +66,13 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       auto& sm = iter.matched();
       memorySize.emplace_back(std::stoul(sm[2].str(), NULL) << 10);
     }
-    CHECK_EQ(memorySize.size(), 2U);
-    size_t i = 0, j = 1;
-    if (memorySize[0] < memorySize[1]) {
-      std::swap(i, j);
+    std::sort(memorySize.begin(), memorySize.end());
+    if (memorySize.size() >= 2u) {
+      total = memorySize.back();
+      available = memorySize[memorySize.size() - 2];
+    } else {
+      return false;
     }
-    total = memorySize[i];
-    available = memorySize[j];
   }
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;

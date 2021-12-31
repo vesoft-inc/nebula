@@ -12,16 +12,19 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
+#include "graph/executor/admin/AddHostsExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
 #include "graph/executor/admin/CreateUserExecutor.h"
 #include "graph/executor/admin/DescribeUserExecutor.h"
 #include "graph/executor/admin/DownloadExecutor.h"
+#include "graph/executor/admin/DropHostsExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
 #include "graph/executor/admin/IngestExecutor.h"
@@ -36,10 +39,10 @@
 #include "graph/executor/admin/ShowHostsExecutor.h"
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
+#include "graph/executor/admin/ShowServiceClientsExecutor.h"
 #include "graph/executor/admin/ShowStatsExecutor.h"
-#include "graph/executor/admin/ShowTSClientsExecutor.h"
-#include "graph/executor/admin/SignInTSServiceExecutor.h"
-#include "graph/executor/admin/SignOutTSServiceExecutor.h"
+#include "graph/executor/admin/SignInServiceExecutor.h"
+#include "graph/executor/admin/SignOutServiceExecutor.h"
 #include "graph/executor/admin/SnapshotExecutor.h"
 #include "graph/executor/admin/SpaceExecutor.h"
 #include "graph/executor/admin/SubmitJobExecutor.h"
@@ -52,6 +55,7 @@
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
+#include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/PassThroughExecutor.h"
 #include "graph/executor/logic/SelectExecutor.h"
@@ -81,6 +85,8 @@
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
+#include "graph/executor/query/ScanEdgesExecutor.h"
+#include "graph/executor/query/ScanVerticesExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
 #include "graph/executor/query/TraverseExecutor.h"
@@ -94,6 +100,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/stats/GraphStats.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;
@@ -148,14 +155,25 @@ Executor *Executor::makeExecutor(const PlanNode *node,
 // static
 Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
   auto pool = qctx->objPool();
+  auto &spaceName = qctx->rctx() ? qctx->rctx()->session()->spaceName() : "";
   switch (node->kind()) {
     case PlanNode::Kind::kPassThrough: {
       return pool->add(new PassThroughExecutor(node, qctx));
     }
     case PlanNode::Kind::kAggregate: {
+      stats::StatsManager::addValue(kNumAggregateExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumAggregateExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new AggregateExecutor(node, qctx));
     }
     case PlanNode::Kind::kSort: {
+      stats::StatsManager::addValue(kNumSortExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumSortExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new SortExecutor(node, qctx));
     }
     case PlanNode::Kind::kTopN: {
@@ -169,6 +187,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kGetVertices: {
       return pool->add(new GetVerticesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kScanEdges: {
+      return pool->add(new ScanEdgesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kScanVertices: {
+      return pool->add(new ScanVerticesExecutor(node, qctx));
     }
     case PlanNode::Kind::kGetNeighbors: {
       return pool->add(new GetNeighborsExecutor(node, qctx));
@@ -192,6 +216,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kTagIndexFullScan:
     case PlanNode::Kind::kTagIndexPrefixScan:
     case PlanNode::Kind::kTagIndexRangeScan: {
+      stats::StatsManager::addValue(kNumIndexScanExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumIndexScanExecutors, {{"space", spaceName}}));
+      }
       return pool->add(new IndexScanExecutor(node, qctx));
     }
     case PlanNode::Kind::kStart: {
@@ -434,20 +463,29 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kSubgraph: {
       return pool->add(new SubgraphExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddZone: {
-      return pool->add(new AddZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHosts: {
+      return pool->add(new AddHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kDropHosts: {
+      return pool->add(new DropHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kMergeZone: {
+      return pool->add(new MergeZoneExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kRenameZone: {
+      return pool->add(new RenameZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kDropZone: {
       return pool->add(new DropZoneExecutor(node, qctx));
     }
+    case PlanNode::Kind::kDivideZone: {
+      return pool->add(new DivideZoneExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDescribeZone: {
       return pool->add(new DescribeZoneExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddHostIntoZone: {
-      return pool->add(new AddHostIntoZoneExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropHostFromZone: {
-      return pool->add(new DropHostFromZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHostsIntoZone: {
+      return pool->add(new AddHostsIntoZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowZones: {
       return pool->add(new ListZonesExecutor(node, qctx));
@@ -464,17 +502,17 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShowStats: {
       return pool->add(new ShowStatsExecutor(node, qctx));
     }
-    case PlanNode::Kind::kShowTSClients: {
-      return pool->add(new ShowTSClientsExecutor(node, qctx));
+    case PlanNode::Kind::kShowServiceClients: {
+      return pool->add(new ShowServiceClientsExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowFTIndexes: {
       return pool->add(new ShowFTIndexesExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSignInTSService: {
-      return pool->add(new SignInTSServiceExecutor(node, qctx));
+    case PlanNode::Kind::kSignInService: {
+      return pool->add(new SignInServiceExecutor(node, qctx));
     }
-    case PlanNode::Kind::kSignOutTSService: {
-      return pool->add(new SignOutTSServiceExecutor(node, qctx));
+    case PlanNode::Kind::kSignOutService: {
+      return pool->add(new SignOutServiceExecutor(node, qctx));
     }
     case PlanNode::Kind::kDownload: {
       return pool->add(new DownloadExecutor(node, qctx));
@@ -499,6 +537,21 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kAppendVertices: {
       return pool->add(new AppendVerticesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiLeftJoin: {
+      return pool->add(new BiLeftJoinExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiInnerJoin: {
+      return pool->add(new BiInnerJoinExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kBiCartesianProduct: {
+      return pool->add(new BiCartesianProductExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kArgument: {
+      return pool->add(new ArgumentExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kAlterSpace: {
+      return pool->add(new AlterSpaceExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
@@ -554,6 +607,12 @@ Status Executor::close() {
 
 Status Executor::checkMemoryWatermark() {
   if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+    stats::StatsManager::addValue(kNumQueriesHitMemoryWatermark);
+    auto &spaceName = qctx()->rctx() ? qctx()->rctx()->session()->spaceName() : "";
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+          kNumQueriesHitMemoryWatermark, {{"space", spaceName}}));
+    }
     return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
                          FLAGS_system_memory_high_watermark_ratio);
   }
@@ -585,7 +644,7 @@ void Executor::drop() {
 Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
-    numRows_ = result.size();
+    numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
     result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {

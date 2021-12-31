@@ -42,7 +42,9 @@ struct PropContext {
     DST = 0x06,
   };
 
-  explicit PropContext(const char* name) : name_(name) { setPropInKey(); }
+  explicit PropContext(const char* name) : name_(name) {
+    setPropInKey();
+  }
 
   PropContext(const char* name,
               const meta::SchemaProviderIf::Field* field,
@@ -138,9 +140,9 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   virtual void process(const REQ& req) = 0;
 
  protected:
-  explicit QueryBaseProcessor(StorageEnv* env,
-                              const ProcessorCounters* counters,
-                              folly::Executor* executor = nullptr)
+  QueryBaseProcessor(StorageEnv* env,
+                     const ProcessorCounters* counters,
+                     folly::Executor* executor = nullptr)
       : BaseProcessor<RESP>(env, counters), executor_(executor) {}
 
   virtual nebula::cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;

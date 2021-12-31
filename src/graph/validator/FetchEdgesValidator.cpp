@@ -104,7 +104,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
   auto keys = sentence->keys()->keys();
   edgeKeys.rows.reserve(keys.size());
   for (const auto &key : keys) {
-    if (!ExpressionUtils::isEvaluableExpr(key->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(key->srcid(), qctx_)) {
       return Status::SemanticError("`%s' is not evaluable.", key->srcid()->toString().c_str());
     }
     auto src = key->srcid()->eval(ctx);
@@ -115,7 +115,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
     }
     auto ranking = key->rank();
 
-    if (!ExpressionUtils::isEvaluableExpr(key->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(key->dstid(), qctx_)) {
       return Status::SemanticError("`%s' is not evaluable.", key->dstid()->toString().c_str());
     }
     auto dst = key->dstid()->eval(ctx);
@@ -136,18 +136,6 @@ Status FetchEdgesValidator::validateEdgeKey() {
   return Status::OK();
 }
 
-void FetchEdgesValidator::extractEdgeProp(ExpressionProps &exprProps) {
-  exprProps.insertEdgeProp(edgeType_, kSrc);
-  exprProps.insertEdgeProp(edgeType_, kDst);
-  exprProps.insertEdgeProp(edgeType_, kRank);
-  exprProps.insertEdgeProp(edgeType_, kType);
-
-  for (std::size_t i = 0; i < edgeSchema_->getNumFields(); ++i) {
-    const auto propName = edgeSchema_->getFieldName(i);
-    exprProps.insertEdgeProp(edgeType_, propName);
-  }
-}
-
 Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
@@ -158,20 +146,13 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   exprProps.insertEdgeProp(edgeType_, nebula::kDst);
   exprProps.insertEdgeProp(edgeType_, nebula::kRank);
 
-  for (const auto &col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      extractEdgeProp(exprProps);
-      break;
-    }
-  }
   auto size = yield->columns().size();
   outputs_.reserve(size);
 
   auto pool = qctx_->objPool();
   auto *newCols = pool->add(new YieldColumns());
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kVertex, Expression::Kind::kPathBuild})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
@@ -182,8 +163,8 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     newCols->addColumn(col->clone().release());
-
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    std::vector<EdgeType> edgeTypes{edgeType_};
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, nullptr, &edgeTypes));
   }
 
   if (exprProps.hasInputVarProperty()) {

@@ -50,6 +50,28 @@ TEST(GetNeighborsTest, PropertyTest) {
     QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
   }
   {
+    LOG(INFO) << "OneOutEdgeMultiProperty";
+    std::vector<VertexID> vertices = {"Tim Duncan"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    bool retNoneProps = false;
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges, retNoneProps);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, expr
+    size_t expectRowCount = 1;
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, expectRowCount, expectColumnCount);
+  }
+  {
     LOG(INFO) << "OneOutEdgeKeyInProperty";
     std::vector<VertexID> vertices = {"Tim Duncan"};
     std::vector<EdgeType> over = {serve};
@@ -156,7 +178,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::OUT_EDGE);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::OUT_EDGE);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -164,8 +186,10 @@ TEST(GetNeighborsTest, PropertyTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, serve, teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
+    // vId, stat, player, expr
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
   }
   {
     LOG(INFO) << "InEdgeReturnAllProperty";
@@ -175,7 +199,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::IN_EDGE);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::IN_EDGE);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -183,8 +207,10 @@ TEST(GetNeighborsTest, PropertyTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, - teammate, - serve, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
+    // vId, stat, player, expr
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
   }
   {
     LOG(INFO) << "InOutEdgeReturnAllProperty";
@@ -194,7 +220,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -203,7 +229,9 @@ TEST(GetNeighborsTest, PropertyTest) {
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
     // vId, stat, player, - teammate, - serve, serve, teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
   }
   {
     LOG(INFO) << "InEdgeReturnAllProperty";
@@ -213,7 +241,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     tags.emplace_back(team, std::vector<std::string>{"name"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -222,7 +250,9 @@ TEST(GetNeighborsTest, PropertyTest) {
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
     // vId, stat, player, - teammate, - serve, serve, teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
   }
   {
     LOG(INFO) << "Nullable";
@@ -386,6 +416,26 @@ TEST(GetNeighborsTest, GoFromMultiVerticesTest) {
     QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 2, 5);
   }
   {
+    LOG(INFO) << "NoOutEdgeMultiProperty";
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, serve, expr
+    size_t expectColumnCount = 4;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 2, expectColumnCount);
+  }
+  {
     LOG(INFO) << "OneInEdgeMultiProperty";
     std::vector<VertexID> vertices = {"Spurs", "Rockets"};
     std::vector<EdgeType> over = {-serve};
@@ -505,43 +555,43 @@ TEST(GetNeighborsTest, StatTest) {
     {
       // count teamGames_ in all served history
       cpp2::StatProp statProp;
-      statProp.set_alias("Total games");
+      statProp.alias_ref() = ("Total games");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamGames");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::SUM);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::SUM);
       statProps.emplace_back(std::move(statProp));
     }
     {
       // avg scores in all served teams
       cpp2::StatProp statProp;
-      statProp.set_alias("Avg scores in all served teams");
+      statProp.alias_ref() = ("Avg scores in all served teams");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::AVG);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::AVG);
       statProps.emplace_back(std::move(statProp));
     }
     {
       // longest consecutive team career in a team
       cpp2::StatProp statProp;
-      statProp.set_alias("Longest consecutive team career in a team");
+      statProp.alias_ref() = ("Longest consecutive team career in a team");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamCareer");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::MAX);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::MAX);
       statProps.emplace_back(std::move(statProp));
     }
     {
       // sum of rank in serve edge
       cpp2::StatProp statProp;
-      statProp.set_alias("Sum of rank in serve edge");
+      statProp.alias_ref() = ("Sum of rank in serve edge");
       const auto& exp = *EdgeRankExpression::make(pool, folly::to<std::string>(serve));
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::SUM);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::SUM);
       statProps.emplace_back(std::move(statProp));
     }
-    (*req.traverse_spec_ref()).set_stat_props(std::move(statProps));
+    (*req.traverse_spec_ref()).stat_props_ref() = (std::move(statProps));
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -572,34 +622,34 @@ TEST(GetNeighborsTest, StatTest) {
     {
       // avg scores in all served teams
       cpp2::StatProp statProp;
-      statProp.set_alias("Avg scores in all served teams");
+      statProp.alias_ref() = ("Avg scores in all served teams");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::AVG);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::AVG);
       statProps.emplace_back(std::move(statProp));
     }
     {
       // min avg scores in all served teams
       cpp2::StatProp statProp;
-      statProp.set_alias("Min scores in all served teams");
+      statProp.alias_ref() = ("Min scores in all served teams");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::MIN);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::MIN);
       statProps.emplace_back(std::move(statProp));
     }
     {
       // max avg scores in all served teams
       cpp2::StatProp statProp;
-      statProp.set_alias("Max scores in all served teams");
+      statProp.alias_ref() = ("Max scores in all served teams");
       const auto& exp =
           *EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore");
-      statProp.set_prop(Expression::encode(exp));
-      statProp.set_stat(cpp2::StatType::MAX);
+      statProp.prop_ref() = (Expression::encode(exp));
+      statProp.stat_ref() = (cpp2::StatType::MAX);
       statProps.emplace_back(std::move(statProp));
     }
-    (*req.traverse_spec_ref()).set_stat_props(std::move(statProps));
+    (*req.traverse_spec_ref()).stat_props_ref() = (std::move(statProps));
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -641,7 +691,7 @@ TEST(GetNeighborsTest, LimitSampleTest) {
     tags.emplace_back(team, std::vector<std::string>{"name"});
     edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_limit(10);
+    (*req.traverse_spec_ref()).limit_ref() = (10);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -664,7 +714,7 @@ TEST(GetNeighborsTest, LimitSampleTest) {
     edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_limit(4);
+    (*req.traverse_spec_ref()).limit_ref() = (4);
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -689,8 +739,8 @@ TEST(GetNeighborsTest, LimitSampleTest) {
     tags.emplace_back(team, std::vector<std::string>{"name"});
     edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_limit(10);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).limit_ref() = (10);
+    (*req.traverse_spec_ref()).random_ref() = (true);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -713,8 +763,8 @@ TEST(GetNeighborsTest, LimitSampleTest) {
     edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_limit(4);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).limit_ref() = (4);
+    (*req.traverse_spec_ref()).random_ref() = (true);
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -746,8 +796,8 @@ TEST(GetNeighborsTest, LimitSampleTest) {
     edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_limit(5);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).limit_ref() = (5);
+    (*req.traverse_spec_ref()).random_ref() = (true);
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -841,7 +891,7 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
     tags.emplace_back(team, std::vector<std::string>{"name"});
     edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).random_ref() = (true);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -866,7 +916,7 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
     edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).random_ref() = (true);
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -900,7 +950,7 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
     edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_random(true);
+    (*req.traverse_spec_ref()).random_ref() = (true);
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -933,7 +983,9 @@ TEST(GetNeighborsTest, TtlTest) {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
   TagID player = 1;
+  TagID team = 2;
   EdgeType serve = 101;
+  EdgeType teammate = 102;
 
   {
     LOG(INFO) << "OutEdgeReturnAllProperty";
@@ -955,13 +1007,31 @@ TEST(GetNeighborsTest, TtlTest) {
     QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
   }
   {
+    LOG(INFO) << "InEdgeReturnAllProperty";
+    std::vector<VertexID> vertices = {"Spurs"};
+    std::vector<EdgeType> over = {-serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(team, std::vector<std::string>{"name"});
+    edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, team, - serve, expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
+  }
+  {
     LOG(INFO) << "GoFromPlayerOverAll";
     std::vector<VertexID> vertices = {"Tim Duncan"};
     std::vector<EdgeType> over = {};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -969,9 +1039,10 @@ TEST(GetNeighborsTest, TtlTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
+    // vId, stat, expr
+    size_t expectColsNum = 3;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColsNum);
   }
   sleep(FLAGS_mock_ttl_duration + 1);
   {
@@ -1000,13 +1071,14 @@ TEST(GetNeighborsTest, TtlTest) {
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
   }
   {
-    LOG(INFO) << "GoFromPlayerOverAll";
-    std::vector<VertexID> vertices = {"Tim Duncan"};
-    std::vector<EdgeType> over = {};
+    LOG(INFO) << "InEdgeReturnAllProperty";
+    std::vector<VertexID> vertices = {"Spurs"};
+    std::vector<EdgeType> over = {-serve};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(team, std::vector<std::string>{"name"});
+    edges.emplace_back(-serve, std::vector<std::string>{"playerName", "startYear", "teamCareer"});
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1014,20 +1086,41 @@ TEST(GetNeighborsTest, TtlTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
     ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
-    ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values.size());
+    // vId, stat, team, - serve, expr
+    ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+    ASSERT_EQ("Spurs", (*resp.vertices_ref()).rows[0].values[0].getStr());
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[1].type());
+    // team still exists (team hasn't set ttl)
+    ASSERT_EQ(Value::Type::LIST, (*resp.vertices_ref()).rows[0].values[2].type());
+    // - serve expired
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type());
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
+  }
+  {
+    LOG(INFO) << "GoFromPlayerOverAll";
+    std::vector<VertexID> vertices = {"Tim Duncan"};
+    std::vector<EdgeType> over = {serve, teammate};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, expr
+    ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+    ASSERT_EQ(3, (*resp.vertices_ref()).rows[0].values.size());
+    for (auto& s : resp.vertices_ref().value().colNames) {
+      LOG(INFO) << "colName: " << s;
+    }
     ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());   // stat
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());   // player expired
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[3].empty());   // team not exists
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[4].empty());   // general tag not exists
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[5].isList());  // - teammate valid
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[6].empty());   // - serve expired
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[7].empty());   // + serve expired
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[8].isList());  // + teammate valid
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[9].empty());   // expr
+    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());  // stat
+    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());  // expr
   }
   FLAGS_mock_ttl_col = false;
 }
@@ -1195,7 +1288,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges, true);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1213,7 +1306,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1221,9 +1314,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
+    // vId, stat, expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 3);
   }
   {
     LOG(INFO) << "GoFromTeamOverAll";
@@ -1232,7 +1324,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1240,9 +1332,10 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
+    // vId, stat, expr
+    size_t expectColCnt = 3;
+    QueryTestUtils::checkResponse(
+        *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColCnt);
   }
   {
     LOG(INFO) << "GoFromPlayerOverInEdge";
@@ -1251,7 +1344,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::IN_EDGE);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::IN_EDGE);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1259,8 +1352,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - serve, - teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
+    // vId, stat, expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 3);
   }
   {
     LOG(INFO) << "GoFromPlayerOverOutEdge";
@@ -1269,7 +1362,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::OUT_EDGE);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::OUT_EDGE);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1277,8 +1370,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, + serve, + teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
+    // vId, stat, expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 3);
   }
   {
     LOG(INFO) << "GoFromMultiPlayerOverAll";
@@ -1287,7 +1380,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1295,9 +1388,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 10);
+    // vId, stat, _expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 3);
   }
   {
     LOG(INFO) << "GoFromMultiTeamOverAll";
@@ -1306,7 +1398,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1314,9 +1406,8 @@ TEST(GetNeighborsTest, GoOverAllTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 10);
+    // vId, stat, _expr
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 3);
   }
 }
 
@@ -1337,7 +1428,7 @@ TEST(GetNeighborsTest, MultiVersionTest) {
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
     auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-    (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
+    (*req.traverse_spec_ref()).edge_direction_ref() = (cpp2::EdgeDirection::BOTH);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1345,9 +1436,93 @@ TEST(GetNeighborsTest, MultiVersionTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, team, general tag, - teammate, - serve, + serve, +
-    // teammate, expr
-    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
+    // vId, stat, player, team
+    QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 3);
+  }
+}
+
+TEST(GetNeighborsTest, MultiTagNodeTest) {
+  fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  TagID player = 1;
+  // TagID team = 2;
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "negative no edge prop RelExp ";
+    std::vector<VertexID> vertices = {"Tracy McGrady"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    {
+      const auto& exp = *RelationalExpression::makeGT(
+          pool,
+          SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
+          ConstantExpression::make(pool, Value(9999)));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
+    }
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, serve, expr
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "_stats", "_tag:1:name:age:avgScore", "_expr"};
+    // nebula::Row row({"Tracy McGrady", Value()});
+    nebula::Row row({""});
+    expected.rows.emplace_back(std::move(row));
+    EXPECT_EQ(expected.colNames, resp.vertices_ref().value().colNames);
+    EXPECT_TRUE(resp.vertices_ref().value().rows.empty());
+  }
+  {
+    LOG(INFO) << "no edge prop RelExp multi result";
+    std::vector<VertexID> vertices = {
+        "Tracy McGrady", "Dwight Howard", "Shaquille O'Neal", "Yao Ming"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    {
+      const auto& exp = *RelationalExpression::makeGT(
+          pool,
+          SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
+          ConstantExpression::make(pool, Value(19)));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
+    }
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, serve, expr
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "_stats", "_tag:1:name:age:avgScore", "_expr"};
+    nebula::Row row1(
+        {"Shaquille O'Neal", Value(), nebula::List({"Shaquille O'Neal", 48, 23.7}), Value()});
+    nebula::Row row2(
+        {"Tracy McGrady", Value(), nebula::List({"Tracy McGrady", 41, 19.6}), Value()});
+    expected.rows.emplace_back(std::move(row1));
+    expected.rows.emplace_back(std::move(row2));
+    ASSERT_EQ(expected.colNames, resp.vertices_ref().value().colNames);
+    ASSERT_EQ(expected.rows, resp.vertices_ref().value().rows);
+    ASSERT_EQ(expected, *resp.vertices_ref());
   }
 }
 
@@ -1382,7 +1557,7 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore"),
           ConstantExpression::make(pool, Value(20)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1408,6 +1583,39 @@ TEST(GetNeighborsTest, FilterTest) {
     ASSERT_EQ(expected, *resp.vertices_ref());
   }
   {
+    LOG(INFO) << "positive no edge prop RelExp";
+    std::vector<VertexID> vertices = {"Tracy McGrady"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+    {
+      const auto& exp = *RelationalExpression::makeGT(
+          pool,
+          SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
+          ConstantExpression::make(pool, Value(18)));
+      // (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      req.traverse_spec_ref()->filter_ref() = Expression::encode(exp);
+    }
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, serve, expr
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "_stats", "_tag:1:name:age:avgScore", "_expr"};
+    nebula::Row row({"Tracy McGrady", Value(), nebula::List({"Tracy McGrady", 41, 19.6}), Value()});
+    expected.rows.emplace_back(std::move(row));
+    EXPECT_EQ(expected.colNames, resp.vertices_ref().value().colNames);
+    EXPECT_EQ(expected.rows, resp.vertices_ref().value().rows);
+    EXPECT_EQ(expected, *resp.vertices_ref());
+  }
+  {
     LOG(INFO) << "ArithExpression";
     std::vector<VertexID> vertices = {"Tracy McGrady"};
     std::vector<EdgeType> over = {serve};
@@ -1426,7 +1634,7 @@ TEST(GetNeighborsTest, FilterTest) {
               EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "endYear"),
               EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "startYear")),
           ConstantExpression::make(pool, Value(5)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1471,7 +1679,7 @@ TEST(GetNeighborsTest, FilterTest) {
               pool,
               EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamCareer"),
               ConstantExpression::make(pool, Value(4))));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1509,7 +1717,7 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           EdgeDstIdExpression::make(pool, folly::to<std::string>(serve)),
           ConstantExpression::make(pool, Value("Rockets")));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1554,7 +1762,7 @@ TEST(GetNeighborsTest, FilterTest) {
               pool,
               SourcePropertyExpression::make(pool, folly::to<std::string>(player), "games"),
               ConstantExpression::make(pool, Value(1000))));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1602,7 +1810,7 @@ TEST(GetNeighborsTest, FilterTest) {
               pool,
               SourcePropertyExpression::make(pool, folly::to<std::string>(player), "avgScore"),
               ConstantExpression::make(pool, Value(18))));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1688,7 +1896,7 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamGames"),
           ConstantExpression::make(pool, Value(1000)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1736,7 +1944,7 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "teamAvgScore"),
           ConstantExpression::make(pool, Value(15)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
@@ -1784,7 +1992,7 @@ TEST(GetNeighborsTest, FilterTest) {
           pool,
           EdgePropertyExpression::make(pool, folly::to<std::string>(teammate), "startYear"),
           ConstantExpression::make(pool, Value(2002)));
-      (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = (Expression::encode(exp));
     }
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();

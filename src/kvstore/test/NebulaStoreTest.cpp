@@ -39,8 +39,8 @@ void dump(const std::vector<T>& v) {
 }
 
 std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getHandlers() {
-  auto handlersPool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      1, true /*stats*/);
+  auto handlersPool =
+      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   handlersPool->setNamePrefix("executor");
   handlersPool->start();
   return handlersPool;

@@ -69,28 +69,28 @@ Status handleRangeIndex(const meta::cpp2::ColumnDef& field,
       include = true;
       [[fallthrough]];
     case Expression::Kind::kRelGT:
-      hint->set_begin_value(value);
-      hint->set_include_begin(include);
+      hint->begin_value_ref() = value;
+      hint->include_begin_ref() = include;
       break;
     case Expression::Kind::kRelLE:
       include = true;
       [[fallthrough]];
     case Expression::Kind::kRelLT:
-      hint->set_end_value(value);
-      hint->set_include_end(include);
+      hint->end_value_ref() = value;
+      hint->include_end_ref() = include;
       break;
     default:
       break;
   }
-  hint->set_scan_type(storage::cpp2::ScanType::RANGE);
-  hint->set_column_name(field.get_name());
+  hint->scan_type_ref() = storage::cpp2::ScanType::RANGE;
+  hint->column_name_ref() = field.get_name();
   return Status::OK();
 }
 
 void handleEqualIndex(const ColumnDef& field, const Value& value, IndexColumnHint* hint) {
-  hint->set_scan_type(storage::cpp2::ScanType::PREFIX);
-  hint->set_column_name(field.get_name());
-  hint->set_begin_value(value);
+  hint->scan_type_ref() = storage::cpp2::ScanType::PREFIX;
+  hint->column_name_ref() = field.get_name();
+  hint->begin_value_ref() = value;
 }
 
 StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
@@ -233,23 +233,23 @@ bool getIndexColumnHintInExpr(const ColumnDef& field,
     return false;
   }
   ScoredColumnHint h;
-  h.hint.set_column_name(field.get_name());
+  h.hint.column_name_ref() = field.get_name();
   if (begin.first < end.first) {
-    h.hint.set_scan_type(storage::cpp2::ScanType::RANGE);
-    h.hint.set_begin_value(std::move(begin.first));
-    h.hint.set_end_value(std::move(end.first));
-    h.hint.set_include_begin(begin.second);
-    h.hint.set_include_end(end.second);
+    h.hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
+    h.hint.begin_value_ref() = std::move(begin.first);
+    h.hint.end_value_ref() = std::move(end.first);
+    h.hint.include_begin_ref() = begin.second;
+    h.hint.include_end_ref() = end.second;
     h.score = IndexScore::kRange;
   } else if (begin.first == end.first) {
     if (begin.second == false && end.second == false) {
       return false;
     } else {
-      h.hint.set_scan_type(storage::cpp2::ScanType::RANGE);
-      h.hint.set_begin_value(std::move(begin.first));
-      h.hint.set_end_value(std::move(end.first));
-      h.hint.set_include_begin(begin.second);
-      h.hint.set_include_end(end.second);
+      h.hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
+      h.hint.begin_value_ref() = std::move(begin.first);
+      h.hint.end_value_ref() = std::move(end.first);
+      h.hint.include_begin_ref() = begin.second;
+      h.hint.include_end_ref() = end.second;
       h.score = IndexScore::kRange;
     }
   } else {
@@ -382,10 +382,10 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
   }
   // The filter can always be pushed down for lookup query
   if (iter != index.hints.end() || !index.unusedExprs.empty()) {
-    ictx->set_filter(condition->encode());
+    ictx->filter_ref() = condition->encode();
   }
-  ictx->set_index_id(index.index->get_index_id());
-  ictx->set_column_hints(std::move(hints));
+  ictx->index_id_ref() = index.index->get_index_id();
+  ictx->column_hints_ref() = std::move(hints);
   return true;
 }
 
@@ -416,7 +416,8 @@ bool OptimizerUtils::relExprHasIndex(
 }
 
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
-                                       nebula::graph::IndexScan* to) {
+                                       nebula::graph::IndexScan* to,
+                                       QueryContext* qctx) {
   to->setEmptyResultSet(from->isEmptyResultSet());
   to->setSpace(from->space());
   to->setReturnCols(from->returnColumns());
@@ -424,8 +425,9 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setSchemaId(from->schemaId());
   to->setDedup(from->dedup());
   to->setOrderBy(from->orderBy());
-  to->setLimit(from->limit());
+  to->setLimit(from->limit(qctx));
   to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
+  to->setYieldColumns(from->yieldColumns());
 }
 
 Status OptimizerUtils::compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b) {

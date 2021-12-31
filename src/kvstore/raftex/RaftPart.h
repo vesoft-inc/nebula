@@ -108,22 +108,34 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return role_ == Role::LEARNER;
   }
 
-  ClusterID clusterId() const { return clusterId_; }
+  ClusterID clusterId() const {
+    return clusterId_;
+  }
 
-  GraphSpaceID spaceId() const { return spaceId_; }
+  GraphSpaceID spaceId() const {
+    return spaceId_;
+  }
 
-  PartitionID partitionId() const { return partId_; }
+  PartitionID partitionId() const {
+    return partId_;
+  }
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
   HostAddr leader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return leader_;
   }
 
-  TermID termId() const { return term_; }
+  TermID termId() const {
+    return term_;
+  }
 
-  std::shared_ptr<wal::FileBasedWal> wal() const { return wal_; }
+  std::shared_ptr<wal::FileBasedWal> wal() const {
+    return wal_;
+  }
 
   void addLearner(const HostAddr& learner);
 
@@ -224,6 +236,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Reset the part, clean up all data and WALs.
   void reset();
 
+  uint64_t execTime() const {
+    return execTime_;
+  }
+
  protected:
   // Protected constructor to prevent from instantiating directly
   RaftPart(ClusterID clusterId,
@@ -241,7 +257,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   using Status = cpp2::Status;
   using Role = cpp2::Role;
 
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
 
   // The method will be invoked by start()
   //
@@ -268,9 +286,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Check if we can accept candidate's message
   virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
 
-  // The inherited classes need to implement this method to commit
-  // a batch of log messages
-  virtual nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) = 0;
+  // The inherited classes need to implement this method to commit a batch of log messages.
+  // Return {error code, last commit log id, last commit log term}.
+  // When no logs applied to state machine or error occurs when calling commitLogs,
+  // kNoCommitLogId and kNoCommitLogTerm are returned.
+  virtual std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(
+      std::unique_ptr<LogIterator> iter, bool wait) = 0;
 
   virtual bool preProcessLog(LogID logId,
                              TermID termId,
@@ -284,7 +305,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
                                                      bool finished) = 0;
 
   // Clean up extra data about the part, usually related to state machine
-  virtual void cleanup() = 0;
+  virtual nebula::cpp2::ErrorCode cleanup() = 0;
 
   void addPeer(const HostAddr& peer);
 
@@ -515,15 +536,21 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // To prevent we have voted more than once in a same term
   TermID votedTerm_{0};
 
-  // The id and term of the last-sent log
+  // As for leader lastLogId_ is the log id which has been replicated to majority peers.
+  // As for follower lastLogId_ is only a latest log id from current leader or any leader of
+  // previous term. Not all logs before lastLogId_ could be applied for follower.
   LogID lastLogId_{0};
   TermID lastLogTerm_{0};
-  // The id for the last globally committed log (from the leader)
+
+  // The last id and term when logs has been applied to state machine
   LogID committedLogId_{0};
+  TermID committedLogTerm_{0};
+  static constexpr LogID kNoCommitLogId{-1};
+  static constexpr TermID kNoCommitLogTerm{-1};
 
   // To record how long ago when the last leader message received
   time::Duration lastMsgRecvDur_;
-  // To record how long ago when the last log message or heartbeat was sent
+  // To record how long ago when the last log message was sent
   time::Duration lastMsgSentDur_;
   // To record when the last message was accepted by majority peers
   uint64_t lastMsgAcceptedTime_{0};
@@ -563,6 +590,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   int64_t startTimeMs_ = 0;
 
   std::atomic<bool> blocking_{false};
+
+  // For stats info
+  uint64_t execTime_{0};
 };
 
 }  // namespace raftex

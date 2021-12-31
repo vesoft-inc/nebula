@@ -47,7 +47,6 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
   }
 
   std::vector<kvstore::KV> data;
-
   auto newSpaceData =
       makeNewSpaceData(nebula::value(oldSpaceId), nebula::value(newSpaceId), newSpaceName);
   if (nebula::ok(newSpaceData)) {
@@ -85,7 +84,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     return;
   }
 
-  resp_.set_id(to(nebula::value(newSpaceId), EntryType::SPACE));
+  resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
   rc_ = doSyncPut(std::move(data));
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "put data error, " << apache::thrift::util::enumNameSafe(rc_);
@@ -114,7 +113,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char *>(&newSpaceId), sizeof(newSpaceId)));
   cpp2::SpaceDesc spaceDesc = MetaKeyUtils::parseSpace(nebula::value(oldSpaceVal));
-  spaceDesc.set_space_name(spaceName);
+  spaceDesc.space_name_ref() = spaceName;
   data.emplace_back(MetaKeyUtils::spaceKey(newSpaceId), MetaKeyUtils::spaceVal(spaceDesc));
 
   auto prefix = MetaKeyUtils::partPrefix(oldSpaceId);
@@ -123,9 +122,10 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     return nebula::error(partPrefix);
   }
   auto iter = nebula::value(partPrefix).get();
-  for (; iter->valid(); iter->next()) {
+  while (iter->valid()) {
     auto partId = MetaKeyUtils::parsePartKeyPartId(iter->key());
     data.emplace_back(MetaKeyUtils::partKey(newSpaceId, partId), iter->val());
+    iter->next();
   }
   return data;
 }
@@ -145,7 +145,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
   std::vector<kvstore::KV> data;
   auto iter = nebula::value(tagPrefix).get();
-  for (; iter->valid(); iter->next()) {
+  while (iter->valid()) {
     auto val = iter->val();
 
     auto tagId = MetaKeyUtils::parseTagId(iter->key());
@@ -157,6 +157,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     auto tagVer = MetaKeyUtils::parseTagVersion(iter->key());
     auto key = MetaKeyUtils::schemaTagKey(newSpaceId, tagId, tagVer);
     data.emplace_back(std::move(key), val.str());
+    iter->next();
   }
   return data;
 }
@@ -176,7 +177,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
   std::vector<kvstore::KV> data;
   auto iter = nebula::value(edgePrefix).get();
-  for (; iter->valid(); iter->next()) {
+  while (iter->valid()) {
     auto val = iter->val();
 
     auto edgeType = MetaKeyUtils::parseEdgeType(iter->key());
@@ -188,6 +189,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     auto ver = MetaKeyUtils::parseEdgeVersion(iter->key());
     auto key = MetaKeyUtils::schemaEdgeKey(newSpaceId, edgeType, ver);
     data.emplace_back(std::move(key), val.str());
+    iter->next();
   }
   return data;
 }
@@ -207,7 +209,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
   std::vector<kvstore::KV> data;
   auto iter = nebula::value(indexPrefix).get();
-  for (; iter->valid(); iter->next()) {
+  while (iter->valid()) {
     auto val = iter->val();
 
     auto indexId = MetaKeyUtils::parseIndexesKeyIndexID(iter->key());
@@ -219,6 +221,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
                       std::string(reinterpret_cast<const char *>(&indexId), sizeof(indexId)));
 
     data.emplace_back(MetaKeyUtils::indexKey(newSpaceId, indexId), MetaKeyUtils::indexVal(idxItem));
+    iter->next();
   }
   return data;
 }

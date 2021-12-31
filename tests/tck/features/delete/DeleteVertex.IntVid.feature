@@ -44,7 +44,7 @@ Feature: Delete int vid of vertex
     # delete one vertex
     When executing query:
       """
-      DELETE VERTEX hash("Tony Parker");
+      DELETE VERTEX hash("Tony Parker") WITH EDGE;
       """
     Then the execution should be successful
     # after delete to check value by fetch
@@ -89,7 +89,7 @@ Feature: Delete int vid of vertex
     # delete multi vertexes
     When executing query:
       """
-      DELETE VERTEX hash("LeBron James"), hash("Dwyane Wade"), hash("Carmelo Anthony");
+      DELETE VERTEX hash("LeBron James"), hash("Dwyane Wade"), hash("Carmelo Anthony") WITH EDGE;
       """
     Then the execution should be successful
     # after delete multi vertexes to check value by go
@@ -136,7 +136,7 @@ Feature: Delete int vid of vertex
     # delete hash id vertex
     When executing query:
       """
-      DELETE VERTEX hash("Grant Hill")
+      DELETE VERTEX hash("Grant Hill") WITH EDGE
       """
     Then the execution should be successful
     # after delete hash id vertex to check value by go
@@ -165,14 +165,14 @@ Feature: Delete int vid of vertex
     # delete not existed vertex
     When executing query:
       """
-      DELETE VERTEX hash("Non-existing Vertex")
+      DELETE VERTEX hash("Non-existing Vertex") WITH EDGE
       """
     Then the execution should be successful
     # delete a vertex without edges
     When executing query:
       """
       INSERT VERTEX player(name, age) VALUES hash("A Loner"): ("A Loner", 0);
-      DELETE VERTEX hash("A Loner");
+      DELETE VERTEX hash("A Loner") WITH EDGE;
       """
     Then the execution should be successful
     # check delete a vertex without edges
@@ -185,7 +185,7 @@ Feature: Delete int vid of vertex
     # delete with no edge
     When executing query:
       """
-      DELETE VERTEX hash("Nobody")
+      DELETE VERTEX hash("Nobody") WITH EDGE
       """
     Then the execution should be successful
     # check delete with no edge
@@ -201,7 +201,7 @@ Feature: Delete int vid of vertex
     # test delete with pipe wrong vid type
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like YIELD (string)like._src as id | DELETE VERTEX $-.id
+      GO FROM hash("Boris Diaw") OVER like YIELD (string)like._src as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then a SemanticError should be raised at runtime:
     # delete with pipe, get result by go
@@ -232,7 +232,7 @@ Feature: Delete int vid of vertex
       | "Manu Ginobili" |
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id | DELETE VERTEX $-.id
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:
@@ -257,7 +257,7 @@ Feature: Delete int vid of vertex
   Scenario: delete with pipe failed, because of the wrong vid type
     When executing query:
       """
-      USE nba_int_vid;YIELD "Tom" as id | DELETE VERTEX $-.id;
+      USE nba_int_vid;YIELD "Tom" as id | DELETE VERTEX $-.id WITH EDGE;
       """
     Then a SemanticError should be raised at runtime: The vid `$-.id' should be type of `INT', but was`STRING'
     Then drop the used space
@@ -288,7 +288,7 @@ Feature: Delete int vid of vertex
       | "Russell Westbrook" |
     When executing query:
       """
-      $var = GO FROM hash("Russell Westbrook") OVER like YIELD like._dst as id; DELETE VERTEX $var.id
+      $var = GO FROM hash("Russell Westbrook") OVER like YIELD like._dst as id; DELETE VERTEX $var.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:

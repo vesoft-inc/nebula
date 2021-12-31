@@ -10,6 +10,7 @@
 #include "version/Version.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(agent_heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
 DEFINE_int32(removed_threshold_sec,
              24 * 60 * 60,
@@ -26,6 +27,8 @@ static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
       return cpp2::HostRole::META;
     case cpp2::ListHostType::STORAGE:
       return cpp2::HostRole::STORAGE;
+    case cpp2::ListHostType::AGENT:
+      return cpp2::HostRole::AGENT;
     default:
       return cpp2::HostRole::UNKNOWN;
   }
@@ -58,7 +61,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     }
   }
   if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    resp_.set_hosts(std::move(hostItems_));
+    resp_.hosts_ref() = std::move(hostItems_);
   }
   handleErrorCode(retCode);
   onFinished();
@@ -85,11 +88,11 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
   }
   for (auto& host : metaPeers) {
     cpp2::HostItem item;
-    item.set_hostAddr(std::move(host));
-    item.set_role(cpp2::HostRole::META);
-    item.set_git_info_sha(gitInfoSha());
-    item.set_status(cpp2::HostStatus::ONLINE);
-    item.set_version(getOriginVersion());
+    item.hostAddr_ref() = std::move(host);
+    item.role_ref() = cpp2::HostRole::META;
+    item.git_info_sha_ref() = gitInfoSha();
+    item.status_ref() = cpp2::HostStatus::ONLINE;
+    item.version_ref() = getOriginVersion();
     hostItems_.emplace_back(item);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -120,21 +123,30 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
 
     cpp2::HostItem item;
     auto host = MetaKeyUtils::parseHostKey(iter->key());
-    item.set_hostAddr(std::move(host));
+    item.hostAddr_ref() = std::move(host);
 
-    item.set_role(info.role_);
-    item.set_git_info_sha(info.gitInfoSha_);
-    if (info.version_.has_value()) {
-      item.set_version(info.version_.value());
+    item.role_ref() = info.role_;
+    item.git_info_sha_ref() = info.gitInfoSha_;
+
+    auto versionKey = MetaKeyUtils::versionKey(item.get_hostAddr());
+    auto versionRet = doGet(versionKey);
+    if (nebula::ok(versionRet)) {
+      auto versionVal = MetaKeyUtils::parseVersion(value(versionRet));
+      item.version_ref() = versionVal;
     }
+
     if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
+      int64_t expiredTime =
+          FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000;  // meta/storage/graph
+      if (info.role_ == cpp2::HostRole::AGENT) {
+        expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000;
+      }
       // If meta didn't receive heartbeat with 2 periods, regard hosts as
       // offline. Same as ActiveHostsMan::getActiveHosts
-      if (now - info.lastHBTimeInMilliSec_ <
-          FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
-        item.set_status(cpp2::HostStatus::ONLINE);
+      if (now - info.lastHBTimeInMilliSec_ < expiredTime) {
+        item.status_ref() = cpp2::HostStatus::ONLINE;
       } else {
-        item.set_status(cpp2::HostStatus::OFFLINE);
+        item.status_ref() = cpp2::HostStatus::OFFLINE;
       }
       hostItems_.emplace_back(item);
     } else {
@@ -158,8 +170,8 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   if (!nebula::ok(activeHostsRet)) {
     return nebula::error(activeHostsRet);
   }
-  auto activeHosts = nebula::value(activeHostsRet);
 
+  auto activeHosts = nebula::value(activeHostsRet);
   const auto& prefix = MetaKeyUtils::leaderPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
@@ -181,7 +193,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   std::vector<std::string> removeLeadersKey;
   for (; iter->valid(); iter->next()) {
     auto spaceIdAndPartId = MetaKeyUtils::parseLeaderKeyV3(iter->key());
-    VLOG(1) << "show hosts: space = " << spaceIdAndPartId.first
+    VLOG(1) << "Show hosts: space = " << spaceIdAndPartId.first
             << ", part = " << spaceIdAndPartId.second;
     // If the space in the leader key don't exist, remove leader key
     auto spaceId = spaceIdAndPartId.first;
@@ -256,7 +268,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillAllParts() {
       return item.get_hostAddr() == hostAddr;
     });
     if (it != hostItems_.end()) {
-      it->set_all_parts(std::move(hostEntry.second));
+      it->all_parts_ref() = std::move(hostEntry.second);
     }
   }
 

@@ -28,16 +28,22 @@ class VertexExpression final : public Expression {
 
   void accept(ExprVisitor *visitor) override;
 
-  Expression *clone() const override { return VertexExpression::make(pool_, name()); }
+  Expression *clone() const override {
+    return VertexExpression::make(pool_, name());
+  }
 
-  std::string toString() const override { return name_; }
+  std::string toString() const override {
+    return name_;
+  }
 
-  const std::string &name() const { return name_; }
+  const std::string &name() const {
+    return name_;
+  }
 
   bool operator==(const Expression &expr) const override;
 
  private:
-  explicit VertexExpression(ObjectPool *pool, const std::string &name)
+  VertexExpression(ObjectPool *pool, const std::string &name)
       : Expression(pool, Kind::kVertex), name_(name) {}
 
   void writeTo(Encoder &encoder) const override;

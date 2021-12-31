@@ -27,9 +27,9 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
                                                               PartitionID part,
                                                               const IndexItems& items,
                                                               kvstore::RateLimiter* rateLimiter) {
-  if (canceled_) {
+  if (UNLIKELY(canceled_)) {
     LOG(ERROR) << "Rebuild Tag Index is Canceled";
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   auto vidSizeRet = env_->schemaMan_->getSpaceVidLen(space);
@@ -64,9 +64,9 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
   RowReaderWrapper reader;
   size_t batchSize = 0;
   while (iter && iter->valid()) {
-    if (canceled_) {
+    if (UNLIKELY(canceled_)) {
       LOG(ERROR) << "Rebuild Tag Index is Canceled";
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
@@ -127,7 +127,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_tag_id() == tagID) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get(), schema);
         if (!valuesRet.ok()) {
           LOG(WARNING) << "Collect index value failed";
           continue;

@@ -38,8 +38,29 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
   keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
   keys.emplace_back(MetaKeyUtils::indexKey(spaceID, tagIndexID));
 
+  auto indexItemRet = doGet(keys.back());
+  if (!nebula::ok(indexItemRet)) {
+    auto retCode = nebula::error(indexItemRet);
+    if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    LOG(ERROR) << "Drop Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
+  if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id) {
+    LOG(ERROR) << "Drop Tag Index Failed: Index Name " << indexName << " is not TagIndex";
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    onFinished();
+    return;
+  }
+
   LOG(INFO) << "Drop Tag Index " << indexName;
-  resp_.set_id(to(tagIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(tagIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

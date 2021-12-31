@@ -15,14 +15,14 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
  public:
   class ResultSchemaField : public meta::SchemaProviderIf::Field {
    public:
-    explicit ResultSchemaField(std::string name,
-                               nebula::cpp2::PropertyType type,
-                               int16_t size,
-                               bool nullable,
-                               int32_t offset,
-                               size_t nullFlagPos,
-                               Expression* defaultValue = nullptr,
-                               meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
+    ResultSchemaField(std::string name,
+                      nebula::cpp2::PropertyType type,
+                      int16_t size,
+                      bool nullable,
+                      int32_t offset,
+                      size_t nullFlagPos,
+                      Expression* defaultValue = nullptr,
+                      meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
 
     const char* name() const override;
     nebula::cpp2::PropertyType type() const override;
@@ -48,7 +48,9 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
  public:
   virtual ~ResultSchemaProvider() = default;
 
-  SchemaVer getVersion() const noexcept override { return schemaVer_; }
+  SchemaVer getVersion() const noexcept override {
+    return schemaVer_;
+  }
 
   size_t getNumFields() const noexcept override;
 

@@ -31,7 +31,9 @@ void ConstantExpression::resetFrom(Decoder& decoder) {
   val_ = decoder.readValue();
 }
 
-void ConstantExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ConstantExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 std::string ConstantExpression::toString() const {
   std::stringstream out;

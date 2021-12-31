@@ -15,6 +15,7 @@
 #include "common/meta/SchemaManager.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
+#include "storage/GraphStorageLocalServer.h"
 #include "storage/admin/AdminTaskManager.h"
 #include "storage/transaction/TransactionManager.h"
 
@@ -39,6 +40,9 @@ class StorageServer final {
 
   void stop();
 
+  // used for signal handler to set an internal stop flag
+  void notifyStop();
+
   void waitUntilStop();
 
  private:
@@ -61,7 +65,11 @@ class StorageServer final {
   std::atomic<ServiceStatus> storageSvcStatus_{STATUS_UNINITIALIZED};
   std::atomic<ServiceStatus> adminSvcStatus_{STATUS_UNINITIALIZED};
 
+#ifndef BUILD_STANDALONE
   std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
+#else
+  std::shared_ptr<GraphStorageLocalServer> storageServer_;
+#endif
   std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
 
   std::unique_ptr<std::thread> internalStorageThread_;
@@ -88,6 +96,10 @@ class StorageServer final {
   std::unique_ptr<TransactionManager> txnMan_{nullptr};
   // used for communicate between one storaged to another
   std::unique_ptr<InternalStorageClient> interClient_;
+
+  ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
+  std::mutex muStop_;
+  std::condition_variable cvStop_;
 };
 
 }  // namespace storage

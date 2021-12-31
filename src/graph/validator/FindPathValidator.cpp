@@ -7,6 +7,7 @@
 
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
 
 namespace nebula {
@@ -36,8 +37,7 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
   // Not Support $-、$var、$$.tag.prop、$^.tag.prop、agg
   auto expr = where->filter();
   if (ExpressionUtils::findAny(expr,
-                               {Expression::Kind::kAggregate,
-                                Expression::Kind::kSrcProperty,
+                               {Expression::Kind::kSrcProperty,
                                 Expression::Kind::kDstProperty,
                                 Expression::Kind::kVarProperty,
                                 Expression::Kind::kInputProperty})) {

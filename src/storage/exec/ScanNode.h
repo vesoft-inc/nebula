@@ -13,21 +13,23 @@ namespace storage {
 
 using Cursor = std::string;
 
-inline bool vTrue(const Value& v) { return v.isBool() && v.getBool(); }
+inline bool vTrue(const Value& v) {
+  return v.isBool() && v.getBool();
+}
 
 // Node to scan vertices of one partition
 class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
   using RelNode<Cursor>::doExecute;
 
-  explicit ScanVertexPropNode(RuntimeContext* context,
-                              std::vector<std::unique_ptr<TagNode>> tagNodes,
-                              bool enableReadFollower,
-                              int64_t limit,
-                              std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
-                              nebula::DataSet* resultDataSet,
-                              StorageExpressionContext* expCtx = nullptr,
-                              Expression* filter = nullptr)
+  ScanVertexPropNode(RuntimeContext* context,
+                     std::vector<std::unique_ptr<TagNode>> tagNodes,
+                     bool enableReadFollower,
+                     int64_t limit,
+                     std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
+                     nebula::DataSet* resultDataSet,
+                     StorageExpressionContext* expCtx = nullptr,
+                     Expression* filter = nullptr)
       : context_(context),
         tagNodes_(std::move(tagNodes)),
         enableReadFollower_(enableReadFollower),
@@ -92,10 +94,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
 
     cpp2::ScanCursor c;
     if (iter->valid()) {
-      c.set_has_next(true);
-      c.set_next_cursor(iter->key().str());
-    } else {
-      c.set_has_next(false);
+      c.next_cursor_ref() = iter->key().str();
     }
     cursors_->emplace(partId, std::move(c));
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -246,10 +245,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
 
     cpp2::ScanCursor c;
     if (iter->valid()) {
-      c.set_has_next(true);
-      c.set_next_cursor(iter->key().str());
-    } else {
-      c.set_has_next(false);
+      c.next_cursor_ref() = iter->key().str();
     }
     cursors_->emplace(partId, std::move(c));
     return nebula::cpp2::ErrorCode::SUCCEEDED;

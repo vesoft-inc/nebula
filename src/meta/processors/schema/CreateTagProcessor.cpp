@@ -22,7 +22,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     if (nebula::ok(conflictRet)) {
       LOG(ERROR) << "Failed to create tag `" << tagName
                  << "': some edge with the same name already exists.";
-      resp_.set_id(to(nebula::value(conflictRet), EntryType::TAG));
+      resp_.id_ref() = to(nebula::value(conflictRet), EntryType::TAG);
       handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
       onFinished();
       return;
@@ -46,8 +46,8 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   }
 
   cpp2::Schema schema;
-  schema.set_columns(std::move(columns));
-  schema.set_schema_prop(req.get_schema().get_schema_prop());
+  schema.columns_ref() = std::move(columns);
+  schema.schema_prop_ref() = req.get_schema().get_schema_prop();
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
   auto ret = getTagId(spaceId, tagName);
@@ -58,7 +58,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
       LOG(ERROR) << "Create Tag Failed :" << tagName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     }
-    resp_.set_id(to(nebula::value(ret), EntryType::TAG));
+    resp_.id_ref() = to(nebula::value(ret), EntryType::TAG);
     onFinished();
     return;
   } else {
@@ -89,7 +89,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
 
   LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
 
-  resp_.set_id(to(tagId, EntryType::TAG));
+  resp_.id_ref() = to(tagId, EntryType::TAG);
   doSyncPutAndUpdate(std::move(data));
 }
 

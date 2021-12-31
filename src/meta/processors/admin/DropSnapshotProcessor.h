@@ -23,7 +23,7 @@ class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
   void process(const cpp2::DropSnapshotReq& req);
 
  private:
-  explicit DropSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
+  DropSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
       : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
  private:

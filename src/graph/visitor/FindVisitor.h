@@ -23,13 +23,21 @@ class FindVisitor final : public ExprVisitorImpl {
     return true;
   }
 
-  bool needFindAll() const { return needFindAll_; }
+  bool needFindAll() const {
+    return needFindAll_;
+  }
 
-  void setNeedFindAll(bool needFindAll) { needFindAll_ = needFindAll; }
+  void setNeedFindAll(bool needFindAll) {
+    needFindAll_ = needFindAll;
+  }
 
-  bool found() const { return !foundExprs_.empty(); }
+  bool found() const {
+    return !foundExprs_.empty();
+  }
 
-  std::vector<const Expression*> results() const { return foundExprs_; }
+  std::vector<const Expression*> results() const {
+    return foundExprs_;
+  }
 
  private:
   using ExprVisitorImpl::visit;
@@ -47,6 +55,7 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(ConstantExpression* expr) override;
   void visit(EdgePropertyExpression* expr) override;
   void visit(TagPropertyExpression* expr) override;
+  void visit(LabelTagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
   void visit(SourcePropertyExpression* expr) override;

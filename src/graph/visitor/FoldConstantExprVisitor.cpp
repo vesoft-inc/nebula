@@ -44,17 +44,28 @@ void FoldConstantExprVisitor::visit(LabelExpression *expr) {
   canBeFolded_ = false;
 }
 
+void FoldConstantExprVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  canBeFolded_ = false;
+}
+
 void FoldConstantExprVisitor::visit(LabelAttributeExpression *expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // binary expression
-void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(SubscriptExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
   UNUSED(expr);

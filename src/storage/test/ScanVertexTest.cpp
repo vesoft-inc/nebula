@@ -23,31 +23,32 @@ cpp2::ScanVertexRequest buildRequest(
     int64_t endTime = std::numeric_limits<int64_t>::max(),
     bool onlyLatestVer = false) {
   cpp2::ScanVertexRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   cpp2::ScanCursor c;
   CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
   for (std::size_t i = 0; i < partIds.size(); ++i) {
-    c.set_has_next(!cursors[i].empty());
-    c.set_next_cursor(cursors[i]);
+    if (!cursors[i].empty()) {
+      c.next_cursor_ref() = cursors[i];
+    }
     parts.emplace(partIds[i], c);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<cpp2::VertexProp> vertexProps;
   for (const auto& tag : tags) {
     TagID tagId = tag.first;
     cpp2::VertexProp vertexProp;
-    vertexProp.set_tag(tagId);
+    vertexProp.tag_ref() = tagId;
     for (const auto& prop : tag.second) {
       (*vertexProp.props_ref()).emplace_back(std::move(prop));
     }
     vertexProps.emplace_back(std::move(vertexProp));
   }
-  req.set_return_columns(std::move(vertexProps));
-  req.set_limit(rowLimit);
-  req.set_start_time(startTime);
-  req.set_end_time(endTime);
-  req.set_only_latest_version(onlyLatestVer);
+  req.return_columns_ref() = std::move(vertexProps);
+  req.limit_ref() = rowLimit;
+  req.start_time_ref() = startTime;
+  req.end_time_ref() = endTime;
+  req.only_latest_version_ref() = onlyLatestVer;
   return req;
 }
 
@@ -120,7 +121,7 @@ TEST(ScanVertexTest, PropertyTest) {
       auto resp = std::move(f).get();
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
-      checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+      checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -149,7 +150,7 @@ TEST(ScanVertexTest, PropertyTest) {
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
       // all 11 columns in value
-      checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+      checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -182,9 +183,8 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(
-            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
@@ -209,9 +209,8 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(
-            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
@@ -245,7 +244,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
   }
   {
     LOG(INFO) << "Scan one tag with all properties in one batch";
@@ -271,7 +270,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 11 columns in value
-    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
   }
 }
 
@@ -299,7 +298,7 @@ TEST(ScanVertexTest, LimitTest) {
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
   {
@@ -327,7 +326,7 @@ TEST(ScanVertexTest, LimitTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 11 columns in value
-    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
 }
@@ -433,7 +432,7 @@ TEST(ScanVertexTest, MultipleTagsTest) {
                               16.7,
                               Value::kEmpty,
                               Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
 }
 
@@ -460,7 +459,7 @@ TEST(ScanVertexTest, FilterTest) {
     Expression* filter = TagPropertyExpression::make(&pool, "1", "name");
     filter =
         RelationalExpression::makeEQ(&pool, filter, ConstantExpression::make(&pool, "Kobe Bryant"));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -471,7 +470,7 @@ TEST(ScanVertexTest, FilterTest) {
         {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
     expect.emplace_back(List(
         {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
   {
     LOG(INFO) << "Scan one tag with some properties in one batch";
@@ -487,7 +486,7 @@ TEST(ScanVertexTest, FilterTest) {
         &pool,
         filter,
         UnaryExpression::makeIsEmpty(&pool, TagPropertyExpression::make(&pool, "2", "name")));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -498,7 +497,7 @@ TEST(ScanVertexTest, FilterTest) {
         {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
     expect.emplace_back(List(
         {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
 }
 

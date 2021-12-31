@@ -10,6 +10,7 @@ nebula_add_library(
     logic/PassThroughExecutor.cpp
     logic/StartExecutor.cpp
     logic/SelectExecutor.cpp
+    logic/ArgumentExecutor.cpp
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
@@ -34,6 +35,8 @@ nebula_add_library(
     query/InnerJoinExecutor.cpp
     query/IndexScanExecutor.cpp
     query/AssignExecutor.cpp
+    query/ScanVerticesExecutor.cpp
+    query/ScanEdgesExecutor.cpp
     query/TraverseExecutor.cpp
     query/AppendVerticesExecutor.cpp
     algo/ConjunctPathExecutor.cpp
@@ -42,6 +45,8 @@ nebula_add_library(
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
+    admin/AddHostsExecutor.cpp
+    admin/DropHostsExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/CreateUserExecutor.cpp
     admin/DropUserExecutor.cpp
@@ -66,9 +71,9 @@ nebula_add_library(
     admin/IngestExecutor.cpp
     admin/ConfigExecutor.cpp
     admin/ZoneExecutor.cpp
-    admin/ShowTSClientsExecutor.cpp
-    admin/SignInTSServiceExecutor.cpp
-    admin/SignOutTSServiceExecutor.cpp
+    admin/ShowServiceClientsExecutor.cpp
+    admin/SignInServiceExecutor.cpp
+    admin/SignOutServiceExecutor.cpp
     admin/SessionExecutor.cpp
     admin/ShowQueriesExecutor.cpp
     admin/KillQueryExecutor.cpp

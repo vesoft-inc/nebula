@@ -23,7 +23,21 @@ struct KeyValue {
     value.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
+
+  auto& operator=(const KeyValue& rhs) {
+    this->key = rhs.key;
+    this->value = rhs.value;
+    return *this;
+  }
+
+  auto& operator=(KeyValue&& rhs) {
+    this->key = std::move(rhs.key);
+    this->value = std::move(rhs.value);
+    return *this;
+  }
 
   bool operator==(const KeyValue& rhs) const {
     if (key != rhs.key) {

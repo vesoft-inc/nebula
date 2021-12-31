@@ -27,11 +27,17 @@ class DeduceTypeVisitor final : public ExprVisitor {
                     GraphSpaceID space);
   ~DeduceTypeVisitor() = default;
 
-  bool ok() const { return status_.ok(); }
+  bool ok() const {
+    return status_.ok();
+  }
 
-  Status status() && { return std::move(status_); }
+  Status status() && {
+    return std::move(status_);
+  }
 
-  Value::Type type() const { return type_; }
+  Value::Type type() const {
+    return type_;
+  }
 
  private:
   void visit(ConstantExpression *expr) override;
@@ -57,6 +63,7 @@ class DeduceTypeVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;

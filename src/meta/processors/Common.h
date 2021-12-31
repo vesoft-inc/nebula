@@ -23,12 +23,13 @@ class LockUtils {
   GENERATE_LOCK(lastUpdateTime);
   GENERATE_LOCK(space);
   GENERATE_LOCK(id);
+  GENERATE_LOCK(workerId);
   GENERATE_LOCK(localId);
   GENERATE_LOCK(tag);
   GENERATE_LOCK(edge);
   GENERATE_LOCK(tagIndex);
   GENERATE_LOCK(edgeIndex);
-  GENERATE_LOCK(fulltextServices);
+  GENERATE_LOCK(service);
   GENERATE_LOCK(fulltextIndex);
   GENERATE_LOCK(user);
   GENERATE_LOCK(config);
@@ -37,6 +38,7 @@ class LockUtils {
   GENERATE_LOCK(zone);
   GENERATE_LOCK(listener);
   GENERATE_LOCK(session);
+  GENERATE_LOCK(machine);
 
 #undef GENERATE_LOCK
 };

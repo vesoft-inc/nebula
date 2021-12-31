@@ -68,6 +68,8 @@ class SchemaManager {
 
   virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
 
+  StatusOr<std::unordered_map<TagID, std::string>> getAllTags(GraphSpaceID space);
+
   // get all version of all tag schema
   virtual StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) = 0;
 
@@ -80,7 +82,8 @@ class SchemaManager {
   // get all latest version of all edge schema
   virtual StatusOr<EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) = 0;
 
-  virtual StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() = 0;
+  virtual StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+      cpp2::ExternalServiceType type) = 0;
 
   // Get the TagID or EdgeType by the name.
   // The first one is a bool which is used to distinguish the type.

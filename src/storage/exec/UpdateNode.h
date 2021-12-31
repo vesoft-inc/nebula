@@ -412,6 +412,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       }
     }
     // step 3, insert new vertex data
+    batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
     batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
   }
@@ -420,7 +421,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
                                      const VertexID& vId,
                                      RowReader* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
       return {};
     }
@@ -751,7 +752,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
                                      RowReader* reader,
                                      const cpp2::EdgeKey& edgeKey,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
       return {};
     }

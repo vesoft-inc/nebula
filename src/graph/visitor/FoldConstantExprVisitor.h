@@ -7,7 +7,6 @@
 #define GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 
 #include "common/expression/ExprVisitor.h"
-// #include "common/base/Status.h"
 
 namespace nebula {
 namespace graph {
@@ -16,13 +15,21 @@ class FoldConstantExprVisitor final : public ExprVisitor {
  public:
   explicit FoldConstantExprVisitor(ObjectPool *pool) : pool_(pool) {}
 
-  bool canBeFolded() const { return canBeFolded_; }
+  bool canBeFolded() const {
+    return canBeFolded_;
+  }
 
-  bool isConstant(Expression *expr) const { return expr->kind() == Expression::Kind::kConstant; }
+  bool isConstant(Expression *expr) const {
+    return expr->kind() == Expression::Kind::kConstant;
+  }
 
-  bool ok() const { return status_.ok(); }
+  bool ok() const {
+    return status_.ok();
+  }
 
-  Status status() && { return std::move(status_); }
+  Status status() && {
+    return std::move(status_);
+  }
 
   void visit(ConstantExpression *expr) override;
   void visit(UnaryExpression *expr) override;
@@ -47,6 +54,7 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;

@@ -25,7 +25,8 @@ class CreateSpaceValidator final : public Validator {
 
   Status toPlan() override;
 
-  bool checkTSIndex(const std::vector<meta::cpp2::FTClient>& clients, const std::string& index);
+  bool checkTSIndex(const std::vector<meta::cpp2::ServiceClient>& clients,
+                    const std::string& index);
 
  private:
   meta::cpp2::SpaceDesc spaceDesc_;
@@ -46,6 +47,18 @@ class CreateSpaceAsValidator final : public Validator {
  private:
   std::string oldSpaceName_;
   std::string newSpaceName_;
+};
+
+class AlterSpaceValidator final : public Validator {
+ public:
+  AlterSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    noSpaceRequired_ = true;
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
 };
 
 class DescSpaceValidator final : public Validator {
@@ -167,6 +180,30 @@ class ShowListenerValidator final : public Validator {
   Status toPlan() override;
 };
 
+class AddHostsValidator final : public Validator {
+ public:
+  AddHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class DropHostsValidator final : public Validator {
+ public:
+  DropHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
 class ShowHostsValidator final : public Validator {
  public:
   ShowHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
@@ -280,21 +317,9 @@ class ShowStatusValidator final : public Validator {
   Status toPlan() override;
 };
 
-class ShowTSClientsValidator final : public Validator {
+class ShowServiceClientsValidator final : public Validator {
  public:
-  ShowTSClientsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-    setNoSpaceRequired();
-  }
-
- private:
-  Status validateImpl() override;
-
-  Status toPlan() override;
-};
-
-class SignInTSServiceValidator final : public Validator {
- public:
-  SignInTSServiceValidator(Sentence* sentence, QueryContext* context)
+  ShowServiceClientsValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {
     setNoSpaceRequired();
   }
@@ -305,9 +330,21 @@ class SignInTSServiceValidator final : public Validator {
   Status toPlan() override;
 };
 
-class SignOutTSServiceValidator final : public Validator {
+class SignInServiceValidator final : public Validator {
  public:
-  SignOutTSServiceValidator(Sentence* sentence, QueryContext* context)
+  SignInServiceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class SignOutServiceValidator final : public Validator {
+ public:
+  SignOutServiceValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {
     setNoSpaceRequired();
   }
@@ -325,7 +362,9 @@ class ShowSessionsValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 };
@@ -337,7 +376,9 @@ class GetSessionValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 

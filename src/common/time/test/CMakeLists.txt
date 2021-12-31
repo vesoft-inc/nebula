@@ -51,6 +51,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
     LIBRARIES
         gtest
 )

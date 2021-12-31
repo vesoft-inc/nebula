@@ -23,7 +23,9 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
   explicit TestSingleEdgeIterator(std::unique_ptr<kvstore::KVIterator> iter)
       : iter_(std::move(iter)) {}
 
-  bool valid() const override { return iter_->valid(); }
+  bool valid() const override {
+    return iter_->valid();
+  }
 
   void next() override {
     do {
@@ -31,15 +33,23 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
     } while (iter_->valid() && !check());
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
  private:
   // return true when the value iter to a valid edge value
-  bool check() { return true; }
+  bool check() {
+    return true;
+  }
 
   std::unique_ptr<kvstore::KVIterator> iter_;
   std::unique_ptr<RowReader> reader_;
@@ -253,12 +263,12 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
 // the parameter pair<int, int> is
 // 1. count of edge schema version,
 // 2. how many edges will be scanned
-INSTANTIATE_TEST_CASE_P(ScanEdgePropBench,
-                        ScanEdgePropBench,
-                        ::testing::Values(std::make_pair(1, 10000),
-                                          std::make_pair(10, 10000),
-                                          std::make_pair(1, 100),
-                                          std::make_pair(10, 100)));
+INSTANTIATE_TEST_SUITE_P(ScanEdgePropBench,
+                         ScanEdgePropBench,
+                         ::testing::Values(std::make_pair(1, 10000),
+                                           std::make_pair(10, 10000),
+                                           std::make_pair(1, 100),
+                                           std::make_pair(10, 100)));
 
 }  // namespace nebula
 

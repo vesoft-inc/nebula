@@ -7,7 +7,7 @@
 
 #include "storage/StorageFlags.h"
 #include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 #include "storage/transaction/TransactionManager.h"
 
@@ -23,7 +23,7 @@ void ChainAddEdgesGroupProcessor::process(const cpp2::AddEdgesRequest& req) {
 
   auto delegateProcess = [&](auto& item) {
     auto localPartId = item.first.first;
-    auto* proc = ChainAddEdgesProcessorLocal::instance(env_);
+    auto* proc = ChainAddEdgesLocalProcessor::instance(env_);
     proc->setRemotePartId(item.first.second);
     proc->getFuture().thenValue([=](auto&& resp) {
       auto code = resp.get_result().get_failed_parts().empty()
@@ -47,9 +47,9 @@ void ChainAddEdgesGroupProcessor::shuffleRequest(const cpp2::AddEdgesRequest& re
 
   auto genNewReq = [&](auto& reqIn) {
     cpp2::AddEdgesRequest ret;
-    ret.set_space_id(reqIn.get_space_id());
-    ret.set_prop_names(reqIn.get_prop_names());
-    ret.set_if_not_exists(reqIn.get_if_not_exists());
+    ret.space_id_ref() = reqIn.get_space_id();
+    ret.prop_names_ref() = reqIn.get_prop_names();
+    ret.if_not_exists_ref() = reqIn.get_if_not_exists();
     return ret;
   };
 

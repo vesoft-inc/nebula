@@ -14,8 +14,8 @@ class UUIDExpression final : public Expression {
   friend class Expression;
 
  public:
-  static UUIDExpression* make(ObjectPool* pool, const std::string& field = "") {
-    return pool->add(new UUIDExpression(pool, field));
+  static UUIDExpression* make(ObjectPool* pool) {
+    return pool->add(new UUIDExpression(pool));
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -26,17 +26,17 @@ class UUIDExpression final : public Expression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return UUIDExpression::make(pool_, field_); }
+  Expression* clone() const override {
+    return UUIDExpression::make(pool_);
+  }
 
  private:
-  explicit UUIDExpression(ObjectPool* pool, const std::string& field = "")
-      : Expression(pool, Kind::kUUID), field_(field) {}
+  explicit UUIDExpression(ObjectPool* pool) : Expression(pool, Kind::kUUID) {}
 
   void writeTo(Encoder& encoder) const override;
   void resetFrom(Decoder& decoder) override;
 
  private:
-  std::string field_;
   Value result_;
 };
 

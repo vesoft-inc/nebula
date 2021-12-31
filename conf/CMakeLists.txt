@@ -5,6 +5,8 @@
 # These configuration files are for reference to generate your own customized ones.
 # Thus, they are installed as read-only, even for the owner.
 
+if(NOT ENABLE_STANDALONE_VERSION)
+
 install(
   FILES
     nebula-graphd.conf.default
@@ -47,3 +49,20 @@ install(
   COMPONENT
     storage
   )
+
+else()
+
+install(
+  FILES
+    nebula-standalone.conf.default
+  PERMISSIONS
+    OWNER_READ
+    GROUP_READ
+    WORLD_READ
+  DESTINATION
+    etc
+  COMPONENT
+    graph
+  )
+
+endif()

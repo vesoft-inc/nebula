@@ -18,7 +18,8 @@ class GetPropExecutor : public StorageAccessExecutor {
   GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
       : StorageAccessExecutor(name, node, qctx) {}
 
-  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
+  template <typename Response>
+  Status handleResp(storage::StorageRpcResponse<Response> &&rpcResp,
                     const std::vector<std::string> &colNames) {
     auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
     NG_RETURN_IF_ERROR(result);

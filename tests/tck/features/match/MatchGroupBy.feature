@@ -12,10 +12,10 @@ Feature: Match GroupBy
       MATCH(n:player)
         RETURN id(n) AS id,
                count(n) AS count,
-               sum(floor(n.age)) AS sum,
-               max(n.age) AS max,
-               min(n.age) AS min,
-               avg(distinct n.age) AS age,
+               sum(floor(n.player.age)) AS sum,
+               max(n.player.age) AS max,
+               min(n.player.age) AS min,
+               avg(distinct n.player.age) AS age,
                labels(n) AS lb
           ORDER BY id, count, max, min
           SKIP 10 LIMIT 8;
@@ -37,10 +37,10 @@ Feature: Match GroupBy
       MATCH(n:player)
         RETURN id(n) AS id,
                count(n) AS count,
-               sum(floor(n.age)) AS sum,
-               max(n.age) AS max,
-               min(n.age) AS min,
-               avg(distinct n.age)+1 AS age,
+               sum(floor(n.player.age)) AS sum,
+               max(n.player.age) AS max,
+               min(n.player.age) AS min,
+               avg(distinct n.player.age)+1 AS age,
                labels(n) AS lb
           ORDER BY id, count, max, min
           SKIP 10 LIMIT 8;
@@ -62,10 +62,10 @@ Feature: Match GroupBy
       MATCH(n:player)
         RETURN id(n) AS id,
                count(n) AS count,
-               sum(floor(n.age)) AS sum,
-               max(n.age) AS max,
-               min(n.age) AS min,
-               (INT)avg(distinct n.age)+1 AS age,
+               sum(floor(n.player.age)) AS sum,
+               max(n.player.age) AS max,
+               min(n.player.age) AS min,
+               (INT)avg(distinct n.player.age)+1 AS age,
                labels(n) AS lb
           ORDER BY id, count, max, min
           SKIP 10 LIMIT 8;
@@ -85,13 +85,13 @@ Feature: Match GroupBy
     When executing query:
       """
       MATCH(n:player)
-        WHERE n.age > 35
+        WHERE n.player.age > 35
         RETURN DISTINCT id(n) AS id,
                         count(n) AS count,
-                        sum(floor(n.age)) AS sum,
-                        max(n.age) AS max,
-                        min(n.age) AS min,
-                        avg(distinct n.age)+1 AS age,
+                        sum(floor(n.player.age)) AS sum,
+                        max(n.player.age) AS max,
+                        min(n.player.age) AS min,
+                        avg(distinct n.player.age)+1 AS age,
                         labels(n) AS lb
               ORDER BY id, count, max, min
               SKIP 10 LIMIT 6;
@@ -109,13 +109,13 @@ Feature: Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like]->(m)
-        WHERE n.age > 35
+        WHERE n.player.age > 35
         RETURN DISTINCT id(n) AS id,
                         count(n) AS count,
-                        sum(floor(n.age)) AS sum,
-                        max(m.age) AS max,
-                        min(n.age) AS min,
-                        avg(distinct n.age)+1 AS age,
+                        sum(floor(n.player.age)) AS sum,
+                        max(m.player.age) AS max,
+                        min(n.player.age) AS min,
+                        avg(distinct n.player.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
               SKIP 10 LIMIT 20;
@@ -136,16 +136,16 @@ Feature: Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
-        WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WHERE n.player.age > 35
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
-                        sum(floor(n.age)) AS sum,
-                        max(m.age) AS max,
-                        min(n.age) AS min,
-                        avg(distinct n.age)+1 AS age,
+                        sum(floor(n.player.age)) AS sum,
+                        max(m.player.age) AS max,
+                        min(n.player.age) AS min,
+                        avg(distinct n.player.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD count(*) AS count;
+        RETURN count(*) AS count;
       """
     Then the result should be, in order, with relax comparison:
       | count |
@@ -155,16 +155,16 @@ Feature: Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
-        WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WHERE n.player.age > 35
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
-                        sum(floor(n.age)) AS sum,
-                        max(m.age) AS max,
-                        min(n.age) AS min,
-                        avg(distinct n.age)+1 AS age,
+                        sum(floor(n.player.age)) AS sum,
+                        max(m.player.age) AS max,
+                        min(n.player.age) AS min,
+                        avg(distinct n.player.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD DISTINCT $-.min AS min, (INT)count(*) AS count;
+        RETURN DISTINCT min, (INT)count(*) AS count;
       """
     Then the result should be, in any order, with relax comparison:
       | min | count |
@@ -186,7 +186,7 @@ Feature: Match GroupBy
       MATCH p = (a:player)-[:like]->(other:player)
           WHERE other <> a
         WITH a AS a, other AS other, length(p) AS len
-        RETURN a.name AS name, (INT)avg(other.age) AS age, len
+        RETURN a.player.name AS name, (INT)avg(other.player.age) AS age, len
           ORDER BY name, age
           SKIP 3 LIMIT 8
       """

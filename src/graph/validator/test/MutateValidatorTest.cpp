@@ -61,7 +61,7 @@ TEST_F(MutateValidatorTest, InsertEdgeTest) {
 TEST_F(MutateValidatorTest, DeleteVertexTest) {
   // succeed
   {
-    auto cmd = "DELETE VERTEX \"A\"";
+    auto cmd = "DELETE VERTEX \"A\" WITH EDGE";
     std::vector<PlanNode::Kind> expected = {
         PK::kDeleteVertices,
         PK::kDeleteEdges,
@@ -73,15 +73,35 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
     };
     ASSERT_TRUE(checkResult(cmd, expected));
   }
+  {
+    auto cmd = "DELETE VERTEX \"A\"";
+    std::vector<PlanNode::Kind> expected = {
+        PK::kDeleteVertices,
+        PK::kDedup,
+        PK::kStart,
+    };
+    ASSERT_TRUE(checkResult(cmd, expected));
+  }
   // pipe
   {
-    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst";
+    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst WITH EDGE";
     std::vector<PlanNode::Kind> expected = {
         PK::kDeleteVertices,
         PK::kDeleteEdges,
         PK::kDedup,
         PK::kProject,
         PK::kGetNeighbors,
+        PK::kDedup,
+        PK::kProject,
+        PK::kGetNeighbors,
+        PK::kStart,
+    };
+    ASSERT_TRUE(checkResult(cmd, expected));
+  }
+  {
+    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst";
+    std::vector<PlanNode::Kind> expected = {
+        PK::kDeleteVertices,
         PK::kDedup,
         PK::kProject,
         PK::kGetNeighbors,
@@ -91,7 +111,7 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
   }
   // pipe wrong input
   {
-    auto cmd = "GO FROM \"C\" OVER E YIELD E._dst as dst | DELETE VERTEX $-.a";
+    auto cmd = "GO FROM \"C\" OVER E YIELD E._dst as dst | DELETE VERTEX $-.a WITH EDGE";
     ASSERT_FALSE(checkResult(cmd));
   }
 }

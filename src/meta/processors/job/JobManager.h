@@ -14,15 +14,17 @@
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
+#include "common/stats/StatsManager.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobStatus.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
 
 namespace nebula {
 namespace meta {
+extern stats::CounterId kNumRunningJobs;
 
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
@@ -44,6 +46,7 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
+  friend struct JobCallBack;
 
  public:
   ~JobManager();
@@ -138,23 +141,25 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
 
   nebula::cpp2::ErrorCode saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
 
+  void compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired);
+
  private:
   // Todo(pandasheep)
   // When folly is upgraded, PriorityUMPSCQueueSet can be used
   // Use two queues to simulate priority queue, Divide by job cmd
   std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> lowPriorityQueue_;
   std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> highPriorityQueue_;
+  std::map<JobID, std::unique_ptr<JobExecutor>> runningJobs_;
 
   // The job in running or queue
   folly::ConcurrentHashMap<JobID, JobDescription> inFlightJobs_;
   std::thread bgThread_;
-  std::mutex statusGuard_;
-  JbmgrStatus status_{JbmgrStatus::NOT_START};
   nebula::kvstore::KVStore* kvStore_{nullptr};
   AdminClient* adminClient_{nullptr};
 
   std::mutex muReportFinish_;
   std::mutex muJobFinished_;
+  std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
 };
 
 }  // namespace meta

@@ -21,28 +21,28 @@
     storage::cpp2::AdminExecResp resp;                       \
     storage::cpp2::ResponseCommon result;                    \
     std::vector<storage::cpp2::PartitionResult> partRetCode; \
-    result.set_failed_parts(partRetCode);                    \
-    resp.set_result(result);                                 \
+    result.failed_parts_ref() = partRetCode;                 \
+    resp.result_ref() = result;                              \
     pro.setValue(std::move(resp));                           \
     return f;                                                \
   } while (false)
 
-#define RETURN_LEADER_CHANGED(req, leader)                         \
-  UNUSED(req);                                                     \
-  do {                                                             \
-    folly::Promise<storage::cpp2::AdminExecResp> pro;              \
-    auto f = pro.getFuture();                                      \
-    storage::cpp2::AdminExecResp resp;                             \
-    storage::cpp2::ResponseCommon result;                          \
-    std::vector<storage::cpp2::PartitionResult> partRetCode;       \
-    storage::cpp2::PartitionResult thriftRet;                      \
-    thriftRet.set_code(nebula::cpp2::ErrorCode::E_LEADER_CHANGED); \
-    thriftRet.set_leader(leader);                                  \
-    partRetCode.emplace_back(std::move(thriftRet));                \
-    result.set_failed_parts(partRetCode);                          \
-    resp.set_result(result);                                       \
-    pro.setValue(std::move(resp));                                 \
-    return f;                                                      \
+#define RETURN_LEADER_CHANGED(req, leader)                            \
+  UNUSED(req);                                                        \
+  do {                                                                \
+    folly::Promise<storage::cpp2::AdminExecResp> pro;                 \
+    auto f = pro.getFuture();                                         \
+    storage::cpp2::AdminExecResp resp;                                \
+    storage::cpp2::ResponseCommon result;                             \
+    std::vector<storage::cpp2::PartitionResult> partRetCode;          \
+    storage::cpp2::PartitionResult thriftRet;                         \
+    thriftRet.code_ref() = nebula::cpp2::ErrorCode::E_LEADER_CHANGED; \
+    thriftRet.leader_ref() = leader;                                  \
+    partRetCode.emplace_back(std::move(thriftRet));                   \
+    result.failed_parts_ref() = partRetCode;                          \
+    resp.result_ref() = result;                                       \
+    pro.setValue(std::move(resp));                                    \
+    return f;                                                         \
   } while (false)
 
 DECLARE_int32(max_retry_times_admin_op);
@@ -91,11 +91,11 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::CreateCPResp resp;
     storage::cpp2::ResponseCommon result;
     std::vector<storage::cpp2::PartitionResult> partRetCode;
-    result.set_failed_parts(partRetCode);
-    resp.set_result(result);
+    result.failed_parts_ref() = partRetCode;
+    resp.result_ref() = result;
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.set_path("snapshot_path");
-    resp.set_info({cpInfo});
+    cpInfo.path_ref() = "snapshot_path";
+    resp.info_ref() = {cpInfo};
     pro.setValue(std::move(resp));
     return f;
   }
@@ -308,6 +308,7 @@ TEST(AdminClientTest, SnapshotTest) {
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
   HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
+  TestUtils::createSomeHosts(kv.get(), {storageHost});
   ActiveHostsMan::updateHostInfo(
       kv.get(), storageHost, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
   auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
@@ -317,24 +318,28 @@ TEST(AdminClientTest, SnapshotTest) {
   auto client = std::make_unique<AdminClient>(kv.get());
   {
     LOG(INFO) << "Test Blocking Writes On...";
+    std::set<GraphSpaceID> ids{1};
     auto status =
-        client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON, storageHost).get();
+        client->blockingWrites(ids, storage::cpp2::EngineSignType::BLOCK_ON, storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Create Snapshot...";
-    auto status = client->createSnapshot(1, "test_snapshot", storageHost).get();
+    std::set<GraphSpaceID> ids{1};
+    auto status = client->createSnapshot(ids, "test_snapshot", storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Drop Snapshot...";
-    auto status = client->dropSnapshot(1, "test_snapshot", storageHost).get();
+    std::set<GraphSpaceID> ids{1};
+    auto status = client->dropSnapshot(ids, "test_snapshot", storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Blocking Writes Off...";
+    std::set<GraphSpaceID> ids{1};
     auto status =
-        client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF, storageHost).get();
+        client->blockingWrites(ids, storage::cpp2::EngineSignType::BLOCK_OFF, storageHost).get();
     ASSERT_TRUE(status.ok());
   }
 }

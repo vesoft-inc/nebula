@@ -112,7 +112,7 @@ struct SpaceDesc {
     4: binary                   charset_name,
     5: binary                   collate_name,
     6: ColumnTypeDef            vid_type = {"type": common.PropertyType.FIXED_STRING, "type_length": 8},
-    7: optional binary          group_name,
+    7: list<binary>             zone_names,
     8: optional IsolationLevel  isolation_level,
     9: optional binary          comment,
 }
@@ -141,13 +141,19 @@ struct EdgeItem {
     4: Schema           schema,
 }
 
+struct IndexParams {
+    1: optional i32     s2_max_level,
+    2: optional i32     s2_max_cells,
+}
+
 struct IndexItem {
-    1: common.IndexID      index_id,
-    2: binary              index_name,
-    3: common.SchemaID     schema_id
-    4: binary              schema_name,
-    5: list<ColumnDef>     fields,
-    6: optional binary     comment,
+    1: common.IndexID       index_id,
+    2: binary               index_name,
+    3: common.SchemaID      schema_id
+    4: binary               schema_name,
+    5: list<ColumnDef>      fields,
+    6: optional binary      comment,
+    7: optional IndexParams index_params,
 }
 
 enum HostStatus {
@@ -203,6 +209,16 @@ struct ExecResp {
     3: common.HostAddr  leader,
 }
 
+enum AlterSpaceOp {
+    ADD_ZONE    = 0x01,
+} (cpp.enum_strict)
+
+struct AlterSpaceReq {
+    1: binary           space_name,
+    2: AlterSpaceOp     op,
+    3: list<binary>     paras,
+}
+
 // Job related data structures
 enum AdminJobOp {
     ADD         = 0x01,
@@ -229,6 +245,7 @@ enum AdminCmd {
     DOWNLOAD                 = 7,
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
+    ZONE_BALANCE             = 10,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -432,12 +449,21 @@ struct ListEdgesResp {
     3: list<EdgeItem>   edges,
 }
 
+struct AddHostsReq {
+    1: list<common.HostAddr> hosts,
+}
+
+struct DropHostsReq {
+    1: list<common.HostAddr> hosts,
+}
+
 enum ListHostType {
     // nebula 1.0 show hosts, show leader, partition info
     ALLOC       = 0x00,
     GRAPH       = 0x01,
     META        = 0x02,
     STORAGE     = 0x03,
+    AGENT       = 0x04,
 } (cpp.enum_strict)
 
 struct ListHostsReq {
@@ -479,6 +505,17 @@ struct GetPartsAllocResp {
     2: common.HostAddr  leader,
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
     4: optional map<common.PartitionID, i64>(cpp.template = "std::unordered_map") terms,
+}
+
+// get workerid for snowflake
+struct GetWorkerIdReq {
+    1: binary host, 
+}
+
+struct GetWorkerIdResp {
+    1: common.ErrorCode code,
+    2: common.HostAddr  leader,
+    3: i64              workerid,
 }
 
 struct MultiPutReq {
@@ -546,7 +583,8 @@ enum HostRole {
     META        = 0x01,
     STORAGE     = 0x02,
     LISTENER    = 0x03,
-    UNKNOWN     = 0x04
+    AGENT       = 0x04,
+    UNKNOWN     = 0x05
 } (cpp.enum_strict)
 
 struct LeaderInfo {
@@ -559,17 +597,40 @@ struct PartitionList {
 }
 
 struct HBReq {
-    1: HostRole   role,
-    2: common.HostAddr host,
-    3: ClusterID cluster_id,
+    1: HostRole                 role,
+    2: common.HostAddr          host,
+    3: ClusterID                cluster_id,
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
-    5: binary     git_info_sha,
-    // version of binary
-    6: optional binary version,
-    7: optional map<common.GraphSpaceID, map<binary, PartitionList>
+    5: binary                   git_info_sha,
+    6: optional map<common.GraphSpaceID, map<binary, PartitionList>
         (cpp.template = "std::unordered_map")>
         (cpp.template = "std::unordered_map") disk_parts;
+    7: optional common.DirInfo  dir,
+    // version of binary
+    8: optional binary          version,
+}
+
+// service(agent/metad/storaged/graphd) info
+struct ServiceInfo {
+    1: common.DirInfo    dir,
+    2: common.HostAddr   addr,
+    3: HostRole          role,
+}
+
+struct AgentHBReq {
+    1: common.HostAddr host,
+    2: binary          git_info_sha,
+    // version of binary
+    3: optional binary version,
+}
+
+struct AgentHBResp {
+    1: common.ErrorCode   code,
+    2: common.HostAddr    leader,
+    // metad/graphd/storaged may in the same host
+    // do not include agent it self
+    3: list<ServiceInfo>   service_list,
 }
 
 struct IndexFieldDef {
@@ -585,6 +646,7 @@ struct CreateTagIndexReq {
     4: list<IndexFieldDef>  fields,
     5: bool                 if_not_exists,
     6: optional binary      comment,
+    7: optional IndexParams index_params,
 }
 
 struct DropTagIndexReq {
@@ -621,6 +683,7 @@ struct CreateEdgeIndexReq {
     4: list<IndexFieldDef>	fields,
     5: bool                	if_not_exists,
     6: optional binary      comment,
+    7: optional IndexParams index_params,
 }
 
 struct DropEdgeIndexReq {
@@ -817,23 +880,29 @@ struct ListIndexStatusResp {
 }
 
 // Zone related interface
-struct AddZoneReq {
-    1: binary                 zone_name,
-    2: list<common.HostAddr>  nodes,
+struct MergeZoneReq {
+    1: list<binary>      zones,
+    2: binary            zone_name,
 }
 
 struct DropZoneReq {
     1: binary                 zone_name,
 }
 
-struct AddHostIntoZoneReq {
-    1: common.HostAddr  node,
-    2: binary           zone_name,
+struct DivideZoneReq {
+    1: binary                                                                   zone_name,
+    2: map<binary, list<common.HostAddr>> (cpp.template = "std::unordered_map") zone_items,
 }
 
-struct DropHostFromZoneReq {
-    1: common.HostAddr  node,
-    2: binary           zone_name,
+struct RenameZoneReq {
+    1: binary            original_zone_name,
+    2: binary            zone_name,
+}
+
+struct AddHostsIntoZoneReq {
+    1: list<common.HostAddr>  hosts,
+    2: binary                 zone_name,
+    3: bool                   is_new,
 }
 
 struct GetZoneReq {
@@ -904,25 +973,26 @@ struct GetStatsResp {
     3: StatsItem        stats,
 }
 
-struct BackupInfo {
-    1: common.HostAddr host,
-    2: list<common.CheckpointInfo> info,
+struct HostBackupInfo {
+    1: common.HostAddr             host,
+    // each for one data path
+    2: list<common.CheckpointInfo> checkpoints,
 }
 
 struct SpaceBackupInfo {
-    1: SpaceDesc           space,
-    2: list<BackupInfo>    info,
+    1: SpaceDesc             space,
+    2: list<HostBackupInfo>  host_backups,
 }
 
 struct BackupMeta {
     // space_name => SpaceBackupInfo
-    1: map<common.GraphSpaceID, SpaceBackupInfo> (cpp.template = "std::unordered_map")  backup_info,
+    1: map<common.GraphSpaceID, SpaceBackupInfo>(cpp.template = "std::unordered_map")  space_backups,
     // sst file
     2: list<binary>                               meta_files,
     // backup
     3: binary                                     backup_name,
     4: bool                                       full,
-    5: bool                                       include_system_space,
+    5: bool                                       all_spaces,
     6: i64                                        create_time,
 }
 
@@ -947,32 +1017,35 @@ struct RestoreMetaReq {
     2: list<HostPair>   hosts,
 }
 
-enum FTServiceType {
+enum ExternalServiceType {
     ELASTICSEARCH = 0x01,
 } (cpp.enum_strict)
 
-struct FTClient {
+struct ServiceClient {
     1: required common.HostAddr    host,
     2: optional binary             user,
     3: optional binary             pwd,
     4: optional binary             conn_type,
 }
 
-struct SignInFTServiceReq {
-    1: FTServiceType                type,
-    2: list<FTClient>               clients,
+struct SignInServiceReq {
+    1: ExternalServiceType type,
+    2: list<ServiceClient> clients,
 }
 
-struct SignOutFTServiceReq {
+struct SignOutServiceReq {
+    1: ExternalServiceType type,
 }
 
-struct ListFTClientsReq {
+struct ListServiceClientsReq {
+    1: ExternalServiceType type,
 }
 
-struct ListFTClientsResp {
+struct ListServiceClientsResp {
     1: common.ErrorCode    code,
     2: common.HostAddr     leader,
-    3: list<FTClient>      clients,
+    3: map<ExternalServiceType, list<ServiceClient>>
+    (cpp.template = "std::unordered_map") clients,
 }
 
 struct FTIndex {
@@ -1087,10 +1160,9 @@ struct ReportTaskReq {
 }
 
 struct ListClusterInfoResp {
-    1: common.ErrorCode         code,
-    2: common.HostAddr          leader,
-    3: list<common.HostAddr>    meta_servers,
-    4: list<common.NodeInfo>    storage_servers,
+    1: common.ErrorCode  code,
+    2: common.HostAddr   leader,
+    3: map<string, list<ServiceInfo>>(cpp.template = "std::unordered_map") host_services,
 }
 
 struct ListClusterInfoReq {
@@ -1112,7 +1184,9 @@ struct VerifyClientVersionResp {
 
 
 struct VerifyClientVersionReq {
-    1: required binary version = common.version;
+    1: required binary client_version = common.version;
+    2: common.HostAddr host;
+    3: binary build_version;
 }
 
 service MetaService {
@@ -1120,6 +1194,7 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+    ExecResp alterSpace(1: AlterSpaceReq req);
 
     ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 
@@ -1135,10 +1210,15 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ListHostsResp listHosts(1: ListHostsReq req);
+    ExecResp       addHosts(1: AddHostsReq req);
+    ExecResp       addHostsIntoZone(1: AddHostsIntoZoneReq req);
+    ExecResp       dropHosts(1: DropHostsReq req);
+    ListHostsResp  listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
     ListPartsResp listParts(1: ListPartsReq req);
+
+    GetWorkerIdResp getWorkerId(1: GetWorkerIdReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);
@@ -1171,6 +1251,7 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
+    AgentHBResp  agentHeartbeat(1: AgentHBReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);
@@ -1183,23 +1264,21 @@ service MetaService {
 
     AdminJobResp runAdminJob(1: AdminJobReq req);
 
-    ExecResp       addZone(1: AddZoneReq req);
+    ExecResp       mergeZone(1: MergeZoneReq req);
     ExecResp       dropZone(1: DropZoneReq req);
-    ExecResp       addHostIntoZone(1: AddHostIntoZoneReq req);
-    ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
+    ExecResp       divideZone(1: DivideZoneReq req);
+    ExecResp       renameZone(1: RenameZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
 
-    CreateBackupResp createBackup(1: CreateBackupReq req);
-    ExecResp       restoreMeta(1: RestoreMetaReq req);
     ExecResp       addListener(1: AddListenerReq req);
     ExecResp       removeListener(1: RemoveListenerReq req);
     ListListenerResp listListener(1: ListListenerReq req);
 
     GetStatsResp  getStats(1: GetStatsReq req);
-    ExecResp signInFTService(1: SignInFTServiceReq req);
-    ExecResp signOutFTService(1: SignOutFTServiceReq req);
-    ListFTClientsResp listFTClients(1: ListFTClientsReq req);
+    ExecResp signInService(1: SignInServiceReq req);
+    ExecResp signOutService(1: SignOutServiceReq req);
+    ListServiceClientsResp listServiceClients(1: ListServiceClientsReq req);
 
     ExecResp createFTIndex(1: CreateFTIndexReq req);
     ExecResp dropFTIndex(1: DropFTIndexReq req);
@@ -1214,6 +1293,9 @@ service MetaService {
 
     ExecResp reportTaskFinish(1: ReportTaskReq req);
 
+    // Interfaces for backup and restore
+    CreateBackupResp createBackup(1: CreateBackupReq req);
+    ExecResp       restoreMeta(1: RestoreMetaReq req);
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 

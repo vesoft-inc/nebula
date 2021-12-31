@@ -132,8 +132,8 @@ class ElasticSearchBasicTest : public ::testing::Test {
 
   cpp2::AddVerticesRequest mockVerticesReq(int32_t parts, int64_t begin, int64_t end) {
     nebula::storage::cpp2::AddVerticesRequest req;
-    req.set_space_id(1);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = 1;
+    req.if_not_exists_ref() = true;
 
     auto vertices = mockVertices(begin, end);
 
@@ -142,14 +142,14 @@ class ElasticSearchBasicTest : public ::testing::Test {
       nebula::storage::cpp2::NewTag newTag;
       auto partId = std::hash<std::string>()(vertex.vId_) % parts + 1;
 
-      newTag.set_tag_id(tagId_);
-      newTag.set_props(std::move(vertex.props_));
+      newTag.tag_id_ref() = tagId_;
+      newTag.props_ref() = std::move(vertex.props_);
 
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
 
-      newVertex.set_id(vertex.vId_);
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = vertex.vId_;
+      newVertex.tags_ref() = std::move(newTags);
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     return req;
@@ -167,8 +167,8 @@ class ElasticSearchBasicTest : public ::testing::Test {
 
 TEST_F(ElasticSearchBasicTest, SimpleTest) {
   FLAGS_heartbeat_interval_secs = 1;
-  meta::cpp2::FTClient ftClient;
-  ftClient.set_host(HostAddr("127.0.0.1", esPort_));
+  meta::cpp2::ServiceClient ftClient;
+  ftClient.host_ref() = HostAddr("127.0.0.1", esPort_);
   const nebula::ClusterID kClusterId = 10;
   mock::MockCluster cluster;
   cluster.startMeta(folly::stringPrintf("%s/meta", rootPath_->path()));
@@ -189,13 +189,13 @@ TEST_F(ElasticSearchBasicTest, SimpleTest) {
     auto* mClient = cluster.metaClient_.get();
     std::vector<meta::cpp2::ColumnDef> columns;
     columns.emplace_back();
-    columns.back().set_name("col1");
-    columns.back().type.set_type(PropertyType::STRING);
+    columns.back().name_ref() = "col1";
+    columns.back().type.type_ref() = PropertyType::STRING;
     columns.emplace_back();
-    columns.back().set_name("col2");
-    columns.back().type.set_type(PropertyType::STRING);
+    columns.back().name_ref() = "col2";
+    columns.back().type.type_ref() = PropertyType::STRING;
     meta::cpp2::Schema schema;
-    schema.set_columns(std::move(columns));
+    schema.columns_ref() = std::move(columns);
     ret = mClient->createTagSchema(spaceId_, "tag1", schema).get();
     ASSERT_TRUE(ret.ok());
     tagId_ = std::move(ret).value();

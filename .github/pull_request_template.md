@@ -1,27 +1,42 @@
+<!--
+Thanks for your contributing!
+In order to review PR more efficiently, please add information according to the template.
+-->
+
 #### What type of PR is this?
 - [ ] bug
 - [ ] feature
 - [ ] enhancement
 
-#### What does this PR do?
+#### What problem does this PR slove?
+Issue(s) number: 
+
+Description:
 
 
-#### Which issue(s)/PR(s) this PR relates to?
+#### How do you slove it?
+
 
   
-#### Special notes for your reviewer, ex. impact of this fix, etc:
+#### Special notes for your reviewer, ex. impact of this fix, design document, etc:
 
 
-#### Additional context:
 
+#### Checklist:
+Tests:
+- [ ] Unit test(positive and negative cases)
+- [ ] Function test
+- [ ] Perfomance test
+- [ ] N/A
 
-#### Checklist：
-- [ ] Documentation affected （Please add the label if documentation needs to be modified.)
-- [ ] Incompatible （If it is incompatible, please describe it and add corresponding label.）
-- [ ] Need to cherry-pick （If need to cherry-pick to some branches, please label the destination version(s).)
+Affects:
+- [ ] Documentation affected (Please add the label if documentation needs to be modified.)
+- [ ] Incompatibility (If it breaks the compatibility, please describe it and add the label.）
+- [ ] If it's needed to cherry-pick (If cherry-pick to some branches is required, please label the destination version(s).)
 - [ ] Performance impacted: Consumes more CPU/Memory
 
 
-#### Release notes：
-Please confirm whether to reflect in release notes and how to describe:
->                                                                 `
+#### Release notes:
+
+Please confirm whether to be reflected in release notes and how to describe:
+> ex. Fixed the bug .....

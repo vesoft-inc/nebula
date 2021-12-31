@@ -39,8 +39,29 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
   keys.emplace_back(MetaKeyUtils::indexKey(spaceID, edgeIndexID));
 
+  auto indexItemRet = doGet(keys.back());
+  if (!nebula::ok(indexItemRet)) {
+    auto retCode = nebula::error(indexItemRet);
+    if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    LOG(ERROR) << "Drop Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
+  if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
+    LOG(ERROR) << "Drop Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    onFinished();
+    return;
+  }
+
   LOG(INFO) << "Drop Edge Index " << indexName;
-  resp_.set_id(to(edgeIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(edgeIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

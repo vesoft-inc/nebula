@@ -10,6 +10,7 @@
 #include "common/base/ObjectPool.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
+#include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
 
@@ -20,6 +21,7 @@ bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
   auto kind = expr->kind();
 
   return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
+                                              Expression::Kind::kLabelTagProperty,
                                               Expression::Kind::kEdgeProperty,
                                               Expression::Kind::kInputProperty,
                                               Expression::Kind::kVarProperty,
@@ -63,10 +65,11 @@ std::vector<const Expression *> ExpressionUtils::collectAll(
   return std::move(visitor).results();
 }
 
-bool ExpressionUtils::checkVarExprIfExist(const Expression *expr) {
+bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryContext *qctx) {
   auto vars = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
   for (auto *var : vars) {
-    if (!static_cast<const VariableExpression *>(var)->isInner()) {
+    auto *varExpr = static_cast<const VariableExpression *>(var);
+    if (!varExpr->isInner() && !qctx->existParameter(varExpr->var())) {
       return true;
     }
   }
@@ -76,6 +79,7 @@ bool ExpressionUtils::checkVarExprIfExist(const Expression *expr) {
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
+                     Expression::Kind::kLabelTagProperty,
                      Expression::Kind::kEdgeProperty,
                      Expression::Kind::kDstProperty,
                      Expression::Kind::kSrcProperty,
@@ -98,6 +102,7 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kVar,
                   Expression::Kind::kVersionedVar,
                   Expression::Kind::kLabelAttribute,
+                  Expression::Kind::kLabelTagProperty,
                   Expression::Kind::kTagProperty,
                   Expression::Kind::kEdgeProperty,
                   Expression::Kind::kDstProperty,
@@ -110,10 +115,42 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kEdge});
 }
 
-bool ExpressionUtils::isEvaluableExpr(const Expression *expr) {
-  EvaluableExprVisitor visitor;
+bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext *qctx) {
+  EvaluableExprVisitor visitor(qctx);
   const_cast<Expression *>(expr)->accept(&visitor);
   return visitor.ok();
+}
+
+// rewrite Attribute to LabelTagProp
+Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
+  ObjectPool *pool = expr->getObjPool();
+
+  auto matcher = [](const Expression *e) -> bool {
+    if (e->kind() == Expression::Kind::kAttribute) {
+      auto attrExpr = static_cast<const AttributeExpression *>(e);
+      if (attrExpr->left()->kind() == Expression::Kind::kLabelAttribute &&
+          attrExpr->right()->kind() == Expression::Kind::kConstant) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    auto attrExpr = static_cast<const AttributeExpression *>(e);
+    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(attrExpr->left());
+    auto labelExpr = const_cast<LabelExpression *>(labelAttrExpr->left());
+    auto tagExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
+    auto propExpr = static_cast<const LabelExpression *>(attrExpr->right());
+    QueryExpressionContext ctx(nullptr);
+    const auto &labelVal = labelExpr->eval(ctx);
+    auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
+    const auto &tag = tagExpr->eval(ctx);
+    const auto &prop = const_cast<LabelExpression *>(propExpr)->eval(ctx);
+    return LabelTagPropertyExpression::make(pool, label, tag.getStr(), prop.getStr());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 // rewrite LabelAttr to EdgeProp
@@ -123,7 +160,6 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
   auto rewriter = [pool](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
@@ -140,13 +176,27 @@ Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string
     return e->kind() == Expression::Kind::kVarProperty;
   };
   auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
     auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
     auto newProp = varPropExpr->prop();
     return VariablePropertyExpression::make(pool, newVar, newProp);
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
+// rewrite parameter to Constant
+Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryContext *qctx) {
+  auto matcher = [qctx](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVar &&
+           qctx->existParameter(static_cast<const VariableExpression *>(e)->var());
+  };
+  auto rewriter = [qctx](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kVar);
+    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+    return ConstantExpression::make(qctx->objPool(), v);
+  };
+
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
 // rewrite LabelAttr to tagProp
@@ -156,7 +206,6 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
   auto rewriter = [pool](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
@@ -406,8 +455,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     return nullptr;
   };
 
-  std::function<Expression *(const Expression *)> rewriter =
-      [&](const Expression *e) -> Expression * {
+  auto rewriter = [&](const Expression *e) -> Expression * {
     auto exprCopy = e->clone();
     auto relExpr = static_cast<RelationalExpression *>(exprCopy);
     auto lExpr = relExpr->left();
@@ -437,6 +485,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
         e->kind() == Expression::Kind::kDivision)
       return false;
     auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+
     return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
            ExpressionUtils::isEvaluableExpr(arithExpr->right());
   };

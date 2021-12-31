@@ -35,7 +35,7 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_items(std::move(items));
+  resp_.items_ref() = std::move(items);
   onFinished();
 }
 

@@ -49,6 +49,21 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        agent_hb_processor_test
+    SOURCES
+        AgentHBProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         meta_client_test
     SOURCES
         MetaClientTest.cpp
@@ -197,21 +212,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        group_zone_test
-    SOURCES
-        GroupZoneTest.cpp
-    OBJECTS
-        ${meta_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         create_backup_test
     SOURCES
         CreateBackupProcessorTest.cpp
@@ -245,6 +245,21 @@ nebula_add_test(
         list_meta_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        verify_client_version_test
+    SOURCES
+        VerifyClientVersionTest.cpp
     OBJECTS
         ${meta_test_deps}
     LIBRARIES

@@ -8,7 +8,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE id(v) == 'Paul Gasol'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       """
     Then the result should be, in any order:
       | Name         | Age |
@@ -17,7 +17,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -31,7 +31,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE NOT NOT id(v) == 'Paul Gasol'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       """
     Then the result should be, in any order:
       | Name         | Age |
@@ -40,7 +40,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE NOT NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -54,7 +54,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name |
@@ -62,7 +62,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name         |
@@ -73,7 +73,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') OR id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -86,7 +86,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') OR id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -101,7 +101,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) == 'Paul Gasol'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name         |
@@ -110,7 +110,7 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) != 'Paul Gasol'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name |
@@ -119,7 +119,7 @@ Feature: Match seek by id
       MATCH (v)
       WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
             OR false
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -132,8 +132,8 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
-            AND (id(v) == 'James Harden' OR v.age == 23)
-      RETURN v.name AS Name
+            AND (id(v) == 'James Harden' OR v.player.age == 23)
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name           |
@@ -141,8 +141,8 @@ Feature: Match seek by id
     When executing query:
       """
       MATCH (v:player)
-      WHERE id(v) IN ['James Harden', v.age]
-      RETURN v.name AS Name
+      WHERE id(v) IN ['James Harden', v.player.age]
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name           |
@@ -155,9 +155,9 @@ Feature: Match seek by id
       WHERE ((NOT NOT id(v) == 'Paul Gasol')
             OR id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray'])
             AND id(v) != 'Paul Gasol'
-            AND v.name != 'Jonathon Simmons'
-            AND v.age == 29
-      RETURN v.name AS Name
+            AND v.player.name != 'Jonathon Simmons'
+            AND v.player.age == 29
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name              |
@@ -167,8 +167,8 @@ Feature: Match seek by id
     When executing query:
       """
       MATCH (v)
-      WHERE (id(v) == "Tim Duncan" AND v.age>10) OR (id(v) == "Tony Parker" AND v.age>10)
-      RETURN v.name AS Name
+      WHERE (id(v) == "Tim Duncan" AND v.player.age>10) OR (id(v) == "Tony Parker" AND v.player.age>10)
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name          |
@@ -180,7 +180,7 @@ Feature: Match seek by id
       """
       MATCH (v)-[:serve]->(t)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) == 'Paul Gasol'
-      RETURN v.name AS Name, t.name AS Team
+      RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
       | Name         | Team        |
@@ -195,7 +195,7 @@ Feature: Match seek by id
       """
       MATCH (v)-[:serve]->(t)
       WHERE (NOT NOT id(v) == 'Paul Gasol') AND id(v) == 'Paul Gasol' AND id(t) IN ['Grizzlies', 'Lakers']
-      RETURN v.name AS Name, t.name AS Team
+      RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
       | Name         | Team        |
@@ -205,7 +205,7 @@ Feature: Match seek by id
       """
       MATCH (v)-[:serve]->(t)
       WHERE ((NOT NOT id(v) == 'Paul Gasol') AND id(v) == 'Paul Gasol') OR id(t) IN ['Grizzlies', 'Lakers']
-      RETURN v.name AS Name, t.name AS Team
+      RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
       | Name         | Team        |
@@ -220,60 +220,81 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE NOT id(v) == 'Paul Gasol'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
       WHERE NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-            OR v.age == 23
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) == 'James Harden'
-            OR v.age == 23
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
       WHERE id(x) == 'James Harden'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `x'
     When executing query:
       """
       MATCH (v)
       WHERE (id(v) + '') == 'James Harden'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
       MATCH (v)
-      WHERE id(v) IN ['James Harden', v.name]
-      RETURN v.name AS Name
+      WHERE id(v) IN ['James Harden', v.player.name]
+      RETURN v.player.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
+  @skip
+  Scenario: test OR logic (reason = "or logic optimization error")
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name                 |
+      | 'James Harden'       |
+      | 'Jonathon Simmons'   |
+      | 'Klay Thompson'      |
+      | 'Dejounte Murray'    |
+      | 'Kristaps Porzingis' |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) == 'James Harden'
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name                 |
+      | 'James Harden'       |
+      | 'Kristaps Porzingis' |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) == 'James Harden'
+            OR v.player.age != 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name |
 
   Scenario: Start from end
     When executing query:
       """
       MATCH (v)-[:serve]->(t)
       WHERE id(t) == 'Pistons'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name            |

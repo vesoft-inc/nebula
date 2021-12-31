@@ -39,7 +39,7 @@ TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID space
                                                               GraphSpaceID partId,
                                                               bool checkWhiteList) {
   if (checkWhiteList) {
-    if (whiteListParts_.find(std::make_pair(spaceId, partId)) == whiteListParts_.end()) {
+    if (scannedParts_.find(std::make_pair(spaceId, partId)) == scannedParts_.end()) {
       return nullptr;
     }
   }
@@ -52,16 +52,27 @@ TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID space
   return item.first->second.get();
 }
 
-StatusOr<TermID> TransactionManager::getTerm(GraphSpaceID spaceId, PartitionID partId) {
-  return env_->metaClient_->getTermFromCache(spaceId, partId);
+std::pair<TermID, Code> TransactionManager::getTerm(GraphSpaceID spaceId, PartitionID partId) {
+  TermID termId = -1;
+  auto rc = Code::SUCCEEDED;
+  auto part = env_->kvstore_->part(spaceId, partId);
+  if (nebula::ok(part)) {
+    termId = nebula::value(part)->termId();
+  } else {
+    rc = nebula::error(part);
+  }
+  return std::make_pair(termId, rc);
 }
 
-bool TransactionManager::checkTerm(GraphSpaceID spaceId, PartitionID partId, TermID term) {
+bool TransactionManager::checkTermFromCache(GraphSpaceID spaceId,
+                                            PartitionID partId,
+                                            TermID termId) {
   auto termOfMeta = env_->metaClient_->getTermFromCache(spaceId, partId);
   if (termOfMeta.ok()) {
-    if (term < termOfMeta.value()) {
+    if (termId < termOfMeta.value()) {
       LOG(WARNING) << "checkTerm() failed: "
-                   << "spaceId=" << spaceId << ", partId=" << partId << ", in-coming term=" << term
+                   << "spaceId=" << spaceId << ", partId=" << partId
+                   << ", in-coming term=" << termId
                    << ", term in meta cache=" << termOfMeta.value();
       return false;
     }
@@ -69,12 +80,12 @@ bool TransactionManager::checkTerm(GraphSpaceID spaceId, PartitionID partId, Ter
   auto partUUID = std::make_pair(spaceId, partId);
   auto it = cachedTerms_.find(partUUID);
   if (it != cachedTerms_.cend()) {
-    if (term < it->second) {
+    if (termId < it->second) {
       LOG(WARNING) << "term < it->second";
       return false;
     }
   }
-  cachedTerms_.assign(partUUID, term);
+  cachedTerms_.assign(partUUID, termId);
   return true;
 }
 
@@ -98,6 +109,7 @@ bool TransactionManager::start() {
 }
 
 void TransactionManager::stop() {
+  exec_->stop();
   resumeThread_->stop();
   resumeThread_->wait();
 }
@@ -114,23 +126,21 @@ std::string TransactionManager::getEdgeKey(const std::string& lockKey) {
 }
 
 void TransactionManager::addPrime(GraphSpaceID spaceId, const std::string& edge, ResumeType type) {
-  LOG_IF(INFO, FLAGS_trace_toss) << "addPrime() space=" << spaceId
-                                 << ", hex=" << folly::hexlify(edge)
-                                 << ", ResumeType=" << static_cast<int>(type);
+  VLOG(1) << "addPrime() space=" << spaceId << ", hex=" << folly::hexlify(edge)
+          << ", ResumeType=" << static_cast<int>(type);
   auto key = makeLockKey(spaceId, edge);
-  reserveTable_.insert(std::make_pair(key, type));
+  dangleEdges_.insert(std::make_pair(key, type));
 }
 
 void TransactionManager::delPrime(GraphSpaceID spaceId, const std::string& edge) {
-  LOG_IF(INFO, FLAGS_trace_toss) << "delPrime() space=" << spaceId
-                                 << ", hex=" << folly::hexlify(edge);
+  VLOG(1) << "delPrime() space=" << spaceId << ", hex=" << folly::hexlify(edge) << ", readable "
+          << ConsistUtil::readableKey(8, edge);
   auto key = makeLockKey(spaceId, edge);
-  reserveTable_.erase(key);
+  dangleEdges_.erase(key);
 
   auto partId = NebulaKeyUtils::getPart(edge);
   auto* lk = getLockCore(spaceId, partId, false);
-  auto lockKey = makeLockKey(spaceId, edge);
-  lk->unlock(lockKey);
+  lk->unlock(edge);
 }
 
 void TransactionManager::scanAll() {
@@ -147,6 +157,7 @@ void TransactionManager::scanAll() {
       scanPrimes(spaceId, partId);
     }
   }
+  LOG(INFO) << "finish scanAll()";
 }
 
 void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
@@ -164,7 +175,8 @@ void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::Call
                               opt.spaceId,
                               opt.partId,
                               opt.term);
-  whiteListParts_.erase(std::make_pair(opt.spaceId, opt.partId));
+  scannedParts_.erase(std::make_pair(opt.spaceId, opt.partId));
+  dangleEdges_.clear();
 }
 
 void TransactionManager::onLeaderElectedWrapper(
@@ -182,9 +194,10 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (; iter->valid(); iter->next()) {
       auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key());
-      VLOG(1) << "scanned edgekey: " << folly::hexlify(edgeKey);
+      VLOG(1) << "scanned edgekey: " << folly::hexlify(edgeKey)
+              << ", readable: " << ConsistUtil::readableKey(8, edgeKey.str());
       auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      auto insSucceed = reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
+      auto insSucceed = dangleEdges_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
       if (!insSucceed.second) {
         LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
       }
@@ -200,13 +213,14 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
       return;
     }
   }
+
   prefix = ConsistUtil::doublePrimePrefix(partId);
   rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (; iter->valid(); iter->next()) {
       auto edgeKey = ConsistUtil::edgeKeyFromDoublePrime(iter->key());
       auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      auto insSucceed = reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_REMOTE));
+      auto insSucceed = dangleEdges_.insert(std::make_pair(lockKey, ResumeType::RESUME_REMOTE));
       if (!insSucceed.second) {
         LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
       }
@@ -223,13 +237,13 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
     }
   }
   auto partOfSpace = std::make_pair(spaceId, partId);
-  auto insRet = whiteListParts_.insert(std::make_pair(partOfSpace, 0));
+  auto insRet = scannedParts_.insert(std::make_pair(partOfSpace, 0));
   LOG(INFO) << "insert space=" << spaceId << ", part=" << partId
-            << ", into white list suc=" << insRet.second;
+            << ", into white list suc=" << std::boolalpha << insRet.second;
 }
 
-folly::ConcurrentHashMap<std::string, ResumeType>* TransactionManager::getReserveTable() {
-  return &reserveTable_;
+folly::ConcurrentHashMap<std::string, ResumeType>* TransactionManager::getDangleEdges() {
+  return &dangleEdges_;
 }
 
 }  // namespace storage

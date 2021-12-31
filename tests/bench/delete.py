@@ -48,7 +48,7 @@ class TestDeleteBench(NebulaTestSuite):
                     for col in row.columns:
                         if col.getType() == ttypes.ColumnValue.ID:
                             id = col.get_id()
-                            resp = self.execute('DELETE VERTEX {0}'.format(id))
+                            resp = self.execute('DELETE VERTEX {0} WITH EDGE'.format(id))
                             self.check_resp_succeeded(resp)
 
             resp = self.execute('lookup on person where person.age == {0} '.format(i))

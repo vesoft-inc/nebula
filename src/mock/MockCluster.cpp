@@ -57,14 +57,15 @@ std::unique_ptr<kvstore::MemPartManager> MockCluster::memPartMan(
 }
 
 // static
-std::string MockCluster::localIP() { return "127.0.0.1"; }
+std::string MockCluster::localIP() {
+  return "127.0.0.1";
+}
 
 // static
 std::unique_ptr<kvstore::NebulaStore> MockCluster::initKV(kvstore::KVOptions options,
                                                           HostAddr localHost) {
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-  auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      1, true /*stats*/);
+  auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   workers->setNamePrefix("executor");
   workers->start();
   if (localHost.host == 0) {
@@ -102,8 +103,7 @@ void MockCluster::startMeta(const std::string& rootPath, HostAddr addr) {
 }
 
 std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> MockCluster::getWorkers() {
-  auto worker =
-      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1, true);
+  auto worker = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   worker->setNamePrefix("executor");
   worker->start();
   return worker;
@@ -134,7 +134,7 @@ void MockCluster::initStorageKV(const char* dataPath,
                                 SchemaVer schemaVerCount,
                                 bool hasProp,
                                 bool hasListener,
-                                const std::vector<meta::cpp2::FTClient>& clients,
+                                const std::vector<meta::cpp2::ServiceClient>& clients,
                                 bool needCffBuilder) {
   FLAGS_heartbeat_interval_secs = 1;
   const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
@@ -143,15 +143,15 @@ void MockCluster::initStorageKV(const char* dataPath,
   if (metaClient_ != nullptr) {
     LOG(INFO) << "Pull meta information from meta server";
     nebula::meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("test_space");
-    spaceDesc.set_partition_num(6);
-    spaceDesc.set_replica_factor(1);
-    spaceDesc.set_charset_name("utf8");
-    spaceDesc.set_collate_name("utf8_bin");
+    spaceDesc.space_name_ref() = "test_space";
+    spaceDesc.partition_num_ref() = 6;
+    spaceDesc.replica_factor_ref() = 1;
+    spaceDesc.charset_name_ref() = "utf8";
+    spaceDesc.collate_name_ref() = "utf8_bin";
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
-    type.set_type_length(32);
-    spaceDesc.set_vid_type(std::move(type));
+    type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+    type.type_length_ref() = 32;
+    spaceDesc.vid_type_ref() = std::move(type);
     auto ret = metaClient_->createSpace(spaceDesc).get();
     if (!ret.ok()) {
       LOG(FATAL) << "can't create space";
@@ -169,7 +169,8 @@ void MockCluster::initStorageKV(const char* dataPath,
       if (clients.empty()) {
         LOG(FATAL) << "full text client list is empty";
       }
-      ret = metaClient_->signInFTService(meta::cpp2::FTServiceType::ELASTICSEARCH, clients).get();
+      ret =
+          metaClient_->signInService(meta::cpp2::ExternalServiceType::ELASTICSEARCH, clients).get();
       if (!ret.ok()) {
         LOG(FATAL) << "full text client sign in failed";
       }

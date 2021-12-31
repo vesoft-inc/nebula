@@ -9,6 +9,7 @@
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;
@@ -38,11 +39,12 @@ StatusOr<OptRule::TransformResult> PushStepLimitDownGetNeighborsRule::transform(
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
-
-  if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
-      graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
-    int64_t limitRows = limit->offset() + limit->count();
-    int64_t gnLimit = gn->limit();
+  auto *qctx = octx->qctx();
+  if (gn->limitExpr() != nullptr &&
+      graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr(), qctx) &&
+      graph::ExpressionUtils::isEvaluableExpr(limit->countExpr(), qctx)) {
+    int64_t limitRows = limit->offset() + limit->count(qctx);
+    int64_t gnLimit = gn->limit(qctx);
     if (gnLimit >= 0 && limitRows >= gnLimit) {
       return TransformResult::noTransform();
     }

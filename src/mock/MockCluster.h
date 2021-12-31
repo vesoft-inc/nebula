@@ -41,9 +41,7 @@ class MockCluster {
 
   void startMeta(const std::string& rootPath, HostAddr addr = HostAddr("127.0.0.1", 0));
 
-  void startStorage(HostAddr addr,
-                    const std::string& rootPath,
-                    SchemaVer schemaVerCount = 1);
+  void startStorage(HostAddr addr, const std::string& rootPath, SchemaVer schemaVerCount = 1);
 
   /**
    * Init a meta client connect to current meta server.
@@ -81,7 +79,7 @@ class MockCluster {
                      SchemaVer schemaVerCount = 1,
                      bool hasProp = true,
                      bool hasListener = false,
-                     const std::vector<meta::cpp2::FTClient>& clients = {},
+                     const std::vector<meta::cpp2::ServiceClient>& clients = {},
                      bool needCffBuilder = false);
 
   std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers();
@@ -90,7 +88,9 @@ class MockCluster {
 
   static std::string localIP();
 
-  int32_t getTotalParts() { return totalParts_; }
+  int32_t getTotalParts() {
+    return totalParts_;
+  }
 
   void stop() {
     if (metaClient_) {

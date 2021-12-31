@@ -15,6 +15,7 @@ nebula_add_library(
     processors/parts/ListSpacesProcessor.cpp
     processors/parts/DropSpaceProcessor.cpp
     processors/parts/GetPartsAllocProcessor.cpp
+    processors/parts/AlterSpaceProcessor.cpp
     processors/schema/CreateTagProcessor.cpp
     processors/schema/AlterTagProcessor.cpp
     processors/schema/GetTagProcessor.cpp
@@ -26,6 +27,7 @@ nebula_add_library(
     processors/schema/ListEdgesProcessor.cpp
     processors/schema/DropEdgeProcessor.cpp
     processors/schema/SchemaUtil.cpp
+    processors/id/GetWorkerIdProcessor.cpp
     processors/index/CreateTagIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
@@ -34,7 +36,7 @@ nebula_add_library(
     processors/index/DropEdgeIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
-    processors/index/FTServiceProcessor.cpp
+    processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
     processors/kv/GetProcessor.cpp
     processors/kv/MultiGetProcessor.cpp
@@ -43,6 +45,7 @@ nebula_add_library(
     processors/kv/RemoveRangeProcessor.cpp
     processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/admin/AgentHBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
@@ -67,11 +70,16 @@ nebula_add_library(
     processors/job/AdminJobProcessor.cpp
     processors/job/ReportTaskProcessor.cpp
     processors/job/JobUtils.cpp
+    processors/job/StorageJobExecutor.cpp
+    processors/job/JobExecutor.cpp
     processors/job/MetaJobExecutor.cpp
     processors/job/SimpleConcurrentJobExecutor.cpp
     processors/job/CompactJobExecutor.cpp
     processors/job/FlushJobExecutor.cpp
     processors/job/BalanceJobExecutor.cpp
+    processors/job/ZoneBalanceJobExecutor.cpp
+    processors/job/DataBalanceJobExecutor.cpp
+    processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
@@ -80,11 +88,15 @@ nebula_add_library(
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
-    processors/zone/AddZoneProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
     processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/DivideZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
-    processors/zone/UpdateZoneProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -150,13 +162,20 @@ set(meta_test_deps
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
 )
 
 nebula_add_subdirectory(http)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)
+nebula_add_subdirectory(stats)

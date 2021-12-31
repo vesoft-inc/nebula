@@ -21,7 +21,8 @@
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainDeleteEdgesGroupProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -41,7 +42,7 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
       LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
     }
     using TM = apache::thrift::concurrency::PriorityThreadManager;
-    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers);
     pool->setNamePrefix("reader-pool");
     pool->start();
     readerPool_ = std::move(pool);
@@ -112,7 +113,7 @@ folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_updateEdg
 
 folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_chainUpdateEdge(
     const cpp2::UpdateEdgeRequest& req) {
-  auto* proc = ChainUpdateEdgeProcessorLocal::instance(env_);
+  auto* proc = ChainUpdateEdgeLocalProcessor::instance(env_);
   RETURN_FUTURE(proc);
 }
 
@@ -135,13 +136,13 @@ folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupIn
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanVertexResponse> GraphStorageServiceHandler::future_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanVertex(
     const cpp2::ScanVertexRequest& req) {
   auto* processor = ScanVertexProcessor::instance(env_, &kScanVertexCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanEdgeResponse> GraphStorageServiceHandler::future_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
     const cpp2::ScanEdgeRequest& req) {
   auto* processor = ScanEdgeProcessor::instance(env_, &kScanEdgeCounters, readerPool_.get());
   RETURN_FUTURE(processor);
@@ -157,6 +158,12 @@ folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
 folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainAddEdges(
     const cpp2::AddEdgesRequest& req) {
   auto* processor = ChainAddEdgesGroupProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainDeleteEdges(
+    const cpp2::DeleteEdgesRequest& req) {
+  auto* processor = ChainDeleteEdgesGroupProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
