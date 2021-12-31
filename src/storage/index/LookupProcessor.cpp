@@ -17,6 +17,7 @@
 #include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexProjectionNode.h"
 #include "storage/exec/IndexSelectionNode.h"
+#include "storage/exec/IndexTopNNode.h"
 #include "storage/exec/IndexVertexScanNode.h"
 namespace nebula {
 namespace storage {
@@ -127,9 +128,15 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
   }
   if (req.limit_ref().has_value()) {
     auto limit = *req.get_limit();
-    auto node = std::make_unique<IndexLimitNode>(context_.get(), limit);
-    node->addChild(std::move(nodes[0]));
-    nodes[0] = std::move(node);
+    if (req.order_by_ref().has_value() && req.get_order_by()->size() > 0) {
+      auto node = std::make_unique<IndexTopNNode>(context_.get(), limit, req.get_order_by());
+      node->addChild(std::move(nodes[0]));
+      nodes[0] = std::move(node);
+    } else {
+      auto node = std::make_unique<IndexLimitNode>(context_.get(), limit);
+      node->addChild(std::move(nodes[0]));
+      nodes[0] = std::move(node);
+    }
   }
   return std::move(nodes[0]);
 }
