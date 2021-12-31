@@ -21,7 +21,9 @@ namespace opt {
 std::unique_ptr<OptRule> EliminateRowCollectRule::kInstance =
     std::unique_ptr<EliminateRowCollectRule>(new EliminateRowCollectRule());
 
-EliminateRowCollectRule::EliminateRowCollectRule() { RuleSet::QueryRules().addRule(this); }
+EliminateRowCollectRule::EliminateRowCollectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 // TODO match DataCollect->(Any Node with real result)
 const Pattern& EliminateRowCollectRule::pattern() const {
@@ -63,7 +65,9 @@ StatusOr<OptRule::TransformResult> EliminateRowCollectRule::transform(
   return result;
 }
 
-std::string EliminateRowCollectRule::toString() const { return "EliminateRowCollectRule"; }
+std::string EliminateRowCollectRule::toString() const {
+  return "EliminateRowCollectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula
