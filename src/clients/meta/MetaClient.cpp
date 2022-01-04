@@ -2421,13 +2421,10 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     return Status::Error("User not exist");
   }
 
-  folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+  auto lockedSince = userLoginLockTime_[account];
+  auto passwordAttemtRemain = userPasswordAttemptsRemain_[account];
 
-  auto& lockedSince = userLoginLockTime_[account];
-  auto& passwordAttemtRemain = userPasswordAttemptsRemain_[account];
-  LOG(INFO) << "Thread id: " << std::this_thread::get_id()
-            << " ,passwordAttemtRemain: " << passwordAttemtRemain;
-  // lockedSince is non-zero means the account has been locked
+  // If lockedSince is non-zero, it means the account has been locked
   if (lockedSince != 0) {
     auto remainingLockTime =
         (lockedSince + FLAGS_password_lock_time_in_secs) - time::WallClock::fastNowInSec();
@@ -2441,8 +2438,9 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
           remainingLockTime);
     }
     // Clear lock state and reset attempts
-    lockedSince = 0;
-    passwordAttemtRemain = FLAGS_failed_login_attempts;
+    userLoginLockTime_.assign_if_equal(account, lockedSince, 0);
+    userPasswordAttemptsRemain_.assign_if_equal(
+        account, passwordAttemtRemain, FLAGS_failed_login_attempts);
   }
 
   if (iter->second != password) {
@@ -2453,12 +2451,14 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
 
     // If the password is not correct and passwordAttemtRemain > 0,
     // Allow another attemp
+    passwordAttemtRemain = userPasswordAttemptsRemain_[account];
     if (passwordAttemtRemain > 0) {
-      --passwordAttemtRemain;
-      if (passwordAttemtRemain == 0) {
+      auto newAttemtRemain = passwordAttemtRemain - 1;
+      userPasswordAttemptsRemain_.assign_if_equal(account, passwordAttemtRemain, newAttemtRemain);
+      if (newAttemtRemain == 0) {
         // If the remaining attemps is 0, failed to authenticate
         // Block user login
-        lockedSince = time::WallClock::fastNowInSec();
+        userLoginLockTime_.assign_if_equal(account, 0, time::WallClock::fastNowInSec());
         return Status::Error(
             "%d times consecutive incorrect passwords has been input, user name: %s has been "
             "locked, try again in %d seconds",
@@ -2466,14 +2466,14 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
             account.c_str(),
             FLAGS_password_lock_time_in_secs);
       }
-      LOG(ERROR) << "Invalid password, remaining attempts: " << passwordAttemtRemain;
-      return Status::Error("Invalid password, remaining attempts: %d", passwordAttemtRemain);
+      LOG(ERROR) << "Invalid password, remaining attempts: " << newAttemtRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", newAttemtRemain);
     }
   }
 
-  // Reset password attempts
-  passwordAttemtRemain = FLAGS_failed_login_attempts;
-  lockedSince = 0;
+  // Authentication succeed, reset password attempts
+  userPasswordAttemptsRemain_.assign(account, FLAGS_failed_login_attempts);
+  userLoginLockTime_.assign(account, 0);
   return Status::OK();
 }
 
