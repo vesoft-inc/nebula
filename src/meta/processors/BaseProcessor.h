@@ -125,7 +125,7 @@ class BaseProcessor {
   void doPut(std::vector<kvstore::KV> data);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>> doPrefix(
-      const std::string& key);
+      const std::string& key, bool canReadFromFollower = false);
 
   /**
    * General get function.

@@ -21,7 +21,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
     {"versions", {"__versions__", false}},
-    {"machines", {"__machines__", false}},
+    {"machines", {"__machines__", true}},
     {"host_dirs", {"__host_dirs__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},

@@ -1630,6 +1630,27 @@ TEST(Value, Ctor) {
   // Value v2(&tmp);
 }
 
+TEST(Value, ToString) {
+  {
+    Duration d;
+    d.addYears(1);
+    d.addMonths(2);
+    d.addDays(500);
+    d.addSeconds(10);
+    d.addMicroseconds(20);
+    EXPECT_EQ(d.toString(), "P14MT43200010.000020000S");
+  }
+  {
+    Duration d;
+    d.addYears(1);
+    d.addMonths(2);
+    d.addDays(500);
+    d.addSeconds(10);
+    d.addMicroseconds(20000000);
+    EXPECT_EQ(d.toString(), "P14MT43200030.000000000S");
+  }
+}
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {
