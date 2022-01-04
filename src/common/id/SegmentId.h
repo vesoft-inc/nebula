@@ -34,11 +34,12 @@ class SegmentId {
     runner_ = runner;
   }
 
-  int64_t getId();
+  StatusOr<int64_t> getId();
 
  private:
   explicit SegmentId(int64_t step) : step_(step) {
-    segmentStart_ = fetchSegment();
+    auto xRet = fetchSegment();
+    segmentStart_ = xRet.value();
     cur_ = segmentStart_ - 1;
   }
   // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
@@ -46,7 +47,7 @@ class SegmentId {
   // after getSegmentId(), adding che here.
   void asyncFetchSegment();
 
-  int64_t fetchSegment();
+  StatusOr<int64_t> fetchSegment();
 
   std::mutex mutex_;
 

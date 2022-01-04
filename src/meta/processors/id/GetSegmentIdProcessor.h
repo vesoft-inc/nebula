@@ -33,7 +33,7 @@ class GetSegmentIdProcessor : public BaseProcessor<cpp2::GetSegmentIdResp> {
 
   void doPut(std::vector<kvstore::KV> data);
 
-  inline static const string kIdKey = "segment_cur_id";
+  inline static const string kIdKey = "segment_id";
 };
 
 }  // namespace meta

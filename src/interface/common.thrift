@@ -470,8 +470,8 @@ enum ErrorCode {
     E_WRITE_WRITE_CONFLICT            = -3073,
 
     E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
-    // get worker id
-    E_WORKER_ID_FAILED                = -3062,
+    // get id failed
+    E_ID_FAILED                = -3062,
 
     // 35xx for storaged raft
     E_RAFT_UNKNOWN_PART               = -3500,

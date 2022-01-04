@@ -17,6 +17,7 @@ void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& re
   auto curIdResult = doGet(kIdKey);
   if (!nebula::ok(curIdResult)) {
     LOG(ERROR) << "Get step or current id failed during get segment id";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
     resp_.segment_id_ref() = -1;
     onFinished();
   }

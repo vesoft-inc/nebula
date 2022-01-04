@@ -12,7 +12,7 @@
 
 namespace nebula {
 
-int64_t SegmentId::getId() {
+StatusOr<int64_t> SegmentId::getId() {
   std::lock_guard<std::mutex> guard(mutex_);
 
   if (cur_ < segmentStart_ + step_ - 1) {
@@ -23,7 +23,9 @@ int64_t SegmentId::getId() {
     if (segmentStart_ >= nextSegmentStart_) {
       // indicate asyncFetchSegment failed
       LOG(ERROR) << "segmentId asyncFetchSegment failed";
-      nextSegmentStart_ = fetchSegment();
+      auto xRet = fetchSegment();
+      NG_RETURN_IF_ERROR(xRet);
+      nextSegmentStart_ = xRet.value();
     }
     segmentStart_ = nextSegmentStart_;
     cur_ = segmentStart_;
@@ -44,7 +46,7 @@ void SegmentId::asyncFetchSegment() {
   });
 }
 
-int64_t SegmentId::fetchSegment() {
+StatusOr<int64_t> SegmentId::fetchSegment() {
   auto result = client_->getSegmentId(step_).get();
   if (result.ok()) {
     return result.value();

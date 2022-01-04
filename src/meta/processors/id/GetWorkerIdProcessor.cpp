@@ -23,7 +23,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
 
   auto newResult = doGet(kIdKey);
   if (!nebula::ok(newResult)) {
-    handleErrorCode(nebula::cpp2::ErrorCode::E_WORKER_ID_FAILED);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
     onFinished();
     return;
   }
