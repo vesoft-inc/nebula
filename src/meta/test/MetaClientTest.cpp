@@ -52,11 +52,11 @@ TEST(MetaClientTest, InterfacesTest) {
     // Test createSpace, listSpaces, getPartsAlloc.
     {
       meta::cpp2::SpaceDesc spaceDesc;
-      spaceDesc.set_space_name("default_space");
-      spaceDesc.set_partition_num(8);
-      spaceDesc.set_replica_factor(3);
-      spaceDesc.set_charset_name("utf8");
-      spaceDesc.set_collate_name("utf8_bin");
+      spaceDesc.space_name_ref() = "default_space";
+      spaceDesc.partition_num_ref() = 8;
+      spaceDesc.replica_factor_ref() = 3;
+      spaceDesc.charset_name_ref() = "utf8";
+      spaceDesc.collate_name_ref() = "utf8_bin";
       auto ret = client->createSpace(spaceDesc).get();
       ASSERT_TRUE(ret.ok()) << ret.status();
       spaceId = ret.value();
@@ -66,9 +66,9 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
       meta::cpp2::SpaceDesc spaceDesc;
-      spaceDesc.set_space_name("default_space");
-      spaceDesc.set_partition_num(8);
-      spaceDesc.set_replica_factor(3);
+      spaceDesc.space_name_ref() = "default_space";
+      spaceDesc.partition_num_ref() = 8;
+      spaceDesc.replica_factor_ref() = 3;
       auto ret = client->createSpace(spaceDesc).get();
       ASSERT_FALSE(ret.ok());
     }
@@ -103,7 +103,7 @@ TEST(MetaClientTest, InterfacesTest) {
       for (auto i = 0; i < 5; i++) {
         cpp2::ColumnDef column;
         column.name = "tagItem" + std::to_string(i);
-        column.type.set_type(PropertyType::STRING);
+        column.type.type_ref() = PropertyType::STRING;
         (*schema.columns_ref()).emplace_back(std::move(column));
       }
       auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
@@ -118,9 +118,9 @@ TEST(MetaClientTest, InterfacesTest) {
       for (auto i = 0; i < 5; i++) {
         cpp2::ColumnDef column;
         column.name = "tagItem" + std::to_string(i);
-        column.type.set_type(PropertyType::STRING);
+        column.type.type_ref() = PropertyType::STRING;
         const auto& defaultValue = *ConstantExpression::make(metaPool, std::to_string(i));
-        column.set_default_value(Expression::encode(defaultValue));
+        column.default_value_ref() = Expression::encode(defaultValue);
         (*schema.columns_ref()).emplace_back(std::move(column));
       }
       auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
@@ -131,11 +131,11 @@ TEST(MetaClientTest, InterfacesTest) {
       cpp2::Schema schema;
       cpp2::ColumnDef column;
       column.name = "tagItem";
-      column.type.set_type(PropertyType::STRING);
-      column.set_nullable(true);
+      column.type.type_ref() = PropertyType::STRING;
+      column.nullable_ref() = true;
       const auto& defaultValue = *ArithmeticExpression::makeDivision(
           metaPool, ConstantExpression::make(metaPool, 1), ConstantExpression::make(metaPool, 0));
-      column.set_default_value(Expression::encode(defaultValue));
+      column.default_value_ref() = Expression::encode(defaultValue);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = client->createTagSchema(spaceId, "tagWithWrongDefault", schema).get();
       ASSERT_FALSE(ret.ok()) << ret.status();
@@ -146,7 +146,7 @@ TEST(MetaClientTest, InterfacesTest) {
       for (auto i = 0; i < 5; i++) {
         cpp2::ColumnDef column;
         column.name = "edgeItem" + std::to_string(i);
-        column.type.set_type(PropertyType::STRING);
+        column.type.type_ref() = PropertyType::STRING;
         (*schema.columns_ref()).emplace_back(std::move(column));
       }
       auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
@@ -160,9 +160,9 @@ TEST(MetaClientTest, InterfacesTest) {
       for (auto i = 0; i < 5; i++) {
         cpp2::ColumnDef column;
         column.name = "edgeItem" + std::to_string(i);
-        column.type.set_type(PropertyType::STRING);
+        column.type.type_ref() = PropertyType::STRING;
         const auto& defaultValue = *ConstantExpression::make(metaPool, std::to_string(i));
-        column.set_default_value(Expression::encode(defaultValue));
+        column.default_value_ref() = Expression::encode(defaultValue);
         (*schema.columns_ref()).emplace_back(std::move(column));
       }
       auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
@@ -343,6 +343,7 @@ TEST(MetaClientTest, InterfacesTest) {
     ASSERT_TRUE(ret1.ok()) << ret1.status();
     ASSERT_EQ(0, ret1.value().size());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, TagTest) {
@@ -359,9 +360,9 @@ TEST(MetaClientTest, TagTest) {
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 9;
+  spaceDesc.replica_factor_ref() = 3;
   auto ret = client->createSpace(spaceDesc).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
   GraphSpaceID spaceId = ret.value();
@@ -371,25 +372,25 @@ TEST(MetaClientTest, TagTest) {
   {
     std::vector<cpp2::ColumnDef> columns;
     columns.emplace_back();
-    columns.back().set_name("column_i");
+    columns.back().name_ref() = "column_i";
     const auto& intValue = *ConstantExpression::make(metaPool, Value(0L));
-    columns.back().set_default_value(Expression::encode(intValue));
-    columns.back().type.set_type(PropertyType::INT64);
+    columns.back().default_value_ref() = Expression::encode(intValue);
+    columns.back().type.type_ref() = PropertyType::INT64;
 
     columns.emplace_back();
     const auto& floatValue = *ConstantExpression::make(metaPool, Value(3.14));
-    columns.back().set_default_value(Expression::encode(floatValue));
-    columns.back().set_name("column_d");
-    columns.back().type.set_type(PropertyType::DOUBLE);
+    columns.back().default_value_ref() = Expression::encode(floatValue);
+    columns.back().name_ref() = "column_d";
+    columns.back().type.type_ref() = PropertyType::DOUBLE;
 
     columns.emplace_back();
     const auto& strValue = *ConstantExpression::make(metaPool, "test");
-    columns.back().set_default_value(Expression::encode(strValue));
-    columns.back().set_name("column_s");
-    columns.back().type.set_type(PropertyType::STRING);
+    columns.back().default_value_ref() = Expression::encode(strValue);
+    columns.back().name_ref() = "column_s";
+    columns.back().type.type_ref() = PropertyType::STRING;
 
     cpp2::Schema schema;
-    schema.set_columns(std::move(columns));
+    schema.columns_ref() = std::move(columns);
     auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
     ASSERT_TRUE(result.ok());
     id = result.value();
@@ -397,21 +398,21 @@ TEST(MetaClientTest, TagTest) {
   {
     std::vector<cpp2::ColumnDef> columns;
     cpp2::ColumnDef intColumn;
-    intColumn.set_name("column_i");
-    intColumn.type.set_type(PropertyType::INT64);
+    intColumn.name_ref() = "column_i";
+    intColumn.type.type_ref() = PropertyType::INT64;
     const auto& intValue = *ConstantExpression::make(metaPool, Value(0L));
-    intColumn.set_default_value(Expression::encode(intValue));
+    intColumn.default_value_ref() = Expression::encode(intValue);
     columns.emplace_back(std::move(intColumn));
 
     cpp2::ColumnDef doubleColumn;
-    doubleColumn.set_name("column_d");
-    doubleColumn.type.set_type(PropertyType::STRING);
+    doubleColumn.name_ref() = "column_d";
+    doubleColumn.type.type_ref() = PropertyType::STRING;
     const auto& floatValue = *ConstantExpression::make(metaPool, Value(3.14));
-    doubleColumn.set_default_value(Expression::encode(floatValue));
+    doubleColumn.default_value_ref() = Expression::encode(floatValue);
     columns.emplace_back(std::move(doubleColumn));
 
     cpp2::Schema schema;
-    schema.set_columns(columns);
+    schema.columns_ref() = columns;
 
     auto result = client->createTagSchema(spaceId, "test_tag_type_mismatch", schema).get();
     ASSERT_FALSE(result.ok());
@@ -453,20 +454,20 @@ TEST(MetaClientTest, TagTest) {
   auto genSchema = [](Value value, PropertyType type, bool isFunction = false) -> auto {
     std::vector<cpp2::ColumnDef> columns;
     columns.emplace_back();
-    columns.back().set_name("colName");
+    columns.back().name_ref() = "colName";
     auto valueExpr = ConstantExpression::make(metaPool, std::move(value));
     if (isFunction) {
       ArgumentList* argList = ArgumentList::make(metaPool);
       argList->addArgument(valueExpr);
       auto fExpr = FunctionCallExpression::make(metaPool, "timestamp", argList);
-      columns.back().set_default_value(Expression::encode(*fExpr));
+      columns.back().default_value_ref() = Expression::encode(*fExpr);
     } else {
-      columns.back().set_default_value(Expression::encode(*valueExpr));
+      columns.back().default_value_ref() = Expression::encode(*valueExpr);
     }
-    columns.back().type.set_type(type);
+    columns.back().type.type_ref() = type;
 
     cpp2::Schema schema;
-    schema.set_columns(std::move(columns));
+    schema.columns_ref() = std::move(columns);
     return schema;
   };
   // Test wrong format timestamp in default value
@@ -578,6 +579,7 @@ TEST(MetaClientTest, TagTest) {
     auto result = client->createTagSchema(spaceId, "test_tag_min_int32", std::move(schema)).get();
     ASSERT_TRUE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, EdgeTest) {
@@ -594,9 +596,9 @@ TEST(MetaClientTest, EdgeTest) {
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default_space");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default_space";
+  spaceDesc.partition_num_ref() = 9;
+  spaceDesc.replica_factor_ref() = 3;
   auto ret = client->createSpace(spaceDesc).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
   GraphSpaceID space = ret.value();
@@ -607,49 +609,49 @@ TEST(MetaClientTest, EdgeTest) {
     std::vector<cpp2::ColumnDef> columns;
 
     cpp2::ColumnDef intColumn;
-    intColumn.set_name("column_i");
-    intColumn.type.set_type(PropertyType::INT64);
+    intColumn.name_ref() = "column_i";
+    intColumn.type.type_ref() = PropertyType::INT64;
     const auto& intValue = *ConstantExpression::make(metaPool, Value(0L));
-    intColumn.set_default_value(Expression::encode(intValue));
+    intColumn.default_value_ref() = Expression::encode(intValue);
     columns.emplace_back(std::move(intColumn));
 
     cpp2::ColumnDef doubleColumn;
-    doubleColumn.set_name("column_d");
-    doubleColumn.type.set_type(PropertyType::DOUBLE);
+    doubleColumn.name_ref() = "column_d";
+    doubleColumn.type.type_ref() = PropertyType::DOUBLE;
     const auto& floatValue = *ConstantExpression::make(metaPool, Value(3.14));
-    doubleColumn.set_default_value(Expression::encode(floatValue));
+    doubleColumn.default_value_ref() = Expression::encode(floatValue);
     columns.emplace_back(std::move(doubleColumn));
 
     cpp2::ColumnDef stringColumn;
-    stringColumn.set_name("column_s");
-    stringColumn.type.set_type(PropertyType::STRING);
+    stringColumn.name_ref() = "column_s";
+    stringColumn.type.type_ref() = PropertyType::STRING;
     const auto& strValue = *ConstantExpression::make(metaPool, "test");
-    stringColumn.set_default_value(Expression::encode(strValue));
+    stringColumn.default_value_ref() = Expression::encode(strValue);
     columns.emplace_back(std::move(stringColumn));
     expectedColumns = columns;
 
     cpp2::Schema schema;
-    schema.set_columns(std::move(columns));
+    schema.columns_ref() = std::move(columns);
     auto result = client->createEdgeSchema(space, "test_edge", schema).get();
     ASSERT_TRUE(result.ok());
   }
   {
     std::vector<cpp2::ColumnDef> columns;
     cpp2::ColumnDef intColumn;
-    intColumn.set_name("column_i");
-    intColumn.type.set_type(PropertyType::INT64);
+    intColumn.name_ref() = "column_i";
+    intColumn.type.type_ref() = PropertyType::INT64;
     const auto& intValue = *ConstantExpression::make(metaPool, Value(0L));
-    intColumn.set_default_value(Expression::encode(intValue));
+    intColumn.default_value_ref() = Expression::encode(intValue);
     columns.emplace_back(std::move(intColumn));
 
     cpp2::ColumnDef doubleColumn;
-    doubleColumn.set_name("column_d");
-    doubleColumn.type.set_type(PropertyType::STRING);
+    doubleColumn.name_ref() = "column_d";
+    doubleColumn.type.type_ref() = PropertyType::STRING;
     const auto& floatValue = *ConstantExpression::make(metaPool, Value(3.14));
-    doubleColumn.set_default_value(Expression::encode(floatValue));
+    doubleColumn.default_value_ref() = Expression::encode(floatValue);
     columns.emplace_back(std::move(doubleColumn));
     cpp2::Schema schema;
-    schema.set_columns(columns);
+    schema.columns_ref() = columns;
 
     auto result = client->createEdgeSchema(space, "test_edge_type_mismatch", schema).get();
     ASSERT_FALSE(result.ok());
@@ -664,7 +666,7 @@ TEST(MetaClientTest, EdgeTest) {
     version = edges[0].get_version();
 
     cpp2::Schema expected;
-    expected.set_columns(std::move(expectedColumns));
+    expected.columns_ref() = std::move(expectedColumns);
     cpp2::Schema resultSchema = edges[0].get_schema();
     ASSERT_TRUE(TestUtils::verifySchema(resultSchema, expected));
   }
@@ -687,6 +689,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto result = client->getEdgeSchema(space, "test_edge", version).get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, TagIndexTest) {
@@ -704,9 +707,9 @@ TEST(MetaClientTest, TagIndexTest) {
   }
 
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default_space");
-  spaceDesc.set_partition_num(8);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default_space";
+  spaceDesc.partition_num_ref() = 8;
+  spaceDesc.replica_factor_ref() = 3;
   auto ret = client->createSpace(spaceDesc).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
   GraphSpaceID space = ret.value();
@@ -716,25 +719,25 @@ TEST(MetaClientTest, TagIndexTest) {
     for (auto i = 0; i < 2; i++) {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef column0;
-      column0.set_name(folly::stringPrintf("tag_%d_col_0", i));
-      column0.type.set_type(PropertyType::INT64);
+      column0.name_ref() = folly::stringPrintf("tag_%d_col_0", i);
+      column0.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(column0));
 
       cpp2::ColumnDef column1;
-      column1.set_name(folly::stringPrintf("tag_%d_col_1", i));
-      column1.type.set_type(PropertyType::FIXED_STRING);
-      column1.type.set_type_length(50);
+      column1.name_ref() = folly::stringPrintf("tag_%d_col_1", i);
+      column1.type.type_ref() = PropertyType::FIXED_STRING;
+      column1.type.type_length_ref() = 50;
       columns.emplace_back(std::move(column1));
 
       cpp2::Schema schema;
-      schema.set_columns(std::move(columns));
+      schema.columns_ref() = std::move(columns);
       auto result = client->createTagSchema(space, folly::stringPrintf("tag_%d", i), schema).get();
       ASSERT_TRUE(result.ok());
     }
   }
   {
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
+    field.name_ref() = "tag_0_col_0";
     auto result = client->createTagIndex(space, "tag_single_field_index", "tag_0", {field}).get();
     ASSERT_TRUE(result.ok());
     singleFieldIndexID = result.value();
@@ -742,8 +745,8 @@ TEST(MetaClientTest, TagIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_1");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
     auto result =
@@ -754,8 +757,8 @@ TEST(MetaClientTest, TagIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("not_exist_field");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "not_exist_field";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
 
@@ -768,8 +771,8 @@ TEST(MetaClientTest, TagIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_1");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
 
@@ -782,8 +785,8 @@ TEST(MetaClientTest, TagIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_0");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
 
@@ -799,8 +802,8 @@ TEST(MetaClientTest, TagIndexTest) {
 
     {
       cpp2::ColumnDef singleColumn;
-      singleColumn.set_name("tag_0_col_0");
-      singleColumn.type.set_type(PropertyType::INT64);
+      singleColumn.name_ref() = "tag_0_col_0";
+      singleColumn.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
       columns.emplace_back(std::move(singleColumn));
       auto singleFieldResult = values[0].get_fields();
@@ -810,14 +813,14 @@ TEST(MetaClientTest, TagIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("tag_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "tag_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
 
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("tag_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(50);
+      stringColumn.name_ref() = "tag_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = 50;
       columns.emplace_back(std::move(stringColumn));
 
       auto multiFieldResult = values[1].get_fields();
@@ -866,6 +869,7 @@ TEST(MetaClientTest, TagIndexTest) {
     auto result = client->dropTagIndex(space, "tag_single_field_index").get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, EdgeIndexTest) {
@@ -883,9 +887,9 @@ TEST(MetaClientTest, EdgeIndexTest) {
   }
 
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default_space");
-  spaceDesc.set_partition_num(8);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default_space";
+  spaceDesc.partition_num_ref() = 8;
+  spaceDesc.replica_factor_ref() = 3;
   auto ret = client->createSpace(spaceDesc).get();
   GraphSpaceID space = ret.value();
   IndexID singleFieldIndexID;
@@ -894,18 +898,18 @@ TEST(MetaClientTest, EdgeIndexTest) {
     for (auto i = 0; i < 2; i++) {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef column0;
-      column0.set_name(folly::stringPrintf("edge_%d_col_0", i));
-      column0.type.set_type(PropertyType::INT64);
+      column0.name_ref() = folly::stringPrintf("edge_%d_col_0", i);
+      column0.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(column0));
 
       cpp2::ColumnDef column1;
-      column1.set_name(folly::stringPrintf("edge_%d_col_1", i));
-      column1.type.set_type(PropertyType::FIXED_STRING);
-      column1.type.set_type_length(50);
+      column1.name_ref() = folly::stringPrintf("edge_%d_col_1", i);
+      column1.type.type_ref() = PropertyType::FIXED_STRING;
+      column1.type.type_length_ref() = 50;
       columns.emplace_back(std::move(column1));
 
       cpp2::Schema schema;
-      schema.set_columns(std::move(columns));
+      schema.columns_ref() = std::move(columns);
       auto result =
           client->createEdgeSchema(space, folly::stringPrintf("edge_%d", i), schema).get();
       ASSERT_TRUE(result.ok());
@@ -913,7 +917,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
   }
   {
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
+    field.name_ref() = "edge_0_col_0";
     auto result =
         client->createEdgeIndex(space, "edge_single_field_index", "edge_0", {field}).get();
     ASSERT_TRUE(result.ok());
@@ -922,8 +926,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_1");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
     auto result =
@@ -934,8 +938,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_1");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
     auto result =
@@ -946,8 +950,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_0");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
     auto result =
@@ -958,8 +962,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   {
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("not_exist_field");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "not_exist_field";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
     auto result =
@@ -975,8 +979,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
 
     {
       cpp2::ColumnDef column;
-      column.set_name("edge_0_col_0");
-      column.type.set_type(PropertyType::INT64);
+      column.name_ref() = "edge_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
       columns.emplace_back(std::move(column));
 
@@ -987,13 +991,13 @@ TEST(MetaClientTest, EdgeIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("edge_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "edge_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("edge_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(50);
+      stringColumn.name_ref() = "edge_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = 50;
       columns.emplace_back(std::move(stringColumn));
       auto multiFieldResult = values[1].get_fields();
       ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
@@ -1044,6 +1048,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, FTServiceTest) {
@@ -1064,34 +1069,35 @@ TEST(MetaClientTest, FTServiceTest) {
   std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
   TestUtils::registerHB(kv, hosts);
 
-  std::vector<cpp2::FTClient> clients;
-  cpp2::FTClient c1, c2;
-  c1.set_host({"0", 0});
-  c1.set_user("u1");
-  c1.set_pwd("pwd");
+  std::vector<cpp2::ServiceClient> clients;
+  cpp2::ServiceClient c1, c2;
+  c1.host_ref() = {"0", 0};
+  c1.user_ref() = "u1";
+  c1.pwd_ref() = "pwd";
   clients.emplace_back(c1);
-  c2.set_host({"1", 1});
-  c2.set_user("u2");
+  c2.host_ref() = {"1", 1};
+  c2.user_ref() = "u2";
   clients.emplace_back(c2);
   {
-    cpp2::FTServiceType type = cpp2::FTServiceType::ELASTICSEARCH;
-    auto result = client->signInFTService(type, clients).get();
+    cpp2::ExternalServiceType type = cpp2::ExternalServiceType::ELASTICSEARCH;
+    auto result = client->signInService(type, clients).get();
     ASSERT_TRUE(result.ok());
   }
   {
-    auto result = client->listFTClients().get();
+    auto result = client->listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
-    ASSERT_EQ(clients, result.value());
+    ASSERT_EQ(clients, result.value()[cpp2::ExternalServiceType::ELASTICSEARCH]);
   }
   {
-    auto result = client->signOutFTService().get();
+    auto result = client->signOutService(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
   }
   {
-    auto result = client->listFTClients().get();
+    auto result = client->listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
     ASSERT_TRUE(result.ok());
     ASSERT_TRUE(result.value().empty());
   }
+  cluster.stop();
 }
 
 class TestListener : public MetaChangedListener {
@@ -1190,7 +1196,7 @@ TEST(MetaClientTest, DiffTest) {
   std::vector<HostAddr> hosts = {{"0", 0}};
   {
     cpp2::AddHostsReq req;
-    req.set_hosts(hosts);
+    req.hosts_ref() = hosts;
     auto* processor = AddHostsProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -1222,9 +1228,9 @@ TEST(MetaClientTest, DiffTest) {
   {
     // Test Create Space and List Spaces
     meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("default_space");
-    spaceDesc.set_partition_num(9);
-    spaceDesc.set_replica_factor(1);
+    spaceDesc.space_name_ref() = "default_space";
+    spaceDesc.partition_num_ref() = 9;
+    spaceDesc.replica_factor_ref() = 1;
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
   }
@@ -1233,9 +1239,9 @@ TEST(MetaClientTest, DiffTest) {
   ASSERT_EQ(9, listener->partNum);
   {
     meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("default_space_1");
-    spaceDesc.set_partition_num(5);
-    spaceDesc.set_replica_factor(1);
+    spaceDesc.space_name_ref() = "default_space_1";
+    spaceDesc.partition_num_ref() = 5;
+    spaceDesc.replica_factor_ref() = 1;
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
   }
@@ -1250,6 +1256,7 @@ TEST(MetaClientTest, DiffTest) {
   sleep(FLAGS_heartbeat_interval_secs + 1);
   ASSERT_EQ(1, listener->spaceNum);
   ASSERT_EQ(9, listener->partNum);
+  cluster.stop();
 }
 
 TEST(MetaClientTest, ListenerDiffTest) {
@@ -1288,14 +1295,14 @@ TEST(MetaClientTest, ListenerDiffTest) {
   {
     // create two space
     meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("listener_space");
-    spaceDesc.set_partition_num(9);
-    spaceDesc.set_replica_factor(1);
+    spaceDesc.space_name_ref() = "listener_space";
+    spaceDesc.partition_num_ref() = 9;
+    spaceDesc.replica_factor_ref() = 1;
     auto ret = console->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     auto spaceId = ret.value();
 
-    spaceDesc.set_space_name("no_listener_space");
+    spaceDesc.space_name_ref() = "no_listener_space";
     ret = console->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
 
@@ -1352,6 +1359,7 @@ TEST(MetaClientTest, ListenerDiffTest) {
     ASSERT_EQ(0, listener->listenerPartNum);
   }
   client->unRegisterListener();
+  cluster.stop();
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
@@ -1390,6 +1398,7 @@ TEST(MetaClientTest, HeartbeatTest) {
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(1, nebula::value(hostsRet).size());
   client->unRegisterListener();
+  cluster.stop();
 }
 
 class TestMetaService : public cpp2::MetaServiceSvIf {
@@ -1399,7 +1408,7 @@ class TestMetaService : public cpp2::MetaServiceSvIf {
     folly::Promise<cpp2::HBResp> pro;
     auto f = pro.getFuture();
     cpp2::HBResp resp;
-    resp.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     pro.setValue(std::move(resp));
     return f;
   }
@@ -1407,9 +1416,13 @@ class TestMetaService : public cpp2::MetaServiceSvIf {
 
 class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
  public:
-  void setLeader(HostAddr leader) { leader_ = leader; }
+  void setLeader(HostAddr leader) {
+    leader_ = leader;
+  }
 
-  void setAddr(HostAddr addr) { addr_ = addr; }
+  void setAddr(HostAddr addr) {
+    addr_ = addr;
+  }
 
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override {
     UNUSED(req);
@@ -1417,10 +1430,10 @@ class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
     auto f = pro.getFuture();
     cpp2::HBResp resp;
     if (addr_ == leader_) {
-      resp.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+      resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     } else {
-      resp.set_code(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
-      resp.set_leader(leader_);
+      resp.code_ref() = nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+      resp.leader_ref() = leader_;
     }
     pro.setValue(std::move(resp));
     return f;
@@ -1554,10 +1567,10 @@ cpp2::ConfigItem initConfigItem(cpp2::ConfigModule module,
                                 cpp2::ConfigMode mode,
                                 Value value) {
   cpp2::ConfigItem configItem;
-  configItem.set_module(module);
-  configItem.set_name(name);
-  configItem.set_mode(mode);
-  configItem.set_value(value);
+  configItem.module_ref() = module;
+  configItem.name_ref() = name;
+  configItem.mode_ref() = mode;
+  configItem.value_ref() = value;
   return configItem;
 }
 
@@ -1669,6 +1682,7 @@ TEST(MetaClientTest, Config) {
   // Just avoid memory leak error of clang asan. to waiting asynchronous thread
   // done.
   sleep(FLAGS_heartbeat_interval_secs * 5);
+  cluster.stop();
 }
 
 TEST(MetaClientTest, ListenerTest) {
@@ -1676,7 +1690,7 @@ TEST(MetaClientTest, ListenerTest) {
   fs::TempDir rootPath("/tmp/MetaClientListenerTest.XXXXXX");
 
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   uint32_t localMetaPort = cluster.metaServer_->port_;
   auto* kv = cluster.metaKV_.get();
   auto localIp = cluster.localIP();
@@ -1692,9 +1706,9 @@ TEST(MetaClientTest, ListenerTest) {
   client->waitForMetadReady();
 
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 9;
+  spaceDesc.replica_factor_ref() = 3;
   auto ret = client->createSpace(spaceDesc).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
   GraphSpaceID space = ret.value();
@@ -1713,10 +1727,10 @@ TEST(MetaClientTest, ListenerTest) {
     std::vector<cpp2::ListenerInfo> expected;
     for (size_t i = 0; i < 9; i++) {
       cpp2::ListenerInfo l;
-      l.set_type(cpp2::ListenerType::ELASTICSEARCH);
-      l.set_host(listenerHosts[i % 4]);
-      l.set_part_id(i + 1);
-      l.set_status(cpp2::HostStatus::ONLINE);
+      l.type_ref() = cpp2::ListenerType::ELASTICSEARCH;
+      l.host_ref() = listenerHosts[i % 4];
+      l.part_id_ref() = i + 1;
+      l.status_ref() = cpp2::HostStatus::ONLINE;
       expected.emplace_back(std::move(l));
     }
     ASSERT_EQ(expected, listeners);
@@ -1731,6 +1745,7 @@ TEST(MetaClientTest, ListenerTest) {
     auto listeners = listRet.value();
     ASSERT_EQ(0, listeners.size());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, VerifyClientTest) {
@@ -1765,7 +1780,9 @@ TEST(MetaClientTest, VerifyClientTest) {
     EXPECT_TRUE(status.ok());
   }
   FLAGS_enable_client_white_list = false;
+  cluster.stop();
 }
+
 TEST(MetaClientTest, HostsTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
@@ -1827,13 +1844,14 @@ TEST(MetaClientTest, HostsTest) {
     auto result = client->dropHosts(std::move(hosts)).get();
     EXPECT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/AddHostsIntoNewZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   {
@@ -1871,13 +1889,14 @@ TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
     auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
     EXPECT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, AddHostsIntoZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   {
@@ -1950,13 +1969,14 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
     auto result = client->dropHosts(std::move(hosts)).get();
     EXPECT_TRUE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, DropHostsTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/DropHostsTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
@@ -1978,11 +1998,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number same with the zone size.
     meta::cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_0");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_0";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -1990,11 +2010,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number less than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_1");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_1";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(2, ret.value());
@@ -2002,11 +2022,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_2");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(6);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_2";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 6;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_FALSE(ret.ok()) << ret.status();
   }
@@ -2042,13 +2062,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_3");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_3";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(4, ret.value());
@@ -2056,13 +2076,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number less than the zone size
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_1");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_1";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(5, ret.value());
@@ -2070,13 +2090,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_6");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(6);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_6";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 6;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_FALSE(ret.ok()) << ret.status();
   }
@@ -2133,13 +2153,14 @@ TEST(MetaClientTest, DropHostsTest) {
     ASSERT_EQ("zone_0", zones[2].get_zone_name());
     ASSERT_EQ("zone_2", zones[3].get_zone_name());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, RenameZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
@@ -2170,13 +2191,13 @@ TEST(MetaClientTest, RenameZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2223,6 +2244,460 @@ TEST(MetaClientTest, RenameZoneTest) {
     ASSERT_EQ("z_1", zones[1]);
     ASSERT_EQ("zone_2", zones[2]);
   }
+  cluster.stop();
+}
+
+TEST(MetaClientTest, MergeZoneTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/MergeZoneTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+  auto* kv = cluster.metaKV_.get();
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("default_zone_127.0.0.1_8986", zones[0].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[1].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[2].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
+  }
+  {
+    // Merge zones is empty
+    auto result = client->mergeZone({}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge only zone
+    auto result = client->mergeZone({"zone_0"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones have duplicate
+    auto result = client->mergeZone({"zone_0", "zone_0"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones not exist
+    auto result = client->mergeZone({"zone_0", "zone_not_exist"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones not exist
+    auto result = client->mergeZone({"zone_not_exist_0", "zone_not_exist_1"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    auto result = client
+                      ->mergeZone({"default_zone_127.0.0.1_8986",
+                                   "default_zone_127.0.0.1_8987",
+                                   "default_zone_127.0.0.1_8988"},
+                                  "zone_1")
+                      .get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->mergeZone({"default_zone_127.0.0.1_8989", "zone_1"}, "zone_1").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("zone_1", zones[0].get_zone_name());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(kv, {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}});
+  // Merge zone with space test
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.zone_names_ref() = std::move(zones);
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(1, ret.value());
+  }
+  {
+    // zone size should be greater than part size
+    auto result =
+        client->mergeZone({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"}, "zone")
+            .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropSpace("default_space").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.zone_names_ref() = std::move(zones);
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(2, ret.value());
+  }
+  {
+    auto result =
+        client->mergeZone({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"}, "z_1")
+            .get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->mergeZone({"default_zone_127.0.0.1_8978", "z_1"}, "z_1").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->getSpace("default_space").get();
+    auto properties = result.value().get_properties();
+    ASSERT_EQ("default_space", properties.get_space_name());
+    ASSERT_EQ(9, properties.get_partition_num());
+    ASSERT_EQ(1, properties.get_replica_factor());
+    ASSERT_EQ("utf8", properties.get_charset_name());
+    ASSERT_EQ("utf8_bin", properties.get_collate_name());
+    auto zones = properties.get_zone_names();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("z_1", zones[0]);
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(2, zones.size());
+    ASSERT_EQ("z_1", zones[0].get_zone_name());
+    ASSERT_EQ("zone_1", zones[1].get_zone_name());
+  }
+  cluster.stop();
+}
+
+TEST(MetaClientTest, DivideZoneTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/DivideZoneTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+  auto* kv = cluster.metaKV_.get();
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "default_zone", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("default_zone", zones[0].get_zone_name());
+  }
+  {
+    // Split zone which not exist
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("zone_not_exist", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone with empty hosts
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone with empty hosts
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone and the sum is not all
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone and the hosts is more than the total
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> hosts0 = {};
+    zoneItems.emplace("zone_0", std::move(hosts0));
+    std::vector<HostAddr> hosts1 = {};
+    zoneItems.emplace("zone_1", std::move(hosts1));
+    std::vector<HostAddr> hosts2 = {};
+    zoneItems.emplace("zone_2", std::move(hosts2));
+    std::vector<HostAddr> hosts3 = {};
+    zoneItems.emplace("zone_3", std::move(hosts3));
+    std::vector<HostAddr> hosts4 = {};
+    zoneItems.emplace("zone_4", std::move(hosts4));
+    std::vector<HostAddr> hosts5 = {};
+    zoneItems.emplace("zone_5", std::move(hosts5));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone successfully
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(2, zones.size());
+    ASSERT_EQ("another_zone", zones[0].get_zone_name());
+    ASSERT_EQ("one_zone", zones[1].get_zone_name());
+  }
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "default_zone", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(3, zones.size());
+    ASSERT_EQ("another_zone", zones[0].get_zone_name());
+    ASSERT_EQ("default_zone", zones[1].get_zone_name());
+    ASSERT_EQ("one_zone", zones[2].get_zone_name());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(1, ret.value());
+  }
+  {
+    auto ret = client->getSpace("default_space").get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    auto spaceDesc = ret.value().get_properties();
+    ASSERT_EQ("default_space", spaceDesc.get_space_name());
+    ASSERT_EQ(9, spaceDesc.get_partition_num());
+    ASSERT_EQ(3, spaceDesc.get_replica_factor());
+    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
+    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
+    auto zones = spaceDesc.get_zone_names();
+    ASSERT_EQ(3, zones.size());
+    ASSERT_EQ("another_zone", zones[0]);
+    ASSERT_EQ("default_zone", zones[1]);
+    ASSERT_EQ("one_zone", zones[2]);
+  }
+  {
+    // Zone name conflict
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Zone name conflict
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("another_zone", zones[0].get_zone_name());
+    ASSERT_EQ("another_zone_1", zones[1].get_zone_name());
+    ASSERT_EQ("one_zone", zones[2].get_zone_name());
+    ASSERT_EQ("one_zone_1", zones[3].get_zone_name());
+  }
+  {
+    auto ret = client->getSpace("default_space").get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    auto spaceDesc = ret.value().get_properties();
+    ASSERT_EQ("default_space", spaceDesc.get_space_name());
+    ASSERT_EQ(9, spaceDesc.get_partition_num());
+    ASSERT_EQ(3, spaceDesc.get_replica_factor());
+    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
+    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
+    auto zones = spaceDesc.get_zone_names();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("another_zone", zones[0]);
+    ASSERT_EQ("one_zone", zones[1]);
+    ASSERT_EQ("one_zone_1", zones[2]);
+    ASSERT_EQ("another_zone_1", zones[3]);
+  }
+  cluster.stop();
+}
+
+TEST(MetaClientTest, DropZoneTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/DropZoneTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+  auto* kv = cluster.metaKV_.get();
+  {
+    // Add single host
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_2", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_3", true).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("zone_0", zones[0].get_zone_name());
+    ASSERT_EQ("zone_1", zones[1].get_zone_name());
+    ASSERT_EQ("zone_2", zones[2].get_zone_name());
+    ASSERT_EQ("zone_3", zones[3].get_zone_name());
+  }
+  {
+    auto result = client->dropZone("zone_not_exist").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropZone("zone_0").get();
+    ASSERT_TRUE(result.ok());
+  }
+  {
+    auto result = client->dropZone("zone_0").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(1, ret.value());
+  }
+  {
+    auto result = client->dropZone("zone_1").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropSpace("default_space").get();
+    ASSERT_TRUE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(2, ret.value());
+  }
+  {
+    auto result = client->dropZone("zone_1").get();
+    ASSERT_FALSE(result.ok());
+  }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, RocksdbOptionsTest) {
@@ -2271,9 +2746,9 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     std::vector<HostAddr> hosts = {{"0", 0}};
     TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("default_space");
-    spaceDesc.set_partition_num(9);
-    spaceDesc.set_replica_factor(1);
+    spaceDesc.space_name_ref() = "default_space";
+    spaceDesc.partition_num_ref() = 9;
+    spaceDesc.replica_factor_ref() = 1;
     client->createSpace(spaceDesc).get();
     sleep(FLAGS_heartbeat_interval_secs + 1);
   }
@@ -2296,6 +2771,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     ASSERT_EQ(listener->options["disable_auto_compactions"], "\"true\"");
     ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
   }
+  cluster.stop();
 }
 
 }  // namespace meta

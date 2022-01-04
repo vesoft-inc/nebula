@@ -11,10 +11,10 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (player)-[:serve]->(team)
-      RETURN player.name, team.name
+      RETURN player.player.name, team.team.name
       """
     Then the result should be, in any order:
-      | player.name             | team.name       |
+      | player.player.name      | team.team.name  |
       | "Amar'e Stoudemire"     | "Suns"          |
       | "Amar'e Stoudemire"     | "Knicks"        |
       | "Amar'e Stoudemire"     | "Heat"          |
@@ -170,10 +170,10 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (team)<-[:serve]-(player)
-      RETURN player.name, team.name
+      RETURN player.player.name, team.team.name
       """
     Then the result should be, in any order:
-      | player.name             | team.name       |
+      | player.player.name      | team.team.name  |
       | "Amar'e Stoudemire"     | "Suns"          |
       | "Amar'e Stoudemire"     | "Knicks"        |
       | "Amar'e Stoudemire"     | "Heat"          |
@@ -329,321 +329,321 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (team)-[:serve]-(player)
-      RETURN player.name, team.name
+      RETURN player.player.name, team.team.name
       """
     Then the result should be, in any order:
-      | player.name             | team.name               |
-      | "Heat"                  | "Amar'e Stoudemire"     |
-      | "Suns"                  | "Amar'e Stoudemire"     |
-      | "Knicks"                | "Amar'e Stoudemire"     |
-      | "Thunders"              | "Russell Westbrook"     |
-      | "Rockets"               | "James Harden"          |
-      | "Thunders"              | "James Harden"          |
-      | "Lakers"                | "Kobe Bryant"           |
-      | "Rockets"               | "Tracy McGrady"         |
-      | "Spurs"                 | "Tracy McGrady"         |
-      | "Magic"                 | "Tracy McGrady"         |
-      | "Raptors"               | "Tracy McGrady"         |
-      | "Hornets"               | "Chris Paul"            |
-      | "Rockets"               | "Chris Paul"            |
-      | "Clippers"              | "Chris Paul"            |
-      | "Spurs"                 | "Boris Diaw"            |
-      | "Hornets"               | "Boris Diaw"            |
-      | "Hawks"                 | "Boris Diaw"            |
-      | "Jazz"                  | "Boris Diaw"            |
-      | "Suns"                  | "Boris Diaw"            |
-      | "Heat"                  | "LeBron James"          |
-      | "Cavaliers"             | "LeBron James"          |
-      | "Cavaliers"             | "LeBron James"          |
-      | "Lakers"                | "LeBron James"          |
-      | "Warriors"              | "Klay Thompson"         |
-      | "Knicks"                | "Kristaps Porzingis"    |
-      | "Mavericks"             | "Kristaps Porzingis"    |
-      | "Magic"                 | "Jonathon Simmons"      |
-      | "76ers"                 | "Jonathon Simmons"      |
-      | "Spurs"                 | "Jonathon Simmons"      |
-      | "Kings"                 | "Marco Belinelli"       |
-      | "Warriors"              | "Marco Belinelli"       |
-      | "Raptors"               | "Marco Belinelli"       |
-      | "Hornets"               | "Marco Belinelli"       |
-      | "Spurs"                 | "Marco Belinelli"       |
-      | "76ers"                 | "Marco Belinelli"       |
-      | "Hawks"                 | "Marco Belinelli"       |
-      | "Hornets"               | "Marco Belinelli"       |
-      | "Spurs"                 | "Marco Belinelli"       |
-      | "Bulls"                 | "Marco Belinelli"       |
-      | "Mavericks"             | "Luka Doncic"           |
-      | "Hornets"               | "David West"            |
-      | "Warriors"              | "David West"            |
-      | "Pacers"                | "David West"            |
-      | "Spurs"                 | "David West"            |
-      | "Spurs"                 | "Tony Parker"           |
-      | "Hornets"               | "Tony Parker"           |
-      | "Raptors"               | "Danny Green"           |
-      | "Cavaliers"             | "Danny Green"           |
-      | "Spurs"                 | "Danny Green"           |
-      | "Grizzlies"             | "Rudy Gay"              |
-      | "Kings"                 | "Rudy Gay"              |
-      | "Spurs"                 | "Rudy Gay"              |
-      | "Raptors"               | "Rudy Gay"              |
-      | "Spurs"                 | "LaMarcus Aldridge"     |
-      | "Trail Blazers"         | "LaMarcus Aldridge"     |
-      | "Spurs"                 | "Tim Duncan"            |
-      | "Thunders"              | "Kevin Durant"          |
-      | "Warriors"              | "Kevin Durant"          |
-      | "Warriors"              | "Stephen Curry"         |
-      | "Bucks"                 | "Ray Allen"             |
-      | "Thunders"              | "Ray Allen"             |
-      | "Heat"                  | "Ray Allen"             |
-      | "Celtics"               | "Ray Allen"             |
-      | "76ers"                 | "Tiago Splitter"        |
-      | "Spurs"                 | "Tiago Splitter"        |
-      | "Hawks"                 | "Tiago Splitter"        |
-      | "Clippers"              | "DeAndre Jordan"        |
-      | "Mavericks"             | "DeAndre Jordan"        |
-      | "Knicks"                | "DeAndre Jordan"        |
-      | "Bucks"                 | "Paul Gasol"            |
-      | "Spurs"                 | "Paul Gasol"            |
-      | "Grizzlies"             | "Paul Gasol"            |
-      | "Bulls"                 | "Paul Gasol"            |
-      | "Lakers"                | "Paul Gasol"            |
-      | "Celtics"               | "Aron Baynes"           |
-      | "Pistons"               | "Aron Baynes"           |
-      | "Spurs"                 | "Aron Baynes"           |
-      | "Spurs"                 | "Cory Joseph"           |
-      | "Raptors"               | "Cory Joseph"           |
-      | "Pacers"                | "Cory Joseph"           |
-      | "Nets"                  | "Vince Carter"          |
-      | "Grizzlies"             | "Vince Carter"          |
-      | "Raptors"               | "Vince Carter"          |
-      | "Hawks"                 | "Vince Carter"          |
-      | "Suns"                  | "Vince Carter"          |
-      | "Mavericks"             | "Vince Carter"          |
-      | "Magic"                 | "Vince Carter"          |
-      | "Kings"                 | "Vince Carter"          |
-      | "Raptors"               | "Marc Gasol"            |
-      | "Grizzlies"             | "Marc Gasol"            |
-      | "Jazz"                  | "Ricky Rubio"           |
-      | "Timberwolves"          | "Ricky Rubio"           |
-      | "76ers"                 | "Ben Simmons"           |
-      | "Bucks"                 | "Giannis Antetokounmpo" |
-      | "Bulls"                 | "Rajon Rondo"           |
-      | "Kings"                 | "Rajon Rondo"           |
-      | "Mavericks"             | "Rajon Rondo"           |
-      | "Lakers"                | "Rajon Rondo"           |
-      | "Celtics"               | "Rajon Rondo"           |
-      | "Pelicans"              | "Rajon Rondo"           |
-      | "Spurs"                 | "Manu Ginobili"         |
-      | "Cavaliers"             | "Kyrie Irving"          |
-      | "Celtics"               | "Kyrie Irving"          |
-      | "Rockets"               | "Carmelo Anthony"       |
-      | "Thunders"              | "Carmelo Anthony"       |
-      | "Nuggets"               | "Carmelo Anthony"       |
-      | "Knicks"                | "Carmelo Anthony"       |
-      | "Bulls"                 | "Dwyane Wade"           |
-      | "Heat"                  | "Dwyane Wade"           |
-      | "Cavaliers"             | "Dwyane Wade"           |
-      | "Heat"                  | "Dwyane Wade"           |
-      | "76ers"                 | "Joel Embiid"           |
-      | "Trail Blazers"         | "Damian Lillard"        |
-      | "Rockets"               | "Yao Ming"              |
-      | "Spurs"                 | "Kyle Anderson"         |
-      | "Grizzlies"             | "Kyle Anderson"         |
-      | "Spurs"                 | "Dejounte Murray"       |
-      | "Clippers"              | "Blake Griffin"         |
-      | "Pistons"               | "Blake Griffin"         |
-      | "Suns"                  | "Steve Nash"            |
-      | "Suns"                  | "Steve Nash"            |
-      | "Mavericks"             | "Steve Nash"            |
-      | "Lakers"                | "Steve Nash"            |
-      | "Mavericks"             | "Jason Kidd"            |
-      | "Mavericks"             | "Jason Kidd"            |
-      | "Nets"                  | "Jason Kidd"            |
-      | "Knicks"                | "Jason Kidd"            |
-      | "Suns"                  | "Jason Kidd"            |
-      | "Mavericks"             | "Dirk Nowitzki"         |
-      | "Thunders"              | "Paul George"           |
-      | "Pacers"                | "Paul George"           |
-      | "Suns"                  | "Grant Hill"            |
-      | "Magic"                 | "Grant Hill"            |
-      | "Clippers"              | "Grant Hill"            |
-      | "Pistons"               | "Grant Hill"            |
-      | "Celtics"               | "Shaquille O'Neal"      |
-      | "Cavaliers"             | "Shaquille O'Neal"      |
-      | "Lakers"                | "Shaquille O'Neal"      |
-      | "Magic"                 | "Shaquille O'Neal"      |
-      | "Suns"                  | "Shaquille O'Neal"      |
-      | "Heat"                  | "Shaquille O'Neal"      |
-      | "Warriors"              | "JaVale McGee"          |
-      | "Mavericks"             | "JaVale McGee"          |
-      | "Wizards"               | "JaVale McGee"          |
-      | "Lakers"                | "JaVale McGee"          |
-      | "Nuggets"               | "JaVale McGee"          |
-      | "Rockets"               | "Dwight Howard"         |
-      | "Wizards"               | "Dwight Howard"         |
-      | "Magic"                 | "Dwight Howard"         |
-      | "Hornets"               | "Dwight Howard"         |
-      | "Lakers"                | "Dwight Howard"         |
-      | "Hawks"                 | "Dwight Howard"         |
-      | "Vince Carter"          | "Nets"                  |
-      | "Jason Kidd"            | "Nets"                  |
-      | "Grant Hill"            | "Pistons"               |
-      | "Blake Griffin"         | "Pistons"               |
-      | "Aron Baynes"           | "Pistons"               |
-      | "Ray Allen"             | "Bucks"                 |
-      | "Paul Gasol"            | "Bucks"                 |
-      | "Giannis Antetokounmpo" | "Bucks"                 |
-      | "Jason Kidd"            | "Mavericks"             |
-      | "Steve Nash"            | "Mavericks"             |
-      | "Jason Kidd"            | "Mavericks"             |
-      | "Dirk Nowitzki"         | "Mavericks"             |
-      | "JaVale McGee"          | "Mavericks"             |
-      | "Rajon Rondo"           | "Mavericks"             |
-      | "Kristaps Porzingis"    | "Mavericks"             |
-      | "Vince Carter"          | "Mavericks"             |
-      | "DeAndre Jordan"        | "Mavericks"             |
-      | "Luka Doncic"           | "Mavericks"             |
-      | "Grant Hill"            | "Clippers"              |
-      | "Blake Griffin"         | "Clippers"              |
-      | "DeAndre Jordan"        | "Clippers"              |
-      | "Chris Paul"            | "Clippers"              |
-      | "Russell Westbrook"     | "Thunders"              |
-      | "Kevin Durant"          | "Thunders"              |
-      | "Carmelo Anthony"       | "Thunders"              |
-      | "Ray Allen"             | "Thunders"              |
-      | "James Harden"          | "Thunders"              |
-      | "Paul George"           | "Thunders"              |
-      | "Kobe Bryant"           | "Lakers"                |
-      | "Steve Nash"            | "Lakers"                |
-      | "Rajon Rondo"           | "Lakers"                |
-      | "LeBron James"          | "Lakers"                |
-      | "JaVale McGee"          | "Lakers"                |
-      | "Dwight Howard"         | "Lakers"                |
-      | "Shaquille O'Neal"      | "Lakers"                |
-      | "Paul Gasol"            | "Lakers"                |
-      | "Ricky Rubio"           | "Jazz"                  |
-      | "Boris Diaw"            | "Jazz"                  |
-      | "Carmelo Anthony"       | "Nuggets"               |
-      | "JaVale McGee"          | "Nuggets"               |
-      | "Dwight Howard"         | "Wizards"               |
-      | "JaVale McGee"          | "Wizards"               |
-      | "David West"            | "Pacers"                |
-      | "Cory Joseph"           | "Pacers"                |
-      | "Paul George"           | "Pacers"                |
-      | "Ricky Rubio"           | "Timberwolves"          |
-      | "Vince Carter"          | "Hawks"                 |
-      | "Boris Diaw"            | "Hawks"                 |
-      | "Marco Belinelli"       | "Hawks"                 |
-      | "Tiago Splitter"        | "Hawks"                 |
-      | "Dwight Howard"         | "Hawks"                 |
-      | "Marco Belinelli"       | "Warriors"              |
-      | "Klay Thompson"         | "Warriors"              |
-      | "JaVale McGee"          | "Warriors"              |
-      | "David West"            | "Warriors"              |
-      | "Stephen Curry"         | "Warriors"              |
-      | "Kevin Durant"          | "Warriors"              |
-      | "Jonathon Simmons"      | "Magic"                 |
-      | "Grant Hill"            | "Magic"                 |
-      | "Dwight Howard"         | "Magic"                 |
-      | "Tracy McGrady"         | "Magic"                 |
-      | "Vince Carter"          | "Magic"                 |
-      | "Shaquille O'Neal"      | "Magic"                 |
-      | "Carmelo Anthony"       | "Rockets"               |
-      | "Tracy McGrady"         | "Rockets"               |
-      | "Dwight Howard"         | "Rockets"               |
-      | "Yao Ming"              | "Rockets"               |
-      | "James Harden"          | "Rockets"               |
-      | "Chris Paul"            | "Rockets"               |
-      | "Rajon Rondo"           | "Pelicans"              |
-      | "Marc Gasol"            | "Raptors"               |
-      | "Vince Carter"          | "Raptors"               |
-      | "Danny Green"           | "Raptors"               |
-      | "Marco Belinelli"       | "Raptors"               |
-      | "Cory Joseph"           | "Raptors"               |
-      | "Rudy Gay"              | "Raptors"               |
-      | "Tracy McGrady"         | "Raptors"               |
-      | "Boris Diaw"            | "Spurs"                 |
-      | "Kyle Anderson"         | "Spurs"                 |
-      | "Cory Joseph"           | "Spurs"                 |
-      | "Tiago Splitter"        | "Spurs"                 |
-      | "LaMarcus Aldridge"     | "Spurs"                 |
-      | "Paul Gasol"            | "Spurs"                 |
-      | "Marco Belinelli"       | "Spurs"                 |
-      | "Tracy McGrady"         | "Spurs"                 |
-      | "David West"            | "Spurs"                 |
-      | "Manu Ginobili"         | "Spurs"                 |
-      | "Tony Parker"           | "Spurs"                 |
-      | "Rudy Gay"              | "Spurs"                 |
-      | "Jonathon Simmons"      | "Spurs"                 |
-      | "Aron Baynes"           | "Spurs"                 |
-      | "Danny Green"           | "Spurs"                 |
-      | "Tim Duncan"            | "Spurs"                 |
-      | "Marco Belinelli"       | "Spurs"                 |
-      | "Dejounte Murray"       | "Spurs"                 |
-      | "LeBron James"          | "Heat"                  |
-      | "Dwyane Wade"           | "Heat"                  |
-      | "Ray Allen"             | "Heat"                  |
-      | "Amar'e Stoudemire"     | "Heat"                  |
-      | "Dwyane Wade"           | "Heat"                  |
-      | "Shaquille O'Neal"      | "Heat"                  |
-      | "Marc Gasol"            | "Grizzlies"             |
-      | "Kyle Anderson"         | "Grizzlies"             |
-      | "Vince Carter"          | "Grizzlies"             |
-      | "Paul Gasol"            | "Grizzlies"             |
-      | "Rudy Gay"              | "Grizzlies"             |
-      | "Kristaps Porzingis"    | "Knicks"                |
-      | "Jason Kidd"            | "Knicks"                |
-      | "Carmelo Anthony"       | "Knicks"                |
-      | "DeAndre Jordan"        | "Knicks"                |
-      | "Amar'e Stoudemire"     | "Knicks"                |
-      | "Steve Nash"            | "Suns"                  |
-      | "Steve Nash"            | "Suns"                  |
-      | "Grant Hill"            | "Suns"                  |
-      | "Vince Carter"          | "Suns"                  |
-      | "Amar'e Stoudemire"     | "Suns"                  |
-      | "Shaquille O'Neal"      | "Suns"                  |
-      | "Jason Kidd"            | "Suns"                  |
-      | "Boris Diaw"            | "Suns"                  |
-      | "David West"            | "Hornets"               |
-      | "Boris Diaw"            | "Hornets"               |
-      | "Marco Belinelli"       | "Hornets"               |
-      | "Chris Paul"            | "Hornets"               |
-      | "Dwight Howard"         | "Hornets"               |
-      | "Tony Parker"           | "Hornets"               |
-      | "Marco Belinelli"       | "Hornets"               |
-      | "LeBron James"          | "Cavaliers"             |
-      | "LeBron James"          | "Cavaliers"             |
-      | "Dwyane Wade"           | "Cavaliers"             |
-      | "Kyrie Irving"          | "Cavaliers"             |
-      | "Danny Green"           | "Cavaliers"             |
-      | "Shaquille O'Neal"      | "Cavaliers"             |
-      | "Marco Belinelli"       | "Kings"                 |
-      | "Rajon Rondo"           | "Kings"                 |
-      | "Rudy Gay"              | "Kings"                 |
-      | "Vince Carter"          | "Kings"                 |
-      | "Aron Baynes"           | "Celtics"               |
-      | "Shaquille O'Neal"      | "Celtics"               |
-      | "Kyrie Irving"          | "Celtics"               |
-      | "Rajon Rondo"           | "Celtics"               |
-      | "Ray Allen"             | "Celtics"               |
-      | "Ben Simmons"           | "76ers"                 |
-      | "Joel Embiid"           | "76ers"                 |
-      | "Tiago Splitter"        | "76ers"                 |
-      | "Marco Belinelli"       | "76ers"                 |
-      | "Jonathon Simmons"      | "76ers"                 |
-      | "LaMarcus Aldridge"     | "Trail Blazers"         |
-      | "Damian Lillard"        | "Trail Blazers"         |
-      | "Dwyane Wade"           | "Bulls"                 |
-      | "Rajon Rondo"           | "Bulls"                 |
-      | "Paul Gasol"            | "Bulls"                 |
-      | "Marco Belinelli"       | "Bulls"                 |
+      | player.player.name      | team.team.name  |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | "Vince Carter"          | "Nets"          |
+      | "Jason Kidd"            | "Nets"          |
+      | "Grant Hill"            | "Pistons"       |
+      | "Blake Griffin"         | "Pistons"       |
+      | "Aron Baynes"           | "Pistons"       |
+      | "Ray Allen"             | "Bucks"         |
+      | "Paul Gasol"            | "Bucks"         |
+      | "Giannis Antetokounmpo" | "Bucks"         |
+      | "Jason Kidd"            | "Mavericks"     |
+      | "Steve Nash"            | "Mavericks"     |
+      | "Jason Kidd"            | "Mavericks"     |
+      | "Dirk Nowitzki"         | "Mavericks"     |
+      | "JaVale McGee"          | "Mavericks"     |
+      | "Rajon Rondo"           | "Mavericks"     |
+      | "Kristaps Porzingis"    | "Mavericks"     |
+      | "Vince Carter"          | "Mavericks"     |
+      | "DeAndre Jordan"        | "Mavericks"     |
+      | "Luka Doncic"           | "Mavericks"     |
+      | "Grant Hill"            | "Clippers"      |
+      | "Blake Griffin"         | "Clippers"      |
+      | "DeAndre Jordan"        | "Clippers"      |
+      | "Chris Paul"            | "Clippers"      |
+      | "Russell Westbrook"     | "Thunders"      |
+      | "Kevin Durant"          | "Thunders"      |
+      | "Carmelo Anthony"       | "Thunders"      |
+      | "Ray Allen"             | "Thunders"      |
+      | "James Harden"          | "Thunders"      |
+      | "Paul George"           | "Thunders"      |
+      | "Kobe Bryant"           | "Lakers"        |
+      | "Steve Nash"            | "Lakers"        |
+      | "Rajon Rondo"           | "Lakers"        |
+      | "LeBron James"          | "Lakers"        |
+      | "JaVale McGee"          | "Lakers"        |
+      | "Dwight Howard"         | "Lakers"        |
+      | "Shaquille O'Neal"      | "Lakers"        |
+      | "Paul Gasol"            | "Lakers"        |
+      | "Ricky Rubio"           | "Jazz"          |
+      | "Boris Diaw"            | "Jazz"          |
+      | "Carmelo Anthony"       | "Nuggets"       |
+      | "JaVale McGee"          | "Nuggets"       |
+      | "Dwight Howard"         | "Wizards"       |
+      | "JaVale McGee"          | "Wizards"       |
+      | "David West"            | "Pacers"        |
+      | "Cory Joseph"           | "Pacers"        |
+      | "Paul George"           | "Pacers"        |
+      | "Ricky Rubio"           | "Timberwolves"  |
+      | "Vince Carter"          | "Hawks"         |
+      | "Boris Diaw"            | "Hawks"         |
+      | "Marco Belinelli"       | "Hawks"         |
+      | "Tiago Splitter"        | "Hawks"         |
+      | "Dwight Howard"         | "Hawks"         |
+      | "Marco Belinelli"       | "Warriors"      |
+      | "Klay Thompson"         | "Warriors"      |
+      | "JaVale McGee"          | "Warriors"      |
+      | "David West"            | "Warriors"      |
+      | "Stephen Curry"         | "Warriors"      |
+      | "Kevin Durant"          | "Warriors"      |
+      | "Jonathon Simmons"      | "Magic"         |
+      | "Grant Hill"            | "Magic"         |
+      | "Dwight Howard"         | "Magic"         |
+      | "Tracy McGrady"         | "Magic"         |
+      | "Vince Carter"          | "Magic"         |
+      | "Shaquille O'Neal"      | "Magic"         |
+      | "Carmelo Anthony"       | "Rockets"       |
+      | "Tracy McGrady"         | "Rockets"       |
+      | "Dwight Howard"         | "Rockets"       |
+      | "Yao Ming"              | "Rockets"       |
+      | "James Harden"          | "Rockets"       |
+      | "Chris Paul"            | "Rockets"       |
+      | "Rajon Rondo"           | "Pelicans"      |
+      | "Marc Gasol"            | "Raptors"       |
+      | "Vince Carter"          | "Raptors"       |
+      | "Danny Green"           | "Raptors"       |
+      | "Marco Belinelli"       | "Raptors"       |
+      | "Cory Joseph"           | "Raptors"       |
+      | "Rudy Gay"              | "Raptors"       |
+      | "Tracy McGrady"         | "Raptors"       |
+      | "Boris Diaw"            | "Spurs"         |
+      | "Kyle Anderson"         | "Spurs"         |
+      | "Cory Joseph"           | "Spurs"         |
+      | "Tiago Splitter"        | "Spurs"         |
+      | "LaMarcus Aldridge"     | "Spurs"         |
+      | "Paul Gasol"            | "Spurs"         |
+      | "Marco Belinelli"       | "Spurs"         |
+      | "Tracy McGrady"         | "Spurs"         |
+      | "David West"            | "Spurs"         |
+      | "Manu Ginobili"         | "Spurs"         |
+      | "Tony Parker"           | "Spurs"         |
+      | "Rudy Gay"              | "Spurs"         |
+      | "Jonathon Simmons"      | "Spurs"         |
+      | "Aron Baynes"           | "Spurs"         |
+      | "Danny Green"           | "Spurs"         |
+      | "Tim Duncan"            | "Spurs"         |
+      | "Marco Belinelli"       | "Spurs"         |
+      | "Dejounte Murray"       | "Spurs"         |
+      | "LeBron James"          | "Heat"          |
+      | "Dwyane Wade"           | "Heat"          |
+      | "Ray Allen"             | "Heat"          |
+      | "Amar'e Stoudemire"     | "Heat"          |
+      | "Dwyane Wade"           | "Heat"          |
+      | "Shaquille O'Neal"      | "Heat"          |
+      | "Marc Gasol"            | "Grizzlies"     |
+      | "Kyle Anderson"         | "Grizzlies"     |
+      | "Vince Carter"          | "Grizzlies"     |
+      | "Paul Gasol"            | "Grizzlies"     |
+      | "Rudy Gay"              | "Grizzlies"     |
+      | "Kristaps Porzingis"    | "Knicks"        |
+      | "Jason Kidd"            | "Knicks"        |
+      | "Carmelo Anthony"       | "Knicks"        |
+      | "DeAndre Jordan"        | "Knicks"        |
+      | "Amar'e Stoudemire"     | "Knicks"        |
+      | "Steve Nash"            | "Suns"          |
+      | "Steve Nash"            | "Suns"          |
+      | "Grant Hill"            | "Suns"          |
+      | "Vince Carter"          | "Suns"          |
+      | "Amar'e Stoudemire"     | "Suns"          |
+      | "Shaquille O'Neal"      | "Suns"          |
+      | "Jason Kidd"            | "Suns"          |
+      | "Boris Diaw"            | "Suns"          |
+      | "David West"            | "Hornets"       |
+      | "Boris Diaw"            | "Hornets"       |
+      | "Marco Belinelli"       | "Hornets"       |
+      | "Chris Paul"            | "Hornets"       |
+      | "Dwight Howard"         | "Hornets"       |
+      | "Tony Parker"           | "Hornets"       |
+      | "Marco Belinelli"       | "Hornets"       |
+      | "LeBron James"          | "Cavaliers"     |
+      | "LeBron James"          | "Cavaliers"     |
+      | "Dwyane Wade"           | "Cavaliers"     |
+      | "Kyrie Irving"          | "Cavaliers"     |
+      | "Danny Green"           | "Cavaliers"     |
+      | "Shaquille O'Neal"      | "Cavaliers"     |
+      | "Marco Belinelli"       | "Kings"         |
+      | "Rajon Rondo"           | "Kings"         |
+      | "Rudy Gay"              | "Kings"         |
+      | "Vince Carter"          | "Kings"         |
+      | "Aron Baynes"           | "Celtics"       |
+      | "Shaquille O'Neal"      | "Celtics"       |
+      | "Kyrie Irving"          | "Celtics"       |
+      | "Rajon Rondo"           | "Celtics"       |
+      | "Ray Allen"             | "Celtics"       |
+      | "Ben Simmons"           | "76ers"         |
+      | "Joel Embiid"           | "76ers"         |
+      | "Tiago Splitter"        | "76ers"         |
+      | "Marco Belinelli"       | "76ers"         |
+      | "Jonathon Simmons"      | "76ers"         |
+      | "LaMarcus Aldridge"     | "Trail Blazers" |
+      | "Damian Lillard"        | "Trail Blazers" |
+      | "Dwyane Wade"           | "Bulls"         |
+      | "Rajon Rondo"           | "Bulls"         |
+      | "Paul Gasol"            | "Bulls"         |
+      | "Marco Belinelli"       | "Bulls"         |
     When executing query:
       """
       MATCH (p1)-[:like]->(player)-[:serve]->(team)
-      RETURN p1.name, player.name, team.name
+      RETURN p1.player.name, player.player.name, team.team.name
       """
     Then the result should be, in any order:
-      | p1.name              | player.name          | team.name       |
+      | p1.player.name       | player.player.name   | team.team.name  |
       | "Amar'e Stoudemire"  | "Steve Nash"         | "Suns"          |
       | "Amar'e Stoudemire"  | "Steve Nash"         | "Lakers"        |
       | "Amar'e Stoudemire"  | "Steve Nash"         | "Mavericks"     |
@@ -877,10 +877,10 @@ Feature: Match seek by edge
   Scenario Outline: Seek by edge with range
     When executing query:
       """
-      match (p1)-[:like*2]->(p2) return p1.name, p2.name
+      match (p1)-[:like*2]->(p2) return p1.player.name, p2.player.name
       """
     Then the result should be, in any order:
-      | p1.name              | p2.name              |
+      | p1.player.name       | p2.player.name       |
       | "Amar'e Stoudemire"  | "Dirk Nowitzki"      |
       | "Amar'e Stoudemire"  | "Jason Kidd"         |
       | "Amar'e Stoudemire"  | "Amar'e Stoudemire"  |
@@ -1041,10 +1041,10 @@ Feature: Match seek by edge
       | "Shaquille O'Neal"   | "Manu Ginobili"      |
     When executing query:
       """
-      match (p1)-[:like*1..2]->(p2) return p1.name, p2.name
+      match (p1)-[:like*1..2]->(p2) return p1.player.name, p2.player.name
       """
     Then the result should be, in any order:
-      | p1.name              | p2.name              |
+      | p1.player.name       | p2.player.name       |
       | "Amar'e Stoudemire"  | "Steve Nash"         |
       | "Amar'e Stoudemire"  | "Dirk Nowitzki"      |
       | "Amar'e Stoudemire"  | "Jason Kidd"         |
@@ -1286,15 +1286,15 @@ Feature: Match seek by edge
       | "Shaquille O'Neal"   | "Manu Ginobili"      |
     When executing query:
       """
-      match (p1)-[:serve*2]->(p2) return p1.name, p2.name
+      match (p1)-[:serve*2]->(p2) return p1.player.name, p2.team.name
       """
     Then the result should be, in any order:
-      | p1.name | p2.name |
+      | p1.player.name | p2.team.name |
 
   Scenario Outline: Seek by edge with properties
     When executing query:
       """
-      match (player)-[:serve {start_year : 2001}]->(team) return player.name AS player, team.name AS team
+      match (player)-[:serve {start_year : 2001}]->(team) return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1302,7 +1302,7 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (team)<-[:serve {start_year : 2001}]-(player) return player.name AS player, team.name AS team
+      match (team)<-[:serve {start_year : 2001}]-(player) return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1310,17 +1310,17 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (player)-[:serve {start_year : 2001}]-(team) return player.name AS player, team.name AS team
+      match (player)-[:serve {start_year : 2001}]-(team) return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
-      | player       | team         |
-      | "Paul Gasol" | "Grizzlies"  |
-      | "Jason Kidd" | "Nets"       |
-      | "Grizzlies"  | "Paul Gasol" |
-      | "Nets"       | "Jason Kidd" |
+      | player       | team        |
+      | "Paul Gasol" | "Grizzlies" |
+      | "Jason Kidd" | "Nets"      |
+      | NULL         | NULL        |
+      | NULL         | NULL        |
     When executing query:
       """
-      match (player)-[s:serve]->(team) where s.start_year == 2001 return player.name AS player, team.name AS team
+      match (player)-[s:serve]->(team) where s.start_year == 2001 return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1328,7 +1328,7 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (team)<-[s:serve]-(player) where s.start_year == 2001 return player.name AS player, team.name AS team
+      match (team)<-[s:serve]-(player) where s.start_year == 2001 return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1336,22 +1336,22 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (player)-[s:serve]-(team) where s.start_year == 2001 return player.name AS player, team.name AS team
+      match (p)-[s:serve]-(t) where s.start_year == 2001 return p.player.name AS player, t.team.name AS team
       """
     Then the result should be, in any order:
-      | player       | team         |
-      | "Paul Gasol" | "Grizzlies"  |
-      | "Jason Kidd" | "Nets"       |
-      | "Grizzlies"  | "Paul Gasol" |
-      | "Nets"       | "Jason Kidd" |
+      | player       | team        |
+      | "Paul Gasol" | "Grizzlies" |
+      | "Jason Kidd" | "Nets"      |
+      | NULL         | NULL        |
+      | NULL         | NULL        |
 
   Scenario Outline: Seek by edge with range with properties
     When executing query:
       """
-      match (p1)-[:like*2 {likeness: 90}]->(p2) return p1.name, p2.name
+      match (p1)-[:like*2 {likeness: 90}]->(p2) return p1.player.name, p2.player.name
       """
     Then the result should be, in any order:
-      | p1.name              | p2.name              |
+      | p1.player.name       | p2.player.name       |
       | "Amar'e Stoudemire"  | "Amar'e Stoudemire"  |
       | "Amar'e Stoudemire"  | "Stephen Curry"      |
       | "Tracy McGrady"      | "Tracy McGrady"      |
@@ -1391,10 +1391,10 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Rudy Gay"           |
     When executing query:
       """
-      match (p1)-[l:like*1..2 {likeness: 90}]->(p2) return p1.name, p2.name
+      match (p1)-[l:like*1..2 {likeness: 90}]->(p2) return p1.player.name, p2.player.name
       """
     Then the result should be, in any order:
-      | p1.name              | p2.name              |
+      | p1.player.name       | p2.player.name       |
       | "Amar'e Stoudemire"  | "Steve Nash"         |
       | "Amar'e Stoudemire"  | "Amar'e Stoudemire"  |
       | "Amar'e Stoudemire"  | "Stephen Curry"      |
@@ -1467,9 +1467,9 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (p1)-[:teammate]->(p2)
-      RETURN p1.name, id(p2)
+      RETURN p1.player.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario Outline: seek by edge in a single edge type space
     Given an empty graph
@@ -1488,18 +1488,18 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (p1)-[]->(p2)
-      RETURN p1.name, id(p2)
+      RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (p1)-[b]->(p2)
-      RETURN p1.name, id(p2)
+      RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (p1)-[:edge_1]->(p2)
-      RETURN p1.name, id(p2)
+      RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.

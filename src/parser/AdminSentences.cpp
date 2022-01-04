@@ -13,19 +13,29 @@
 
 namespace nebula {
 
-std::string ShowHostsSentence::toString() const { return std::string("SHOW HOSTS"); }
+std::string ShowHostsSentence::toString() const {
+  return std::string("SHOW HOSTS");
+}
 
-std::string ShowMetaLeaderSentence::toString() const { return std::string("SHOW META LEADER"); }
+std::string ShowMetaLeaderSentence::toString() const {
+  return std::string("SHOW META LEADER");
+}
 
-std::string ShowSpacesSentence::toString() const { return std::string("SHOW SPACES"); }
+std::string ShowSpacesSentence::toString() const {
+  return std::string("SHOW SPACES");
+}
 
 std::string ShowCreateSpaceSentence::toString() const {
   return folly::stringPrintf("SHOW CREATE SPACE %s", name_.get()->c_str());
 }
 
-std::string ShowPartsSentence::toString() const { return std::string("SHOW PARTS"); }
+std::string ShowPartsSentence::toString() const {
+  return std::string("SHOW PARTS");
+}
 
-std::string ShowUsersSentence::toString() const { return std::string("SHOW USERS"); }
+std::string ShowUsersSentence::toString() const {
+  return std::string("SHOW USERS");
+}
 
 std::string DescribeUserSentence::toString() const {
   return folly::stringPrintf("DESCRIBE USER %s", account_.get()->c_str());
@@ -35,15 +45,25 @@ std::string ShowRolesSentence::toString() const {
   return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
 }
 
-std::string ShowSnapshotsSentence::toString() const { return std::string("SHOW SNAPSHOTS"); }
+std::string ShowSnapshotsSentence::toString() const {
+  return std::string("SHOW SNAPSHOTS");
+}
 
-std::string ShowCharsetSentence::toString() const { return std::string("SHOW CHARSET"); }
+std::string ShowCharsetSentence::toString() const {
+  return std::string("SHOW CHARSET");
+}
 
-std::string ShowCollationSentence::toString() const { return std::string("SHOW COLLATION"); }
+std::string ShowCollationSentence::toString() const {
+  return std::string("SHOW COLLATION");
+}
 
-std::string ShowGroupsSentence::toString() const { return std::string("SHOW GROUPS"); }
+std::string ShowGroupsSentence::toString() const {
+  return std::string("SHOW GROUPS");
+}
 
-std::string ShowZonesSentence::toString() const { return std::string("SHOW ZONES"); }
+std::string ShowZonesSentence::toString() const {
+  return std::string("SHOW ZONES");
+}
 
 std::string SpaceOptItem::toString() const {
   switch (optType_) {
@@ -112,6 +132,15 @@ std::string DropSpaceSentence::toString() const {
   return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
 }
 
+std::string AlterSpaceSentence::toString() const {
+  std::string zones = paras_.front();
+  for (size_t i = 1; i < paras_.size(); i++) {
+    zones += "," + paras_[i];
+  }
+  return folly::stringPrintf(
+      "ALTER SPACE %s ADD ZONE %s", spaceName_.get()->c_str(), zones.c_str());
+}
+
 std::string DescribeSpaceSentence::toString() const {
   return folly::stringPrintf("DESCRIBE SPACE %s", spaceName_.get()->c_str());
 }
@@ -173,7 +202,9 @@ std::string HostList::toString() const {
   return buf;
 }
 
-std::string CreateSnapshotSentence::toString() const { return "CREATE SNAPSHOT"; }
+std::string CreateSnapshotSentence::toString() const {
+  return "CREATE SNAPSHOT";
+}
 
 std::string DropSnapshotSentence::toString() const {
   return folly::stringPrintf("DROP SNAPSHOT %s", name_.get()->c_str());
@@ -210,7 +241,9 @@ std::string RemoveListenerSentence::toString() const {
   return buf;
 }
 
-std::string ShowListenerSentence::toString() const { return "SHOW LISTENER"; }
+std::string ShowListenerSentence::toString() const {
+  return "SHOW LISTENER";
+}
 
 std::string AdminJobSentence::toString() const {
   switch (op_) {
@@ -238,9 +271,20 @@ std::string AdminJobSentence::toString() const {
           return "INGEST";
         case meta::cpp2::AdminCmd::DATA_BALANCE:
           if (paras_.empty()) {
-            return "SUBMIT JOB BALANCE DATA";
+            return "SUBMIT JOB BALANCE IN ZONE";
           } else {
-            std::string str = "SUBMIT JOB BALANCE DATA REMOVE";
+            std::string str = "SUBMIT JOB BALANCE IN ZONE REMOVE";
+            for (size_t i = 0; i < paras_.size(); i++) {
+              auto &s = paras_[i];
+              str += i == 0 ? " " + s : ", " + s;
+            }
+            return str;
+          }
+        case meta::cpp2::AdminCmd::ZONE_BALANCE:
+          if (paras_.empty()) {
+            return "SUBMIT JOB BALANCE ACROSS ZONE";
+          } else {
+            std::string str = "SUBMIT JOB BALANCE ACROSS ZONE REMOVE";
             for (size_t i = 0; i < paras_.size(); i++) {
               auto &s = paras_[i];
               str += i == 0 ? " " + s : ", " + s;
@@ -276,13 +320,21 @@ std::string AdminJobSentence::toString() const {
   LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
 }
 
-meta::cpp2::AdminJobOp AdminJobSentence::getOp() const { return op_; }
+meta::cpp2::AdminJobOp AdminJobSentence::getOp() const {
+  return op_;
+}
 
-meta::cpp2::AdminCmd AdminJobSentence::getCmd() const { return cmd_; }
+meta::cpp2::AdminCmd AdminJobSentence::getCmd() const {
+  return cmd_;
+}
 
-const std::vector<std::string> &AdminJobSentence::getParas() const { return paras_; }
+const std::vector<std::string> &AdminJobSentence::getParas() const {
+  return paras_;
+}
 
-void AdminJobSentence::addPara(const std::string &para) { paras_.emplace_back(para); }
+void AdminJobSentence::addPara(const std::string &para) {
+  paras_.emplace_back(para);
+}
 
 void AdminJobSentence::addPara(const NameLabelList &paras) {
   const auto &labels = paras.labels();
@@ -290,14 +342,30 @@ void AdminJobSentence::addPara(const NameLabelList &paras) {
       labels.begin(), labels.end(), [this](const auto &para) { paras_.emplace_back(*para); });
 }
 
-std::string ShowStatsSentence::toString() const { return folly::stringPrintf("SHOW STATS"); }
+std::string ShowStatsSentence::toString() const {
+  return folly::stringPrintf("SHOW STATS");
+}
 
-std::string ShowTSClientsSentence::toString() const { return "SHOW TEXT SEARCH CLIENTS"; }
+std::string ShowServiceClientsSentence::toString() const {
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      return "SHOW TEXT SEARCH CLIENTS";
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
+}
 
-std::string SignInTextServiceSentence::toString() const {
+std::string SignInServiceSentence::toString() const {
   std::string buf;
   buf.reserve(256);
-  buf += "SIGN IN TEXT SERVICE ";
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      buf += "SIGN IN TEXT SERVICE ";
+      break;
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
+
   for (auto &client : clients_->clients()) {
     buf += "(";
     buf += client.get_host().host;
@@ -329,19 +397,27 @@ std::string SignInTextServiceSentence::toString() const {
   return buf;
 }
 
-std::string SignOutTextServiceSentence::toString() const { return "SIGN OUT TEXT SERVICE"; }
+std::string SignOutServiceSentence::toString() const {
+  switch (type_) {
+    case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
+      return "SIGN OUT TEXT SERVICE";
+    default:
+      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+  }
+}
 
 std::string ShowSessionsSentence::toString() const {
   if (isSetSessionID()) {
     return folly::stringPrintf("SHOW SESSION %ld", sessionId_);
   }
+  if (isLocalCommand()) return "SHOW LOCAL SESSIONS";
   return "SHOW SESSIONS";
 }
 
 std::string ShowQueriesSentence::toString() const {
   std::string buf = "SHOW";
-  if (isAll()) {
-    buf += " ALL";
+  if (!isAll()) {
+    buf += " LOCAL";
   }
   buf += " QUERIES";
   return buf;

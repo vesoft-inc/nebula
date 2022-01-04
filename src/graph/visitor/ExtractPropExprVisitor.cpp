@@ -13,32 +13,67 @@ ExtractPropExprVisitor::ExtractPropExprVisitor(
     YieldColumns* srcAndEdgePropCols,
     YieldColumns* dstPropCols,
     YieldColumns* inputPropCols,
-    std::unordered_map<std::string, YieldColumn*>& propExprColMap)
+    std::unordered_map<std::string, YieldColumn*>& propExprColMap,
+    std::unordered_set<std::string>& uniqueEdgeVertexCol)
     : vctx_(DCHECK_NOTNULL(vctx)),
       srcAndEdgePropCols_(srcAndEdgePropCols),
       dstPropCols_(dstPropCols),
       inputPropCols_(inputPropCols),
-      propExprColMap_(propExprColMap) {}
+      propExprColMap_(propExprColMap),
+      uniqueEdgeVertexCol_(uniqueEdgeVertexCol) {}
 
-void ExtractPropExprVisitor::visit(ConstantExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(ConstantExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(VertexExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(VertexExpression* expr) {
+  const auto& colName = expr->name();
+  if (uniqueEdgeVertexCol_.emplace(colName).second) {
+    if (colName == "$^") {
+      srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), colName));
+    } else {
+      dstPropCols_->addColumn(new YieldColumn(expr->clone(), colName));
+    }
+  }
+}
 
-void ExtractPropExprVisitor::visit(EdgeExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(EdgeExpression* expr) {
+  if (uniqueEdgeVertexCol_.emplace(expr->toString()).second) {
+    srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), expr->toString()));
+  }
+}
 
-void ExtractPropExprVisitor::visit(VariableExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(VariableExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(SubscriptExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(SubscriptExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(LabelExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(LabelExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(LabelAttributeExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(LabelAttributeExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(VersionedVariableExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(LabelTagPropertyExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(UUIDExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(VersionedVariableExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(ColumnExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(UUIDExpression* expr) {
+  reportError(expr);
+}
+
+void ExtractPropExprVisitor::visit(ColumnExpression* expr) {
+  reportError(expr);
+}
 
 void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
   switch (expr->kind()) {
@@ -87,9 +122,13 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
   }
 }
 
-void ExtractPropExprVisitor::visit(VariablePropertyExpression* expr) { visitPropertyExpr(expr); }
+void ExtractPropExprVisitor::visit(VariablePropertyExpression* expr) {
+  visitPropertyExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(InputPropertyExpression* expr) { visitPropertyExpr(expr); }
+void ExtractPropExprVisitor::visit(InputPropertyExpression* expr) {
+  visitPropertyExpr(expr);
+}
 
 void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
   PropertyExpression* propExpr = nullptr;
@@ -135,21 +174,33 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
   }
 }
 
-void ExtractPropExprVisitor::visit(TagPropertyExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(TagPropertyExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
 void ExtractPropExprVisitor::visit(SourcePropertyExpression* expr) {
   visitVertexEdgePropExpr(expr);
 }
 
-void ExtractPropExprVisitor::visit(EdgePropertyExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgePropertyExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeSrcIdExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeSrcIdExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeTypeExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeTypeExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeRankExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeRankExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeDstIdExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeDstIdExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
 void ExtractPropExprVisitor::visit(DestPropertyExpression* expr) {
   auto found = propExprColMap_.find(expr->toString());

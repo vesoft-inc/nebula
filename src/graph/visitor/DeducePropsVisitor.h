@@ -28,17 +28,35 @@ class ExpressionProps final {
   ExpressionProps() = default;
   ~ExpressionProps() = default;
 
-  const std::set<folly::StringPiece>& inputProps() const { return inputProps_; }
-  const TagIDPropsMap& srcTagProps() const { return srcTagProps_; }
-  const TagIDPropsMap& dstTagProps() const { return dstTagProps_; }
-  const TagIDPropsMap& tagProps() const { return tagProps_; }
-  const TagNameIds& tagNameIds() const { return tagNameIds_; }
-  const EdgePropMap& edgeProps() const { return edgeProps_; }
-  const VarPropMap& varProps() const { return varProps_; }
+  const std::set<folly::StringPiece>& inputProps() const {
+    return inputProps_;
+  }
+  const TagIDPropsMap& srcTagProps() const {
+    return srcTagProps_;
+  }
+  const TagIDPropsMap& dstTagProps() const {
+    return dstTagProps_;
+  }
+  const TagIDPropsMap& tagProps() const {
+    return tagProps_;
+  }
+  const TagNameIds& tagNameIds() const {
+    return tagNameIds_;
+  }
+  const EdgePropMap& edgeProps() const {
+    return edgeProps_;
+  }
+  const VarPropMap& varProps() const {
+    return varProps_;
+  }
 
-  bool hasInputVarProperty() const { return !inputProps_.empty() || !varProps_.empty(); }
+  bool hasInputVarProperty() const {
+    return !inputProps_.empty() || !varProps_.empty();
+  }
 
-  bool hasSrcDstTagProperty() const { return !srcTagProps_.empty() || !dstTagProps_.empty(); }
+  bool hasSrcDstTagProperty() const {
+    return !srcTagProps_.empty() || !dstTagProps_.empty();
+  }
 
   bool isAllPropsEmpty() const {
     return inputProps_.empty() && varProps_.empty() && srcTagProps_.empty() && edgeProps_.empty() &&
@@ -71,15 +89,22 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   DeducePropsVisitor(QueryContext* qctx,
                      GraphSpaceID space,
                      ExpressionProps* exprProps,
-                     std::set<std::string>* userDefinedVarNameList);
+                     std::set<std::string>* userDefinedVarNameList,
+                     std::vector<TagID>* tagIds,
+                     std::vector<EdgeType>* edgeTypes);
 
-  bool ok() const override { return status_.ok(); }
+  bool ok() const override {
+    return status_.ok();
+  }
 
-  const Status& status() const { return status_; }
+  const Status& status() const {
+    return status_;
+  }
 
  private:
   using ExprVisitorImpl::visit;
   void visit(EdgePropertyExpression* expr) override;
+  void visit(LabelTagPropertyExpression* expr) override;
   void visit(TagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
@@ -93,7 +118,6 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   void visit(VariableExpression* expr) override;
   void visit(VersionedVariableExpression* expr) override;
   void visit(LabelExpression* expr) override;
-  void visit(AttributeExpression* expr) override;
   void visit(LabelAttributeExpression* expr) override;
   void visit(ConstantExpression* expr) override;
   void visit(VertexExpression* expr) override;
@@ -107,6 +131,8 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   GraphSpaceID space_;
   ExpressionProps* exprProps_{nullptr};
   std::set<std::string>* userDefinedVarNameList_{nullptr};
+  std::vector<TagID>* tagIds_{nullptr};
+  std::vector<EdgeType>* edgeTypes_{nullptr};
   Status status_;
 };
 

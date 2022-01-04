@@ -39,7 +39,9 @@ auto pool = &objPool;
 
 class LookupIndexTest : public ::testing::TestWithParam<bool> {
  public:
-  void SetUp() override { FLAGS_query_concurrently = GetParam(); }
+  void SetUp() override {
+    FLAGS_query_concurrently = GetParam();
+  }
 
   void TearDown() override {}
 };
@@ -137,34 +139,34 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
   {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(3);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = 3;
+    indices.schema_id_ref() = schemaId;
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = std::move(parts);
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back("col_bool");
     returnCols.emplace_back("col_int");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(true));
-    columnHint.set_column_name("col_bool");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(true));
+    columnHint.column_name_ref() = ("col_bool");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(3);
+    context1.column_hints_ref() = (std::move(columnHints));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (3);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
     processor->process(req);
@@ -229,35 +231,35 @@ TEST_P(LookupIndexTest, SimpleTagIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
     std::string name = "Rudy Gay";
-    columnHint.set_begin_value(Value(name));
-    columnHint.set_column_name("name");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(name));
+    columnHint.column_name_ref() = ("name");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(1);
+    context1.column_hints_ref() = (std::move(columnHints));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -297,49 +299,49 @@ TEST_P(LookupIndexTest, SimpleTagIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     // player.name_ == "Rudy Gay"
     cpp2::IndexColumnHint columnHint1;
     std::string name1 = "Rudy Gay";
-    columnHint1.set_begin_value(Value(name1));
-    columnHint1.set_column_name("name");
-    columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint1.begin_value_ref() = (Value(name1));
+    columnHint1.column_name_ref() = ("name");
+    columnHint1.scan_type_ref() = (cpp2::ScanType::PREFIX);
     // player.name_ == "Kobe Bryant"
     cpp2::IndexColumnHint columnHint2;
     std::string name2 = "Kobe Bryant";
-    columnHint2.set_begin_value(Value(name2));
-    columnHint2.set_column_name("name");
-    columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint2.begin_value_ref() = (Value(name2));
+    columnHint2.column_name_ref() = ("name");
+    columnHint2.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints1;
     columnHints1.emplace_back(std::move(columnHint1));
     std::vector<IndexColumnHint> columnHints2;
     columnHints2.emplace_back(std::move(columnHint2));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints1));
-    context1.set_filter("");
-    context1.set_index_id(1);
+    context1.column_hints_ref() = (std::move(columnHints1));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (1);
     cpp2::IndexQueryContext context2;
-    context2.set_column_hints(std::move(columnHints2));
-    context2.set_filter("");
-    context2.set_index_id(1);
+    context2.column_hints_ref() = (std::move(columnHints2));
+    context2.filter_ref() = ("");
+    context2.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
     contexts.emplace_back(std::move(context2));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -400,15 +402,15 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -417,21 +419,21 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(tony));
-    columnHint.set_column_name("player1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(tony));
+    columnHint.column_name_ref() = ("player1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.column_hints_ref() = (std::move(columnHints));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -485,15 +487,15 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::string yao = "Yao Ming";
@@ -504,34 +506,34 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     // teammates.player1 == "Tony Parker"
     cpp2::IndexColumnHint columnHint1;
-    columnHint1.set_begin_value(Value(tony));
-    columnHint1.set_column_name("player1");
-    columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint1.begin_value_ref() = (Value(tony));
+    columnHint1.column_name_ref() = ("player1");
+    columnHint1.scan_type_ref() = (cpp2::ScanType::PREFIX);
     // teammates.player1 == "Yao Ming"
     cpp2::IndexColumnHint columnHint2;
-    columnHint2.set_begin_value(Value(yao));
-    columnHint2.set_column_name("player1");
-    columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint2.begin_value_ref() = (Value(yao));
+    columnHint2.column_name_ref() = ("player1");
+    columnHint2.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints1;
     columnHints1.emplace_back(std::move(columnHint1));
     std::vector<IndexColumnHint> columnHints2;
     columnHints2.emplace_back(std::move(columnHint2));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints1));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.column_hints_ref() = (std::move(columnHints1));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (102);
     cpp2::IndexQueryContext context2;
-    context2.set_column_hints(std::move(columnHints2));
-    context2.set_filter("");
-    context2.set_index_id(102);
+    context2.column_hints_ref() = (std::move(columnHints2));
+    context2.filter_ref() = ("");
+    context2.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
     contexts.emplace_back(std::move(context2));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -618,39 +620,39 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
     std::string name = "Rudy Gay";
-    columnHint.set_begin_value(Value(name));
-    columnHint.set_column_name("name");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(name));
+    columnHint.column_name_ref() = ("name");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
+    context1.column_hints_ref() = (std::move(columnHints));
     const auto& expr =
         *RelationalExpression::makeEQ(pool,
                                       TagPropertyExpression::make(pool, "player", "age"),
                                       ConstantExpression::make(pool, Value(34L)));
-    context1.set_filter(expr.encode());
-    context1.set_index_id(1);
+    context1.filter_ref() = (expr.encode());
+    context1.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -694,39 +696,39 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
     std::string name = "Rudy Gay";
-    columnHint.set_begin_value(Value(name));
-    columnHint.set_column_name("name");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(name));
+    columnHint.column_name_ref() = ("name");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
+    context1.column_hints_ref() = (std::move(columnHints));
     const auto& expr =
         *RelationalExpression::makeGT(pool,
                                       TagPropertyExpression::make(pool, "player", "age"),
                                       ConstantExpression::make(pool, Value(34L)));
-    context1.set_filter(expr.encode());
-    context1.set_index_id(1);
+    context1.filter_ref() = (expr.encode());
+    context1.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -777,15 +779,15 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -794,25 +796,25 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(tony));
-    columnHint.set_column_name("player1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(tony));
+    columnHint.column_name_ref() = ("player1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
+    context1.column_hints_ref() = (std::move(columnHints));
     // const auto& expr = *RelationalExpression::makeEQ(
     //     pool,
     //     EdgePropertyExpression::make(pool, "Teammate", "teamName"),
     //     ConstantExpression::make(pool, Value("Spurs")));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -871,15 +873,15 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -888,25 +890,25 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(tony));
-    columnHint.set_column_name("player1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(tony));
+    columnHint.column_name_ref() = ("player1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
+    context1.column_hints_ref() = (std::move(columnHints));
     const auto& expr =
         *RelationalExpression::makeNE(pool,
                                       EdgePropertyExpression::make(pool, "Teammate", "teamName"),
                                       ConstantExpression::make(pool, Value("Spurs")));
-    context1.set_filter(expr.encode());
-    context1.set_index_id(102);
+    context1.filter_ref() = (expr.encode());
+    context1.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -958,35 +960,35 @@ TEST_P(LookupIndexTest, TagIndexWithDataTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("games");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
     std::string name = "Rudy Gay";
-    columnHint.set_begin_value(Value(name));
-    columnHint.set_column_name("name");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(name));
+    columnHint.column_name_ref() = ("name");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(1);
+    context1.column_hints_ref() = (std::move(columnHints));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -1045,15 +1047,15 @@ TEST_P(LookupIndexTest, EdgeIndexWithDataTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -1062,21 +1064,21 @@ TEST_P(LookupIndexTest, EdgeIndexWithDataTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("startYear");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(tony));
-    columnHint.set_column_name("player1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (Value(tony));
+    columnHint.column_name_ref() = ("player1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.column_hints_ref() = (std::move(columnHints));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -1144,23 +1146,23 @@ TEST_P(LookupIndexTest, TagWithPropStatsVerticesIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     cpp2::IndexQueryContext context1;
-    context1.set_filter("");
-    context1.set_index_id(4);
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (4);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
-    req.set_return_columns({kVid, kTag});
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
+    req.return_columns_ref() = {kVid, kTag};
 
     auto fut = processor->getFuture();
     processor->process(req);
@@ -1217,23 +1219,23 @@ TEST_P(LookupIndexTest, TagWithoutPropStatsVerticesIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     cpp2::IndexQueryContext context1;
-    context1.set_filter("");
-    context1.set_index_id(4);
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (4);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
-    req.set_return_columns({kVid, kTag});
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
+    req.return_columns_ref() = {kVid, kTag};
 
     auto fut = processor->getFuture();
     processor->process(req);
@@ -1291,23 +1293,23 @@ TEST_P(LookupIndexTest, EdgeWithPropStatsVerticesIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(101);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (101);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     cpp2::IndexQueryContext context1;
-    context1.set_filter("");
-    context1.set_index_id(103);
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (103);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
-    req.set_return_columns({kSrc, kType, kRank, kDst});
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
+    req.return_columns_ref() = {kSrc, kType, kRank, kDst};
 
     auto fut = processor->getFuture();
     processor->process(req);
@@ -1374,23 +1376,23 @@ TEST_P(LookupIndexTest, EdgeWithoutPropStatsVerticesIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(101);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (101);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     cpp2::IndexQueryContext context1;
-    context1.set_filter("");
-    context1.set_index_id(103);
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (103);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
-    req.set_return_columns({kSrc, kType, kRank, kDst});
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
+    req.return_columns_ref() = {kSrc, kType, kRank, kDst};
 
     auto fut = processor->getFuture();
     processor->process(req);
@@ -1446,15 +1448,15 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
 
     meta::cpp2::ColumnDef col1;
     col1.name = "col1";
-    col1.type.set_type(PropertyType::INT64);
-    col1.set_nullable(true);
+    col1.type.type_ref() = (PropertyType::INT64);
+    col1.nullable_ref() = (true);
     cols.emplace_back(std::move(col1));
 
     meta::cpp2::ColumnDef col2;
     col2.name = "col2";
-    col2.type.set_type(PropertyType::FIXED_STRING);
-    col2.type.set_type_length(20);
-    col2.set_nullable(true);
+    col2.type.type_ref() = (PropertyType::FIXED_STRING);
+    col2.type.type_length_ref() = (20);
+    col2.nullable_ref() = (true);
     cols.emplace_back(std::move(col2));
 
     indexMan->addTagIndex(spaceId, tagId, indexId, std::move(cols));
@@ -1467,27 +1469,27 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     PartitionID partId = 1;
     cpp2::AddVerticesRequest req;
-    req.set_space_id(spaceId);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = (spaceId);
+    req.if_not_exists_ref() = (true);
     std::unordered_map<TagID, std::vector<std::string>> propNames;
     propNames[tagId] = {"col1", "col2", "col3", "col4"};
-    req.set_prop_names(std::move(propNames));
+    req.prop_names_ref() = (std::move(propNames));
     {
       // all not null
       VertexID vId = "1_a_1_a";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(1));
       props.emplace_back(Value("aaa"));
       props.emplace_back(Value(1));
       props.emplace_back(Value("aaa"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = genVid(vId);
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1495,17 +1497,17 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
       VertexID vId = "string_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(2));
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value(2));
       props.emplace_back(NullType::__NULL__);
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1513,17 +1515,17 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
       VertexID vId = "int_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value("bbb"));
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value("bbb"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1531,17 +1533,17 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
       VertexID vId = "3_c_null_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(3));
       props.emplace_back(Value("ccc"));
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1549,17 +1551,17 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
       VertexID vId = "3_c_3_c";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(3));
       props.emplace_back(Value("ccc"));
       props.emplace_back(Value(3));
       props.emplace_back(Value("ccc"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1567,17 +1569,17 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
       VertexID vId = "all_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
 
@@ -1588,27 +1590,27 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     EXPECT_EQ(0, resp.result.failed_parts.size());
   }
   cpp2::LookupIndexRequest req;
-  req.set_space_id(spaceId);
-  req.set_parts({1, 2, 3, 4, 5, 6});
-  req.set_return_columns({kVid});
+  req.space_id_ref() = (spaceId);
+  req.parts_ref() = {1, 2, 3, 4, 5, 6};
+  req.return_columns_ref() = {kVid};
   {
     LOG(INFO) << "lookup on tag where tag.col1 == 0";
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_column_name("col1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-    columnHint.set_begin_value(0);
+    columnHint.column_name_ref() = ("col1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (0);
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints({columnHint});
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = {columnHint};
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1621,21 +1623,21 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     LOG(INFO) << "lookup on tag where tag.col1 == 1";
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_column_name("col1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-    columnHint.set_begin_value(1);
+    columnHint.column_name_ref() = ("col1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = (1);
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints({columnHint});
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = {columnHint};
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1651,30 +1653,30 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     std::vector<cpp2::IndexColumnHint> columnHints;
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col1");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value(1);
+      columnHint.column_name_ref() = ("col1");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = (1);
       columnHints.emplace_back(std::move(columnHint));
     }
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col2");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value("aaa");
+      columnHint.column_name_ref() = ("col2");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = ("aaa");
       columnHints.emplace_back(std::move(columnHint));
     }
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = "";
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1688,22 +1690,22 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     LOG(INFO) << "lookup on tag where tag.col1 < 2";
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_column_name("col1");
-    columnHint.set_scan_type(cpp2::ScanType::RANGE);
-    columnHint.set_begin_value(std::numeric_limits<int64_t>::min());
-    columnHint.set_end_value(2);
+    columnHint.column_name_ref() = ("col1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::RANGE);
+    columnHint.begin_value_ref() = (std::numeric_limits<int64_t>::min());
+    columnHint.end_value_ref() = (2);
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints({columnHint});
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = {columnHint};
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1717,22 +1719,22 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     LOG(INFO) << "lookup on tag where tag.col1 >= 2";
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_column_name("col1");
-    columnHint.set_scan_type(cpp2::ScanType::RANGE);
-    columnHint.set_begin_value(2);
-    columnHint.set_end_value(std::numeric_limits<int64_t>::max());
+    columnHint.column_name_ref() = ("col1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::RANGE);
+    columnHint.begin_value_ref() = (2);
+    columnHint.end_value_ref() = (std::numeric_limits<int64_t>::max());
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints({columnHint});
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = {columnHint};
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1748,22 +1750,22 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     LOG(INFO) << "lookup on tag where tag.col1 > 2";
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_column_name("col1");
-    columnHint.set_scan_type(cpp2::ScanType::RANGE);
-    columnHint.set_begin_value(3);
-    columnHint.set_end_value(std::numeric_limits<int64_t>::max());
+    columnHint.column_name_ref() = ("col1");
+    columnHint.scan_type_ref() = (cpp2::ScanType::RANGE);
+    columnHint.begin_value_ref() = (3);
+    columnHint.end_value_ref() = (std::numeric_limits<int64_t>::max());
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints({columnHint});
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = {columnHint};
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1782,16 +1784,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     std::vector<cpp2::IndexColumnHint> columnHints;
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col1");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value(3);
+      columnHint.column_name_ref() = ("col1");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = (3);
       columnHints.emplace_back(std::move(columnHint));
     }
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col2");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value("ccc");
+      columnHint.column_name_ref() = ("col2");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = ("ccc");
       columnHints.emplace_back(std::move(columnHint));
     }
 
@@ -1801,16 +1803,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
                                       ConstantExpression::make(pool, Value(1)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter(expr.encode());
-    context.set_index_id(222);
-    context.set_column_hints(columnHints);
+    context.filter_ref() = (expr.encode());
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (columnHints);
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1829,16 +1831,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     std::vector<cpp2::IndexColumnHint> columnHints;
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col1");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value(3);
+      columnHint.column_name_ref() = ("col1");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = (3);
       columnHints.emplace_back(std::move(columnHint));
     }
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col2");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value("ccc");
+      columnHint.column_name_ref() = ("col2");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = ("ccc");
       columnHints.emplace_back(std::move(columnHint));
     }
     const auto& expr =
@@ -1847,16 +1849,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
                                       ConstantExpression::make(pool, Value(5)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter(expr.encode());
-    context.set_index_id(222);
-    context.set_column_hints(columnHints);
+    context.filter_ref() = (expr.encode());
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (columnHints);
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1875,16 +1877,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     std::vector<cpp2::IndexColumnHint> columnHints;
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col1");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value(3);
+      columnHint.column_name_ref() = ("col1");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = (3);
       columnHints.emplace_back(std::move(columnHint));
     }
     {
       cpp2::IndexColumnHint columnHint;
-      columnHint.set_column_name("col2");
-      columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-      columnHint.set_begin_value("ccc");
+      columnHint.column_name_ref() = ("col2");
+      columnHint.scan_type_ref() = (cpp2::ScanType::PREFIX);
+      columnHint.begin_value_ref() = ("ccc");
       columnHints.emplace_back(std::move(columnHint));
     }
     const auto& expr = *nebula::LogicalExpression::makeAnd(
@@ -1897,16 +1899,16 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
                                      ConstantExpression::make(pool, Value("a"))));
 
     cpp2::IndexQueryContext context;
-    context.set_filter(expr.encode());
-    context.set_index_id(222);
-    context.set_column_hints(columnHints);
+    context.filter_ref() = (expr.encode());
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (columnHints);
 
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
+    schemaId.tag_id_ref() = (111);
     cpp2::IndexSpec indices;
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1943,10 +1945,10 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   auto nullColumnDef = [strColLen](const std::string& name, const PropertyType type) {
     meta::cpp2::ColumnDef col;
     col.name = name;
-    col.type.set_type(type);
-    col.set_nullable(true);
+    col.type.type_ref() = (type);
+    col.nullable_ref() = (true);
     if (type == PropertyType::FIXED_STRING) {
-      col.type.set_type_length(strColLen);
+      col.type.type_length_ref() = (strColLen);
     }
     return col;
   };
@@ -1966,27 +1968,27 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   {
     PartitionID partId = 1;
     cpp2::AddVerticesRequest req;
-    req.set_space_id(spaceId);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = (spaceId);
+    req.if_not_exists_ref() = (true);
     std::unordered_map<TagID, std::vector<std::string>> propNames;
     propNames[tagId] = {"col_bool", "col_int", "col_double", "col_str"};
-    req.set_prop_names(std::move(propNames));
+    req.prop_names_ref() = (std::move(propNames));
     {
       // all not null
       VertexID vId = "true_1_1.0_a";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(true));
       props.emplace_back(Value(1));
       props.emplace_back(Value(1.0f));
       props.emplace_back(Value("aaa"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -1994,17 +1996,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
       VertexID vId = "null_2_2.0_b";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value(2));
       props.emplace_back(Value(2.0f));
       props.emplace_back(Value("bbb"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -2012,17 +2014,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
       VertexID vId = "false_null_3.0_c";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(false));
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value(3.0f));
       props.emplace_back(Value("ccc"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -2030,17 +2032,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
       VertexID vId = "true_4_null_d";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(true));
       props.emplace_back(Value(4));
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(Value("ddd"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -2048,17 +2050,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
       VertexID vId = "false_5_5.0_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(Value(false));
       props.emplace_back(Value(5));
       props.emplace_back(Value(5.0f));
       props.emplace_back(NullType::__NULL__);
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     {
@@ -2066,17 +2068,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
       VertexID vId = "all_null";
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = (tagId);
       std::vector<Value> props;
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
       props.emplace_back(NullType::__NULL__);
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = (std::move(props));
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(genVid(vId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = (genVid(vId));
+      newVertex.tags_ref() = (std::move(newTags));
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
 
@@ -2092,17 +2094,17 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
                        const Value& begin,
                        const Value& end) {
     cpp2::IndexColumnHint hint;
-    hint.set_column_name(col);
-    hint.set_scan_type(scanType);
-    hint.set_begin_value(begin);
-    hint.set_end_value(end);
+    hint.column_name_ref() = (col);
+    hint.scan_type_ref() = (scanType);
+    hint.begin_value_ref() = (begin);
+    hint.end_value_ref() = (end);
     return hint;
   };
 
   cpp2::LookupIndexRequest req;
-  req.set_space_id(spaceId);
-  req.set_parts({1, 2, 3, 4, 5, 6});
-  req.set_return_columns({kVid});
+  req.space_id_ref() = (spaceId);
+  req.parts_ref() = {1, 2, 3, 4, 5, 6};
+  req.return_columns_ref() = {kVid};
 
   // bool range scan will be forbidden in query engine, so only test prefix for
   // bool
@@ -2112,16 +2114,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_bool", cpp2::ScanType::PREFIX, Value(true), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2140,16 +2142,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_int", cpp2::ScanType::PREFIX, Value(1), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2168,16 +2170,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         "col_int", cpp2::ScanType::RANGE, Value(3), Value(std::numeric_limits<int64_t>::max())));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2196,16 +2198,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         "col_int", cpp2::ScanType::RANGE, Value(std::numeric_limits<int64_t>::min()), Value(4)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2224,16 +2226,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_int", cpp2::ScanType::RANGE, Value(0), Value(3)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2252,16 +2254,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_int", cpp2::ScanType::RANGE, Value(0), Value(10)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2284,16 +2286,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
                                         Value(2.0)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2316,16 +2318,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
                                         Value(std::numeric_limits<double>::max())));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2346,16 +2348,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_double", cpp2::ScanType::RANGE, Value(0.0), Value(10.0)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2376,16 +2378,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_str", cpp2::ScanType::PREFIX, Value("aaa"), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2410,16 +2412,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_str", cpp2::ScanType::RANGE, Value(begin), Value(end)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2441,16 +2443,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_str", cpp2::ScanType::RANGE, Value("a"), Value("c")));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2468,16 +2470,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2498,16 +2500,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2531,16 +2533,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_double", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2566,16 +2568,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         columnHint("col_str", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2597,16 +2599,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_str", cpp2::ScanType::PREFIX, Value("ddd"), Value()));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2630,16 +2632,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
         "col_str", cpp2::ScanType::RANGE, Value(std::string(strColLen, '\0')), Value("d")));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2665,16 +2667,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
                                         Value(std::numeric_limits<double>::max())));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2693,16 +2695,16 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     columnHints.emplace_back(columnHint("col_int", cpp2::ScanType::RANGE, Value(0), Value(10)));
 
     cpp2::IndexQueryContext context;
-    context.set_filter("");
-    context.set_index_id(222);
-    context.set_column_hints(std::move(columnHints));
+    context.filter_ref() = ("");
+    context.index_id_ref() = (222);
+    context.column_hints_ref() = (std::move(columnHints));
 
     cpp2::IndexSpec indices;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(111);
-    indices.set_schema_id(schemaId);
-    indices.set_contexts({context});
-    req.set_indices(std::move(indices));
+    schemaId.tag_id_ref() = (111);
+    indices.schema_id_ref() = (schemaId);
+    indices.contexts_ref() = {context};
+    req.indices_ref() = (std::move(indices));
 
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -2750,49 +2752,49 @@ TEST_P(LookupIndexTest, DeDupTagIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = (1);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     // player.name_ == "Rudy Gay"
     cpp2::IndexColumnHint columnHint1;
     std::string name1 = "Rudy Gay";
-    columnHint1.set_begin_value(Value(name1));
-    columnHint1.set_column_name("name");
-    columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint1.begin_value_ref() = (Value(name1));
+    columnHint1.column_name_ref() = ("name");
+    columnHint1.scan_type_ref() = (cpp2::ScanType::PREFIX);
     // player.name_ == "Rudy Gay"
     cpp2::IndexColumnHint columnHint2;
     std::string name2 = "Rudy Gay";
-    columnHint2.set_begin_value(Value(name2));
-    columnHint2.set_column_name("name");
-    columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint2.begin_value_ref() = (Value(name2));
+    columnHint2.column_name_ref() = ("name");
+    columnHint2.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints1;
     columnHints1.emplace_back(std::move(columnHint1));
     std::vector<IndexColumnHint> columnHints2;
     columnHints2.emplace_back(std::move(columnHint2));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints1));
-    context1.set_filter("");
-    context1.set_index_id(1);
+    context1.column_hints_ref() = (std::move(columnHints1));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (1);
     cpp2::IndexQueryContext context2;
-    context2.set_column_hints(std::move(columnHints2));
-    context2.set_filter("");
-    context2.set_index_id(1);
+    context2.column_hints_ref() = (std::move(columnHints2));
+    context2.filter_ref() = ("");
+    context2.index_id_ref() = (1);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
     contexts.emplace_back(std::move(context2));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -2848,15 +2850,15 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = (spaceId);
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = (102);
+    indices.schema_id_ref() = (schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = (std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -2865,33 +2867,33 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = (std::move(returnCols));
     // teammates.player1 == "Tony Parker"
     cpp2::IndexColumnHint columnHint1;
-    columnHint1.set_begin_value(Value(tony));
-    columnHint1.set_column_name("player1");
-    columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint1.begin_value_ref() = (Value(tony));
+    columnHint1.column_name_ref() = ("player1");
+    columnHint1.scan_type_ref() = (cpp2::ScanType::PREFIX);
     cpp2::IndexColumnHint columnHint2;
-    columnHint2.set_begin_value(Value(tony));
-    columnHint2.set_column_name("player1");
-    columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint2.begin_value_ref() = (Value(tony));
+    columnHint2.column_name_ref() = ("player1");
+    columnHint2.scan_type_ref() = (cpp2::ScanType::PREFIX);
     std::vector<IndexColumnHint> columnHints1;
     columnHints1.emplace_back(std::move(columnHint1));
     std::vector<IndexColumnHint> columnHints2;
     columnHints2.emplace_back(std::move(columnHint2));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints1));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.column_hints_ref() = (std::move(columnHints1));
+    context1.filter_ref() = ("");
+    context1.index_id_ref() = (102);
     cpp2::IndexQueryContext context2;
-    context2.set_column_hints(std::move(columnHints2));
-    context2.set_filter("");
-    context2.set_index_id(102);
+    context2.column_hints_ref() = (std::move(columnHints2));
+    context2.filter_ref() = ("");
+    context2.index_id_ref() = (102);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
     contexts.emplace_back(std::move(context2));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = (std::move(contexts));
+    req.indices_ref() = (std::move(indices));
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -2923,7 +2925,7 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
 
 }  // namespace storage
 }  // namespace nebula

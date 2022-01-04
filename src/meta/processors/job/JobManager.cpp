@@ -12,6 +12,7 @@
 #include <boost/stacktrace.hpp>
 
 #include "common/http/HttpClient.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
@@ -33,6 +34,7 @@ using nebula::kvstore::KVIterator;
 
 namespace nebula {
 namespace meta {
+stats::CounterId kNumRunningJobs;
 
 JobManager* JobManager::getInstance() {
   static JobManager inst;
@@ -43,8 +45,7 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
   if (store == nullptr) {
     return false;
   }
-  std::lock_guard<std::mutex> lk(statusGuard_);
-  if (status_ != JbmgrStatus::NOT_START) {
+  if (status_.load(std::memory_order_acquire) != JbmgrStatus::NOT_START) {
     return false;
   }
   kvStore_ = store;
@@ -52,7 +53,7 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
   lowPriorityQueue_ = std::make_unique<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>>();
   highPriorityQueue_ = std::make_unique<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>>();
 
-  status_ = JbmgrStatus::IDLE;
+  status_.store(JbmgrStatus::IDLE, std::memory_order_release);
   if (handleRemainingJobs() != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return false;
   }
@@ -61,7 +62,9 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
   return true;
 }
 
-JobManager::~JobManager() { shutDown(); }
+JobManager::~JobManager() {
+  shutDown();
+}
 
 nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -82,10 +85,10 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
     auto optJobRet = JobDescription::makeJobDescription(iter->key(), iter->val());
     if (nebula::ok(optJobRet)) {
       auto optJob = nebula::value(optJobRet);
-      std::unique_ptr<MetaJobExecutor> je =
-          MetaJobExecutorFactory::createMetaJobExecutor(optJob, kvStore_, adminClient_);
+      std::unique_ptr<JobExecutor> je =
+          JobExecutorFactory::createJobExecutor(optJob, kvStore_, adminClient_);
       // Only balance has been recovered
-      if (optJob.getStatus() == cpp2::JobStatus::RUNNING && je->runInMeta()) {
+      if (optJob.getStatus() == cpp2::JobStatus::RUNNING && je->isMetaJob()) {
         jds.emplace_back(optJob);
       }
     }
@@ -99,24 +102,22 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
 
 void JobManager::shutDown() {
   LOG(INFO) << "JobManager::shutDown() begin";
-  if (status_ == JbmgrStatus::STOPPED) {  // in case of shutdown more than once
+  if (status_.load(std::memory_order_acquire) ==
+      JbmgrStatus::STOPPED) {  // in case of shutdown more than once
     LOG(INFO) << "JobManager not running, exit";
     return;
   }
-  {
-    std::lock_guard<std::mutex> lk(statusGuard_);
-    status_ = JbmgrStatus::STOPPED;
-  }
+  status_.store(JbmgrStatus::STOPPED, std::memory_order_release);
   bgThread_.join();
   LOG(INFO) << "JobManager::shutDown() end";
 }
 
 void JobManager::scheduleThread() {
   LOG(INFO) << "JobManager::runJobBackground() enter";
-  while (status_ != JbmgrStatus::STOPPED) {
+  while (status_.load(std::memory_order_acquire) != JbmgrStatus::STOPPED) {
     std::pair<JbOp, JobID> opJobId;
-    while (status_ == JbmgrStatus::BUSY || !try_dequeue(opJobId)) {
-      if (status_ == JbmgrStatus::STOPPED) {
+    while (status_.load(std::memory_order_acquire) == JbmgrStatus::BUSY || !try_dequeue(opJobId)) {
+      if (status_.load(std::memory_order_acquire) == JbmgrStatus::STOPPED) {
         LOG(INFO) << "[JobManager] detect shutdown called, exit";
         break;
       }
@@ -129,17 +130,12 @@ void JobManager::scheduleThread() {
       continue;  // leader change or archive happened
     }
     auto jobDesc = nebula::value(jobDescRet);
-    if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING)) {
+    if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING, opJobId.first == JbOp::RECOVER)) {
       LOG(INFO) << "[JobManager] skip job " << opJobId.second;
       continue;
     }
     save(jobDesc.jobKey(), jobDesc.jobVal());
-    {
-      std::lock_guard<std::mutex> lk(statusGuard_);
-      if (status_ == JbmgrStatus::IDLE) {
-        status_ = JbmgrStatus::BUSY;
-      }
-    }
+    compareChangeStatus(JbmgrStatus::IDLE, JbmgrStatus::BUSY);
     if (!runJobInternal(jobDesc, opJobId.first)) {
       jobFinished(opJobId.second, cpp2::JobStatus::FAILED);
     }
@@ -148,8 +144,11 @@ void JobManager::scheduleThread() {
 
 // @return: true if all task dispatched, else false
 bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
-  std::unique_ptr<MetaJobExecutor> jobExec =
-      MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_, adminClient_);
+  std::lock_guard<std::mutex> lk(muJobFinished_);
+  std::unique_ptr<JobExecutor> je =
+      JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
+  JobExecutor* jobExec = je.get();
+  runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
   if (jobExec == nullptr) {
     LOG(ERROR) << "unreconized job cmd " << apache::thrift::util::enumNameSafe(jobDesc.getCmd());
     return false;
@@ -172,22 +171,14 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   if (op == JbOp::RECOVER) {
     jobExec->recovery();
   }
-  if (jobExec->runInMeta()) {
-    jobExec->setFinishCallBack([this, &jobDesc](bool ret) {
-      SCOPE_EXIT { cleanJob(jobDesc.getJobId()); };
-      if (ret) {
-        JobDescription jd = jobDesc;
-        if (!jd.setStatus(cpp2::JobStatus::FINISHED)) {
-          return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
-        }
-        statusGuard_.lock();
-        if (status_ == JbmgrStatus::BUSY) {
-          status_ = JbmgrStatus::IDLE;
-        }
-        statusGuard_.unlock();
-        return save(jd.jobKey(), jd.jobVal());
-      } else {
+  if (jobExec->isMetaJob()) {
+    jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
+      if (status == meta::cpp2::JobStatus::STOPPED) {
+        std::lock_guard<std::mutex> lkg(muJobFinished_);
+        cleanJob(jobDesc.getJobId());
         return nebula::cpp2::ErrorCode::SUCCEEDED;
+      } else {
+        return jobFinished(jobDesc.getJobId(), status);
       }
     });
   }
@@ -205,6 +196,10 @@ void JobManager::cleanJob(JobID jobId) {
   if (it != inFlightJobs_.end()) {
     inFlightJobs_.erase(it);
   }
+  auto itr = runningJobs_.find(jobId);
+  if (itr != runningJobs_.end()) {
+    runningJobs_.erase(itr);
+  }
 }
 
 nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus jobStatus) {
@@ -212,7 +207,6 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
       "{}, jobId={}, result={}", __func__, jobId, apache::thrift::util::enumNameSafe(jobStatus));
   // normal job finish may race to job stop
   std::lock_guard<std::mutex> lk(muJobFinished_);
-  SCOPE_EXIT { cleanJob(jobId); };
   auto optJobDescRet = JobDescription::loadJobDescription(jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     LOG(WARNING) << folly::sformat("can't load job, jobId={}", jobId);
@@ -220,10 +214,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
       // there is a rare condition, that when job finished,
       // the job description is deleted(default more than a week)
       // but stop an invalid job should not set status to idle.
-      std::lock_guard<std::mutex> statusLk(statusGuard_);
-      if (status_ == JbmgrStatus::BUSY) {
-        status_ = JbmgrStatus::IDLE;
-      }
+      compareChangeStatus(JbmgrStatus::BUSY, JbmgrStatus::IDLE);
     }
     return nebula::error(optJobDescRet);
   }
@@ -234,23 +225,18 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
     // job already been set as finished, failed or stopped
     return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
   }
-  {
-    std::lock_guard<std::mutex> statusLk(statusGuard_);
-    if (status_ == JbmgrStatus::BUSY) {
-      status_ = JbmgrStatus::IDLE;
-    }
-  }
+  compareChangeStatus(JbmgrStatus::BUSY, JbmgrStatus::IDLE);
   auto rc = save(optJobDesc.jobKey(), optJobDesc.jobVal());
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }
 
-  auto jobExec = MetaJobExecutorFactory::createMetaJobExecutor(optJobDesc, kvStore_, adminClient_);
-
-  if (!jobExec) {
-    LOG(WARNING) << folly::sformat("unable to create jobExecutor, jobId={}", jobId);
+  auto it = runningJobs_.find(jobId);
+  if (it == runningJobs_.end()) {
+    LOG(WARNING) << folly::sformat("can't find jobExecutor, jobId={}", jobId);
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
+  std::unique_ptr<JobExecutor>& jobExec = it->second;
   if (!optJobDesc.getParas().empty()) {
     auto spaceName = optJobDesc.getParas().back();
     auto spaceIdRet = getSpaceId(spaceName);
@@ -268,9 +254,13 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
     jobExec->setSpaceId(spaceId);
   }
   if (jobStatus == cpp2::JobStatus::STOPPED) {
-    return jobExec->stop();
+    jobExec->stop();
+    if (!jobExec->isMetaJob()) {
+      cleanJob(jobId);
+    }
   } else {
     jobExec->finish(jobStatus == cpp2::JobStatus::FINISHED);
+    cleanJob(jobId);
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -293,7 +283,7 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   }
 
   auto optJobDesc = nebula::value(optJobDescRet);
-  auto jobExec = MetaJobExecutorFactory::createMetaJobExecutor(optJobDesc, kvStore_, adminClient_);
+  auto jobExec = JobExecutorFactory::createJobExecutor(optJobDesc, kvStore_, adminClient_);
 
   if (!jobExec) {
     LOG(WARNING) << folly::sformat("createMetaJobExecutor failed(), jobId={}", jobId);
@@ -322,6 +312,11 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   return jobExec->saveSpecialTaskStatus(req);
 }
 
+void JobManager::compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired) {
+  JbmgrStatus ex = expected;
+  status_.compare_exchange_strong(ex, desired, std::memory_order_acq_rel);
+}
+
 /**
  * @brief
  *      client should retry if any persist attempt
@@ -333,7 +328,8 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
   auto jobId = req.get_job_id();
   auto taskId = req.get_task_id();
   // only an active job manager will accept task finish report
-  if (status_ == JbmgrStatus::STOPPED || status_ == JbmgrStatus::NOT_START) {
+  if (status_.load(std::memory_order_acquire) == JbmgrStatus::STOPPED ||
+      status_.load(std::memory_order_acquire) == JbmgrStatus::NOT_START) {
     LOG(INFO) << folly::sformat(
         "report to an in-active job manager, job={}, task={}", jobId, taskId);
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
@@ -571,7 +567,8 @@ JobManager::showJob(JobID iJob, const std::string& spaceName) {
       ret.second.emplace_back(td.toTaskDesc());
     }
   }
-  if (ret.first.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE) {
+  if (ret.first.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
+      ret.first.get_cmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
     auto res = BalancePlan::show(iJob, kvStore_, adminClient_);
     if (ok(res)) {
       std::vector<cpp2::BalanceTask> thriftTasks = value(res);
@@ -651,7 +648,9 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
       if (optJob.getParas().back() != spaceName) {
         continue;
       }
-      if (optJob.getStatus() == cpp2::JobStatus::QUEUE) {
+      if (optJob.getStatus() == cpp2::JobStatus::QUEUE ||
+          (jobIds.size() && (optJob.getStatus() == cpp2::JobStatus::FAILED ||
+                             optJob.getStatus() == cpp2::JobStatus::STOPPED))) {
         // Check if the job exists
         JobID jId = 0;
         auto jobExist = checkJobExist(optJob.getCmd(), optJob.getParas(), jId);

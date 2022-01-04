@@ -12,11 +12,17 @@ namespace nebula {
 
 class CaseList final {
  public:
-  static CaseList* make(ObjectPool* pool, size_t sz = 0) { return pool->add(new CaseList(sz)); }
+  static CaseList* make(ObjectPool* pool, size_t sz = 0) {
+    return pool->add(new CaseList(sz));
+  }
 
-  void add(Expression* when, Expression* then) { items_.emplace_back(when, then); }
+  void add(Expression* when, Expression* then) {
+    items_.emplace_back(when, then);
+  }
 
-  auto items() { return items_; }
+  auto items() {
+    return items_;
+  }
 
   struct Item {
     Item(Expression* wh, Expression* th) : when(wh), then(th) {}
@@ -26,7 +32,9 @@ class CaseList final {
 
  private:
   CaseList() = default;
-  explicit CaseList(size_t sz) { items_.reserve(sz); }
+  explicit CaseList(size_t sz) {
+    items_.reserve(sz);
+  }
 
  private:
   std::vector<Item> items_;
@@ -48,13 +56,21 @@ class CaseExpression final : public Expression {
 
   const Value& eval(ExpressionContext& ctx) override;
 
-  void setGeneric(bool isGeneric = true) { isGeneric_ = isGeneric; }
+  void setGeneric(bool isGeneric = true) {
+    isGeneric_ = isGeneric;
+  }
 
-  void setCondition(Expression* cond) { condition_ = cond; }
+  void setCondition(Expression* cond) {
+    condition_ = cond;
+  }
 
-  void setDefault(Expression* defaultResult) { default_ = defaultResult; }
+  void setDefault(Expression* defaultResult) {
+    default_ = defaultResult;
+  }
 
-  void setCases(CaseList* cases) { cases_ = cases->items(); }
+  void setCases(CaseList* cases) {
+    cases_ = cases->items();
+  }
 
   void setWhen(size_t index, Expression* when) {
     DCHECK_LT(index, cases_.size());
@@ -66,19 +82,33 @@ class CaseExpression final : public Expression {
     cases_[index].then = then;
   }
 
-  bool hasCondition() const { return condition_ != nullptr; }
+  bool hasCondition() const {
+    return condition_ != nullptr;
+  }
 
-  bool hasDefault() const { return default_ != nullptr; }
+  bool hasDefault() const {
+    return default_ != nullptr;
+  }
 
-  size_t numCases() const { return cases_.size(); }
+  size_t numCases() const {
+    return cases_.size();
+  }
 
-  bool isGeneric() const { return isGeneric_; }
+  bool isGeneric() const {
+    return isGeneric_;
+  }
 
-  Expression* condition() const { return condition_; }
+  Expression* condition() const {
+    return condition_;
+  }
 
-  Expression* defaultResult() const { return default_; }
+  Expression* defaultResult() const {
+    return default_;
+  }
 
-  const std::vector<CaseList::Item>& cases() const { return cases_; }
+  const std::vector<CaseList::Item>& cases() const {
+    return cases_;
+  }
 
   std::string toString() const override;
 
@@ -100,7 +130,7 @@ class CaseExpression final : public Expression {
  private:
   explicit CaseExpression(ObjectPool* pool) : Expression(pool, Kind::kCase), isGeneric_(true) {}
 
-  explicit CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)
+  CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)
       : Expression(pool, Kind::kCase), isGeneric_(isGeneric) {
     cases_ = cases->items();
   }

@@ -22,7 +22,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     if (nebula::ok(conflictRet)) {
       LOG(ERROR) << "Failed to create edge `" << edgeName
                  << "': some tag with the same name already exists.";
-      resp_.set_id(to(nebula::value(conflictRet), EntryType::EDGE));
+      resp_.id_ref() = to(nebula::value(conflictRet), EntryType::EDGE);
       handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
       onFinished();
       return;
@@ -46,8 +46,8 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
   }
 
   cpp2::Schema schema;
-  schema.set_columns(std::move(columns));
-  schema.set_schema_prop(req.get_schema().get_schema_prop());
+  schema.columns_ref() = std::move(columns);
+  schema.schema_prop_ref() = req.get_schema().get_schema_prop();
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
   auto ret = getEdgeType(spaceId, edgeName);
@@ -58,7 +58,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
       LOG(ERROR) << "Create Edge Failed :" << edgeName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     }
-    resp_.set_id(to(nebula::value(ret), EntryType::EDGE));
+    resp_.id_ref() = to(nebula::value(ret), EntryType::EDGE);
     onFinished();
     return;
   } else {
@@ -88,7 +88,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
                     MetaKeyUtils::schemaVal(edgeName, schema));
 
   LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
-  resp_.set_id(to(edgeType, EntryType::EDGE));
+  resp_.id_ref() = to(edgeType, EntryType::EDGE);
   doSyncPutAndUpdate(std::move(data));
 }
 

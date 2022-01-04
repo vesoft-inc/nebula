@@ -20,7 +20,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownProjectRule::kInstance =
     std::unique_ptr<PushFilterDownProjectRule>(new PushFilterDownProjectRule());
 
-PushFilterDownProjectRule::PushFilterDownProjectRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownProjectRule::PushFilterDownProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& PushFilterDownProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
@@ -48,6 +50,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
     auto varProps = graph::ExpressionUtils::collectAll(e,
                                                        {Expression::Kind::kTagProperty,
+                                                        Expression::Kind::kLabelTagProperty,
                                                         Expression::Kind::kEdgeProperty,
                                                         Expression::Kind::kInputProperty,
                                                         Expression::Kind::kVarProperty,
@@ -142,7 +145,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   return result;
 }
 
-std::string PushFilterDownProjectRule::toString() const { return "PushFilterDownProjectRule"; }
+std::string PushFilterDownProjectRule::toString() const {
+  return "PushFilterDownProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

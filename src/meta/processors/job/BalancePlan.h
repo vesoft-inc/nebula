@@ -17,7 +17,6 @@ namespace nebula {
 namespace meta {
 
 class BalancePlan {
-  friend class Balancer;
   friend class DataBalanceJobExecutor;
   FRIEND_TEST(BalanceTest, BalancePlanTest);
   FRIEND_TEST(BalanceTest, NormalTest);
@@ -41,7 +40,9 @@ class BalancePlan {
         tasks_(plan.tasks_),
         finishedTaskNum_(plan.finishedTaskNum_) {}
 
-  void addTask(BalanceTask task) { tasks_.emplace_back(std::move(task)); }
+  void addTask(BalanceTask task) {
+    tasks_.emplace_back(std::move(task));
+  }
 
   void invoke();
 
@@ -54,17 +55,27 @@ class BalancePlan {
    * */
   void rollback() {}
 
-  meta::cpp2::JobStatus status() { return jobDescription_.getStatus(); }
+  meta::cpp2::JobStatus status() {
+    return jobDescription_.getStatus();
+  }
 
-  void setStatus(meta::cpp2::JobStatus status) { jobDescription_.setStatus(status); }
+  void setStatus(meta::cpp2::JobStatus status) {
+    jobDescription_.setStatus(status);
+  }
 
-  nebula::cpp2::ErrorCode saveInStore(bool onlyPlan = false);
+  nebula::cpp2::ErrorCode saveInStore();
 
-  JobID id() const { return jobDescription_.getJobId(); }
+  JobID id() const {
+    return jobDescription_.getJobId();
+  }
 
-  const std::vector<BalanceTask>& tasks() const { return tasks_; }
+  const std::vector<BalanceTask>& tasks() const {
+    return tasks_;
+  }
 
-  int32_t taskSize() const { return tasks_.size(); }
+  int32_t taskSize() const {
+    return tasks_.size();
+  }
 
   void stop() {
     std::lock_guard<std::mutex> lg(lock_);
@@ -82,6 +93,8 @@ class BalancePlan {
                                                                                kvstore::KVStore* kv,
                                                                                AdminClient* client);
 
+  void setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func);
+
  private:
   JobDescription jobDescription_;
   kvstore::KVStore* kv_ = nullptr;
@@ -89,12 +102,14 @@ class BalancePlan {
   std::vector<BalanceTask> tasks_;
   std::mutex lock_;
   size_t finishedTaskNum_ = 0;
-  std::function<void()> onFinished_;
+  std::function<void(meta::cpp2::JobStatus)> onFinished_;
   bool stopped_ = false;
+  bool failed_ = false;
 
   // List of task index in tasks_;
   using Bucket = std::vector<int32_t>;
   std::vector<Bucket> buckets_;
+  std::atomic<int32_t> curIndex_;
 };
 
 }  // namespace meta

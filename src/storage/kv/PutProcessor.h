@@ -24,7 +24,7 @@ class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::KVPutRequest& req);
 
  private:
-  explicit PutProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  PutProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 

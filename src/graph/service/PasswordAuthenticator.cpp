@@ -8,9 +8,11 @@
 namespace nebula {
 namespace graph {
 
-PasswordAuthenticator::PasswordAuthenticator(meta::MetaClient* client) { metaClient_ = client; }
+PasswordAuthenticator::PasswordAuthenticator(meta::MetaClient* client) {
+  metaClient_ = client;
+}
 
-bool PasswordAuthenticator::auth(const std::string& user, const std::string& password) {
+Status PasswordAuthenticator::auth(const std::string& user, const std::string& password) {
   return metaClient_->authCheckFromCache(user, password);
 }
 

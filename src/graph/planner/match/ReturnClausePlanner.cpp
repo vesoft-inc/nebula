@@ -35,8 +35,7 @@ Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subP
     auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(rctx->order.get());
     NG_RETURN_IF_ERROR(orderPlan);
     auto plan = std::move(orderPlan).value();
-    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-    subPlan.root = plan.root;
+    subPlan = SegmentsConnector::addInput(plan, subPlan, true);
   }
 
   if (rctx->pagination != nullptr &&
@@ -45,8 +44,7 @@ Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subP
     auto paginationPlan = std::make_unique<PaginationPlanner>()->transform(rctx->pagination.get());
     NG_RETURN_IF_ERROR(paginationPlan);
     auto plan = std::move(paginationPlan).value();
-    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-    subPlan.root = plan.root;
+    subPlan = SegmentsConnector::addInput(plan, subPlan, true);
   }
 
   VLOG(1) << "return root: " << subPlan.root->outputVar()

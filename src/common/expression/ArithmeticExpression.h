@@ -58,10 +58,12 @@ class ArithmeticExpression final : public BinaryExpression {
     return pool_->add(new ArithmeticExpression(pool_, kind(), left()->clone(), right()->clone()));
   }
 
-  bool isArithmeticExpr() const override { return true; }
+  bool isArithmeticExpr() const override {
+    return true;
+  }
 
  private:
-  explicit ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+  ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : BinaryExpression(pool, kind, lhs, rhs) {}
 
  private:

@@ -116,9 +116,25 @@ class MetaKeyUtils final {
 
   static HostAddr parseMachineKey(folly::StringPiece key);
 
-  static std::string hostKey(std::string ip, Port port);
+  // hostDir store service(metad/storaged/graphd) address -> dir info(root path and data paths)
+  // agent will use these to start/stop service and backup/restore data
+  static std::string hostDirKey(std::string ip);
 
-  static std::string hostKeyV2(std::string addr, Port port);
+  static std::string hostDirKey(std::string host, Port port);
+
+  static HostAddr parseHostDirKey(folly::StringPiece key);
+
+  static const std::string& hostDirPrefix();
+
+  static const std::string hostDirHostPrefix(std::string host);
+
+  static std::string hostDirVal(cpp2::DirInfo dir);
+
+  static cpp2::DirInfo parseHostDir(folly::StringPiece val);
+
+  static std::string hostKey(std::string host, Port port);
+
+  static std::string hostKeyV2(std::string host, Port port);
 
   static const std::string& hostPrefix();
 
@@ -212,6 +228,10 @@ class MetaKeyUtils final {
   }
 
   static std::string indexSpaceKey(const std::string& name);
+
+  static std::string parseIndexSpaceKey(folly::StringPiece key);
+
+  static EntryType parseIndexType(folly::StringPiece key);
 
   static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
 
@@ -326,12 +346,15 @@ class MetaKeyUtils final {
 
   static GraphSpaceID parseStatsSpace(folly::StringPiece rawData);
 
-  static std::string fulltextServiceKey();
+  static std::string serviceKey(const meta::cpp2::ExternalServiceType& type);
 
-  static std::string fulltextServiceVal(meta::cpp2::FTServiceType type,
-                                        const std::vector<meta::cpp2::FTClient>& clients);
+  static std::string serviceVal(const std::vector<meta::cpp2::ServiceClient>& client);
 
-  static std::vector<meta::cpp2::FTClient> parseFTClients(folly::StringPiece rawData);
+  static const std::string& servicePrefix();
+
+  static meta::cpp2::ExternalServiceType parseServiceType(folly::StringPiece rawData);
+
+  static std::vector<meta::cpp2::ServiceClient> parseServiceClients(folly::StringPiece rawData);
 
   static const std::string& sessionPrefix();
 

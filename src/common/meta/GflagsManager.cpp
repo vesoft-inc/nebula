@@ -53,6 +53,7 @@ std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> GflagsManager
       {"minloglevel", {cpp2::ConfigMode::MUTABLE, false}},
       {"v", {cpp2::ConfigMode::MUTABLE, false}},
       {"heartbeat_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
+      {"agent_heartbeat_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
       {"meta_client_retry_times", {cpp2::ConfigMode::MUTABLE, false}},
       {"slow_op_threshold_ms", {cpp2::ConfigMode::MUTABLE, false}},
       {"wal_ttl", {cpp2::ConfigMode::MUTABLE, false}},
@@ -128,10 +129,10 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
       continue;
     }
     cpp2::ConfigItem item;
-    item.set_name(name);
-    item.set_module(module);
-    item.set_mode(mode);
-    item.set_value(std::move(value));
+    item.name_ref() = name;
+    item.module_ref() = module;
+    item.mode_ref() = mode;
+    item.value_ref() = std::move(value);
     configItems.emplace_back(std::move(item));
   }
   LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";

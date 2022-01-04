@@ -471,12 +471,12 @@ Feature: Yield Sentence
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst as id, $$ as dst | YIELD $-.dst where count($-.id) > 2
       """
-    Then a SemanticError should be raised at runtime: `(count($-.id)>2)', not support aggregate function in where sentence.
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($-.id) > 2'
     When executing query:
       """
       $var = go from "Tim Duncan" over like yield like._dst as id, $$ as dst; yield $var.dst where count($var.id) > 2
       """
-    Then a SemanticError should be raised at runtime: `(count($var.id)>2)', not support aggregate function in where sentence.
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($var.id) > 2'
 
   Scenario: DuplicateColumn
     When executing query:

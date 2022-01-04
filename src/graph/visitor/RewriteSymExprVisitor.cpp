@@ -51,9 +51,13 @@ void RewriteSymExprVisitor::visit(LabelAttributeExpression *expr) {
   }
 }
 
-void RewriteSymExprVisitor::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void RewriteSymExprVisitor::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void RewriteSymExprVisitor::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void RewriteSymExprVisitor::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void RewriteSymExprVisitor::visit(SubscriptExpression *expr) {
   UNUSED(expr);
@@ -144,6 +148,11 @@ void RewriteSymExprVisitor::visit(MapExpression *expr) {
 
 // property Expression
 void RewriteSymExprVisitor::visit(TagPropertyExpression *expr) {
+  UNUSED(expr);
+  hasWrongType_ = true;
+}
+
+void RewriteSymExprVisitor::visit(LabelTagPropertyExpression *expr) {
   UNUSED(expr);
   hasWrongType_ = true;
 }

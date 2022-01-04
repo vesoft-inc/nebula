@@ -10,7 +10,10 @@
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/admin/AgentHBProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/processors/job/AdminJobProcessor.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
@@ -23,12 +26,15 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
     // Initialize counters
     kHBCounters.init();
+    kAgentHBCounters.init();
   }
 
   /**
    * Parts distribution related operations.
    * */
   folly::Future<cpp2::ExecResp> future_createSpace(const cpp2::CreateSpaceReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_alterSpace(const cpp2::AlterSpaceReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_createSpaceAs(const cpp2::CreateSpaceAsReq& req) override;
 
@@ -116,14 +122,12 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ListIndexStatusResp> future_listEdgeIndexStatus(
       const cpp2::ListIndexStatusReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_signInFTService(
-      const cpp2::SignInFTServiceReq& req) override;
+  folly::Future<cpp2::ExecResp> future_signInService(const cpp2::SignInServiceReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_signOutFTService(
-      const cpp2::SignOutFTServiceReq& req) override;
+  folly::Future<cpp2::ExecResp> future_signOutService(const cpp2::SignOutServiceReq& req) override;
 
-  folly::Future<cpp2::ListFTClientsResp> future_listFTClients(
-      const cpp2::ListFTClientsReq& req) override;
+  folly::Future<cpp2::ListServiceClientsResp> future_listServiceClients(
+      const cpp2::ListServiceClientsReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_createFTIndex(const cpp2::CreateFTIndexReq& req) override;
 
@@ -158,6 +162,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
 
+  folly::Future<cpp2::AgentHBResp> future_agentHeartbeat(const cpp2::AgentHBReq& req) override;
+
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 
   folly::Future<cpp2::GetConfigResp> future_getConfig(const cpp2::GetConfigReq& req) override;
@@ -188,7 +194,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_mergeZone(const cpp2::MergeZoneReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_splitZone(const cpp2::SplitZoneReq& req) override;
+  folly::Future<cpp2::ExecResp> future_divideZone(const cpp2::DivideZoneReq& req) override;
 
   folly::Future<cpp2::ListZonesResp> future_listZones(const cpp2::ListZonesReq& req) override;
 
@@ -232,6 +238,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
       const cpp2::VerifyClientVersionReq& req) override;
+
+  folly::Future<cpp2::GetWorkerIdResp> future_getWorkerId(const cpp2::GetWorkerIdReq& req) override;
 
  private:
   kvstore::KVStore* kvstore_ = nullptr;

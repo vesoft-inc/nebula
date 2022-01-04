@@ -55,10 +55,10 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
   VLOG(1) << "leader host: " << leader;
 
   cpp2::ChainUpdateEdgeRequest chainReq;
-  chainReq.set_update_edge_request(reversedRequest);
-  chainReq.set_term(termOfSrc);
+  chainReq.update_edge_request_ref() = reversedRequest;
+  chainReq.term_ref() = termOfSrc;
   if (optVersion) {
-    chainReq.set_edge_version(optVersion.value());
+    chainReq.edge_version_ref() = optVersion.value();
   }
   auto resp = getResponse(
       evb,
@@ -88,7 +88,8 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   auto partId = directReq.get_parts().begin()->first;
   auto optLeader = getLeader(directReq.get_space_id(), partId);
   if (!optLeader.ok()) {
-    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId);
+    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId)
+                 << optLeader.status();
     p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
     return;
   }
@@ -120,15 +121,57 @@ cpp2::ChainAddEdgesRequest InternalStorageClient::makeChainAddReq(const cpp2::Ad
                                                                   TermID termId,
                                                                   folly::Optional<int64_t> ver) {
   cpp2::ChainAddEdgesRequest ret;
-  ret.set_space_id(req.get_space_id());
-  ret.set_parts(req.get_parts());
-  ret.set_prop_names(req.get_prop_names());
-  ret.set_if_not_exists(req.get_if_not_exists());
-  ret.set_term(termId);
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
+  ret.prop_names_ref() = req.get_prop_names();
+  ret.if_not_exists_ref() = req.get_if_not_exists();
+  ret.term_ref() = termId;
   if (ver) {
-    ret.set_edge_version(ver.value());
+    ret.edge_version_ref() = ver.value();
   }
   return ret;
+}
+
+void InternalStorageClient::chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
+                                             const std::string& txnId,
+                                             TermID termId,
+                                             folly::Promise<nebula::cpp2::ErrorCode>&& p,
+                                             folly::EventBase* evb) {
+  auto spaceId = req.get_space_id();
+  auto partId = req.get_parts().begin()->first;
+  auto optLeader = getLeader(req.get_space_id(), partId);
+  if (!optLeader.ok()) {
+    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId)
+                 << optLeader.status();
+    p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
+    return;
+  }
+  HostAddr& leader = optLeader.value();
+  leader.port += kInternalPortOffset;
+  VLOG(2) << "leader host: " << leader;
+
+  cpp2::ChainDeleteEdgesRequest chainReq;
+  chainReq.space_id_ref() = req.get_space_id();
+  chainReq.parts_ref() = req.get_parts();
+  chainReq.txn_id_ref() = txnId;
+  chainReq.term_ref() = termId;
+  auto resp = getResponse(
+      evb,
+      std::make_pair(leader, chainReq),
+      [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::ChainDeleteEdgesRequest& r) {
+        return client->future_chainDeleteEdges(r);
+      });
+
+  std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
+    auto code = getErrorCode(t);
+    if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      chainDeleteEdges(req, txnId, termId, std::move(p));
+    } else {
+      p.setValue(code);
+    }
+    return;
+  });
 }
 
 }  // namespace storage

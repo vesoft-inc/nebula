@@ -39,11 +39,12 @@ required:
          A list of meta severs' ip:port separated by comma.
          Default: 127.0.0.1:45500
 
-       --upgrade_version=<1|2>
-         This tool can only upgrade 1.x data or 2.0 RC data.
-         When the value is 1, upgrade the data from 1.x to 2.0 GA.
-         When the value is 2, upgrade the data from 2.0 RC to 2.0 GA.
-         Default: 0
+       --upgrade_version=<1:2|2RC:2|2:3>
+         This tool can only upgrade 1.x data, 2.0 RC, or 2.0 GA data.
+         1:2        upgrade the data from 1.x to 2.0GA
+         2RC:2      upgrade the data from 2.0RC to 2.0GA
+         2:3        upgrade the data from 2.0GA to 3.0
+         Default: ""
 
  optional:
        --write_batch_num=<N>
@@ -164,9 +165,9 @@ int main(int argc, char* argv[]) {
   CHECK_NOTNULL(schemaMan);
   CHECK_NOTNULL(indexMan);
 
-  if (FLAGS_upgrade_version != 1 && FLAGS_upgrade_version != 2) {
-    LOG(ERROR) << "Flag upgrade_version : " << FLAGS_upgrade_version
-               << " illegal, upgrade_version can only be 1 or 2";
+  std::vector<std::string> versions = {"1:2", "2RC:2", "2:3"};
+  if (std::find(versions.begin(), versions.end(), FLAGS_upgrade_version) == versions.end()) {
+    LOG(ERROR) << "Flag upgrade_version : " << FLAGS_upgrade_version;
     return EXIT_FAILURE;
   }
   LOG(INFO) << "Prepare phase end";

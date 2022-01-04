@@ -9,7 +9,10 @@
 
 #include "clients/storage/StorageClientBase.h"
 #include "common/base/Base.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftLocalClientManager.h"
 #include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
+#include "storage/GraphStorageLocalServer.h"
 
 namespace nebula {
 namespace storage {
@@ -22,7 +25,18 @@ using StorageRpcRespFuture = folly::SemiFuture<StorageRpcResponse<T>>;
  *
  * The class is NOT reentrant
  */
-class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
+#ifndef BUILD_STANDALONE
+using ThriftClientType = cpp2::GraphStorageServiceAsyncClient;
+template <typename T>
+using ThriftClientManType = thrift::ThriftClientManager<T>;
+#else
+using ThriftClientType = GraphStorageLocalServer;
+template <typename T>
+using ThriftClientManType = thrift::LocalClientManager<T>;
+
+#endif
+class StorageClient
+    : public StorageClientBase<ThriftClientType, ThriftClientManType<ThriftClientType>> {
   FRIEND_TEST(StorageClientTest, LeaderChangeTest);
 
  public:
@@ -46,7 +60,8 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
 
   StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                 meta::MetaClient* metaClient)
-      : StorageClientBase<cpp2::GraphStorageServiceAsyncClient>(ioThreadPool, metaClient) {}
+      : StorageClientBase<ThriftClientType, ThriftClientManType<ThriftClientType>>(ioThreadPool,
+                                                                                   metaClient) {}
   virtual ~StorageClient() {}
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> getNeighbors(
@@ -126,6 +141,7 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
+      std::vector<storage::cpp2::OrderBy> orderBy,
       int64_t limit);
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(

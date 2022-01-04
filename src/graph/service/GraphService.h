@@ -51,12 +51,13 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
       const cpp2::VerifyClientVersionReq& req) override;
 
+  std::unique_ptr<meta::MetaClient> metaClient_;
+
  private:
-  bool auth(const std::string& username, const std::string& password);
+  Status auth(const std::string& username, const std::string& password);
 
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
-  std::unique_ptr<meta::MetaClient> metaClient_;
 };
 
 }  // namespace graph

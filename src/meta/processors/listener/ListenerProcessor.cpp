@@ -123,19 +123,19 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
     cpp2::ListenerInfo listener;
-    listener.set_type(MetaKeyUtils::parseListenerType(iter->key()));
-    listener.set_host(MetaKeyUtils::deserializeHostAddr(iter->val()));
-    listener.set_part_id(MetaKeyUtils::parseListenerPart(iter->key()));
+    listener.type_ref() = MetaKeyUtils::parseListenerType(iter->key());
+    listener.host_ref() = MetaKeyUtils::deserializeHostAddr(iter->val());
+    listener.part_id_ref() = MetaKeyUtils::parseListenerPart(iter->key());
     if (std::find(activeHosts.begin(), activeHosts.end(), *listener.host_ref()) !=
         activeHosts.end()) {
-      listener.set_status(cpp2::HostStatus::ONLINE);
+      listener.status_ref() = cpp2::HostStatus::ONLINE;
     } else {
-      listener.set_status(cpp2::HostStatus::OFFLINE);
+      listener.status_ref() = cpp2::HostStatus::OFFLINE;
     }
     listeners.emplace_back(std::move(listener));
     iter->next();
   }
-  resp_.set_listeners(std::move(listeners));
+  resp_.listeners_ref() = std::move(listeners);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

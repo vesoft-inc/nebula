@@ -54,7 +54,9 @@ class DummyListener : public Listener {
                  nullptr,
                  schemaMan) {}
 
-  std::vector<KV> data() { return data_; }
+  std::vector<KV> data() {
+    return data_;
+  }
 
   std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
                                              LogID committedLogId,
@@ -71,11 +73,17 @@ class DummyListener : public Listener {
     return result;
   }
 
-  std::pair<int64_t, int64_t> committedSnapshot() { return committedSnapshot_; }
+  std::pair<int64_t, int64_t> committedSnapshot() {
+    return committedSnapshot_;
+  }
 
-  std::pair<LogID, TermID> committedId() { return lastCommittedLogId(); }
+  std::pair<LogID, TermID> committedId() {
+    return lastCommittedLogId();
+  }
 
-  int32_t snapshotBatchCount() { return snapshotBatchCount_; }
+  int32_t snapshotBatchCount() {
+    return snapshotBatchCount_;
+  }
 
  protected:
   void init() override {}
@@ -87,19 +95,24 @@ class DummyListener : public Listener {
     return true;
   }
 
-  bool persist(LogID, TermID, LogID) override { return true; }
+  bool persist(LogID, TermID, LogID) override {
+    return true;
+  }
 
   std::pair<LogID, TermID> lastCommittedLogId() override {
     return std::make_pair(committedLogId_, lastLogTerm_);
   }
 
-  LogID lastApplyLogId() override { return lastApplyLogId_; }
+  LogID lastApplyLogId() override {
+    return lastApplyLogId_;
+  }
 
-  void cleanup() override {
+  nebula::cpp2::ErrorCode cleanup() override {
     data_.clear();
     leaderCommitId_ = 0;
     lastApplyLogId_ = 0;
     snapshotBatchCount_ = 0;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
  private:
@@ -232,8 +245,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
   }
 
   std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers() {
-    auto worker =
-        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1, true);
+    auto worker = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
     worker->setNamePrefix("executor");
     worker->start();
     return worker;
@@ -658,17 +670,17 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerBasicTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerBasicTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerAdvanceTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerAdvanceTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
-INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
-                        ListenerSnapshotTest,
-                        ::testing::Values(std::make_tuple(1, 1, 1)));
+INSTANTIATE_TEST_SUITE_P(PartCount_Replicas_ListenerCount,
+                         ListenerSnapshotTest,
+                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
 }  // namespace kvstore
 }  // namespace nebula

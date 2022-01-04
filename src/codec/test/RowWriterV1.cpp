@@ -11,7 +11,9 @@ using meta::SchemaProviderIf;
 using meta::cpp2::Schema;
 using nebula::cpp2::PropertyType;
 
-RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) { CHECK(!!schema_); }
+RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) {
+  CHECK(!!schema_);
+}
 
 int64_t RowWriterV1::size() const noexcept {
   auto offsetBytes = calcOccupiedBytes(cord_.size());

@@ -28,19 +28,33 @@ class Result final {
   static const Result& EmptyResult();
   static const std::vector<Result>& EmptyResultList();
 
-  std::shared_ptr<Value> valuePtr() const { return core_.value; }
+  std::shared_ptr<Value> valuePtr() const {
+    return core_.value;
+  }
 
-  const Value& value() const { return *core_.value; }
+  const Value& value() const {
+    return *core_.value;
+  }
 
-  State state() const { return core_.state; }
+  State state() const {
+    return core_.state;
+  }
 
-  size_t size() const { return core_.iter->size(); }
+  size_t size() const {
+    return core_.iter->size();
+  }
 
-  std::unique_ptr<Iterator> iter() const& { return core_.iter->copy(); }
+  std::unique_ptr<Iterator> iter() const& {
+    return core_.iter->copy();
+  }
 
-  std::unique_ptr<Iterator> iter() && { return std::move(core_.iter); }
+  std::unique_ptr<Iterator> iter() && {
+    return std::move(core_.iter);
+  }
 
-  Iterator* iterRef() { return core_.iter.get(); }
+  Iterator* iterRef() {
+    return core_.iter.get();
+  }
 
   void checkMemory(bool checkMemory) {
     core_.checkMemory = checkMemory;
@@ -53,13 +67,17 @@ class Result final {
   friend class ResultBuilder;
   friend class ExecutionContext;
 
-  Value&& moveValue() { return std::move(*core_.value); }
+  Value&& moveValue() {
+    return std::move(*core_.value);
+  }
 
   struct Core {
     Core() = default;
     Core(Core&&) = default;
     Core& operator=(Core&&) = default;
-    Core(const Core& c) { *this = c; }
+    Core(const Core& c) {
+      *this = c;
+    }
     Core& operator=(const Core& c) {
       if (&c != this) {
         state = c.state;
@@ -85,7 +103,9 @@ class Result final {
 // Default iterator type is sequential.
 class ResultBuilder final {
  public:
-  ResultBuilder() { core_.state = Result::State::kSuccess; }
+  ResultBuilder() {
+    core_.state = Result::State::kSuccess;
+  }
 
   Result build() {
     if (!core_.iter) iter(Iterator::Kind::kSequential);

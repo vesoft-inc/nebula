@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 
-class LeftJoinExecutor final : public JoinExecutor {
+class LeftJoinExecutor : public JoinExecutor {
  public:
   LeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
       : JoinExecutor("LeftJoinExecutor", node, qctx) {}
@@ -20,8 +20,10 @@ class LeftJoinExecutor final : public JoinExecutor {
 
   Status close() override;
 
- private:
-  folly::Future<Status> join();
+ protected:
+  folly::Future<Status> join(const std::vector<Expression*>& hashKeys,
+                             const std::vector<Expression*>& probeKeys,
+                             const std::vector<std::string>& colNames);
 
   DataSet probe(const std::vector<Expression*>& probeKeys,
                 Iterator* probeIter,
@@ -37,8 +39,18 @@ class LeftJoinExecutor final : public JoinExecutor {
                    const Row& lRow,
                    DataSet& ds) const;
 
- private:
   size_t rightColSize_{0};
+};
+
+/**
+ * No diffrence with left join in processing data, but the dependencies would be executed in
+ * paralell.
+ */
+class BiLeftJoinExecutor final : public LeftJoinExecutor {
+ public:
+  BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx);
+
+  folly::Future<Status> execute() override;
 };
 }  // namespace graph
 }  // namespace nebula

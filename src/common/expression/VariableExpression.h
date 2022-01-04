@@ -17,9 +17,13 @@ class VariableExpression final : public Expression {
     return pool->add(new VariableExpression(pool, var, isInner));
   }
 
-  const std::string& var() const { return var_; }
+  const std::string& var() const {
+    return var_;
+  }
 
-  bool isInner() const { return isInner_; }
+  bool isInner() const {
+    return isInner_;
+  }
 
   const Value& eval(ExpressionContext& ctx) override;
 
@@ -34,7 +38,9 @@ class VariableExpression final : public Expression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return VariableExpression::make(pool_, var(), isInner_); }
+  Expression* clone() const override {
+    return VariableExpression::make(pool_, var(), isInner_);
+  }
 
  private:
   explicit VariableExpression(ObjectPool* pool, const std::string& var = "", bool isInner = false)
@@ -60,7 +66,9 @@ class VersionedVariableExpression final : public Expression {
     return pool->add(new VersionedVariableExpression(pool, var, version));
   }
 
-  const std::string& var() const { return var_; }
+  const std::string& var() const {
+    return var_;
+  }
 
   const Value& eval(ExpressionContext& ctx) override;
 

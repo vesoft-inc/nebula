@@ -149,18 +149,18 @@ Feature: Case Expression
   Scenario: use case in MATCH
     When executing query:
       """
-      MATCH (v:player) WHERE CASE v.age > 45 WHEN false THEN false ELSE true END
-      RETURN v.name, v.age
+      MATCH (v:player) WHERE CASE v.player.age > 45 WHEN false THEN false ELSE true END
+      RETURN v.player.name, v.player.age
       """
     Then the result should be, in any order:
-      | v.name             | v.age |
-      | "Shaquille O'Neal" | 47    |
-      | "Grant Hill"       | 46    |
+      | v.player.name      | v.player.age |
+      | "Shaquille O'Neal" | 47           |
+      | "Grant Hill"       | 46           |
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.age > 43
-      RETURN CASE WHEN v.age > 46 THEN v.name WHEN v.age > 45 THEN v.age ELSE "nothing" END AS r
+      WHERE v.player.age > 43
+      RETURN CASE WHEN v.player.age > 46 THEN v.player.name WHEN v.player.age > 45 THEN v.player.age ELSE "nothing" END AS r
       """
     Then the result should be, in any order:
       | r                  |

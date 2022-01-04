@@ -28,13 +28,13 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
     auto value = iter->val();
     auto item = MetaKeyUtils::parseConfigValue(value);
     auto configName = MetaKeyUtils::parseConfigKey(key);
-    item.set_module(configName.first);
-    item.set_name(configName.second);
+    item.module_ref() = configName.first;
+    item.name_ref() = configName.second;
     items.emplace_back(std::move(item));
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_items(std::move(items));
+  resp_.items_ref() = std::move(items);
   onFinished();
 }
 

@@ -26,9 +26,9 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
-BaseProcessor<RESP>::doPrefix(const std::string& key) {
+BaseProcessor<RESP>::doPrefix(const std::string& key, bool canReadFromFollower) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
+  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter, canReadFromFollower);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(2) << "Prefix Failed";
     return code;
@@ -87,6 +87,20 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
 }
 
 template <typename RESP>
+void BaseProcessor<RESP>::doBatchOperation(std::string batchOp) {
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncAppendBatch(kDefaultSpaceId,
+                             kDefaultPartId,
+                             std::move(batchOp),
+                             [this, &baton](nebula::cpp2::ErrorCode code) {
+                               this->handleErrorCode(code);
+                               baton.post();
+                             });
+  baton.wait();
+  this->onFinished();
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start, const std::string& end) {
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncRemoveRange(
@@ -114,27 +128,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::
     iter->next();
   }
   return values;
-}
-
-template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::allHosts() {
-  std::vector<HostAddr> hosts;
-  const auto& prefix = MetaKeyUtils::hostPrefix();
-  std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    VLOG(2) << "Can't find any hosts";
-    return code;
-  }
-
-  while (iter->valid()) {
-    HostAddr h;
-    auto hostAddrPiece = iter->key().subpiece(prefix.size());
-    memcpy(&h, hostAddrPiece.data(), hostAddrPiece.size());
-    hosts.emplace_back(std::move(h));
-    iter->next();
-  }
-  return hosts;
 }
 
 template <typename RESP>

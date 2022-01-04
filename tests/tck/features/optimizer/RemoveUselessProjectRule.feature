@@ -11,8 +11,8 @@ Feature: Remove Useless Project Rule
       """
       MATCH (v:player)
       WITH
-        v.age+1 AS age,
-        count(v.age) AS count
+        v.player.age+1 AS age,
+        count(v.player.age) AS count
       RETURN age, count
       ORDER BY age, count
       """

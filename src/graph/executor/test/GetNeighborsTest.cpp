@@ -31,13 +31,13 @@ class GetNeighborsTest : public testing::Test {
     }
 
     meta::cpp2::Session session;
-    session.set_session_id(0);
-    session.set_user_name("root");
+    session.session_id_ref() = 0;
+    session.user_name_ref() = "root";
     auto clientSession = ClientSession::create(std::move(session), nullptr);
     SpaceInfo spaceInfo;
     spaceInfo.name = "test_space";
     spaceInfo.id = 1;
-    spaceInfo.spaceDesc.set_space_name("test_space");
+    spaceInfo.spaceDesc.space_name_ref() = "test_space";
     clientSession->setSpace(std::move(spaceInfo));
     auto rctx = std::make_unique<RequestContext<ExecutionResponse>>();
     rctx->setSession(std::move(clientSession));

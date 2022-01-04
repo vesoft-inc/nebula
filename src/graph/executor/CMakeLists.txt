@@ -10,6 +10,7 @@ nebula_add_library(
     logic/PassThroughExecutor.cpp
     logic/StartExecutor.cpp
     logic/SelectExecutor.cpp
+    logic/ArgumentExecutor.cpp
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
@@ -70,9 +71,9 @@ nebula_add_library(
     admin/IngestExecutor.cpp
     admin/ConfigExecutor.cpp
     admin/ZoneExecutor.cpp
-    admin/ShowTSClientsExecutor.cpp
-    admin/SignInTSServiceExecutor.cpp
-    admin/SignOutTSServiceExecutor.cpp
+    admin/ShowServiceClientsExecutor.cpp
+    admin/SignInServiceExecutor.cpp
+    admin/SignOutServiceExecutor.cpp
     admin/SessionExecutor.cpp
     admin/ShowQueriesExecutor.cpp
     admin/KillQueryExecutor.cpp

@@ -8,10 +8,12 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -80,7 +82,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
               << ", VertexID: " << *edgeKey.dst_ref();
 
       if (!NebulaKeyUtils::isValidVidLen(
-              spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+              spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                    << ", dstVid: " << *edgeKey.dst_ref();
@@ -90,10 +92,10 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
-                                         (*edgeKey.src_ref()).getStr(),
+                                         edgeKey.src_ref()->getStr(),
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
-                                         (*edgeKey.dst_ref()).getStr());
+                                         edgeKey.dst_ref()->getStr());
       if (ifNotExists_) {
         if (!visited.emplace(key).second) {
           continue;
@@ -141,6 +143,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
             });
       } else {
         doPut(spaceId_, partId, std::move(data));
+        stats::StatsManager::addValue(kNumEdgesInserted, data.size());
       }
     }
   }
@@ -164,17 +167,17 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       auto edgeKey = *newEdge.key_ref();
       auto l = std::make_tuple(spaceId_,
                                partId,
-                               (*edgeKey.src_ref()).getStr(),
+                               edgeKey.src_ref()->getStr(),
                                *edgeKey.edge_type_ref(),
                                *edgeKey.ranking_ref(),
-                               (*edgeKey.dst_ref()).getStr());
+                               edgeKey.dst_ref()->getStr());
       if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
         if (!env_->edgesML_->try_lock(l)) {
-          LOG(ERROR) << folly::format("edge locked : src {}, type {}, rank {}, dst {}",
-                                      (*edgeKey.src_ref()).getStr(),
-                                      *edgeKey.edge_type_ref(),
-                                      *edgeKey.ranking_ref(),
-                                      (*edgeKey.dst_ref()).getStr());
+          LOG(ERROR) << folly::sformat("edge locked : src {}, type {}, rank {}, dst {}",
+                                       edgeKey.src_ref()->getStr(),
+                                       *edgeKey.edge_type_ref(),
+                                       *edgeKey.ranking_ref(),
+                                       edgeKey.dst_ref()->getStr());
           code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           break;
         }
@@ -186,7 +189,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               << ", VertexID: " << *edgeKey.dst_ref();
 
       if (!NebulaKeyUtils::isValidVidLen(
-              spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+              spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                    << ", dstVid: " << *edgeKey.dst_ref();
@@ -196,10 +199,10 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
 
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
-                                         (*edgeKey.src_ref()).getStr(),
+                                         edgeKey.src_ref()->getStr(),
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
-                                         (*edgeKey.dst_ref()).getStr());
+                                         edgeKey.dst_ref()->getStr());
       if (ifNotExists_ && !visited.emplace(key).second) {
         continue;
       }
@@ -249,7 +252,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 1 , Delete old version index if exists.
              */
             if (oReader != nullptr) {
-              auto ois = indexKeys(partId, oReader.get(), key, index);
+              auto ois = indexKeys(partId, oReader.get(), key, index, schema.get());
               if (!ois.empty()) {
                 // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
@@ -273,7 +276,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 2 , Insert new edge index
              */
             if (nReader != nullptr) {
-              auto niks = indexKeys(partId, nReader.get(), key, index);
+              auto niks = indexKeys(partId, nReader.get(), key, index, schema.get());
               if (!niks.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -302,6 +305,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         break;
       }
       batchHolder->put(std::move(key), std::move(retEnc.value()));
+      stats::StatsManager::addValue(kNumEdgesInserted);
     }
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       env_->edgesML_->unlockBatch(dummyLock);
@@ -380,7 +384,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
         }
 
         if (!val.empty()) {
-          auto ois = indexKeys(partId, oReader.get(), e.first, index);
+          auto ois = indexKeys(partId, oReader.get(), e.first, index, schema.get());
           if (!ois.empty()) {
             // Check the index is building for the specified partition or not.
             auto indexState = env_->getIndexState(spaceId_, partId);
@@ -412,7 +416,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
           }
         }
 
-        auto niks = indexKeys(partId, nReader.get(), e.first, index);
+        auto niks = indexKeys(partId, nReader.get(), e.first, index, schema.get());
         if (!niks.empty()) {
           auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
           auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -469,8 +473,9 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
     PartitionID partId,
     RowReader* reader,
     const folly::StringPiece& rawKey,
-    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
   }

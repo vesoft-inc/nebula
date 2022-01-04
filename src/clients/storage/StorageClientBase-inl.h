@@ -7,7 +7,9 @@
 
 #include <folly/Try.h>
 
+#include "clients/storage/stats/StorageClientStats.h"
 #include "common/ssl/SSLConfig.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 
 namespace nebula {
@@ -68,50 +70,52 @@ struct ResponseContext {
   bool fulfilled_{false};
 };
 
-template <typename ClientType>
-StorageClientBase<ClientType>::StorageClientBase(
+template <typename ClientType, typename ClientManagerType>
+StorageClientBase<ClientType, ClientManagerType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
-  clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
+  clientsMan_ = std::make_unique<ClientManagerType>(FLAGS_enable_ssl);
 }
 
-template <typename ClientType>
-StorageClientBase<ClientType>::~StorageClientBase() {
+template <typename ClientType, typename ClientManagerType>
+StorageClientBase<ClientType, ClientManagerType>::~StorageClientBase() {
   VLOG(3) << "Destructing StorageClientBase";
   if (nullptr != metaClient_) {
     metaClient_ = nullptr;
   }
 }
 
-template <typename ClientType>
-StatusOr<HostAddr> StorageClientBase<ClientType>::getLeader(GraphSpaceID spaceId,
-                                                            PartitionID partId) const {
+template <typename ClientType, typename ClientManagerType>
+StatusOr<HostAddr> StorageClientBase<ClientType, ClientManagerType>::getLeader(
+    GraphSpaceID spaceId, PartitionID partId) const {
   return metaClient_->getStorageLeaderFromCache(spaceId, partId);
 }
 
-template <typename ClientType>
-void StorageClientBase<ClientType>::updateLeader(GraphSpaceID spaceId,
-                                                 PartitionID partId,
-                                                 const HostAddr& leader) {
+template <typename ClientType, typename ClientManagerType>
+void StorageClientBase<ClientType, ClientManagerType>::updateLeader(GraphSpaceID spaceId,
+                                                                    PartitionID partId,
+                                                                    const HostAddr& leader) {
   metaClient_->updateStorageLeader(spaceId, partId, leader);
 }
 
-template <typename ClientType>
-void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId, PartitionID partId) {
+template <typename ClientType, typename ClientManagerType>
+void StorageClientBase<ClientType, ClientManagerType>::invalidLeader(GraphSpaceID spaceId,
+                                                                     PartitionID partId) {
   metaClient_->invalidStorageLeader(spaceId, partId);
 }
 
-template <typename ClientType>
-void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
-                                                  std::vector<PartitionID>& partsId) {
+template <typename ClientType, typename ClientManagerType>
+void StorageClientBase<ClientType, ClientManagerType>::invalidLeader(
+    GraphSpaceID spaceId, std::vector<PartitionID>& partsId) {
   for (const auto& partId : partsId) {
     invalidLeader(spaceId, partId);
   }
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
-folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::collectResponse(
+folly::SemiFuture<StorageRpcResponse<Response>>
+StorageClientBase<ClientType, ClientManagerType>::collectResponse(
     folly::EventBase* evb,
     std::unordered_map<HostAddr, Request> requests,
     RemoteFunc&& remoteFunc) {
@@ -212,9 +216,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
   return context->promise.getSemiFuture();
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
-folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
+folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerType>::getResponse(
     folly::EventBase* evb, std::pair<HostAddr, Request>&& request, RemoteFunc&& remoteFunc) {
   auto pro = std::make_shared<folly::Promise<StatusOr<Response>>>();
   auto f = pro->getFuture();
@@ -223,13 +227,14 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
   return f;
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
-void StorageClientBase<ClientType>::getResponseImpl(
+void StorageClientBase<ClientType, ClientManagerType>::getResponseImpl(
     folly::EventBase* evb,
     std::pair<HostAddr, Request> request,
     RemoteFunc remoteFunc,
     std::shared_ptr<folly::Promise<StatusOr<Response>>> pro) {
+  stats::StatsManager::addValue(kNumRpcSentToStoraged);
   using TransportException = apache::thrift::transport::TTransportException;
   if (evb == nullptr) {
     DCHECK(!!ioThreadPool_);
@@ -266,6 +271,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
             .thenError(folly::tag_t<TransportException>{},
                        [spaceId, partsId = std::move(partsId), host, pro, this](
                            TransportException&& ex) mutable {
+                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
                          if (ex.getType() == TransportException::TIMED_OUT) {
                            LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
                          } else {
@@ -278,6 +284,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
             .thenError(folly::tag_t<std::exception>{},
                        [spaceId, partsId = std::move(partsId), host, pro, this](
                            std::exception&& ex) mutable {
+                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
                          // exception occurred during RPC
                          pro->setValue(Status::Error(
                              folly::stringPrintf("RPC failure in StorageClient: %s", ex.what())));
@@ -286,14 +293,14 @@ void StorageClientBase<ClientType>::getResponseImpl(
       });  // via
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 template <class Container, class GetIdFunc>
 StatusOr<std::unordered_map<
     HostAddr,
     std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>>
-StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
-                                                 const Container& ids,
-                                                 GetIdFunc f) const {
+StorageClientBase<ClientType, ClientManagerType>::clusterIdsToHosts(GraphSpaceID spaceId,
+                                                                    const Container& ids,
+                                                                    GetIdFunc f) const {
   std::unordered_map<HostAddr,
                      std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>
       clusters;
@@ -325,9 +332,9 @@ StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
   return clusters;
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
-StorageClientBase<ClientType>::getHostParts(GraphSpaceID spaceId) const {
+StorageClientBase<ClientType, ClientManagerType>::getHostParts(GraphSpaceID spaceId) const {
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
   auto status = metaClient_->partsNum(spaceId);
   if (!status.ok()) {
@@ -345,9 +352,10 @@ StorageClientBase<ClientType>::getHostParts(GraphSpaceID spaceId) const {
   return hostParts;
 }
 
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
-StorageClientBase<ClientType>::getHostPartsWithCursor(GraphSpaceID spaceId) const {
+StorageClientBase<ClientType, ClientManagerType>::getHostPartsWithCursor(
+    GraphSpaceID spaceId) const {
   std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>> hostParts;
   auto status = metaClient_->partsNum(spaceId);
   if (!status.ok()) {

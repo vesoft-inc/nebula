@@ -25,12 +25,16 @@ struct Vid;
 
 template <>
 struct Vid<int64_t> {
-  static int64_t value(const Value &v) { return v.getInt(); }
+  static int64_t value(const Value &v) {
+    return v.getInt();
+  }
 };
 
 template <>
 struct Vid<std::string> {
-  static std::string value(const Value &v) { return v.getStr(); }
+  static std::string value(const Value &v) {
+    return v.getStr();
+  }
 };
 
 template <typename VidType>
@@ -41,10 +45,11 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
                             bool dedup) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
-  vertices.rows.reserve(iter->size());
+  auto s = !iter->isGetNeighborsIter() ? iter->size() : 0;
+  vertices.rows.reserve(s);
 
   std::unordered_set<VidType> uniqueSet;
-  uniqueSet.reserve(iter->size());
+  uniqueSet.reserve(s);
 
   const auto &vidType = *(space.spaceDesc.vid_type_ref());
 

@@ -20,9 +20,13 @@ class RewriteSymExprVisitor final : public ExprVisitor {
  public:
   RewriteSymExprVisitor(ObjectPool *objPool, const std::string &sym, bool isEdge);
 
-  bool hasWrongType() const { return hasWrongType_; }
+  bool hasWrongType() const {
+    return hasWrongType_;
+  }
 
-  Expression *expr() { return expr_; }
+  Expression *expr() {
+    return expr_;
+  }
 
   void visit(ConstantExpression *expr) override;
   void visit(UnaryExpression *expr) override;
@@ -47,6 +51,7 @@ class RewriteSymExprVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;

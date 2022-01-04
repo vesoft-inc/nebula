@@ -3,7 +3,7 @@
 %no-lines
 %locations
 %define api.namespace { nebula::geo }
-%define parser_class_name { WKTParser }
+%define api.parser.class { WKTParser }
 %lex-param { nebula::geo::WKTScanner& scanner }
 %parse-param { nebula::geo::WKTScanner& scanner }
 %parse-param { std::string &errmsg }

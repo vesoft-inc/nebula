@@ -30,21 +30,27 @@ class ColumnProperty final {
   explicit ColumnProperty(std::string *comment = nullptr)
       : v_(std::unique_ptr<std::string>(comment)) {}
 
-  bool isNullable() const { return std::holds_alternative<bool>(v_); }
+  bool isNullable() const {
+    return std::holds_alternative<bool>(v_);
+  }
 
   bool nullable() const {
     DCHECK(isNullable());
     return std::get<bool>(v_);
   }
 
-  bool isDefaultValue() const { return std::holds_alternative<Expression *>(v_); }
+  bool isDefaultValue() const {
+    return std::holds_alternative<Expression *>(v_);
+  }
 
   const auto *defaultValue() const {
     DCHECK(isDefaultValue());
     return std::get<Expression *>(v_);
   }
 
-  bool isComment() const { return std::holds_alternative<std::unique_ptr<std::string>>(v_); }
+  bool isComment() const {
+    return std::holds_alternative<std::unique_ptr<std::string>>(v_);
+  }
 
   const auto *comment() const {
     DCHECK(isComment());
@@ -61,9 +67,13 @@ class ColumnProperties final {
  public:
   ColumnProperties() = default;
 
-  void addProperty(ColumnProperty *property) { properties_.emplace_back(property); }
+  void addProperty(ColumnProperty *property) {
+    properties_.emplace_back(property);
+  }
 
-  auto &properties() const { return properties_; }
+  auto &properties() const {
+    return properties_;
+  }
 
   std::string toString() const {
     std::stringstream str;
@@ -91,15 +101,25 @@ class ColumnSpecification final {
         typeLen_(typeLen),
         geoShape_(geoShape) {}
 
-  nebula::cpp2::PropertyType type() const { return type_; }
+  nebula::cpp2::PropertyType type() const {
+    return type_;
+  }
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
-  int16_t typeLen() const { return typeLen_; }
+  int16_t typeLen() const {
+    return typeLen_;
+  }
 
-  meta::cpp2::GeoShape geoShape() const { return geoShape_; }
+  meta::cpp2::GeoShape geoShape() const {
+    return geoShape_;
+  }
 
-  auto &properties() const { return properties_; }
+  auto &properties() const {
+    return properties_;
+  }
 
   std::string toString() const;
 
@@ -114,7 +134,9 @@ class ColumnSpecification final {
 class ColumnSpecificationList final {
  public:
   ColumnSpecificationList() = default;
-  void addColumn(ColumnSpecification *column) { columns_.emplace_back(column); }
+  void addColumn(ColumnSpecification *column) {
+    columns_.emplace_back(column);
+  }
 
   std::vector<ColumnSpecification *> columnSpecs() const {
     std::vector<ColumnSpecification *> result;
@@ -134,7 +156,9 @@ class ColumnNameList final {
  public:
   ColumnNameList() = default;
 
-  void addColumn(std::string *column) { columns_.emplace_back(column); }
+  void addColumn(std::string *column) {
+    columns_.emplace_back(column);
+  }
 
   std::vector<std::string *> columnNames() const {
     std::vector<std::string *> result;
@@ -209,14 +233,20 @@ class SchemaPropItem final {
     }
   }
 
-  PropType getPropType() { return propType_; }
+  PropType getPropType() {
+    return propType_;
+  }
 
   std::string toString() const;
 
  private:
-  int64_t asInt() { return boost::get<int64_t>(propValue_); }
+  int64_t asInt() {
+    return boost::get<int64_t>(propValue_);
+  }
 
-  const std::string &asString() { return boost::get<std::string>(propValue_); }
+  const std::string &asString() {
+    return boost::get<std::string>(propValue_);
+  }
 
   bool asBool() {
     switch (propValue_.which()) {
@@ -232,11 +262,17 @@ class SchemaPropItem final {
     return false;
   }
 
-  bool isInt() { return propValue_.which() == 0; }
+  bool isInt() {
+    return propValue_.which() == 0;
+  }
 
-  bool isBool() { return propValue_.which() == 1; }
+  bool isBool() {
+    return propValue_.which() == 1;
+  }
 
-  bool isString() { return propValue_.which() == 2; }
+  bool isString() {
+    return propValue_.which() == 2;
+  }
 
  private:
   Value propValue_;
@@ -245,7 +281,9 @@ class SchemaPropItem final {
 
 class SchemaPropList final {
  public:
-  void addOpt(SchemaPropItem *item) { items_.emplace_back(item); }
+  void addOpt(SchemaPropItem *item) {
+    items_.emplace_back(item);
+  }
 
   std::vector<SchemaPropItem *> getProps() const {
     std::vector<SchemaPropItem *> result;
@@ -276,11 +314,17 @@ class CreateTagSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
-  std::vector<ColumnSpecification *> columnSpecs() const { return columns_->columnSpecs(); }
+  std::vector<ColumnSpecification *> columnSpecs() const {
+    return columns_->columnSpecs();
+  }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const { return schemaProps_->getProps(); }
+  std::vector<SchemaPropItem *> getSchemaProps() const {
+    return schemaProps_->getProps();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -303,11 +347,17 @@ class CreateEdgeSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
-  std::vector<ColumnSpecification *> columnSpecs() const { return columns_->columnSpecs(); }
+  std::vector<ColumnSpecification *> columnSpecs() const {
+    return columns_->columnSpecs();
+  }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const { return schemaProps_->getProps(); }
+  std::vector<SchemaPropItem *> getSchemaProps() const {
+    return schemaProps_->getProps();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -329,11 +379,17 @@ class AlterSchemaOptItem final {
     colNames_.reset(colNames);
   }
 
-  std::vector<ColumnSpecification *> columnSpecs() const { return columns_->columnSpecs(); }
+  std::vector<ColumnSpecification *> columnSpecs() const {
+    return columns_->columnSpecs();
+  }
 
-  std::vector<std::string *> columnNames() const { return colNames_->columnNames(); }
+  std::vector<std::string *> columnNames() const {
+    return colNames_->columnNames();
+  }
 
-  OptionType getOptType() { return optType_; }
+  OptionType getOptType() {
+    return optType_;
+  }
 
   nebula::meta::cpp2::AlterSchemaOp toType();
 
@@ -348,7 +404,9 @@ class AlterSchemaOptItem final {
 class AlterSchemaOptList final {
  public:
   AlterSchemaOptList() = default;
-  void addOpt(AlterSchemaOptItem *item) { alterSchemaItems_.emplace_back(item); }
+  void addOpt(AlterSchemaOptItem *item) {
+    alterSchemaItems_.emplace_back(item);
+  }
 
   std::vector<AlterSchemaOptItem *> alterSchemaItems() const {
     std::vector<AlterSchemaOptItem *> result;
@@ -375,11 +433,17 @@ class AlterTagSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
-  std::vector<AlterSchemaOptItem *> getSchemaOpts() const { return opts_->alterSchemaItems(); }
+  std::vector<AlterSchemaOptItem *> getSchemaOpts() const {
+    return opts_->alterSchemaItems();
+  }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const { return schemaProps_->getProps(); }
+  std::vector<SchemaPropItem *> getSchemaProps() const {
+    return schemaProps_->getProps();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -398,11 +462,17 @@ class AlterEdgeSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
-  std::vector<AlterSchemaOptItem *> getSchemaOpts() const { return opts_->alterSchemaItems(); }
+  std::vector<AlterSchemaOptItem *> getSchemaOpts() const {
+    return opts_->alterSchemaItems();
+  }
 
-  std::vector<SchemaPropItem *> getSchemaProps() const { return schemaProps_->getProps(); }
+  std::vector<SchemaPropItem *> getSchemaProps() const {
+    return schemaProps_->getProps();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -419,7 +489,9 @@ class DescribeTagSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -434,7 +506,9 @@ class DescribeEdgeSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -449,7 +523,9 @@ class DropTagSentence final : public DropSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -464,7 +540,9 @@ class DropEdgeSentence final : public DropSentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -499,7 +577,9 @@ class IndexParamItem final {
     paramValue_ = val;
   }
 
-  ParamType getParamType() { return paramType_; }
+  ParamType getParamType() {
+    return paramType_;
+  }
 
   StatusOr<int> getS2MaxLevel() {
     if (paramType_ == S2_MAX_LEVEL) {
@@ -526,7 +606,9 @@ class IndexParamItem final {
 
 class IndexParamList final {
  public:
-  void add(IndexParamItem *item) { items_.emplace_back(item); }
+  void add(IndexParamItem *item) {
+    items_.emplace_back(item);
+  }
 
   std::vector<IndexParamItem *> getParams() const {
     std::vector<IndexParamItem *> result;
@@ -565,9 +647,13 @@ class CreateTagIndexSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
-  const std::string *tagName() const { return tagName_.get(); }
+  const std::string *tagName() const {
+    return tagName_.get();
+  }
 
   std::vector<meta::cpp2::IndexFieldDef> fields() const {
     std::vector<meta::cpp2::IndexFieldDef> result;
@@ -578,9 +664,13 @@ class CreateTagIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const IndexParamList *getIndexParamList() const { return indexParams_.get(); }
+  const IndexParamList *getIndexParamList() const {
+    return indexParams_.get();
+  }
 
-  const std::string *comment() const { return comment_.get(); }
+  const std::string *comment() const {
+    return comment_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -613,9 +703,13 @@ class CreateEdgeIndexSentence final : public CreateSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
-  const std::string *edgeName() const { return edgeName_.get(); }
+  const std::string *edgeName() const {
+    return edgeName_.get();
+  }
 
   std::vector<meta::cpp2::IndexFieldDef> fields() const {
     std::vector<meta::cpp2::IndexFieldDef> result;
@@ -626,9 +720,13 @@ class CreateEdgeIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const IndexParamList *getIndexParamList() const { return indexParams_.get(); }
+  const IndexParamList *getIndexParamList() const {
+    return indexParams_.get();
+  }
 
-  const std::string *comment() const { return comment_.get(); }
+  const std::string *comment() const {
+    return comment_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -647,7 +745,9 @@ class DescribeTagIndexSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -662,7 +762,9 @@ class DescribeEdgeIndexSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -677,7 +779,9 @@ class DropTagIndexSentence final : public DropSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -692,7 +796,9 @@ class DropEdgeIndexSentence final : public DropSentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -700,14 +806,18 @@ class DropEdgeIndexSentence final : public DropSentence {
 
 class ShowTagsSentence : public Sentence {
  public:
-  ShowTagsSentence() { kind_ = Kind::kShowTags; }
+  ShowTagsSentence() {
+    kind_ = Kind::kShowTags;
+  }
 
   std::string toString() const override;
 };
 
 class ShowEdgesSentence : public Sentence {
  public:
-  ShowEdgesSentence() { kind_ = Kind::kShowEdges; }
+  ShowEdgesSentence() {
+    kind_ = Kind::kShowEdges;
+  }
 
   std::string toString() const override;
 };
@@ -721,7 +831,9 @@ class ShowCreateTagSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -736,7 +848,9 @@ class ShowCreateEdgeSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -751,7 +865,9 @@ class ShowTagIndexesSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -766,7 +882,9 @@ class ShowEdgeIndexesSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return name_.get(); }
+  const std::string *name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -774,14 +892,18 @@ class ShowEdgeIndexesSentence : public Sentence {
 
 class ShowTagIndexStatusSentence : public Sentence {
  public:
-  ShowTagIndexStatusSentence() { kind_ = Kind::kShowTagIndexStatus; }
+  ShowTagIndexStatusSentence() {
+    kind_ = Kind::kShowTagIndexStatus;
+  }
 
   std::string toString() const override;
 };
 
 class ShowEdgeIndexStatusSentence : public Sentence {
  public:
-  ShowEdgeIndexStatusSentence() { kind_ = Kind::kShowEdgeIndexStatus; }
+  ShowEdgeIndexStatusSentence() {
+    kind_ = Kind::kShowEdgeIndexStatus;
+  }
 
   std::string toString() const override;
 };
@@ -795,7 +917,9 @@ class ShowCreateTagIndexSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -810,7 +934,9 @@ class ShowCreateEdgeIndexSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *indexName() const { return indexName_.get(); }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -823,7 +949,9 @@ class AddHostsSentence : public Sentence {
     kind_ = Kind::kAddHosts;
   }
 
-  const HostList *hosts() const { return hosts_.get(); }
+  const HostList *hosts() const {
+    return hosts_.get();
+  }
 
   std::string toString() const override;
 
@@ -838,7 +966,9 @@ class DropHostsSentence : public Sentence {
     kind_ = Kind::kDropHosts;
   }
 
-  const HostList *hosts() const { return hosts_.get(); }
+  const HostList *hosts() const {
+    return hosts_.get();
+  }
 
   std::string toString() const override;
 
@@ -848,7 +978,7 @@ class DropHostsSentence : public Sentence {
 
 class MergeZoneSentence : public Sentence {
  public:
-  explicit MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
+  MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
     zoneName_.reset(zoneName);
     zoneNames_.reset(zoneNames);
     kind_ = Kind::kMergeZone;
@@ -856,9 +986,13 @@ class MergeZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
-  const ZoneNameList *zoneNames() const { return zoneNames_.get(); }
+  const ZoneNameList *zoneNames() const {
+    return zoneNames_.get();
+  }
 
  private:
   std::unique_ptr<std::string> zoneName_;
@@ -874,34 +1008,40 @@ class DropZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> zoneName_;
 };
 
-class SplitZoneSentence : public Sentence {
+class DivideZoneSentence : public Sentence {
  public:
-  explicit SplitZoneSentence(std::string *zoneName, ZoneNameList *zoneNames) {
+  DivideZoneSentence(std::string *zoneName, ZoneItemList *zoneItems) {
     zoneName_.reset(zoneName);
-    zoneNames_.reset(zoneNames);
-    kind_ = Kind::kSplitZone;
+    zoneItems_.reset(zoneItems);
+    kind_ = Kind::kDivideZone;
   }
 
   std::string toString() const override;
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
-  const ZoneNameList *zoneNames() const { return zoneNames_.get(); }
+  const ZoneItemList *zoneItems() const {
+    return zoneItems_.get();
+  }
 
  private:
   std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<ZoneNameList> zoneNames_;
+  std::unique_ptr<ZoneItemList> zoneItems_;
 };
 
 class RenameZoneSentence : public Sentence {
  public:
-  explicit RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
+  RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
     originalZoneName_.reset(originalZoneName);
     zoneName_.reset(zoneName);
     kind_ = Kind::kRenameZone;
@@ -909,9 +1049,13 @@ class RenameZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *originalZoneName() const { return originalZoneName_.get(); }
+  const std::string *originalZoneName() const {
+    return originalZoneName_.get();
+  }
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> originalZoneName_;
@@ -927,7 +1071,9 @@ class DescribeZoneSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> zoneName_;
@@ -935,7 +1081,9 @@ class DescribeZoneSentence : public Sentence {
 
 class ListZonesSentence : public Sentence {
  public:
-  ListZonesSentence() { kind_ = Kind::kListZones; }
+  ListZonesSentence() {
+    kind_ = Kind::kListZones;
+  }
 
   std::string toString() const override;
 };
@@ -949,11 +1097,17 @@ class AddHostsIntoZoneSentence : public Sentence {
     kind_ = Kind::kAddHostsIntoZone;
   }
 
-  const std::string *zoneName() const { return zoneName_.get(); }
+  const std::string *zoneName() const {
+    return zoneName_.get();
+  }
 
-  const HostList *address() const { return address_.get(); }
+  const HostList *address() const {
+    return address_.get();
+  }
 
-  bool isNew() const { return isNew_; }
+  bool isNew() const {
+    return isNew_;
+  }
 
   std::string toString() const override;
 
@@ -981,10 +1135,16 @@ class CreateFTIndexSentence final : public Sentence {
 
   std::string toString() const override;
 
-  bool isEdge() { return isEdge_; }
-  const std::string *indexName() const { return indexName_.get(); }
+  bool isEdge() {
+    return isEdge_;
+  }
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
 
-  const std::string *schemaName() const { return schemaName_.get(); }
+  const std::string *schemaName() const {
+    return schemaName_.get();
+  }
 
   std::vector<std::string> fields() const {
     std::vector<std::string> result;
@@ -1010,7 +1170,9 @@ class DropFTIndexSentence final : public Sentence {
 
   std::string toString() const override;
 
-  const std::string *name() const { return indexName_.get(); }
+  const std::string *name() const {
+    return indexName_.get();
+  }
 
  private:
   std::unique_ptr<std::string> indexName_;
@@ -1018,7 +1180,9 @@ class DropFTIndexSentence final : public Sentence {
 
 class ShowFTIndexesSentence final : public Sentence {
  public:
-  ShowFTIndexesSentence() { kind_ = Kind::kShowFTIndexes; }
+  ShowFTIndexesSentence() {
+    kind_ = Kind::kShowFTIndexes;
+  }
   std::string toString() const override;
 };
 

@@ -14,6 +14,7 @@
 #include <gtest/gtest_prod.h>
 
 #include <atomic>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -71,6 +72,10 @@ using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 // Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
 using Listeners =
     std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
+
+// Get services
+using ServiceClientsList =
+    std::unordered_map<cpp2::ExternalServiceType, std::vector<cpp2::ServiceClient>>;
 
 struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
@@ -139,13 +144,14 @@ using IndexStatus = std::tuple<std::string, std::string, std::string>;
 using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>>;
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
+// Mapping of user name and remaining wrong password attempts
+using UserPasswordAttemptsRemain = std::unordered_map<std::string, uint32>;
+// Mapping of user name and the timestamp when the account is locked
+using UserLoginLockTime = std::unordered_map<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
-
-// get fulltext services
-using FulltextClientsList = std::vector<cpp2::FTClient>;
 
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
@@ -184,7 +190,9 @@ struct MetaClientOptions {
         serviceName_(opt.serviceName_),
         skipConfig_(opt.skipConfig_),
         role_(opt.role_),
-        gitInfoSHA_(opt.gitInfoSHA_) {}
+        gitInfoSHA_(opt.gitInfoSHA_),
+        dataPaths_(opt.dataPaths_),
+        rootPath_(opt.rootPath_) {}
 
   // Current host address
   HostAddr localHost_{"", 0};
@@ -196,10 +204,14 @@ struct MetaClientOptions {
   std::string serviceName_ = "";
   // Whether to skip the config manager
   bool skipConfig_ = false;
-  // host role(graph/meta/storage) using this client
+  // Host role(graph/meta/storage) using this client
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
+  // Data path list, used in storaged
+  std::vector<std::string> dataPaths_;
+  // Install path, used in metad/graphd/storaged
+  std::string rootPath_;
 };
 
 class MetaClient {
@@ -259,6 +271,10 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
+
+  folly::Future<StatusOr<bool>> alterSpace(const std::string& spaceName,
+                                           meta::cpp2::AlterSpaceOp op,
+                                           const std::vector<std::string>& paras);
 
   folly::Future<StatusOr<std::vector<cpp2::PartItem>>> listParts(GraphSpaceID spaceId,
                                                                  std::vector<PartitionID> partIds);
@@ -437,15 +453,17 @@ class MetaClient {
   StatusOr<std::vector<RemoteListenerInfo>> getListenerHostTypeBySpacePartType(GraphSpaceID spaceId,
                                                                                PartitionID partId);
 
-  // Operations for fulltext services
-  folly::Future<StatusOr<bool>> signInFTService(cpp2::FTServiceType type,
-                                                const std::vector<cpp2::FTClient>& clients);
+  // Operations for services
+  folly::Future<StatusOr<bool>> signInService(const cpp2::ExternalServiceType& type,
+                                              const std::vector<cpp2::ServiceClient>& clients);
 
-  folly::Future<StatusOr<bool>> signOutFTService();
+  folly::Future<StatusOr<bool>> signOutService(const cpp2::ExternalServiceType& type);
 
-  folly::Future<StatusOr<std::vector<cpp2::FTClient>>> listFTClients();
+  folly::Future<StatusOr<ServiceClientsList>> listServiceClients(
+      const cpp2::ExternalServiceType& type);
 
-  StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
+  StatusOr<std::vector<cpp2::ServiceClient>> getServiceClientsFromCache(
+      const cpp2::ExternalServiceType& type);
 
   // Operations for fulltext index.
 
@@ -580,7 +598,7 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password);
+  Status authCheckFromCache(const std::string& account, const std::string& password);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
@@ -606,12 +624,12 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
 
+  folly::Future<StatusOr<bool>> divideZone(
+      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zoneItems);
+
   folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 
   folly::Future<StatusOr<bool>> dropZone(std::string zoneName);
-
-  folly::Future<StatusOr<bool>> splitZone(
-      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zones);
 
   folly::Future<StatusOr<bool>> addHostsIntoZone(std::vector<HostAddr> hosts,
                                                  std::string zoneName,
@@ -638,9 +656,19 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
-  HostAddr getMetaLeader() { return leader_; }
+  folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
 
-  int64_t HeartbeatTime() { return heartbeatTime_; }
+  HostAddr getMetaLeader() {
+    return leader_;
+  }
+
+  int64_t HeartbeatTime() {
+    return heartbeatTime_;
+  }
+
+  std::string getLocalIp() {
+    return options_.localHost_.toString();
+  }
 
  protected:
   // Return true if load succeeded.
@@ -668,7 +696,7 @@ class MetaClient {
 
   bool loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 
-  bool loadFulltextClients();
+  bool loadGlobalServiceClients();
 
   bool loadFulltextIndexes();
 
@@ -759,6 +787,8 @@ class MetaClient {
   HostAddr leader_;
   HostAddr localHost_;
 
+  // Only report dir info once when started
+  bool dirInfoReported_ = false;
   struct ThreadLocalInfo {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;
@@ -796,10 +826,14 @@ class MetaClient {
 
   UserRolesMap userRolesMap_;
   UserPasswordMap userPasswordMap_;
+  UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
+  UserLoginLockTime userLoginLockTime_;
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
-  FulltextClientsList fulltextClientList_;
+
+  // Global service client
+  ServiceClientsList serviceClientList_;
   FTIndexMap fulltextIndexMap_;
 
   mutable folly::RWSpinLock localCacheLock_;

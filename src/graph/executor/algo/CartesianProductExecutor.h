@@ -17,10 +17,18 @@ class CartesianProductExecutor : public Executor {
 
   folly::Future<Status> execute() override;
 
- private:
+ protected:
   void doCartesianProduct(const DataSet& lds, const DataSet& rds, DataSet& result);
 
+ private:
   std::vector<std::vector<std::string>> colNames_;
+};
+
+class BiCartesianProductExecutor : public CartesianProductExecutor {
+ public:
+  BiCartesianProductExecutor(const PlanNode* node, QueryContext* qctx);
+
+  folly::Future<Status> execute() override;
 };
 
 }  // namespace graph

@@ -162,6 +162,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "PROFILE"                   { return TokenType::KW_PROFILE; }
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
+"ACROSS"                    { return TokenType::KW_ACROSS; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,
@@ -219,6 +220,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "TTL_COL"                   { return TokenType::KW_TTL_COL; }
 "GRAPH"                     { return TokenType::KW_GRAPH; }
 "META"                      { return TokenType::KW_META; }
+"AGENT"                     { return TokenType::KW_AGENT; }
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }
@@ -269,6 +271,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "COMMENT"                   { return TokenType::KW_COMMENT; }
 "S2_MAX_LEVEL"              { return TokenType::KW_S2_MAX_LEVEL; }
 "S2_MAX_CELLS"              { return TokenType::KW_S2_MAX_CELLS; }
+"LOCAL"                     { return TokenType::KW_LOCAL; }
 "SESSIONS"                  { return TokenType::KW_SESSIONS; }
 "SESSION"                   { return TokenType::KW_SESSION; }
 "SAMPLE"                    { return TokenType::KW_SAMPLE; }
@@ -283,6 +286,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
+"DIVIDE"                    { return TokenType::KW_DIVIDE; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
@@ -512,7 +516,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                  * including the non-ascii ones, which are negative
                                  * in terms of type of `signed char'. At the same time, because
                                  * Bison translates all negative tokens to EOF(i.e. YY_NULL),
-                                 * so we have to cast illegal characters to type of `unsinged char'
+                                 * so we have to cast illegal characters to type of `unsigned char'
                                  * This will make Bison receive an unknown token, which leads to
                                  * a syntax error.
                                  *

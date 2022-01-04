@@ -15,7 +15,9 @@ class QueryContext;
 class EvaluableExprVisitor : public ExprVisitorImpl {
  public:
   explicit EvaluableExprVisitor(const QueryContext *qctx = nullptr);
-  bool ok() const override { return isEvaluable_; }
+  bool ok() const override {
+    return isEvaluable_;
+  }
 
  private:
   using ExprVisitorImpl::visit;
@@ -33,6 +35,8 @@ class EvaluableExprVisitor : public ExprVisitorImpl {
   void visit(TagPropertyExpression *) override;
 
   void visit(EdgePropertyExpression *) override;
+
+  void visit(LabelTagPropertyExpression *) override;
 
   void visit(InputPropertyExpression *) override;
 

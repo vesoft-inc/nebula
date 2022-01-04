@@ -64,6 +64,7 @@ class Expression {
     kFunctionCall,
     // Vertex/Edge/Path
     kTagProperty,
+    kLabelTagProperty,
     kEdgeProperty,
     kInputProperty,
     kVarProperty,
@@ -116,18 +117,26 @@ class Expression {
   Expression& operator=(Expression&&) = delete;
   Expression(const Expression&) = delete;
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
-  static Value eval(Expression* expr, ExpressionContext& ctx) { return expr->eval(ctx); }
+  static Value eval(Expression* expr, ExpressionContext& ctx) {
+    return expr->eval(ctx);
+  }
 
   virtual const Value& eval(ExpressionContext& ctx) = 0;
 
   virtual bool operator==(const Expression& rhs) const = 0;
-  bool operator!=(const Expression& rhs) const { return !operator==(rhs); }
+  bool operator!=(const Expression& rhs) const {
+    return !operator==(rhs);
+  }
 
   virtual std::string toString() const = 0;
 
-  virtual std::string rawString() const { return toString(); }
+  virtual std::string rawString() const {
+    return toString();
+  }
 
   virtual void accept(ExprVisitor* visitor) = 0;
 
@@ -140,15 +149,25 @@ class Expression {
 
   static Expression* decode(ObjectPool* pool, folly::StringPiece encoded);
 
-  ObjectPool* getObjPool() const { return pool_; }
+  ObjectPool* getObjPool() const {
+    return pool_;
+  }
 
-  virtual bool isLogicalExpr() const { return false; }
+  virtual bool isLogicalExpr() const {
+    return false;
+  }
 
-  virtual bool isRelExpr() const { return false; }
+  virtual bool isRelExpr() const {
+    return false;
+  }
 
-  virtual bool isArithmeticExpr() const { return false; }
+  virtual bool isArithmeticExpr() const {
+    return false;
+  }
 
-  virtual bool isContainerExpr() const { return false; }
+  virtual bool isContainerExpr() const {
+    return false;
+  }
 
  protected:
   class Encoder final {

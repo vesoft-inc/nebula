@@ -7,7 +7,6 @@
 #define GRAPH_VISITOR_REWRITEVISITOR_H_
 
 #include <functional>
-#include <vector>
 
 #include "graph/visitor/ExprVisitorImpl.h"
 
@@ -26,22 +25,28 @@ class RewriteVisitor final : public ExprVisitorImpl {
                                Rewriter rewriter,
                                const std::unordered_set<Expression::Kind>& needVisitedTypes);
 
-  const Matcher matcher() const { return matcher_; }
+  const Matcher matcher() const {
+    return matcher_;
+  }
 
-  const Rewriter rewriter() const { return rewriter_; }
+  const Rewriter rewriter() const {
+    return rewriter_;
+  }
 
  private:
-  explicit RewriteVisitor(Matcher matcher, Rewriter rewriter)
+  RewriteVisitor(Matcher matcher, Rewriter rewriter)
       : matcher_(std::move(matcher)), rewriter_(std::move(rewriter)) {}
 
-  explicit RewriteVisitor(Matcher matcher,
-                          Rewriter rewriter,
-                          const std::unordered_set<Expression::Kind>& needVisitedTypes)
+  RewriteVisitor(Matcher matcher,
+                 Rewriter rewriter,
+                 const std::unordered_set<Expression::Kind>& needVisitedTypes)
       : matcher_(std::move(matcher)),
         rewriter_(std::move(rewriter)),
         needVisitedTypes_(std::move(needVisitedTypes)) {}
 
-  bool ok() const override { return true; }
+  bool ok() const override {
+    return true;
+  }
 
  private:
   using ExprVisitorImpl::visit;
@@ -67,6 +72,7 @@ class RewriteVisitor final : public ExprVisitorImpl {
   void visit(LabelExpression*) override {}
   void visit(UUIDExpression*) override {}
   void visit(LabelAttributeExpression*) override {}
+  void visit(LabelTagPropertyExpression*) override {}
   void visit(VariableExpression*) override {}
   void visit(VersionedVariableExpression*) override {}
   void visit(TagPropertyExpression*) override {}
