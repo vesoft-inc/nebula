@@ -658,6 +658,26 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        index_scan_topN_test
+    SOURCES
+        IndexScanTopNTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
 nebula_add_executable(
     NAME
         es_bulk_example
@@ -738,21 +758,6 @@ nebula_add_executable(
         chain_resume_edge_test
     SOURCES
         ChainResumeEdgeTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        chain_delete_edge_test
-    SOURCES
-        ChainDeleteEdgesTest.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES

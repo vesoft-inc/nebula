@@ -10,6 +10,7 @@ nebula_add_library(
 nebula_add_library(
     service_obj OBJECT
     GraphService.cpp
+    GraphServer.cpp
 )
 
 nebula_add_library(

@@ -225,6 +225,9 @@ class NebulaService(object):
         self.graphd_param['system_memory_high_watermark_ratio'] = '0.95'
         self.graphd_param['num_rows_to_check_memory'] = '4'
         self.graphd_param['session_reclaim_interval_secs'] = '2'
+        # Login retry
+        self.graphd_param['failed_login_attempts'] = '5'
+        self.graphd_param['password_lock_time_in_secs'] = '10'
 
         self.storaged_param = copy.copy(_params)
         self.storaged_param['local_config'] = 'false'
@@ -368,7 +371,6 @@ class NebulaService(object):
         for p in self.all_processes:
             p.start()
 
-        time.sleep(3)
         config = Config()
         config.max_connection_pool_size = 20
         config.timeout = 60000
@@ -377,19 +379,33 @@ class NebulaService(object):
         # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
         ssl_config = get_ssl_config(self.is_graph_ssl, self.ca_signed)
         print("begin to add hosts")
-        assert client_pool.init(
-            [("127.0.0.1", self.graphd_processes[0].tcp_port)], config, ssl_config
-        )
+        ok = False
+        # wait graph is ready, and then add hosts
+        for _ in range(20):
+            try:
+                ok = client_pool.init(
+                    [("127.0.0.1", self.graphd_processes[0].tcp_port)],
+                    config,
+                    ssl_config,
+                )
+                if ok:
+                    break
+            except:
+                pass
+            time.sleep(1)
 
-        cmd = (
-            "ADD HOSTS 127.0.0.1:"
-            + str(self.storaged_processes[0].tcp_port)
-            + " INTO NEW ZONE \"default_zone\""
-        )
-        print("add hosts cmd is {}".format(cmd))
-
+        assert ok, "graph is not ready"
         # get session from the pool
         client = client_pool.get_session('root', 'nebula')
+
+        hosts = ",".join(
+            [
+                "127.0.0.1:{}".format(str(storaged.tcp_port))
+                for storaged in self.storaged_processes
+            ]
+        )
+        cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
+        print("add hosts cmd is {}".format(cmd))
         resp = client.execute(cmd)
         assert resp.is_succeeded(), resp.error_msg()
         client.release()

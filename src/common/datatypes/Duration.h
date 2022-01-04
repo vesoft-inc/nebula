@@ -125,10 +125,8 @@ struct Duration {
   }
 
   std::string toString() const {
-    std::stringstream ss;
-    ss << "P" << months << "M" << days() << "D"
-       << "T" << seconds << "S";
-    return ss.str();
+    return folly::sformat(
+        "P{}MT{}.{:0>6}000S", months, seconds + microseconds / 1000000, microseconds % 1000000);
   }
 
   folly::dynamic toJson() const {
