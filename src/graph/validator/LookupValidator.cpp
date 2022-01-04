@@ -97,8 +97,7 @@ Status LookupValidator::validateYieldEdge() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
@@ -124,8 +123,7 @@ Status LookupValidator::validateYieldTag() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {

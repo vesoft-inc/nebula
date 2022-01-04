@@ -162,6 +162,10 @@ std::string FetchEdgesSentence::toString() const {
   } else {
     buf += edgeKeys_->toString();
   }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
+  }
   return buf;
 }
 

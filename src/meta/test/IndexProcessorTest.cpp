@@ -2047,6 +2047,10 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
   // mock one space and ten tag, ten edge
   {
     // space Id is 1
