@@ -5,6 +5,8 @@
 #ifndef PARSER_GRAPHSCANNER_H_
 #define PARSER_GRAPHSCANNER_H_
 
+#include <gtest/gtest_prod.h>
+
 #include "common/base/Base.h"
 
 // Only include FlexLexer.h if it hasn't been already included
@@ -177,6 +179,7 @@ class GraphScanner : public yyFlexLexer {
 
  private:
   friend class Scanner_Basic_Test;
+  FRIEND_TEST(Scanner, LexColumnCount);
   int yylex() override;
 
   bool hasUnaryMinus_{false};
