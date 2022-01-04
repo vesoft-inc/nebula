@@ -214,7 +214,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             return;
           }
           // Usually the peer is not in proper state, for example:
-          // E_RAFT_UNKNOWN_PART/E_RAFT_BAD_STATE/E_RAFT_NOT_READY/E_RAFT_WAITING_SNAPSHOT
+          // E_RAFT_UNKNOWN_PART/E_RAFT_STOPPED/E_RAFT_NOT_READY/E_RAFT_WAITING_SNAPSHOT
           // In this case, nothing changed, just return the error
           default: {
             LOG_EVERY_N(ERROR, 100)

@@ -351,24 +351,24 @@ void RaftPart::stop() {
   LOG(INFO) << idStr_ << "Partition has been stopped";
 }
 
-AppendLogResult RaftPart::canAppendLogs() {
+nebula::cpp2::ErrorCode RaftPart::canAppendLogs() {
   DCHECK(!raftLock_.try_lock());
   if (UNLIKELY(status_ != Status::RUNNING)) {
     LOG(ERROR) << idStr_ << "The partition is not running";
-    return AppendLogResult::E_STOPPED;
+    return nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
   }
   if (UNLIKELY(role_ != Role::LEADER)) {
     LOG_EVERY_N(WARNING, 1000) << idStr_ << "The partition is not a leader";
-    return AppendLogResult::E_NOT_A_LEADER;
+    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  return AppendLogResult::SUCCEEDED;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-AppendLogResult RaftPart::canAppendLogs(TermID termId) {
+nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
   DCHECK(!raftLock_.try_lock());
   if (UNLIKELY(term_ != termId)) {
     VLOG(2) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
-    return AppendLogResult::E_TERM_OUT_OF_DATE;
+    return nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
   }
   return canAppendLogs();
 }
@@ -527,7 +527,7 @@ nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate) {
   });
   if (it == hosts.end()) {
     LOG(INFO) << idStr_ << "The candidate " << candidate << " is not in my peers";
-    return nebula::cpp2::ErrorCode::E_RAFT_WRONG_LEADER;
+    return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
@@ -593,41 +593,41 @@ void RaftPart::commitRemovePeer(const HostAddr& peer) {
   removePeer(peer);
 }
 
-folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source, std::string log) {
+folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendAsync(ClusterID source, std::string log) {
   if (source < 0) {
     source = clusterId_;
   }
   return appendLogAsync(source, LogType::NORMAL, std::move(log));
 }
 
-folly::Future<AppendLogResult> RaftPart::atomicOpAsync(AtomicOp op) {
+folly::Future<nebula::cpp2::ErrorCode> RaftPart::atomicOpAsync(AtomicOp op) {
   return appendLogAsync(clusterId_, LogType::ATOMIC_OP, "", std::move(op));
 }
 
-folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
+folly::Future<nebula::cpp2::ErrorCode> RaftPart::sendCommandAsync(std::string log) {
   return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
 }
 
-folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
-                                                        LogType logType,
-                                                        std::string log,
-                                                        AtomicOp op) {
+folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source,
+                                                                LogType logType,
+                                                                std::string log,
+                                                                AtomicOp op) {
   if (blocking_) {
     // No need to block heartbeats and empty log.
     if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
-      return AppendLogResult::E_WRITE_BLOCKING;
+      return nebula::cpp2::ErrorCode::E_RAFT_WRITE_BLOCKED;
     }
   }
 
   LogCache swappedOutLogs;
-  auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
+  auto retFuture = folly::Future<nebula::cpp2::ErrorCode>::makeEmpty();
 
   if (bufferOverFlow_) {
     LOG_EVERY_N(WARNING, 100) << idStr_
                               << "The appendLog buffer is full."
                                  " Please slow down the log appending rate."
                               << "replicatingLogs_ :" << replicatingLogs_;
-    return AppendLogResult::E_BUFFER_OVERFLOW;
+    return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
   }
   {
     std::lock_guard<std::mutex> lck(logsLock_);
@@ -641,7 +641,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                       " Please slow down the log appending rate."
                    << "replicatingLogs_ :" << replicatingLogs_;
       bufferOverFlow_ = true;
-      return AppendLogResult::E_BUFFER_OVERFLOW;
+      return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
     }
 
     VLOG(2) << idStr_ << "Appending logs to the buffer";
@@ -677,11 +677,11 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
   LogID firstId = 0;
   TermID termId = 0;
-  AppendLogResult res;
+  nebula::cpp2::ErrorCode res;
   {
     std::lock_guard<std::mutex> g(raftLock_);
     res = canAppendLogs();
-    if (res == AppendLogResult::SUCCEEDED) {
+    if (res == nebula::cpp2::ErrorCode::SUCCEEDED) {
       firstId = lastLogId_ + 1;
       termId = term_;
     }
@@ -705,7 +705,8 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                           auto opRet = opCB();
                           if (!opRet.hasValue()) {
                             // Failed
-                            sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
+                            sendingPromise_.setOneSingleValue(
+                                nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
                           }
                           return opRet;
                         });
@@ -728,11 +729,11 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     replicatingLogs_ = false;
     return;
   }
-  AppendLogResult res = AppendLogResult::SUCCEEDED;
+  nebula::cpp2::ErrorCode res = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     std::lock_guard<std::mutex> g(raftLock_);
     res = canAppendLogs(termId);
-    if (res != AppendLogResult::SUCCEEDED) {
+    if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
       break;
     }
     currTerm = term_;
@@ -743,7 +744,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     SlowOpTracker tracker;
     if (!wal_->appendLogs(iter)) {
       LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write into WAL";
-      res = AppendLogResult::E_WAL_FAILURE;
+      res = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
       break;
@@ -776,11 +777,11 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
   using namespace folly;  // NOLINT since the fancy overload of | operator
 
   decltype(hosts_) hosts;
-  AppendLogResult res = AppendLogResult::SUCCEEDED;
+  nebula::cpp2::ErrorCode res = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     std::lock_guard<std::mutex> g(raftLock_);
     res = canAppendLogs(currTerm);
-    if (res != AppendLogResult::SUCCEEDED) {
+    if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
       break;
@@ -871,7 +872,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     highestTerm = std::max(highestTerm, res.second.get_current_term());
   }
 
-  AppendLogResult res = AppendLogResult::SUCCEEDED;
+  nebula::cpp2::ErrorCode res = nebula::cpp2::ErrorCode::SUCCEEDED;
   {
     std::lock_guard<std::mutex> g(raftLock_);
     if (highestTerm > term_) {
@@ -880,7 +881,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       leader_ = HostAddr("", 0);
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
-      res = AppendLogResult::E_TERM_OUT_OF_DATE;
+      res = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
     }
   }
   if (!checkAppendLogResult(res)) {
@@ -895,7 +896,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     do {
       std::lock_guard<std::mutex> g(raftLock_);
       res = canAppendLogs(currTerm);
-      if (res != AppendLogResult::SUCCEEDED) {
+      if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
         break;
@@ -943,10 +944,10 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
 
     // Step 4: Fulfill the promise
     if (iter.hasNonAtomicOpLogs()) {
-      sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
+      sendingPromise_.setOneSharedValue(nebula::cpp2::ErrorCode::SUCCEEDED);
     }
     if (iter.leadByAtomicOp()) {
-      sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+      sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::SUCCEEDED);
     }
     // Step 5: Check whether need to continue
     // the log replication
@@ -971,7 +972,8 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
                 auto opRet = op();
                 if (!opRet.hasValue()) {
                   // Failed
-                  sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
+                  sendingPromise_.setOneSingleValue(
+                      nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
                 }
                 return opRet;
               });
@@ -1331,7 +1333,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // Make sure the partition is running
   if (UNLIKELY(status_ == Status::STOPPED)) {
     LOG(INFO) << idStr_ << "The part has been stopped, skip the request";
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_STATE;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
 
@@ -1497,7 +1499,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     VLOG(2) << idStr_ << "The part has been stopped, skip the request";
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_STATE;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
@@ -1736,7 +1738,7 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     VLOG(2) << idStr_ << "The part has been stopped, skip the request";
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_STATE;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
@@ -1772,7 +1774,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     LOG(ERROR) << idStr_ << "The part has been stopped, skip the request";
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_STATE;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
@@ -1782,7 +1784,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   }
   if (UNLIKELY(role_ != Role::FOLLOWER && role_ != Role::LEARNER)) {
     LOG(ERROR) << idStr_ << "Bad role " << roleStr(role_);
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_STATE;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(leader_ != HostAddr(req.get_leader_addr(), req.get_leader_port()) ||
@@ -1935,8 +1937,8 @@ std::pair<LogID, TermID> RaftPart::lastLogInfo() const {
   return std::make_pair(wal_->lastLogId(), wal_->lastLogTerm());
 }
 
-bool RaftPart::checkAppendLogResult(AppendLogResult res) {
-  if (res != AppendLogResult::SUCCEEDED) {
+bool RaftPart::checkAppendLogResult(nebula::cpp2::ErrorCode res) {
+  if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
     {
       std::lock_guard<std::mutex> lck(logsLock_);
       logs_.clear();
@@ -1961,16 +1963,16 @@ void RaftPart::reset() {
   lastTotalSize_ = 0;
 }
 
-AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
+nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {
   std::lock_guard<std::mutex> lck(raftLock_);
   LOG(INFO) << idStr_ << "Check whether I catch up";
   if (role_ != Role::LEADER) {
     LOG(INFO) << idStr_ << "I am not the leader";
-    return AppendLogResult::E_NOT_A_LEADER;
+    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   if (peer == addr_) {
     LOG(INFO) << idStr_ << "I am the leader";
-    return AppendLogResult::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   for (auto& host : hosts_) {
     if (host->addr_ == peer) {
@@ -1978,13 +1980,13 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
           host->followerCommittedLogId_ < wal_->firstLogId()) {
         LOG(INFO) << idStr_ << "The committed log id of peer is " << host->followerCommittedLogId_
                   << ", which is invalid or less than my first wal log id";
-        return AppendLogResult::E_SENDING_SNAPSHOT;
+        return nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT;
       }
-      return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
-                                    : AppendLogResult::SUCCEEDED;
+      return host->sendingSnapshot_ ? nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT
+                                    : nebula::cpp2::ErrorCode::SUCCEEDED;
     }
   }
-  return AppendLogResult::E_INVALID_PEER;
+  return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
 }
 
 bool RaftPart::linkCurrentWAL(const char* newPath) {

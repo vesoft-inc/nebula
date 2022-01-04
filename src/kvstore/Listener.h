@@ -153,7 +153,7 @@ class Listener : public raftex::RaftPart {
     CHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
       LOG(WARNING) << idStr_ << "The candidate " << candidate << " is not in my peers";
-      return nebula::cpp2::ErrorCode::E_RAFT_WRONG_LEADER;
+      return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
