@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <queue>
+#include <unordered_set>
 
 #include "common/base/ObjectPool.h"
 #include "common/expression/Expression.h"
@@ -570,9 +571,11 @@ StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter
   // pushed down
   auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
   // Deduplicate the list
-  auto dedupPropExprsList =
-      std::unordered_set<const Expression *>(propExprs.begin(), propExprs.end());
-  if (dedupPropExprsList.size() > 1) {
+  std::unordered_set<std::string> dedupPropExprSet;
+  for (auto &iter : propExprs) {
+    dedupPropExprSet.emplace(iter->toString());
+  }
+  if (dedupPropExprSet.size() > 1) {
     return const_cast<Expression *>(filter);
   }
 
