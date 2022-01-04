@@ -84,6 +84,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::WhereClause                    *lookup_where_clause;
     nebula::WhenClause                     *when_clause;
     nebula::YieldClause                    *yield_clause;
+    nebula::YieldClause                    *group_by_yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
     nebula::TruncateClause                 *truncate_clause;
@@ -262,7 +263,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <lookup_where_clause> lookup_where_clause
 %type <when_clause> when_clause
 %type <truncate_clause> truncate_clause
-%type <yield_clause> yield_clause
+%type <yield_clause> yield_clause group_by_yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
 %type <vertex_tag_list> vertex_tag_list
@@ -1484,7 +1485,12 @@ over_clause
 
 where_clause
     : %empty { $$ = nullptr; }
-    | KW_WHERE expression { $$ = new WhereClause($2); }
+    | KW_WHERE expression {
+        if (graph::ExpressionUtils::findAny($2, {Expression::Kind::kAggregate})) {
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in where clause.");
+        }
+        $$ = new WhereClause($2);
+    }
     ;
 
 when_clause
@@ -1494,8 +1500,20 @@ when_clause
 
 yield_clause
     : %empty { $$ = nullptr; }
-    | KW_YIELD yield_columns { $$ = new YieldClause($2); }
-    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
+    | KW_YIELD yield_columns {
+        if ($2->hasAgg()) {
+            delete($2);
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in yield clause.");
+        }
+        $$ = new YieldClause($2);
+    }
+    | KW_YIELD KW_DISTINCT yield_columns {
+        if ($3->hasAgg()) {
+            delete($3);
+            throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in yield clause.");
+        }
+        $$ = new YieldClause($3, true);
+    }
     ;
 
 yield_columns
@@ -2316,8 +2334,13 @@ limit_sentence
     }
     ;
 
+group_by_yield_clause
+    : KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
+    ;
+
 group_by_sentence
-    : KW_GROUP KW_BY group_clause yield_clause {
+    : KW_GROUP KW_BY group_clause group_by_yield_clause {
         auto group = new GroupBySentence();
         group->setGroupClause($3);
         group->setYieldClause($4);
