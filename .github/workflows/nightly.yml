@@ -82,7 +82,8 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             vesoft/nebula-${{ matrix.service }}:nightly
           push: true
