@@ -44,7 +44,6 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
     return;
   }
 
-  // std::vector<kvstore::KV> data;
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   auto iter = nebula::value(ret).get();
   while (iter->valid()) {
@@ -62,7 +61,7 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
     iter->next();
   }
 
-  batchHolder->remove(MetaKeyUtils::zoneKey(originalZoneKey));
+  batchHolder->remove(MetaKeyUtils::zoneKey(originalZoneName));
   batchHolder->put(std::move(zoneKey), std::move(originalZoneValue));
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
