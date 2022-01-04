@@ -1157,8 +1157,11 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
       size -= 1;
     }
     depth += 1;
+    if (depth < ExpressionUtils::kMaxDepth) {
+      return false;
+    }
   }
-  return depth < ExpressionUtils::kMaxDepth;
+  return true;
 }  // namespace graph
 
 }  // namespace graph
