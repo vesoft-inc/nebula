@@ -30,18 +30,27 @@ void LogMonitor::getLogDiskFreeByte() {
 void LogMonitor::checkAndChangeLogLevel() {
   getLogDiskFreeByte();
 
-  if (freeByte_ < FLAGS_log_min_reserved_bytes_to_warn) {
-    LOG(ERROR) << "log disk freebyte is less than " << FLAGS_log_min_reserved_bytes_to_warn
-               << ", change log level to WARNING";
-    FLAGS_minloglevel = google::GLOG_WARNING;
+  if (FLAGS_log_min_reserved_bytes_to_fatal > FLAGS_log_min_reserved_bytes_to_error ||
+      FLAGS_log_min_reserved_bytes_to_fatal > FLAGS_log_min_reserved_bytes_to_warn ||
+      FLAGS_log_min_reserved_bytes_to_error > FLAGS_log_min_reserved_bytes_to_warn) {
+    LOG(ERROR) << "Get Invalid config in LogMonitor, the LogMonitor config should be "
+               << "FLAGS_log_min_reserved_bytes_to_warn >"
+               << "FLAGS_log_min_reserved_bytes_to_error > FLAGS_log_min_reserved_bytes_to_fatal;";
+    return;
+  }
+
+  if (freeByte_ < FLAGS_log_min_reserved_bytes_to_fatal) {
+    LOG(ERROR) << "log disk freebyte is less than " << FLAGS_log_min_reserved_bytes_to_fatal
+               << ", change log level to FATAL";
+    FLAGS_minloglevel = google::GLOG_FATAL;
   } else if (freeByte_ < FLAGS_log_min_reserved_bytes_to_error) {
     LOG(ERROR) << "log disk freebyte is less than " << FLAGS_log_min_reserved_bytes_to_error
                << ", change log level to ERROR";
     FLAGS_minloglevel = google::GLOG_ERROR;
-  } else if (freeByte_ < FLAGS_log_min_reserved_bytes_to_fatal) {
-    LOG(ERROR) << "log disk freebyte is less than " << FLAGS_log_min_reserved_bytes_to_fatal
-               << ", change log level to FATAL";
-    FLAGS_minloglevel = google::GLOG_FATAL;
+  } else if (freeByte_ < FLAGS_log_min_reserved_bytes_to_warn) {
+    LOG(ERROR) << "log disk freebyte is less than " << FLAGS_log_min_reserved_bytes_to_warn
+               << ", change log level to WARNING";
+    FLAGS_minloglevel = google::GLOG_WARNING;
   } else {
     // if freeByte_ is bigger than every min_log_flag, reset the FLAGS_minloglevel to old value
     if (FLAGS_minloglevel != oldMinLogLevel_) {
