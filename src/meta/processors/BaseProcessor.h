@@ -193,6 +193,8 @@ class BaseProcessor {
    * */
   nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
 
+  nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
+
   /**
    * Check hosts has been include by zone or not.
    * */
