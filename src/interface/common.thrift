@@ -471,7 +471,7 @@ enum ErrorCode {
 
     E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
     // get id failed
-    E_ID_FAILED                = -3062,
+    E_ID_FAILED                       = -3062,
 
     // 35xx for storaged raft
     E_RAFT_UNKNOWN_PART               = -3500,

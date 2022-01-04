@@ -5,6 +5,7 @@
 
 #include "common/expression/UUIDExpression.h"
 
+#include "common/datatypes/Value.h"
 #include "common/expression/ExprVisitor.h"
 #include "common/id/SegmentId.h"
 
@@ -27,7 +28,11 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
   SegmentId& generator = SegmentId::getInstance(10000);
-  result_ = generator.getId();
+  auto xRet = generator.getId();
+  if (xRet.ok()) {
+    return Value::kNullBadData;
+  }
+  result_ = xRet.value();
   return result_;
 }
 
