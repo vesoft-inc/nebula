@@ -147,8 +147,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
     // cache tagKey
-    std::unordered_set<std::string> visited;
-    visited.reserve(vertices.size());
+    deleteDupVid(const_cast<std::vector<cpp2::NewVertex>&>(vertices));
     for (auto& vertex : vertices) {
       auto vid = vertex.get_id().getStr();
       const auto& newTags = vertex.get_tags();
@@ -181,9 +180,6 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         }
 
         auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
-        if (ifNotExists_ && !visited.emplace(key).second) {
-          continue;
-        }
         auto props = newTag.get_props();
         auto iter = propNamesMap.find(tagId);
         std::vector<std::string> propNames;
@@ -232,8 +228,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
             if (oReader != nullptr) {
               auto ois = indexKeys(partId, vid, oReader.get(), index, schema.get());
               if (!ois.empty()) {
-                // Check the index is building for the specified partition or
-                // not.
+                // Check the index is building for the specified partition or not
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
                   auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
@@ -343,6 +338,36 @@ std::vector<std::string> AddVerticesProcessor::indexKeys(
 
   return IndexKeyUtils::vertexIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), vId, std::move(values).value());
+}
+
+/*
+ * ifNotExist_ is true. Only keep the first one when vid is same
+ * ifNotExist_ is false. Only keep the last one when vid is same
+ */
+void AddVerticesProcessor::deleteDupVid(std::vector<cpp2::NewVertex>& vertices) {
+  std::unordered_set<std::string> visited;
+  visited.reserve(vertices.size());
+  if (ifNotExists_) {
+    auto iter = vertices.begin();
+    while (iter != vertices.end()) {
+      const auto& vid = iter->get_id().getStr();
+      if (!visited.emplace(vid).second) {
+        iter = vertices.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  } else {
+    auto iter = vertices.rbegin();
+    while (iter != vertices.rend()) {
+      const auto& vid = iter->get_id().getStr();
+      if (!visited.emplace(vid).second) {
+        iter = decltype(iter)(vertices.erase(std::next(iter).base()));
+      } else {
+        ++iter;
+      }
+    }
+  }
 }
 
 }  // namespace storage
