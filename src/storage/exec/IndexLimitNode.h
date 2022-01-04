@@ -15,10 +15,12 @@ class IndexLimitNode : public IndexNode {
   std::unique_ptr<IndexNode> copy() override;
   std::string identify() override;
 
+ protected:
+  const uint64_t offset_, limit_;
+
  private:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
   Result doNext() override;
-  const uint64_t offset_, limit_;
   uint64_t currentOffset_ = 0;
 };
 }  // namespace storage

@@ -170,10 +170,13 @@ CounterId StatsManager::counterWithLabels(const CounterId& id,
   auto index = id.index();
   CHECK(!labels.empty());
   std::string newIndex;
-  for (auto& [k, v] : labels) {
-    newIndex.append(k).append("_").append(v).append("_");
-  }
   newIndex.append(index);
+  newIndex.append("{");
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("=").append(v).append(",");
+  }
+  newIndex.back() = '}';
+
   auto it = sm.nameMap_.find(newIndex);
   // Get the counter if it already exists
   if (it != sm.nameMap_.end()) {
@@ -196,10 +199,12 @@ CounterId StatsManager::histoWithLabels(const CounterId& id, const std::vector<L
   auto index = id.index();
   CHECK(!labels.empty());
   std::string newIndex;
-  for (auto& [k, v] : labels) {
-    newIndex.append(k).append("_").append(v).append("_");
-  }
   newIndex.append(index);
+  newIndex.append("{");
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("=").append(v).append(",");
+  }
+  newIndex.back() = '}';
   auto it = sm.nameMap_.find(newIndex);
   // Get the counter if it already exists
   if (it != sm.nameMap_.end()) {
@@ -224,10 +229,12 @@ void StatsManager::removeCounterWithLabels(const CounterId& id,
   auto index = id.index();
   CHECK(!labels.empty());
   std::string newIndex;
-  for (auto& [k, v] : labels) {
-    newIndex.append(k).append("_").append(v).append("_");
-  }
   newIndex.append(index);
+  newIndex.append("{");
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("=").append(v).append(",");
+  }
+  newIndex.back() = '}';
   folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
   auto it = sm.nameMap_.find(newIndex);
   if (it != sm.nameMap_.end()) {
@@ -245,10 +252,12 @@ void StatsManager::removeHistoWithLabels(const CounterId& id,
   auto index = id.index();
   CHECK(!labels.empty());
   std::string newIndex;
-  for (auto& [k, v] : labels) {
-    newIndex.append(k).append("_").append(v).append("_");
-  }
   newIndex.append(index);
+  newIndex.append("{");
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("=").append(v).append(",");
+  }
+  newIndex.back() = '}';
   folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
   auto it = sm.nameMap_.find(newIndex);
   if (it != sm.nameMap_.end()) {

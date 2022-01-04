@@ -427,6 +427,7 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setOrderBy(from->orderBy());
   to->setLimit(from->limit(qctx));
   to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
+  to->setYieldColumns(from->yieldColumns());
 }
 
 Status OptimizerUtils::compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b) {

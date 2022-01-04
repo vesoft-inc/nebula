@@ -1157,7 +1157,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
       size -= 1;
     }
     depth += 1;
-    if (depth < ExpressionUtils::kMaxDepth) {
+    if (depth > ExpressionUtils::kMaxDepth) {
       return false;
     }
   }
