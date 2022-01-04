@@ -127,11 +127,20 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
     auto ret = machineExist(machineKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "The host " << host << " not existed!";
+      LOG(ERROR) << "The machine " << host << " not existed!";
       code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }
     holder->remove(std::move(machineKey));
+
+    auto hostKey = MetaKeyUtils::hostKey(host.host, host.port);
+    ret = hostExist(hostKey);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "The host " << host << " not existed!";
+      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+      break;
+    }
+    holder->remove(std::move(hostKey));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

@@ -263,6 +263,15 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::machineExist(const std::string& mac
 }
 
 template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+  auto ret = doGet(hostKey);
+  if (nebula::ok(ret)) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+  return nebula::error(ret);
+}
+
+template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::includeByZone(const std::vector<HostAddr>& hosts) {
   const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
