@@ -87,6 +87,18 @@ def init_parser():
         default='false',
         help='run this process inside container',
     )
+    opt_parser.add_option(
+        '--failed_login_attempts',
+        dest='failed_login_attempts',
+        default=0,
+        help='how many consecutive incorrect passwords input to a SINGLE graph service node cause the account to become locked',
+    )
+    opt_parser.add_option(
+        '--password_lock_time_in_secs',
+        dest='password_lock_time_in_secs',
+        default=0,
+        help='how long in seconds to lock the account after too many consecutive login attempts provide an incorrect password',
+    )
     return opt_parser
 
 

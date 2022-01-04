@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "common/id/Snowflake.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
 namespace nebula {
@@ -38,6 +39,8 @@ bool GraphServer::start() {
     LOG(ERROR) << status;
     return false;
   }
+
+  nebula::Snowflake::initWorkerId(interface->metaClient_.get());
 
   graphThread_ = std::make_unique<std::thread>([&] {
     thriftServer_->setPort(localHost_.port);

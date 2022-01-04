@@ -142,7 +142,7 @@ TEST_F(ExpressionTest, TestExprClone) {
   auto fnCallExpr = FunctionCallExpression::make(&pool, "count", ArgumentList::make(&pool));
   ASSERT_EQ(*fnCallExpr, *fnCallExpr->clone());
 
-  auto uuidExpr = UUIDExpression::make(&pool, "hello");
+  auto uuidExpr = UUIDExpression::make(&pool);
   ASSERT_EQ(*uuidExpr, *uuidExpr->clone());
 
   auto subExpr = SubscriptExpression::make(
