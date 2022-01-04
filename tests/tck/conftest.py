@@ -174,6 +174,7 @@ def preload_space(
     load_nba_data,
     load_nba_int_vid_data,
     load_student_data,
+    load_ldbc_v0_3_3,
     session,
     graph_spaces,
 ):
@@ -184,6 +185,8 @@ def preload_space(
         graph_spaces["space_desc"] = load_nba_int_vid_data
     elif space == "student":
         graph_spaces["space_desc"] = load_student_data
+    elif space == "ldbc_v0_3_3":
+        graph_spaces["ldbc_v0_3_3"] = load_ldbc_v0_3_3
     else:
         raise ValueError(f"Invalid space name given: {space}")
     resp_ok(session, f'USE {space};', True)

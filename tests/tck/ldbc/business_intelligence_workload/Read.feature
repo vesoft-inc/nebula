@@ -4,7 +4,7 @@
 Feature: LDBC Business Intelligence Workload - Read
 
   Background:
-    Given a graph with space named "ldbc-v0.3.3"
+    Given a graph with space named "ldbc_v0_3_3"
 
   Scenario: 1. Posting summary
     When executing query:
@@ -131,9 +131,9 @@ Feature: LDBC Business Intelligence Workload - Read
       WHERE id(country) == "Burma"
       RETURN
         forum.Forum.id AS forumId,
-        forum.Forum.title,
-        forum.Forum.creationDate,
-        person.Person.id,
+        forum.Forum.title AS forumTitle,
+        forum.Forum.creationDate AS forumCreationDate,
+        person.Person.id AS personId,
         count(DISTINCT post) AS postCount
       ORDER BY
         postCount DESC,
@@ -141,7 +141,7 @@ Feature: LDBC Business Intelligence Workload - Read
       LIMIT 20
       """
     Then the result should be, in order:
-      | forumId | forum.title | forum.creationDate | person.id | postCount |
+      | forumId | forumTitle | forumCreationDate | personId | postCount |
 
   Scenario: 5. Top posters in a country
     When executing query:
@@ -162,9 +162,9 @@ Feature: LDBC Business Intelligence Workload - Read
       WHERE popularForum IN popularForums
       RETURN
         person.Person.id AS personId,
-        person.Person.firstName,
-        person.Person.lastName,
-        person.Person.creationDate,
+        person.Person.firstName AS personFirstName,
+        person.Person.lastName AS personLastName,
+        person.Person.creationDate AS personCreationDate,
         count(DISTINCT post) AS postCount
       ORDER BY
         postCount DESC,
@@ -172,31 +172,9 @@ Feature: LDBC Business Intelligence Workload - Read
       LIMIT 100
       """
     Then the result should be, in order:
-      | personId | person.firstName | person.lastName | person.creationDate | postCount |
+      | personId | personFirstName | personLastName | personCreationDate | postCount |
 
   Scenario: 6. Most active posters of a given topic
-    When executing query:
-      """
-      MATCH (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
-      WHERE id(`tag`) == "Abbas_I_of_Persia"
-      OPTIONAL MATCH (:Person)-[like:LIKES]->(message)
-      OPTIONAL MATCH (message)<-[:REPLY_OF]-(comment:`Comment`)
-      WITH person, count(DISTINCT like) AS likeCount, count(DISTINCT comment) AS replyCount, count(DISTINCT message) AS messageCount
-      RETURN
-        person.id AS personId,
-        replyCount,
-        likeCount,
-        messageCount,
-        1*messageCount + 2*replyCount + 10*likeCount AS score
-      ORDER BY
-        score DESC,
-        personId ASC
-      LIMIT 100
-      """
-    Then the result should be, in order:
-      | personId | replyCount | likeCount | messageCount | score |
-
-  Scenario: 7. Most authoritative users on a given topic
     When executing query:
       """
       MATCH (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
@@ -213,6 +191,26 @@ Feature: LDBC Business Intelligence Workload - Read
       ORDER BY
         score DESC,
         personId ASC
+      LIMIT 100
+      """
+    Then the result should be, in order:
+      | personId | replyCount | likeCount | messageCount | score |
+
+  Scenario: 7. Most authoritative users on a given topic
+    When executing query:
+      """
+      MATCH (`tag`:`Tag`)
+      WHERE id(`tag`) == "Arnold_Schwarzenegger"
+      MATCH (`tag`)<-[:HAS_TAG]-(message1:Message)-[:HAS_CREATOR]->(person1:Person)
+      MATCH (`tag`)<-[:HAS_TAG]-(message2:Message)-[:HAS_CREATOR]->(person1)
+      OPTIONAL MATCH (message2)<-[:LIKES]-(person2:Person)
+      OPTIONAL MATCH (person2)<-[:HAS_CREATOR]-(message3:Message)<-[like:LIKES]-(p3:Person)
+      RETURN
+        person1.Person.id AS person1Id,
+        count(DISTINCT like) AS authorityScore
+      ORDER BY
+        authorityScore DESC,
+        person1Id ASC
       LIMIT 100
       """
     Then the result should be, in order:
@@ -342,9 +340,9 @@ Feature: LDBC Business Intelligence Workload - Read
       WHERE likeCount > 400
       RETURN
         message.Message.id AS messageId,
-        message.Message.creationDate,
-        creator.Person.firstName,
-        creator.Person.lastName,
+        message.Message.creationDate AS messageCreationDate,
+        creator.Person.firstName AS creatorFirstName,
+        creator.Person.lastName AS creatorLastName,
         likeCount
       ORDER BY
         likeCount DESC,
@@ -352,7 +350,7 @@ Feature: LDBC Business Intelligence Workload - Read
       LIMIT 100
       """
     Then the result should be, in order:
-      | messageId | message.creationDate | creator.firstName | creator.lastName | likeCount |
+      | messageId | messageCreationDate | creatorFirstName | creatorLastName | likeCount |
 
   Scenario: 13. Popular tags per month in a country
     When executing query:
@@ -399,8 +397,8 @@ Feature: LDBC Business Intelligence Workload - Read
         AND  post.Post.creationDate <= "20120630220000000"
       RETURN
         person.Person.id AS personId,
-        person.Person.firstName,
-        person.Person.lastName,
+        person.Person.firstName AS personFirstName,
+        person.Person.lastName AS personLastName,
         count(DISTINCT post) AS threadCount,
         count(DISTINCT reply) AS messageCount
       ORDER BY
@@ -409,7 +407,7 @@ Feature: LDBC Business Intelligence Workload - Read
       LIMIT 100
       """
     Then the result should be, in any order:
-      | personId | person.firstName | person.lastName | threadCount | messageCount |
+      | personId | personFirstName | personLastName | threadCount | messageCount |
 
   Scenario: 15. Social normals
     When executing query:
@@ -482,6 +480,7 @@ Feature: LDBC Business Intelligence Workload - Read
       """
     Then the result should be, in any order:
       | count |
+      | 0     |
 
   Scenario: 18. How many persons have a given number of messages
     # TODO: [:REPLY_OF*0..]

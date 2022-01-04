@@ -4,7 +4,7 @@
 Feature: LDBC Interactive Workload - Short Reads
 
   Background:
-    Given a graph with space named "ldbc-v0.3.3"
+    Given a graph with space named "ldbc_v0_3_3"
 
   Scenario: 1. Friends with certain name
     When executing query:
