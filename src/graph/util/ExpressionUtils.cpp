@@ -417,12 +417,13 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
+  QueryExpressionContext ctx(nullptr);
 
-  auto checkArithmExpr = [](const ArithmeticExpression *arithmExpr) -> bool {
+  auto checkArithmExpr = [&ctx](const ArithmeticExpression *arithmExpr) -> bool {
     auto lExpr = const_cast<Expression *>(arithmExpr->left());
     auto rExpr = const_cast<Expression *>(arithmExpr->right());
-    QueryExpressionContext ctx(nullptr);
 
+    // If the arithExpr has constant expr as member that is a string, do not rewrite
     if (lExpr->kind() == Expression::Kind::kConstant) {
       if (static_cast<ConstantExpression *>(lExpr)->eval(ctx).isStr()) {
         return false;
@@ -450,33 +451,30 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     }
 
     auto relExpr = static_cast<const RelationalExpression *>(e);
+    // Check right operand
     bool checkRightOperand = isEvaluableExpr(relExpr->right());
     if (!checkRightOperand) return false;
 
-    bool checkLeftOperand = true;
+    // Check left operand
+    bool checkLeftOperand = false;
     auto lExpr = relExpr->left();
-
     // Left operand is arithmetical expr
     if (lExpr->isArithmeticExpr()) {
       auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
-      auto constExprList = collectAll(arithmExpr, {Expression::Kind::kConstant});
-      QueryExpressionContext ctx(nullptr);
-
-      // If the arithExpr has constant expr as member that is a string, do not rewrite
       checkLeftOperand = checkArithmExpr(arithmExpr);
     } else if (lExpr->isRelExpr()) {  // for expressions that contain boolean literals
       checkLeftOperand = true;
     }
-    return checkLeftOperand && checkRightOperand;
+    return checkLeftOperand;
   };
 
   // Simplify relational expressions involving boolean literals
-  auto simplifyBoolOperand =
-      [pool](RelationalExpression *relExpr, Expression *lExpr, Expression *rExpr) -> Expression * {
-    QueryExpressionContext ctx(nullptr);
+  auto simplifyBoolOperand = [pool, &ctx](RelationalExpression *relExpr,
+                                          Expression *lExpr,
+                                          Expression *rExpr) -> Expression * {
     if (rExpr->kind() == Expression::Kind::kConstant) {
       auto conExpr = static_cast<ConstantExpression *>(rExpr);
-      auto val = conExpr->eval(ctx(nullptr));
+      auto val = conExpr->eval(ctx);
       auto valType = val.type();
       // Rewrite to null if the expression contains any operand that is null
       if (valType == Value::Type::NULLVALUE) {
