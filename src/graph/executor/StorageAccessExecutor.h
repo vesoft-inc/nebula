@@ -79,7 +79,8 @@ class StorageAccessExecutor : public Executor {
         return Status::Error(std::move(error));
       }
       case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
-        return Status::Error("Storage Error: The leader has changed. Try again later");
+        return Status::Error(
+            folly::sformat("Storage Error: Not the leader of {}. Please retry later.", partId));
       case nebula::cpp2::ErrorCode::E_INVALID_FILTER:
         return Status::Error("Storage Error: Invalid filter.");
       case nebula::cpp2::ErrorCode::E_INVALID_UPDATER:
@@ -88,6 +89,8 @@ class StorageAccessExecutor : public Executor {
         return Status::Error("Storage Error: Invalid space vid len.");
       case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
         return Status::Error("Storage Error: Space not found.");
+      case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND:
+        return Status::Error(folly::sformat("Storage Error: Part {} not found.", partId));
       case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
         return Status::Error("Storage Error: Tag not found.");
       case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
@@ -108,14 +111,25 @@ class StorageAccessExecutor : public Executor {
             "The not null field doesn't have a default value.");
       case nebula::cpp2::ErrorCode::E_OUT_OF_RANGE:
         return Status::Error("Storage Error: Out of range value.");
-      case nebula::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
-        return Status::Error("Storage Error: Atomic operation failed.");
       case nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
         return Status::Error(
             "Storage Error: More than one request trying to "
             "add/update/delete one edge/vertex at the same time.");
       case nebula::cpp2::ErrorCode::E_FILTER_OUT:
         return Status::OK();
+      case nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE:
+        return Status::Error(folly::sformat(
+            "Storage Error: Term of part {} is out of date. Please retry later.", partId));
+      case nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL:
+        return Status::Error("Storage Error: Write wal failed. Probably disk is almost full.");
+      case nebula::cpp2::ErrorCode::E_RAFT_WRITE_BLOCKED:
+        return Status::Error(
+            "Storage Error: Write is blocked when creating snapshot. Please retry later.");
+      case nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW:
+        return Status::Error(folly::sformat(
+            "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
+      case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
+        return Status::Error("Storage Error: Atomic operation failed.");
       default:
         auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
                                     partId,
