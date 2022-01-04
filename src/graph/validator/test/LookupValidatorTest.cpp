@@ -149,7 +149,8 @@ TEST_F(LookupValidatorTest, wrongYield) {
   {
     std::string query = "LOOKUP ON person YIELD count(*)";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: illegal yield clauses `count(*)'");
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: Invalid use of aggregating function in yield clause. near `count(*)'");
   }
   {
     std::string query = "LOOKUP ON person YIELD vertex as node, edge";
