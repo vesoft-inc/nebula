@@ -1119,8 +1119,8 @@ TEST(GetNeighborsTest, TtlTest) {
       LOG(INFO) << "colName: " << s;
     }
     ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());   // stat
-    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());   // expr
+    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());  // stat
+    ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());  // expr
   }
   FLAGS_mock_ttl_col = false;
 }
