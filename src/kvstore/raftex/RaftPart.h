@@ -15,6 +15,7 @@
 #include "common/time/Duration.h"
 #include "common/utils/LogIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/raftex_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
@@ -284,7 +285,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
   // Check if we can accept candidate's message
-  virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
+  virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate);
 
   // The inherited classes need to implement this method to commit a batch of log messages.
   // Return {error code, last commit log id, last commit log term}.
@@ -330,7 +331,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   const char* roleStr(Role role) const;
 
   template <typename REQ>
-  cpp2::ErrorCode verifyLeader(const REQ& req);
+  nebula::cpp2::ErrorCode verifyLeader(const REQ& req);
 
   /*****************************************************************
    *

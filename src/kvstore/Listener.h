@@ -149,13 +149,13 @@ class Listener : public raftex::RaftPart {
     LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
   }
 
-  raftex::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
+  nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
     CHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
       LOG(WARNING) << idStr_ << "The candidate " << candidate << " is not in my peers";
-      return raftex::cpp2::ErrorCode::E_WRONG_LEADER;
+      return nebula::cpp2::ErrorCode::E_RAFT_WRONG_LEADER;
     }
-    return raftex::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   // For listener, we just return true directly. Another background thread trigger the actual

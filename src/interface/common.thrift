@@ -473,5 +473,26 @@ enum ErrorCode {
     // get worker id
     E_WORKER_ID_FAILED                = -3062,
 
+    // 35xx for storaged raft
+    E_RAFT_UNKNOWN_PART               = -3500;
+    // Raft consensus errors
+    E_RAFT_LOG_GAP                    = -3501;
+    E_RAFT_LOG_STALE                  = -3502;
+    E_RAFT_TERM_OUT_OF_DATE           = -3503;
+    // Raft state errors
+    E_RAFT_WAITING_SNAPSHOT           = -3511;
+    E_RAFT_BAD_STATE                  = -3512;
+    E_RAFT_WRONG_LEADER               = -3513;
+    E_RAFT_NOT_READY                  = -3514;
+    E_RAFT_BAD_ROLE                   = -3515,
+    // Local errors
+    E_RAFT_WAL_FAIL                   = -3521;
+    E_RAFT_HOST_STOPPED               = -3522;
+    E_RAFT_TOO_MANY_REQUESTS          = -3523;
+    E_RAFT_PERSIST_SNAPSHOT_FAILED    = -3524;
+    E_RAFT_RPC_EXCEPTION              = -3525;
+    E_RAFT_NO_WAL_FOUND               = -3526;
+    E_RAFT_HOST_PAUSED                = -3527;
+
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
