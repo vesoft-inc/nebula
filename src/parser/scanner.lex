@@ -374,7 +374,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 {DEC}+\.\.                  {
                                 yyless(yyleng - 2);
-                                yylloc->columns(-2);
+                                yylloc->columns(-2);  // remove the extra counted column number
                                 return parseDecimal();
                             }
 {DEC}+                      {
