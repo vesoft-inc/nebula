@@ -239,6 +239,8 @@ class MetaClient {
 
   bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
 
+  void notifyStop();
+
   void stop();
 
   void registerListener(MetaChangedListener* listener) {

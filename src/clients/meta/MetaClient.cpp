@@ -86,6 +86,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 }
 
 MetaClient::~MetaClient() {
+  notifyStop();
   stop();
   delete sessionMap_.load();
   delete killedPlans_.load();
@@ -142,13 +143,18 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
   return ready_;
 }
 
-void MetaClient::stop() {
+void MetaClient::notifyStop() {
   if (bgThread_ != nullptr) {
     bgThread_->stop();
+  }
+  isRunning_ = false;
+}
+
+void MetaClient::stop() {
+  if (bgThread_ != nullptr) {
     bgThread_->wait();
     bgThread_.reset();
   }
-  isRunning_ = false;
 }
 
 void MetaClient::heartBeatThreadFunc() {
