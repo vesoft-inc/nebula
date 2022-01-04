@@ -13,33 +13,25 @@ namespace meta {
 
 void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& req) {
   int64_t length = req.get_length();
-  LOG(INFO) << "SegmentId enter: Get segment id, length: " << length;
   folly::SharedMutex::WriteHolder wHolder(LockUtils::segmentIdLock());
 
   auto curIdResult = doGet(kIdKey);
   if (!nebula::ok(curIdResult)) {
     LOG(ERROR) << "Get step or current id failed during get segment id";
+    resp_.segment_id_ref() = -1;
+    onFinished();
   }
-  LOG(INFO) << "SegmentId: current str: " << std::move(nebula::value(curIdResult));
 
-  int64_t curIdInt = std::stoi(std::move(nebula::value(curIdResult)));
-  LOG(INFO) << "SegmentId: current id: " << curIdInt;
-  LOG(INFO) << "SegmentId: insert current: " << curIdInt + length;
+  int64_t curId = std::stoi(std::move(nebula::value(curIdResult)));
 
-  doPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(curIdInt + length)}});
-  auto test = doGet(kIdKey);
-  if (!nebula::ok(curIdResult)) {
-    LOG(ERROR) << "get test failed";
-  }
-  LOG(INFO) << "SegmentId: test: " << std::move(nebula::value(test));
+  doPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(curId + length)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_segment_id(curIdInt);
+  resp_.segment_id_ref() = curId;
   onFinished();
 }
 
 void GetSegmentIdProcessor::doPut(std::vector<kvstore::KV> data) {
-  LOG(INFO) << "SegmentId: doPut";
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncMultiPut(kDefaultSpaceId,
                           kDefaultPartId,

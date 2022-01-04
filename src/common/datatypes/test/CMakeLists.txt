@@ -63,6 +63,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -148,6 +149,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:thrift_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

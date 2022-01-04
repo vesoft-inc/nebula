@@ -145,6 +145,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:segment_id_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
     LIBRARIES
         follybenchmark
         boost_regex
@@ -185,6 +186,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:segment_id_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
     LIBRARIES
         follybenchmark
         boost_regex
