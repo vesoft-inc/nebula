@@ -4,7 +4,7 @@
 
 set(expression_test_common_libs
     $<TARGET_OBJECTS:parser_obj>
-        $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:segment_id_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:network_obj>
