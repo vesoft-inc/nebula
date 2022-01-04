@@ -1,5 +1,5 @@
 space:
-  name: ldbc-v0.3.3
+  name: ldbc_v0_3_3
   partitionNum: 8
   replicaFactor: 1
   vidType: FIXED_STRING(32)
@@ -35,7 +35,7 @@ schema: |
   CREATE EDGE IF NOT EXISTS `HAS_MEMBER`(`joinDate` string);
   CREATE EDGE IF NOT EXISTS `KNOWS`(`creationDate` string);
   CREATE EDGE IF NOT EXISTS `HAS_TYPE`();
-  CREATE TAG INDEX message_create_date ON `Message`(`creationDate`(20))
-  CREATE TAG INDEX person_first_name ON `Person`(`firstName`(20))
+  CREATE TAG INDEX message_create_date ON `Message`(`creationDate`(20));
+  CREATE TAG INDEX person_first_name ON `Person`(`firstName`(20));
 files:
 

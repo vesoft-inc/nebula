@@ -12,14 +12,14 @@ Feature: LDBC Interactive Workload - Short Reads
       MATCH (n:Person)-[:IS_LOCATED_IN]->(p:Place)
       WHERE id(n)==""
       RETURN
-        n.firstName AS firstName,
-        n.lastName AS lastName,
-        n.birthday AS birthday,
-        n.locationIP AS locationIP,
-        n.browserUsed AS browserUsed,
-        p.id AS cityId,
-        n.gender AS gender,
-        n.creationDate AS creationDate
+        n.Person.firstName AS firstName,
+        n.Person.lastName AS lastName,
+        n.Person.birthday AS birthday,
+        n.Person.locationIP AS locationIP,
+        n.Person.browserUsed AS browserUsed,
+        p.Place.id AS cityId,
+        n.Person.gender AS gender,
+        n.Person.creationDate AS creationDate
       """
     Then the result should be, in any order:
       | firstName | lastName | birthday | locationIP | browserUsed | cityId | gender | creationDate |
@@ -32,16 +32,16 @@ Feature: LDBC Interactive Workload - Short Reads
       WHERE id(n)==""
       MATCH (p)-[:HAS_CREATOR]->(c)
       RETURN
-        m.id as messageId,
-        CASE exists(m.content)
-          WHEN true THEN m.content
-          ELSE m.imageFile
+        m.Message.id as messageId,
+        CASE exists(m.Message.content)
+          WHEN true THEN m.Message.content
+          ELSE m.Message.imageFile
         END AS messageContent,
-        m.creationDate AS messageCreationDate,
-        p.id AS originalPostId,
-        c.id AS originalPostAuthorId,
-        c.firstName as originalPostAuthorFirstName,
-        c.lastName as originalPostAuthorLastName
+        m.Message.creationDate AS messageCreationDate,
+        p.Post.id AS originalPostId,
+        c.Person.id AS originalPostAuthorId,
+        c.Person.firstName as originalPostAuthorFirstName,
+        c.Person.lastName as originalPostAuthorLastName
       ORDER BY messageCreationDate DESC
       LIMIT 10
       """
@@ -54,9 +54,9 @@ Feature: LDBC Interactive Workload - Short Reads
       MATCH (n:Person)-[r:KNOWS]-(friend)
       WHERE id(n) == ""
       RETURN
-        toInteger(friend.id) AS personId,
-        friend.firstName AS firstName,
-        friend.lastName AS lastName,
+        toInteger(friend.Person.id) AS personId,
+        friend.Person.firstName AS firstName,
+        friend.Person.lastName AS lastName,
         r.creationDate AS friendshipCreationDate
       ORDER BY friendshipCreationDate DESC, personId ASC
       """
@@ -69,10 +69,10 @@ Feature: LDBC Interactive Workload - Short Reads
       MATCH (m:Message)
       WHERE id(m) == ""
       RETURN
-        m.creationDate as messageCreationDate,
-        CASE exists(m.content)
-          WHEN true THEN m.content
-          ELSE m.imageFile
+        m.Message.creationDate as messageCreationDate,
+        CASE exists(m.Message.content)
+          WHEN true THEN m.Message.content
+          ELSE m.Message.imageFile
         END AS messageContent
       """
     Then the result should be, in any order:
@@ -84,9 +84,9 @@ Feature: LDBC Interactive Workload - Short Reads
       MATCH (m:Message)-[:HAS_CREATOR]->(p:Person)
       WHERE id(m) == ""
       RETURN
-        p.id AS personId,
-        p.firstName AS firstName,
-        p.lastName AS lastName
+        p.Person.id AS personId,
+        p.Person.firstName AS firstName,
+        p.Person.lastName AS lastName
       """
     Then the result should be, in any order:
       | personId | firstName | lastName |
@@ -98,11 +98,11 @@ Feature: LDBC Interactive Workload - Short Reads
       MATCH (m:Message)-[:REPLY_OF*0..100]->(p:Post)<-[:CONTAINER_OF]-(f:Forum)-[:HAS_MODERATOR]->(mod:Person)
       WHERE id(m) == ""
       RETURN
-        f.id AS forumId,
-        f.title AS forumTitle,
-        mod.id AS moderatorId,
-        mod.firstName AS moderatorFirstName,
-        mod.lastName AS moderatorLastName
+        f.Forum.id AS forumId,
+        f.Forum.title AS forumTitle,
+        mod.Person.id AS moderatorId,
+        mod.Person.firstName AS moderatorFirstName,
+        mod.Person.lastName AS moderatorLastName
       """
     Then the result should be, in any order:
       | forumId | forumTitle | moderatorId | moderatorFirstName | moderatorLastName |
@@ -115,12 +115,12 @@ Feature: LDBC Interactive Workload - Short Reads
       WHERE id(m) == ""
       OPTIONAL MATCH (m)-[:HAS_CREATOR]->(a:Person)-[r:KNOWS]-(p)
       RETURN
-        c.id AS commentId,
-        c.content AS commentContent,
-        c.creationDate AS commentCreationDate,
-        p.id AS replyAuthorId,
-        p.firstName AS replyAuthorFirstName,
-        p.lastName AS replyAuthorLastName,
+        c.`Comment`.id AS commentId,
+        c.`Comment`.content AS commentContent,
+        c.`Comment`.creationDate AS commentCreationDate,
+        p.Person.id AS replyAuthorId,
+        p.Person.firstName AS replyAuthorFirstName,
+        p.Person.lastName AS replyAuthorLastName,
         CASE r
           WHEN null THEN false
           ELSE true
