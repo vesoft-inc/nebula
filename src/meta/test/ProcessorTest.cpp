@@ -324,6 +324,10 @@ TEST(ProcessorTest, SpaceTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
   int32_t hostsNum = 4;
   {
     cpp2::SpaceDesc properties;
@@ -489,6 +493,10 @@ TEST(ProcessorTest, CreateTagTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     cpp2::SpaceDesc properties;
@@ -694,6 +702,10 @@ TEST(ProcessorTest, CreateEdgeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space";
     properties.partition_num_ref() = 9;
@@ -884,6 +896,10 @@ TEST(ProcessorTest, KVOperationTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     cpp2::SpaceDesc properties;
@@ -2287,6 +2303,10 @@ TEST(ProcessorTest, SameNameTagsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space";
     properties.partition_num_ref() = 9;
@@ -2533,6 +2553,10 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   // mock one space and ten tag, ten edge
   {
@@ -3053,6 +3077,10 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     // Add host into zone with zone name conflict.
     cpp2::AddHostsIntoZoneReq req;
     req.zone_name_ref() = "zone_0";
@@ -3076,6 +3104,10 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     // Add existed hosts.
@@ -3181,6 +3213,10 @@ TEST(ProcessorTest, DropHostsTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     // Attempt to register heartbeat
@@ -3298,6 +3334,11 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     // Show the zones created by add hosts
     cpp2::ListZonesReq req;
     auto* processor = ListZonesProcessor::instance(kv.get());
@@ -3339,6 +3380,24 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(4, resp.get_id().get_space_id());
   }
   {
+    // Create Space on cluster, the replica number same with the zone size
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space_on_zone_duplicate";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_1"};
+    properties.zone_names_ref() = std::move(zones);
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
     // Create Space on cluster, the replica number less than the zone size
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space_on_zone_1";
@@ -3355,7 +3414,7 @@ TEST(ProcessorTest, DropHostsTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(5, resp.get_id().get_space_id());
+    ASSERT_EQ(6, resp.get_id().get_space_id());
   }
   {
     // Create Space on cluster, the replica number greater than the zone size
@@ -3946,6 +4005,11 @@ TEST(ProcessorTest, DivideZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     cpp2::ListZonesReq req;
     auto* processor = ListZonesProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -4101,6 +4165,11 @@ TEST(ProcessorTest, DivideZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     cpp2::ListZonesReq req;

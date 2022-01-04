@@ -45,7 +45,8 @@ TEST(MetaClientTest, InterfacesTest) {
   GraphSpaceID spaceId = 0;
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   {
@@ -356,7 +357,8 @@ TEST(MetaClientTest, TagTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
@@ -592,7 +594,8 @@ TEST(MetaClientTest, EdgeTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
@@ -702,7 +705,8 @@ TEST(MetaClientTest, TagIndexTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
 
@@ -882,7 +886,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
 
@@ -1281,7 +1286,8 @@ TEST(MetaClientTest, ListenerDiffTest) {
   auto client = std::make_unique<meta::MetaClient>(threadPool, metaAddrs, options);
   {
     std::vector<HostAddr> hosts = {{"0", 0}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   client->waitForMetadReady();
@@ -1700,7 +1706,8 @@ TEST(MetaClientTest, ListenerTest) {
   auto client = std::make_shared<MetaClient>(threadPool, localhosts);
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   client->waitForMetadReady();
@@ -1899,6 +1906,7 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
+  auto* kv = cluster.metaKV_.get();
   {
     // Add host into zone with duplicate hosts
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
@@ -1951,6 +1959,7 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
     auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", false).get();
     EXPECT_FALSE(result.ok());
   }
+  { TestUtils::registerHB(kv, {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}}); }
   {
     // Drop hosts which is empty.
     std::vector<HostAddr> hosts = {};
