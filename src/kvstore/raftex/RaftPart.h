@@ -15,6 +15,7 @@
 #include "common/time/Duration.h"
 #include "common/utils/LogIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/raftex_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
@@ -32,21 +33,6 @@ class FileBasedWal;
 }  // namespace wal
 
 namespace raftex {
-
-enum class AppendLogResult {
-  SUCCEEDED = 0,
-  E_ATOMIC_OP_FAILURE = -1,
-  E_NOT_A_LEADER = -2,
-  E_STOPPED = -3,
-  E_NOT_READY = -4,
-  E_BUFFER_OVERFLOW = -5,
-  E_WAL_FAILURE = -6,
-  E_TERM_OUT_OF_DATE = -7,
-  E_SENDING_SNAPSHOT = -8,
-  E_INVALID_PEER = -9,
-  E_NOT_ENOUGH_ACKS = -10,
-  E_WRITE_BLOCKING = -11,
-};
 
 enum class LogType {
   NORMAL = 0x00,
@@ -173,23 +159,23 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    *
    * If the source == -1, the current clusterId will be used
    ****************************************************************/
-  folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
+  folly::Future<nebula::cpp2::ErrorCode> appendAsync(ClusterID source, std::string log);
 
   /****************************************************************
    * Run the op atomically.
    ***************************************************************/
-  folly::Future<AppendLogResult> atomicOpAsync(AtomicOp op);
+  folly::Future<nebula::cpp2::ErrorCode> atomicOpAsync(AtomicOp op);
 
   /**
    * Asynchronously send one command.
    * */
-  folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+  folly::Future<nebula::cpp2::ErrorCode> sendCommandAsync(std::string log);
 
   /**
    * Check if the peer has catched up data from leader. If leader is sending the
    * snapshot, the method will return false.
    * */
-  AppendLogResult isCatchedUp(const HostAddr& peer);
+  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer);
 
   bool linkCurrentWAL(const char* newPath);
 
@@ -284,7 +270,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
   // Check if we can accept candidate's message
-  virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
+  virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate);
 
   // The inherited classes need to implement this method to commit a batch of log messages.
   // Return {error code, last commit log id, last commit log term}.
@@ -330,7 +316,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   const char* roleStr(Role role) const;
 
   template <typename REQ>
-  cpp2::ErrorCode verifyLeader(const REQ& req);
+  nebula::cpp2::ErrorCode verifyLeader(const REQ& req);
 
   /*****************************************************************
    *
@@ -379,16 +365,16 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Check whether new logs can be appended
   // Pre-condition: The caller needs to hold the raftLock_
-  AppendLogResult canAppendLogs();
+  nebula::cpp2::ErrorCode canAppendLogs();
 
   // Also check if term has changed
   // Pre-condition: The caller needs to hold the raftLock_
-  AppendLogResult canAppendLogs(TermID currTerm);
+  nebula::cpp2::ErrorCode canAppendLogs(TermID currTerm);
 
-  folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                LogType logType,
-                                                std::string log,
-                                                AtomicOp cb = nullptr);
+  folly::Future<nebula::cpp2::ErrorCode> appendLogAsync(ClusterID source,
+                                                        LogType logType,
+                                                        std::string log,
+                                                        AtomicOp cb = nullptr);
 
   void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
@@ -414,7 +400,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // counted in
   std::vector<std::shared_ptr<Host>> followers() const;
 
-  bool checkAppendLogResult(AppendLogResult res);
+  bool checkAppendLogResult(nebula::cpp2::ErrorCode res);
 
   void updateQuorum();
 
@@ -511,13 +497,13 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   mutable std::mutex logsLock_;
   std::atomic_bool replicatingLogs_{false};
   std::atomic_bool bufferOverFlow_{false};
-  PromiseSet<AppendLogResult> cachingPromise_;
+  PromiseSet<nebula::cpp2::ErrorCode> cachingPromise_;
   LogCache logs_;
 
   // Partition level lock to synchronize the access of the partition
   mutable std::mutex raftLock_;
 
-  PromiseSet<AppendLogResult> sendingPromise_;
+  PromiseSet<nebula::cpp2::ErrorCode> sendingPromise_;
 
   Status status_;
   Role role_;

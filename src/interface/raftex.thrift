@@ -22,33 +22,6 @@ enum Status {
     WAITING_SNAPSHOT    = 3; // Waiting for the snapshot.
 } (cpp.enum_strict)
 
-enum ErrorCode {
-    SUCCEEDED = 0;
-
-    E_UNKNOWN_PART = -1;
-
-    // Raft consensus errors
-    E_LOG_GAP = -2;
-    E_LOG_STALE = -3;
-    E_TERM_OUT_OF_DATE = -4;
-
-    // Raft state errors
-    E_WAITING_SNAPSHOT = -5;            // The follower is waiting a snapshot
-    E_BAD_STATE = -6;
-    E_WRONG_LEADER = -7;
-    E_NOT_READY = -8;
-    E_BAD_ROLE = -9,
-
-    // Local errors
-    E_WAL_FAIL = -10;
-    E_HOST_STOPPED = -11;
-    E_TOO_MANY_REQUESTS = -12;
-    E_PERSIST_SNAPSHOT_FAILED = -13;
-    E_RPC_EXCEPTION = -14;              // An thrift internal exception was thrown
-    E_NO_WAL_FOUND = -15;
-    E_APPLY_FAIL = -16;
-    E_HOST_PAUSED = -17;
-}
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
@@ -73,8 +46,8 @@ struct AskForVoteRequest {
 
 // Response message for the vote call
 struct AskForVoteResponse {
-    1: ErrorCode error_code;
-    2: TermID    current_term;
+    1: common.ErrorCode error_code;
+    2: TermID           current_term;
 }
 
 // Log entries being sent to follower, logId is not included, it could be calculated by
@@ -98,13 +71,13 @@ struct AppendLogRequest {
 }
 
 struct AppendLogResponse {
-    1: ErrorCode    error_code;
-    2: TermID       current_term;
-    3: string       leader_addr;
-    4: Port         leader_port;
-    5: LogID        committed_log_id;
-    6: LogID        last_matched_log_id;
-    7: TermID       last_matched_log_term;
+    1: common.ErrorCode error_code;
+    2: TermID           current_term;
+    3: string           leader_addr;
+    4: Port             leader_port;
+    5: LogID            committed_log_id;
+    6: LogID            last_matched_log_id;
+    7: TermID           last_matched_log_term;
 }
 
 struct SendSnapshotRequest {
@@ -133,17 +106,17 @@ struct HeartbeatRequest {
 }
 
 struct HeartbeatResponse {
-    1: ErrorCode    error_code;
-    2: TermID       current_term;
-    3: string       leader_addr;
-    4: Port         leader_port;
-    5: LogID        committed_log_id;
-    6: LogID        last_log_id;
-    7: TermID       last_log_term;
+    1: common.ErrorCode error_code;
+    2: TermID           current_term;
+    3: string           leader_addr;
+    4: Port             leader_port;
+    5: LogID            committed_log_id;
+    6: LogID            last_log_id;
+    7: TermID           last_log_term;
 }
 
 struct SendSnapshotResponse {
-    1: ErrorCode    error_code;
+    1: common.ErrorCode error_code;
 }
 
 struct GetStateRequest {
@@ -152,14 +125,14 @@ struct GetStateRequest {
 }
 
 struct GetStateResponse {
-    1: ErrorCode    error_code;
-    2: Role         role;
-    3: TermID       term;
-    4: bool         is_leader;
-    5: LogID        committed_log_id;
-    6: LogID        last_log_id;
-    7: TermID       last_log_term;
-    8: Status       status;
+    1: common.ErrorCode error_code;
+    2: Role             role;
+    3: TermID           term;
+    4: bool             is_leader;
+    5: LogID            committed_log_id;
+    6: LogID            last_log_id;
+    7: TermID           last_log_term;
+    8: Status           status;
 }
 
 service RaftexService {
