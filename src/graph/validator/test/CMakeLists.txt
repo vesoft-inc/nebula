@@ -21,7 +21,8 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:graph_session_obj>
-    $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:segment_id_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>

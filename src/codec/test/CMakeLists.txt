@@ -29,7 +29,8 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:segment_id_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
