@@ -276,9 +276,13 @@ class PlanNode {
     return cost_;
   }
 
-  void setLoopLayers(std::size_t c) { loopLayers_ = c; }
+  void setLoopLayers(std::size_t c) {
+    loopLayers_ = c;
+  }
 
-  std::size_t loopLayers() const { return loopLayers_; }
+  std::size_t loopLayers() const {
+    return loopLayers_;
+  }
 
  protected:
   PlanNode(QueryContext* qctx, Kind kind);

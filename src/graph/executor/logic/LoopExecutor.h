@@ -25,7 +25,9 @@ class LoopExecutor final : public Executor {
     return body_;
   }
 
-  bool finally() const { return finally_; }
+  bool finally() const {
+    return finally_;
+  }
 
  private:
   // Hold the last executor node of loop body executors chain
