@@ -6,6 +6,8 @@
 #ifndef COMMON_ID_SEGMENTINCR_H_
 #define COMMON_ID_SEGMENTINCR_H_
 
+#include <proxygen/lib/http/codec/ErrorCode.h>
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 
@@ -26,6 +28,15 @@ class SegmentId {
 
   SegmentId& operator=(const SegmentId&) = delete;
 
+  Status init() {
+    auto xRet = fetchSegment();
+    NG_RETURN_IF_ERROR(xRet);
+    segmentStart_ = xRet.value();
+
+    cur_ = segmentStart_ - 1;
+    return Status::OK();
+  }
+
   static void initClient(meta::MetaClient* client) {
     client_ = client;
   }
@@ -37,11 +48,8 @@ class SegmentId {
   StatusOr<int64_t> getId();
 
  private:
-  explicit SegmentId(int64_t step) : step_(step) {
-    auto xRet = fetchSegment();
-    segmentStart_ = xRet.value();
-    cur_ = segmentStart_ - 1;
-  }
+  explicit SegmentId(int64_t step) : step_(step) {}
+
   // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
   // isn't updated. In this case, we will getSegmentId() directly. In case this function update
   // after getSegmentId(), adding che here.
