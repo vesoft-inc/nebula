@@ -685,3 +685,15 @@ Feature: Basic match
       RETURN count(names)
       """
     Then a SemanticError should be raised at runtime: To get the property of the vertex in `v3.name', should use the format `var.tag.prop'
+
+  Scenario: filter is not a valid expression
+    When executing query:
+      """
+      MATCH (v:player) WHERE v.player.name-'n'=="Tim Duncann" RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `(v.player.name-"n")' is not a valid expression, can not apply `-' to `__EMPTY__' and `STRING'.
+    When executing query:
+      """
+      MATCH (v:player) WHERE v.player.name+'n'=="Tim Duncann" RETURN v
+      """
+    Then the execution should be successful
