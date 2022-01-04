@@ -88,11 +88,11 @@ TEST(LogAppend, MultiThreadAppend) {
       for (int j = 1; j <= numLogs; ++j) {
         do {
           auto fut = leader->appendAsync(0, folly::stringPrintf("Log %03d for t%d", j, i));
-          if (fut.isReady() && fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
+          if (fut.isReady() && fut.value() == nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW) {
             LOG(FATAL) << "Should not reach here";
           } else if (j == numLogs) {
             // Only wait on the last log message
-            ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
+            ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, std::move(fut).get());
           }
           break;
         } while (true);
