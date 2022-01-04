@@ -32,7 +32,6 @@
 #include "graph/util/ExpressionUtils.h"
 #include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
-#include "common/id/SegmentId.h"
 
 namespace nebula {
 
@@ -1115,7 +1114,6 @@ function_call_expression
 
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
-        SegmentId::initClientAndRunner(qctx->getMetaClient(), qctx->rctx()->runner());
         $$ = UUIDExpression::make(qctx->objPool());
     }
     ;

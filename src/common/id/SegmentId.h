@@ -26,8 +26,11 @@ class SegmentId {
 
   SegmentId& operator=(const SegmentId&) = delete;
 
-  static void initClientAndRunner(meta::MetaClient* client, folly::Executor* runner) {
+  static void initClient(meta::MetaClient* client) {
     client_ = client;
+  }
+
+  static void initRunner(folly::Executor* runner) {
     runner_ = runner;
   }
 
@@ -47,14 +50,14 @@ class SegmentId {
 
   std::mutex mutex_;
 
-  int64_t cur_ = -1;
-  int64_t step_ = -1;
+  int64_t cur_{-1};
+  int64_t step_{-1};
 
-  int64_t segmentStart_ = -1;
-  int64_t nextSegmentStart_ = -1;
+  int64_t segmentStart_{-1};
+  int64_t nextSegmentStart_{-1};
 
-  static inline meta::MetaClient* client_ = nullptr;
-  static inline folly::Executor* runner_ = nullptr;
+  static inline meta::MetaClient* client_{nullptr};
+  static inline folly::Executor* runner_{nullptr};
 };
 }  // namespace nebula
 
