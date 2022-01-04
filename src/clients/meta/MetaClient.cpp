@@ -175,8 +175,6 @@ bool MetaClient::loadUsersAndRoles() {
   }
   decltype(userRolesMap_) userRolesMap;
   decltype(userPasswordMap_) userPasswordMap;
-  decltype(userPasswordAttemptsRemain_) userPasswordAttemptsRemain;
-  decltype(userLoginLockTime_) userLoginLockTime;
   // List of username
   std::unordered_set<std::string> userNameList;
 
@@ -188,8 +186,6 @@ bool MetaClient::loadUsersAndRoles() {
     }
     userRolesMap[user.first] = rolesRet.value();
     userPasswordMap[user.first] = user.second;
-    userPasswordAttemptsRemain[user.first] = FLAGS_failed_login_attempts;
-    userLoginLockTime[user.first] = 0;
     userNameList.emplace(user.first);
   }
   {
@@ -197,31 +193,30 @@ bool MetaClient::loadUsersAndRoles() {
     userRolesMap_ = std::move(userRolesMap);
     userPasswordMap_ = std::move(userPasswordMap);
 
+    // Remove expired users from cache
+    auto removeExpiredUser = [&](folly::ConcurrentHashMap<std::string, uint32>& userMap,
+                                 const std::unordered_set<std::string> userList) {
+      for (auto& ele : userMap) {
+        if (userList.count(ele.first) == 0) {
+          userMap.erase(ele.first);
+        }
+      }
+    };
+    removeExpiredUser(userPasswordAttemptsRemain_, userNameList);
+    removeExpiredUser(userLoginLockTime_, userNameList);
+
     // This method is called periodically by the heartbeat thread, but we don't want to reset the
-    // failed login attempts every time. Remove expired users from cache
-    for (auto& ele : userPasswordAttemptsRemain) {
-      if (userNameList.count(ele.first) == 0) {
-        userPasswordAttemptsRemain.erase(ele.first);
-      }
-    }
-    for (auto& ele : userLoginLockTime) {
-      if (userNameList.count(ele.first) == 0) {
-        userLoginLockTime.erase(ele.first);
-      }
-    }
-
-    // If the user is not in the map, insert value with the default value
+    // failed login attempts every time.
     for (const auto& user : userNameList) {
-      if (userPasswordAttemptsRemain.count(user) == 0) {
-        userPasswordAttemptsRemain[user] = FLAGS_failed_login_attempts;
+      // If the user is not in the map, insert value with the default value
+      // Do nothing if the account is already in the map
+      if (userPasswordAttemptsRemain_.find(user) == userPasswordAttemptsRemain_.end()) {
+        userPasswordAttemptsRemain_.insert(user, FLAGS_failed_login_attempts);
       }
-      if (userLoginLockTime.count(user) == 0) {
-        userLoginLockTime[user] = 0;
+      if (userLoginLockTime_.find(user) == userLoginLockTime_.end()) {
+        userLoginLockTime_.insert(user, 0);
       }
     }
-
-    userPasswordAttemptsRemain_ = std::move(userPasswordAttemptsRemain);
-    userLoginLockTime_ = std::move(userLoginLockTime);
   }
   return true;
 }
