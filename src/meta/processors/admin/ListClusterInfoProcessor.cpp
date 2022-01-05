@@ -37,8 +37,8 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   }
   auto iter = nebula::value(iterRet).get();
   for (; iter->valid(); iter->next()) {
-    HostAddr addr = MetaKeyUtils::parseHostKey(iter->key());
-    HostInfo info = HostInfo::decode(iter->val());
+    auto addr = MetaKeyUtils::parseHostKey(iter->key());
+    auto info = HostInfo::decode(iter->val());
 
     cpp2::ServiceInfo service;
     service.role_ref() = info.role_;

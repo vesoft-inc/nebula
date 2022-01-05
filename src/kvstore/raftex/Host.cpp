@@ -43,18 +43,18 @@ void Host::waitForStop() {
   LOG(INFO) << idStr_ << "The host has been stopped!";
 }
 
-cpp2::ErrorCode Host::canAppendLog() const {
+nebula::cpp2::ErrorCode Host::canAppendLog() const {
   CHECK(!lock_.try_lock());
   if (stopped_) {
     VLOG(2) << idStr_ << "The host is stopped, just return";
-    return cpp2::ErrorCode::E_HOST_STOPPED;
+    return nebula::cpp2::ErrorCode::E_RAFT_HOST_STOPPED;
   }
 
   if (paused_) {
     VLOG(2) << idStr_ << "The host is paused, due to losing leadership";
-    return cpp2::ErrorCode::E_HOST_PAUSED;
+    return nebula::cpp2::ErrorCode::E_RAFT_HOST_PAUSED;
   }
-  return cpp2::ErrorCode::SUCCEEDED;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteRequest& req,
@@ -64,7 +64,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
     if (stopped_) {
       VLOG(2) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AskForVoteResponse resp;
-      resp.error_code_ref() = cpp2::ErrorCode::E_HOST_STOPPED;
+      resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_HOST_STOPPED;
       return resp;
     }
   }
@@ -89,7 +89,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
 
     if (UNLIKELY(sendingSnapshot_)) {
       LOG_EVERY_N(INFO, 500) << idStr_ << "The target host is waiting for a snapshot";
-      res = cpp2::ErrorCode::E_WAITING_SNAPSHOT;
+      res = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
     } else if (requestOnGoing_) {
       // buffer incoming request to pendingReq_
       if (cachingPromise_.size() <= FLAGS_max_outstanding_requests) {
@@ -97,11 +97,11 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
         return cachingPromise_.getFuture();
       } else {
         LOG_EVERY_N(INFO, 200) << idStr_ << "Too many requests are waiting, return error";
-        res = cpp2::ErrorCode::E_TOO_MANY_REQUESTS;
+        res = nebula::cpp2::ErrorCode::E_RAFT_TOO_MANY_REQUESTS;
       }
     }
 
-    if (res != cpp2::ErrorCode::SUCCEEDED) {
+    if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(2) << idStr_ << "The host is not in a proper status, just return";
       cpp2::AppendLogResponse r;
       r.error_code_ref() = res;
@@ -168,16 +168,16 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             << ", commitLogId " << resp.get_committed_log_id() << ", lastLogIdSent_ "
             << self->lastLogIdSent_ << ", lastLogTermSent_ " << self->lastLogTermSent_;
         switch (resp.get_error_code()) {
-          case cpp2::ErrorCode::SUCCEEDED:
-          case cpp2::ErrorCode::E_LOG_GAP:
-          case cpp2::ErrorCode::E_LOG_STALE: {
+          case nebula::cpp2::ErrorCode::SUCCEEDED:
+          case nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP:
+          case nebula::cpp2::ErrorCode::E_RAFT_LOG_STALE: {
             VLOG(2) << self->idStr_ << "AppendLog request sent successfully";
 
             std::shared_ptr<cpp2::AppendLogRequest> newReq;
             {
               std::lock_guard<std::mutex> g(self->lock_);
               auto res = self->canAppendLog();
-              if (res != cpp2::ErrorCode::SUCCEEDED) {
+              if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 cpp2::AppendLogResponse r;
                 r.error_code_ref() = res;
                 self->setResponse(r);
@@ -214,7 +214,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             return;
           }
           // Usually the peer is not in proper state, for example:
-          // E_UNKNOWN_PART/E_BAD_STATE/E_NOT_READY/E_WAITING_SNAPSHOT
+          // E_RAFT_UNKNOWN_PART/E_RAFT_STOPPED/E_RAFT_NOT_READY/E_RAFT_WAITING_SNAPSHOT
           // In this case, nothing changed, just return the error
           default: {
             LOG_EVERY_N(ERROR, 100)
@@ -232,7 +232,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                  [self = shared_from_this(), req](TransportException&& ex) {
                    VLOG(2) << self->idStr_ << ex.what();
                    cpp2::AppendLogResponse r;
-                   r.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
+                   r.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
                    {
                      std::lock_guard<std::mutex> g(self->lock_);
                      if (ex.getType() == TransportException::TIMED_OUT) {
@@ -254,7 +254,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
       .thenError(folly::tag_t<std::exception>{}, [self = shared_from_this()](std::exception&& ex) {
         VLOG(2) << self->idStr_ << ex.what();
         cpp2::AppendLogResponse r;
-        r.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
+        r.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
         {
           std::lock_guard<std::mutex> g(self->lock_);
           self->setResponse(r);
@@ -264,7 +264,8 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
       });
 }
 
-ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareAppendLogRequest() {
+ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
+Host::prepareAppendLogRequest() {
   CHECK(!lock_.try_lock());
   VLOG(2) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
@@ -279,7 +280,7 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
         << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
         << ", but you are seeking " << lastLogIdSent_ + 1
         << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
-    return cpp2::ErrorCode::E_NO_WAL_FOUND;
+    return nebula::cpp2::ErrorCode::E_RAFT_NO_WAL_FOUND;
   }
 
   auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
@@ -307,16 +308,16 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
     if (!it->valid() && (lastLogIdSent_ + static_cast<int64_t>(logs.size()) != logIdToSend_)) {
       LOG_IF(INFO, FLAGS_trace_raft)
           << idStr_ << "Can't find log in wal, logIdToSend_ = " << logIdToSend_;
-      return cpp2::ErrorCode::E_NO_WAL_FOUND;
+      return nebula::cpp2::ErrorCode::E_RAFT_NO_WAL_FOUND;
     }
     req->log_str_list_ref() = std::move(logs);
     return req;
   } else {
-    return cpp2::ErrorCode::E_NO_WAL_FOUND;
+    return nebula::cpp2::ErrorCode::E_RAFT_NO_WAL_FOUND;
   }
 }
 
-cpp2::ErrorCode Host::startSendSnapshot() {
+nebula::cpp2::ErrorCode Host::startSendSnapshot() {
   CHECK(!lock_.try_lock());
   if (!sendingSnapshot_) {
     LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
@@ -345,7 +346,7 @@ cpp2::ErrorCode Host::startSendSnapshot() {
   } else {
     LOG_EVERY_N(INFO, 100) << idStr_ << "The snapshot req is in queue, please wait for a moment";
   }
-  return cpp2::ErrorCode::E_WAITING_SNAPSHOT;
+  return nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
 }
 
 folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
@@ -355,7 +356,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
   {
     std::lock_guard<std::mutex> g(lock_);
     auto res = canAppendLog();
-    if (res != cpp2::ErrorCode::SUCCEEDED) {
+    if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AppendLogResponse resp;
       resp.error_code_ref() = res;
@@ -395,7 +396,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(
         VLOG(3) << self->idStr_ << "heartbeat call got response";
         if (t.hasException()) {
           cpp2::HeartbeatResponse resp;
-          resp.error_code_ref() = cpp2::ErrorCode::E_RPC_EXCEPTION;
+          resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
           pro.setValue(std::move(resp));
           return;
         } else {
@@ -412,7 +413,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
   {
     std::lock_guard<std::mutex> g(lock_);
     auto res = canAppendLog();
-    if (res != cpp2::ErrorCode::SUCCEEDED) {
+    if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::HeartbeatResponse resp;
       resp.error_code_ref() = res;

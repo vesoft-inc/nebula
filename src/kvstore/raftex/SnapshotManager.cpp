@@ -72,7 +72,7 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
             // occupied.
             try {
               auto resp = std::move(f).get();
-              if (resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
+              if (resp.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 VLOG(1) << part->idStr_ << "has sended count " << totalCount;
                 if (status == SnapshotStatus::DONE) {
                   LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
