@@ -276,3 +276,131 @@ Feature: Insert vertex and edge with if not exists
       | like.likeness |
       | 200           |
     And drop the used space
+
+  Scenario: index and data consistency check
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS student(name string, age int);
+      CREATE TAG INDEX index_s_age on student(age);
+      """
+    And wait 6 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX
+        student(name, age)
+      VALUES
+        "zhang":("zhang", 19),
+        "zhang":("zhang", 29),
+        "zhang":("zhang", 39),
+        "wang":("wang", 18),
+        "li":("li", 16),
+        "wang":("wang", 38);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 39  |
+      | 38  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.name AS name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name | age |
+      | "li" | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.name as name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name    | age |
+      | "zhang" | 39  |
+      | "wang"  | 38  |
+    When executing query:
+      """
+      FETCH PROP ON student "zhang", "wang", "li" YIELD student.name as name, student.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name    | age |
+      | "zhang" | 39  |
+      | "wang"  | 38  |
+      | "li"    | 16  |
+    When try to execute query:
+      """
+      DELETE TAG student FROM "zhang", "wang", "li";
+      """
+    Then the execution should be successful
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        student(name, age)
+      VALUES
+        "zhao":("zhao", 19),
+        "zhao":("zhao", 29),
+        "zhao":("zhao", 39),
+        "qian":("qian", 18),
+        "sun":("sun", 16),
+        "qian":("qian", 38),
+        "chen":("chen", 40),
+        "chen":("chen", 35);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 19  |
+      | 18  |
+      | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 40  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.name AS name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "zhao" | 19  |
+      | "qian" | 18  |
+      | "sun"  | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.name as name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "chen" | 40  |
+    When executing query:
+      """
+      FETCH PROP ON student "zhao", "qian", "sun", "chen" YIELD student.name as name, student.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "zhao" | 19  |
+      | "qian" | 18  |
+      | "sun"  | 16  |
+      | "chen" | 40  |
+    And drop the used space

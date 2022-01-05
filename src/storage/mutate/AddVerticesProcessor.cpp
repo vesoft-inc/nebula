@@ -341,6 +341,7 @@ std::vector<std::string> AddVerticesProcessor::indexKeys(
 }
 
 /*
+ * Batch insert
  * ifNotExist_ is true. Only keep the first one when vid is same
  * ifNotExist_ is false. Only keep the last one when vid is same
  */
