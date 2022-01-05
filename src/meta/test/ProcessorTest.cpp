@@ -3947,7 +3947,6 @@ TEST(ProcessorTest, MergeZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
-    LOG(INFO) << "========================";
     cpp2::MergeZoneReq req;
     req.zones_ref() = {"default_zone_127.0.0.1_8978", "z_1"};
     req.zone_name_ref() = "z_1";
