@@ -27,7 +27,7 @@ void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
     auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
     cpp2::Zone zone;
     zone.zone_name_ref() = std::move(zoneName);
-    if (hosts.size() != 0) {
+    if (!hosts.empty()) {
       zone.nodes_ref() = std::move(hosts);
     } else {
       zone.nodes_ref() = {HostAddr("", 0)};

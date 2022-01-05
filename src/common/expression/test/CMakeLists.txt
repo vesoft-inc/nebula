@@ -48,6 +48,14 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:memory_obj>
 )
 
+
+if(ENABLE_STANDALONE_VERSION)
+set(expression_test_common_libs
+    ${expression_test_common_libs}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_library(
     expr_ctx_mock_obj OBJECT
     ExpressionContextMock.cpp

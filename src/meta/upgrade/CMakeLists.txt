@@ -6,11 +6,14 @@ nebula_add_library(
     meta_data_upgrade_obj OBJECT
     MetaDataUpgrade.cpp
     v1/MetaServiceUtilsV1.cpp
+    v2/MetaServiceUtilsV2.cpp
 )
 
 add_dependencies(
     meta_data_upgrade_obj
     meta_v1_thrift_obj
+    meta_v2_thrift_obj
 )
 
 nebula_add_subdirectory(v1)
+nebula_add_subdirectory(v2)

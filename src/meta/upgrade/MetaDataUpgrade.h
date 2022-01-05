@@ -14,6 +14,7 @@
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
 #include "meta/upgrade/v1/gen-cpp2/meta_types.h"
+#include "meta/upgrade/v2/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
@@ -33,10 +34,15 @@ class MetaDataUpgrade final {
   Status rewriteConfigs(const folly::StringPiece &key, const folly::StringPiece &val);
   Status rewriteJobDesc(const folly::StringPiece &key, const folly::StringPiece &val);
 
+  Status rewriteSpacesV2ToV3(const folly::StringPiece &key, const folly::StringPiece &val);
+
   Status deleteKeyVal(const folly::StringPiece &key);
 
+  Status saveMachineAndZone(std::vector<kvstore::KV> data);
+
   void printHost(const folly::StringPiece &key, const folly::StringPiece &val);
-  void printSpaces(const folly::StringPiece &val);
+  void printSpacesV1(const folly::StringPiece &val);
+  void printSpacesV2(const folly::StringPiece &val);
   void printParts(const folly::StringPiece &key, const folly::StringPiece &val);
   void printLeaders(const folly::StringPiece &key);
   void printSchemas(const folly::StringPiece &val);
@@ -48,6 +54,26 @@ class MetaDataUpgrade final {
   Status put(const folly::StringPiece &key, const folly::StringPiece &val) {
     std::vector<kvstore::KV> data;
     data.emplace_back(key.str(), val.str());
+    folly::Baton<true, std::atomic> baton;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kv_->asyncMultiPut(kDefaultSpaceId,
+                       kDefaultPartId,
+                       std::move(data),
+                       [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                         if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                           ret = code;
+                           LOG(INFO) << "Put data error on meta server";
+                         }
+                         baton.post();
+                       });
+    baton.wait();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return Status::Error("Put data failed");
+    }
+    return Status::OK();
+  }
+
+  Status put(std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     kv_->asyncMultiPut(kDefaultSpaceId,
@@ -93,6 +119,10 @@ class MetaDataUpgrade final {
 
   Status convertToNewIndexColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                                   std::vector<cpp2::ColumnDef> &newCols);
+
+  nebula::cpp2::PropertyType convertToPropertyType(nebula::meta::v2::cpp2::PropertyType type);
+
+  nebula::meta::cpp2::GeoShape convertToGeoShape(nebula::meta::v2::cpp2::GeoShape shape);
 
  private:
   kvstore::KVStore *kv_ = nullptr;
