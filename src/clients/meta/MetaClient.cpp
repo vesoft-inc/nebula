@@ -195,7 +195,7 @@ bool MetaClient::loadUsersAndRoles() {
 
     // Remove expired users from cache
     auto removeExpiredUser = [&](folly::ConcurrentHashMap<std::string, uint32>& userMap,
-                                 const std::unordered_set<std::string> userList) {
+                                 const std::unordered_set<std::string>& userList) {
       for (auto& ele : userMap) {
         if (userList.count(ele.first) == 0) {
           userMap.erase(ele.first);
