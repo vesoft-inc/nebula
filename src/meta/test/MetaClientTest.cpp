@@ -1208,6 +1208,7 @@ TEST(MetaClientTest, DiffTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
+  { TestUtils::registerHB(kv, {{"0", 0}}); }
 
   meta::MetaClientOptions options;
   options.localHost_ = {"0", 0};
@@ -1370,19 +1371,14 @@ TEST(MetaClientTest, ListenerDiffTest) {
 
 TEST(MetaClientTest, HeartbeatTest) {
   FLAGS_heartbeat_interval_secs = 1;
-  // const nebula::ClusterID kClusterId = 10;
   fs::TempDir rootPath("/tmp/HeartbeatTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   auto* kv = cluster.metaKV_.get();
 
-  // meta::MetaClientOptions options;
   TestUtils::createSomeHosts(kv, {{"0", 0}});
 
   HostAddr localHost("0", 0);
-  // options.localHost_ = localHost;
-  // options.clusterId_ = kClusterId;
-  // options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
 
