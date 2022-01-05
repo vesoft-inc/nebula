@@ -59,12 +59,12 @@ DEFINE_bool(enable_partitioned_index_filter, false, "True for partitioned index 
 DEFINE_string(rocksdb_compression,
               "snappy",
               "Compression algorithm used by RocksDB, "
-              "options: no,snappy,lz4,lz4hc,zstd,zlib,bzip2,xpress");
+              "options: no, snappy, lz4, lz4hc, zstd, zlib, bzip2, xpress");
 
 DEFINE_string(rocksdb_bottommost_compression,
               "disable",
               "Specify the bottommost level compression algorithm"
-              "options: no,snappy,lz4,lz4hc,zstd,zlib,bzip2,xpress,disable");
+              "options: no, snappy, lz4, lz4hc, zstd, zlib, bzip2, xpress, disable");
 
 DEFINE_string(rocksdb_compression_per_level,
               "",
