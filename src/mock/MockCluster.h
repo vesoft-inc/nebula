@@ -18,6 +18,7 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
+#include "mock/LocalServer.h"
 #include "mock/RpcServer.h"
 #include "storage/BaseProcessor.h"
 #include "storage/GraphStorageServiceHandler.h"
@@ -117,7 +118,11 @@ class MockCluster {
   std::unique_ptr<kvstore::NebulaStore> metaKV_{nullptr};
 
   std::unique_ptr<RpcServer> storageAdminServer_{nullptr};
+#ifndef BUILD_STANDALONE
   std::unique_ptr<RpcServer> graphStorageServer_{nullptr};
+#else
+  std::unique_ptr<LocalServer> graphStorageServer_{nullptr};
+#endif
   std::unique_ptr<kvstore::NebulaStore> storageKV_{nullptr};
   std::unique_ptr<storage::StorageEnv> storageEnv_{nullptr};
 
