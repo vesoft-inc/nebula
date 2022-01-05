@@ -27,9 +27,9 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
-  SegmentId& generator = SegmentId::getInstance(10000);
+  SegmentId& generator = SegmentId::getInstance();
   auto xRet = generator.getId();
-  if (xRet.ok()) {
+  if (!xRet.ok()) {
     return Value::kNullBadData;
   }
   result_ = xRet.value();

@@ -66,6 +66,8 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
 
   SegmentId::initClient(metaClient_.get());
   SegmentId::initRunner(getThreadManager());
+  SegmentId& generator = SegmentId::getInstance();
+  generator.init(10000);
 
   return queryEngine_->init(std::move(ioExecutor), metaClient_.get());
 }

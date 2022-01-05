@@ -15,8 +15,8 @@ class SegmentId {
   FRIEND_TEST(SegmentIdTest, TestConcurrency);
 
  public:
-  static SegmentId& getInstance(int64_t step) {
-    static SegmentId instance(step);
+  static SegmentId& getInstance() {
+    static SegmentId instance;
     return instance;
   }
 
@@ -26,12 +26,15 @@ class SegmentId {
 
   SegmentId& operator=(const SegmentId&) = delete;
 
-  Status init() {
+  Status init(int64_t step) {
+    step_ = step;
+
     auto xRet = fetchSegment();
     NG_RETURN_IF_ERROR(xRet);
-    segmentStart_ = xRet.value();
 
+    segmentStart_ = xRet.value();
     cur_ = segmentStart_ - 1;
+
     return Status::OK();
   }
 
@@ -46,7 +49,7 @@ class SegmentId {
   StatusOr<int64_t> getId();
 
  private:
-  explicit SegmentId(int64_t step) : step_(step) {}
+  SegmentId() = default;
 
   // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
   // isn't updated. In this case, we will getSegmentId() directly. In case this function update

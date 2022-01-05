@@ -5,6 +5,8 @@
 
 #include "common/id/SegmentId.h"
 
+#include <proxygen/lib/http/codec/ErrorCode.h>
+
 #include <cstdint>
 #include <mutex>
 
@@ -49,11 +51,8 @@ void SegmentId::asyncFetchSegment() {
 
 StatusOr<int64_t> SegmentId::fetchSegment() {
   auto result = client_->getSegmentId(step_).get();
-  if (result.ok()) {
-    return result.value();
-  } else {
-    LOG(ERROR) << "Failed to fetch segment id from meta server";
-    return -1;
-  }
+
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
 }
 }  // namespace nebula
