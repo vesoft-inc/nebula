@@ -31,7 +31,7 @@ class Host final : public std::enable_shared_from_this<Host> {
   Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
   ~Host() {
-    LOG(INFO) << idStr_ << " The host has been destroyed!";
+    VLOG(1) << idStr_ << " The host has been destroyed!";
   }
 
   const char* idStr() const {

@@ -21,7 +21,7 @@ typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type RowWrite
       break;
     }
     default: {
-      LOG(ERROR) << "Incompatible value type \"int\"";
+      LOG(WARNING) << "Incompatible value type \"int\"";
       writeInt(0);
       break;
     }

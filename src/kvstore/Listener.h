@@ -146,13 +146,13 @@ class Listener : public raftex::RaftPart {
   }
 
   void onDiscoverNewLeader(HostAddr nLeader) override {
-    LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
+    VLOG(2) << idStr_ << "Find the new leader " << nLeader;
   }
 
   nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
     CHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
-      LOG(WARNING) << idStr_ << "The candidate " << candidate << " is not in my peers";
+      VLOG(2) << idStr_ << "The candidate " << candidate << " is not in my peers";
       return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;

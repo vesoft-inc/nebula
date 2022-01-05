@@ -90,10 +90,10 @@ class EventListener : public rocksdb::EventListener {
   // file is ingested using IngestExternalFile.
   void OnExternalFileIngested(rocksdb::DB*,
                               const rocksdb::ExternalFileIngestionInfo& info) override {
-    LOG(INFO) << "Ingest external SST file: column family " << info.cf_name
-              << ", the external file path " << info.external_file_path
-              << ", the internal file path " << info.internal_file_path
-              << ", the properties of the table: " << info.table_properties.ToString();
+    VLOG(1) << "Ingest external SST file: column family " << info.cf_name
+            << ", the external file path " << info.external_file_path << ", the internal file path "
+            << info.internal_file_path
+            << ", the properties of the table: " << info.table_properties.ToString();
   }
 
   // A callback function for RocksDB which will be called before setting the
@@ -113,49 +113,49 @@ class EventListener : public rocksdb::EventListener {
   // A callback function for RocksDB which will be called whenever a file read
   // operation finishes.
   void OnFileReadFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Reading file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Reading file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file write
   // operation finishes.
   void OnFileWriteFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Writeing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Writeing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file flush
   // operation finishes.
   void OnFileFlushFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Flushing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Flushing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file sync
   // operation finishes.
   void OnFileSyncFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Syncing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Syncing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file
   // rangeSync operation finishes.
   void OnFileRangeSyncFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "RangeSyncing file finished: file path is " << info.path
+    VLOG(4) << "RangeSyncing file finished: file path is " << info.path
             << " offset: " << info.offset << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file
   // truncate operation finishes.
   void OnFileTruncateFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Truncating file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Truncating file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
   // A callback function for RocksDB which will be called whenever a file close
   // operation finishes.
   void OnFileCloseFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Closing file finished: file path is " << info.path;
+    VLOG(4) << "Closing file finished: file path is " << info.path;
   }
 
   // A callback function for RocksDB which will be called just before

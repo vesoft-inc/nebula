@@ -43,7 +43,7 @@ bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema, folly::StringP
     return true;
   } else {
     // Invalid data
-    LOG(ERROR) << "Invalid row data: " << toHexStr(row);
+    LOG(WARNING) << "Invalid row data: " << toHexStr(row);
     return false;
   }
 }
@@ -72,7 +72,7 @@ bool RowReaderV1::processHeader(folly::StringPiece row) {
   uint32_t numOffsets = (numFields >> 4);
   if (numBytesForOffset_ * numOffsets + verBytes + 1 > row.size()) {
     // Data is too short
-    LOG(ERROR) << "Row data is too short: " << toHexStr(row);
+    LOG(WARNING) << "Row data is too short: " << toHexStr(row);
     return false;
   }
   offsets_.resize(numFields + 1, -1);
@@ -219,7 +219,7 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
     case PropertyType::STRING:
       return getString(index);
     default:
-      LOG(ERROR) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
+      LOG(FATAL) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
       return NullType::BAD_TYPE;
   }
 }

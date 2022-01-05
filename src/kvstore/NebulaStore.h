@@ -33,7 +33,6 @@ struct SpacePartInfo {
   ~SpacePartInfo() {
     parts_.clear();
     engines_.clear();
-    LOG(INFO) << "~SpacePartInfo()";
   }
 
   std::unordered_map<PartitionID, std::shared_ptr<Part>> parts_;

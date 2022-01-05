@@ -13,11 +13,11 @@ namespace nebula {
 namespace kvstore {
 
 enum LogType : char {
-  OP_PUT = 0x1,
-  OP_MULTI_PUT = 0x2,
-  OP_REMOVE = 0x3,
-  OP_MULTI_REMOVE = 0x4,
-  OP_REMOVE_RANGE = 0x6,
+  OP_PUT = 0x01,
+  OP_MULTI_PUT = 0x02,
+  OP_REMOVE = 0x03,
+  OP_MULTI_REMOVE = 0x04,
+  OP_REMOVE_RANGE = 0x06,
   OP_ADD_LEARNER = 0x07,
   OP_TRANS_LEADER = 0x08,
   OP_ADD_PEER = 0x09,
@@ -26,9 +26,9 @@ enum LogType : char {
 };
 
 enum BatchLogType : char {
-  OP_BATCH_PUT = 0x1,
-  OP_BATCH_REMOVE = 0x2,
-  OP_BATCH_REMOVE_RANGE = 0x3,
+  OP_BATCH_PUT = 0x01,
+  OP_BATCH_REMOVE = 0x02,
+  OP_BATCH_REMOVE_RANGE = 0x03,
 };
 
 std::string encodeKV(const folly::StringPiece& key, const folly::StringPiece& val);

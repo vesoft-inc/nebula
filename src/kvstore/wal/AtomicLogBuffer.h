@@ -120,7 +120,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
       }
       // Operations after load SHOULD NOT reorder before it.
       auto pos = currNode_->pos_.load(std::memory_order_acquire);
-      VLOG(3) << "currNode firstLogId = " << currNode_->firstLogId_
+      VLOG(5) << "currNode firstLogId = " << currNode_->firstLogId_
               << ", currIndex = " << currIndex_ << ", currNode pos " << pos;
       if (currIndex_ >= pos) {
         currNode_ = currNode_->prev_.load(std::memory_order_relaxed);
@@ -264,7 +264,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
         // We have more than one nodes in current list.
         // So we mark the tail to be deleted.
         bool expected = false;
-        VLOG(3) << "Mark node " << tail->firstLogId_ << " to be deleted!";
+        VLOG(5) << "Mark node " << tail->firstLogId_ << " to be deleted!";
         auto marked =
             tail->markDeleted_.compare_exchange_strong(expected, true, std::memory_order_relaxed);
         auto* prev = tail->prev_.load(std::memory_order_relaxed);
@@ -333,7 +333,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
   Node* seek(LogID logId) {
     auto* head = head_.load(std::memory_order_relaxed);
     if (head != nullptr && logId > head->lastLogId()) {
-      VLOG(3) << "Bad seek, the seeking logId " << logId
+      VLOG(5) << "Bad seek, the seeking logId " << logId
               << " is greater than the latest logId in buffer " << head->lastLogId();
       return nullptr;
     }
@@ -347,7 +347,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     // And we should ensure the nodes inside the range SHOULD NOT be deleted.
     // We could ensure the tail during gc is older than current one.
     while (p != tail->next_ && !p->markDeleted_) {
-      VLOG(3) << "current node firstLogId = " << p->firstLogId_
+      VLOG(5) << "current node firstLogId = " << p->firstLogId_
               << ", the seeking logId = " << logId;
       if (logId >= p->firstLogId_) {
         break;
@@ -369,7 +369,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     // so we could ensure the tail used in GC is older than new coming readers.
     auto* tail = tail_.load(std::memory_order_acquire);
     auto readers = refs_.fetch_sub(1, std::memory_order_relaxed);
-    VLOG(3) << "Release ref, readers = " << readers;
+    VLOG(5) << "Release ref, readers = " << readers;
     // todo(doodle): https://github.com/vesoft-inc/nebula-storage/issues/390
     if (readers > 1) {
       return;
@@ -385,7 +385,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
 
     if (dirtyNodes > dirtyNodesLimit_) {
       if (gcOnGoing_.compare_exchange_strong(gcRunning, true, std::memory_order_acquire)) {
-        VLOG(1) << "GC begins!";
+        VLOG(4) << "GC begins!";
         // It means no readers on the deleted nodes.
         // Cut-off the list.
         CHECK_NOTNULL(tail);
@@ -396,7 +396,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
         auto* curr = dirtyHead;
         while (curr != nullptr) {
           CHECK(curr->markDeleted_.load(std::memory_order_relaxed));
-          VLOG(1) << "Delete node " << curr->firstLogId_;
+          VLOG(5) << "Delete node " << curr->firstLogId_;
           auto* del = curr;
           curr = curr->next_;
           delete del;
@@ -405,9 +405,9 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
         }
 
         gcOnGoing_.store(false, std::memory_order_release);
-        VLOG(1) << "GC finished!";
+        VLOG(4) << "GC finished!";
       } else {
-        VLOG(1) << "Current list is in gc now!";
+        VLOG(5) << "Current list is in gc now!";
       }
     }
   }
