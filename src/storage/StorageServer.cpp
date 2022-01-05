@@ -400,7 +400,6 @@ void StorageServer::stop() {
   }
   if (metaClient_) {
     metaClient_->notifyStop();
-    // metaClient_->stop();
   }
   if (kvstore_) {
     kvstore_.reset();
