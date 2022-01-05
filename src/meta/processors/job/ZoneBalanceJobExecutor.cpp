@@ -121,7 +121,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::rebalanceActiveZones(
   for (auto& z : sortedActiveZonesRef) {
     totalPartNum += z->partNum_;
   }
-  if (sortedActiveZonesRef.size() == 0) {
+  if (sortedActiveZonesRef.empty()) {
     LOG(ERROR) << "rebalance error: no active zones";
     return nebula::cpp2::ErrorCode::E_NO_HOSTS;
   }

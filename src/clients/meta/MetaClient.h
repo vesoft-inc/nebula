@@ -773,7 +773,7 @@ class MetaClient {
   std::atomic<int64_t> metadLastUpdateTime_{0};
 
   int64_t metaServerVersion_{-1};
-  static constexpr int64_t EXPECT_META_VERSION = 2;
+  static constexpr int64_t EXPECT_META_VERSION = 3;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
