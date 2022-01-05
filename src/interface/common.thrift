@@ -407,6 +407,9 @@ enum ErrorCode {
 
     E_QUERY_NOT_FOUND                 = -2073,
     E_AGENT_HB_FAILUE                 = -2074,
+    E_INDEX_CONFLICT_FIELD            = -2075,
+    E_INDEX_COLUMNS_EXCEED_LIMIT      = -2076,
+    E_INDEX_ALREADY_EXISTED           = -2077,
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,

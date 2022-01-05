@@ -17,15 +17,15 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
   auto tagIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(tagIndexIDRet)) {
     auto retCode = nebula::error(tagIndexIDRet);
-    LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    VLOG(2) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName
+            << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
 
   auto indexId = nebula::value(tagIndexIDRet);
-  LOG(INFO) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName;
+  VLOG(1) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName;
   const auto& indexKey = MetaKeyUtils::indexKey(spaceID, indexId);
   auto indexItemRet = doGet(indexKey);
   if (!nebula::ok(indexItemRet)) {
@@ -33,8 +33,8 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    VLOG(2) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+            << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -42,7 +42,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
 
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id) {
-    LOG(ERROR) << "Get Tag Index Failed: Index Name " << indexName << " is not TagIndex";
+    VLOG(2) << "Get Tag Index Failed: Index Name " << indexName << " is not TagIndex";
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;

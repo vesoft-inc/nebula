@@ -22,16 +22,16 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     columnSet.emplace(field.get_name());
   }
   if (fields.size() != columnSet.size()) {
-    LOG(ERROR) << "Conflict field in the edge index.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    VLOG(2) << "Conflict field in the edge index.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INDEX_CONFLICT_FIELD);
     onFinished();
     return;
   }
 
   // A maximum of 16 columns are allowed in the index
   if (columnSet.size() > maxIndexLimit) {
-    LOG(ERROR) << "The number of index columns exceeds maximum limit " << maxIndexLimit;
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    VLOG(2) << "The number of index columns exceeds maximum limit " << maxIndexLimit;
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INDEX_COLUMNS_EXCEED_LIMIT);
     onFinished();
     return;
   }
@@ -43,8 +43,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     if (req.get_if_not_exists()) {
       handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     } else {
-      LOG(ERROR) << "Create Edge Index Failed: " << indexName << " has existed";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+      VLOG(2) << "Create Edge Index Failed: " << indexName << " has existed";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INDEX_ALREADY_EXISTED);
     }
     resp_.id_ref() = to(nebula::value(ret), EntryType::INDEX);
     onFinished();
@@ -52,8 +52,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   } else {
     auto retCode = nebula::error(ret);
     if (retCode != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
-      LOG(ERROR) << "Create Edge Index Failed, index name " << indexName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      VLOG(2) << "Create Edge Index Failed, index name " << indexName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
       handleErrorCode(retCode);
       onFinished();
       return;
@@ -63,8 +63,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   auto edgeTypeRet = getEdgeType(space, edgeName);
   if (!nebula::ok(edgeTypeRet)) {
     auto retCode = nebula::error(edgeTypeRet);
-    LOG(ERROR) << "Create Edge Index Failed, Edge " << edgeName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    VLOG(2) << "Create Edge Index Failed, Edge " << edgeName
+            << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -75,8 +75,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Edge indexes prefix failed, space id " << space
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    VLOG(2) << "Edge indexes prefix failed, space id " << space
+            << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -94,7 +94,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     if (checkIndexExist(fields, item)) {
-      resp_.code_ref() = nebula::cpp2::ErrorCode::E_EXISTED;
+      resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_ALREADY_EXISTED;
       onFinished();
       return;
     }
@@ -104,8 +104,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   auto schemaRet = getLatestEdgeSchema(space, edgeType);
   if (!nebula::ok(schemaRet)) {
     auto retCode = nebula::error(schemaRet);
-    LOG(ERROR) << "Get edge schema failed, space id " << space << " edgeName " << edgeName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    VLOG(2) << "Get edge schema failed, space id " << space << " edgeName " << edgeName
+            << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -120,37 +120,37 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     });
 
     if (iter == schemaCols.end()) {
-      LOG(ERROR) << "Field " << field.get_name() << " not found in Edge " << edgeName;
+      VLOG(2) << "Field " << field.get_name() << " not found in Edge " << edgeName;
       handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
       onFinished();
       return;
     }
     cpp2::ColumnDef col = *iter;
     if (col.type.get_type() == nebula::cpp2::PropertyType::DURATION) {
-      LOG(ERROR) << "Field " << field.get_name() << " in Edge " << edgeName << " is duration."
-                 << "It can not be indexed.";
+      VLOG(2) << "Field " << field.get_name() << " in Edge " << edgeName << " is duration."
+              << "It can not be indexed.";
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
     }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                   << field.get_name();
+        VLOG(2) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
+                << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
       }
     } else if (col.type.get_type() == nebula::cpp2::PropertyType::STRING) {
       if (!field.type_length_ref().has_value()) {
-        LOG(ERROR) << "No type length set : " << field.get_name();
+        VLOG(2) << "No type length set : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
       }
       if (*field.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                   << field.get_name();
+        VLOG(2) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
+                << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -158,13 +158,13 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
       col.type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
       col.type.type_length_ref() = *field.get_type_length();
     } else if (field.type_length_ref().has_value()) {
-      LOG(ERROR) << "No need to set type length : " << field.get_name();
+      VLOG(2) << "No need to set type length : " << field.get_name();
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
     } else if (col.type.get_type() == nebula::cpp2::PropertyType::GEOGRAPHY && fields.size() > 1) {
       // TODO(jie): Support joint index for geography
-      LOG(ERROR) << "Only support to create index on a single geography column currently";
+      VLOG(2) << "Only support to create index on a single geography column currently";
       handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
       onFinished();
       return;
@@ -175,7 +175,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   std::vector<kvstore::KV> data;
   auto edgeIndexRet = autoIncrementIdInSpace(space);
   if (!nebula::ok(edgeIndexRet)) {
-    LOG(ERROR) << "Create edge index failed: Get edge index ID failed";
+    VLOG(2) << "Create edge index failed: Get edge index ID failed";
     handleErrorCode(nebula::error(edgeIndexRet));
     onFinished();
     return;
@@ -199,7 +199,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                     std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
   data.emplace_back(MetaKeyUtils::indexKey(space, edgeIndex), MetaKeyUtils::indexVal(item));
-  LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
+  VLOG(1) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
   resp_.id_ref() = to(edgeIndex, EntryType::INDEX);
   doSyncPutAndUpdate(std::move(data));
 }

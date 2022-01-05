@@ -943,6 +943,12 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Backup table failure!");
     case nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND:
       return Status::Error("Session not existed!");
+    case nebula::cpp2::ErrorCode::E_INDEX_CONFLICT_FIELD:
+      return Status::Error("Conflict filed in edge index!");
+    case nebula::cpp2::ErrorCode::E_INDEX_COLUMNS_EXCEED_LIMIT:
+      return Status::Error("The number of index columns exceed maximum limit!");
+    case nebula::cpp2::ErrorCode::E_INDEX_ALREADY_EXISTED:
+      return Status::Error("Index already existed!");
     default:
       return Status::Error("Unknown error!");
   }
