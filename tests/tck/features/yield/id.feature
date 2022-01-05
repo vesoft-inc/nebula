@@ -2,7 +2,7 @@ Feature: unique id
 
   Background:
     Yield uuid() to get id
-  
+
   Scenario: segment id
     When executing query:
       """
