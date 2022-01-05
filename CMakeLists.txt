@@ -47,6 +47,7 @@ include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
 include(IncludeWhatYouUse)
+include(BreakPadConfig)
 
 add_custom_target(
   clang-format

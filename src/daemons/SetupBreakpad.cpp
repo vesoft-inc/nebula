@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
 #include <breakpad/client/linux/handler/exception_handler.h>
 
 #include "common/base/Status.h"

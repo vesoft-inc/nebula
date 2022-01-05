@@ -62,7 +62,7 @@ static void signalHandler(int sig);
 static void waitForStop();
 static Status setupSignalHandler();
 extern Status setupLogging();
-#if defined(__x86_64__) && defined(NDEBUG)
+#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
 
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-#if defined(__x86_64__) && defined(NDEBUG)
+#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
   if (!status.ok()) {
     LOG(ERROR) << status;
