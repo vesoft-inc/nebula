@@ -112,6 +112,26 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
 
   {
     FLAGS_rocksdb_compression = "lz4";
+    FLAGS_rocksdb_compression_per_level = "";
+    FLAGS_rocksdb_bottommost_compression = "zstd";
+    rocksdb::Options options;
+    auto status = initRocksdbOptions(options, 1);
+    ASSERT_TRUE(status.ok()) << status.ToString();
+    ASSERT_EQ(rocksdb::kLZ4Compression, options.compression);
+    ASSERT_EQ(rocksdb::kZSTD, options.bottommost_compression);
+
+    rocksdb::DB* db = nullptr;
+    SCOPE_EXIT {
+      delete db;
+    };
+    options.create_if_missing = true;
+    fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+    status = rocksdb::DB::Open(options, rootPath.path(), &db);
+    ASSERT_TRUE(status.ok()) << status.ToString();
+  }
+
+  {
+    FLAGS_rocksdb_compression = "lz4";
     FLAGS_rocksdb_compression_per_level = "no:no::snappy::zstd";
     rocksdb::Options options;
     auto status = initRocksdbOptions(options, 1);

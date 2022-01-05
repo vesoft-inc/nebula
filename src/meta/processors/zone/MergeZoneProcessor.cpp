@@ -147,7 +147,6 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto spaceZones = properties.get_zone_names();
-
     bool replacement = false;
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);

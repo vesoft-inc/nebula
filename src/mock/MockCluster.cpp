@@ -226,10 +226,17 @@ void MockCluster::startStorage(HostAddr addr,
   storageAdminServer_->start("admin-storage", addr.port - 1, adminHandler);
   LOG(INFO) << "The admin storage daemon started on port " << storageAdminServer_->port_;
 
+#ifndef BUILD_STANDALONE
   graphStorageServer_ = std::make_unique<RpcServer>();
   auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
   graphStorageServer_->start("graph-storage", addr.port, graphHandler);
   LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
+#else
+  graphStorageServer_ = std::make_unique<LocalServer>();
+  auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+  graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+  LOG(INFO) << "The graph storage daemon started on Local server.";
+#endif
 }
 
 std::unique_ptr<meta::SchemaManager> MockCluster::memSchemaMan(SchemaVer schemaVerCount,

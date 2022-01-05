@@ -97,7 +97,7 @@ class Host final : public std::enable_shared_from_this<Host> {
   }
 
  private:
-  cpp2::ErrorCode canAppendLog() const;
+  nebula::cpp2::ErrorCode canAppendLog() const;
 
   folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
@@ -107,9 +107,10 @@ class Host final : public std::enable_shared_from_this<Host> {
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
-  ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();
+  ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
+  prepareAppendLogRequest();
 
-  cpp2::ErrorCode startSendSnapshot();
+  nebula::cpp2::ErrorCode startSendSnapshot();
 
   bool noRequest() const;
 

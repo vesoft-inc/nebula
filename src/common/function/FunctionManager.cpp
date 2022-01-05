@@ -1757,7 +1757,7 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
-      if (args.size() == 0) {
+      if (args.empty()) {
         return time::WallClock::fastNowInSec();
       }
       auto status = time::TimeUtils::toTimestamp(args[0].get());
