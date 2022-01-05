@@ -11,19 +11,6 @@ namespace meta {
 void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
   auto zoneName = req.get_zone_name();
-  auto zoneIdRet = getZoneId(zoneName);
-  if (!nebula::ok(zoneIdRet)) {
-    auto retCode = nebula::error(zoneIdRet);
-    if (retCode == nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND) {
-      LOG(ERROR) << "Get Zone Failed, Zone " << zoneName << " not found.";
-    } else {
-      LOG(ERROR) << "Get Zone Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    }
-    handleErrorCode(retCode);
-    onFinished();
-    return;
-  }
-
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
@@ -40,7 +27,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
 
   auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   LOG(INFO) << "Get Zone: " << zoneName << " node size: " << hosts.size();
-  resp_.set_hosts(std::move(hosts));
+  resp_.hosts_ref() = std::move(hosts);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

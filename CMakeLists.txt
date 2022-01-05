@@ -31,6 +31,10 @@ option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable include-what-you-use find  nouse incl
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
+if(ENABLE_STANDALONE_VERSION)
+    add_definitions(-DBUILD_STANDALONE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/nebula)
 

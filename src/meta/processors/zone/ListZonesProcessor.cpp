@@ -26,18 +26,18 @@ void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
     auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
     auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
     cpp2::Zone zone;
-    zone.set_zone_name(std::move(zoneName));
-    if (hosts.size() != 0) {
-      zone.set_nodes(std::move(hosts));
+    zone.zone_name_ref() = std::move(zoneName);
+    if (!hosts.empty()) {
+      zone.nodes_ref() = std::move(hosts);
     } else {
-      zone.set_nodes({HostAddr("", 0)});
+      zone.nodes_ref() = {HostAddr("", 0)};
     }
     zones.emplace_back(std::move(zone));
     iter->next();
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_zones(std::move(zones));
+  resp_.zones_ref() = std::move(zones);
   onFinished();
 }
 

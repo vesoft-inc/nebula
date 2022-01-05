@@ -44,7 +44,9 @@ void Latch::wait() {
   cond_.wait(unique, [this]() { return counter_ == 0; });
 }
 
-bool Latch::isReady() { return counter_ == 0; }
+bool Latch::isReady() {
+  return counter_ == 0;
+}
 
 }  // namespace concurrent
 }  // namespace nebula

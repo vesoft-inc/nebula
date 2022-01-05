@@ -40,6 +40,8 @@ class DropSpaceExecutor final : public Executor {
   DropSpaceExecutor(const PlanNode *node, QueryContext *qctx)
       : Executor("DropSpaceExecutor", node, qctx) {}
 
+  void unRegisterSpaceLevelMetrics(const std::string &spaceName);
+
   folly::Future<Status> execute() override;
 };
 
@@ -55,6 +57,14 @@ class ShowCreateSpaceExecutor final : public Executor {
  public:
   ShowCreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
       : Executor("ShowCreateSpaceExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
+class AlterSpaceExecutor final : public Executor {
+ public:
+  AlterSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("AlterSpaceExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

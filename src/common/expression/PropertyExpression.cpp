@@ -54,67 +54,87 @@ const Value& EdgePropertyExpression::eval(ExpressionContext& ctx) {
   return result_;
 }
 
-void EdgePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& TagPropertyExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getTagProp(sym_, prop_);
   return result_;
 }
 
-void TagPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void TagPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& InputPropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getInputProp(prop_);
 }
 
-void InputPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void InputPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& VariablePropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getVarProp(sym_, prop_);
 }
 
-void VariablePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VariablePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& SourcePropertyExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getSrcProp(sym_, prop_);
   return result_;
 }
 
-void SourcePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SourcePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& DestPropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getDstProp(sym_, prop_);
 }
 
-void DestPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void DestPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeSrcIdExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeSrcIdExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeSrcIdExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeTypeExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeTypeExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeTypeExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeRankExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeRankExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeRankExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeDstIdExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeDstIdExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 std::string PropertyExpression::toString() const {
   std::string buf;
@@ -152,6 +172,49 @@ std::string VariablePropertyExpression::toString() const {
   }
 
   return buf;
+}
+
+const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
+  const auto& var = label_->eval(ctx);
+  if (var.type() != Value::Type::VERTEX) {
+    return Value::kNullBadType;
+  }
+  for (const auto& tag : var.getVertex().tags) {
+    if (tag.name == sym_) {
+      auto iter = tag.props.find(prop_);
+      if (iter != tag.props.end()) {
+        return iter->second;
+      }
+    }
+  }
+  return Value::kNullValue;
+}
+
+void LabelTagPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
+
+std::string LabelTagPropertyExpression::toString() const {
+  std::string labelStr = label_ != nullptr ? label_->toString().erase(0, 1) : "";
+  return labelStr + "." + sym_ + "." + prop_;
+}
+
+bool LabelTagPropertyExpression::operator==(const Expression& rhs) const {
+  if (kind_ != rhs.kind()) {
+    return false;
+  }
+  const auto& expr = static_cast<const LabelTagPropertyExpression&>(rhs);
+  return *label_ == *expr.label_ && sym_ == expr.sym_ && prop_ == expr.prop_;
+}
+
+void LabelTagPropertyExpression::writeTo(Encoder& encoder) const {
+  PropertyExpression::writeTo(encoder);
+  encoder << *label_;
+}
+
+void LabelTagPropertyExpression::resetFrom(Decoder& decoder) {
+  PropertyExpression::resetFrom(decoder);
+  label_ = decoder.readExpression(pool_);
 }
 
 }  // namespace nebula

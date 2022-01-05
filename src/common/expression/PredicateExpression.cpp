@@ -18,7 +18,13 @@ std::unordered_map<std::string, PredicateExpression::Type> PredicateExpression::
 
 const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
   DCHECK(collection_->kind() == Expression::Kind::kAttribute ||
-         collection_->kind() == Expression::Kind::kSubscript);
+         collection_->kind() == Expression::Kind::kSubscript ||
+         collection_->kind() == Expression::Kind::kLabelTagProperty);
+
+  if (collection_->kind() == Expression::Kind::kLabelTagProperty) {
+    result_ = !collection_->eval(ctx).isNull();
+    return result_;
+  }
 
   auto* attributeExpr = static_cast<BinaryExpression*>(collection_);
   auto& container = attributeExpr->left()->eval(ctx);
@@ -249,17 +255,19 @@ std::string PredicateExpression::toString() const {
   if (name_ != "exists") {
     buf += innerVar_;
     buf += " IN ";
-    buf += collection_->toString();
+    buf += collection_ ? collection_->toString() : "";
     buf += " WHERE ";
-    buf += filter_->toString();
+    buf += filter_ ? filter_->toString() : "";
   } else {
-    buf += collection_->toString();
+    buf += collection_ ? collection_->toString() : "";
   }
   buf += ")";
 
   return buf;
 }
 
-void PredicateExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void PredicateExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

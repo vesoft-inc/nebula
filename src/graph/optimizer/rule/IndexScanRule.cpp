@@ -5,9 +5,6 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
-#include "common/expression/LabelAttributeExpression.h"
-#include "common/expression/VariableExpression.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
@@ -18,10 +15,10 @@
 #include "graph/util/IndexUtil.h"
 #include "graph/visitor/RewriteVisitor.h"
 
+using nebula::graph::ExpressionUtils;
 using nebula::graph::IndexScan;
 using nebula::graph::IndexUtil;
 using nebula::graph::OptimizerUtils;
-
 using IndexQueryCtx = std::vector<nebula::graph::IndexScan::IndexQueryContext>;
 
 namespace nebula {
@@ -30,7 +27,9 @@ namespace opt {
 std::unique_ptr<OptRule> IndexScanRule::kInstance =
     std::unique_ptr<IndexScanRule>(new IndexScanRule());
 
-IndexScanRule::IndexScanRule() { RuleSet::DefaultRules().addRule(this); }
+IndexScanRule::IndexScanRule() {
+  RuleSet::DefaultRules().addRule(this);
+}
 
 const Pattern& IndexScanRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kIndexScan);
@@ -93,7 +92,9 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   return result;
 }
 
-std::string IndexScanRule::toString() const { return "IndexScanRule"; }
+std::string IndexScanRule::toString() const {
+  return "IndexScanRule";
+}
 
 Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx& iqctx,
                                           ScanKind kind,
@@ -175,7 +176,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
     if (it != filterItems.items.end()) {
       // TODO (sky) : rewrite filter expr. NE expr should be add filter expr .
       if (filter != nullptr) {
-        ctx.set_filter(Expression::encode(*filter));
+        ctx.filter_ref() = Expression::encode(*filter);
       }
       break;
     }
@@ -185,22 +186,22 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
       break;
     }
   }
-  ctx.set_index_id(index->get_index_id());
+  ctx.index_id_ref() = index->get_index_id();
   if (hc > 0) {
     // TODO (sky) : rewrite expr and set filter
     if (filter != nullptr) {
-      ctx.set_filter(Expression::encode(*filter));
+      ctx.filter_ref() = Expression::encode(*filter);
     }
   }
-  ctx.set_column_hints(std::move(hints));
+  ctx.column_hints_ref() = std::move(hints);
   iqctx.emplace_back(std::move(ctx));
   return Status::OK();
 }
 
 Status IndexScanRule::appendIQCtx(const IndexItem& index, IndexQueryCtx& iqctx) const {
   IndexQueryContext ctx;
-  ctx.set_index_id(index->get_index_id());
-  ctx.set_filter("");
+  ctx.index_id_ref() = index->get_index_id();
+  ctx.filter_ref() = "";
   iqctx.emplace_back(std::move(ctx));
   return Status::OK();
 }
@@ -291,19 +292,19 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
 
   if (isRangeScan) {
     if (!begin.first.empty()) {
-      hint.set_begin_value(begin.first);
-      hint.set_include_begin(begin.second);
+      hint.begin_value_ref() = begin.first;
+      hint.include_begin_ref() = begin.second;
     }
     if (!end.first.empty()) {
-      hint.set_end_value(end.first);
-      hint.set_include_end(end.second);
+      hint.end_value_ref() = end.first;
+      hint.include_end_ref() = end.second;
     }
-    hint.set_scan_type(storage::cpp2::ScanType::RANGE);
+    hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
   } else {
-    hint.set_begin_value(begin.first);
-    hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
+    hint.begin_value_ref() = begin.first;
+    hint.scan_type_ref() = storage::cpp2::ScanType::PREFIX;
   }
-  hint.set_column_name(col.get_name());
+  hint.column_name_ref() = col.get_name();
   hints.emplace_back(std::move(hint));
   return Status::OK();
 }
@@ -374,9 +375,13 @@ Status IndexScanRule::analyzeExpression(
     case Expression::Kind::kRelGT:
     case Expression::Kind::kRelNE: {
       auto* rExpr = static_cast<RelationalExpression*>(expr);
-      auto ret = isEdge ? addFilterItem<EdgePropertyExpression>(rExpr, items, qctx)
-                        : addFilterItem<TagPropertyExpression>(rExpr, items, qctx);
-      NG_RETURN_IF_ERROR(ret);
+      if (isEdge) {
+        NG_RETURN_IF_ERROR(addFilterItem<EdgePropertyExpression>(rExpr, items, qctx));
+      } else if (ExpressionUtils::hasAny(rExpr, {Expression::Kind::kLabelTagProperty})) {
+        NG_RETURN_IF_ERROR(addFilterItem<LabelTagPropertyExpression>(rExpr, items, qctx));
+      } else {
+        NG_RETURN_IF_ERROR(addFilterItem<TagPropertyExpression>(rExpr, items, qctx));
+      }
       if (kind->getKind() == ScanKind::Kind::kMultipleScan &&
           expr->kind() == Expression::Kind::kRelNE) {
         kind->setKind(ScanKind::Kind::kSingleScan);
@@ -396,8 +401,14 @@ Status IndexScanRule::addFilterItem(RelationalExpression* expr,
                                     FilterItems* items,
                                     QueryContext* qctx) const {
   // TODO (sky) : Check illegal filter. for example : where c1 == 1 and c1 == 2
-  auto relType = std::is_same<E, EdgePropertyExpression>::value ? Expression::Kind::kEdgeProperty
-                                                                : Expression::Kind::kTagProperty;
+  Expression::Kind relType;
+  if constexpr (std::is_same<E, EdgePropertyExpression>::value) {
+    relType = Expression::Kind::kEdgeProperty;
+  } else if constexpr (std::is_same<E, LabelTagPropertyExpression>::value) {
+    relType = Expression::Kind::kLabelTagProperty;
+  } else {
+    relType = Expression::Kind::kTagProperty;
+  }
   if (expr->left()->kind() == relType &&
       graph::ExpressionUtils::isEvaluableExpr(expr->right(), qctx)) {
     auto* l = static_cast<const E*>(expr->left());
@@ -511,7 +522,7 @@ std::vector<IndexItem> IndexScanRule::findValidIndex(graph::QueryContext* qctx,
         return item.col_ == fields[0].get_name();
       });
       if (it == items.items.end()) {
-        validIndexes.erase(index);
+        index = validIndexes.erase(index);
       } else {
         index++;
       }

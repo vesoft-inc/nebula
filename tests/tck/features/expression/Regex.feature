@@ -104,8 +104,8 @@ Feature: Regular Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name =~ "T\\w+\\s?.*"
-      RETURN v.name AS name
+      WHERE v.player.name =~ "T\\w+\\s?.*"
+      RETURN v.player.name AS name
       """
     Then the result should be, in any order:
       | name             |
@@ -116,9 +116,9 @@ Feature: Regular Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name STARTS WITH "Tony"
-      RETURN v.name, v.name =~ "T\\w+\\s?.*" AS b
+      WHERE v.player.name STARTS WITH "Tony"
+      RETURN v.player.name, v.player.name =~ "T\\w+\\s?.*" AS b
       """
     Then the result should be, in any order:
-      | v.name        | b    |
+      | v.player.name | b    |
       | "Tony Parker" | true |

@@ -251,7 +251,9 @@ class NebulaKeyUtils final {
    */
   static std::string toLockKey(const folly::StringPiece& rawKey);
 
-  static EdgeVerPlaceHolder getLockVersion(const folly::StringPiece&) { return 0; }
+  static EdgeVerPlaceHolder getLockVersion(const folly::StringPiece&) {
+    return 0;
+  }
 
   static folly::StringPiece lockWithNoVersion(const folly::StringPiece& rawKey) {
     // TODO(liuyu) We should change the method if varint data version
@@ -269,6 +271,8 @@ class NebulaKeyUtils final {
   }
 
   static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
+
+  static std::string dataVersionKey();
 
   static_assert(sizeof(NebulaKeyType) == sizeof(PartitionID));
 

@@ -13,7 +13,7 @@ Feature: merge get vertices, dedup and project rule
       """
       MATCH (v)
       WHERE id(v) == 'Tim Duncan'
-      RETURN v.name AS Name
+      RETURN v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name         |

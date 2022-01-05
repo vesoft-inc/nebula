@@ -16,9 +16,13 @@ namespace storage {
 static const std::string kPrimeTable{"__prime__"};              // NOLINT
 static const std::string kDoublePrimeTable{"__prime_prime__"};  // NOLINT
 
-std::string ConsistUtil::primeTable() { return kPrimeTable; }
+std::string ConsistUtil::primeTable() {
+  return kPrimeTable;
+}
 
-std::string ConsistUtil::doublePrimeTable() { return kDoublePrimeTable; }
+std::string ConsistUtil::doublePrimeTable() {
+  return kDoublePrimeTable;
+}
 
 std::string ConsistUtil::primePrefix(PartitionID partId) {
   return kPrimeTable + NebulaKeyUtils::edgePrefix(partId);
@@ -61,6 +65,8 @@ RequestType ConsistUtil::parseType(folly::StringPiece val) {
       return RequestType::UPDATE;
     case 'a':
       return RequestType::INSERT;
+    case 'd':
+      return RequestType::DELETE;
     default:
       LOG(FATAL) << "should not happen, identifier is " << identifier;
   }
@@ -94,49 +100,12 @@ std::string ConsistUtil::ConsistUtil::edgeKey(size_t vIdLen,
                                  (*key.dst_ref()).getStr());
 }
 
-std::vector<int64_t> ConsistUtil::getMultiEdgeVers(kvstore::KVStore* store,
-                                                   GraphSpaceID spaceId,
-                                                   PartitionID partId,
-                                                   const std::vector<std::string>& keys) {
-  std::vector<int64_t> ret(keys.size());
-  std::vector<std::string> _keys(keys);
-  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-  std::vector<Status> status;
-  std::vector<std::string> vals;
-  std::tie(rc, status) = store->multiGet(spaceId, partId, std::move(_keys), &vals);
-  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED && rc != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
-    return ret;
-  }
-  for (auto i = 0U; i != ret.size(); ++i) {
-    ret[i] = getTimestamp(vals[i]);
-  }
-  return ret;
-}
-
-// return -1 if edge version not exist
-int64_t ConsistUtil::getSingleEdgeVer(kvstore::KVStore* store,
-                                      GraphSpaceID spaceId,
-                                      PartitionID partId,
-                                      const std::string& key) {
-  static int64_t invalidEdgeVer = -1;
-  std::string val;
-  auto rc = store->get(spaceId, partId, key, &val);
-  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return invalidEdgeVer;
-  }
-  return getTimestamp(val);
-}
-
-int64_t ConsistUtil::getTimestamp(const std::string& val) noexcept {
-  return *reinterpret_cast<const int64_t*>(val.data() + (val.size() - sizeof(int64_t)));
-}
-
 cpp2::AddEdgesRequest ConsistUtil::toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req) {
   cpp2::AddEdgesRequest ret;
-  ret.set_space_id(req.get_space_id());
-  ret.set_parts(req.get_parts());
-  ret.set_prop_names(req.get_prop_names());
-  ret.set_if_not_exists(req.get_if_not_exists());
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
+  ret.prop_names_ref() = req.get_prop_names();
+  ret.if_not_exists_ref() = req.get_if_not_exists();
   return ret;
 }
 
@@ -153,62 +122,71 @@ void ConsistUtil::reverseEdgeKeyInplace(cpp2::EdgeKey& edgeKey) {
   *edgeKey.edge_type_ref() = 0 - edgeKey.get_edge_type();
 }
 
-std::pair<int64_t, nebula::cpp2::ErrorCode> ConsistUtil::versionOfUpdateReq(
-    StorageEnv* env, const cpp2::UpdateEdgeRequest& req) {
-  int64_t ver = -1;
-  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-  do {
-    auto spaceId = req.get_space_id();
-    auto stVidLen = env->metaClient_->getSpaceVidLen(spaceId);
-    if (!stVidLen.ok()) {
-      rc = nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-      break;
-    }
-    auto vIdLen = stVidLen.value();
-    auto partId = req.get_part_id();
-    auto key = ConsistUtil::edgeKey(vIdLen, partId, req.get_edge_key());
-    ver = ConsistUtil::getSingleEdgeVer(env->kvstore_, spaceId, partId, key);
-  } while (0);
-
-  return std::make_pair(ver, rc);
+int64_t ConsistUtil::toInt(const ::nebula::Value& val) {
+  // return ConsistUtil::toInt2(val.toString());
+  auto str = val.toString();
+  if (str.size() < 3) {
+    return 0;
+  }
+  return *reinterpret_cast<int64*>(const_cast<char*>(str.data() + 1));
 }
 
-std::string ConsistUtil::dumpAddEdgeReq(const cpp2::AddEdgesRequest& req) {
-  std::stringstream oss;
-  oss << "prop_names.size() = " << req.get_prop_names().size() << " ";
-  for (auto& name : req.get_prop_names()) {
-    oss << name << " ";
+int64_t ConsistUtil::toInt2(const std::string& str) {
+  if (str.size() < 8) {
+    return 0;
   }
-  oss << " ";
-  for (auto& part : req.get_parts()) {
-    // oss << dumpParts(part.second);
-    for (auto& edge : part.second) {
-      oss << " edge: " << folly::hexlify(edge.get_key().get_src().toString()) << "->"
-          << folly::hexlify(edge.get_key().get_dst().toString())
-          << ", type=" << edge.get_key().get_edge_type()
-          << ", rank=" << edge.get_key().get_ranking() << ", vals: ";
-      for (auto& val : edge.get_props()) {
-        oss << val.toString() << ", ";
-      }
-      oss << "\n";
-    }
-  }
-  return oss.str();
+  return *reinterpret_cast<int64*>(const_cast<char*>(str.data()));
 }
 
-std::string ConsistUtil::dumpParts(const Parts& parts) {
+std::string ConsistUtil::readableKey(size_t vidLen, const std::string& rawKey) {
+  auto src = NebulaKeyUtils::getSrcId(vidLen, rawKey);
+  auto dst = NebulaKeyUtils::getDstId(vidLen, rawKey);
+  auto rank = NebulaKeyUtils::getRank(vidLen, rawKey);
+  std::stringstream ss;
+  ss << ConsistUtil::toInt2(src.str()) << "->" << ConsistUtil::toInt2(dst.str()) << "@" << rank;
+  return ss.str();
+}
+
+std::vector<std::string> ConsistUtil::toStrKeys(const cpp2::DeleteEdgesRequest& req, int vIdLen) {
+  std::vector<std::string> ret;
+  for (auto& edgesOfPart : req.get_parts()) {
+    auto partId = edgesOfPart.first;
+    for (auto& key : edgesOfPart.second) {
+      ret.emplace_back(ConsistUtil::edgeKey(vIdLen, partId, key));
+    }
+  }
+  return ret;
+}
+
+::nebula::cpp2::ErrorCode ConsistUtil::getErrorCode(const cpp2::ExecResponse& resp) {
+  auto ret = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto& respComn = resp.get_result();
+  for (auto& part : respComn.get_failed_parts()) {
+    ret = part.code;
+  }
+  return ret;
+}
+
+cpp2::DeleteEdgesRequest DeleteEdgesRequestHelper::toDeleteEdgesRequest(
+    const cpp2::ChainDeleteEdgesRequest& req) {
+  cpp2::DeleteEdgesRequest ret;
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
+  return ret;
+}
+
+cpp2::DeleteEdgesRequest DeleteEdgesRequestHelper::parseDeleteEdgesRequest(const std::string& val) {
+  cpp2::DeleteEdgesRequest req;
+  apache::thrift::CompactSerializer::deserialize(val, req);
+  return req;
+}
+
+std::string DeleteEdgesRequestHelper::explain(const cpp2::DeleteEdgesRequest& req) {
   std::stringstream oss;
-  for (auto& part : parts) {
-    for (auto& edge : part.second) {
-      oss << " edge: " << folly::hexlify(edge.get_key().get_src().toString()) << "->"
-          << folly::hexlify(edge.get_key().get_dst().toString())
-          << ", type=" << edge.get_key().get_edge_type()
-          << ", rank=" << edge.get_key().get_ranking() << ", vals: ";
-      for (auto& val : edge.get_props()) {
-        oss << val.toString() << ", ";
-      }
-      oss << "\n";
+  for (auto& partOfKeys : req.get_parts()) {
+    for (auto& key : partOfKeys.second) {
+      oss << ConsistUtil::toInt(key.get_src()) << "->" << ConsistUtil::toInt(key.get_dst()) << "@"
+          << key.get_ranking() << ", ";
     }
   }
   return oss.str();

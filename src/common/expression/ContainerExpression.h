@@ -21,11 +21,15 @@ class ExpressionList final {
     return *this;
   }
 
-  auto get() { return items_; }
+  auto get() {
+    return items_;
+  }
 
  private:
   ExpressionList() = default;
-  explicit ExpressionList(size_t sz) { items_.reserve(sz); }
+  explicit ExpressionList(size_t sz) {
+    items_.reserve(sz);
+  }
 
  private:
   std::vector<Expression *> items_;
@@ -42,11 +46,15 @@ class MapItemList final {
     return *this;
   }
 
-  auto get() { return items_; }
+  auto get() {
+    return items_;
+  }
 
  private:
   MapItemList() = default;
-  explicit MapItemList(size_t sz) { items_.reserve(sz); }
+  explicit MapItemList(size_t sz) {
+    items_.reserve(sz);
+  }
 
  private:
   using Pair = std::pair<std::string, Expression *>;
@@ -65,18 +73,26 @@ class ListExpression final : public Expression {
 
   const Value &eval(ExpressionContext &ctx) override;
 
-  const std::vector<Expression *> &items() const { return items_; }
+  const std::vector<Expression *> &items() const {
+    return items_;
+  }
 
   void setItem(size_t index, Expression *item) {
     DCHECK_LT(index, items_.size());
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() { return items_; }
+  std::vector<Expression *> get() {
+    return items_;
+  }
 
-  void setItems(std::vector<Expression *> items) { items_ = items; }
+  void setItems(std::vector<Expression *> items) {
+    items_ = items;
+  }
 
-  size_t size() const { return items_.size(); }
+  size_t size() const {
+    return items_.size();
+  }
 
   bool operator==(const Expression &rhs) const override;
 
@@ -92,12 +108,14 @@ class ListExpression final : public Expression {
     return ListExpression::make(pool_, items);
   }
 
-  bool isContainerExpr() const override { return true; }
+  bool isContainerExpr() const override {
+    return true;
+  }
 
  private:
   explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
 
-  explicit ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
+  ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
     items_ = items->get();
   }
 
@@ -122,18 +140,26 @@ class SetExpression final : public Expression {
 
   const Value &eval(ExpressionContext &ctx) override;
 
-  const std::vector<Expression *> &items() const { return items_; }
+  const std::vector<Expression *> &items() const {
+    return items_;
+  }
 
   void setItem(size_t index, Expression *item) {
     DCHECK_LT(index, items_.size());
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() { return items_; }
+  std::vector<Expression *> get() {
+    return items_;
+  }
 
-  void setItems(std::vector<Expression *> items) { items_ = items; }
+  void setItems(std::vector<Expression *> items) {
+    items_ = items;
+  }
 
-  size_t size() const { return items_.size(); }
+  size_t size() const {
+    return items_.size();
+  }
 
   bool operator==(const Expression &rhs) const override;
 
@@ -149,12 +175,14 @@ class SetExpression final : public Expression {
     return SetExpression::make(pool_, items);
   }
 
-  bool isContainerExpr() const override { return true; }
+  bool isContainerExpr() const override {
+    return true;
+  }
 
  private:
   explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
 
-  explicit SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
+  SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
     items_ = items->get();
   }
 
@@ -181,18 +209,26 @@ class MapExpression final : public Expression {
 
   const Value &eval(ExpressionContext &ctx) override;
 
-  const std::vector<Item> &items() const { return items_; }
+  const std::vector<Item> &items() const {
+    return items_;
+  }
 
-  void setItems(std::vector<Item> items) { items_ = items; }
+  void setItems(std::vector<Item> items) {
+    items_ = items;
+  }
 
   void setItem(size_t index, Item item) {
     DCHECK_LT(index, items_.size());
     items_[index] = item;
   }
 
-  std::vector<Item> get() { return items_; }
+  std::vector<Item> get() {
+    return items_;
+  }
 
-  size_t size() const { return items_.size(); }
+  size_t size() const {
+    return items_.size();
+  }
 
   bool operator==(const Expression &rhs) const override;
 
@@ -208,12 +244,14 @@ class MapExpression final : public Expression {
     return MapExpression::make(pool_, items);
   }
 
-  bool isContainerExpr() const override { return true; }
+  bool isContainerExpr() const override {
+    return true;
+  }
 
  private:
   explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
 
-  explicit MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
+  MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
     items_ = items->get();
   }
 

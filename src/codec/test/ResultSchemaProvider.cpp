@@ -33,34 +33,54 @@ ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
       defaultValue_(defaultValue),
       geoShape_(geoShape) {}
 
-const char* ResultSchemaProvider::ResultSchemaField::name() const { return name_.c_str(); }
+const char* ResultSchemaProvider::ResultSchemaField::name() const {
+  return name_.c_str();
+}
 
-PropertyType ResultSchemaProvider::ResultSchemaField::type() const { return type_; }
+PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
+  return type_;
+}
 
 bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
   return defaultValue_ != nullptr;
 }
 
-bool ResultSchemaProvider::ResultSchemaField::nullable() const { return nullable_; }
+bool ResultSchemaProvider::ResultSchemaField::nullable() const {
+  return nullable_;
+}
 
-Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const { return defaultValue_; }
+Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const {
+  return defaultValue_;
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::size() const { return size_; }
+size_t ResultSchemaProvider::ResultSchemaField::size() const {
+  return size_;
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::offset() const { return offset_; }
+size_t ResultSchemaProvider::ResultSchemaField::offset() const {
+  return offset_;
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::nullFlagPos() const { return nullFlagPos_; }
+size_t ResultSchemaProvider::ResultSchemaField::nullFlagPos() const {
+  return nullFlagPos_;
+}
 
-meta::cpp2::GeoShape ResultSchemaProvider::ResultSchemaField::geoShape() const { return geoShape_; }
+meta::cpp2::GeoShape ResultSchemaProvider::ResultSchemaField::geoShape() const {
+  return geoShape_;
+}
 
 /***********************************
  *
  * ResultSchemaProvider
  *
  **********************************/
-size_t ResultSchemaProvider::getNumFields() const noexcept { return columns_.size(); }
+size_t ResultSchemaProvider::getNumFields() const noexcept {
+  return columns_.size();
+}
 
-size_t ResultSchemaProvider::getNumNullableFields() const noexcept { return numNullableFields_; }
+size_t ResultSchemaProvider::getNumNullableFields() const noexcept {
+  return numNullableFields_;
+}
 
 size_t ResultSchemaProvider::size() const noexcept {
   if (columns_.size() > 0) {

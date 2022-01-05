@@ -17,14 +17,18 @@ using nebula::storage::cpp2::ScanResponse;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> ScanEdgesExecutor::execute() { return scanEdges(); }
+folly::Future<Status> ScanEdgesExecutor::execute() {
+  return scanEdges();
+}
 
 folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   SCOPED_TIMER(&execTime_);
   StorageClient *client = qctx()->getStorageClient();
   auto *se = asNode<ScanEdges>(node());
   if (se->limit() < 0) {
-    return Status::Error("Scan edges must specify limit number.");
+    return Status::Error(
+        "Scan vertices or edges need to specify a limit number, "
+        "or limit number can not push down.");
   }
 
   time::Duration scanEdgesTime;

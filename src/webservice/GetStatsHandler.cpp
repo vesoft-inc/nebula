@@ -82,7 +82,9 @@ void GetStatsHandler::addOneStat(folly::dynamic& vals,
   vals.push_back(folly::dynamic::object(statName, error));
 }
 
-void GetStatsHandler::requestComplete() noexcept { delete this; }
+void GetStatsHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void GetStatsHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service GetStatsHandler got error: " << proxygen::getErrorString(err);

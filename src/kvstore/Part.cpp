@@ -5,6 +5,7 @@
 
 #include "kvstore/Part.h"
 
+#include "common/time/ScopedTimer.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
@@ -15,8 +16,6 @@ DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 
 namespace nebula {
 namespace kvstore {
-
-using nebula::raftex::AppendLogResult;
 
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
@@ -68,108 +67,102 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
   std::string log = encodeMultiValues(OP_PUT, key, value);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAppendBatch(std::string&& batch, KVCallback cb) {
   appendAsync(FLAGS_cluster_id, std::move(batch))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
   std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
   std::string log = encodeSingleValue(OP_REMOVE, key);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb) {
   std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncRemoveRange(folly::StringPiece start, folly::StringPiece end, KVCallback cb) {
   std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::sync(KVCallback cb) {
-  sendCommandAsync("").thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-    callback(this->toResultCode(res));
-  });
+  sendCommandAsync("").thenValue(
+      [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
   atomicOpAsync(std::move(op))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_LEARNER, learner);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), learner, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), learner, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add learner " << learner
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
   std::string log = encodeHost(OP_TRANS_LEADER, target);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), target, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), target, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "transfer leader to " << target
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_PEER, peer);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), peer, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add peer " << peer
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_REMOVE_PEER, peer);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), peer, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "remove peer " << peer
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
-void Part::setBlocking(bool sign) { blocking_ = sign; }
+void Part::setBlocking(bool sign) {
+  blocking_ = sign;
+}
 
 void Part::onLostLeadership(TermID term) {
   VLOG(1) << "Lost the leadership for the term " << term;
@@ -201,9 +194,13 @@ void Part::onLeaderReady(TermID term) {
   }
 }
 
-void Part::registerOnLeaderReady(LeaderChangeCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderReady(LeaderChangeCB cb) {
+  leaderReadyCB_.emplace_back(std::move(cb));
+}
 
-void Part::registerOnLeaderLost(LeaderChangeCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderLost(LeaderChangeCB cb) {
+  leaderLostCB_.emplace_back(std::move(cb));
+}
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
@@ -212,10 +209,12 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
   }
 }
 
-cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool wait) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
-  LogID lastId = -1;
-  TermID lastTerm = -1;
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   while (iter->valid()) {
     lastId = iter->logId();
     lastTerm = iter->logTerm();
@@ -234,7 +233,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->put(pieces[0], pieces[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -243,12 +242,12 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         // Make the number of values are an even number
         DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
-          VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+          VLOG(2) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
                   << ", val = " << folly::hexlify(kvs[i + 1]);
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -258,7 +257,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->remove(key);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -268,7 +267,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           auto code = batch->remove(k);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -279,14 +278,14 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->removeRange(range[0], range[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
       case OP_BATCH_WRITE: {
         auto data = decodeBatchValue(log);
         for (auto& op : data) {
-          VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
+          VLOG(2) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
                   << ", val=" << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
@@ -298,7 +297,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -343,17 +342,24 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
     auto code = putCommitMsg(batch.get(), lastId, lastTerm);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << idStr_ << "Commit msg failed";
-      return code;
+      return {code, kNoCommitLogId, kNoCommitLogTerm};
     }
   }
-  return engine_->commitBatchWrite(
+
+  auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, wait);
+  if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return {code, lastId, lastTerm};
+  } else {
+    return {code, kNoCommitLogId, kNoCommitLogTerm};
+  }
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
                                                  LogID committedLogId,
                                                  TermID committedLogTerm,
                                                  bool finished) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;
   int64_t size = 0;
@@ -454,69 +460,53 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
   return true;
 }
 
-void Part::cleanup() {
+nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
+  auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
   const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
-                                  NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                                NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& edgePre = NebulaKeyUtils::edgePrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
-                             NebulaKeyUtils::lastKey(edgePre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
+                           NebulaKeyUtils::lastKey(edgePre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& indexPre = IndexKeyUtils::indexPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
-                             NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                           NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& operationPre = OperationKeyUtils::operationPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
-                             NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                           NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
-  ret = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+  ret = batch->remove(NebulaKeyUtils::systemCommitKey(partId_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
                << static_cast<int32_t>(ret);
+    return ret;
   }
-  return;
-}
-
-// TODO(pandasheep) unify raft errorcode
-nebula::cpp2::ErrorCode Part::toResultCode(raftex::AppendLogResult res) {
-  switch (res) {
-    case raftex::AppendLogResult::SUCCEEDED:
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    case raftex::AppendLogResult::E_NOT_A_LEADER:
-      return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
-    case raftex::AppendLogResult::E_WRITE_BLOCKING:
-      return nebula::cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
-    case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
-      return nebula::cpp2::ErrorCode::E_ATOMIC_OP_FAILED;
-    case raftex::AppendLogResult::E_BUFFER_OVERFLOW:
-      return nebula::cpp2::ErrorCode::E_CONSENSUS_ERROR;
-    default:
-      LOG(ERROR) << idStr_ << "Consensus error " << static_cast<int32_t>(res);
-      return nebula::cpp2::ErrorCode::E_CONSENSUS_ERROR;
-  }
+  return engine_->commitBatchWrite(
+      std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
 }
 
 }  // namespace kvstore

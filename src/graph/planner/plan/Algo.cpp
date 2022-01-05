@@ -69,5 +69,16 @@ std::vector<std::string> CartesianProduct::inputVars() const {
   return varNames;
 }
 
+std::unique_ptr<PlanNodeDescription> BiCartesianProduct::explain() const {
+  return BinaryInputNode::explain();
+}
+
+BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right)
+    : BinaryInputNode(qctx, Kind::kBiCartesianProduct, left, right) {
+  auto lColNames = left->colNames();
+  auto rColNames = right->colNames();
+  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
+  setColNames(lColNames);
+}
 }  // namespace graph
 }  // namespace nebula

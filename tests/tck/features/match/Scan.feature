@@ -10,7 +10,7 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v)
-      RETURN v.name AS Name
+      RETURN v.student.name AS Name
       LIMIT 3
       """
     Then the result should be, in any order:
@@ -21,7 +21,7 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v:teacher)
-      RETURN v.name AS Name
+      RETURN v.teacher.name AS Name
       LIMIT 3
       """
     Then the result should be, in any order:
@@ -52,7 +52,7 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v:teacher:student)
-      RETURN v.name AS Name
+      RETURN v.student.name AS Name
       LIMIT 3
       """
     Then the result should be, in any order:
@@ -60,7 +60,7 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v:person:teacher)
-      RETURN v.name AS Name
+      RETURN v.person.name AS Name
       LIMIT 3
       """
     Then the result should be, in any order:
@@ -71,7 +71,7 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v:person{name: "Mary"}:teacher)
-      RETURN v.name AS Name
+      RETURN v.person.name AS Name
       LIMIT 3
       """
     Then the result should be, in any order:
@@ -82,16 +82,16 @@ Feature: Match seek by scan
     When executing query:
       """
       MATCH (v)
-      RETURN v.name AS Name
+      RETURN v.person.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v{name: "Mary"})
-      RETURN v.name AS Name
+      RETURN v.student.name AS Name
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: query edge by scan
     When executing query:
@@ -147,11 +147,25 @@ Feature: Match seek by scan
       MATCH ()-[e]->()
       RETURN type(e) AS Type
       """
-    Then a ExecutionError should be raised at runtime: Scan edges must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)-[e]->()
-      RETURN v.name, type(e) AS Type
+      RETURN v.person.name, type(e) AS Type
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH ()-[e:is_teacher]-()
+      RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
+      LIMIT 3
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH ()-[e]-()
+      RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
+      LIMIT 3
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.

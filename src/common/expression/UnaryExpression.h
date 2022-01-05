@@ -62,11 +62,17 @@ class UnaryExpression final : public Expression {
     return pool_->add(new UnaryExpression(pool_, kind(), operand_->clone()));
   }
 
-  const Expression* operand() const { return operand_; }
+  const Expression* operand() const {
+    return operand_;
+  }
 
-  Expression* operand() { return operand_; }
+  Expression* operand() {
+    return operand_;
+  }
 
-  void setOperand(Expression* expr) { operand_ = expr; }
+  void setOperand(Expression* expr) {
+    operand_ = expr;
+  }
 
  private:
   explicit UnaryExpression(ObjectPool* pool, Kind kind, Expression* operand = nullptr)

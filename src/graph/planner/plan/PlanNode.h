@@ -65,6 +65,10 @@ class PlanNode {
     kDataCollect,
     kLeftJoin,
     kInnerJoin,
+    kBiLeftJoin,
+    kBiInnerJoin,
+    kBiCartesianProduct,
+    kArgument,
 
     // Logic
     kStart,
@@ -92,6 +96,7 @@ class PlanNode {
     kDropSpace,
     kDropTag,
     kDropEdge,
+    kAlterSpace,
 
     // index related
     kCreateTagIndex,
@@ -152,7 +157,7 @@ class PlanNode {
     kMergeZone,
     kRenameZone,
     kDropZone,
-    kSplitZone,
+    kDivideZone,
     kAddHosts,
     kDropHosts,
     kDescribeZone,
@@ -163,11 +168,11 @@ class PlanNode {
     kRemoveListener,
     kShowListener,
 
-    // text service related
-    kShowTSClients,
+    // service related
+    kShowServiceClients,
     kShowFTIndexes,
-    kSignInTSService,
-    kSignOutTSService,
+    kSignInService,
+    kSignOutService,
     kDownload,
     kIngest,
     kShowSessions,
@@ -177,7 +182,9 @@ class PlanNode {
     kKillQuery,
   };
 
-  bool isQueryNode() const { return kind_ < Kind::kStart; }
+  bool isQueryNode() const {
+    return kind_ < Kind::kStart;
+  }
 
   // Describe plan node
   virtual std::unique_ptr<PlanNodeDescription> explain() const;
@@ -186,32 +193,50 @@ class PlanNode {
 
   virtual void calcCost();
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
-  int64_t id() const { return id_; }
+  int64_t id() const {
+    return id_;
+  }
 
-  QueryContext* qctx() const { return qctx_; }
+  QueryContext* qctx() const {
+    return qctx_;
+  }
 
-  bool isSingleInput() const { return numDeps() == 1U; }
+  bool isSingleInput() const {
+    return numDeps() == 1U;
+  }
 
   void setOutputVar(const std::string& var);
 
-  const std::string& outputVar(size_t index = 0) const { return outputVarPtr(index)->name; }
+  const std::string& outputVar(size_t index = 0) const {
+    return outputVarPtr(index)->name;
+  }
 
   Variable* outputVarPtr(size_t index = 0) const {
     DCHECK_LT(index, outputVars_.size());
     return outputVars_[index];
   }
 
-  const std::vector<Variable*>& outputVars() const { return outputVars_; }
+  const std::vector<Variable*>& outputVars() const {
+    return outputVars_;
+  }
 
-  const std::vector<std::string>& colNames() const { return outputVarPtr(0)->colNames; }
+  const std::vector<std::string>& colNames() const {
+    return outputVarPtr(0)->colNames;
+  }
 
-  void setId(int64_t id) { id_ = id; }
+  void setId(int64_t id) {
+    id_ = id;
+  }
 
-  void setColNames(std::vector<std::string> cols) { outputVarPtr(0)->colNames = std::move(cols); }
+  void setColNames(std::vector<std::string> cols);
 
-  const auto& dependencies() const { return dependencies_; }
+  const auto& dependencies() const {
+    return dependencies_;
+  }
 
   const PlanNode* dep(size_t index = 0) const {
     DCHECK_LT(index, dependencies_.size());
@@ -223,9 +248,13 @@ class PlanNode {
     dependencies_[index] = DCHECK_NOTNULL(dep);
   }
 
-  void addDep(const PlanNode* dep) { dependencies_.emplace_back(dep); }
+  void addDep(const PlanNode* dep) {
+    dependencies_.emplace_back(dep);
+  }
 
-  size_t numDeps() const { return dependencies_.size(); }
+  size_t numDeps() const {
+    return dependencies_.size();
+  }
 
   std::string inputVar(size_t idx = 0UL) const {
     DCHECK_LT(idx, inputVars_.size());
@@ -234,14 +263,18 @@ class PlanNode {
 
   void setInputVar(const std::string& varname, size_t idx = 0UL);
 
-  const std::vector<Variable*>& inputVars() const { return inputVars_; }
+  const std::vector<Variable*>& inputVars() const {
+    return inputVars_;
+  }
 
   void releaseSymbols();
 
   static const char* toString(Kind kind);
   std::string toString() const;
 
-  double cost() const { return cost_; }
+  double cost() const {
+    return cost_;
+  }
 
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
@@ -275,7 +308,9 @@ std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
 // node
 class SingleDependencyNode : public PlanNode {
  public:
-  void dependsOn(const PlanNode* dep) { setDep(0, dep); }
+  void dependsOn(const PlanNode* dep) {
+    setDep(0, dep);
+  }
 
   PlanNode* clone() const override {
     LOG(FATAL) << "Shouldn't call the unimplemented method";
@@ -287,7 +322,9 @@ class SingleDependencyNode : public PlanNode {
     addDep(dep);
   }
 
-  void cloneMembers(const SingleDependencyNode& node) { PlanNode::cloneMembers(node); }
+  void cloneMembers(const SingleDependencyNode& node) {
+    PlanNode::cloneMembers(node);
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 };
@@ -302,7 +339,9 @@ class SingleInputNode : public SingleDependencyNode {
   }
 
  protected:
-  void cloneMembers(const SingleInputNode& node) { SingleDependencyNode::cloneMembers(node); }
+  void cloneMembers(const SingleInputNode& node) {
+    SingleDependencyNode::cloneMembers(node);
+  }
 
   void copyInputColNames(const PlanNode* input) {
     if (input != nullptr) {
@@ -315,21 +354,37 @@ class SingleInputNode : public SingleDependencyNode {
 
 class BinaryInputNode : public PlanNode {
  public:
-  void setLeftDep(const PlanNode* left) { setDep(0, left); }
+  void setLeftDep(const PlanNode* left) {
+    setDep(0, left);
+  }
 
-  void setRightDep(const PlanNode* right) { setDep(1, right); }
+  void setRightDep(const PlanNode* right) {
+    setDep(1, right);
+  }
 
-  void setLeftVar(const std::string& leftVar) { setInputVar(leftVar, 0); }
+  void setLeftVar(const std::string& leftVar) {
+    setInputVar(leftVar, 0);
+  }
 
-  void setRightVar(const std::string& rightVar) { setInputVar(rightVar, 1); }
+  void setRightVar(const std::string& rightVar) {
+    setInputVar(rightVar, 1);
+  }
 
-  const PlanNode* left() const { return dep(0); }
+  const PlanNode* left() const {
+    return dep(0);
+  }
 
-  const PlanNode* right() const { return dep(1); }
+  const PlanNode* right() const {
+    return dep(1);
+  }
 
-  const std::string& leftInputVar() const { return inputVars_[0]->name; }
+  const std::string& leftInputVar() const {
+    return inputVars_[0]->name;
+  }
 
-  const std::string& rightInputVar() const { return inputVars_[1]->name; }
+  const std::string& rightInputVar() const {
+    return inputVars_[1]->name;
+  }
 
   PlanNode* clone() const override {
     LOG(FATAL) << "Shouldn't call the unimplemented method";
@@ -341,7 +396,9 @@ class BinaryInputNode : public PlanNode {
  protected:
   BinaryInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
 
-  void cloneMembers(const BinaryInputNode& node) { PlanNode::cloneMembers(node); }
+  void cloneMembers(const BinaryInputNode& node) {
+    PlanNode::cloneMembers(node);
+  }
 };
 
 // some PlanNode may depend on multiple Nodes(may be one OR more)
@@ -358,7 +415,9 @@ class VariableDependencyNode : public PlanNode {
  protected:
   VariableDependencyNode(QueryContext* qctx, Kind kind) : PlanNode(qctx, kind) {}
 
-  void cloneMembers(const VariableDependencyNode& node) { PlanNode::cloneMembers(node); }
+  void cloneMembers(const VariableDependencyNode& node) {
+    PlanNode::cloneMembers(node);
+  }
 
   std::vector<int64_t> dependIds() const {
     std::vector<int64_t> ids(numDeps());

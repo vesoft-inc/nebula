@@ -11,33 +11,19 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "storage/CommonUtils.h"
+#include "storage/transaction/ConsistTypes.h"
 
 namespace nebula {
 namespace storage {
-
-enum class RequestType {
-  UNKNOWN,
-  INSERT,
-  UPDATE,
-};
-
-enum class ResumeType {
-  UNKNOWN = 0,
-  RESUME_CHAIN,
-  RESUME_REMOTE,
-};
-
-struct ResumeOptions {
-  ResumeOptions(ResumeType tp, std::string val) : resumeType(tp), primeValue(std::move(val)) {}
-  ResumeType resumeType;
-  std::string primeValue;
-};
-
 class ConsistUtil final {
  public:
   static std::string primeTable();
 
   static std::string doublePrimeTable();
+
+  static std::string deletePrimeTable();
+
+  static std::string deleteDoublePrimeTable();
 
   static std::string edgeKey(size_t vIdLen, PartitionID partId, const cpp2::EdgeKey& key);
 
@@ -75,38 +61,50 @@ class ConsistUtil final {
 
   static std::string strUUID();
 
-  static std::string tempRequestTable();
-
-  static std::vector<int64_t> getMultiEdgeVers(kvstore::KVStore* store,
-                                               GraphSpaceID spaceId,
-                                               PartitionID partId,
-                                               const std::vector<std::string>& keys);
-
-  // return -1 if edge version not exist
-  static int64_t getSingleEdgeVer(kvstore::KVStore* store,
-                                  GraphSpaceID spaceId,
-                                  PartitionID partId,
-                                  const std::string& key);
-
-  static int64_t getTimestamp(const std::string& val) noexcept;
-
   static cpp2::AddEdgesRequest toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req);
 
   static cpp2::EdgeKey reverseEdgeKey(const cpp2::EdgeKey& edgeKey);
 
   static void reverseEdgeKeyInplace(cpp2::EdgeKey& edgeKey);
 
-  static std::string insertIdentifier() noexcept { return "a"; }
+  static std::string insertIdentifier() noexcept {
+    return "a";
+  }
 
-  static std::string updateIdentifier() noexcept { return "u"; }
+  static std::string updateIdentifier() noexcept {
+    return "u";
+  }
 
-  static std::pair<int64_t, nebula::cpp2::ErrorCode> versionOfUpdateReq(
-      StorageEnv* env, const cpp2::UpdateEdgeRequest& req);
+  static std::string deleteIdentifier() noexcept {
+    return "d";
+  }
 
-  static std::string dumpAddEdgeReq(const cpp2::AddEdgesRequest& req);
+  /**
+   * @brief if the vid of space is created as "Fixed string"
+   * when trying to print this vid, it will show a hex string
+   * This function trying to transform it to human readable format.
+   * @return -1 if failed
+   */
+  static int64_t toInt(const ::nebula::Value& val);
 
-  using Parts = std::unordered_map<PartitionID, std::vector<cpp2::NewEdge>>;
-  static std::string dumpParts(const Parts& parts);
+  static int64_t toInt2(const std::string& val);
+
+  static std::string readableKey(size_t vidLen, const std::string& rawKey);
+
+  static std::vector<std::string> toStrKeys(const cpp2::DeleteEdgesRequest& req, int vidLen);
+
+  static ::nebula::cpp2::ErrorCode getErrorCode(const cpp2::ExecResponse& resp);
+};
+
+struct DeleteEdgesRequestHelper final {
+  static cpp2::DeleteEdgesRequest toDeleteEdgesRequest(const cpp2::ChainDeleteEdgesRequest& req);
+
+  static cpp2::ChainDeleteEdgesRequest toChainDeleteEdgesRequest(
+      const cpp2::DeleteEdgesRequest& req);
+
+  static cpp2::DeleteEdgesRequest parseDeleteEdgesRequest(const std::string& val);
+
+  static std::string explain(const cpp2::DeleteEdgesRequest& req);
 };
 
 }  // namespace storage

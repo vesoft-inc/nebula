@@ -3,10 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include "daemons/SetupLogging.h"
+
+#include <glog/logging.h>
+
+#include <string>
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/fs/FileUtils.h"
-
 DECLARE_string(log_dir);
 
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
@@ -16,12 +21,17 @@ DEFINE_string(stderr_log_file, "stderr.log", "Destination filename of stderr");
 using nebula::Status;
 using nebula::fs::FileUtils;
 
-Status setupLogging() {
+Status setupLogging(const std::string &exe) {
   // If the log directory does not exist, try to create
-  if (!FileUtils::exist(FLAGS_log_dir)) {
-    if (!FileUtils::makeDir(FLAGS_log_dir)) {
-      return Status::Error("Failed to create log directory `%s'", FLAGS_log_dir.c_str());
-    }
+  if (!FileUtils::exist(FLAGS_log_dir) && !FileUtils::makeDir(FLAGS_log_dir)) {
+    return Status::Error("Failed to create log directory `%s'", FLAGS_log_dir.c_str());
+  }
+  if (!FLAGS_timestamp_in_logfile_name) {
+    google::SetLogDestination(google::GLOG_INFO, (FLAGS_log_dir + '/' + exe + ".INFO").c_str());
+    google::SetLogDestination(google::GLOG_WARNING,
+                              (FLAGS_log_dir + '/' + exe + ".WARNING").c_str());
+    google::SetLogDestination(google::GLOG_ERROR, (FLAGS_log_dir + '/' + exe + ".ERROR").c_str());
+    google::SetLogDestination(google::GLOG_FATAL, (FLAGS_log_dir + '/' + exe + ".FATAL").c_str());
   }
 
   if (!FLAGS_redirect_stdout) {

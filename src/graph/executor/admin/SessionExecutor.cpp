@@ -18,9 +18,8 @@ folly::Future<Status> ShowSessionsExecutor::execute() {
   auto *showNode = asNode<ShowSessions>(node());
   if (showNode->isSetSessionID()) {
     return getSession(showNode->getSessionId());
-  } else {
-    return listSessions();
   }
+  return showNode->isLocalCommand() ? listLocalSessions() : listSessions();
 }
 
 folly::Future<Status> ShowSessionsExecutor::listSessions() {
@@ -31,6 +30,7 @@ folly::Future<Status> ShowSessionsExecutor::listSessions() {
           return Status::Error("Show sessions failed: %s.", resp.status().toString().c_str());
         }
         auto sessions = resp.value().get_sessions();
+        // Construct result column names
         DataSet result({"SessionId",
                         "UserName",
                         "SpaceName",
@@ -40,19 +40,26 @@ folly::Future<Status> ShowSessionsExecutor::listSessions() {
                         "Timezone",
                         "ClientIp"});
         for (auto &session : sessions) {
-          Row row;
-          row.emplace_back(session.get_session_id());
-          row.emplace_back(session.get_user_name());
-          row.emplace_back(session.get_space_name());
-          row.emplace_back(microSecToDateTime(session.get_create_time()));
-          row.emplace_back(microSecToDateTime(session.get_update_time()));
-          row.emplace_back(network::NetworkUtils::toHostsStr({session.get_graph_addr()}));
-          row.emplace_back(session.get_timezone());
-          row.emplace_back(session.get_client_ip());
-          result.emplace_back(std::move(row));
+          addSessions(session, result);
         }
         return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
+}
+
+folly::Future<Status> ShowSessionsExecutor::listLocalSessions() {
+  auto localSessions = qctx_->rctx()->sessionMgr()->getSessionFromLocalCache();
+  DataSet result({"SessionId",
+                  "UserName",
+                  "SpaceName",
+                  "CreateTime",
+                  "UpdateTime",
+                  "GraphAddr",
+                  "Timezone",
+                  "ClientIp"});
+  for (auto &session : localSessions) {
+    addSessions(session, result);
+  }
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
 folly::Future<Status> ShowSessionsExecutor::getSession(SessionID sessionId) {
@@ -64,18 +71,32 @@ folly::Future<Status> ShowSessionsExecutor::getSession(SessionID sessionId) {
               "Get session `%ld' failed: %s.", sessionId, resp.status().toString().c_str());
         }
         auto session = resp.value().get_session();
-        DataSet result({"VariableName", "Value"});
-        result.emplace_back(Row({"SessionID", session.get_session_id()}));
-        result.emplace_back(Row({"UserName", session.get_user_name()}));
-        result.emplace_back(Row({"SpaceName", session.get_space_name()}));
-        result.emplace_back(Row({"CreateTime", microSecToDateTime(session.get_create_time())}));
-        result.emplace_back(Row({"UpdateTime", microSecToDateTime(session.get_update_time())}));
-        result.emplace_back(
-            Row({"GraphAddr", network::NetworkUtils::toHostsStr({session.get_graph_addr()})}));
-        result.emplace_back(Row({"Timezone", session.get_timezone()}));
-        result.emplace_back(Row({"ClientIp", session.get_client_ip()}));
+
+        // Construct result column names
+        DataSet result({"SessionId",
+                        "UserName",
+                        "SpaceName",
+                        "CreateTime",
+                        "UpdateTime",
+                        "GraphAddr",
+                        "Timezone",
+                        "ClientIp"});
+        addSessions(session, result);
         return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
+}
+
+void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataSet &dataSet) const {
+  Row row;
+  row.emplace_back(session.get_session_id());
+  row.emplace_back(session.get_user_name());
+  row.emplace_back(session.get_space_name());
+  row.emplace_back(microSecToDateTime(session.get_create_time()));
+  row.emplace_back(microSecToDateTime(session.get_update_time()));
+  row.emplace_back(network::NetworkUtils::toHostsStr({session.get_graph_addr()}));
+  row.emplace_back(session.get_timezone());
+  row.emplace_back(session.get_client_ip());
+  dataSet.emplace_back(std::move(row));
 }
 
 folly::Future<Status> UpdateSessionExecutor::execute() {

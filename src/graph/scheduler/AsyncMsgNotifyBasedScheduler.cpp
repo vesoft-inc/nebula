@@ -9,18 +9,20 @@ DECLARE_bool(enable_lifetime_optimize);
 
 namespace nebula {
 namespace graph {
+
 AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) : Scheduler() {
   qctx_ = qctx;
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
+  auto root = qctx_->plan()->root();
   if (FLAGS_enable_lifetime_optimize) {
     // special for root
-    qctx_->plan()->root()->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
-                                                           std::memory_order_relaxed);
-    analyzeLifetime(qctx_->plan()->root());
+    root->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
+                                          std::memory_order_relaxed);
+    analyzeLifetime(root);
   }
-  auto executor = Executor::create(qctx_->plan()->root(), qctx_);
+  auto executor = Executor::create(root, qctx_);
   return doSchedule(executor);
 }
 
@@ -42,18 +44,28 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
     queue.pop();
     queue2.push(exe);
 
-    std::vector<folly::Future<Status>> futures;
-    for (auto* dep : exe->depends()) {
-      auto notVisited = visited.emplace(dep).second;
-      if (notVisited) {
-        queue.push(dep);
+    std::vector<folly::Future<Status>>& futures = futureMap[exe->id()];
+    if (exe->node()->kind() == PlanNode::Kind::kArgument) {
+      auto nodeInputVar = exe->node()->inputVar();
+      const auto& writtenBy = qctx_->symTable()->getVar(nodeInputVar)->writtenBy;
+      for (auto& node : writtenBy) {
+        folly::Promise<Status> p;
+        futures.emplace_back(p.getFuture());
+        auto& promises = promiseMap[node->id()];
+        promises.emplace_back(std::move(p));
       }
-      folly::Promise<Status> p;
-      futures.emplace_back(p.getFuture());
-      auto& promises = promiseMap[dep->id()];
-      promises.emplace_back(std::move(p));
+    } else {
+      for (auto* dep : exe->depends()) {
+        auto notVisited = visited.emplace(dep).second;
+        if (notVisited) {
+          queue.push(dep);
+        }
+        folly::Promise<Status> p;
+        futures.emplace_back(p.getFuture());
+        auto& promises = promiseMap[dep->id()];
+        promises.emplace_back(std::move(p));
+      }
     }
-    futureMap.emplace(exe->id(), std::move(futures));
   }
 
   while (!queue2.empty()) {
@@ -68,174 +80,113 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
     DCHECK(currentPromisesFound != promiseMap.end());
     auto currentExePromises = std::move(currentPromisesFound->second);
 
-    scheduleExecutor(std::move(currentExeFutures), exe, runner, std::move(currentExePromises));
+    scheduleExecutor(std::move(currentExeFutures), exe, runner)
+        .thenTry([this, pros = std::move(currentExePromises)](auto&& t) mutable {
+          if (t.hasException()) {
+            notifyError(pros, Status::Error(std::move(t).exception().what()));
+          } else {
+            auto v = std::move(t).value();
+            if (v.ok()) {
+              notifyOK(pros);
+            } else {
+              notifyError(pros, v);
+            }
+          }
+        });
   }
 
   return resultFuture;
 }
 
-void AsyncMsgNotifyBasedScheduler::scheduleExecutor(
-    std::vector<folly::Future<Status>>&& futures,
-    Executor* exe,
-    folly::Executor* runner,
-    std::vector<folly::Promise<Status>>&& promises) const {
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::scheduleExecutor(
+    std::vector<folly::Future<Status>>&& futures, Executor* exe, folly::Executor* runner) const {
   switch (exe->node()->kind()) {
     case PlanNode::Kind::kSelect: {
       auto select = static_cast<SelectExecutor*>(exe);
-      runSelect(std::move(futures), select, runner, std::move(promises));
-      break;
+      return runSelect(std::move(futures), select, runner);
     }
     case PlanNode::Kind::kLoop: {
       auto loop = static_cast<LoopExecutor*>(exe);
-      runLoop(std::move(futures), loop, runner, std::move(promises));
-      break;
+      return runLoop(std::move(futures), loop, runner);
+    }
+    case PlanNode::Kind::kArgument: {
+      return runExecutor(std::move(futures), exe, runner);
     }
     default: {
       if (exe->depends().empty()) {
-        runLeafExecutor(exe, runner, std::move(promises));
+        return runLeafExecutor(exe, runner);
       } else {
-        runExecutor(std::move(futures), exe, runner, std::move(promises));
+        return runExecutor(std::move(futures), exe, runner);
       }
-      break;
     }
   }
 }
 
-void AsyncMsgNotifyBasedScheduler::runSelect(std::vector<folly::Future<Status>>&& futures,
-                                             SelectExecutor* select,
-                                             folly::Executor* runner,
-                                             std::vector<folly::Promise<Status>>&& promises) const {
-  folly::collect(futures).via(runner).thenTry([select, pros = std::move(promises), this](
-                                                  auto&& t) mutable {
-    if (t.hasException()) {
-      return notifyError(pros, Status::Error(t.exception().what()));
-    }
-    auto status = std::move(t).value();
-    auto s = checkStatus(std::move(status));
-    if (!s.ok()) {
-      return notifyError(pros, s);
-    }
-
-    std::move(execute(select))
-        .thenTry([select, pros = std::move(pros), this](auto&& selectTry) mutable {
-          if (selectTry.hasException()) {
-            return notifyError(pros, Status::Error(selectTry.exception().what()));
-          }
-          auto selectStatus = std::move(selectTry).value();
-          if (!selectStatus.ok()) {
-            return notifyError(pros, selectStatus);
-          }
-          auto val = qctx_->ectx()->getValue(select->node()->outputVar());
-          if (!val.isBool()) {
-            std::stringstream ss;
-            ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
-            return notifyError(pros, Status::Error(ss.str()));
-          }
-
-          auto selectFuture = folly::makeFuture<Status>(Status::OK());
-          if (val.getBool()) {
-            selectFuture = doSchedule(select->thenBody());
-          } else {
-            selectFuture = doSchedule(select->elseBody());
-          }
-          std::move(selectFuture).thenTry([pros = std::move(pros), this](auto&& bodyTry) mutable {
-            if (bodyTry.hasException()) {
-              return notifyError(pros, Status::Error(bodyTry.exception().what()));
-            }
-            auto bodyStatus = std::move(bodyTry).value();
-            if (!bodyStatus.ok()) {
-              return notifyError(pros, bodyStatus);
-            } else {
-              return notifyOK(pros);
-            }
-          });
-        });
-  });
-}
-
-void AsyncMsgNotifyBasedScheduler::runExecutor(
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::runSelect(
     std::vector<folly::Future<Status>>&& futures,
-    Executor* exe,
-    folly::Executor* runner,
-    std::vector<folly::Promise<Status>>&& promises) const {
-  folly::collect(futures).via(runner).thenTry(
-      [exe, pros = std::move(promises), this](auto&& t) mutable {
-        if (t.hasException()) {
-          return notifyError(pros, Status::Error(t.exception().what()));
+    SelectExecutor* select,
+    folly::Executor* runner) const {
+  return folly::collect(futures)
+      .via(runner)
+      .thenValue([select, this](auto&& t) mutable -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(checkStatus(std::move(t)));
+        return execute(select);
+      })
+      .thenValue([select, this](auto&& selectStatus) mutable -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(selectStatus);
+        auto val = qctx_->ectx()->getValue(select->node()->outputVar());
+        if (!val.isBool()) {
+          std::stringstream ss;
+          ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
+          return Status::Error(ss.str());
         }
-        auto status = std::move(t).value();
-        auto depStatus = checkStatus(std::move(status));
-        if (!depStatus.ok()) {
-          return notifyError(pros, depStatus);
+
+        if (val.getBool()) {
+          return doSchedule(select->thenBody());
         }
-        // Execute in current thread.
-        std::move(execute(exe)).thenTry([pros = std::move(pros), this](auto&& exeTry) mutable {
-          if (exeTry.hasException()) {
-            return notifyError(pros, Status::Error(exeTry.exception().what()));
-          }
-          auto exeStatus = std::move(exeTry).value();
-          if (!exeStatus.ok()) {
-            return notifyError(pros, exeStatus);
-          }
-          return notifyOK(pros);
-        });
+        return doSchedule(select->elseBody());
       });
 }
 
-void AsyncMsgNotifyBasedScheduler::runLeafExecutor(
-    Executor* exe, folly::Executor* runner, std::vector<folly::Promise<Status>>&& promises) const {
-  std::move(execute(exe)).via(runner).thenTry([pros = std::move(promises), this](auto&& t) mutable {
-    if (t.hasException()) {
-      return notifyError(pros, Status::Error(t.exception().what()));
-    }
-    auto s = std::move(t).value();
-    if (!s.ok()) {
-      return notifyError(pros, s);
-    }
-    return notifyOK(pros);
-  });
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::runExecutor(
+    std::vector<folly::Future<Status>>&& futures, Executor* exe, folly::Executor* runner) const {
+  return folly::collect(futures).via(runner).thenValue(
+      [exe, this](auto&& t) mutable -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(checkStatus(std::move(t)));
+        // Execute in current thread.
+        return execute(exe);
+      });
 }
 
-void AsyncMsgNotifyBasedScheduler::runLoop(std::vector<folly::Future<Status>>&& futures,
-                                           LoopExecutor* loop,
-                                           folly::Executor* runner,
-                                           std::vector<folly::Promise<Status>>&& promises) const {
-  folly::collect(futures).via(runner).thenTry(
-      [loop, runner, pros = std::move(promises), this](auto&& t) mutable {
-        if (t.hasException()) {
-          return notifyError(pros, Status::Error(t.exception().what()));
-        }
-        auto status = std::move(t).value();
-        auto s = checkStatus(std::move(status));
-        if (!s.ok()) {
-          return notifyError(pros, s);
-        }
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLeafExecutor(Executor* exe,
+                                                                    folly::Executor* runner) const {
+  return std::move(execute(exe)).via(runner);
+}
 
-        std::move(execute(loop))
-            .thenTry([loop, runner, pros = std::move(pros), this](auto&& loopTry) mutable {
-              if (loopTry.hasException()) {
-                return notifyError(pros, Status::Error(loopTry.exception().what()));
-              }
-              auto loopStatus = std::move(loopTry).value();
-              if (!loopStatus.ok()) {
-                return notifyError(pros, loopStatus);
-              }
-              auto val = qctx_->ectx()->getValue(loop->node()->outputVar());
-              if (!val.isBool()) {
-                std::stringstream ss;
-                ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
-                return notifyError(pros, Status::Error(ss.str()));
-              }
-              if (val.getBool()) {
-                auto loopBody = loop->loopBody();
-                auto scheduleFuture = doSchedule(loopBody);
-                std::vector<folly::Future<Status>> fs;
-                fs.emplace_back(std::move(scheduleFuture));
-                runLoop(std::move(fs), loop, runner, std::move(pros));
-              } else {
-                return notifyOK(pros);
-              }
-            });
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLoop(
+    std::vector<folly::Future<Status>>&& futures,
+    LoopExecutor* loop,
+    folly::Executor* runner) const {
+  return folly::collect(futures)
+      .via(runner)
+      .thenValue([loop, this](auto&& t) mutable -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(checkStatus(std::move(t)));
+        return execute(loop);
+      })
+      .thenValue([loop, runner, this](auto&& loopStatus) mutable -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(loopStatus);
+        auto val = qctx_->ectx()->getValue(loop->node()->outputVar());
+        if (!val.isBool()) {
+          std::stringstream ss;
+          ss << "Loop produces a bad condition result: " << val << " type: " << val.type();
+          return Status::Error(ss.str());
+        }
+        if (!val.getBool()) {
+          return Status::OK();
+        }
+        std::vector<folly::Future<Status>> fs;
+        fs.emplace_back(doSchedule(loop->loopBody()));
+        return runLoop(std::move(fs), loop, runner);
       });
 }
 

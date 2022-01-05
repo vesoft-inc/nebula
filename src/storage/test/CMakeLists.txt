@@ -2,6 +2,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v2_thrift_obj>
     $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
@@ -52,6 +53,10 @@ set(storage_test_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
 )
 
 nebula_add_test(
@@ -647,6 +652,26 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        index_scan_topN_test
+    SOURCES
+        IndexScanTopNTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
 nebula_add_executable(
     NAME
         es_bulk_example
@@ -676,21 +701,6 @@ nebula_add_executable(
         wangle
         follybenchmark
         boost_regex
-)
-
-nebula_add_test(
-    NAME
-        list_cluster_info_test
-    SOURCES
-        ListClusterInfoTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
 )
 
 nebula_add_test(

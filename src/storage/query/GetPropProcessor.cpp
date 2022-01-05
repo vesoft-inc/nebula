@@ -82,10 +82,10 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
       auto partId = partEntry.first;
       for (const auto& row : partEntry.second) {
         cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(row.values[0].getStr());
-        edgeKey.set_edge_type(row.values[1].getInt());
-        edgeKey.set_ranking(row.values[2].getInt());
-        edgeKey.set_dst(row.values[3].getStr());
+        edgeKey.src_ref() = row.values[0].getStr();
+        edgeKey.edge_type_ref() = row.values[1].getInt();
+        edgeKey.ranking_ref() = row.values[2].getInt();
+        edgeKey.dst_ref() = row.values[3].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
@@ -167,10 +167,10 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
       auto plan = buildEdgePlan(context, result);
       for (const auto& row : input) {
         cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(row.values[0].getStr());
-        edgeKey.set_edge_type(row.values[1].getInt());
-        edgeKey.set_ranking(row.values[2].getInt());
-        edgeKey.set_dst(row.values[3].getStr());
+        edgeKey.src_ref() = row.values[0].getStr();
+        edgeKey.edge_type_ref() = row.values[1].getInt();
+        edgeKey.ranking_ref() = row.values[2].getInt();
+        edgeKey.dst_ref() = row.values[3].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
@@ -305,7 +305,9 @@ void GetPropProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeP
   }
 }
 
-void GetPropProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void GetPropProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

@@ -34,6 +34,28 @@ Status JoinExecutor::checkInputDataSets() {
   return Status::OK();
 }
 
+Status JoinExecutor::checkBiInputDataSets() {
+  auto* join = asNode<BiJoin>(node());
+  lhsIter_ = ectx_->getResult(join->leftInputVar()).iter();
+  DCHECK(!!lhsIter_);
+  VLOG(1) << "lhs: " << join->leftInputVar() << " " << lhsIter_->size();
+  if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << lhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  rhsIter_ = ectx_->getResult(join->rightInputVar()).iter();
+  DCHECK(!!rhsIter_);
+  VLOG(1) << "rhs: " << join->rightInputVar() << " " << rhsIter_->size();
+  if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << rhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  colSize_ = join->colNames().size();
+  return Status::OK();
+}
+
 void JoinExecutor::buildHashTable(
     const std::vector<Expression*>& hashKeys,
     Iterator* iter,

@@ -14,39 +14,40 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> LeftJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
+  auto* joinNode = asNode<Join>(node());
+  auto& rhsResult =
+      ectx_->getVersionedResult(joinNode->rightVar().first, joinNode->rightVar().second);
+  rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
   NG_RETURN_IF_ERROR(checkInputDataSets());
-  return join();
+  return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
 }
 
-Status LeftJoinExecutor::close() { return Executor::close(); }
+Status LeftJoinExecutor::close() {
+  return Executor::close();
+}
 
-folly::Future<Status> LeftJoinExecutor::join() {
-  auto* join = asNode<Join>(node());
-  auto& rhsResult = ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second);
-  rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
-
-  auto& hashKeys = join->hashKeys();
-  auto& probeKeys = join->probeKeys();
+folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& hashKeys,
+                                             const std::vector<Expression*>& probeKeys,
+                                             const std::vector<std::string>& colNames) {
   DCHECK_EQ(hashKeys.size(), probeKeys.size());
   DataSet result;
-
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
     std::unordered_map<Value, std::vector<const Row*>> hashTable;
-    hashTable.reserve(rhsIter_->size() == 0 ? 1 : rhsIter_->size());
+    hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
-      buildSingleKeyHashTable(join->probeKeys().front(), rhsIter_.get(), hashTable);
-      result = singleKeyProbe(join->hashKeys().front(), lhsIter_.get(), hashTable);
+      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable);
+      result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
     std::unordered_map<List, std::vector<const Row*>> hashTable;
-    hashTable.reserve(rhsIter_->size() == 0 ? 1 : rhsIter_->size());
+    hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
-      buildHashTable(join->probeKeys(), rhsIter_.get(), hashTable);
-      result = probe(join->hashKeys(), lhsIter_.get(), hashTable);
+      buildHashTable(probeKeys, rhsIter_.get(), hashTable);
+      result = probe(hashKeys, lhsIter_.get(), hashTable);
     }
   }
 
-  result.colNames = join->colNames();
+  result.colNames = colNames;
   VLOG(2) << node_->toString() << ", result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
@@ -99,7 +100,7 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
     values.insert(values.end(),
                   std::make_move_iterator(lRow.values.begin()),
                   std::make_move_iterator(lRow.values.end()));
-    values.insert(values.end(), colSize_ - lRowSize, Value::kEmpty);
+    values.insert(values.end(), colSize_ - lRowSize, Value::kNullValue);
     ds.rows.emplace_back(std::move(newRow));
   } else {
     for (auto* row : range->second) {
@@ -116,5 +117,17 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
   }
 }
 
+BiLeftJoinExecutor::BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
+    : LeftJoinExecutor(node, qctx) {
+  name_ = "BiLeftJoinExecutor";
+}
+folly::Future<Status> BiLeftJoinExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  auto* joinNode = asNode<BiJoin>(node());
+  auto& rhsResult = ectx_->getResult(joinNode->rightInputVar());
+  rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
+  NG_RETURN_IF_ERROR(checkBiInputDataSets());
+  return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
+}
 }  // namespace graph
 }  // namespace nebula

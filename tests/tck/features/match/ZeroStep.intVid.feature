@@ -323,53 +323,53 @@ Feature: Variable length Pattern match int vid (0 step)
     When executing query:
       """
       MATCH (v) -[*0..1]-(v2:player{name: "Tim Duncan"})-[e*1..2]->(v3)
-      RETURN DISTINCT v3.name AS Name, e ORDER BY Name
+      RETURN DISTINCT v3.player.name AS pName, v3.team.name as tName, e ORDER BY pName
       """
     Then the result should be, in any order:
-      | Name                | e                                                                                                                                                                          |
-      | "Cavaliers"         | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]]                 |
-      | "Danny Green"       | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]]                                                                                            |
-      | "Hornets"           | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]]                                           |
-      | "Hornets"           | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]]                   |
-      | "Kyle Anderson"     | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]]          |
-      | "Kyle Anderson"     | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]]                                  |
-      | "LaMarcus Aldridge" | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}]]                                                                                      |
-      | "LaMarcus Aldridge" | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}]]      |
-      | "LaMarcus Aldridge" | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}]]                              |
-      | "LaMarcus Aldridge" | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]]                              |
-      | "LaMarcus Aldridge" | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]]                                                      |
-      | "LeBron James"      | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"LeBron James" @0 {likeness: 80}]]                                   |
-      | "Manu Ginobili"     | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]]          |
-      | "Manu Ginobili"     | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]]                                                          |
-      | "Manu Ginobili"     | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]]                                  |
-      | "Manu Ginobili"     | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]]                                  |
-      | "Manu Ginobili"     | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}]]                                                                                          |
-      | "Manu Ginobili"     | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]]                                                                                                                  |
-      | "Marco Belinelli"   | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]]                                |
-      | "Raptors"           | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Raptors" @0 {end_year: 2019, start_year: 2018}]]                   |
-      | "Spurs"             | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]]                                         |
-      | "Spurs"             | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]]                 |
-      | "Spurs"             | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]]                                             |
-      | "Spurs"             | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]]                     |
-      | "Spurs"             | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Spurs" @0 {end_year: 2018, start_year: 2010}]]                     |
-      | "Spurs"             | [[:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]]                                                                                                     |
-      | "Spurs"             | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]]         |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]]                                     |
-      | "Tim Duncan"        | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]                                                         |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]                                 |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]]             |
-      | "Tim Duncan"        | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]]                                     |
-      | "Tim Duncan"        | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]]                                 |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                                     |
-      | "Tim Duncan"        | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                                                             |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]]         |
-      | "Tim Duncan"        | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]]                         |
-      | "Tony Parker"       | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]]                                                                                            |
-      | "Tony Parker"       | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]]                        |
-      | "Tony Parker"       | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:teammate "Manu Ginobili"->"Tony Parker" @0 {end_year: 2016, start_year: 2002}]]                                |
-      | "Tony Parker"       | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:teammate "Manu Ginobili"->"Tony Parker" @0 {end_year: 2016, start_year: 2002}]]        |
-      | "Tony Parker"       | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                                                                                                                    |
-      | "Trail Blazers"     | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}]] |
+      | pName               | tName           | e                                                                                                                                                                          |
+      | "Danny Green"       | NULL            | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]]                                                                                            |
+      | "Kyle Anderson"     | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]]                                  |
+      | "Kyle Anderson"     | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]]          |
+      | "LaMarcus Aldridge" | NULL            | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}]]                                                                                      |
+      | "LaMarcus Aldridge" | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]]                                                      |
+      | "LaMarcus Aldridge" | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]]                              |
+      | "LaMarcus Aldridge" | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}]]                              |
+      | "LaMarcus Aldridge" | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}]]      |
+      | "LeBron James"      | NULL            | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"LeBron James" @0 {likeness: 80}]]                                   |
+      | "Manu Ginobili"     | NULL            | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}]]                                                                                          |
+      | "Manu Ginobili"     | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]]                                                          |
+      | "Manu Ginobili"     | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]]                                  |
+      | "Manu Ginobili"     | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]]                                  |
+      | "Manu Ginobili"     | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]]          |
+      | "Manu Ginobili"     | NULL            | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]]                                                                                                                  |
+      | "Marco Belinelli"   | NULL            | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]]                                |
+      | "Tim Duncan"        | NULL            | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]]                                 |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]]                         |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]]             |
+      | "Tim Duncan"        | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]]                                     |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                                     |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]]                                     |
+      | "Tim Duncan"        | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                                                             |
+      | "Tim Duncan"        | NULL            | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]                                                         |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]                                 |
+      | "Tim Duncan"        | NULL            | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]]         |
+      | "Tony Parker"       | NULL            | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:teammate "Manu Ginobili"->"Tony Parker" @0 {end_year: 2016, start_year: 2002}]]                                |
+      | "Tony Parker"       | NULL            | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                                                                                                                    |
+      | "Tony Parker"       | NULL            | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]]                                                                                            |
+      | "Tony Parker"       | NULL            | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:teammate "Manu Ginobili"->"Tony Parker" @0 {end_year: 2016, start_year: 2002}]]        |
+      | "Tony Parker"       | NULL            | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]]                        |
+      | NULL                | "Cavaliers"     | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]]                 |
+      | NULL                | "Spurs"         | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]]                                         |
+      | NULL                | "Spurs"         | [[:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}], [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]]                 |
+      | NULL                | "Spurs"         | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Spurs" @0 {end_year: 2018, start_year: 2010}]]                     |
+      | NULL                | "Spurs"         | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]]                                             |
+      | NULL                | "Spurs"         | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]]                     |
+      | NULL                | "Spurs"         | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]]         |
+      | NULL                | "Hornets"       | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]]                                           |
+      | NULL                | "Hornets"       | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}], [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]]                   |
+      | NULL                | "Spurs"         | [[:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]]                                                                                                     |
+      | NULL                | "Trail Blazers" | [[:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}], [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}]] |
+      | NULL                | "Raptors"       | [[:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}], [:serve "Danny Green"->"Raptors" @0 {end_year: 2019, start_year: 2018}]]                   |
     When executing query:
       """
       MATCH (v) -[e1*0..1{likeness: 90}]-(v2:player{name: "Tony Parker"})-[*1..2]->(v3)

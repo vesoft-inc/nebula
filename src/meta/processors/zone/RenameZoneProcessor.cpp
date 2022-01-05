@@ -5,11 +5,14 @@
 
 #include "meta/processors/zone/RenameZoneProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
 void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
   folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
 
   auto originalZoneName = req.get_original_zone_name();
   auto originalZoneKey = MetaKeyUtils::zoneKey(originalZoneName);
@@ -41,44 +44,27 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
     return;
   }
 
-  std::vector<kvstore::KV> data;
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   auto iter = nebula::value(ret).get();
   while (iter->valid()) {
-    auto spaceKey = iter->key();
+    auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto zones = properties.get_zone_names();
     auto it = std::find(zones.begin(), zones.end(), originalZoneName);
     if (it != zones.end()) {
       std::replace(zones.begin(), zones.end(), originalZoneName, zoneName);
-      properties.set_zone_names(zones);
+      properties.zone_names_ref() = zones;
+      auto spaceKey = MetaKeyUtils::spaceKey(id);
       auto spaceVal = MetaKeyUtils::spaceVal(properties);
-      data.emplace_back(spaceKey, std::move(spaceVal));
+      batchHolder->put(std::move(spaceKey), std::move(spaceVal));
     }
     iter->next();
   }
 
-  folly::Baton<true, std::atomic> baton;
-  auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
-  std::vector<std::string> keys = {originalZoneKey};
-  kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(keys),
-                             [&result, &baton](nebula::cpp2::ErrorCode code) {
-                               if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                                 result = code;
-                                 LOG(INFO) << "Remove data error on meta server";
-                               }
-                               baton.post();
-                             });
-  baton.wait();
-  if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    this->handleErrorCode(result);
-    this->onFinished();
-    return;
-  }
-
-  data.emplace_back(zoneKey, originalZoneValue);
-  doSyncPutAndUpdate(std::move(data));
+  batchHolder->remove(MetaKeyUtils::zoneKey(originalZoneName));
+  batchHolder->put(std::move(zoneKey), std::move(originalZoneValue));
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 }  // namespace meta

@@ -28,7 +28,7 @@ StatusOr<SubPlan> ScanSeek::transformEdge(EdgeContext *edgeCtx) {
 bool ScanSeek::matchNode(NodeContext *nodeCtx) {
   auto &node = *nodeCtx->info;
   // only require the tag
-  if (node.tids.size() == 0) {
+  if (node.tids.empty()) {
     // empty labels means all labels
     const auto *qctx = nodeCtx->matchClauseCtx->qctx;
     auto allLabels = qctx->schemaMng()->getAllTags(nodeCtx->matchClauseCtx->space.id);
@@ -63,8 +63,8 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
   for (std::size_t i = 0; i < nodeCtx->scanInfo.schemaIds.size(); ++i) {
     storage::cpp2::VertexProp vProp;
     std::vector<std::string> props{kTag};
-    vProp.set_tag(nodeCtx->scanInfo.schemaIds[i]);
-    vProp.set_props(std::move(props));
+    vProp.tag_ref() = nodeCtx->scanInfo.schemaIds[i];
+    vProp.props_ref() = std::move(props);
     vProps->emplace_back(std::move(vProp));
     colNames.emplace_back(nodeCtx->scanInfo.schemaNames[i] + "." + kTag);
   }
@@ -92,8 +92,11 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
       prev = notEmpty;
     }
   }
-  auto *filter = Filter::make(qctx, scanVertices, prev);
-  plan.root = filter;
+  if (prev != nullptr) {
+    // prev equals to nullptr happend when there are no tags in whole space
+    auto *filter = Filter::make(qctx, scanVertices, prev);
+    plan.root = filter;
+  }
 
   nodeCtx->initialExpr = InputPropertyExpression::make(pool, kVid);
   return plan;

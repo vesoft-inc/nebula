@@ -94,7 +94,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
   if (helper_->checkHadoopPath()) {
     std::vector<std::string> parts;
     folly::split(",", partitions_, parts, true);
-    if (parts.size() == 0) {
+    if (parts.empty()) {
       ResponseBuilder(downstream_)
           .status(400, "SSTFile download failed")
           .body("Partitions should be not empty")
@@ -127,7 +127,9 @@ void StorageHttpDownloadHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpDownloadHandler::requestComplete() noexcept { delete this; }
+void StorageHttpDownloadHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service StorageHttpDownloadHandler got error: "

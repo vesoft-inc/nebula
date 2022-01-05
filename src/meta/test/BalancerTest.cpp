@@ -10,6 +10,9 @@
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
 #include "meta/processors/job/BalanceJobExecutor.h"
+#include "meta/processors/job/DataBalanceJobExecutor.h"
+#include "meta/processors/job/LeaderBalanceJobExecutor.h"
+#include "meta/processors/job/ZoneBalanceJobExecutor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/TestUtils.h"
@@ -90,6 +93,310 @@ TEST(BalanceTest, BalanceTaskTest) {
   LOG(INFO) << "Test finished!";
 }
 
+SpaceInfo createSpaceInfo(
+    const std::string& name,
+    GraphSpaceID spaceId,
+    int32_t replica,
+    const std::vector<
+        std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>>>&
+        zones) {
+  SpaceInfo spaceInfo;
+  spaceInfo.name_ = name;
+  spaceInfo.spaceId_ = spaceId;
+  spaceInfo.replica_ = replica;
+  for (const auto& z : zones) {
+    Zone zone(z.first);
+    for (const auto& h : z.second) {
+      Host host(h.first);
+      for (const auto& p : h.second) {
+        host.parts_.insert(p);
+      }
+      zone.hosts_.emplace(host.host_, host);
+    }
+    spaceInfo.zones_.emplace(zone.zoneName_, zone);
+  }
+  return spaceInfo;
+}
+
+void checkZoneAvg(const Zone& zone) {
+  int32_t avg = zone.partNum_ / zone.hosts_.size();
+  for (const auto& p : zone.hosts_) {
+    EXPECT_EQ(p.second.parts_.size() - avg <= 1, true);
+  }
+}
+
+void checkConflic(const Zone& zone) {
+  int32_t totalNum = 0;
+  for (const auto& p : zone.hosts_) {
+    totalNum += p.second.parts_.size();
+  }
+  EXPECT_EQ(totalNum, zone.partNum_);
+}
+
+TEST(BalanceTest, RemoveZonePlanTest) {
+  fs::TempDir rootPath("/tmp/RemoveZoneTest.XXXXXX");
+  std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
+  SpaceInfo spaceInfo = createSpaceInfo(
+      "space1",
+      1,
+      3,
+      {{"zone1",
+        {{{"127.0.0.1", 11}, {5}},
+         {{"127.0.0.1", 12}, {10, 15}},
+         {{"127.0.0.1", 13}, {12, 13, 14}}}},
+       {"zone2",
+        {{{"127.0.0.1", 21}, {3, 4}}, {{"127.0.0.1", 22}, {8}}, {{"127.0.0.1", 23}, {15}}}},
+       {"zone3",
+        {{{"127.0.0.1", 31}, {1, 2}},
+         {{"127.0.0.1", 32}, {6, 7, 8, 9, 10}},
+         {{"127.0.0.1", 33}, {11, 12}}}},
+       {"zone4",
+        {{{"127.0.0.1", 41}, {1, 2, 3}},
+         {{"127.0.0.1", 42}, {6, 7, 11}},
+         {{"127.0.0.1", 43}, {12, 13, 14}}}},
+       {"zone5",
+        {{{"127.0.0.1", 51}, {3, 4, 5}},
+         {{"127.0.0.1", 52}, {9, 10, 11}},
+         {{"127.0.0.1", 53}, {13, 14, 15}}}},
+       {"zone6", {{{"127.0.0.1", 61}, {4}}, {{"127.0.0.1", 62}, {8, 9}}}},
+       {"zone7",
+        {{{"127.0.0.1", 71}, {1, 2}}, {{"127.0.0.1", 72}, {6, 7}}, {{"127.0.0.1", 73}, {5}}}}});
+  ZoneBalanceJobExecutor balancer(JobDescription(), store.get(), nullptr, {});
+  balancer.lostZones_ = {"zone6", "zone7"};
+  balancer.spaceInfo_ = spaceInfo;
+  Status status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone1"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone2"]);
+
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone4"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone6"].partNum_, 0);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone7"].partNum_, 0);
+  checkConflic(balancer.spaceInfo_.zones_["zone1"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone2"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone3"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone4"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone5"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone6"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone7"]);
+}
+
+TEST(BalanceTest, BalanceZonePlanTest) {
+  fs::TempDir rootPath("/tmp/BalanceZoneTest.XXXXXX");
+  std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
+  SpaceInfo spaceInfo = createSpaceInfo(
+      "space1",
+      1,
+      3,
+      {
+          {"zone1",
+           {{{"127.0.0.1", 11}, {5}},
+            {{"127.0.0.1", 12}, {10, 15}},
+            {{"127.0.0.1", 13}, {12, 13, 14}}}},
+          {"zone2",
+           {{{"127.0.0.1", 21}, {3, 4}}, {{"127.0.0.1", 22}, {8}}, {{"127.0.0.1", 23}, {15}}}},
+          {"zone3",
+           {{{"127.0.0.1", 31}, {1, 2}},
+            {{"127.0.0.1", 32}, {6, 7, 8, 9, 10}},
+            {{"127.0.0.1", 33}, {11, 12}}}},
+          {"zone4",
+           {{{"127.0.0.1", 41}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 42}, {6, 7, 8, 9, 11}},
+            {{"127.0.0.1", 43}, {12, 13, 14}}}},
+          {"zone5",
+           {{{"127.0.0.1", 51}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 52}, {6, 7, 9, 10, 11}},
+            {{"127.0.0.1", 53}, {13, 14, 15}}}},
+      });
+  ZoneBalanceJobExecutor balancer(JobDescription(), store.get(), nullptr, {});
+  balancer.spaceInfo_ = spaceInfo;
+  Status status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone4"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 9);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone1"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone2"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone4"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone5"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone1"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone2"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone3"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone4"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone5"]);
+  balancer.lostZones_ = {"zone4", "zone5"};
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 15);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 15);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 15);
+  balancer.lostZones_ = {};
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone4"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 9);
+}
+
+TEST(BalanceTest, BalanceZoneRemainderPlanTest) {
+  fs::TempDir rootPath("/tmp/BalanceZoneTest.XXXXXX");
+  std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
+  SpaceInfo spaceInfo = createSpaceInfo(
+      "space1",
+      1,
+      3,
+      {
+          {"zone1",
+           {{{"127.0.0.1", 11}, {5}},
+            {{"127.0.0.1", 12}, {10, 15}},
+            {{"127.0.0.1", 13}, {12, 13, 14}}}},
+          {"zone2",
+           {{{"127.0.0.1", 21}, {3, 4}}, {{"127.0.0.1", 22}, {8, 16}}, {{"127.0.0.1", 23}, {15}}}},
+          {"zone3",
+           {{{"127.0.0.1", 31}, {1, 2}},
+            {{"127.0.0.1", 32}, {6, 7, 8, 9, 10}},
+            {{"127.0.0.1", 33}, {11, 12}}}},
+          {"zone4",
+           {{{"127.0.0.1", 41}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 42}, {6, 7, 8, 9, 11}},
+            {{"127.0.0.1", 43}, {12, 13, 14, 16}}}},
+          {"zone5",
+           {{{"127.0.0.1", 51}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 52}, {6, 7, 9, 10, 11}},
+            {{"127.0.0.1", 53}, {13, 14, 15, 16}}}},
+      });
+  ZoneBalanceJobExecutor balancer(JobDescription(), store.get(), nullptr, {});
+  balancer.spaceInfo_ = spaceInfo;
+  Status status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 10);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone4"].partNum_, 10);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 10);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone1"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone2"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone4"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone5"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone1"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone2"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone3"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone4"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone5"]);
+
+  spaceInfo = createSpaceInfo(
+      "space1",
+      1,
+      3,
+      {
+          {"zone1",
+           {{{"127.0.0.1", 11}, {5}},
+            {{"127.0.0.1", 12}, {10, 15}},
+            {{"127.0.0.1", 13}, {12, 13, 14}}}},
+          {"zone2",
+           {{{"127.0.0.1", 21}, {3, 4}}, {{"127.0.0.1", 22}, {8}}, {{"127.0.0.1", 23}, {15}}}},
+          {"zone3",
+           {{{"127.0.0.1", 31}, {1, 2}},
+            {{"127.0.0.1", 32}, {6, 7, 8, 9, 10}},
+            {{"127.0.0.1", 33}, {11, 12, 16}}}},
+          {"zone4",
+           {{{"127.0.0.1", 41}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 42}, {6, 7, 8, 9, 11}},
+            {{"127.0.0.1", 43}, {12, 13, 14, 16}}}},
+          {"zone5",
+           {{{"127.0.0.1", 51}, {1, 2, 3, 4, 5}},
+            {{"127.0.0.1", 52}, {6, 7, 9, 10, 11}},
+            {{"127.0.0.1", 53}, {13, 14, 15, 16}}}},
+      });
+  balancer.spaceInfo_ = spaceInfo;
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone2"].partNum_, 9);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone3"].partNum_, 10);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone4"].partNum_, 10);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 10);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone1"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone2"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone4"]);
+  checkZoneAvg(balancer.spaceInfo_.zones_["zone5"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone1"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone2"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone3"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone4"]);
+  checkConflic(balancer.spaceInfo_.zones_["zone5"]);
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::Balanced());
+}
+
+TEST(BalanceTest, BalanceDataPlanTest) {
+  fs::TempDir rootPath("/tmp/BalanceZoneTest.XXXXXX");
+  std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
+  SpaceInfo spaceInfo = createSpaceInfo(
+      "space1",
+      1,
+      3,
+      {
+          {"zone1",
+           {{{"127.0.0.1", 11}, {1, 2, 3, 53, 54}},
+            {{"127.0.0.1", 12}, {4, 5}},
+            {{"127.0.0.1", 13}, {6, 7, 8, 9, 10, 11, 12, 13, 14, 15}},
+            {{"127.0.0.1", 14}, {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}},
+            {{"127.0.0.1", 15}, {31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+                                 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52}}}},
+      });
+  DataBalanceJobExecutor balancer(JobDescription(), store.get(), nullptr, {});
+  balancer.spaceInfo_ = spaceInfo;
+  Status status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 11)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 12)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 13)].parts_.size(),
+            10);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 14)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 15)].parts_.size(),
+            11);
+
+  spaceInfo = createSpaceInfo("space1",
+                              1,
+                              3,
+                              {{"zone1",
+                                {{{"127.0.0.1", 11}, {5, 6, 7, 8, 9, 10}},
+                                 {{"127.0.0.1", 12}, {11, 12, 13, 17, 18, 19, 20}},
+                                 {{"127.0.0.1", 13}, {21, 22, 23, 28, 29, 30}},
+                                 {{"127.0.0.1", 14}, {31, 32, 33, 34, 35, 36, 37, 38, 39, 40}},
+                                 {{"127.0.0.1", 15}, {41, 42, 43, 44, 45, 46, 47, 48, 49, 50}},
+                                 {{"127.0.0.1", 16}, {51, 52, 53, 54, 14, 15, 16}},
+                                 {{"127.0.0.1", 17}, {1, 2, 3, 4, 24, 25, 26, 27}}}}});
+  balancer.spaceInfo_ = spaceInfo;
+  balancer.lostHosts_ = {{"127.0.0.1", 16}, {"127.0.0.1", 17}};
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 11)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 12)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 13)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 14)].parts_.size(),
+            11);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 15)].parts_.size(),
+            10);
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::Balanced());
+}
+
 void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
   auto prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -113,656 +420,6 @@ void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
       ss << part << " ";
     }
     LOG(INFO) << "Host: " << it->first << " parts: " << ss.str();
-  }
-}
-
-HostParts assignHostParts(kvstore::KVStore* kv, GraphSpaceID spaceId) {
-  auto prefix = MetaKeyUtils::partPrefix(spaceId);
-  std::unique_ptr<kvstore::KVIterator> iter;
-  kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-  HostParts hostPart;
-  while (iter->valid()) {
-    auto key = iter->key();
-    PartitionID partId;
-    memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    auto hs = MetaKeyUtils::parsePartVal(iter->val());
-    for (auto h : hs) {
-      hostPart[h].emplace_back(partId);
-    }
-    iter->next();
-  }
-  return hostPart;
-}
-
-void testRestBlancer() {
-  DataBalanceJobExecutor::plan_.reset(nullptr);
-  BalanceJobExecutor::lock_.unlock();
-  BalanceJobExecutor::running_ = false;
-  LeaderBalanceJobExecutor::inLeaderBalance_ = false;
-}
-
-TEST(BalanceTest, SimpleTestWithZone) {
-  fs::TempDir rootPath("/tmp/SimpleTestWithZone.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 4; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-
-    // create zone and group
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}},
-                         {"zone_1", {{"1", 1}}},
-                         {"zone_2", {{"2", 2}}},
-                         {"zone_3", {{"3", 3}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
-    properties.set_zone_names(std::move(zones));
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
-  }
-  sleep(1);
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 1), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("2", 2), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
-    int32_t totalParts = 12;
-    std::vector<BalanceTask> tasks;
-    NiceMock<MockAdminClient> client;
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
-    auto code = balancer.assembleZoneParts(zones, hostParts);
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_EQ(3, it->second.size());
-    }
-    EXPECT_EQ(3, tasks.size());
-  }
-  testRestBlancer();
-}
-
-TEST(BalanceTest, ExpansionZoneTest) {
-  fs::TempDir rootPath("/tmp/ExpansionZoneTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 3; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-
-    // create zone and group
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}}}, {"zone_2", {{"2", 2}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
-  }
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 4; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}},
-                         {"zone_1", {{"1", 1}}},
-                         {"zone_2", {{"2", 2}}},
-                         {"zone_3", {{"3", 3}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
-    properties.set_zone_names(std::move(zones));
-    std::vector<kvstore::KV> data;
-    data.emplace_back(MetaKeyUtils::spaceKey(1), MetaKeyUtils::spaceVal(properties));
-    folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
-    baton.wait();
-  }
-  {
-    HostParts hostParts;
-    int32_t totalParts = 0;
-    auto result = balancer.getHostParts(1, true, hostParts, totalParts);
-    ASSERT_TRUE(nebula::ok(result));
-    std::vector<BalanceTask> tasks;
-    hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_EQ(3, it->second.size());
-    }
-    EXPECT_EQ(3, tasks.size());
-  }
-  testRestBlancer();
-}
-
-TEST(BalanceTest, ExpansionHostIntoZoneTest) {
-  fs::TempDir rootPath("/tmp/ExpansionHostIntoZoneTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 6; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-
-    // create zone and group
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}}}, {"zone_2", {{"2", 2}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
-  }
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 6; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}, {"3", 3}}},
-                         {"zone_1", {{"1", 1}, {"4", 4}}},
-                         {"zone_2", {{"2", 2}, {"5", 5}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    HostParts hostParts;
-    int32_t totalParts = 0;
-    auto result = balancer.getHostParts(1, true, hostParts, totalParts);
-    ASSERT_TRUE(nebula::ok(result));
-
-    std::vector<BalanceTask> tasks;
-    hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("4", 4), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("5", 5), std::vector<PartitionID>{});
-
-    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_EQ(2, it->second.size());
-    }
-    EXPECT_EQ(6, tasks.size());
-  }
-  testRestBlancer();
-}
-
-TEST(BalanceTest, ShrinkZoneTest) {
-  fs::TempDir rootPath("/tmp/ShrinkZoneTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 4; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-    // create zone and group
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}},
-                         {"zone_1", {{"1", 1}}},
-                         {"zone_2", {{"2", 2}}},
-                         {"zone_3", {{"3", 3}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
-    properties.set_zone_names(std::move(zones));
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
-  }
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  balancer.lostHosts_ = {{"3", 3}};
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-}
-
-TEST(BalanceTest, ShrinkHostFromZoneTest) {
-  fs::TempDir rootPath("/tmp/ShrinkHostFromZoneTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  {
-    std::vector<HostAddr> hosts;
-    for (int i = 0; i < 6; i++) {
-      hosts.emplace_back(std::to_string(i), i);
-    }
-    TestUtils::createSomeHosts(kv, hosts);
-    TestUtils::registerHB(kv, hosts);
-
-    // create zone and group
-    ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}, {"3", 3}}},
-                         {"zone_1", {{"1", 1}, {"4", 4}}},
-                         {"zone_2", {{"2", 2}, {"5", 5}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
-  }
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(0L, cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  showHostLoading(kv, 1);
-
-  {
-    ZoneInfo zoneInfo = {
-        {"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}, {"4", 4}}}, {"zone_2", {{"2", 2}, {"5", 5}}}};
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  balancer.lostHosts_ = {{"3", 3}};
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-}
-
-TEST(BalanceTest, BalanceWithComplexZoneTest) {
-  fs::TempDir rootPath("/tmp/LeaderBalanceWithComplexZoneTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  std::vector<HostAddr> hosts;
-  for (int i = 0; i < 18; i++) {
-    hosts.emplace_back(std::to_string(i), i);
-  }
-  TestUtils::createSomeHosts(kv, hosts);
-  TestUtils::registerHB(kv, hosts);
-
-  {
-    ZoneInfo zoneInfo = {
-        {"zone_0", {HostAddr("0", 0), HostAddr("1", 1)}},
-        {"zone_1", {HostAddr("2", 2), HostAddr("3", 3)}},
-        {"zone_2", {HostAddr("4", 4), HostAddr("5", 5)}},
-        {"zone_3", {HostAddr("6", 6), HostAddr("7", 7)}},
-        {"zone_4", {HostAddr("8", 8), HostAddr("9", 9)}},
-        {"zone_5", {HostAddr("10", 10), HostAddr("11", 11)}},
-        {"zone_6", {HostAddr("12", 12), HostAddr("13", 13)}},
-        {"zone_7", {HostAddr("14", 14), HostAddr("15", 15)}},
-        {"zone_8", {HostAddr("16", 16), HostAddr("17", 17)}},
-    };
-    TestUtils::assembleZone(kv, zoneInfo);
-  }
-  {
-    {
-      cpp2::SpaceDesc properties;
-      properties.set_space_name("default_space");
-      properties.set_partition_num(18);
-      properties.set_replica_factor(3);
-      cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
-      auto* processor = CreateSpaceProcessor::instance(kv);
-      auto f = processor->getFuture();
-      processor->process(req);
-      auto resp = std::move(f).get();
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-      ASSERT_EQ(1, resp.get_id().get_space_id());
-      LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
-      showHostLoading(kv, resp.get_id().get_space_id());
-    }
-    {
-      cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_0");
-      properties.set_partition_num(64);
-      properties.set_replica_factor(3);
-      std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-      properties.set_zone_names(std::move(zones));
-      cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
-      auto* processor = CreateSpaceProcessor::instance(kv);
-      auto f = processor->getFuture();
-      processor->process(req);
-      auto resp = std::move(f).get();
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-      ASSERT_EQ(2, resp.get_id().get_space_id());
-      LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
-      showHostLoading(kv, resp.get_id().get_space_id());
-    }
-    {
-      cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_1");
-      properties.set_partition_num(81);
-      properties.set_replica_factor(3);
-      std::vector<std::string> zones = {
-          "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
-      properties.set_zone_names(std::move(zones));
-      cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
-      auto* processor = CreateSpaceProcessor::instance(kv);
-      auto f = processor->getFuture();
-      processor->process(req);
-      auto resp = std::move(f).get();
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-      ASSERT_EQ(3, resp.get_id().get_space_id());
-      LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
-      showHostLoading(kv, resp.get_id().get_space_id());
-    }
-  }
-  sleep(1);
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  {
-    int32_t totalParts = 18 * 3;
-    std::vector<BalanceTask> tasks;
-    auto hostParts = assignHostParts(kv, 1);
-    balancer.balanceParts(1, hostParts, totalParts, tasks, true);
-  }
-  {
-    int32_t totalParts = 64 * 3;
-    std::vector<BalanceTask> tasks;
-    auto hostParts = assignHostParts(kv, 2);
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-    auto code = balancer.assembleZoneParts(zones, hostParts);
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(2, hostParts, totalParts, tasks, true);
-  }
-  {
-    auto dump = [](const HostParts& hostParts, const std::vector<BalanceTask>& tasks) {
-      for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-        std::stringstream ss;
-        ss << it->first << ": ";
-        for (auto partId : it->second) {
-          ss << partId << ", ";
-        }
-        LOG(INFO) << ss.str() << " size " << it->second.size();
-      }
-      for (const auto& task : tasks) {
-        LOG(INFO) << task.taskIdStr();
-      }
-    };
-
-    HostParts hostParts;
-    std::vector<PartitionID> parts;
-    for (int32_t i = 1; i <= 81; i++) {
-      parts.emplace_back(i);
-    }
-
-    for (int32_t i = 0; i < 18; i++) {
-      if (i == 10 || i == 12 || i == 14) {
-        hostParts.emplace(HostAddr(std::to_string(i), i), parts);
-      } else {
-        hostParts.emplace(HostAddr(std::to_string(i), i), std::vector<PartitionID>{});
-      }
-    }
-
-    LOG(INFO) << "=== original map ====";
-    int32_t totalParts = 243;
-    std::vector<BalanceTask> tasks;
-    dump(hostParts, tasks);
-    std::vector<std::string> zones = {
-        "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
-    auto code = balancer.assembleZoneParts(zones, hostParts);
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(3, hostParts, totalParts, tasks, true);
-
-    LOG(INFO) << "=== new map ====";
-    dump(hostParts, tasks);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_GE(it->second.size(), 5);
-      EXPECT_LE(it->second.size(), 24);
-
-      LOG(INFO) << "Host " << it->first << " Part Size " << it->second.size();
-    }
-    showHostLoading(kv, 3);
-  }
-}
-
-TEST(BalanceTest, BalancePartsTest) {
-  fs::TempDir rootPath("/tmp/BalancePartsTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-
-  auto dump = [](const HostParts& hostParts, const std::vector<BalanceTask>& tasks) {
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      std::stringstream ss;
-      ss << it->first << ": ";
-      for (auto partId : it->second) {
-        ss << partId << ", ";
-      }
-      VLOG(1) << ss.str();
-    }
-    for (const auto& task : tasks) {
-      VLOG(1) << task.taskIdStr();
-    }
-  };
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{});
-    int32_t totalParts = 12;
-    std::vector<BalanceTask> tasks;
-    VLOG(1) << "=== original map ====";
-    dump(hostParts, tasks);
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
-    VLOG(1) << "=== new map ====";
-    dump(hostParts, tasks);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_EQ(3, it->second.size());
-    }
-    EXPECT_EQ(3, tasks.size());
-  }
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4, 5});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 4, 5});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{2, 3, 4, 5});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{1, 3});
-    int32_t totalParts = 15;
-    std::vector<BalanceTask> tasks;
-    VLOG(1) << "=== original map ====";
-    dump(hostParts, tasks);
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
-    VLOG(1) << "=== new map ====";
-    dump(hostParts, tasks);
-    EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
-    EXPECT_EQ(4, hostParts[HostAddr("1", 0)].size());
-    EXPECT_EQ(4, hostParts[HostAddr("2", 0)].size());
-    EXPECT_EQ(3, hostParts[HostAddr("3", 0)].size());
-    EXPECT_EQ(1, tasks.size());
-  }
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 4, 5});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{2, 3, 4, 5});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{1, 3, 5});
-    int32_t totalParts = 15;
-    std::vector<BalanceTask> tasks;
-    VLOG(1) << "=== original map ====";
-    dump(hostParts, tasks);
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
-    VLOG(1) << "=== new map ====";
-    dump(hostParts, tasks);
-    EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
-    EXPECT_EQ(4, hostParts[HostAddr("1", 0)].size());
-    EXPECT_EQ(4, hostParts[HostAddr("2", 0)].size());
-    EXPECT_EQ(3, hostParts[HostAddr("3", 0)].size());
-    EXPECT_EQ(0, tasks.size());
-  }
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("4", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("5", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("6", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("7", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("8", 0), std::vector<PartitionID>{});
-    int32_t totalParts = 27;
-    std::vector<BalanceTask> tasks;
-    VLOG(1) << "=== original map ====";
-    dump(hostParts, tasks);
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
-    VLOG(1) << "=== new map ====";
-    dump(hostParts, tasks);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_EQ(3, it->second.size());
-    }
-    EXPECT_EQ(18, tasks.size());
-  }
-  {
-    HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("4", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("5", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("6", 0), std::vector<PartitionID>{});
-    hostParts.emplace(HostAddr("7", 0), std::vector<PartitionID>{});
-    int32_t totalParts = 27;
-    std::vector<BalanceTask> tasks;
-    VLOG(1) << "=== original map ====";
-    dump(hostParts, tasks);
-    JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-    DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
-    VLOG(1) << "=== new map ====";
-    dump(hostParts, tasks);
-    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-      EXPECT_GE(4, it->second.size());
-      EXPECT_LE(3, it->second.size());
-    }
-    EXPECT_EQ(18, tasks.size());
   }
 }
 
@@ -878,7 +535,7 @@ TEST(BalanceTest, BalancePlanTest) {
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
-    plan.onFinished_ = [&plan, &b]() {
+    plan.onFinished_ = [&plan, &b](meta::cpp2::JobStatus) {
       ASSERT_EQ(meta::cpp2::JobStatus::FINISHED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
@@ -909,7 +566,7 @@ TEST(BalanceTest, BalancePlanTest) {
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
-    plan.onFinished_ = [&plan, &b]() {
+    plan.onFinished_ = [&plan, &b](meta::cpp2::JobStatus) {
       ASSERT_EQ(meta::cpp2::JobStatus::FINISHED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
@@ -950,7 +607,7 @@ TEST(BalanceTest, BalancePlanTest) {
     }
     TestUtils::registerHB(kv, hosts);
     folly::Baton<true, std::atomic> b;
-    plan.onFinished_ = [&plan, &b]() {
+    plan.onFinished_ = [&plan, &b](meta::cpp2::JobStatus) {
       ASSERT_EQ(meta::cpp2::JobStatus::FAILED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
@@ -958,17 +615,6 @@ TEST(BalanceTest, BalancePlanTest) {
     plan.invoke();
     b.wait();
   }
-}
-
-void verifyBalancePlan(kvstore::KVStore* kv, JobID jobId, meta::cpp2::JobStatus jobStatus) {
-  std::string key = JobDescription::makeJobKey(jobId);
-  std::string value;
-  auto retcode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &value);
-  EXPECT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto optJobRet = JobDescription::makeJobDescription(key, value);
-  EXPECT_TRUE(nebula::ok(optJobRet));
-  auto optJob = nebula::value(optJobRet);
-  EXPECT_EQ(jobStatus, optJob.getStatus());
 }
 
 void verifyBalanceTask(kvstore::KVStore* kv,
@@ -980,278 +626,132 @@ void verifyBalanceTask(kvstore::KVStore* kv,
   const auto& prefix = MetaKeyUtils::balanceTaskPrefix(jobId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-  ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+  EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   int32_t num = 0;
   while (iter->valid()) {
     auto keyTuple = MetaKeyUtils::parseBalanceTaskKey(iter->key());
-    ASSERT_EQ(jobId, std::get<0>(keyTuple));
-    ASSERT_EQ(1, std::get<1>(keyTuple));
+    EXPECT_EQ(jobId, std::get<0>(keyTuple));
+    EXPECT_EQ(1, std::get<1>(keyTuple));
     partCount[std::get<3>(keyTuple)]--;
     partCount[std::get<4>(keyTuple)]++;
     auto valueTuple = MetaKeyUtils::parseBalanceTaskVal(iter->val());
-    ASSERT_EQ(status, std::get<0>(valueTuple));
-    ASSERT_EQ(result, std::get<1>(valueTuple));
-    ASSERT_LT(0, std::get<2>(valueTuple));
-    ASSERT_LT(0, std::get<3>(valueTuple));
+    EXPECT_EQ(status, std::get<0>(valueTuple));
+    EXPECT_EQ(result, std::get<1>(valueTuple));
+    EXPECT_LT(0, std::get<2>(valueTuple));
+    if (result != BalanceTaskResult::IN_PROGRESS) {
+      EXPECT_LT(0, std::get<3>(valueTuple));
+    }
     num++;
     iter->next();
   }
   if (exceptNumber != 0) {
-    ASSERT_EQ(exceptNumber, num);
+    EXPECT_EQ(exceptNumber, num);
   }
 }
 
-TEST(BalanceTest, NormalTest) {
-  fs::TempDir rootPath("/tmp/NormalTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-  std::unordered_map<HostAddr, int32_t> partCount;
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  sleep(1);
-  LOG(INFO) << "Rebalance finished!";
-  verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
-}
-
-TEST(BalanceTest, SpecifyHostTest) {
-  fs::TempDir rootPath("/tmp/SpecifyHostTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-  std::unordered_map<HostAddr, int32_t> partCount;
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-
-  sleep(1);
-  LOG(INFO) << "Now, we remove host {3, 3}";
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
-  balancer.lostHosts_ = {{"3", 3}};
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  LOG(INFO) << "Rebalance finished!";
-  verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
-}
-
-TEST(BalanceTest, SpecifyMultiHostTest) {
-  fs::TempDir rootPath("/tmp/SpecifyMultiHostTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}});
-  TestUtils::assembleSpace(kv, 1, 12, 3, 6);
-  std::unordered_map<HostAddr, int32_t> partCount;
-  for (int32_t i = 0; i < 6; i++) {
-    partCount[HostAddr(std::to_string(i), i)] = 6;
+void verifyMetaZone(kvstore::KVStore* kv,
+                    GraphSpaceID spaceId,
+                    const std::vector<std::string>& zones) {
+  std::string spaceKey = MetaKeyUtils::spaceKey(spaceId);
+  std::string spaceVal;
+  kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+  const std::vector<std::string>& zns = properties.get_zone_names();
+  std::set<std::string> zoneSet;
+  for (const std::string& zoneName : zns) {
+    zoneSet.emplace(zoneName);
   }
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
-  // If {"2", 2} and {"3", 3} are both dead, minority hosts for some part are
-  // alive, it would lead to a fail
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"4", 4}, {"5", 5}});
-  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_NO_VALID_HOST),
-            ret.value().message());
-  // If {"2", 2} is dead, {"3", 3} still alive, each part has majority hosts
-  // alive
-  testRestBlancer();
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}, {"4", 4}, {"5", 5}});
-  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  LOG(INFO) << "Rebalance finished!";
-
-  // In theory, there should be only 12 tasks, but in some environment, 13 tasks
-  // is generated. A partition is moved more than once from A -> B -> C, actually
-  // A -> C is enough.
-  verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount);
-  ASSERT_EQ(9, partCount[HostAddr("0", 0)]);
-  ASSERT_EQ(9, partCount[HostAddr("1", 1)]);
-  ASSERT_EQ(0, partCount[HostAddr("2", 2)]);
-  ASSERT_EQ(0, partCount[HostAddr("3", 3)]);
-  ASSERT_EQ(9, partCount[HostAddr("4", 4)]);
-  ASSERT_EQ(9, partCount[HostAddr("5", 5)]);
+  std::set<std::string> expectZones;
+  for (const std::string& zoneName : zones) {
+    expectZones.emplace(zoneName);
+  }
+  EXPECT_EQ(zoneSet, expectZones);
 }
 
-TEST(BalanceTest, MockReplaceMachineTest) {
-  fs::TempDir rootPath("/tmp/MockReplaceMachineTest.XXXXXX");
+JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::AdminCmd cmd) {
+  JobDescription jd(testJobId.fetch_add(1, std::memory_order_relaxed), cmd, {});
+  std::vector<nebula::kvstore::KV> data;
+  data.emplace_back(jd.jobKey(), jd.jobVal());
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+    baton.post();
+  });
+  baton.wait();
+  return jd;
+}
+
+TEST(BalanceTest, NormalZoneTest) {
+  fs::TempDir rootPath("/tmp/NormalZoneTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  TestUtils::assembleSpace(kv, 1, 12, 3, 3);
+  TestUtils::assembleSpaceWithZone(kv, 1, 8, 3, 8, 24);
+  std::unordered_map<HostAddr, int32_t> partCount;
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-
-  // add a new machine
-  TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
-  LOG(INFO) << "Now, we want to replace host {2, 2} with {3, 3}";
-  // Because for all parts majority hosts still alive, we could balance
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  // {2, 2} should be offline now
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  LOG(INFO) << "Rebalance finished!";
-  std::unordered_map<HostAddr, int32_t> partCount;
+  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::ZONE_BALANCE);
+  ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
+  balancer.spaceInfo_.loadInfo(1, kv);
+  auto ret = balancer.executeInternal();
+  EXPECT_EQ(Status::Balanced(), ret.value());
+  balancer.finish();
+  balancer.lostZones_ = {"5", "6", "7", "8"};
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
+  ret = balancer.executeInternal();
+  baton.wait();
+  EXPECT_EQ(Status::OK(), ret.value());
+  verifyMetaZone(kv, balancer.spaceInfo_.spaceId_, {"1", "2", "3", "4"});
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 12);
 }
 
-TEST(BalanceTest, SingleReplicaTest) {
-  fs::TempDir rootPath("/tmp/SingleReplicaTest.XXXXXX");
+TEST(BalanceTest, NormalDataTest) {
+  fs::TempDir rootPath("/tmp/NormalDataTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}});
-  TestUtils::assembleSpace(kv, 1, 12, 1, 6);
+  TestUtils::assembleSpaceWithZone(kv, 1, 8, 3, 1, 8);
   std::unordered_map<HostAddr, int32_t> partCount;
-  for (int32_t i = 0; i < 6; i++) {
-    partCount[HostAddr(std::to_string(i), i)] = 2;
-  }
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-
-  sleep(1);
-  LOG(INFO) << "Now, we want to remove host {2, 2} and {3, 3}";
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}});
-
-  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  LOG(INFO) << "Rebalance finished!";
-
+  balancer.spaceInfo_.loadInfo(1, kv);
+  auto ret = balancer.executeInternal();
+  EXPECT_EQ(Status::Balanced(), ret.value());
+  balancer.finish();
+  balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
+  ret = balancer.executeInternal();
+  baton.wait();
+  EXPECT_EQ(Status::OK(), ret.value());
   verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 4);
-  ASSERT_EQ(3, partCount[HostAddr("0", 0)]);
-  ASSERT_EQ(3, partCount[HostAddr("1", 1)]);
-  ASSERT_EQ(0, partCount[HostAddr("2", 2)]);
-  ASSERT_EQ(0, partCount[HostAddr("3", 3)]);
-  ASSERT_EQ(3, partCount[HostAddr("4", 4)]);
-  ASSERT_EQ(3, partCount[HostAddr("5", 5)]);
-}
-
-TEST(BalanceTest, TryToRecoveryTest) {
-  fs::TempDir rootPath("/tmp/TryToRecoveryTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  // first 6 call is the failed case, since we can't recover the plan, so only 6
-  // call
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
-      .Times(6)
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
-
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  std::unordered_map<HostAddr, int32_t> partCount;
-  verifyBalanceTask(kv,
-                    balancer.jobId_,
-                    BalanceTaskStatus::CATCH_UP_DATA,
-                    BalanceTaskResult::FAILED,
-                    partCount,
-                    6);
-
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now let's try to recovery it. Since all host would be regarded "
-               "as offline, "
-            << "so all task will be invalid";
-  balancer.recovery();
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::INVALID, partCount, 6);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
 TEST(BalanceTest, RecoveryTest) {
-  FLAGS_task_concurrency = 1;
-  fs::TempDir rootPath("/tmp/RecoveryTest.XXXXXX");
+  fs::TempDir rootPath("/tmp/TryToRecoveryTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-
+  TestUtils::assembleSpaceWithZone(kv, 1, 24, 1, 1, 8);
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  // first 6 call is the failed case, the later call will return default value
-  // In gtest release 1.8.0 we can only write as follows:
   EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
-      .Times(AtLeast(12))
+      .Times(12)
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
@@ -1259,16 +759,18 @@ TEST(BalanceTest, RecoveryTest) {
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
+  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
+  auto ret = balancer.executeInternal();
+  baton.wait();
+  EXPECT_EQ(Status::OK(), ret.value());
   std::unordered_map<HostAddr, int32_t> partCount;
   verifyBalanceTask(kv,
                     balancer.jobId_,
@@ -1276,94 +778,102 @@ TEST(BalanceTest, RecoveryTest) {
                     BalanceTaskResult::FAILED,
                     partCount,
                     6);
-
-  // register hb again to prevent from regarding src as offline
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  LOG(INFO) << "Now let's try to recovery it.";
   balancer.recovery();
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  sleep(1);
+  verifyBalanceTask(
+      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::IN_PROGRESS, partCount, 6);
+  baton.reset();
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
+  ret = balancer.executeInternal();
+  baton.wait();
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
 TEST(BalanceTest, StopPlanTest) {
-  FLAGS_task_concurrency = 1;
   fs::TempDir rootPath("/tmp/StopAndRecoverTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
   TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-
-  // {3, 3} is lost for now
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-
+  TestUtils::assembleSpaceWithZone(kv, 1, 24, 3, 5, 5);
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> delayClient;
   EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
-      // first task in first plan will be blocked, all other tasks will be
-      // skipped,
-      .Times(1)
+      .Times(8)
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .WillOnce(
+          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
-
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &delayClient, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  sleep(1);
-  LOG(INFO) << "Rebalance should still in progress";
-
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
+  FLAGS_task_concurrency = 8;
+  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
+  ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
+  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.lostZones_ = {"4", "5"};
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
+  auto ret = balancer.executeInternal();
+  EXPECT_EQ(Status::OK(), ret.value());
   auto stopRet = balancer.stop();
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, stopRet);
+  baton.wait();
+  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balancer.jobId_);
+  std::unique_ptr<kvstore::KVIterator> iter;
+  auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+  ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
+  int32_t taskEnded = 0;
+  int32_t taskStopped = 0;
+  int32_t invalid = 0;
+  int32_t success = 0;
+  int32_t progress = 0;
+  while (iter->valid()) {
+    BalanceTask task;
+    {
+      auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
+      task.status_ = std::get<0>(tup);
+      task.ret_ = std::get<1>(tup);
+      task.startTimeMs_ = std::get<2>(tup);
+      task.endTimeMs_ = std::get<3>(tup);
 
-  // wait until the only IN_PROGRESS task finished;
-  sleep(3);
-  {
-    const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balancer.jobId_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
-    int32_t taskEnded = 0;
-    int32_t taskStopped = 0;
-    while (iter->valid()) {
-      BalanceTask task;
-      // PartitionID partId =
-      // std::get<2>(BalanceTask::MetaServiceUtils(iter->key()));
-      {
-        auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
-        task.status_ = std::get<0>(tup);
-        task.ret_ = std::get<1>(tup);
-        task.startTimeMs_ = std::get<2>(tup);
-        task.endTimeMs_ = std::get<3>(tup);
-
-        if (task.status_ == BalanceTaskStatus::END) {
-          taskEnded++;
-        } else {
-          taskStopped++;
-        }
+      if (task.ret_ == BalanceTaskResult::SUCCEEDED) {
+        success++;
+      } else if (task.ret_ == BalanceTaskResult::INVALID) {
+        invalid++;
+      } else if (task.ret_ == BalanceTaskResult::IN_PROGRESS) {
+        progress++;
       }
-      iter->next();
+
+      if (task.status_ == BalanceTaskStatus::END) {
+        taskEnded++;
+      } else {
+        taskStopped++;
+      }
     }
-    ASSERT_EQ(1, taskEnded);
-    ASSERT_EQ(5, taskStopped);
+    iter->next();
   }
-
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  NiceMock<MockAdminClient> normalClient;
-
-  balancer.adminClient_ = &normalClient;
-  testRestBlancer();
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
+  EXPECT_EQ(8, taskEnded);
+  EXPECT_EQ(22, taskStopped);
+  EXPECT_EQ(22, invalid);
+  EXPECT_EQ(8, success);
+  EXPECT_EQ(0, progress);
 }
 
 void verifyLeaderBalancePlan(HostLeaderMap& hostLeaderMap,
@@ -1626,12 +1136,13 @@ TEST(BalanceTest, LeaderBalanceTest) {
   dist[HostAddr("1", 1)][1] = {6, 7, 8};
   dist[HostAddr("2", 2)][1] = {9};
   EXPECT_CALL(client, getLeaderDist(_))
-      .WillOnce(DoAll(SetArgPointee<0>(dist), Return(ByMove(folly::Future<Status>(Status::OK())))));
+      .WillOnce(testing::DoAll(SetArgPointee<0>(dist),
+                               Return(ByMove(folly::Future<Status>(Status::OK())))));
 
   LeaderBalanceJobExecutor balancer(
       testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::Error("partiton failed to transfer leader"), ret.value());
+  auto ret = balancer.executeInternal();
+  ASSERT_EQ(Status::OK(), ret.value());
 }
 
 TEST(BalanceTest, LeaderBalanceWithZoneTest) {
@@ -1655,13 +1166,13 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(8);
-    properties.set_replica_factor(3);
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 8;
+    properties.replica_factor_ref() = 3;
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -1733,13 +1244,13 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(8);
-    properties.set_replica_factor(3);
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 8;
+    properties.replica_factor_ref() = 3;
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -1803,11 +1314,11 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   {
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("default_space");
-      properties.set_partition_num(9);
-      properties.set_replica_factor(3);
+      properties.space_name_ref() = "default_space";
+      properties.partition_num_ref() = 9;
+      properties.replica_factor_ref() = 3;
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -1818,13 +1329,13 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_0");
-      properties.set_partition_num(64);
-      properties.set_replica_factor(3);
+      properties.space_name_ref() = "space_on_group_0";
+      properties.partition_num_ref() = 64;
+      properties.replica_factor_ref() = 3;
       std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-      properties.set_zone_names(std::move(zones));
+      properties.zone_names_ref() = std::move(zones);
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -1835,14 +1346,14 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_1");
-      properties.set_partition_num(81);
-      properties.set_replica_factor(3);
+      properties.space_name_ref() = "space_on_group_1";
+      properties.partition_num_ref() = 81;
+      properties.replica_factor_ref() = 3;
       std::vector<std::string> zones = {
           "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
-      properties.set_zone_names(std::move(zones));
+      properties.zone_names_ref() = std::move(zones);
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);

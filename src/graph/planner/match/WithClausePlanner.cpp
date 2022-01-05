@@ -36,8 +36,7 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
     auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(wctx->order.get());
     NG_RETURN_IF_ERROR(orderPlan);
     auto plan = std::move(orderPlan).value();
-    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-    subPlan.root = plan.root;
+    subPlan = SegmentsConnector::addInput(plan, subPlan, true);
   }
 
   if (wctx->pagination != nullptr &&
@@ -46,8 +45,7 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
     auto paginationPlan = std::make_unique<PaginationPlanner>()->transform(wctx->pagination.get());
     NG_RETURN_IF_ERROR(paginationPlan);
     auto plan = std::move(paginationPlan).value();
-    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-    subPlan.root = plan.root;
+    subPlan = SegmentsConnector::addInput(plan, subPlan, true);
   }
 
   if (wctx->where != nullptr) {
@@ -56,8 +54,7 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
         std::make_unique<WhereClausePlanner>(needStableFilter)->transform(wctx->where.get());
     NG_RETURN_IF_ERROR(wherePlan);
     auto plan = std::move(wherePlan).value();
-    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-    subPlan.root = plan.root;
+    subPlan = SegmentsConnector::addInput(plan, subPlan, true);
   }
 
   VLOG(1) << "with root: " << subPlan.root->outputVar()

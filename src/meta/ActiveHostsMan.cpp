@@ -12,6 +12,7 @@
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DEFINE_int32(agent_heartbeat_interval_secs, 60, "Agent heartbeat interval in seconds");
 DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
@@ -92,6 +93,31 @@ bool ActiveHostsMan::machineRegisted(kvstore::KVStore* kv, const HostAddr& hostA
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<HostAddr, cpp2::HostRole>>>
+ActiveHostsMan::getServicesInHost(kvstore::KVStore* kv, std::string hostname) {
+  const auto& prefix = MetaKeyUtils::hostPrefix();
+  std::unique_ptr<kvstore::KVIterator> iter;
+  auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Failed to get services in the host: " << hostname << ", error "
+               << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  std::vector<std::pair<HostAddr, cpp2::HostRole>> hosts;
+  while (iter->valid()) {
+    auto addr = MetaKeyUtils::parseHostKey(iter->key());
+    HostInfo info = HostInfo::decode(iter->val());
+
+    if (addr.host == hostname) {
+      hosts.emplace_back(addr, info.role_);
+    }
+    iter->next();
+  }
+
+  return hosts;
+}
+
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHosts(
     kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
   const auto& machinePrefix = MetaKeyUtils::machinePrefix();
@@ -119,9 +145,12 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   }
 
   std::vector<HostAddr> hosts;
-  int64_t threshold =
-      (expiredTTL == 0 ? FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor : expiredTTL) *
-      1000;
+  int64_t expiredTime =
+      FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor;  // meta/storage/graph
+  if (role == cpp2::HostRole::AGENT) {
+    expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor;
+  }
+  int64_t threshold = (expiredTTL == 0 ? expiredTime : expiredTTL) * 1000;
   auto now = time::WallClock::fastNowInMilliSec();
   while (iter->valid()) {
     auto host = MetaKeyUtils::parseHostKey(iter->key());

@@ -11,7 +11,7 @@
 
 DEFINE_int32(listener_commit_interval_secs, 1, "Listener commit interval");
 DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener commit");
-DEFINE_int32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
+DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
 DEFINE_int32(ft_bulk_batch_size, 100, "Max batch size when bulk insert");
 DEFINE_int32(listener_pursue_leader_threshold, 1000, "Catch up with the leader's threshold");
 
@@ -56,12 +56,13 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
 
   auto logIdAndTerm = lastCommittedLogId();
   committedLogId_ = logIdAndTerm.first;
+  committedLogTerm_ = logIdAndTerm.second;
 
   if (lastLogId_ < committedLogId_) {
     LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
               << committedLogId_;
     lastLogId_ = committedLogId_;
-    lastLogTerm_ = term_;
+    lastLogTerm_ = committedLogTerm_;
     wal_->reset();
   }
 
@@ -122,16 +123,19 @@ bool Listener::preProcessLog(LogID logId,
   return true;
 }
 
-cpp2::ErrorCode Listener::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
-  LogID lastId = -1;
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Listener::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool) {
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   while (iter->valid()) {
     lastId = iter->logId();
+    lastTerm = iter->logTerm();
     ++(*iter);
   }
   if (lastId > 0) {
     leaderCommitId_ = lastId;
   }
-  return cpp2::ErrorCode::SUCCEEDED;
+  return {cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
 }
 
 void Listener::doApply() {
@@ -216,7 +220,7 @@ void Listener::doApply() {
     }
 
     // apply to state machine
-    if (apply(data)) {
+    if (lastApplyId != -1 && apply(data)) {
       std::lock_guard<std::mutex> guard(raftLock_);
       lastApplyLogId_ = lastApplyId;
       persist(committedLogId_, term_, lastApplyLogId_);

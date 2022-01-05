@@ -78,7 +78,7 @@ Feature: Groupby & limit Sentence
       """
       GO FROM "Marco Belinelli" OVER serve YIELD $$.team.name AS name, COUNT(serve._dst) AS id
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `$$.team.name AS name, COUNT(serve._dst) AS id'
 
   Scenario: Limit test
     When executing query:

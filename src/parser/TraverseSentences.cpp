@@ -61,7 +61,9 @@ std::string LookupSentence::toString() const {
   return buf;
 }
 
-std::string UseSentence::toString() const { return "USE " + *space_; }
+std::string UseSentence::toString() const {
+  return "USE " + *space_;
+}
 
 std::string SetSentence::toString() const {
   std::string buf;
@@ -159,6 +161,10 @@ std::string FetchEdgesSentence::toString() const {
     buf += keyRef_->toString();
   } else {
     buf += edgeKeys_->toString();
+  }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
   }
   return buf;
 }

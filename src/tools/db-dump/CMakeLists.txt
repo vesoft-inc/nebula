@@ -1,6 +1,7 @@
 set(tools_test_deps
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v2_thrift_obj>
     $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
@@ -34,6 +35,10 @@ set(tools_test_deps
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:datatypes_obj>

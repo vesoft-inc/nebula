@@ -10,12 +10,24 @@
 namespace nebula {
 
 std::string LabelAttributeExpression::toString() const {
-  if (right()->value().isStr()) {
-    return left()->toString() + "." + right()->value().getStr();
+  auto lhs = left();
+  auto rhs = right();
+  auto label = lhs ? (lhs->toString()) : "";
+  std::string attr;
+  if (rhs != nullptr) {
+    DCHECK_EQ(rhs->kind(), Kind::kConstant);
+    auto *constant = static_cast<const ConstantExpression *>(rhs);
+    if (constant->value().isStr()) {
+      attr = constant->value().getStr();
+    } else {
+      attr = rhs->toString();
+    }
   }
-  return left()->toString() + "." + right()->toString();
+  return label + "." + attr;
 }
 
-void LabelAttributeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void LabelAttributeExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula
