@@ -9,16 +9,14 @@
 #include "common/context/ExpressionContext.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/Iterator.h"
-#include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
 
 class QueryExpressionContext final : public ExpressionContext {
  public:
-  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr, QueryContext* qctx = nullptr) {
+  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) {
     ectx_ = ectx;
-    qctx_ = qctx;
   }
 
   // Get the latest version value for the given variable name, such as $a, $b
@@ -68,7 +66,6 @@ class QueryExpressionContext final : public ExpressionContext {
   // could be evaluated as constant value.
   ExecutionContext* ectx_{nullptr};
   Iterator* iter_{nullptr};
-  QueryContext* qctx_{nullptr};
 };
 
 }  // namespace graph
