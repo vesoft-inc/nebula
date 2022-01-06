@@ -115,8 +115,6 @@ class Part : public raftex::RaftPart {
 
   nebula::cpp2::ErrorCode cleanup() override;
 
-  nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
-
  public:
   struct CallbackOptions {
     GraphSpaceID spaceId;

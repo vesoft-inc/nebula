@@ -192,6 +192,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     for (auto& host : hosts) {
       auto key = MetaKeyUtils::hostKey(host.host, host.port);
       auto ret = doGet(key);
+      if (!nebula::ok(ret)) {
+        code = nebula::error(zoneValueRet);
+        LOG(ERROR) << "Get host " << host << " failed.";
+        break;
+      }
+
       HostInfo info = HostInfo::decode(nebula::value(ret));
       if (now - info.lastHBTimeInMilliSec_ <
           FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
@@ -206,6 +212,8 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         LOG(WARNING) << "Host " << host << " expired";
       }
     }
+
+    CHECK_CODE_AND_BREAK();
     zoneHosts[zone] = std::move(hosts);
   }
 
