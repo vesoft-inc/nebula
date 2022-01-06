@@ -25,11 +25,22 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  // Get the host with the least load in the zone
+  /**
+   * @brief Get the host with the least load in the zone
+   *
+   * @param zones
+   * @param zoneHosts
+   * @return StatusOr<Hosts>
+   */
   StatusOr<Hosts> pickHostsWithZone(const std::vector<std::string>& zones,
                                     const std::unordered_map<std::string, Hosts>& zoneHosts);
 
-  // Get the zones with the least load
+  /**
+   * @brief Get the zones with the least load
+   *
+   * @param replicaFactor
+   * @return StatusOr<std::vector<std::string>>
+   */
   StatusOr<std::vector<std::string>> pickLightLoadZones(int32_t replicaFactor);
 
  private:
