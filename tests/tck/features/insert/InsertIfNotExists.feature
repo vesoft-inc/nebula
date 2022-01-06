@@ -276,3 +276,267 @@ Feature: Insert vertex and edge with if not exists
       | like.likeness |
       | 200           |
     And drop the used space
+
+  Scenario: vertices index and data consistency check
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS student(name string, age int);
+      CREATE TAG INDEX index_s_age on student(age);
+      """
+    And wait 6 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX
+        student(name, age)
+      VALUES
+        "zhang":("zhang", 19),
+        "zhang":("zhang", 29),
+        "zhang":("zhang", 39),
+        "wang":("wang", 18),
+        "li":("li", 16),
+        "wang":("wang", 38);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 39  |
+      | 38  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.name AS name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name | age |
+      | "li" | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.name as name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name    | age |
+      | "zhang" | 39  |
+      | "wang"  | 38  |
+    When executing query:
+      """
+      FETCH PROP ON student "zhang", "wang", "li" YIELD student.name as name, student.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name    | age |
+      | "zhang" | 39  |
+      | "wang"  | 38  |
+      | "li"    | 16  |
+    When try to execute query:
+      """
+      DELETE TAG student FROM "zhang", "wang", "li";
+      """
+    Then the execution should be successful
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        student(name, age)
+      VALUES
+        "zhao":("zhao", 19),
+        "zhao":("zhao", 29),
+        "zhao":("zhao", 39),
+        "qian":("qian", 18),
+        "sun":("sun", 16),
+        "qian":("qian", 38),
+        "chen":("chen", 40),
+        "chen":("chen", 35);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 19  |
+      | 18  |
+      | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 40  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age < 30 YIELD student.name AS name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "zhao" | 19  |
+      | "qian" | 18  |
+      | "sun"  | 16  |
+    When executing query:
+      """
+      LOOKUP ON student WHERE student.age > 30 YIELD student.name as name, student.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "chen" | 40  |
+    When executing query:
+      """
+      FETCH PROP ON student "zhao", "qian", "sun", "chen" YIELD student.name as name, student.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name   | age |
+      | "zhao" | 19  |
+      | "qian" | 18  |
+      | "sun"  | 16  |
+      | "chen" | 40  |
+    And drop the used space
+
+  Scenario: edge index and data consistency check
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS student(name string, age int);
+      CREATE EDGE IF NOT EXISTS like(likeness int, t1 int);
+      CREATE EDGE INDEX index_l_likeness on like(likeness);
+      """
+    And wait 6 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX
+        student(name, age)
+      VALUES
+        "zhang":("zhang", 19),
+        "wang":("wang", 18),
+        "li":("li", 16);
+      INSERT EDGE
+        like(likeness, t1)
+      VALUES
+        "zhang"->"wang":(19, 19),
+        "zhang"->"li":(42, 42),
+        "zhang"->"li":(20, 20),
+        "zhang"->"wang":(39, 39),
+        "wang"->"li":(18, 18),
+        "wang"->"zhang":(41, 41);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness < 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst  | likeness |
+      | "zhang" | "li" | 20       |
+      | "wang"  | "li" | 18       |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness > 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness |
+      | "zhang" | "wang"  | 39       |
+      | "wang"  | "zhang" | 41       |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness < 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness, like.t1 as t1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst  | likeness | t1 |
+      | "zhang" | "li" | 20       | 20 |
+      | "wang"  | "li" | 18       | 18 |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness > 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness, like.t1 as t1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness | t1 |
+      | "zhang" | "wang"  | 39       | 39 |
+      | "wang"  | "zhang" | 41       | 41 |
+    When executing query:
+      """
+      FETCH PROP ON like "zhang"->"wang", "zhang"->"li", "wang"->"li", "wang"->"zhang" YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness |
+      | "zhang" | "wang"  | 39       |
+      | "zhang" | "li"    | 20       |
+      | "wang"  | "li"    | 18       |
+      | "wang"  | "zhang" | 41       |
+    When try to execute query:
+      """
+      DELETE EDGE like "zhang"->"wang", "zhang"->"li", "wang"->"li", "wang"->"zhang";
+      """
+    Then the execution should be successful
+    When try to execute query:
+      """
+      INSERT EDGE IF NOT EXISTS
+        like(likeness, t1)
+      VALUES
+        "zhang"->"wang":(19, 19),
+        "zhang"->"li":(42, 42),
+        "zhang"->"li":(20, 20),
+        "zhang"->"wang":(39, 39),
+        "wang"->"li":(18, 18),
+        "wang"->"zhang":(41, 41);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness < 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst    | likeness |
+      | "zhang" | "wang" | 19       |
+      | "wang"  | "li"   | 18       |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness > 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness |
+      | "zhang" | "li"    | 42       |
+      | "wang"  | "zhang" | 41       |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness < 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness, like.t1 as t1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst    | likeness | t1 |
+      | "zhang" | "wang" | 19       | 19 |
+      | "wang"  | "li"   | 18       | 18 |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness > 30 YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness, like.t1 as t1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness | t1 |
+      | "zhang" | "li"    | 42       | 42 |
+      | "wang"  | "zhang" | 41       | 41 |
+    When executing query:
+      """
+      FETCH PROP ON like "zhang"->"wang", "zhang"->"li", "wang"->"li", "wang"->"zhang" YIELD src(edge) as src, dst(edge) as dst, like.likeness as likeness
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src     | dst     | likeness |
+      | "zhang" | "wang"  | 19       |
+      | "zhang" | "li"    | 42       |
+      | "wang"  | "li"    | 18       |
+      | "wang"  | "zhang" | 41       |
+    And drop the used space

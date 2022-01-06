@@ -7,6 +7,7 @@
 #define CLIENTS_META_METACLIENT_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/container/F14Map.h>
 #include <folly/container/F14Set.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -145,9 +146,9 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 // Mapping of user name and remaining wrong password attempts
-using UserPasswordAttemptsRemain = std::unordered_map<std::string, uint32>;
+using UserPasswordAttemptsRemain = folly::ConcurrentHashMap<std::string, uint32>;
 // Mapping of user name and the timestamp when the account is locked
-using UserLoginLockTime = std::unordered_map<std::string, uint32>;
+using UserLoginLockTime = folly::ConcurrentHashMap<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
