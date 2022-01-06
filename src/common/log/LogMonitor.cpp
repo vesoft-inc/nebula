@@ -6,15 +6,22 @@
 
 namespace nebula {
 
+// default min_warn is 256M, disk freebytes < 256M will change LOG_LEVEL to WARNING
 DEFINE_uint64(log_min_reserved_bytes_to_warn,
               256 * (1UL << 20),
               "if freebytes in logdir less than this, will change log level to WARN");
+
+// default min_error is 64M, disk freebytes < 64M will change LOG_LEVEL to ERROR
 DEFINE_uint64(log_min_reserved_bytes_to_error,
               64 * (1UL << 20),
               "if freebytes in logdir less than this, will change log level to ERROR");
+
+// default min_fatal is 4M, disk freebytes < 4M will change LOG_LEVEL to FATAL
 DEFINE_uint64(log_min_reserved_bytes_to_fatal,
               4 * (1UL << 20),
               "if freebytes in logdir less than this, will change log level to FATAL");
+
+// default check log_disk interval is 10s
 DEFINE_int32(log_disk_check_interval_secs, 10, "interval to check free space of log path");
 
 void LogMonitor::getLogDiskFreeByte() {
