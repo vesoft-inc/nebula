@@ -116,7 +116,7 @@ Feature: Pipe or use variable to store the lookup results
       MATCH (v:player{name : "Tim Duncan"})-[e:like*2..3]-(b:player) RETURN id(b) as id
       | GO 1 TO 2 STEPS FROM $-.id OVER * YIELD dst(edge) as id
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `GO 1 TO '
+    Then a SyntaxError should be raised at runtime: syntax error near `| GO 1 T'
     When executing query:
       """
       $var = MATCH (v:player{name : "Tim Duncan"})-[e:like*2..3]-(b:player) RETURN id(b) as id
