@@ -2092,27 +2092,12 @@ FunctionManager::FunctionManager() {
   {
     auto &attr = functions_["coalesce"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
-          if (list.values.empty()) {
-            return Value::kNullValue;
-          }
-          for (auto &i : list.values) {
-            if (i != Value::kNullValue) {
-              return i;
-            }
-          }
-          return Value::kNullValue;
-        }
-        default: {
-          return Value::kNullBadType;
+      for (size_t i = 1; i < args.size(); ++i) {
+        if (args[0].get().type() != Value::Type::NULLVALUE) {
+          return args[i];
         }
       }
     };
