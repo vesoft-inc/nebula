@@ -17,8 +17,8 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List Edge Index Failed: SpaceID " << space
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List Edge Index Failed: SpaceID " << space
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

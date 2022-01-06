@@ -21,12 +21,12 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop Edge Index Failed, index name " << indexName
-                   << " not exists in Space: " << spaceID;
+        LOG(INFO) << "Drop Edge Index Failed, index name " << indexName
+                  << " not exists in Space: " << spaceID;
       }
     } else {
-      LOG(ERROR) << "Drop Edge Index Failed, index name " << indexName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Drop Edge Index Failed, index name " << indexName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -45,8 +45,8 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    LOG(ERROR) << "Drop Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -54,7 +54,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
 
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
-    LOG(ERROR) << "Drop Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
+    LOG(INFO) << "Drop Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;

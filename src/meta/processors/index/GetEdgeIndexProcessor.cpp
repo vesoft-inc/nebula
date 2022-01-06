@@ -16,8 +16,8 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
   auto edgeIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(edgeIndexIDRet)) {
     auto retCode = nebula::error(edgeIndexIDRet);
-    LOG(ERROR) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName
+              << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -32,8 +32,8 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -41,7 +41,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
 
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
-    LOG(ERROR) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
+    LOG(INFO) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;
