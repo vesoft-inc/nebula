@@ -5,9 +5,7 @@
 
 #include "common/expression/UUIDExpression.h"
 
-#include "common/datatypes/Value.h"
 #include "common/expression/ExprVisitor.h"
-#include "common/id/SegmentId.h"
 
 namespace nebula {
 
@@ -27,12 +25,6 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
-  SegmentId& generator = SegmentId::getInstance();
-  auto xRet = generator.getId();
-  if (!xRet.ok()) {
-    return Value::kNullBadData;
-  }
-  result_ = xRet.value();
   return result_;
 }
 
