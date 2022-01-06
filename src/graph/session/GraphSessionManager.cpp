@@ -148,6 +148,7 @@ void GraphSessionManager::removeSession(SessionID id) {
   if (!resp.ok()) {
     // it will delete by reclaim
     LOG(ERROR) << "Remove session `" << id << "' failed: " << resp.status();
+    return;
   }
   activeSessions_.erase(iter);
 }
