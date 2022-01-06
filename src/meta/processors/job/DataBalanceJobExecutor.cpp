@@ -69,6 +69,9 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     const std::string& zoneName = zoneHostEntry.first;
     std::vector<Host*>& lostHostVec = zoneHostEntry.second;
     std::vector<Host*>& activeVec = activeSortedHost[zoneName];
+    if (activeVec.size() == 0) {
+      return Status::Error("zone %s has no host", zoneName.c_str());
+    }
     for (Host* host : lostHostVec) {
       for (PartitionID partId : host->parts_) {
         Host* dstHost = activeVec.front();
