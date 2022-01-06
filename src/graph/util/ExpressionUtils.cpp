@@ -10,8 +10,8 @@
 #include <unordered_set>
 
 #include "common/base/ObjectPool.h"
-#include "common/expression/Expression.h"
 #include "common/expression/ArithmeticExpression.h"
+#include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
 #include "graph/context/QueryContext.h"
@@ -462,7 +462,10 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     if (lExpr->isArithmeticExpr()) {
       auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
       checkLeftOperand = checkArithmExpr(arithmExpr);
-    } else if (lExpr->isRelExpr()) {  // for expressions that contain boolean literals
+    } else if (lExpr->isRelExpr() ||
+               lExpr->kind() == Expression::Kind::kLabelAttribute) {  // for expressions that
+                                                                      // contain boolean literals
+                                                                      // such as (v.age <= null)
       checkLeftOperand = true;
     }
     return checkLeftOperand;
