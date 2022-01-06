@@ -2095,11 +2095,12 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      for (size_t i = 1; i < args.size(); ++i) {
-        if (args[0].get().type() != Value::Type::NULLVALUE) {
-          return args[i];
+      for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].get().type() != Value::Type::NULLVALUE) {
+          return args[i].get();
         }
       }
+      return Value::kNullValue;
     };
   }
   {
