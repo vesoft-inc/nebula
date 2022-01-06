@@ -14,7 +14,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -25,7 +25,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
   while (iter->valid()) {
     auto spaceId = MetaKeyUtils::spaceId(iter->key());
     auto spaceName = MetaKeyUtils::spaceName(iter->val());
-    VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
+    VLOG(1) << "List spaces " << spaceId << ", name " << spaceName;
     cpp2::IdName space;
     space.id_ref() = to(spaceId, EntryType::SPACE);
     space.name_ref() = std::move(spaceName);

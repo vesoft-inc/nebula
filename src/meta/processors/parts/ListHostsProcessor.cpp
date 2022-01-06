@@ -78,7 +78,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
   auto errOrPart = kvstore_->part(kDefaultSpaceId, kDefaultPartId);
   if (!nebula::ok(errOrPart)) {
     auto retCode = nebula::error(errOrPart);
-    LOG(ERROR) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   auto metaPeers = nebula::value(errOrPart)->peers();
@@ -109,7 +109,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
     }
-    LOG(ERROR) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -161,7 +161,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     auto machineRet = doPrefix(machinePrefix);
     if (!nebula::ok(machineRet)) {
       auto retCode = nebula::error(machineRet);
-      LOG(ERROR) << "List Machines Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "List Machines Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
 
@@ -185,7 +185,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
 nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   auto retCode = allHostsWithStatus(cpp2::HostRole::STORAGE);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get all host's status failed";
+    LOG(INFO) << "Get all host's status failed";
     return retCode;
   }
 
@@ -203,8 +203,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
     }
-    LOG(ERROR) << "List leader Hosts Failed, error: "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List leader Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -265,8 +264,8 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillAllParts() {
     auto iterPartRet = doPrefix(partPrefix);
     if (!nebula::ok(iterPartRet)) {
       auto retCode = nebula::error(iterPartRet);
-      LOG(ERROR) << "List part failed in list hosts,  error: "
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "List part failed in list hosts,  error: "
+                << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
 
@@ -307,8 +306,8 @@ void ListHostsProcessor::removeExpiredHosts(std::vector<std::string>&& removeHos
   kvstore_->asyncMultiRemove(
       kDefaultSpaceId, kDefaultPartId, std::move(removeHostsKey), [](nebula::cpp2::ErrorCode code) {
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          LOG(ERROR) << "Async remove long time offline hosts failed: "
-                     << apache::thrift::util::enumNameSafe(code);
+          LOG(INFO) << "Async remove long time offline hosts failed: "
+                    << apache::thrift::util::enumNameSafe(code);
         }
       });
 }
@@ -323,8 +322,8 @@ void ListHostsProcessor::removeInvalidLeaders(std::vector<std::string>&& removeL
                              std::move(removeLeadersKey),
                              [](nebula::cpp2::ErrorCode code) {
                                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-                                 LOG(ERROR) << "Async remove long time offline hosts failed: "
-                                            << apache::thrift::util::enumNameSafe(code);
+                                 LOG(INFO) << "Async remove long time offline hosts failed: "
+                                           << apache::thrift::util::enumNameSafe(code);
                                }
                              });
 }
@@ -338,7 +337,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::getSpaceIdNameMap() {
     if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
     }
-    LOG(ERROR) << "List Hosts Failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List Hosts Failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

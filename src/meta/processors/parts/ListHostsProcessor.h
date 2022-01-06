@@ -24,8 +24,11 @@ class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
       : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
 
   /**
-   *  return online/offline, gitInfoSHA for the specific HostRole
-   * */
+   * @brief return online/offline, gitInfoSHA for the specific HostRole
+   *
+   * @param type graph/meta/storage
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
 
   nebula::cpp2::ErrorCode fillLeaders();
@@ -33,17 +36,31 @@ class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
   nebula::cpp2::ErrorCode fillAllParts();
 
   /**
-   * Get gitInfoSHA from all meta hosts gitInfoSHA
-   * now, assume of of them are equal
-   * */
+   * @brief now(2020-04-29), assume all metad have same gitInfoSHA
+   * this will change if some day
+   * meta.thrift support interface like getHostStatus()
+   * which return a bunch of host information
+   * it's not necessary add this interface only for gitInfoSHA
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode allMetaHostsStatus();
 
-  // Get map of spaceId -> spaceName
+  /**
+   * @brief Get map of spaceId -> spaceName
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode getSpaceIdNameMap();
 
   std::unordered_map<std::string, std::vector<PartitionID>> getLeaderPartsWithSpaceName(
       const LeaderParts& leaderParts);
 
+  /**
+   * @brief Remove host that long time at OFFLINE status
+   *
+   * @param removeHostsKey hosts' key to remove
+   */
   void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
 
   void removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey);

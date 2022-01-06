@@ -24,11 +24,21 @@ class ListPartsProcessor : public BaseProcessor<cpp2::ListPartsResp> {
   explicit ListPartsProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ListPartsResp>(kvstore) {}
 
-  // Get parts alloc information
+  /**
+   * @brief Get Parts alloc information
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
+   * std::vector<HostAddr>>> info for parts alloc
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
   getAllParts();
 
-  // Get all parts with storage leader distribution
+  /**
+   * @brief Get all parts with storage leaser distribution
+   *
+   * @param partItems
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode getLeaderDist(std::vector<cpp2::PartItem>& partItems);
 
  private:
