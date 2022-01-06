@@ -17,8 +17,8 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
   auto tagIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(tagIndexIDRet)) {
     auto retCode = nebula::error(tagIndexIDRet);
-    LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName
+              << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -33,8 +33,8 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
