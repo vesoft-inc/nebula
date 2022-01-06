@@ -6,14 +6,13 @@
 #   -v: The version of package, the version should be match tag name, default value is null
 #   -n: Package to one or multi-packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
-#   -b: Branch, default master
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
 #   -j: Number of threads, default $(nproc)
 #   -r: Whether enable compressed debug info, default ON
 #   -p: Whether dump the symbols from binary by dump_syms
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE>
 #
 
 set -e
@@ -21,13 +20,13 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
-branch="master"
+branch=$(git rev-parse --abbrev-ref HEAD)
 jobs=$(nproc)
 enable_compressed_debug_info=ON
 dump_symbols=OFF
@@ -46,9 +45,6 @@ do
             ;;
         s)
             strip_enable=$OPTARG
-            ;;
-        b)
-            branch=$OPTARG
             ;;
         d)
             enablesanitizer="ON"
@@ -142,9 +138,8 @@ function build {
     san=$2
     ssan=$3
     build_type=$4
-    branch=$5
-    package_tar=$6
-    install_prefix=$7
+    package_tar=$5
+    install_prefix=$6
 
     mkdir -p ${build_dir}
 
@@ -217,7 +212,7 @@ function dump_syms {
 }
 
 # The main
-build $version $enablesanitizer $static_sanitizer $build_type $branch "OFF" "/usr/local/nebula"
+build $version $enablesanitizer $static_sanitizer $build_type "OFF" "/usr/local/nebula"
 package $strip_enable
 if [[ $dump_symbols == ON ]]; then
     echo ">>> start dump symbols <<<"
@@ -225,5 +220,5 @@ if [[ $dump_symbols == ON ]]; then
 fi
 
 # tar package
-build $version $enablesanitizer $static_sanitizer $build_type $branch "ON" "/"
+build $version $enablesanitizer $static_sanitizer $build_type "ON" "/"
 package $strip_enable

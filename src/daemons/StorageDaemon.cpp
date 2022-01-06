@@ -45,13 +45,11 @@ using nebula::Status;
 using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
-static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void signalHandler(nebula::storage::StorageServer *storageServer, int sig);
+static Status setupSignalHandler(nebula::storage::StorageServer *storageServer);
 #if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
-
-std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -150,8 +148,10 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  auto storageServer = std::make_unique<nebula::storage::StorageServer>(
+      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
   // Setup the signal handlers
-  status = setupSignalHandler();
+  status = setupSignalHandler(storageServer.get());
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
@@ -172,32 +172,31 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  gStorageServer = std::make_unique<nebula::storage::StorageServer>(
-      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
-  if (!gStorageServer->start()) {
+  if (!storageServer->start()) {
     LOG(ERROR) << "Storage server start failed";
-    gStorageServer->stop();
+    storageServer->stop();
     return EXIT_FAILURE;
   }
 
-  gStorageServer->waitUntilStop();
+  storageServer->waitUntilStop();
   LOG(INFO) << "The storage Daemon stopped";
   return EXIT_SUCCESS;
 }
 
-Status setupSignalHandler() {
+Status setupSignalHandler(nebula::storage::StorageServer *storageServer) {
   return nebula::SignalHandler::install(
-      {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      {SIGINT, SIGTERM}, [storageServer](nebula::SignalHandler::GeneralSignalInfo *info) {
+        signalHandler(storageServer, info->sig());
+      });
 }
 
-void signalHandler(int sig) {
+void signalHandler(nebula::storage::StorageServer *storageServer, int sig) {
   switch (sig) {
     case SIGINT:
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-      if (gStorageServer) {
-        gStorageServer->notifyStop();
+      if (storageServer) {
+        storageServer->notifyStop();
       }
       break;
     default:
