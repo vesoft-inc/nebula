@@ -30,8 +30,8 @@ using nebula::fs::FileUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
 
-static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void signalHandler(nebula::graph::GraphServer *graphServer, int sig);
+static Status setupSignalHandler(nebula::graph::GraphServer *graphServer);
 static void printHelp(const char *prog);
 #if defined(__x86_64__)
 extern Status setupBreakpad();
@@ -39,8 +39,6 @@ extern Status setupBreakpad();
 
 DECLARE_string(flagfile);
 DECLARE_bool(containerized);
-
-std::unique_ptr<nebula::graph::GraphServer> gServer;
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -153,37 +151,37 @@ int main(int argc, char *argv[]) {
   }
   LOG(INFO) << "Number of worker threads: " << FLAGS_num_worker_threads;
 
+  auto graphServer = std::make_unique<nebula::graph::GraphServer>(localhost);
   // Setup the signal handlers
-  status = setupSignalHandler();
+  status = setupSignalHandler(graphServer.get());
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
 
-  gServer = std::make_unique<nebula::graph::GraphServer>(localhost);
-
-  if (!gServer->start()) {
+  if (!graphServer->start()) {
     LOG(ERROR) << "The graph server start failed";
     return EXIT_FAILURE;
   }
 
-  gServer->waitUntilStop();
+  graphServer->waitUntilStop();
   LOG(INFO) << "The graph Daemon stopped";
   return EXIT_SUCCESS;
 }
 
-Status setupSignalHandler() {
+Status setupSignalHandler(nebula::graph::GraphServer *graphServer) {
   return nebula::SignalHandler::install(
-      {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      {SIGINT, SIGTERM}, [graphServer](nebula::SignalHandler::GeneralSignalInfo *info) {
+        signalHandler(graphServer, info->sig());
+      });
 }
 
-void signalHandler(int sig) {
+void signalHandler(nebula::graph::GraphServer *graphServer, int sig) {
   switch (sig) {
     case SIGINT:
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-      gServer->notifyStop();
+      graphServer->notifyStop();
       break;
     default:
       FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));

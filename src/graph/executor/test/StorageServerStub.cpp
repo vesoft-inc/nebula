@@ -3,20 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "GraphStorageLocalServer.h"
-
 #include <unistd.h>
 
 #include "common/base/Base.h"
-#include "storage/GraphStorageServiceHandler.h"
+#include "storage/GraphStorageLocalServer.h"
 
-#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)                                    \
-  auto promise = std::make_shared<folly::Promise<respType>>();                                    \
-  auto f = promise->getFuture();                                                                  \
-  threadManager->add([&, promise] {                                                               \
-    std::dynamic_pointer_cast<GraphStorageServiceHandler>(handler_)->callFunc(request).thenValue( \
-        [promise](respType&& resp) { promise->setValue(std::move(resp)); });                      \
-  });                                                                                             \
+#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc) \
+  UNUSED(request);                                             \
+  auto promise = std::make_shared<folly::Promise<respType>>(); \
+  respType dummyResp;                                          \
+  auto f = promise->getFuture();                               \
+  promise->setValue(std::move(dummyResp));                     \
   return f;
 
 namespace nebula::storage {

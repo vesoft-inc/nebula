@@ -58,6 +58,20 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:storage_client_stats_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+
+nebula_add_library(
+    storage_server_stub_obj OBJECT
+    StorageServerStub.cpp
+)
+
+set(EXEC_QUERY_TEST_OBJS
+    ${EXEC_QUERY_TEST_OBJS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+    $<TARGET_OBJECTS:storage_server_stub_obj>
+)
+endif()
+
 SET(EXEC_QUERY_TEST_LIBS
     ${THRIFT_LIBRARIES}
     gtest
