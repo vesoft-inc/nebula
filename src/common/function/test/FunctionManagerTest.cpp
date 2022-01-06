@@ -1648,6 +1648,9 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
     TEST_FUNCTION(last, args_["nullvalue"], Value::kNullValue);
     TEST_FUNCTION(coalesce, args_["nullvalue"], Value::kNullValue);
 
+    TEST_FUNCTION(coalesce, args_["range1"], 1);
+    TEST_FUNCTION(coalesce, args_["float"], 1.1);
+
     std::vector<Value> args;
     List list;
     list.values.emplace_back(Value::kNullValue);
