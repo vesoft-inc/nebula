@@ -44,6 +44,8 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
                                      const meta::SchemaProviderIf* latestSchema);
 
+  void deleteDupVid(std::vector<cpp2::NewVertex>& vertices);
+
  private:
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
