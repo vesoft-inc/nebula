@@ -115,6 +115,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
 
   auto now = time::WallClock::fastNowInMilliSec();
   std::vector<std::string> removeHostsKey;
+  std::vector<HostAddr> heartbeatHosts;
   for (auto iter = nebula::value(ret).get(); iter->valid(); iter->next()) {
     HostInfo info = HostInfo::decode(iter->val());
     if (info.role_ != role) {
@@ -123,6 +124,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
 
     cpp2::HostItem item;
     auto host = MetaKeyUtils::parseHostKey(iter->key());
+    heartbeatHosts.emplace_back(host);
     item.hostAddr_ref() = std::move(host);
 
     item.role_ref() = info.role_;
@@ -151,6 +153,28 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
       hostItems_.emplace_back(item);
     } else {
       removeHostsKey.emplace_back(iter->key());
+    }
+  }
+
+  if (role == cpp2::HostRole::STORAGE) {
+    const auto& machinePrefix = MetaKeyUtils::machinePrefix();
+    auto machineRet = doPrefix(machinePrefix);
+    if (!nebula::ok(machineRet)) {
+      auto retCode = nebula::error(machineRet);
+      LOG(ERROR) << "List Machines Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      return retCode;
+    }
+
+    for (auto iter = nebula::value(machineRet).get(); iter->valid(); iter->next()) {
+      auto host = MetaKeyUtils::parseMachineKey(iter->key());
+      auto it = std::find(heartbeatHosts.begin(), heartbeatHosts.end(), host);
+      if (it == heartbeatHosts.end()) {
+        cpp2::HostItem item;
+        item.hostAddr_ref() = std::move(host);
+        item.role_ref() = cpp2::HostRole::STORAGE;
+        item.status_ref() = cpp2::HostStatus::OFFLINE;
+        hostItems_.emplace_back(std::move(item));
+      }
     }
   }
 

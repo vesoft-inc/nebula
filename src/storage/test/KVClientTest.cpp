@@ -51,6 +51,10 @@ TEST(KVClientTest, SimpleTest) {
     auto result = metaClient->addHosts(std::move(hosts)).get();
     EXPECT_TRUE(result.ok());
   }
+  {
+    std::vector<HostAddr> hosts = {storageAddr};
+    nebula::meta::TestUtils::registerHB(cluster.metaKV_.get(), hosts);
+  }
 
   cluster.startStorage(storageAddr, storagePath.path());
   auto client = cluster.initGraphStorageClient();

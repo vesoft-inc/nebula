@@ -58,7 +58,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
       for (const auto& [spaceId, partDiskMap] : *req.get_disk_parts()) {
         for (const auto& [path, partList] : partDiskMap) {
           auto partListVal = MetaKeyUtils::diskPartsVal(partList);
-          std::string key = MetaKeyUtils::diskPartsKey(host, spaceId, path);
+          auto key = MetaKeyUtils::diskPartsKey(host, spaceId, path);
           std::vector<kvstore::KV> data;
           data.emplace_back(key, partListVal);
           // doPut() not work, will trigger the asan: use heap memory which is free

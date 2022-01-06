@@ -17,6 +17,7 @@ enum class MetaVersion {
   UNKNOWN = 0,
   V1 = 1,
   V2 = 2,
+  V3 = 3,
 };
 
 /**
@@ -28,17 +29,21 @@ class MetaVersionMan final {
 
   static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
 
-  static bool setMetaVersionToKV(kvstore::KVStore* kv);
+  static bool setMetaVersionToKV(kvstore::KVStore* kv, MetaVersion version);
 
   static Status updateMetaV1ToV2(kvstore::KVStore* kv);
+
+  static Status updateMetaV2ToV3(kvstore::KVStore* kv);
 
  private:
   static MetaVersion getVersionByHost(kvstore::KVStore* kv);
 
-  static Status doUpgrade(kvstore::KVStore* kv);
+  static Status doUpgradeV1ToV2(kvstore::KVStore* kv);
+
+  static Status doUpgradeV2ToV3(kvstore::KVStore* kv);
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_ROOTUSERMAN_H_
+#endif  // META_METAVERSIONMAN_H_

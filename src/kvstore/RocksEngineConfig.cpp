@@ -59,7 +59,13 @@ DEFINE_bool(enable_partitioned_index_filter, false, "True for partitioned index 
 DEFINE_string(rocksdb_compression,
               "snappy",
               "Compression algorithm used by RocksDB, "
-              "options: no,snappy,lz4,lz4hc,zstd,zlib,bzip2");
+              "options: no, snappy, lz4, lz4hc, zstd, zlib, bzip2, xpress");
+
+DEFINE_string(rocksdb_bottommost_compression,
+              "disable",
+              "Specify the bottommost level compression algorithm"
+              "options: no, snappy, lz4, lz4hc, zstd, zlib, bzip2, xpress, disable");
+
 DEFINE_string(rocksdb_compression_per_level,
               "",
               "Specify per level compression algorithm, "
@@ -142,7 +148,9 @@ static const std::unordered_map<std::string, rocksdb::CompressionType> kCompress
     {"lz4hc", rocksdb::kLZ4HCCompression},
     {"zstd", rocksdb::kZSTD},
     {"zlib", rocksdb::kZlibCompression},
-    {"bzip2", rocksdb::kBZip2Compression}};
+    {"bzip2", rocksdb::kBZip2Compression},
+    {"xpress", rocksdb::kXpressCompression},
+    {"disable", rocksdb::kDisableCompressionOption}};
 
 static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
   // Set the general compression algorithm
@@ -153,6 +161,13 @@ static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
       return rocksdb::Status::InvalidArgument();
     }
     baseOpts.compression = it->second;
+
+    it = kCompressionTypeMap.find(FLAGS_rocksdb_bottommost_compression);
+    if (it == kCompressionTypeMap.end()) {
+      LOG(ERROR) << "Unsupported compression type: " << FLAGS_rocksdb_bottommost_compression;
+      return rocksdb::Status::InvalidArgument();
+    }
+    baseOpts.bottommost_compression = it->second;
   }
   if (FLAGS_rocksdb_compression_per_level.empty()) {
     return rocksdb::Status::OK();
