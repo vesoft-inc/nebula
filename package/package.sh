@@ -108,6 +108,12 @@ EOF
 
 function _build_graph {
     pushd ${build_dir}
+    enable_breakpad=OFF
+    if [ "x"$build_type = "xDebug" ] || [ "x"$build_type = "xRelWithDebInfo" ]; then
+        enable_breakpad=OFF
+    else
+        enable_breakpad=ON
+    fi
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
           -DENABLE_ASAN=${san} \
@@ -119,6 +125,7 @@ function _build_graph {
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           -DENABLE_PACKAGE_TAR=${package_tar} \
+          -DENABLE_BREAKPAD=${enable_breakpad} \
           ${project_dir}
 
     if ! ( make -j ${jobs} ); then
