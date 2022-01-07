@@ -38,6 +38,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat", Value::Type::STRING},
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
+    {"coalesce", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -280,10 +281,6 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
     {"last",
-     {
-         TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
-     }},
-    {"coalesce",
      {
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},

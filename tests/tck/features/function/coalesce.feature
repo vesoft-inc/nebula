@@ -25,3 +25,17 @@ Feature: Fetch Int Vid Edges
     Then the result should be, in any order:
       | result   |
       | __NULL__ |
+    When executing query:
+      """
+      RETURN coalesce(null,[1,2,3]) as result;
+      """
+    Then the result should be, in any order:
+      | result    |
+      | [1, 2, 3] |
+    When executing query:
+      """
+      RETURN coalesce(null,1.234) as result;
+      """
+    Then the result should be, in any order:
+      | result |
+      | 1.234  |
