@@ -142,6 +142,7 @@ class Perf {
       t.join();
     }
 
+    mClient_->notifyStop();
     mClient_->stop();
     threadPool_->stop();
     LOG(INFO) << "Total time cost " << duration.elapsedInMSec() << "ms, "

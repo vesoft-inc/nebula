@@ -95,9 +95,11 @@ class MockCluster {
 
   void stop() {
     if (metaClient_) {
+      metaClient_->notifyStop();
       metaClient_->stop();
     }
     if (lMetaClient_) {
+      metaClient_->notifyStop();
       lMetaClient_->stop();
     }
     if (metaKV_) {

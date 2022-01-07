@@ -361,7 +361,7 @@ def return_if_not_leader_changed(resp) -> bool:
         return True
 
     err_msg = resp.error_msg()
-    return err_msg.find('Storage Error: The leader has changed') < 0
+    return err_msg.find('Please retry later.') < 0
 
 
 @retry(30, return_if_not_leader_changed)
