@@ -26,7 +26,7 @@ void AgentHBProcessor::onFinished() {
 
 void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
   HostAddr agentAddr((*req.host_ref()).host, (*req.host_ref()).port);
-  VLOG(1) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
+  LOG(INFO) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
 
   nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
