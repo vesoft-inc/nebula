@@ -23,8 +23,8 @@ Feature: Fetch Int Vid Edges
       RETURN coalesce(null) as result;
       """
     Then the result should be, in any order:
-      | result   |
-      | __NULL__ |
+      | result |
+      | NULL   |
     When executing query:
       """
       RETURN coalesce(null,[1,2,3]) as result;
