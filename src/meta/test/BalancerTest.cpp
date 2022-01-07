@@ -246,6 +246,45 @@ TEST(BalanceTest, BalanceZonePlanTest) {
   EXPECT_EQ(balancer.spaceInfo_.zones_["zone5"].partNum_, 9);
 }
 
+TEST(BalanceTest, BalanceZonePlanComplexTest) {
+  fs::TempDir rootPath("/tmp/BalanceZoneTest.XXXXXX");
+  std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
+  std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>> pair1(
+      "z1", {{{"127.0.0.1", 11}, {}}});
+  std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>> pair2(
+      "z2", {{{"127.0.0.1", 12}, {}}});
+  std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>> pair3(
+      "z3", {{{"127.0.0.1", 13}, {}}});
+  std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>> pair4(
+      "z4", {{{"127.0.0.1", 14}, {}}});
+  std::pair<std::string, std::vector<std::pair<HostAddr, std::vector<PartitionID>>>> pair5(
+      "z5", {{{"127.0.0.1", 15}, {}}});
+  for (int32_t i = 1; i <= 512; i++) {
+    pair1.second.front().second.push_back(i);
+    pair2.second.front().second.push_back(i);
+    pair3.second.front().second.push_back(i);
+  }
+  SpaceInfo spaceInfo = createSpaceInfo("space1", 1, 3, {pair1, pair2, pair3, pair4, pair5});
+  ZoneBalanceJobExecutor balancer(JobDescription(), store.get(), nullptr, {});
+  balancer.spaceInfo_ = spaceInfo;
+  Status status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z1"].partNum_, 308);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z2"].partNum_, 307);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z3"].partNum_, 307);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z4"].partNum_, 307);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z5"].partNum_, 307);
+  balancer.lostZones_ = {"z1"};
+  status = balancer.buildBalancePlan();
+  EXPECT_EQ(status, Status::OK());
+  EXPECT_EQ(balancer.plan_->tasks().size(), 389);
+  auto tasks = balancer.plan_->tasks();
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z2"].partNum_, 384);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z3"].partNum_, 384);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z4"].partNum_, 384);
+  EXPECT_EQ(balancer.spaceInfo_.zones_["z5"].partNum_, 384);
+}
+
 TEST(BalanceTest, BalanceZoneRemainderPlanTest) {
   fs::TempDir rootPath("/tmp/BalanceZoneTest.XXXXXX");
   std::unique_ptr<kvstore::NebulaStore> store = MockCluster::initMetaKV(rootPath.path());
@@ -666,6 +705,34 @@ void verifyMetaZone(kvstore::KVStore* kv,
     expectZones.emplace(zoneName);
   }
   EXPECT_EQ(zoneSet, expectZones);
+}
+
+void verifyZonePartNum(kvstore::KVStore* kv,
+                       GraphSpaceID spaceId,
+                       const std::map<std::string, int32_t>& zones) {
+  std::map<HostAddr, std::string> hostZone;
+  std::map<std::string, int32_t> zoneNum;
+  std::unique_ptr<kvstore::KVIterator> iter;
+  for (const auto& [zone, num] : zones) {
+    std::string zoneKey = MetaKeyUtils::zoneKey(zone);
+    std::string value;
+    kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &value);
+    auto hosts = MetaKeyUtils::parseZoneHosts(value);
+    for (auto& host : hosts) {
+      hostZone[host] = zone;
+    }
+    zoneNum[zone] = 0;
+  }
+  const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
+  kv->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+  while (iter->valid()) {
+    auto hosts = MetaKeyUtils::parsePartVal(iter->val());
+    for (auto& host : hosts) {
+      zoneNum[hostZone[host]]++;
+    }
+    iter->next();
+  }
+  EXPECT_EQ(zoneNum, zones);
 }
 
 JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::AdminCmd cmd) {
