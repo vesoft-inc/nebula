@@ -24,10 +24,9 @@ void AgentHBProcessor::onFinished() {
   Base::onFinished();
 }
 
-// Agent heartbeat register agent to meta and pull all services info in agent's host
 void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
   HostAddr agentAddr((*req.host_ref()).host, (*req.host_ref()).port);
-  LOG(INFO) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
+  VLOG(1) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
 
   nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
@@ -36,9 +35,9 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
         time::WallClock::fastNowInMilliSec(), cpp2::HostRole::AGENT, req.get_git_info_sha());
     ret = ActiveHostsMan::updateHostInfo(kvstore_, agentAddr, info);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << folly::sformat("Put agent {} info failed: {}",
-                                   agentAddr.toString(),
-                                   apache::thrift::util::enumNameSafe(ret));
+      LOG(INFO) << folly::sformat("Put agent {} info failed: {}",
+                                  agentAddr.toString(),
+                                  apache::thrift::util::enumNameSafe(ret));
       break;
     }
 
@@ -46,9 +45,9 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
     auto servicesRet = ActiveHostsMan::getServicesInHost(kvstore_, agentAddr.host);
     if (!nebula::ok(servicesRet)) {
       ret = nebula::error(servicesRet);
-      LOG(ERROR) << folly::sformat("Get active services for {} failed: {}",
-                                   agentAddr.host,
-                                   apache::thrift::util::enumNameSafe(ret));
+      LOG(INFO) << folly::sformat("Get active services for {} failed: {}",
+                                  agentAddr.host,
+                                  apache::thrift::util::enumNameSafe(ret));
       break;
     }
 
@@ -58,9 +57,9 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
     auto dirIterRet = doPrefix(hostDirHostPrefix);
     if (!nebula::ok(dirIterRet)) {
       ret = nebula::error(dirIterRet);
-      LOG(ERROR) << folly::sformat("Get host {} dir prefix iterator failed: {}",
-                                   agentAddr.host,
-                                   apache::thrift::util::enumNameSafe(ret));
+      LOG(INFO) << folly::sformat("Get host {} dir prefix iterator failed: {}",
+                                  agentAddr.host,
+                                  apache::thrift::util::enumNameSafe(ret));
       break;
     }
     auto dirIter = std::move(nebula::value(dirIterRet));
@@ -86,7 +85,7 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
 
       auto it = serviceDirinfo.find(addr);
       if (it == serviceDirinfo.end()) {
-        LOG(ERROR) << folly::sformat("{} dir info not found", addr.toString());
+        LOG(INFO) << folly::sformat("{} dir info not found", addr.toString());
         break;
       }
 
@@ -99,7 +98,7 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
     if (serviceList.size() != services.size() - 1) {
       ret = nebula::cpp2::ErrorCode::E_AGENT_HB_FAILUE;
       // missing some services' dir info
-      LOG(ERROR) << folly::sformat(
+      LOG(INFO) << folly::sformat(
           "Missing some services's dir info, excepted service {}, but only got {}",
           services.size() - 1,
           serviceList.size());
@@ -111,8 +110,7 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
     auto partRet = kvstore_->part(kDefaultSpaceId, kDefaultPartId);
     if (!nebula::ok(partRet)) {
       ret = nebula::error(partRet);
-      LOG(ERROR) << "Get meta part store failed, error: "
-                 << apache::thrift::util::enumNameSafe(ret);
+      LOG(INFO) << "Get meta part store failed, error: " << apache::thrift::util::enumNameSafe(ret);
       return;
     }
     auto raftPeers = nebula::value(partRet)->peers();
