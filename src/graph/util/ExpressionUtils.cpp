@@ -581,11 +581,11 @@ StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter
   }
 
   // Check if any overflow happen before filter tranform
-  auto initilConstFold = foldConstantExpr(filter);
-  NG_RETURN_IF_ERROR(initilConstFold);
+  auto initialConstFold = foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(initialConstFold);
 
   // Rewrite relational expression
-  auto rewrittenExpr = const_cast<Expression *>(filter);
+  auto rewrittenExpr = initialConstFold.value();
   rewrittenExpr = rewriteRelExpr(rewrittenExpr);
 
   // Fold constant expression

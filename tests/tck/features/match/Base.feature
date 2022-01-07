@@ -696,4 +696,6 @@ Feature: Basic match
       """
       MATCH (v:player) WHERE v.player.name+'n'=="Tim Duncann" RETURN v
       """
-    Then the execution should be successful
+    Then the result should be, in any order:
+      | v                                                                                                          |
+      | ("Tim Duncan":bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
