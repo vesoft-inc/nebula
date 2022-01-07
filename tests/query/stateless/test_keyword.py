@@ -581,20 +581,6 @@ class TestReservedKeyword(NebulaTestSuite):
             assert "SyntaxError: syntax error" in str(e)
 
         try:
-            cmd = 'create tag x133 (no string)'
-            resp = self.execute(cmd)
-            self.check_resp_failed(resp)
-        except Exception as e:
-            assert "SyntaxError: syntax error" in str(e)
-
-        try:
-            cmd = 'create tag x144 (overwrite string)'
-            resp = self.execute(cmd)
-            self.check_resp_failed(resp)
-        except Exception as e:
-            assert "SyntaxError: syntax error" in str(e)
-
-        try:
             cmd = 'create tag x155 (true string)'
             resp = self.execute(cmd)
             self.check_resp_failed(resp)
