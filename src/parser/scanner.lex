@@ -118,8 +118,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "UNION"                     { return TokenType::KW_UNION; }
 "INTERSECT"                 { return TokenType::KW_INTERSECT; }
 "MINUS"                     { return TokenType::KW_MINUS; }
-"NO"                        { return TokenType::KW_NO; }
-"OVERWRITE"                 { return TokenType::KW_OVERWRITE; }
 "SHOW"                      { return TokenType::KW_SHOW; }
 "ADD"                       { return TokenType::KW_ADD; }
 "CREATE"                    { return TokenType::KW_CREATE;}
@@ -155,7 +153,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "STOP"                      { return TokenType::KW_STOP; }
 "LIMIT"                     { return TokenType::KW_LIMIT; }
 "OFFSET"                    { return TokenType::KW_OFFSET; }
-"IS"                        { return TokenType::KW_IS; }
 "NULL"                      { return TokenType::KW_NULL; }
 "RECOVER"                   { return TokenType::KW_RECOVER; }
 "EXPLAIN"                   { return TokenType::KW_EXPLAIN; }
@@ -328,7 +325,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 "<-"                        { return TokenType::L_ARROW; }
 "->"                        { return TokenType::R_ARROW; }
-"_id"                       { return TokenType::ID_PROP; }
 "_type"                     { return TokenType::TYPE_PROP; }
 "_src"                      { return TokenType::SRC_ID_PROP; }
 "_dst"                      { return TokenType::DST_ID_PROP; }
