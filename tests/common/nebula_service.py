@@ -31,9 +31,9 @@ class NebulaProcess(object):
     def __init__(self, name, ports, suffix_index=0, params=None):
         if params is None:
             params = {}
-        assert len(ports) == 4, 'should have 4 ports but have {}'.format(len(ports))
+        assert len(ports) == 6, 'should have 6 ports but have {}'.format(len(ports))
         self.name = name
-        self.tcp_port, self.tcp_internal_port, self.http_port, self.https_port = ports
+        self.tcp_port, _, _, _, self.http_port, self.https_port = ports
         self.suffix_index = suffix_index
         self.params = params
         self.host = '127.0.0.1'
@@ -76,7 +76,12 @@ class NebulaProcess(object):
         if p.returncode != 0:
             logger.info("start process error: " + bytes.decode(p.communicate()[0]))
         proc1 = subprocess.Popen(['ps', 'x'], stdout=subprocess.PIPE)
-        proc2 = subprocess.Popen(['grep', str(self.tcp_port)], stdin=proc1.stdout,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc2 = subprocess.Popen(
+            ['grep', str(self.tcp_port)],
+            stdin=proc1.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         proc1.stdout.close()
         stdout, _ = proc2.communicate()
         pid = None
@@ -162,7 +167,8 @@ class NebulaService(object):
         )
 
         self.debug_log = debug_log
-        self.ports_per_process = 4
+        # storage has 6 ports, 4 for tcp, 1 for http, 1 for http2
+        self.ports_per_process = 6
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
         self._make_params(**kwargs)
@@ -321,13 +327,15 @@ class NebulaService(object):
                         # force internal tcp port with port+1
                         if all(
                             (tcp_port + i) not in all_ports + lock_ports
-                            for i in range(0, 2)
+                            for i in range(-2, 2)
                         ):
                             all_ports.append(tcp_port)
+                            all_ports.append(tcp_port - 2)
+                            all_ports.append(tcp_port - 1)
                             all_ports.append(tcp_port + 1)
                             break
 
-                elif i % self.ports_per_process == 1:
+                elif i % self.ports_per_process in (1, 2, 3):
                     continue
                 else:
                     for _ in range(100):
@@ -540,7 +548,7 @@ class NebulaService(object):
         if process_type.lower() not in ["graphd", "graph", "storaged", "storage"]:
             raise Exception("process type could only be graphd or storaged")
 
-        ports = self._find_free_port(4)
+        ports = self._find_free_port(self.ports_per_process)
 
         if process_type.lower() in ["graphd", "graph"]:
             original_params = self.graphd_processes[0].params

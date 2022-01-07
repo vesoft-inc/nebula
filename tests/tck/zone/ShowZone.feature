@@ -22,7 +22,7 @@ Feature: Show zones
       | "test_zone"    | "127.0.0.1" | ${cluster.storaged_processes[1].tcp_port} |
     When executing query:
       """
-      SHOW ZONE "default_zone";
+      DESC ZONE "default_zone";
       """
     Then the result should contain, replace the holders with cluster info:
       | Hosts       | Port                                      |

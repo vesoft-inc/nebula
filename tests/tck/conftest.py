@@ -89,7 +89,7 @@ def get_running_jobs(sess):
 
 
 def wait_all_jobs_finished(sess, jobs=[]):
-    times = 4 * get_running_jobs(sess)
+    times = 8 * get_running_jobs(sess)
     while jobs and times > 0:
         jobs = [job for job in jobs if not is_job_finished(sess, job)]
         time.sleep(1)
