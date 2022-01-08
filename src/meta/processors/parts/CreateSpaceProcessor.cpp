@@ -193,7 +193,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       auto key = MetaKeyUtils::hostKey(host.host, host.port);
       auto ret = doGet(key);
       if (!nebula::ok(ret)) {
-        code = nebula::error(zoneValueRet);
+        code = nebula::error(ret);
         LOG(ERROR) << "Get host " << host << " failed.";
         break;
       }
