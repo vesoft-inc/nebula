@@ -1,4 +1,5 @@
 Feature: Divide zone
+
   Scenario: divide zone
     Given a nebulacluster with 1 graphd and 3 metad and 1 storaged
     When operating process, "start" a new "storaged[1]"
