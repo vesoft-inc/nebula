@@ -41,7 +41,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
 
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
-    LOG(INFO) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
+    VLOG(2) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;
