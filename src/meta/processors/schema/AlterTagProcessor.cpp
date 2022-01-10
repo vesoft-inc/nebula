@@ -20,8 +20,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   auto ret = getTagId(spaceId, tagName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "Failed to get tag " << tagName << " error "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Failed to get tag " << tagName << " error "
+              << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -33,15 +33,15 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   auto retPre = doPrefix(tagPrefix);
   if (!nebula::ok(retPre)) {
     auto retCode = nebula::error(retPre);
-    LOG(ERROR) << "Tag Prefix failed, tagname: " << tagName << ", spaceId " << spaceId
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Tag Prefix failed, tagname: " << tagName << ", spaceId " << spaceId
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
   auto iter = nebula::value(retPre).get();
   if (!iter->valid()) {
-    LOG(ERROR) << "Tag could not be found, spaceId " << spaceId << ", tagname: " << tagName;
+    LOG(INFO) << "Tag could not be found, spaceId " << spaceId << ", tagname: " << tagName;
     handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
     onFinished();
     return;
@@ -68,8 +68,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   if (existIndex) {
     auto iStatus = indexCheck(indexes, tagItems);
     if (iStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Alter tag error, index conflict : "
-                 << apache::thrift::util::enumNameSafe(iStatus);
+      LOG(INFO) << "Alter tag error, index conflict : "
+                << apache::thrift::util::enumNameSafe(iStatus);
       handleErrorCode(iStatus);
       onFinished();
       return;
@@ -88,7 +88,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
       col = *alterSchemaProp.get_ttl_col();
     }
     if (!col.empty() && duration > 0) {
-      LOG(ERROR) << "Alter tag error, index and ttl conflict";
+      LOG(INFO) << "Alter tag error, index and ttl conflict";
       handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
       onFinished();
       return;
@@ -116,7 +116,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     for (auto& col : cols) {
       auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, *tagItem.op_ref());
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
+        LOG(INFO) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -133,7 +133,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   // Update schema property if tag not index
   auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Alter tag property error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Alter tag property error " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

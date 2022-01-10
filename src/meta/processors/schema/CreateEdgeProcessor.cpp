@@ -20,8 +20,8 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto conflictRet = getTagId(spaceId, edgeName);
     if (nebula::ok(conflictRet)) {
-      LOG(ERROR) << "Failed to create edge `" << edgeName
-                 << "': some tag with the same name already exists.";
+      LOG(INFO) << "Failed to create edge `" << edgeName
+                << "': some tag with the same name already exists.";
       resp_.id_ref() = to(nebula::value(conflictRet), EntryType::EDGE);
       handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
       onFinished();
@@ -29,8 +29,8 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     } else {
       auto retCode = nebula::error(conflictRet);
       if (retCode != nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND) {
-        LOG(ERROR) << "Failed to create edge " << edgeName << " error "
-                   << apache::thrift::util::enumNameSafe(retCode);
+        LOG(INFO) << "Failed to create edge " << edgeName << " error "
+                  << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -55,7 +55,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     if (req.get_if_not_exists()) {
       handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     } else {
-      LOG(ERROR) << "Create Edge Failed :" << edgeName << " has existed";
+      LOG(INFO) << "Create Edge Failed :" << edgeName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     }
     resp_.id_ref() = to(nebula::value(ret), EntryType::EDGE);
@@ -64,8 +64,8 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
   } else {
     auto retCode = nebula::error(ret);
     if (retCode != nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
-      LOG(ERROR) << "Failed to create edge " << edgeName << " error "
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Failed to create edge " << edgeName << " error "
+                << apache::thrift::util::enumNameSafe(retCode);
       handleErrorCode(retCode);
       onFinished();
       return;
@@ -74,7 +74,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
 
   auto edgeTypeRet = autoIncrementIdInSpace(spaceId);
   if (!nebula::ok(edgeTypeRet)) {
-    LOG(ERROR) << "Create edge failed : Get edge type id failed";
+    LOG(INFO) << "Create edge failed : Get edge type id failed";
     handleErrorCode(nebula::error(edgeTypeRet));
     onFinished();
     return;
