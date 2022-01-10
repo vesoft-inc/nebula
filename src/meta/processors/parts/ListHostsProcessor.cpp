@@ -216,7 +216,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   std::vector<std::string> removeLeadersKey;
   for (; iter->valid(); iter->next()) {
     auto spaceIdAndPartId = MetaKeyUtils::parseLeaderKeyV3(iter->key());
-    VLOG(1) << "Show hosts: space = " << spaceIdAndPartId.first
+    VLOG(2) << "Show hosts: space = " << spaceIdAndPartId.first
             << ", part = " << spaceIdAndPartId.second;
     // If the space in the leader key don't exist, remove leader key
     auto spaceId = spaceIdAndPartId.first;
@@ -232,7 +232,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     }
     auto it = std::find(activeHosts.begin(), activeHosts.end(), host);
     if (it == activeHosts.end()) {
-      VLOG(1) << "skip inactive host: " << host;
+      LOG(INFO) << "skip inactive host: " << host;
       continue;  // skip inactive host
     }
 
@@ -241,7 +241,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     });
 
     if (hostIt == hostItems_.end()) {
-      VLOG(1) << "skip inactive host";
+      LOG(INFO) << "skip inactive host";
       continue;
     }
 

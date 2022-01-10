@@ -81,7 +81,7 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
         LOG(INFO) << folly::sformat("term of part {} is invalid", partIdVec[i]);
         continue;
       }
-      LOG(INFO) << folly::sformat("term of part {} is {}", partIdVec[i], term);
+      VLOG(2) << folly::sformat("term of part {} is {}", partIdVec[i], term);
       ret[partIdVec[i]] = term;
     }
   }

@@ -25,7 +25,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
   while (iter->valid()) {
     auto spaceId = MetaKeyUtils::spaceId(iter->key());
     auto spaceName = MetaKeyUtils::spaceName(iter->val());
-    VLOG(1) << "List spaces " << spaceId << ", name " << spaceName;
+    VLOG(2) << "List spaces " << spaceId << ", name " << spaceName;
     cpp2::IdName space;
     space.id_ref() = to(spaceId, EntryType::SPACE);
     space.name_ref() = std::move(spaceName);
