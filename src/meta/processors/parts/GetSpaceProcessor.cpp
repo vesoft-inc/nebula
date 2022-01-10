@@ -35,7 +35,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
   }
 
   auto properties = MetaKeyUtils::parseSpace(nebula::value(ret));
-  VLOG(1) << "Get Space SpaceName: " << spaceName << ", Partition Num "
+  VLOG(2) << "Get Space SpaceName: " << spaceName << ", Partition Num "
           << properties.get_partition_num() << ", Replica Factor "
           << properties.get_replica_factor() << ", bind to the zones "
           << folly::join(",", properties.get_zone_names());
