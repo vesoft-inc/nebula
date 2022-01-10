@@ -78,3 +78,16 @@ nebula_add_test(
     ${PROXYGEN_LIBRARIES}
     ${THRIFT_LIBRARIES}
 )
+
+nebula_add_test(
+  NAME segment_id_test
+  SOURCES SegmentIdTest.cpp
+  OBJECTS
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:segment_id_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+  LIBRARIES 
+    gtest 
+    gtest_main
+    ${THRIFT_LIBRARIES}
+)

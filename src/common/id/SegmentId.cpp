@@ -23,9 +23,10 @@ StatusOr<int64_t> SegmentId::getId() {
     cur_ += 1;
   } else {  // cur == segment end
     if (segmentStart_ >= nextSegmentStart_) {
-      // indicate asyncFetchSegment failed
-      LOG(ERROR) << "segmentId asyncFetchSegment failed, segmentStart_: " << segmentStart_
-                 << ", nextSegmentStart_: " << nextSegmentStart_;
+      // indicate asyncFetchSegment() failed or fetchSegment() slow
+      LOG(ERROR)
+          << "segmentId asyncFetchSegment() failed or slow(step is too small), segmentStart_: "
+          << segmentStart_ << ", nextSegmentStart_: " << nextSegmentStart_;
       auto xRet = fetchSegment();
       NG_RETURN_IF_ERROR(xRet);
       nextSegmentStart_ = xRet.value();

@@ -6,6 +6,8 @@
 #ifndef COMMON_ID_SEGMENTINCR_H_
 #define COMMON_ID_SEGMENTINCR_H_
 
+#include <double-conversion/utils.h>
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 
@@ -16,6 +18,8 @@ class SegmentId {
 
  public:
   static SegmentId& getInstance() {
+    ASSERT(client_ != nullptr);
+    ASSERT(runner_ != nullptr);
     static SegmentId instance;
     return instance;
   }
@@ -28,6 +32,9 @@ class SegmentId {
 
   Status init(int64_t step) {
     step_ = step;
+    if (step <= 10000) {
+      return Status::Error("Step is too small");
+    }
 
     auto xRet = fetchSegment();
     NG_RETURN_IF_ERROR(xRet);
@@ -38,7 +45,7 @@ class SegmentId {
     return Status::OK();
   }
 
-  static void initClient(meta::MetaClient* client) {
+  static void initClient(meta::BaseMetaClient* client) {
     client_ = client;
   }
 
@@ -66,7 +73,7 @@ class SegmentId {
   int64_t segmentStart_{-1};
   int64_t nextSegmentStart_{-1};
 
-  static inline meta::MetaClient* client_{nullptr};
+  static inline meta::BaseMetaClient* client_{nullptr};
   static inline folly::Executor* runner_{nullptr};
 };
 }  // namespace nebula
