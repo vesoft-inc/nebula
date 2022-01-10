@@ -119,14 +119,15 @@ void VidExtractVisitor::visit(LabelExpression *expr) {
 }
 
 void VidExtractVisitor::visit(LabelAttributeExpression *expr) {
-  if (expr->kind() == Expression::Kind::kLabelAttribute) {
-    const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr);
-    vidPattern_ =
-        VidPattern{VidPattern::Special::kInUsed,
-                   {{labelExpr->left()->toString(), {VidPattern::Vids::Kind::kOtherSource, {}}}}};
-  } else {
-    vidPattern_ = VidPattern{};
-  }
+  const auto &label = expr->left()->toString();
+  vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                           {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+}
+
+void VidExtractVisitor::visit(LabelTagPropertyExpression *expr) {
+  const auto &label = static_cast<const PropertyExpression *>(expr->label())->prop();
+  vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                           {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
 }
 
 void VidExtractVisitor::visit(ArithmeticExpression *expr) {
@@ -144,7 +145,13 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
     }
-
+    if (expr->left()->kind() == Expression::Kind::kLabelTagProperty) {
+      const auto *tagPropExpr = static_cast<const LabelTagPropertyExpression *>(expr->left());
+      const auto &label = static_cast<const PropertyExpression *>(tagPropExpr->label())->prop();
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+      return;
+    }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
         expr->right()->kind() != Expression::Kind::kList ||
         !ExpressionUtils::isEvaluableExpr(expr->right())) {
@@ -171,6 +178,13 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
       const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr->left());
       const auto &label = labelExpr->left()->toString();
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+      return;
+    }
+    if (expr->left()->kind() == Expression::Kind::kLabelTagProperty) {
+      const auto *tagPropExpr = static_cast<const LabelTagPropertyExpression *>(expr->left());
+      const auto &label = static_cast<const PropertyExpression *>(tagPropExpr->label())->prop();
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
@@ -351,11 +365,6 @@ void VidExtractVisitor::visit(MapExpression *expr) {
 }
 
 // property Expression
-void VidExtractVisitor::visit(LabelTagPropertyExpression *expr) {
-  UNUSED(expr);
-  vidPattern_ = VidPattern{};
-}
-
 void VidExtractVisitor::visit(TagPropertyExpression *expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
