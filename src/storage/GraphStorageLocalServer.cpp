@@ -8,14 +8,15 @@
 #include <unistd.h>
 
 #include "common/base/Base.h"
+#include "storage/GraphStorageServiceHandler.h"
 
-#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)               \
-  auto promise = std::make_shared<folly::Promise<respType>>();               \
-  auto f = promise->getFuture();                                             \
-  threadManager->add([&, promise] {                                          \
-    handler_->callFunc(request).thenValue(                                   \
-        [promise](respType&& resp) { promise->setValue(std::move(resp)); }); \
-  });                                                                        \
+#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)                                    \
+  auto promise = std::make_shared<folly::Promise<respType>>();                                    \
+  auto f = promise->getFuture();                                                                  \
+  threadManager->add([&, promise] {                                                               \
+    std::dynamic_pointer_cast<GraphStorageServiceHandler>(handler_)->callFunc(request).thenValue( \
+        [promise](respType&& resp) { promise->setValue(std::move(resp)); });                      \
+  });                                                                                             \
   return f;
 
 namespace nebula::storage {
@@ -29,7 +30,8 @@ void GraphStorageLocalServer::setThreadManager(
   threadManager_ = threadManager;
 }
 
-void GraphStorageLocalServer::setInterface(std::shared_ptr<GraphStorageServiceHandler> handler) {
+void GraphStorageLocalServer::setInterface(
+    std::shared_ptr<apache::thrift::ServerInterface> handler) {
   handler_ = handler;
 }
 
@@ -80,6 +82,11 @@ folly::Future<cpp2::GetPropResponse> GraphStorageLocalServer::future_getProps(
 folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteEdges(
     const cpp2::DeleteEdgesRequest& request) {
   LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteEdges);
+}
+
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_chainDeleteEdges(
+    const cpp2::DeleteEdgesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_chainDeleteEdges);
 }
 
 folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteVertices(

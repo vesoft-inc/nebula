@@ -7,6 +7,9 @@
 
 #include "version/Version.h"
 
+DECLARE_uint32(expired_time_factor);
+DECLARE_int32(removed_threshold_sec);
+
 namespace nebula {
 namespace meta {
 
@@ -62,10 +65,6 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     return;
   }
 
-  HostInfo info(0, cpp2::HostRole::STORAGE, "");
-  for (auto& host : hosts) {
-    data.emplace_back(MetaKeyUtils::hostKey(host.host, host.port), HostInfo::encodeV2(info));
-  }
   doPut(std::move(data));
 }
 

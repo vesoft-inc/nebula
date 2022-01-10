@@ -33,14 +33,14 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   DataSet result;
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
     std::unordered_map<Value, std::vector<const Row*>> hashTable;
-    hashTable.reserve(rhsIter_->size() == 0 ? 1 : rhsIter_->size());
+    hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable);
       result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
     std::unordered_map<List, std::vector<const Row*>> hashTable;
-    hashTable.reserve(rhsIter_->size() == 0 ? 1 : rhsIter_->size());
+    hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildHashTable(probeKeys, rhsIter_.get(), hashTable);
       result = probe(hashKeys, lhsIter_.get(), hashTable);
