@@ -32,7 +32,7 @@ class SegmentId {
 
   Status init(int64_t step) {
     step_ = step;
-    if (step <= 10000) {
+    if (step < 10000) {
       return Status::Error("Step is too small");
     }
 
