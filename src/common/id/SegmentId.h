@@ -6,8 +6,6 @@
 #ifndef COMMON_ID_SEGMENTINCR_H_
 #define COMMON_ID_SEGMENTINCR_H_
 
-#include <double-conversion/utils.h>
-
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 

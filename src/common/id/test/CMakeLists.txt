@@ -91,3 +91,17 @@ nebula_add_test(
     gtest_main
     ${THRIFT_LIBRARIES}
 )
+
+nebula_add_test(
+  NAME segment_id_bm
+  SOURCES SegmentIdBenchmark.cpp
+  OBJECTS
+
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:segment_id_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+  LIBRARIES 
+    follybenchmark 
+    boost_regex
+    ${THRIFT_LIBRARIES}
+)

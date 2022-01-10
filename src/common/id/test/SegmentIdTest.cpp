@@ -7,9 +7,6 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include <iostream>
-#include <thread>
-
 #include "common/id/SegmentId.h"
 
 namespace nebula {
@@ -26,26 +23,6 @@ class MockMetaClient : public meta::BaseMetaClient {
   std::mutex mutex_;
   std::atomic_int64_t cur_{0};
 };
-
-TEST(SegmentIdTest, TestSingle) {
-  MockMetaClient metaClient = MockMetaClient();
-
-  int step = 10000;
-
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(32));
-  threadManager->setNamePrefix("executor");
-  threadManager->start();
-
-  SegmentId::initClient(&metaClient);
-  SegmentId::initRunner(threadManager.get());
-  SegmentId& generator = SegmentId::getInstance();
-  ASSERT_TRUE(generator.init(step).ok());
-
-  StatusOr<int64_t> id = generator.getId();
-  ASSERT_TRUE(id.ok());
-  ASSERT_EQ(id.value(), 0);
-}
 
 TEST(SegmentIdTest, TestConcurrency) {
   MockMetaClient metaClient = MockMetaClient();

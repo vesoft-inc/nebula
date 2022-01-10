@@ -5,13 +5,6 @@
 
 #include "common/id/SegmentId.h"
 
-#include <proxygen/lib/http/codec/ErrorCode.h>
-
-#include <cstdint>
-#include <mutex>
-
-#include "common/base/Logging.h"
-
 namespace nebula {
 
 StatusOr<int64_t> SegmentId::getId() {
