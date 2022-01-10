@@ -89,6 +89,21 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  */
 class Listener : public raftex::RaftPart {
  public:
+  /**
+   * @brief Construct a new Listener, it is a derived class of RaftPart
+   *
+   * @param spaceId
+   * @param partId
+   * @param localAddr Listener ip/addr
+   * @param walPath Listener's wal path
+   * @param ioPool IOThreadPool for listener
+   * @param workers Background thread for listener
+   * @param handlers Worker thread for listener
+   * @param snapshotMan Snapshot manager
+   * @param clientMan Client manager
+   * @param diskMan Disk manager
+   * @param schemaMan Schema manager
+   */
   Listener(GraphSpaceID spaceId,
            PartitionID partId,
            HostAddr localAddr,
@@ -101,16 +116,33 @@ class Listener : public raftex::RaftPart {
            std::shared_ptr<DiskManager> diskMan,
            meta::SchemaManager* schemaMan);
 
-  // Initialize listener, all Listener must call this method
+  /**
+   * @brief Initialize listener, all Listener must call this method
+   *
+   * @param peers Raft peers
+   * @param asLearner Listener is always a raft learner, so by default true
+   */
   void start(std::vector<HostAddr>&& peers, bool asLearner = true) override;
 
-  // Stop listener
+  /**
+   * @brief Stop listener
+   */
   void stop() override;
 
+  /**
+   * @brief Get listener's apply id
+   *
+   * @return LogID logId that has been applied to state machine
+   */
   LogID getApplyId() {
     return lastApplyLogId_;
   }
 
+  /**
+   * @brief clean up data in listener, called in RaftPart::reset
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode cleanup() override {
     CHECK(!raftLock_.try_lock());
     leaderCommitId_ = 0;
@@ -119,36 +151,87 @@ class Listener : public raftex::RaftPart {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  /**
+   * @brief Trigger RaftPart::reset, clean all data and reset states
+   */
   void resetListener();
 
+  /**
+   * @brief Check whether listener has catchup leader
+   */
   bool pursueLeaderDone();
 
  protected:
+  /**
+   * @brief extra initialize work could do here
+   */
   virtual void init() = 0;
 
-  // Last apply id, need to be persisted, used in initialization
+  /**
+   * @brief Get last apply id from persistance storage, used in initialization
+   *
+   * @return LogID Last apply log id
+   */
   virtual LogID lastApplyLogId() = 0;
 
+  /**
+   * @brief Apply data into listener's state machine
+   *
+   * @param data Key/value to apply
+   * @return True if succeed. False if failed.
+   */
   virtual bool apply(const std::vector<KV>& data) = 0;
 
-  virtual bool persist(LogID, TermID, LogID) = 0;
+  /**
+   * @brief Persist commitLogId commitLogTerm and lastApplyLogId
+   */
+  virtual bool persist(LogID commitLogId, TermID commitLogTerm, LogID lastApplyLogId) = 0;
 
-  void onLostLeadership(TermID) override {
+  /**
+   * @brief Callback when a raft node lost leadership on term, should not happen in listener
+   *
+   * @param term
+   */
+  void onLostLeadership(TermID term) override {
+    UNUSED(term);
     LOG(FATAL) << "Should not reach here";
   }
 
-  void onElected(TermID) override {
+  /**
+   * @brief Callback when a raft node elected as leader on term, should not happen in listener
+   *
+   * @param term
+   */
+  void onElected(TermID term) override {
+    UNUSED(term);
     LOG(FATAL) << "Should not reach here";
   }
 
-  void onLeaderReady(TermID) override {
+  /**
+   * @brief Callback when a raft node is ready to serve as leader, should not happen in listener
+   *
+   * @param term
+   */
+  void onLeaderReady(TermID term) override {
+    UNUSED(term);
     LOG(FATAL) << "Should not reach here";
   }
 
+  /**
+   * @brief Callback when a raft node discover new leader
+   *
+   * @param nLeader New leader's address
+   */
   void onDiscoverNewLeader(HostAddr nLeader) override {
     VLOG(2) << idStr_ << "Find the new leader " << nLeader;
   }
 
+  /**
+   * @brief Check if candidate is in my peer
+   *
+   * @param candidate Address when received a request
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
     CHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
@@ -158,26 +241,49 @@ class Listener : public raftex::RaftPart {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  // For listener, we just return true directly. Another background thread trigger the actual
-  // apply work, and do it in worker thread, and update lastApplyLogId_
+  /**
+   * @brief For listener, we just return true directly. Another background thread trigger the actual
+   * apply work, and do it in worker thread, and update lastApplyLogId_
+   *
+   * @return std::tuple<SUCCEED, last log id, last log term>
+   */
   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator>,
                                                                 bool) override;
 
-  // For most of the listeners, just return true is enough. However, if listener need to be aware
-  // of membership change, some log type of wal need to be pre-processed, could do it here.
+  /**
+   * @brief For most of the listeners, just return true is enough. However, if listener need to be
+   * aware of membership change, some log type of wal need to be pre-processed, could do it here.
+   *
+   * @param logId Log id to pre-process
+   * @param termId Log term to pre-process
+   * @param clusterId Cluster id in wal
+   * @param log Log message in wal
+   * @return True if succeed. False if failed.
+   */
   bool preProcessLog(LogID logId,
                      TermID termId,
                      ClusterID clusterId,
                      const std::string& log) override;
 
-  // If the listener falls behind way to much than leader, the leader will send all its data
-  // in snapshot by batch, listener need to implement it if it need handle this case. The return
-  // value is a pair of <logs count, logs size> of this batch.
+  /**
+   * @brief If the listener falls behind way to much than leader, the leader will send all its data
+   * in snapshot by batch, listener need to implement this method to apply the batch to state
+   * machine. The return value is a pair of <logs count, logs size> of this batch.
+   *
+   * @param data Data to apply
+   * @param committedLogId Commit log id of snapshot
+   * @param committedLogTerm Commit log term of snapshot
+   * @param finished Whether spapshot is finished
+   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   */
   std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
                                              LogID committedLogId,
                                              TermID committedLogTerm,
                                              bool finished) override;
 
+  /**
+   * @brief Background job thread will trigger doApply to apply data into state machine periodically
+   */
   void doApply();
 
  protected:

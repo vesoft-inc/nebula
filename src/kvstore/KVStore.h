@@ -58,22 +58,41 @@ struct StoreCapability {
 
 class Part;
 /**
- * Interface for all kv-stores
- **/
+ * @brief Interfaces of kvstore
+ */
 class KVStore {
  public:
   virtual ~KVStore() = default;
 
-  // Return bit-OR of StoreCapability values;
+  /**
+   * @brief Return bit-OR of StoreCapability values;
+   *
+   * @return uint32_t Bitwise capability
+   */
   virtual uint32_t capability() const = 0;
 
+  /**
+   * @brief Stop the kvstore
+   */
   virtual void stop() = 0;
 
-  // Retrieve the current leader for the given partition. This
-  // is usually called when E_LEADER_CHANGED error code is returned.
+  /**
+   * @brief Retrieve the current leader for the given partition. This is usually called when
+   * E_LEADER_CHANGED error code is returned.
+   *
+   * @param spaceId
+   * @param partID
+   * @return ErrorOr<nebula::cpp2::ErrorCode, HostAddr> Return HostAddr when succeeded, return
+   * ErrorCode when failed
+   */
   virtual ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                                 PartitionID partID) = 0;
 
+  /**
+   * @brief Return pointer of part manager
+   *
+   * @return PartManager*
+   */
   virtual PartManager* partManager() const {
     return nullptr;
   }
@@ -98,16 +117,34 @@ class KVStore {
    */
   virtual void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) = 0;
 
-  // Read a single key
+  /**
+   * @brief Read a single key
+   *
+   * @param spaceId
+   * @param partId
+   * @param key
+   * @param value
+   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                                       PartitionID partId,
                                       const std::string& key,
                                       std::string* value,
                                       bool canReadFromFollower = false) = 0;
 
-  // Read multiple keys, if error occurs a cpp2::ErrorCode is returned,
-  // If key[i] does not exist, the i-th value in return value would be
-  // Status::KeyNotFound
+  /**
+   * @brief Read a list of keys
+   *
+   * @param spaceId
+   * @param partId
+   * @param keys Keys to read
+   * @param values Pointers of value
+   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @return Return std::vector<Status> when suceeded: Result status of each key, if key[i] does not
+   * exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
+   * failed
+   */
   virtual std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> multiGet(
       GraphSpaceID spaceId,
       PartitionID partId,
@@ -115,7 +152,17 @@ class KVStore {
       std::vector<std::string>* values,
       bool canReadFromFollower = false) = 0;
 
-  // Get all results in range [start, end)
+  /**
+   * @brief Get all results in range [start, end)
+   *
+   * @param spaceId
+   * @param partId
+   * @param start Start key, inclusive
+   * @param end End key, exclusive
+   * @param iter Iterator in range [start, end), returns by kv engine
+   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const std::string& start,
@@ -123,9 +170,9 @@ class KVStore {
                                         std::unique_ptr<KVIterator>* iter,
                                         bool canReadFromFollower = false) = 0;
 
-  // Since the `range' interface will hold references to its 3rd & 4th
-  // parameter, in `iter', thus the arguments must outlive `iter'. Here we
-  // forbid one to invoke `range' with rvalues, which is the common mistake.
+  /**
+   * @brief To forbid to pass rvalue via the 'range' parameter.
+   */
   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         std::string&& start,
@@ -134,6 +181,7 @@ class KVStore {
                                         bool canReadFromFollower = false) = delete;
 
   /**
+<<<<<<< HEAD
    * @brief Get all results with prefix.
    *
    * @param spaceId
@@ -142,6 +190,15 @@ class KVStore {
    * @param iter
    * @param canReadFromFollower
    * @param snapshot If set, read from snapshot.
+=======
+   * @brief Get all results with 'prefix' str as prefix.
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix Key of prefix to seek
+   * @param iter Iterator of keys starts with 'prefix', returns by kv engine
+   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+>>>>>>> 67c9cd281 (add header comments)
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
@@ -152,6 +209,7 @@ class KVStore {
                                          const void* snapshot = nullptr) = 0;
 
   /**
+<<<<<<< HEAD
    * @brief To forbid to pass rvalue via the `prefix' parameter.
    *
    * @param spaceId
@@ -161,6 +219,9 @@ class KVStore {
    * @param canReadFromFollower
    * @param snapshot
    * @return nebula::cpp2::ErrorCode
+=======
+   * @brief To forbid to pass rvalue via the 'prefix' parameter.
+>>>>>>> 67c9cd281 (add header comments)
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
@@ -169,7 +230,17 @@ class KVStore {
                                          bool canReadFromFollower = false,
                                          const void* snapshot = nullptr) = delete;
 
-  // Get all results with prefix starting from start
+  /**
+   * @brief Get all results with 'prefix' str as prefix starting form 'start'
+   *
+   * @param spaceId
+   * @param partId
+   * @param start Start key, inclusive
+   * @param prefix The prefix of keys to iterate
+   * @param iter Iterator of keys starts with 'prefix' beginning from 'start', returns by kv engine
+   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
                                                   PartitionID partId,
                                                   const std::string& start,
@@ -177,7 +248,9 @@ class KVStore {
                                                   std::unique_ptr<KVIterator>* iter,
                                                   bool canReadFromFollower = false) = 0;
 
-  // To forbid to pass rvalue via the `rangeWithPrefix' parameter.
+  /**
+   * @brief To forbid to pass rvalue via the 'rangeWithPrefix' parameter.
+   */
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
                                                   PartitionID partId,
                                                   std::string&& start,
@@ -185,80 +258,221 @@ class KVStore {
                                                   std::unique_ptr<KVIterator>* iter,
                                                   bool canReadFromFollower = false) = delete;
 
+  /**
+   * @brief Synchronize the kvstore across multiple replica
+   *
+   * @param spaceId
+   * @param partId
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode sync(GraphSpaceID spaceId, PartitionID partId) = 0;
 
+  /**
+   * @brief Write multiple key/values to kvstore asynchronously
+   *
+   * @param spaceId
+   * @param partId
+   * @param keyValues Key/values to put
+   * @param cb Callback when has a result
+   */
   virtual void asyncMultiPut(GraphSpaceID spaceId,
                              PartitionID partId,
                              std::vector<KV>&& keyValues,
                              KVCallback cb) = 0;
 
-  // Asynchronous version of remove methods
+  /**
+   * @brief Remove a key from kvstore asynchronously
+   *
+   * @param spaceId
+   * @param partId
+   * @param key Key to remove
+   * @param cb Callback when has a result
+   */
   virtual void asyncRemove(GraphSpaceID spaceId,
                            PartitionID partId,
                            const std::string& key,
                            KVCallback cb) = 0;
 
+  /**
+   * @brief Remove multible keys from kvstore asynchronously
+   *
+   * @param spaceId
+   * @param partId
+   * @param key Keys to remove
+   * @param cb Callback when has a result
+   */
   virtual void asyncMultiRemove(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<std::string>&& keys,
                                 KVCallback cb) = 0;
 
+  /**
+   * @brief Remove keys in range [start, end) asynchronously
+   *
+   * @param spaceId
+   * @param partId
+   * @param start Start key
+   * @param end End key
+   * @param cb Callback when has a result
+   */
   virtual void asyncRemoveRange(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 const std::string& start,
                                 const std::string& end,
                                 KVCallback cb) = 0;
 
+  /**
+   * @brief Do some atomic operation on kvstore
+   *
+   * @param spaceId
+   * @param partId
+   * @param op Atomic operation
+   * @param cb Callback when has a result
+   */
   virtual void asyncAtomicOp(GraphSpaceID spaceId,
                              PartitionID partId,
                              raftex::AtomicOp op,
                              KVCallback cb) = 0;
 
   /**
-   * @brief async commit multi operation.
-   *        difference between asyncMultiPut or asyncMultiRemove is
-   *        this func allow contains both put and remove together
-   *        difference between asyncAtomicOp is asyncAtomicOp may have CAS
+   * @brief Brief async commit multi operation, difference between asyncMultiPut or asyncMultiRemove
+   * is this func allow contains both put and remove together, difference between asyncAtomicOp is
+   * asyncAtomicOp may have CAS
+   *
+   * @param spaceId
+   * @param partId
+   * @param batch Encoded write batch
+   * @param cb Callback when has a result
    */
   virtual void asyncAppendBatch(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::string&& batch,
                                 KVCallback cb) = 0;
 
+  /**
+   * @brief Ingest the sst file under download directory
+   *
+   * @param spaceId
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode ingest(GraphSpaceID spaceId) = 0;
 
+  /**
+   * @brief Retrive the leader distribution
+   *
+   * @param leaderIds The leader address of all partitions
+   * @return int32_t The leader count of all spaces
+   */
   virtual int32_t allLeader(
       std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) = 0;
 
+  /**
+   * @brief Get the part object of given spaceId and partId
+   *
+   * @param spaceId
+   * @param partId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeed,
+   * else return ErrorCode
+   */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                                        PartitionID partId) = 0;
 
+  /**
+   * @brief Trigger comapction, only used in rocksdb
+   *
+   * @param spaceId
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode compact(GraphSpaceID spaceId) = 0;
 
+  /**
+   * @brief Trigger flush, only used in rocksdb
+   *
+   * @param spaceId
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode flush(GraphSpaceID spaceId) = 0;
 
+  /**
+   * @brief Create a Checkpoint, only used in rocksdb
+   *
+   * @param spaceId
+   * @param name Checkpoint name
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> Return the
+   * checkpoint info if succeed, else return ErrorCode
+   */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> createCheckpoint(
       GraphSpaceID spaceId, const std::string& name) = 0;
 
+  /**
+   * @brief Drop a Checkpoint, only used in rocksdb
+   *
+   * @param spaceId
+   * @param name Checkpoint name
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 
+  /**
+   * @brief Set the write blocking flag
+   *
+   * @param spaceId
+   * @param sign True to block. Falst to unblock
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) = 0;
 
+  /**
+   * @brief Backup the data of a table prefix, for meta backup
+   *
+   * @param spaceId
+   * @param name
+   * @param tablePrefix Table prefix
+   * @param filter Data filter when iterate the table
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> Return the sst file path if
+   * succeed, else return ErrorCode
+   */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> backupTable(
       GraphSpaceID spaceId,
       const std::string& name,
       const std::string& tablePrefix,
       std::function<bool(const folly::StringPiece& key)> filter) = 0;
 
-  // for meta BR
+  /**
+   * @brief Restore from sst files
+   *
+   * @param spaceId
+   * @param files SST file path
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode restoreFromFiles(GraphSpaceID spaceId,
                                                    const std::vector<std::string>& files) = 0;
 
+  /**
+   * @brief Write data to local storage engine only
+   *
+   * @param spaceId
+   * @param keyValues Key/values to write into only local storage engine instead of multiple replica
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                             std::vector<KV> keyValues) = 0;
 
+  /**
+   * @brief Get the data paths
+   *
+   * @return std::vector<std::string> Data paths
+   */
   virtual std::vector<std::string> getDataRoot() const = 0;
 
+  /**
+   * @brief Get the kvstore propery, only used in rocksdb
+   *
+   * @param spaceId
+   * @param property Property name
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::string> Return the property value in string if
+   * succeed, else return ErrorCode
+   */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
       GraphSpaceID spaceId, const std::string& property) = 0;
 

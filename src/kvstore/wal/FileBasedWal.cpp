@@ -440,11 +440,6 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
 }
 
 bool FileBasedWal::appendLogInternal(LogID id, TermID term, ClusterID cluster, std::string msg) {
-  if (stopped_) {
-    VLOG(3) << idStr_ << "WAL has stopped. Do not accept logs any more";
-    return false;
-  }
-
   if (lastLogId_ != 0 && firstLogId_ != 0 && id != lastLogId_ + 1) {
     VLOG(3) << idStr_ << "There is a gap in the log id. The last log id is " << lastLogId_
             << ", and the id being appended is " << id;
