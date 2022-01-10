@@ -1,0 +1,41 @@
+space:
+  name: ldbc_v0_3_3
+  partitionNum: 8
+  replicaFactor: 1
+  vidType: FIXED_STRING(32)
+  charset: utf8
+  collate: utf8_bin
+schema: |
+  CREATE TAG IF NOT EXISTS `Place`(`name` string,`url` string,`type` string);
+  CREATE TAG IF NOT EXISTS `City`(`name` string,`url` string,`type` string);
+  CREATE TAG IF NOT EXISTS `Country`(`name` string,`url` string,`type` string);
+  CREATE TAG IF NOT EXISTS `Continent`(`name` string,`url` string,`type` string);
+  CREATE TAG IF NOT EXISTS `Message`(`creationDate` string,`locationIP` string,`browserUsed` string,`content` string,`length` int);
+  CREATE TAG IF NOT EXISTS `Comment`(`creationDate` string,`locationIP` string,`browserUsed` string,`content` string,`length` int);
+  CREATE TAG IF NOT EXISTS `Post`(`imageFile` string,`creationDate` string,`locationIP` string,`browserUsed` string,`language` string,`content` string,`length` int);
+  CREATE TAG IF NOT EXISTS `Organisation`(`type` string,`name` string,`url` string);
+  CREATE TAG IF NOT EXISTS `University`(`type` string,`name` string,`url` string);
+  CREATE TAG IF NOT EXISTS `Company`(`type` string,`name` string,`url` string);
+  CREATE TAG IF NOT EXISTS `Person`(`firstName` string,`lastName` string,`gender` string,`birthday` string,`creationDate` string,`locationIP` string,`browserUsed` string, `email` string, `speaks` string);
+  CREATE TAG IF NOT EXISTS `TagClass`(`name` string,`url` string);
+  CREATE TAG IF NOT EXISTS `Forum`(`title` string,`creationDate` string);
+  CREATE TAG IF NOT EXISTS `Tag`(`name` string,`url` string);
+  CREATE EDGE IF NOT EXISTS `IS_PART_OF`();
+  CREATE EDGE IF NOT EXISTS `LIKES`(`creationDate` string);
+  CREATE EDGE IF NOT EXISTS `HAS_CREATOR`();
+  CREATE EDGE IF NOT EXISTS `HAS_INTEREST`();
+  CREATE EDGE IF NOT EXISTS `IS_SUBCLASS_OF`();
+  CREATE EDGE IF NOT EXISTS `IS_LOCATED_IN`();
+  CREATE EDGE IF NOT EXISTS `HAS_MODERATOR`();
+  CREATE EDGE IF NOT EXISTS `HAS_TAG`();
+  CREATE EDGE IF NOT EXISTS `WORK_AT`(`workFrom` int);
+  CREATE EDGE IF NOT EXISTS `REPLY_OF`();
+  CREATE EDGE IF NOT EXISTS `STUDY_AT`(`classYear` int);
+  CREATE EDGE IF NOT EXISTS `CONTAINER_OF`();
+  CREATE EDGE IF NOT EXISTS `HAS_MEMBER`(`joinDate` string);
+  CREATE EDGE IF NOT EXISTS `KNOWS`(`creationDate` string);
+  CREATE EDGE IF NOT EXISTS `HAS_TYPE`();
+  CREATE TAG INDEX message_create_date ON `Message`(`creationDate`(20));
+  CREATE TAG INDEX person_first_name ON `Person`(`firstName`(20));
+files:
+

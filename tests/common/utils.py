@@ -432,8 +432,9 @@ def load_csv_data(
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization
         time.sleep(2)
 
-        for fd in config["files"]:
-            _load_data_from_file(sess, data_dir, fd)
+        if config["files"] is not None:
+            for fd in config["files"]:
+                _load_data_from_file(sess, data_dir, fd)
 
         return space_desc
 
