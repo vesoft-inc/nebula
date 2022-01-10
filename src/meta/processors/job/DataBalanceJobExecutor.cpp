@@ -99,7 +99,7 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     for (Host* h : hostVec) {
       totalPartNum += h->parts_.size();
     }
-    if (hostVec.size() == 0) {
+    if (hostVec.empty()) {
       LOG(ERROR) << "rebalance error: zone has no host";
       return {};
     }

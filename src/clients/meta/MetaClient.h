@@ -7,6 +7,7 @@
 #define CLIENTS_META_METACLIENT_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/container/F14Map.h>
 #include <folly/container/F14Set.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -145,9 +146,9 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 // Mapping of user name and remaining wrong password attempts
-using UserPasswordAttemptsRemain = std::unordered_map<std::string, uint32>;
+using UserPasswordAttemptsRemain = folly::ConcurrentHashMap<std::string, uint32>;
 // Mapping of user name and the timestamp when the account is locked
-using UserLoginLockTime = std::unordered_map<std::string, uint32>;
+using UserLoginLockTime = folly::ConcurrentHashMap<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
@@ -238,6 +239,8 @@ class MetaClient {
   bool isMetadReady();
 
   bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
+
+  void notifyStop();
 
   void stop();
 
@@ -773,7 +776,7 @@ class MetaClient {
   std::atomic<int64_t> metadLastUpdateTime_{0};
 
   int64_t metaServerVersion_{-1};
-  static constexpr int64_t EXPECT_META_VERSION = 2;
+  static constexpr int64_t EXPECT_META_VERSION = 3;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
@@ -789,7 +792,8 @@ class MetaClient {
 
   // Only report dir info once when started
   bool dirInfoReported_ = false;
-  struct ThreadLocalInfo {
+
+  struct MetaData {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;
     SpaceNameIdMap spaceIndexByName_;
@@ -805,9 +809,12 @@ class MetaClient {
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
     UserPasswordMap userPasswordMap_;
-  };
 
-  const ThreadLocalInfo& getThreadLocalInfo();
+    SessionMap sessionMap_;
+    folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+
+    ServiceClientsList serviceClientList_;
+  };
 
   void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
 
@@ -836,7 +843,6 @@ class MetaClient {
   ServiceClientsList serviceClientList_;
   FTIndexMap fulltextIndexMap_;
 
-  mutable folly::RWSpinLock localCacheLock_;
   // The listener_ is the NebulaStore
   MetaChangedListener* listener_{nullptr};
   // The lock used to protect listener_
@@ -854,8 +860,9 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
-  std::atomic<SessionMap*> sessionMap_;
-  std::atomic<folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>*> killedPlans_;
+  SessionMap sessionMap_;
+  folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+  std::atomic<MetaData*> metadata_;
 };
 
 }  // namespace meta
