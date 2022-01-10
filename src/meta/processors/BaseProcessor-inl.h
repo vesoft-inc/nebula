@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "interface/gen-cpp2/storage_types.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
