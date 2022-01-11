@@ -122,7 +122,6 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
           storage::cpp2::IndexQueryContext ctx;
           ctx.filter_ref() = Expression::encode(*flattenFilter);
           scan->setIndexQueryContext({ctx});
-          whereCtx.reset();
         }
       }
     }

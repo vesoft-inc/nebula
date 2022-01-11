@@ -245,8 +245,7 @@ Feature: Match seek by id
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  @skip
-  Scenario: test OR logic (reason = "or logic optimization error")
+  Scenario: test OR logic
     When executing query:
       """
       MATCH (v)
@@ -254,13 +253,7 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then the result should be, in any order:
-      | Name                 |
-      | 'James Harden'       |
-      | 'Jonathon Simmons'   |
-      | 'Klay Thompson'      |
-      | 'Dejounte Murray'    |
-      | 'Kristaps Porzingis' |
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -268,10 +261,7 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then the result should be, in any order:
-      | Name                 |
-      | 'James Harden'       |
-      | 'Kristaps Porzingis' |
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -279,8 +269,47 @@ Feature: Match seek by id
             OR v.player.age != 23
       RETURN v.player.name AS Name
       """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.name == "Tim Duncan"
+            OR v.player.age == 23
+      RETURN v.player.name as name
+      """
     Then the result should be, in any order:
-      | Name |
+      | name                 |
+      | "Kristaps Porzingis" |
+      | "Tim Duncan"         |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.name == "Tim Duncan"
+            OR v.noexist.age == 23
+      RETURN v.player.name as name
+      """
+    Then the result should be, in any order:
+      | name         |
+      | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.noexist == "Tim Duncan"
+            OR v.player.age == 23
+      RETURN v.player.name as name
+      """
+    Then the result should be, in any order:
+      | name                 |
+      | "Kristaps Porzingis" |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.noexist == "Tim Duncan"
+            OR v.noexist.age == 23
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
 
   Scenario: with arithmetic
     When executing query:
