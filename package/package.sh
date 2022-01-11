@@ -11,6 +11,7 @@
 #   -j: Number of threads, default $(nproc)
 #   -r: Whether enable compressed debug info, default ON
 #   -p: Whether dump the symbols from binary by dump_syms
+#   -k: Whether to enable breakpad, default OFF
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE>
 #
@@ -33,8 +34,9 @@ dump_symbols=OFF
 dump_syms_tool_dir=
 system_name=
 install_prefix=/usr/local/nebula
+enable_breakpad="OFF"
 
-while getopts v:n:s:b:d:t:r:p:j: opt;
+while getopts v:n:s:b:d:t:r:p:j:k: opt;
 do
     case $opt in
         v)
@@ -64,6 +66,9 @@ do
             ;;
         p)
             dump_symbols=$OPTARG
+            ;;
+        k)
+            enable_breakpad=$OPTARG
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -104,11 +109,11 @@ EOF
 
 function _build_graph {
     pushd ${build_dir}
-    enable_breakpad=OFF
-    if [ "x"$build_type = "xDebug" ] || [ "x"$build_type = "xRelWithDebInfo" ]; then
-        enable_breakpad=OFF
-    else
-        enable_breakpad=ON
+    if [ "x"$enable_breakpad == "xON" ]; then
+        if [ "x"$build_type != "xDebug" ] && [ "x"$build_type != "xRelWithDebInfo" ]; then
+            echo 'Breakpad need debug info.'
+            exit 1
+        fi
     fi
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
