@@ -18,7 +18,6 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/BalancePlan.h"

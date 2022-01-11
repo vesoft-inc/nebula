@@ -8,7 +8,6 @@
 #include <folly/synchronization/Baton.h>
 
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
