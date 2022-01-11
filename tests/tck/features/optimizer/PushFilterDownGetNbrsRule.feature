@@ -123,11 +123,11 @@ Feature: Push Filter down GetNeighbors rule
       | name         |
       | "Boris Diaw" |
     And the execution plan should be:
-      | name         | dependencies | operator info                            |
-      | Project      | 1            |                                          |
+      | name         | dependencies | operator info                           |
+      | Project      | 1            |                                         |
       | Filter       | 2            | {"condition": "($$.team.name="Spurs")"} |
-      | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}         |
-      | Start        |              |                                          |
+      | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}        |
+      | Start        |              |                                         |
 
   @skip
   Scenario: fail to push source or dst vertex filter condition down
@@ -141,11 +141,11 @@ Feature: Push Filter down GetNeighbors rule
       | name         |
       | "Boris Diaw" |
     And the execution plan should be:
-      | name         | dependencies | operator info                                                   |
-      | Project      | 1            |                                                                 |
+      | name         | dependencies | operator info                                                  |
+      | Project      | 1            |                                                                |
       | Filter       | 2            | {"condition": "($^.player.age>18) OR ($$.team.name="Lakers")"} |
-      | GetNeighbors | 3            |                                                                 |
-      | Start        |              |                                                                 |
+      | GetNeighbors | 3            |                                                                |
+      | Start        |              |                                                                |
 
   @skip
   Scenario: fail to push dst vertex filter down
