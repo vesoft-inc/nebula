@@ -96,12 +96,12 @@ TEST_F(ExpressionTest, toStringTest) {
     TEST_TOSTRING(2 + 2 - 3, "((2+2)-3)");
     TEST_TOSTRING(true OR true, "(true OR true)");
     TEST_TOSTRING(true AND false OR false, "((true AND false) OR false)");
-    TEST_TOSTRING(true == 2, "(true==2)");
+    TEST_TOSTRING(true = 2, "(true=2)");
     TEST_TOSTRING(2 > 1 AND 3 > 2, "((2>1) AND (3>2))");
     TEST_TOSTRING((3 + 5) * 3 / (6 - 2), "(((3+5)*3)/(6-2))");
     TEST_TOSTRING(76 - 100 / 20 * 4, "(76-((100/20)*4))");
-    TEST_TOSTRING(8 % 2 + 1 == 1, "(((8%2)+1)==1)");
-    TEST_TOSTRING(1 == 2, "(1==2)");
+    TEST_TOSTRING(8 % 2 + 1 = 1, "(((8%2)+1)=1)");
+    TEST_TOSTRING(1 = 2, "(1=2)");
   }
 }
 

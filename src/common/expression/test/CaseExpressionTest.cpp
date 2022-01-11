@@ -91,7 +91,7 @@ TEST_F(CaseExpressionTest, CaseExprToString) {
     auto expr = CaseExpression::make(&pool, cases);
     expr->setDefault(ConstantExpression::make(&pool, 4));
     ASSERT_EQ(
-        "CASE WHEN (23<17) THEN 1 WHEN (37==37) THEN 2 WHEN (45!=99) THEN 3 "
+        "CASE WHEN (23<17) THEN 1 WHEN (37=37) THEN 2 WHEN (45!=99) THEN 3 "
         "ELSE 4 END",
         expr->toString());
   }

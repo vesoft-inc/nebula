@@ -10,16 +10,16 @@ class RelationalExpressionTest : public ExpressionTest {};
 
 TEST_F(ExpressionTest, LiteralConstantsRelational) {
   {
-    TEST_EXPR(true == 1.0, false);
-    TEST_EXPR(true == 2.0, false);
+    TEST_EXPR(true = 1.0, false);
+    TEST_EXPR(true = 2.0, false);
     TEST_EXPR(true != 1.0, true);
     TEST_EXPR(true != 2.0, true);
     TEST_EXPR(true > 1.0, Value::kNullBadType);
     TEST_EXPR(true >= 1.0, Value::kNullBadType);
     TEST_EXPR(true < 1.0, Value::kNullBadType);
     TEST_EXPR(true <= 1.0, Value::kNullBadType);
-    TEST_EXPR(false == 0.0, false);
-    TEST_EXPR(false == 1.0, false);
+    TEST_EXPR(false = 0.0, false);
+    TEST_EXPR(false = 1.0, false);
     TEST_EXPR(false != 0.0, true);
     TEST_EXPR(false != 1.0, true);
     TEST_EXPR(false > 0.0, Value::kNullBadType);
@@ -27,16 +27,16 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(false < 0.0, Value::kNullBadType);
     TEST_EXPR(false <= 0.0, Value::kNullBadType);
 
-    TEST_EXPR(true == 1, false);
-    TEST_EXPR(true == 2, false);
+    TEST_EXPR(true = 1, false);
+    TEST_EXPR(true = 2, false);
     TEST_EXPR(true != 1, true);
     TEST_EXPR(true != 2, true);
     TEST_EXPR(true > 1, Value::kNullBadType);
     TEST_EXPR(true >= 1, Value::kNullBadType);
     TEST_EXPR(true < 1, Value::kNullBadType);
     TEST_EXPR(true <= 1, Value::kNullBadType);
-    TEST_EXPR(false == 0, false);
-    TEST_EXPR(false == 1, false);
+    TEST_EXPR(false = 0, false);
+    TEST_EXPR(false = 1, false);
     TEST_EXPR(false != 0, true);
     TEST_EXPR(false != 1, true);
     TEST_EXPR(false > 0, Value::kNullBadType);
@@ -45,8 +45,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(false <= 0, Value::kNullBadType);
   }
   {
-    TEST_EXPR(-1 == -2, false);
-    TEST_EXPR(-2 == -1, false);
+    TEST_EXPR(-1 = -2, false);
+    TEST_EXPR(-2 = -1, false);
     TEST_EXPR(-1 != -2, true);
     TEST_EXPR(-2 != -1, true);
     TEST_EXPR(-1 > -2, true);
@@ -58,8 +58,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(-1 <= -2, false);
     TEST_EXPR(-2 <= -1, true);
 
-    TEST_EXPR(0.5 == 1, false);
-    TEST_EXPR(1.0 == 1, true);
+    TEST_EXPR(0.5 = 1, false);
+    TEST_EXPR(1.0 = 1, true);
     TEST_EXPR(0.5 != 1, true);
     TEST_EXPR(1.0 != 1, false);
     TEST_EXPR(0.5 > 1, false);
@@ -67,15 +67,15 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(0.5 < 1, true);
     TEST_EXPR(0.5 <= 1, true);
 
-    TEST_EXPR(-1 == -1, true);
+    TEST_EXPR(-1 = -1, true);
     TEST_EXPR(-1 != -1, false);
     TEST_EXPR(-1 > -1, false);
     TEST_EXPR(-1 >= -1, true);
     TEST_EXPR(-1 < -1, false);
     TEST_EXPR(-1 <= -1, true);
 
-    TEST_EXPR(1 == 2, false);
-    TEST_EXPR(2 == 1, false);
+    TEST_EXPR(1 = 2, false);
+    TEST_EXPR(2 = 1, false);
     TEST_EXPR(1 != 2, true);
     TEST_EXPR(2 != 1, true);
     TEST_EXPR(1 > 2, false);
@@ -87,7 +87,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(1 <= 2, true);
     TEST_EXPR(2 <= 1, false);
 
-    TEST_EXPR(1 == 1, true);
+    TEST_EXPR(1 = 1, true);
     TEST_EXPR(1 != 1, false);
     TEST_EXPR(1 > 1, false);
     TEST_EXPR(1 >= 1, true);
@@ -95,7 +95,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(1 <= 1, true);
   }
   {
-    // empty == empty
+    // empty = empty
     auto *operand1 = ConstantExpression::make(&pool, Value());
     auto *operand2 = ConstantExpression::make(&pool, Value());
     auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
@@ -104,7 +104,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
   }
   {
-    // empty == null
+    // empty = null
     auto *operand1 = ConstantExpression::make(&pool, Value());
     auto *operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
     auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
@@ -174,9 +174,9 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(null >= 1.11, Value::kNullValue);
   }
   {
-    TEST_EXPR(8 % 2 + 1 == 1, true);
+    TEST_EXPR(8 % 2 + 1 = 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
-    TEST_EXPR(8 % 3 + 1 == 3, true);
+    TEST_EXPR(8 % 3 + 1 = 3, true);
     TEST_EXPR(8 % 3 + 1 != 3, false);
     TEST_EXPR(8 % 3 > 1, true);
     TEST_EXPR(8 % 3 >= 2, true);
@@ -191,7 +191,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
 // TODO: Add tests for all kinds of relExpr
 TEST_F(RelationalExpressionTest, RelationEQ) {
   {
-    // e1.list == NULL
+    // e1.list = NULL
     auto expr = RelationalExpression::makeEQ(&pool,
                                              EdgePropertyExpression::make(&pool, "e1", "list"),
                                              ConstantExpression::make(&pool, Value(NullType::NaN)));
@@ -199,7 +199,7 @@ TEST_F(RelationalExpressionTest, RelationEQ) {
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
   }
   {
-    // e1.list_of_list == NULL
+    // e1.list_of_list = NULL
     auto expr =
         RelationalExpression::makeEQ(&pool,
                                      EdgePropertyExpression::make(&pool, "e1", "list_of_list"),
@@ -208,7 +208,7 @@ TEST_F(RelationalExpressionTest, RelationEQ) {
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
   }
   {
-    // e1.list == e1.list
+    // e1.list = e1.list
     auto expr = RelationalExpression::makeEQ(&pool,
                                              EdgePropertyExpression::make(&pool, "e1", "list"),
                                              EdgePropertyExpression::make(&pool, "e1", "list"));
@@ -217,7 +217,7 @@ TEST_F(RelationalExpressionTest, RelationEQ) {
     EXPECT_EQ(eval, true);
   }
   {
-    // e1.list_of_list == e1.list_of_list
+    // e1.list_of_list = e1.list_of_list
     auto expr =
         RelationalExpression::makeEQ(&pool,
                                      EdgePropertyExpression::make(&pool, "e1", "list_of_list"),
@@ -227,7 +227,7 @@ TEST_F(RelationalExpressionTest, RelationEQ) {
     EXPECT_EQ(eval, true);
   }
   {
-    // 1 == NULL
+    // 1 = NULL
     auto expr = RelationalExpression::makeEQ(&pool,
                                              ConstantExpression::make(&pool, Value(1)),
                                              ConstantExpression::make(&pool, Value(NullType::NaN)));
@@ -235,7 +235,7 @@ TEST_F(RelationalExpressionTest, RelationEQ) {
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
   }
   {
-    // NULL == NULL
+    // NULL = NULL
     auto expr = RelationalExpression::makeEQ(&pool,
                                              ConstantExpression::make(&pool, Value(NullType::NaN)),
                                              ConstantExpression::make(&pool, Value(NullType::NaN)));
