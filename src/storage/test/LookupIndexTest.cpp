@@ -2925,7 +2925,634 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
+// test aggregate in tag, like sum(age) as "total age"
+TEST_P(LookupIndexTest, AggregateTagIndexTest) {
+  fs::TempDir rootPath("/tmp/SimpleVertexIndexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  GraphSpaceID spaceId = 1;
+  auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+  ASSERT_TRUE(vIdLen.ok());
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
+
+  cpp2::LookupIndexRequest req;
+  nebula::storage::cpp2::IndexSpec indices;
+  req.space_id_ref() = spaceId;
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.tag_id_ref() = 1;
+  indices.schema_id_ref() = schemaId;
+  std::vector<PartitionID> parts;
+  for (int32_t p = 1; p <= totalParts; p++) {
+    parts.emplace_back(p);
+  }
+
+  req.parts_ref() = std::move(parts);
+  std::vector<std::string> returnCols;
+  returnCols.emplace_back(kVid);
+  returnCols.emplace_back(kTag);
+  returnCols.emplace_back("age");
+  req.return_columns_ref() = std::move(returnCols);
+
+  // player.name_ == "Rudy Gay"
+  cpp2::IndexColumnHint columnHint1;
+  std::string name1 = "Rudy Gay";
+  columnHint1.begin_value_ref() = Value(name1);
+  columnHint1.column_name_ref() = "name";
+  columnHint1.scan_type_ref() = cpp2::ScanType::PREFIX;
+
+  // player.name_ == "Kobe Bryant"
+  cpp2::IndexColumnHint columnHint2;
+  std::string name2 = "Kobe Bryant";
+  columnHint2.begin_value_ref() = Value(name2);
+  columnHint2.column_name_ref() = "name";
+  columnHint2.scan_type_ref() = cpp2::ScanType::PREFIX;
+  std::vector<IndexColumnHint> columnHints1;
+  columnHints1.emplace_back(std::move(columnHint1));
+  std::vector<IndexColumnHint> columnHints2;
+  columnHints2.emplace_back(std::move(columnHint2));
+
+  cpp2::IndexQueryContext context1;
+  context1.column_hints_ref() = std::move(columnHints1);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 1;
+  std::vector<cpp2::StatProp> statProps;
+  cpp2::IndexQueryContext context2;
+  context2.column_hints_ref() = std::move(columnHints2);
+  context2.filter_ref() = "";
+  context2.index_id_ref() = 1;
+  decltype(indices.contexts) contexts;
+  contexts.emplace_back(std::move(context1));
+  contexts.emplace_back(std::move(context2));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
+
+  cpp2::StatProp statProp;
+  statProp.alias_ref() = "total age";
+  const auto& exp = *TagPropertyExpression::make(pool, folly::to<std::string>(1), "age");
+  statProp.prop_ref() = Expression::encode(exp);
+  statProp.stat_ref() = cpp2::StatType::SUM;
+  statProps.emplace_back(std::move(statProp));
+  req.stat_columns_ref() = std::move(statProps);
+
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+
+  std::vector<std::string> expectCols = {
+      std::string("1.").append(kVid), std::string("1.").append(kTag), "1.age"};
+  decltype(resp.get_data()->rows) expectRows;
+
+  std::string vId1, vId2;
+  vId1.append(name1.data(), name1.size());
+  Row row1;
+  row1.emplace_back(Value(vId1));
+  row1.emplace_back(Value(1L));
+  row1.emplace_back(Value(34L));
+  expectRows.emplace_back(Row(row1));
+
+  vId2.append(name2.data(), name2.size());
+  Row row2;
+  row2.emplace_back(Value(vId2));
+  row2.emplace_back(Value(1L));
+  row2.emplace_back(Value(41L));
+  expectRows.emplace_back(Row(row2));
+  QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+
+  std::vector<std::string> expectStatColumns;
+  nebula::Row expectStatRow;
+  expectStatColumns.emplace_back("total age");
+  expectStatRow.values.push_back(Value(75L));
+  QueryTestUtils::checkStatResponse(resp, expectStatColumns, expectStatRow);
+}
+
+// test aggregate in tag, like sum(age) as "total age", and age not in returnColumns
+TEST_P(LookupIndexTest, AggregateTagPropNotInReturnColumnsTest) {
+  fs::TempDir rootPath("/tmp/SimpleVertexIndexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  GraphSpaceID spaceId = 1;
+  auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+  ASSERT_TRUE(vIdLen.ok());
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
+
+  cpp2::LookupIndexRequest req;
+  nebula::storage::cpp2::IndexSpec indices;
+  req.space_id_ref() = spaceId;
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.tag_id_ref() = 1;
+  indices.schema_id_ref() = schemaId;
+  std::vector<PartitionID> parts;
+  for (int32_t p = 1; p <= totalParts; p++) {
+    parts.emplace_back(p);
+  }
+
+  req.parts_ref() = std::move(parts);
+  std::vector<std::string> returnCols;
+  returnCols.emplace_back(kVid);
+  returnCols.emplace_back(kTag);
+  req.return_columns_ref() = std::move(returnCols);
+
+  // player.name_ == "Rudy Gay"
+  cpp2::IndexColumnHint columnHint1;
+  std::string name1 = "Rudy Gay";
+  columnHint1.begin_value_ref() = Value(name1);
+  columnHint1.column_name_ref() = "name";
+  columnHint1.scan_type_ref() = cpp2::ScanType::PREFIX;
+
+  // player.name_ == "Kobe Bryant"
+  cpp2::IndexColumnHint columnHint2;
+  std::string name2 = "Kobe Bryant";
+  columnHint2.begin_value_ref() = Value(name2);
+  columnHint2.column_name_ref() = "name";
+  columnHint2.scan_type_ref() = cpp2::ScanType::PREFIX;
+  std::vector<IndexColumnHint> columnHints1;
+  columnHints1.emplace_back(std::move(columnHint1));
+  std::vector<IndexColumnHint> columnHints2;
+  columnHints2.emplace_back(std::move(columnHint2));
+
+  cpp2::IndexQueryContext context1;
+  context1.column_hints_ref() = std::move(columnHints1);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 1;
+  std::vector<cpp2::StatProp> statProps;
+  cpp2::IndexQueryContext context2;
+  context2.column_hints_ref() = std::move(columnHints2);
+  context2.filter_ref() = "";
+  context2.index_id_ref() = 1;
+  decltype(indices.contexts) contexts;
+  contexts.emplace_back(std::move(context1));
+  contexts.emplace_back(std::move(context2));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
+
+  cpp2::StatProp statProp;
+  statProp.alias_ref() = "total age";
+  const auto& exp = *TagPropertyExpression::make(pool, folly::to<std::string>(1), "age");
+  statProp.prop_ref() = Expression::encode(exp);
+  statProp.stat_ref() = cpp2::StatType::SUM;
+  statProps.emplace_back(std::move(statProp));
+  req.stat_columns_ref() = std::move(statProps);
+
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+
+  std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                         std::string("1.").append(kTag)};
+  decltype(resp.get_data()->rows) expectRows;
+
+  std::string vId1, vId2;
+  vId1.append(name1.data(), name1.size());
+  Row row1;
+  row1.emplace_back(Value(vId1));
+  row1.emplace_back(Value(1L));
+  expectRows.emplace_back(Row(row1));
+
+  vId2.append(name2.data(), name2.size());
+  Row row2;
+  row2.emplace_back(Value(vId2));
+  row2.emplace_back(Value(1L));
+  expectRows.emplace_back(Row(row2));
+  QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+
+  std::vector<std::string> expectStatColumns;
+  nebula::Row expectStatRow;
+  expectStatColumns.emplace_back("total age");
+  expectStatRow.values.push_back(Value(75L));
+  QueryTestUtils::checkStatResponse(resp, expectStatColumns, expectStatRow);
+}
+
+// test multi aggregate in tag, like sum(age) as "total age", max(age) as "max age",
+//    max(kVid) as "max kVid", min(age) as "min age"
+TEST_P(LookupIndexTest, AggregateTagPropsTest) {
+  fs::TempDir rootPath("/tmp/SimpleVertexIndexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  GraphSpaceID spaceId = 1;
+  auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+  ASSERT_TRUE(vIdLen.ok());
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
+
+  cpp2::LookupIndexRequest req;
+  nebula::storage::cpp2::IndexSpec indices;
+  req.space_id_ref() = spaceId;
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.tag_id_ref() = 1;
+  indices.schema_id_ref() = schemaId;
+  std::vector<PartitionID> parts;
+  for (int32_t p = 1; p <= totalParts; p++) {
+    parts.emplace_back(p);
+  }
+
+  req.parts_ref() = std::move(parts);
+  std::vector<std::string> returnCols;
+  returnCols.emplace_back(kVid);
+  returnCols.emplace_back(kTag);
+  returnCols.emplace_back("age");
+  req.return_columns_ref() = std::move(returnCols);
+
+  // player.name_ == "Rudy Gay"
+  cpp2::IndexColumnHint columnHint1;
+  std::string name1 = "Rudy Gay";
+  columnHint1.begin_value_ref() = Value(name1);
+  columnHint1.column_name_ref() = "name";
+  columnHint1.scan_type_ref() = cpp2::ScanType::PREFIX;
+
+  // player.name_ == "Kobe Bryant"
+  cpp2::IndexColumnHint columnHint2;
+  std::string name2 = "Kobe Bryant";
+  columnHint2.begin_value_ref() = Value(name2);
+  columnHint2.column_name_ref() = "name";
+  columnHint2.scan_type_ref() = cpp2::ScanType::PREFIX;
+  std::vector<IndexColumnHint> columnHints1;
+  columnHints1.emplace_back(std::move(columnHint1));
+  std::vector<IndexColumnHint> columnHints2;
+  columnHints2.emplace_back(std::move(columnHint2));
+
+  cpp2::IndexQueryContext context1;
+  context1.column_hints_ref() = std::move(columnHints1);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 1;
+  std::vector<cpp2::StatProp> statProps;
+  cpp2::IndexQueryContext context2;
+  context2.column_hints_ref() = std::move(columnHints2);
+  context2.filter_ref() = "";
+  context2.index_id_ref() = 1;
+  decltype(indices.contexts) contexts;
+  contexts.emplace_back(std::move(context1));
+  contexts.emplace_back(std::move(context2));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
+
+  cpp2::StatProp statProp1;
+  statProp1.alias_ref() = "total age";
+  const auto& exp1 = *TagPropertyExpression::make(pool, folly::to<std::string>(1), "age");
+  statProp1.prop_ref() = Expression::encode(exp1);
+  statProp1.stat_ref() = cpp2::StatType::SUM;
+  statProps.emplace_back(statProp1);
+
+  cpp2::StatProp statProp2;
+  statProp2.alias_ref() = "max age";
+  const auto& exp2 = *TagPropertyExpression::make(pool, folly::to<std::string>(1), "age");
+  statProp2.prop_ref() = Expression::encode(exp2);
+  statProp2.stat_ref() = cpp2::StatType::MAX;
+  statProps.emplace_back(statProp2);
+
+  cpp2::StatProp statProp3;
+  statProp3.alias_ref() = "max kVid";
+  const auto& exp3 = *TagPropertyExpression::make(pool, folly::to<std::string>(1), kVid);
+  statProp3.prop_ref() = Expression::encode(exp3);
+  statProp3.stat_ref() = cpp2::StatType::MAX;
+  statProps.emplace_back(statProp3);
+
+  cpp2::StatProp statProp4;
+  statProp4.alias_ref() = "min age";
+  const auto& exp4 = *TagPropertyExpression::make(pool, folly::to<std::string>(1), "age");
+  statProp4.prop_ref() = Expression::encode(exp4);
+  statProp4.stat_ref() = cpp2::StatType::MIN;
+  statProps.emplace_back(statProp4);
+
+  req.stat_columns_ref() = std::move(statProps);
+
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+
+  std::vector<std::string> expectCols = {
+      std::string("1.").append(kVid), std::string("1.").append(kTag), "1.age"};
+  decltype(resp.get_data()->rows) expectRows;
+
+  std::string vId1, vId2;
+  vId1.append(name1.data(), name1.size());
+  Row row1;
+  row1.emplace_back(Value(vId1));
+  row1.emplace_back(Value(1L));
+  row1.emplace_back(Value(34L));
+  expectRows.emplace_back(Row(row1));
+
+  vId2.append(name2.data(), name2.size());
+  Row row2;
+  row2.emplace_back(Value(vId2));
+  row2.emplace_back(Value(1L));
+  row2.emplace_back(Value(41L));
+  expectRows.emplace_back(Row(row2));
+  QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+
+  std::vector<std::string> expectStatColumns;
+  expectStatColumns.emplace_back("total age");
+  expectStatColumns.emplace_back("max age");
+  expectStatColumns.emplace_back("max kVid");
+  expectStatColumns.emplace_back("min age");
+
+  nebula::Row expectStatRow;
+  expectStatRow.values.push_back(Value(75L));
+  expectStatRow.values.push_back(Value(41L));
+  expectStatRow.values.push_back(Value(vId1));
+  expectStatRow.values.push_back(Value(34L));
+
+  QueryTestUtils::checkStatResponse(resp, expectStatColumns, expectStatRow);
+}
+
+TEST_P(LookupIndexTest, AggregateEdgeIndexTest) {
+  fs::TempDir rootPath("/tmp/AggregateEdgeIndexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  GraphSpaceID spaceId = 1;
+  auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+  ASSERT_TRUE(vIdLen.ok());
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
+  cpp2::LookupIndexRequest req;
+  nebula::storage::cpp2::IndexSpec indices;
+  req.space_id_ref() = spaceId;
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.edge_type_ref() = 102;
+  indices.schema_id_ref() = schemaId;
+  std::vector<PartitionID> parts;
+  for (int32_t p = 1; p <= totalParts; p++) {
+    parts.emplace_back(p);
+  }
+  req.parts_ref() = std::move(parts);
+
+  std::string tony = "Tony Parker";
+  std::string manu = "Manu Ginobili";
+  std::string yao = "Yao Ming";
+  std::string tracy = "Tracy McGrady";
+  std::vector<std::string> returnCols;
+  returnCols.emplace_back(kSrc);
+  returnCols.emplace_back(kType);
+  returnCols.emplace_back(kRank);
+  returnCols.emplace_back(kDst);
+  returnCols.emplace_back("teamName");
+  returnCols.emplace_back("startYear");
+  req.return_columns_ref() = std::move(returnCols);
+
+  // teammates.player1 == "Tony Parker"
+  cpp2::IndexColumnHint columnHint1;
+  columnHint1.begin_value_ref() = Value(tony);
+  columnHint1.column_name_ref() = "player1";
+  columnHint1.scan_type_ref() = cpp2::ScanType::PREFIX;
+  // teammates.player1 == "Yao Ming"
+  cpp2::IndexColumnHint columnHint2;
+  columnHint2.begin_value_ref() = Value(yao);
+  columnHint2.column_name_ref() = "player1";
+  columnHint2.scan_type_ref() = cpp2::ScanType::PREFIX;
+  std::vector<IndexColumnHint> columnHints1;
+  columnHints1.emplace_back(std::move(columnHint1));
+  std::vector<IndexColumnHint> columnHints2;
+  columnHints2.emplace_back(std::move(columnHint2));
+
+  cpp2::IndexQueryContext context1;
+  context1.column_hints_ref() = std::move(columnHints1);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 102;
+  cpp2::IndexQueryContext context2;
+  context2.column_hints_ref() = std::move(columnHints2);
+  context2.filter_ref() = "";
+  context2.index_id_ref() = 102;
+  decltype(indices.contexts) contexts;
+  contexts.emplace_back(std::move(context1));
+  contexts.emplace_back(std::move(context2));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
+
+  std::vector<cpp2::StatProp> statProps;
+  cpp2::StatProp statProp1;
+  statProp1.alias_ref() = "total startYear";
+  const auto& exp1 = *EdgePropertyExpression::make(pool, folly::to<std::string>(102), "startYear");
+  statProp1.prop_ref() = Expression::encode(exp1);
+  statProp1.stat_ref() = cpp2::StatType::SUM;
+  statProps.emplace_back(std::move(statProp1));
+
+  cpp2::StatProp statProp2;
+  statProp2.alias_ref() = "max kDst";
+  const auto& exp2 = *EdgePropertyExpression::make(pool, folly::to<std::string>(102), kDst);
+  statProp2.prop_ref() = Expression::encode(exp2);
+  statProp2.stat_ref() = cpp2::StatType::MAX;
+  statProps.emplace_back(std::move(statProp2));
+  req.stat_columns_ref() = std::move(statProps);
+
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+  std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                         std::string("102.").append(kType),
+                                         std::string("102.").append(kRank),
+                                         std::string("102.").append(kDst),
+                                         "102.teamName",
+                                         "102.startYear"};
+  decltype(resp.get_data()->rows) expectRows;
+
+  std::string vId1, vId2, vId3, vId4;
+  vId1.append(tony.data(), tony.size());
+  vId2.append(manu.data(), manu.size());
+  vId3.append(yao.data(), yao.size());
+  vId4.append(tracy.data(), tracy.size());
+
+  Row row1;
+  row1.emplace_back(Value(vId1));
+  row1.emplace_back(Value(102L));
+  row1.emplace_back(Value(2002L));
+  row1.emplace_back(Value(vId2));
+  row1.emplace_back(Value("Spurs"));
+  row1.emplace_back(Value(2002));
+  expectRows.emplace_back(Row(row1));
+
+  Row row2;
+  row2.emplace_back(Value(vId2));
+  row2.emplace_back(Value(102L));
+  row2.emplace_back(Value(2002L));
+  row2.emplace_back(Value(vId1));
+  row2.emplace_back(Value("Spurs"));
+  row2.emplace_back(Value(2002));
+  expectRows.emplace_back(Row(row2));
+
+  Row row3;
+  row3.emplace_back(Value(vId3));
+  row3.emplace_back(Value(102L));
+  row3.emplace_back(Value(2004L));
+  row3.emplace_back(Value(vId4));
+  row3.emplace_back(Value("Rockets"));
+  row3.emplace_back(Value(2004L));
+  expectRows.emplace_back(Row(row3));
+
+  Row row4;
+  row4.emplace_back(Value(vId4));
+  row4.emplace_back(Value(102L));
+  row4.emplace_back(Value(2004L));
+  row4.emplace_back(Value(vId3));
+  row4.emplace_back(Value("Rockets"));
+  row4.emplace_back(Value(2004L));
+  expectRows.emplace_back(Row(row4));
+  QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+
+  std::vector<std::string> expectStatColumns;
+  expectStatColumns.emplace_back("total startYear");
+  expectStatColumns.emplace_back("max kDst");
+
+  nebula::Row expectStatRow;
+  expectStatRow.values.push_back(Value(8012L));
+  expectStatRow.values.push_back(Value(vId3));
+  QueryTestUtils::checkStatResponse(resp, expectStatColumns, expectStatRow);
+}
+
+TEST_P(LookupIndexTest, AggregateEdgePropNotInReturnColumnsTest) {
+  fs::TempDir rootPath("/tmp/AggregateEdgeIndexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  GraphSpaceID spaceId = 1;
+  auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+  ASSERT_TRUE(vIdLen.ok());
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+  auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
+  cpp2::LookupIndexRequest req;
+  nebula::storage::cpp2::IndexSpec indices;
+  req.space_id_ref() = spaceId;
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.edge_type_ref() = 102;
+  indices.schema_id_ref() = schemaId;
+  std::vector<PartitionID> parts;
+  for (int32_t p = 1; p <= totalParts; p++) {
+    parts.emplace_back(p);
+  }
+  req.parts_ref() = std::move(parts);
+
+  std::string tony = "Tony Parker";
+  std::string manu = "Manu Ginobili";
+  std::string yao = "Yao Ming";
+  std::string tracy = "Tracy McGrady";
+  std::vector<std::string> returnCols;
+  returnCols.emplace_back(kSrc);
+  returnCols.emplace_back(kType);
+  returnCols.emplace_back(kRank);
+  returnCols.emplace_back(kDst);
+  req.return_columns_ref() = std::move(returnCols);
+
+  // teammates.player1 == "Tony Parker"
+  cpp2::IndexColumnHint columnHint1;
+  columnHint1.begin_value_ref() = Value(tony);
+  columnHint1.column_name_ref() = "player1";
+  columnHint1.scan_type_ref() = cpp2::ScanType::PREFIX;
+  // teammates.player1 == "Yao Ming"
+  cpp2::IndexColumnHint columnHint2;
+  columnHint2.begin_value_ref() = Value(yao);
+  columnHint2.column_name_ref() = "player1";
+  columnHint2.scan_type_ref() = cpp2::ScanType::PREFIX;
+  std::vector<IndexColumnHint> columnHints1;
+  columnHints1.emplace_back(std::move(columnHint1));
+  std::vector<IndexColumnHint> columnHints2;
+  columnHints2.emplace_back(std::move(columnHint2));
+
+  cpp2::IndexQueryContext context1;
+  context1.column_hints_ref() = std::move(columnHints1);
+  context1.filter_ref() = "";
+  context1.index_id_ref() = 102;
+  cpp2::IndexQueryContext context2;
+  context2.column_hints_ref() = std::move(columnHints2);
+  context2.filter_ref() = "";
+  context2.index_id_ref() = 102;
+  decltype(indices.contexts) contexts;
+  contexts.emplace_back(std::move(context1));
+  contexts.emplace_back(std::move(context2));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
+
+  std::vector<cpp2::StatProp> statProps;
+  cpp2::StatProp statProp1;
+  statProp1.alias_ref() = "total startYear";
+  const auto& exp1 = *EdgePropertyExpression::make(pool, folly::to<std::string>(102), "startYear");
+  statProp1.prop_ref() = Expression::encode(exp1);
+  statProp1.stat_ref() = cpp2::StatType::SUM;
+  statProps.emplace_back(std::move(statProp1));
+
+  cpp2::StatProp statProp2;
+  statProp2.alias_ref() = "count teamName";
+  const auto& exp2 = *EdgePropertyExpression::make(pool, folly::to<std::string>(102), "teamName");
+  statProp2.prop_ref() = Expression::encode(exp2);
+  statProp2.stat_ref() = cpp2::StatType::COUNT;
+  statProps.emplace_back(std::move(statProp2));
+  req.stat_columns_ref() = std::move(statProps);
+
+  auto fut = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(fut).get();
+  std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                         std::string("102.").append(kType),
+                                         std::string("102.").append(kRank),
+                                         std::string("102.").append(kDst)};
+  decltype(resp.get_data()->rows) expectRows;
+
+  std::string vId1, vId2, vId3, vId4;
+  vId1.append(tony.data(), tony.size());
+  vId2.append(manu.data(), manu.size());
+  vId3.append(yao.data(), yao.size());
+  vId4.append(tracy.data(), tracy.size());
+
+  Row row1;
+  row1.emplace_back(Value(vId1));
+  row1.emplace_back(Value(102L));
+  row1.emplace_back(Value(2002L));
+  row1.emplace_back(Value(vId2));
+  expectRows.emplace_back(Row(row1));
+
+  Row row2;
+  row2.emplace_back(Value(vId2));
+  row2.emplace_back(Value(102L));
+  row2.emplace_back(Value(2002L));
+  row2.emplace_back(Value(vId1));
+  expectRows.emplace_back(Row(row2));
+
+  Row row3;
+  row3.emplace_back(Value(vId3));
+  row3.emplace_back(Value(102L));
+  row3.emplace_back(Value(2004L));
+  row3.emplace_back(Value(vId4));
+  expectRows.emplace_back(Row(row3));
+
+  Row row4;
+  row4.emplace_back(Value(vId4));
+  row4.emplace_back(Value(102L));
+  row4.emplace_back(Value(2004L));
+  row4.emplace_back(Value(vId3));
+  expectRows.emplace_back(Row(row4));
+  QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+
+  std::vector<std::string> expectStatColumns;
+  expectStatColumns.emplace_back("total startYear");
+  expectStatColumns.emplace_back("count teamName");
+
+  nebula::Row expectStatRow;
+  expectStatRow.values.push_back(Value(8012L));
+  expectStatRow.values.push_back(Value(4L));
+  QueryTestUtils::checkStatResponse(resp, expectStatColumns, expectStatRow);
+}
+
+INSTANTIATE_TEST_CASE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
 
 }  // namespace storage
 }  // namespace nebula

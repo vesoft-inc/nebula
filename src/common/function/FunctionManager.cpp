@@ -38,6 +38,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat", Value::Type::STRING},
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
+    {"coalesce", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -283,10 +284,6 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
     {"last",
-     {
-         TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
-     }},
-    {"coalesce",
      {
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
@@ -1767,7 +1764,7 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
-      if (args.size() == 0) {
+      if (args.empty()) {
         return time::WallClock::fastNowInSec();
       }
       auto status = time::TimeUtils::toTimestamp(args[0].get());
@@ -2102,29 +2099,15 @@ FunctionManager::FunctionManager() {
   {
     auto &attr = functions_["coalesce"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
-          if (list.values.empty()) {
-            return Value::kNullValue;
-          }
-          for (auto &i : list.values) {
-            if (i != Value::kNullValue) {
-              return i;
-            }
-          }
-          return Value::kNullValue;
-        }
-        default: {
-          return Value::kNullBadType;
+      for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].get().type() != Value::Type::NULLVALUE) {
+          return args[i].get();
         }
       }
+      return Value::kNullValue;
     };
   }
   {

@@ -170,6 +170,11 @@ jobs:
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
         working-directory: tests/
         timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
       - name: Down cluster
         run: |
           make RM_DIR=false down

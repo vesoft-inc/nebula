@@ -164,6 +164,10 @@ class ExpressionUtils {
 
   // TODO(jie) Move it to a better place
   static bool isGeoIndexAcceleratedPredicate(const Expression* expr);
+
+  static bool checkExprDepth(const Expression* expr);
+
+  static constexpr int32_t kMaxDepth = 512;
 };
 
 }  // namespace graph

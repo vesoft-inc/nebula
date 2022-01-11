@@ -1648,26 +1648,29 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
     TEST_FUNCTION(last, args_["nullvalue"], Value::kNullValue);
     TEST_FUNCTION(coalesce, args_["nullvalue"], Value::kNullValue);
 
+    TEST_FUNCTION(coalesce, args_["range1"], 1);
+    TEST_FUNCTION(coalesce, args_["float"], 1.1);
+
     std::vector<Value> args;
     List list;
     list.values.emplace_back(Value::kNullValue);
-    args.push_back(list);
+    args.emplace_back(list);
 
     TEST_FUNCTION(head, args, Value::kNullValue);
     TEST_FUNCTION(last, args, Value::kNullValue);
-    TEST_FUNCTION(coalesce, args, Value::kNullValue);
+    TEST_FUNCTION(coalesce, args, list);
 
     list.values.insert(list.values.begin(), "head");
     args[0] = list;
     TEST_FUNCTION(head, args, "head");
     TEST_FUNCTION(last, args, Value::kNullValue);
-    TEST_FUNCTION(coalesce, args, "head");
+    TEST_FUNCTION(coalesce, args, list);
 
     list.values.emplace_back("last");
     args[0] = list;
     TEST_FUNCTION(head, args, "head")
     TEST_FUNCTION(last, args, "last");
-    TEST_FUNCTION(coalesce, args, "head");
+    TEST_FUNCTION(coalesce, args, list);
   }
   {
     // length(null) return null

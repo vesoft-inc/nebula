@@ -198,6 +198,9 @@ bool StorageServer::start() {
   LOG(INFO) << "Init kvstore";
   kvstore_ = getStoreInstance();
 
+  LOG(INFO) << "Init LogMonitor";
+  logMonitor_ = std::make_unique<LogMonitor>();
+
   if (nullptr == kvstore_) {
     LOG(ERROR) << "Init kvstore failed";
     return false;
@@ -363,6 +366,9 @@ void StorageServer::notifyStop() {
     serverStatus_ = STATUS_STOPPED;
     cvStop_.notify_one();
   }
+  if (metaClient_) {
+    metaClient_->notifyStop();
+  }
 }
 
 void StorageServer::stop() {
@@ -396,7 +402,7 @@ void StorageServer::stop() {
     taskMgr_->shutdown();
   }
   if (metaClient_) {
-    metaClient_->stop();
+    metaClient_->notifyStop();
   }
   if (kvstore_) {
     kvstore_.reset();
