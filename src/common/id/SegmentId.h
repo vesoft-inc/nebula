@@ -57,6 +57,8 @@ class SegmentId {
   int64_t segmentStart_{-1};
   int64_t nextSegmentStart_{-1};
 
+  // ensure the segment can be use for 10 mins.
+  // 2 segment = max insert/secs * 600. segment = 400000 * 600 / 2 = 120000000
   static inline constexpr int64_t kMinStep_{120000000};
 
   static inline meta::BaseMetaClient* client_{nullptr};
