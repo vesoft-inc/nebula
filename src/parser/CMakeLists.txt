@@ -6,7 +6,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(ENABLE_VERBOSE_BISON)
-    set(bison_flags "-Werror -v")
+    set(bison_flags "-Werror -v -Wcounterexamples")
 else()
     set(bison_flags "-Werror")
 endif()

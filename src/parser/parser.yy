@@ -212,7 +212,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE ASSIGN
+%token PIPE
 %token DOT DOT_DOT COLON QM SEMICOLON L_ARROW R_ARROW AT
 %token TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
@@ -405,8 +405,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %left QM COLON
 %left KW_OR KW_XOR
 %left KW_AND
-%right KW_NOT
-%left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
+%right KW_NOT ASSIGN
+%left NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT
@@ -672,7 +672,7 @@ expression_internal
     | expression_internal KW_IS_NOT_EMPTY {
         $$ = UnaryExpression::makeIsNotEmpty(qctx->objPool(), $1);
     }
-    | expression_internal EQ expression_internal {
+    | expression_internal ASSIGN expression_internal {
         $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
     }
     | expression_internal NE expression_internal {
@@ -3476,12 +3476,6 @@ set_config_item
     }
     | name_label ASSIGN expression {
         $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1, $3);
-    }
-    | config_module_enum COLON name_label ASSIGN L_BRACE update_list R_BRACE {
-        $$ = new ConfigRowItem($1, $3, $6);
-    }
-    | name_label ASSIGN L_BRACE update_list R_BRACE {
-        $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1, $4);
     }
     ;
 
