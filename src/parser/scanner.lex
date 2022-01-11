@@ -307,7 +307,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "<="                        { return TokenType::LE; }
 ">"                         { return TokenType::GT; }
 ">="                        { return TokenType::GE; }
-"=="                        { return TokenType::EQ; }
 "!="                        { return TokenType::NE; }
 "<>"                        { return TokenType::NE; }
 "=~"                        { return TokenType::REG; }
