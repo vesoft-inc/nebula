@@ -380,11 +380,11 @@ TEST_F(ExpressionUtilsTest, pushOrs) {
   }
   auto t = ExpressionUtils::pushOrs(pool, rels);
   auto expected = std::string(
-      "(((((tag0.col0==\"val0\") OR "
-      "(tag1.col1==\"val1\")) OR "
-      "(tag2.col2==\"val2\")) OR "
-      "(tag3.col3==\"val3\")) OR "
-      "(tag4.col4==\"val4\"))");
+      "(((((tag0.col0=\"val0\") OR "
+      "(tag1.col1=\"val1\")) OR "
+      "(tag2.col2=\"val2\")) OR "
+      "(tag3.col3=\"val3\")) OR "
+      "(tag4.col4=\"val4\"))");
   ASSERT_EQ(expected, t->toString());
 }
 
@@ -402,11 +402,11 @@ TEST_F(ExpressionUtilsTest, pushAnds) {
   }
   auto t = ExpressionUtils::pushAnds(pool, rels);
   auto expected = std::string(
-      "(((((tag0.col0==\"val0\") AND "
-      "(tag1.col1==\"val1\")) AND "
-      "(tag2.col2==\"val2\")) AND "
-      "(tag3.col3==\"val3\")) AND "
-      "(tag4.col4==\"val4\"))");
+      "(((((tag0.col0=\"val0\") AND "
+      "(tag1.col1=\"val1\")) AND "
+      "(tag2.col2=\"val2\")) AND "
+      "(tag3.col3=\"val3\")) AND "
+      "(tag4.col4=\"val4\"))");
   ASSERT_EQ(expected, t->toString());
 }
 
@@ -439,7 +439,7 @@ TEST_F(ExpressionUtilsTest, flattenInnerLogicalExpr) {
     auto newExpr = ExpressionUtils::flattenInnerLogicalExpr(expr);
     ASSERT_EQ(*expected, *newExpr);
   }
-  // (true OR false OR true)==(true AND false AND true)
+  // (true OR false OR true)=(true AND false AND true)
   {
     auto *or1 = ConstantExpression::make(pool, true);
     auto *or2 = ConstantExpression::make(pool, false);
@@ -508,7 +508,7 @@ TEST_F(ExpressionUtilsTest, rewriteInExpr) {
   (*elist3).add(ConstantExpression::make(pool, 100));
   auto listExpr3 = ListExpression::make(pool, elist3);
 
-  // a IN [b,c]  ->  a==b OR a==c
+  // a IN [b,c]  ->  a=b OR a=c
   {
     auto inExpr1 =
         RelationalExpression::makeIn(pool, ConstantExpression::make(pool, 10), listExpr1);
@@ -533,7 +533,7 @@ TEST_F(ExpressionUtilsTest, rewriteInExpr) {
     ASSERT_EQ(*expected2, *orExpr2);
   }
 
-  // a IN [b]  ->  a == b
+  // a IN [b]  ->  a = b
   {
     auto inExpr = RelationalExpression::makeIn(pool, ConstantExpression::make(pool, 10), listExpr3);
     auto expected = RelationalExpression::makeEQ(
@@ -613,155 +613,155 @@ TEST_F(ExpressionUtilsTest, splitFilter) {
 
 TEST_F(ExpressionUtilsTest, expandExpression) {
   {
-    auto filter = parse("t1.c1 == 1");
+    auto filter = parse("t1.c1 = 1");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(t1.c1==1)";
+    auto expected = "(t1.c1=1)";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and t1.c2 == 2");
+    auto filter = parse("t1.c1 = 1 and t1.c2 = 2");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "((t1.c1==1) AND (t1.c2==2))";
+    auto expected = "((t1.c1=1) AND (t1.c2=2))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and t1.c2 == 2 and t1.c3 == 3");
+    auto filter = parse("t1.c1 = 1 and t1.c2 = 2 and t1.c3 = 3");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(((t1.c1==1) AND (t1.c2==2)) AND (t1.c3==3))";
+    auto expected = "(((t1.c1=1) AND (t1.c2=2)) AND (t1.c3=3))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 or t1.c2 == 2");
+    auto filter = parse("t1.c1 = 1 or t1.c2 = 2");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "((t1.c1==1) OR (t1.c2==2))";
+    auto expected = "((t1.c1=1) OR (t1.c2=2))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 or t1.c2 == 2 or t1.c3 == 3");
+    auto filter = parse("t1.c1 = 1 or t1.c2 = 2 or t1.c3 = 3");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(((t1.c1==1) OR (t1.c2==2)) OR (t1.c3==3))";
+    auto expected = "(((t1.c1=1) OR (t1.c2=2)) OR (t1.c3=3))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and t1.c2 == 2 or t1.c1 == 3");
+    auto filter = parse("t1.c1 = 1 and t1.c2 = 2 or t1.c1 = 3");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(((t1.c1==1) AND (t1.c2==2)) OR (t1.c1==3))";
+    auto expected = "(((t1.c1=1) AND (t1.c2=2)) OR (t1.c1=3))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 or t1.c2 == 2 and t1.c1 == 3");
+    auto filter = parse("t1.c1 = 1 or t1.c2 = 2 and t1.c1 = 3");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "((t1.c1==1) OR ((t1.c2==2) AND (t1.c1==3)))";
+    auto expected = "((t1.c1=1) OR ((t1.c2=2) AND (t1.c1=3)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c3 == 3");
+    auto filter = parse("(t1.c1 = 1 or t1.c2 = 2) and t1.c3 = 3");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(((t1.c1==1) AND (t1.c3==3)) OR ((t1.c2==2) AND (t1.c3==3)))";
+    auto expected = "(((t1.c1=1) AND (t1.c3=3)) OR ((t1.c2=2) AND (t1.c3=3)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c3 == 3 or t1.c4 == 4");
+    auto filter = parse("(t1.c1 = 1 or t1.c2 = 2) and t1.c3 = 3 or t1.c4 = 4");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "((((t1.c1==1) AND (t1.c3==3)) OR "
-        "((t1.c2==2) AND (t1.c3==3))) OR "
-        "(t1.c4==4))";
+        "((((t1.c1=1) AND (t1.c3=3)) OR "
+        "((t1.c2=2) AND (t1.c3=3))) OR "
+        "(t1.c4=4))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and (t1.c3 == 3 or t1.c4 == 4)");
+    auto filter = parse("(t1.c1 = 1 or t1.c2 = 2) and (t1.c3 = 3 or t1.c4 = 4)");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "(((((t1.c1==1) AND (t1.c3==3)) OR "
-        "((t1.c1==1) AND (t1.c4==4))) OR "
-        "((t1.c2==2) AND (t1.c3==3))) OR "
-        "((t1.c2==2) AND (t1.c4==4)))";
+        "(((((t1.c1=1) AND (t1.c3=3)) OR "
+        "((t1.c1=1) AND (t1.c4=4))) OR "
+        "((t1.c2=2) AND (t1.c3=3))) OR "
+        "((t1.c2=2) AND (t1.c4=4)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
     auto filter = parse(
-        "(t1.c1 == 1 or t1.c2 == 2 or t1.c3 == 3 or t1.c4 == 4) "
-        "and t1.c5 == 5");
+        "(t1.c1 = 1 or t1.c2 = 2 or t1.c3 = 3 or t1.c4 = 4) "
+        "and t1.c5 = 5");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "(((((t1.c1==1) AND (t1.c5==5)) OR "
-        "((t1.c2==2) AND (t1.c5==5))) OR "
-        "((t1.c3==3) AND (t1.c5==5))) OR "
-        "((t1.c4==4) AND (t1.c5==5)))";
+        "(((((t1.c1=1) AND (t1.c5=5)) OR "
+        "((t1.c2=2) AND (t1.c5=5))) OR "
+        "((t1.c3=3) AND (t1.c5=5))) OR "
+        "((t1.c4=4) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c4 == 4 and t1.c5 == 5");
+    auto filter = parse("(t1.c1 = 1 or t1.c2 = 2) and t1.c4 = 4 and t1.c5 = 5");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "((((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5)) OR "
-        "(((t1.c2==2) AND (t1.c4==4)) AND (t1.c5==5)))";
+        "((((t1.c1=1) AND (t1.c4=4)) AND (t1.c5=5)) OR "
+        "(((t1.c2=2) AND (t1.c4=4)) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4 == 4) and t1.c5 == 5");
+    auto filter = parse("t1.c1 = 1 and (t1.c2 = 2 or t1.c4 = 4) and t1.c5 = 5");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)) OR "
-        "(((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5)))";
+        "((((t1.c1=1) AND (t1.c2=2)) AND (t1.c5=5)) OR "
+        "(((t1.c1=1) AND (t1.c4=4)) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and t1.c2 == 2 and (t1.c4 == 4 or t1.c5 == 5)");
+    auto filter = parse("t1.c1 = 1 and t1.c2 = 2 and (t1.c4 = 4 or t1.c5 = 5)");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c4==4)) OR "
-        "(((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)))";
-    ASSERT_EQ(expected, target->toString());
-  }
-  {
-    auto filter = parse(
-        "(t1.c1 == 1 or t1.c2 == 2) and "
-        "(t1.c3 == 3 or t1.c4 == 4) and "
-        "t1.c5 == 5");
-    auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected =
-        "((((((t1.c1==1) AND (t1.c3==3)) AND (t1.c5==5)) OR "
-        "(((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5))) OR "
-        "(((t1.c2==2) AND (t1.c3==3)) AND (t1.c5==5))) OR "
-        "(((t1.c2==2) AND (t1.c4==4)) AND (t1.c5==5)))";
-    ASSERT_EQ(expected, target->toString());
-  }
-  {
-    auto filter = parse("t1.c4 == 4 or (t1.c1 == 1 and (t1.c2 == 2 or t1.c3 == 3))");
-    auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected =
-        "((t1.c4==4) OR "
-        "(((t1.c1==1) AND (t1.c2==2)) OR "
-        "((t1.c1==1) AND (t1.c3==3))))";
+        "((((t1.c1=1) AND (t1.c2=2)) AND (t1.c4=4)) OR "
+        "(((t1.c1=1) AND (t1.c2=2)) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
     auto filter = parse(
-        "t1.c4 == 4 or "
-        "(t1.c1 == 1 and (t1.c2 == 2 or t1.c3 == 3)) or "
-        "t1.c5 == 5");
+        "(t1.c1 = 1 or t1.c2 = 2) and "
+        "(t1.c3 = 3 or t1.c4 = 4) and "
+        "t1.c5 = 5");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "(((t1.c4==4) OR "
-        "(((t1.c1==1) AND (t1.c2==2)) OR ((t1.c1==1) AND (t1.c3==3)))) OR "
-        "(t1.c5==5))";
+        "((((((t1.c1=1) AND (t1.c3=3)) AND (t1.c5=5)) OR "
+        "(((t1.c1=1) AND (t1.c4=4)) AND (t1.c5=5))) OR "
+        "(((t1.c2=2) AND (t1.c3=3)) AND (t1.c5=5))) OR "
+        "(((t1.c2=2) AND (t1.c4=4)) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
-    auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4) and t1.c5 == 5");
+    auto filter = parse("t1.c4 = 4 or (t1.c1 = 1 and (t1.c2 = 2 or t1.c3 = 3))");
     auto target = ExpressionUtils::expandExpr(pool, filter);
     auto expected =
-        "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)) OR "
-        "(((t1.c1==1) AND t1.c4) AND (t1.c5==5)))";
+        "((t1.c4=4) OR "
+        "(((t1.c1=1) AND (t1.c2=2)) OR "
+        "((t1.c1=1) AND (t1.c3=3))))";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse(
+        "t1.c4 = 4 or "
+        "(t1.c1 = 1 and (t1.c2 = 2 or t1.c3 = 3)) or "
+        "t1.c5 = 5");
+    auto target = ExpressionUtils::expandExpr(pool, filter);
+    auto expected =
+        "(((t1.c4=4) OR "
+        "(((t1.c1=1) AND (t1.c2=2)) OR ((t1.c1=1) AND (t1.c3=3)))) OR "
+        "(t1.c5=5))";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("t1.c1 = 1 and (t1.c2 = 2 or t1.c4) and t1.c5 = 5");
+    auto target = ExpressionUtils::expandExpr(pool, filter);
+    auto expected =
+        "((((t1.c1=1) AND (t1.c2=2)) AND (t1.c5=5)) OR "
+        "(((t1.c1=1) AND t1.c4) AND (t1.c5=5)))";
     ASSERT_EQ(expected, target->toString());
   }
   {
     // Invalid expression for index. don't need to expand.
-    auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4) == true and t1.c5 == 5");
+    auto filter = parse("t1.c1 = 1 and (t1.c2 = 2 or t1.c4) = true and t1.c5 = 5");
     auto target = ExpressionUtils::expandExpr(pool, filter);
-    auto expected = "(((t1.c1==1) AND (((t1.c2==2) OR t1.c4)==true)) AND (t1.c5==5))";
+    auto expected = "(((t1.c1=1) AND (((t1.c2=2) OR t1.c4)=true)) AND (t1.c5=5))";
     ASSERT_EQ(expected, target->toString());
   }
 }
