@@ -358,6 +358,8 @@ enum ErrorCode {
     E_CONFLICT                        = -2008,
     E_INVALID_PARM                    = -2009,
     E_WRONGCLUSTER                    = -2010,
+    E_ZONE_NOT_ENOUGH                 = -2011,
+    E_ZONE_IS_EMPTY                   = -2012,
 
     E_STORE_FAILURE                   = -2021,
     E_STORE_SEGMENT_ILLEGAL           = -2022,
