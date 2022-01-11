@@ -146,7 +146,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   int32_t zoneNum = zones.size();
   if (replicaFactor > zoneNum) {
     LOG(ERROR) << "Replication number should less than or equal to zone number.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH);
     onFinished();
     return;
   }
@@ -235,16 +235,16 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
     auto pickedZones = std::move(pickedZonesRet).value();
     auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
-    if (!partHostsRet.ok()) {
+    if (!nebula::ok(partHostsRet)) {
       LOG(ERROR) << "Pick hosts with zone failed.";
-      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      code = nebula::error(partHostsRet);
       break;
     }
 
-    auto partHosts = std::move(partHostsRet).value();
+    auto partHosts = nebula::value(partHostsRet);
     if (partHosts.empty()) {
       LOG(ERROR) << "Pick hosts is empty.";
-      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }
 
@@ -269,19 +269,15 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   LOG(INFO) << "Create space " << spaceName;
 }
 
-StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
+ErrorOr<nebula::cpp2::ErrorCode, Hosts> CreateSpaceProcessor::pickHostsWithZone(
     const std::vector<std::string>& zones,
     const std::unordered_map<std::string, Hosts>& zoneHosts) {
   Hosts pickedHosts;
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneHosts.begin(); iter != zoneHosts.end(); iter++) {
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      break;
-    }
-
     if (iter->second.empty()) {
       LOG(ERROR) << "Zone " << iter->first << " is empty";
-      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      code = nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY;
       break;
     }
 
@@ -306,12 +302,13 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
       }
     }
 
+    CHECK_CODE_AND_BREAK();
     hostLoading_[picked] += 1;
     pickedHosts.emplace_back(toThriftHost(std::move(picked)));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return Status::Error("Host not found");
+    return code;
   }
   return pickedHosts;
 }
