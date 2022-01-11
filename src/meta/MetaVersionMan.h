@@ -28,6 +28,12 @@ class MetaVersionMan final {
  public:
   MetaVersionMan() = delete;
 
+  /**
+   * @brief Get meta version
+   *
+   * @param kv
+   * @return
+   */
   static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
 
   static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
