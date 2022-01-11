@@ -223,7 +223,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token <strval> STRING VARIABLE LABEL IPV4
 
 %type <strval> name_label unreserved_keyword predicate_name
-%type <expr> expression
+%type <expr> expression expression_internal
 %type <expr> property_expression
 %type <expr> vertex_prop_expression
 %type <expr> edge_prop_expression
@@ -556,6 +556,18 @@ unreserved_keyword
     ;
 
 expression
+    : expression_internal {
+        if(!graph::ExpressionUtils::checkExprDepth($1)){
+            // delete $1;
+            std::ostringstream errStr;
+            errStr << "The above expression's depth exceeds the maximum depth:" << graph::ExpressionUtils::kMaxDepth;
+            throw nebula::GraphParser::syntax_error(@1, errStr.str());
+        }
+        $$ = $1;
+    }
+    ;
+
+expression_internal
     : constant_expression {
         $$ = $1;
     }
@@ -572,7 +584,7 @@ expression
     }
     | MINUS {
         scanner.setUnaryMinus(true);
-    } expression %prec UNARY_MINUS {
+    } expression_internal %prec UNARY_MINUS {
         if (scanner.isIntMin()) {
             $$ = $3;
             scanner.setIsIntMin(false);
@@ -581,98 +593,98 @@ expression
         }
         scanner.setUnaryMinus(false);
     }
-    | PLUS expression %prec UNARY_PLUS {
+    | PLUS expression_internal %prec UNARY_PLUS {
         $$ = UnaryExpression::makePlus(qctx->objPool(), $2);
     }
-    | NOT expression {
+    | NOT expression_internal {
         $$ = UnaryExpression::makeNot(qctx->objPool(), $2);
     }
-    | KW_NOT expression {
+    | KW_NOT expression_internal {
         $$ = UnaryExpression::makeNot(qctx->objPool(), $2);
     }
-    | L_PAREN type_spec R_PAREN expression %prec CASTING {
+    | L_PAREN type_spec R_PAREN expression_internal %prec CASTING {
         $$ = TypeCastingExpression::make(qctx->objPool(), graph::SchemaUtil::propTypeToValueType($2->type), $4);
         delete $2;
     }
-    | expression STAR expression {
+    | expression_internal STAR expression_internal {
         $$ = ArithmeticExpression::makeMultiply(qctx->objPool(), $1, $3);
     }
-    | expression DIV expression {
+    | expression_internal DIV expression_internal {
         $$ = ArithmeticExpression::makeDivision(qctx->objPool(), $1, $3);
     }
-    | expression MOD expression {
+    | expression_internal MOD expression_internal {
         $$ = ArithmeticExpression::makeMod(qctx->objPool(), $1, $3);
     }
-    | expression PLUS expression {
+    | expression_internal PLUS expression_internal {
         $$ = ArithmeticExpression::makeAdd(qctx->objPool(), $1, $3);
     }
-    | expression MINUS expression {
+    | expression_internal MINUS expression_internal {
         $$ = ArithmeticExpression::makeMinus(qctx->objPool(), $1, $3);
     }
-    | expression LT expression {
+    | expression_internal LT expression_internal {
         $$ = RelationalExpression::makeLT(qctx->objPool(), $1, $3);
     }
-    | expression GT expression {
+    | expression_internal GT expression_internal {
         $$ = RelationalExpression::makeGT(qctx->objPool(), $1, $3);
     }
-    | expression LE expression {
+    | expression_internal LE expression_internal {
         $$ = RelationalExpression::makeLE(qctx->objPool(), $1, $3);
     }
-    | expression GE expression {
+    | expression_internal GE expression_internal {
         $$ = RelationalExpression::makeGE(qctx->objPool(), $1, $3);
     }
-    | expression REG expression {
+    | expression_internal REG expression_internal {
         $$ = RelationalExpression::makeREG(qctx->objPool(), $1, $3);
     }
-    | expression KW_IN expression {
+    | expression_internal KW_IN expression_internal {
         $$ = RelationalExpression::makeIn(qctx->objPool(), $1, $3);
     }
-    | expression KW_NOT_IN expression {
+    | expression_internal KW_NOT_IN expression_internal {
         $$ = RelationalExpression::makeNotIn(qctx->objPool(), $1, $3);
     }
-    | expression KW_CONTAINS expression {
+    | expression_internal KW_CONTAINS expression_internal {
         $$ = RelationalExpression::makeContains(qctx->objPool(), $1, $3);
     }
-    | expression KW_NOT_CONTAINS expression {
+    | expression_internal KW_NOT_CONTAINS expression_internal {
         $$ = RelationalExpression::makeNotContains(qctx->objPool(), $1, $3);
     }
-    | expression KW_STARTS_WITH expression {
+    | expression_internal KW_STARTS_WITH expression_internal {
         $$ = RelationalExpression::makeStartsWith(qctx->objPool(), $1, $3);
     }
-    | expression KW_NOT_STARTS_WITH expression {
+    | expression_internal KW_NOT_STARTS_WITH expression_internal {
         $$ = RelationalExpression::makeNotStartsWith(qctx->objPool(), $1, $3);
     }
-    | expression KW_ENDS_WITH expression {
+    | expression_internal KW_ENDS_WITH expression_internal {
         $$ = RelationalExpression::makeEndsWith(qctx->objPool(), $1, $3);
     }
-    | expression KW_NOT_ENDS_WITH expression {
+    | expression_internal KW_NOT_ENDS_WITH expression_internal {
         $$ = RelationalExpression::makeNotEndsWith(qctx->objPool(), $1, $3);
     }
-    | expression KW_IS_NULL {
+    | expression_internal KW_IS_NULL {
         $$ = UnaryExpression::makeIsNull(qctx->objPool(), $1);
     }
-    | expression KW_IS_NOT_NULL {
+    | expression_internal KW_IS_NOT_NULL {
         $$ = UnaryExpression::makeIsNotNull(qctx->objPool(), $1);
     }
-    | expression KW_IS_EMPTY {
+    | expression_internal KW_IS_EMPTY {
         $$ = UnaryExpression::makeIsEmpty(qctx->objPool(), $1);
     }
-    | expression KW_IS_NOT_EMPTY {
+    | expression_internal KW_IS_NOT_EMPTY {
         $$ = UnaryExpression::makeIsNotEmpty(qctx->objPool(), $1);
     }
-    | expression EQ expression {
+    | expression_internal EQ expression_internal {
         $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
     }
-    | expression NE expression {
+    | expression_internal NE expression_internal {
         $$ = RelationalExpression::makeNE(qctx->objPool(), $1, $3);
     }
-    | expression KW_AND expression {
+    | expression_internal KW_AND expression_internal {
         $$ = LogicalExpression::makeAnd(qctx->objPool(), $1, $3);
     }
-    | expression KW_OR expression {
+    | expression_internal KW_OR expression_internal {
         $$ = LogicalExpression::makeOr(qctx->objPool(), $1, $3);
     }
-    | expression KW_XOR expression {
+    | expression_internal KW_XOR expression_internal {
         $$ = LogicalExpression::makeXor(qctx->objPool(), $1, $3);
     }
     | case_expression {
@@ -712,7 +724,7 @@ constant_expression
     ;
 
 compound_expression
-    : L_PAREN expression R_PAREN {
+    : L_PAREN expression_internal R_PAREN {
         $$ = $2;
     }
     | property_expression {
@@ -751,51 +763,51 @@ property_expression
     ;
 
 subscript_expression
-    : name_label L_BRACKET expression R_BRACKET {
+    : name_label L_BRACKET expression_internal R_BRACKET {
         $$ = SubscriptExpression::make(qctx->objPool(), LabelExpression::make(qctx->objPool(), *$1), $3);
         delete $1;
     }
-    | VARIABLE L_BRACKET expression R_BRACKET {
+    | VARIABLE L_BRACKET expression_internal R_BRACKET {
         $$ = SubscriptExpression::make(qctx->objPool(), VariableExpression::make(qctx->objPool(), *$1), $3);
         delete $1;
     }
-    | compound_expression L_BRACKET expression R_BRACKET {
+    | compound_expression L_BRACKET expression_internal R_BRACKET {
         $$ = SubscriptExpression::make(qctx->objPool(), $1, $3);
     }
     ;
 
 subscript_range_expression
-    : name_label L_BRACKET expression DOT_DOT expression R_BRACKET {
+    : name_label L_BRACKET expression_internal DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), LabelExpression::make(qctx->objPool(), *$1), $3, $5);
         delete($1);
     }
-    | name_label L_BRACKET DOT_DOT expression R_BRACKET {
+    | name_label L_BRACKET DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), LabelExpression::make(qctx->objPool(), *$1), nullptr, $4);
         delete($1);
     }
-    | name_label L_BRACKET expression DOT_DOT R_BRACKET {
+    | name_label L_BRACKET expression_internal DOT_DOT R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), LabelExpression::make(qctx->objPool(), *$1), $3, nullptr);
         delete($1);
     }
-    | VARIABLE L_BRACKET expression DOT_DOT expression R_BRACKET {
+    | VARIABLE L_BRACKET expression_internal DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), VariableExpression::make(qctx->objPool(), *$1), $3, $5);
         delete($1);
     }
-    | VARIABLE L_BRACKET DOT_DOT expression R_BRACKET {
+    | VARIABLE L_BRACKET DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), VariableExpression::make(qctx->objPool(), *$1), nullptr, $4);
         delete($1);
     }
-    | VARIABLE L_BRACKET expression DOT_DOT R_BRACKET {
+    | VARIABLE L_BRACKET expression_internal DOT_DOT R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), VariableExpression::make(qctx->objPool(), *$1), $3, nullptr);
         delete($1);
     }
-    | compound_expression L_BRACKET expression DOT_DOT expression R_BRACKET {
+    | compound_expression L_BRACKET expression_internal DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), $1, $3, $5);
     }
-    | compound_expression L_BRACKET DOT_DOT expression R_BRACKET {
+    | compound_expression L_BRACKET DOT_DOT expression_internal R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), $1, nullptr, $4);
     }
-    | compound_expression L_BRACKET expression DOT_DOT R_BRACKET {
+    | compound_expression L_BRACKET expression_internal DOT_DOT R_BRACKET {
         $$ = SubscriptRangeExpression::make(qctx->objPool(), $1, $3, nullptr);
     }
     ;
@@ -832,7 +844,7 @@ generic_case_expression
     ;
 
 conditional_expression
-    : expression QM expression COLON expression {
+    : expression_internal QM expression_internal COLON expression_internal {
         auto cases = CaseList::make(qctx->objPool());
         cases->add($1, $3);
         auto expr = CaseExpression::make(qctx->objPool(), cases, false);
@@ -845,7 +857,7 @@ case_condition
     : %empty {
         $$ = nullptr;
     }
-    | expression {
+    | expression_internal {
         $$ = $1;
     }
     ;
@@ -854,17 +866,17 @@ case_default
     : %empty {
         $$ = nullptr;
     }
-    | KW_ELSE expression {
+    | KW_ELSE expression_internal {
         $$ = $2;
     }
     ;
 
 when_then_list
-    : KW_WHEN expression KW_THEN expression {
+    : KW_WHEN expression_internal KW_THEN expression_internal {
         $$ = CaseList::make(qctx->objPool());
         $$->add($2, $4);
     }
-    | when_then_list KW_WHEN expression KW_THEN expression {
+    | when_then_list KW_WHEN expression_internal KW_THEN expression_internal {
         $1->add($3, $5);
         $$ = $1;
     }
@@ -878,7 +890,7 @@ predicate_name
     ;
 
 predicate_expression
-    : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
+    : predicate_name L_PAREN expression_internal KW_IN expression_internal KW_WHERE expression_internal R_PAREN {
         if ($3->kind() != Expression::Kind::kLabel) {
             delete $1;
             throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
@@ -889,7 +901,7 @@ predicate_expression
         $$ = expr;
         delete $1;
     }
-    | KW_EXISTS L_PAREN expression R_PAREN {
+    | KW_EXISTS L_PAREN expression_internal R_PAREN {
         if ($3->kind() != Expression::Kind::kLabelAttribute && $3->kind() != Expression::Kind::kAttribute &&
             $3->kind() != Expression::Kind::kSubscript) {
             throw nebula::GraphParser::syntax_error(@3, "The exists only accept LabelAttribute, Attribute and Subscript");
@@ -899,7 +911,7 @@ predicate_expression
     ;
 
 list_comprehension_expression
-    : L_BRACKET expression KW_IN expression KW_WHERE expression R_BRACKET {
+    : L_BRACKET expression_internal KW_IN expression_internal KW_WHERE expression_internal R_BRACKET {
         if ($2->kind() != Expression::Kind::kLabel) {
             throw nebula::GraphParser::syntax_error(@2, "The loop variable must be a label in list comprehension");
         }
@@ -908,7 +920,7 @@ list_comprehension_expression
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
     }
-    | L_BRACKET expression KW_IN expression PIPE expression R_BRACKET {
+    | L_BRACKET expression_internal KW_IN expression_internal PIPE expression_internal R_BRACKET {
         if ($2->kind() != Expression::Kind::kLabel) {
             throw nebula::GraphParser::syntax_error(@2, "The loop variable must be a label in list comprehension");
         }
@@ -917,7 +929,7 @@ list_comprehension_expression
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
     }
-    | L_BRACKET expression KW_IN expression KW_WHERE expression PIPE expression R_BRACKET {
+    | L_BRACKET expression_internal KW_IN expression_internal KW_WHERE expression_internal PIPE expression_internal R_BRACKET {
         if ($2->kind() != Expression::Kind::kLabel) {
             throw nebula::GraphParser::syntax_error(@2, "The loop variable must be a label in list comprehension");
         }
@@ -929,7 +941,7 @@ list_comprehension_expression
     ;
 
 reduce_expression
-    : KW_REDUCE L_PAREN name_label ASSIGN expression COMMA name_label KW_IN expression PIPE expression R_PAREN {
+    : KW_REDUCE L_PAREN name_label ASSIGN expression_internal COMMA name_label KW_IN expression_internal PIPE expression_internal R_PAREN {
         auto *expr = ReduceExpression::make(qctx->objPool(), *$3, $5, *$7, $9, $11);
         nebula::graph::ParserUtil::rewriteReduce(qctx, expr, *$3, *$7);
         $$ = expr;
@@ -1016,7 +1028,7 @@ function_call_expression
             throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
         }
     }
-    | LABEL L_PAREN KW_DISTINCT expression R_PAREN {
+    | LABEL L_PAREN KW_DISTINCT expression_internal R_PAREN {
         if (AggFunctionManager::find(*$1).ok()) {
             $$ = AggregateExpression::make(qctx->objPool(), *$1, $4, true);
             delete($1);
@@ -1136,13 +1148,13 @@ argument_list
         Expression *arg = EdgeExpression::make(qctx->objPool());
         $$->addArgument(arg);
     }
-    | expression {
+    | expression_internal {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = nullptr;
         arg = $1;
         $$->addArgument(arg);
     }
-    | argument_list COMMA expression {
+    | argument_list COMMA expression_internal {
         $$ = $1;
         Expression* arg = nullptr;
         arg = $3;
@@ -1280,11 +1292,11 @@ opt_expression_list
     ;
 
 expression_list
-    : expression {
+    : expression_internal {
         $$ = ExpressionList::make(qctx->objPool());
         $$->add($1);
     }
-    | expression_list COMMA expression {
+    | expression_list COMMA expression_internal {
         $$ = $1;
         $$->add($3);
     }
@@ -1309,12 +1321,12 @@ opt_map_item_list
     ;
 
 map_item_list
-    : name_label COLON expression {
+    : name_label COLON expression_internal {
         $$ = MapItemList::make(qctx->objPool());
         $$->add(*$1, $3);
         delete $1;
     }
-    | map_item_list COMMA name_label COLON expression {
+    | map_item_list COMMA name_label COLON expression_internal {
         $$ = $1;
         $$->add(*$3, $5);
         delete $3;
@@ -1623,47 +1635,19 @@ unwind_clause
 
 with_clause
     : KW_WITH match_return_items match_order_by match_skip match_limit where_clause {
-        if ($6 && graph::ExpressionUtils::findAny($6->filter(),{Expression::Kind::kAggregate})) {
-            delete($2);
-            delete($3);
-            delete($4);
-            delete($5);
-            delete($6);
-            throw nebula::GraphParser::syntax_error(@6, "Invalid use of aggregating function in this context.");
-        }
         $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
     }
     | KW_WITH KW_DISTINCT match_return_items match_order_by match_skip match_limit where_clause {
-        if ($7 && graph::ExpressionUtils::findAny($7->filter(),{Expression::Kind::kAggregate})) {
-            delete($3);
-            delete($4);
-            delete($5);
-            delete($6);
-            delete($7);
-            throw nebula::GraphParser::syntax_error(@7, "Invalid use of aggregating function in this context.");
-        }
         $$ = new WithClause($3, $4, $5, $6, $7, true);
     }
     ;
 
 match_clause
     : KW_MATCH match_path_list where_clause {
-        if ($3 && graph::ExpressionUtils::findAny($3->filter(),{Expression::Kind::kAggregate})) {
-            delete($2);
-            delete($3);
-            throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in this context.");
-        } else {
-            $$ = new MatchClause($2, $3, false/*optional*/);
-        }
+        $$ = new MatchClause($2, $3, false/*optional*/);
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
-        if ($4 && graph::ExpressionUtils::findAny($4->filter(),{Expression::Kind::kAggregate})) {
-            delete($3);
-            delete($4);
-            throw nebula::GraphParser::syntax_error(@4, "Invalid use of aggregating function in this context.");
-        } else {
-            $$ = new MatchClause($3, $4, true);
-        }
+        $$ = new MatchClause($3, $4, true);
     }
     ;
 

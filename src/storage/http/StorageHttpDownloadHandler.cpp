@@ -94,7 +94,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
   if (helper_->checkHadoopPath()) {
     std::vector<std::string> parts;
     folly::split(",", partitions_, parts, true);
-    if (parts.size() == 0) {
+    if (parts.empty()) {
       ResponseBuilder(downstream_)
           .status(400, "SSTFile download failed")
           .body("Partitions should be not empty")

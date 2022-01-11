@@ -19,7 +19,7 @@ class KillQueryMetaWrapper {
  public:
   explicit KillQueryMetaWrapper(MetaClient* client) : client_(client) {}
   void killQuery(SessionID session_id, ExecutionPlanID plan_id) {
-    client_->killedPlans_.load()->emplace(session_id, plan_id);
+    client_->metadata_.load()->killedPlans_.emplace(session_id, plan_id);
   }
 
  private:

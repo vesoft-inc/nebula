@@ -210,8 +210,8 @@ TEST_F(LogCASTest, EmptyTest) {
     LOG(INFO) << "return empty string for atomic operation!";
     folly::Baton<> baton;
     leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::string(""); })
-        .thenValue([&baton](AppendLogResult res) {
-          ASSERT_EQ(AppendLogResult::SUCCEEDED, res);
+        .thenValue([&baton](nebula::cpp2::ErrorCode res) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
           baton.post();
         });
     baton.wait();
@@ -220,8 +220,8 @@ TEST_F(LogCASTest, EmptyTest) {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
     leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
-        .thenValue([&baton](AppendLogResult res) {
-          ASSERT_EQ(AppendLogResult::E_ATOMIC_OP_FAILURE, res);
+        .thenValue([&baton](nebula::cpp2::ErrorCode res) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED, res);
           baton.post();
         });
     baton.wait();

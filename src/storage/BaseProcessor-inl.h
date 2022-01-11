@@ -186,5 +186,32 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
   return std::move(rowWrite).moveEncodedStr();
 }
 
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
+    const meta::SchemaProviderIf::Field& field, cpp2::StatType statType) {
+  // todo(doodle): how to deal with nullable fields? For now, null add anything
+  // is null, if there is even one null, the result will be invalid
+  auto fType = field.type();
+  switch (statType) {
+    case cpp2::StatType::SUM:
+    case cpp2::StatType::AVG:
+    case cpp2::StatType::MIN:
+    case cpp2::StatType::MAX: {
+      if (fType == nebula::cpp2::PropertyType::INT64 ||
+          fType == nebula::cpp2::PropertyType::INT32 ||
+          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
+          fType == nebula::cpp2::PropertyType::FLOAT ||
+          fType == nebula::cpp2::PropertyType::DOUBLE) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+      }
+      return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;
+    }
+    case cpp2::StatType::COUNT: {
+      break;
+    }
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 }  // namespace storage
 }  // namespace nebula

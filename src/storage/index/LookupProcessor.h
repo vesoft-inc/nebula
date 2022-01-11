@@ -27,19 +27,26 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
   void doProcess(const cpp2::LookupIndexRequest& req);
   void onProcessFinished() {
     BaseProcessor<cpp2::LookupIndexResp>::resp_.data_ref() = std::move(resultDataSet_);
+    BaseProcessor<cpp2::LookupIndexResp>::resp_.stat_data_ref() = std::move(statsDataSet_);
   }
   void profilePlan(IndexNode* plan);
   void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   void runInMultipleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   ::nebula::cpp2::ErrorCode prepare(const cpp2::LookupIndexRequest& req);
-  std::unique_ptr<IndexNode> buildPlan(const cpp2::LookupIndexRequest& req);
+  ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> buildPlan(
+      const cpp2::LookupIndexRequest& req);
   std::unique_ptr<IndexNode> buildOneContext(const cpp2::IndexQueryContext& ctx);
   std::vector<std::unique_ptr<IndexNode>> reproducePlan(IndexNode* root, size_t count);
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<std::string, cpp2::StatType>>>
+  handleStatProps(const std::vector<cpp2::StatProp>& statProps);
+  void mergeStatsResult(const std::vector<Row>& statsResult);
   folly::Executor* executor_{nullptr};
   std::unique_ptr<PlanContext> planContext_;
   std::unique_ptr<RuntimeContext> context_;
   nebula::DataSet resultDataSet_;
+  nebula::DataSet statsDataSet_;
   std::vector<nebula::DataSet> partResults_;
+  std::vector<cpp2::StatType> statTypes_;
 };
 }  // namespace storage
 }  // namespace nebula
