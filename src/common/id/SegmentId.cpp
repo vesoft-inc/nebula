@@ -49,4 +49,20 @@ StatusOr<int64_t> SegmentId::fetchSegment() {
   NG_RETURN_IF_ERROR(result);
   return result.value();
 }
+
+Status SegmentId::init(int64_t step) {
+  step_ = step;
+  if (step < 120000000) {
+    return Status::Error("Step is too small");
+  }
+
+  auto xRet = fetchSegment();
+  NG_RETURN_IF_ERROR(xRet);
+
+  segmentStart_ = xRet.value();
+  cur_ = segmentStart_ - 1;
+
+  return Status::OK();
+}
+
 }  // namespace nebula

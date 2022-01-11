@@ -28,20 +28,7 @@ class SegmentId {
 
   SegmentId& operator=(const SegmentId&) = delete;
 
-  Status init(int64_t step) {
-    step_ = step;
-    if (step < 10000) {
-      return Status::Error("Step is too small");
-    }
-
-    auto xRet = fetchSegment();
-    NG_RETURN_IF_ERROR(xRet);
-
-    segmentStart_ = xRet.value();
-    cur_ = segmentStart_ - 1;
-
-    return Status::OK();
-  }
+  Status init(int64_t step);
 
   static void initClient(meta::BaseMetaClient* client) {
     client_ = client;

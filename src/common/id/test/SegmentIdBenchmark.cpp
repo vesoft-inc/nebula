@@ -23,8 +23,8 @@ class MockMetaClient : public nebula::meta::BaseMetaClient {
 };
 
 size_t SegmentIdCurrencyTest(size_t iters, int threadNum) {
-  constexpr size_t ops = 100000UL;
-  int step = 10000;
+  constexpr size_t ops = 1000000UL;
+  int step = 120000000;
 
   MockMetaClient metaClient = MockMetaClient();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -35,7 +35,8 @@ size_t SegmentIdCurrencyTest(size_t iters, int threadNum) {
   nebula::SegmentId::initClient(&metaClient);
   nebula::SegmentId::initRunner(threadManager.get());
   nebula::SegmentId& generator = nebula::SegmentId::getInstance();
-  ASSERT(generator.init(step).ok());
+  nebula::Status status = generator.init(step);
+  ASSERT(status.ok());
 
   auto proc = [&]() {
     auto n = iters * ops;

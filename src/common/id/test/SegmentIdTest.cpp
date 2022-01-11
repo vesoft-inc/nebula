@@ -27,9 +27,8 @@ class MockMetaClient : public meta::BaseMetaClient {
 TEST(SegmentIdTest, TestConcurrency) {
   MockMetaClient metaClient = MockMetaClient();
 
-  int threadNum = 16;
-  int times = 1000000;
-  int step = 10000;
+  int threadNum = 32;
+  int times = 10000000;
 
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
       PriorityThreadManager::newPriorityThreadManager(32));
@@ -39,7 +38,7 @@ TEST(SegmentIdTest, TestConcurrency) {
   SegmentId::initClient(&metaClient);
   SegmentId::initRunner(threadManager.get());
   SegmentId& generator = SegmentId::getInstance();
-  ASSERT_TRUE(generator.init(step).ok());
+  generator.step_ = 10000;
 
   folly::ConcurrentHashMap<int64_t, int> map;
   std::vector<std::thread> threads;
@@ -49,6 +48,7 @@ TEST(SegmentIdTest, TestConcurrency) {
     for (int i = 0; i < times; i++) {
       StatusOr<int64_t> id = generator.getId();
       ASSERT_TRUE(id.ok());
+      // check duplicated id
       ASSERT_TRUE(map.find(id.value()) == map.end()) << "id: " << id.value();
       map.insert(id.value(), 0);
     }

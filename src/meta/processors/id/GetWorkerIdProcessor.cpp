@@ -29,6 +29,13 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   }
 
   int64_t workerId = std::stoi(std::move(nebula::value(newResult)));
+
+  // TODO: (jackwener) limit worker, add LOG ERROR
+  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
+  doPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(workerId + 1)}});
+
+  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+
   resp_.workerid_ref() = workerId;
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
 
