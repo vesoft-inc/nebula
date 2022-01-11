@@ -29,7 +29,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH (n)-[]-(m:player)-[]-(l)
-      WHERE m.player.name=="Kyle Anderson"
+      WHERE m.player.name="Kyle Anderson"
       RETURN n,m,l
       """
     Then the result should be, in any order, with relax comparison:
@@ -189,7 +189,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (n)-[]-(m:player{name:"Kyle Anderson"})-[]-(l)-[]-(k)
-      WHERE k.player.name == "Marc Gasol"
+      WHERE k.player.name = "Marc Gasol"
       RETURN n, m, l, k
       """
     Then the result should be, in any order, with relax comparison:
@@ -200,7 +200,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (n)-[]-(m:player{name:"Kyle Anderson"})-[]-(l)-[]-(k)
-      WHERE k.player.name == "Marc Gasol"
+      WHERE k.player.name = "Marc Gasol"
       RETURN p
       """
     Then the result should be, in any order, with relax comparison:
@@ -211,7 +211,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = ()-[e1]-(m:player{name:"Kyle Anderson"})-[e2]-()-[e3]-(k)
-      WHERE k.player.name == "Marc Gasol"
+      WHERE k.player.name = "Marc Gasol"
       RETURN e1, e2, e3
       """
     Then the result should be, in any order, with relax comparison:
@@ -230,7 +230,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (k)-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)
-      WHERE l.team.name == "Lakers"
+      WHERE l.team.name = "Lakers"
       RETURN k, n, m, l
       """
     Then the result should be, in any order, with relax comparison:
@@ -254,7 +254,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (k)-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)
-      WHERE l.team.name == "Lakers"
+      WHERE l.team.name = "Lakers"
       RETURN p
       """
     Then the result should be, in any order, with relax comparison:
@@ -278,7 +278,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH ()-[e1]-()-[e2]-(:player{name:"Kobe Bryant"})-[e3]-(l)
-      WHERE l.team.name == "Lakers"
+      WHERE l.team.name = "Lakers"
       RETURN e1, e2, e3
       """
     Then the result should be, in any order, with relax comparison:
@@ -312,7 +312,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = ()-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)-[]-(k)
-      WHERE k.player.name == "Paul Gasol"
+      WHERE k.player.name = "Paul Gasol"
       RETURN p
       """
     Then the result should be, in any order, with relax comparison:
@@ -335,7 +335,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH (i)-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)-[]-(k)
-      WHERE k.player.name == "Paul Gasol"
+      WHERE k.player.name = "Paul Gasol"
       RETURN i, n, m, l, k
       """
     Then the result should be, in any order, with relax comparison:
@@ -358,7 +358,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH ()-[e1]-()-[e2]-(:player{name:"Kobe Bryant"})-[e3]-()-[e4]-(k)
-      WHERE k.player.name == "Paul Gasol"
+      WHERE k.player.name = "Paul Gasol"
       RETURN e1, e2, e3, e4
       """
     Then the result should be, in any order, with relax comparison:
@@ -507,7 +507,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH (n)-[]-(m)-[]-(l)
-      WHERE id(m)==hash('Kyle Anderson')
+      WHERE id(m)=hash('Kyle Anderson')
       RETURN n,m,l
       """
     Then the result should be, in any order, with relax comparison:

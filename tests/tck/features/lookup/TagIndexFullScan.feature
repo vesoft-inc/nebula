@@ -92,7 +92,7 @@ Feature: Lookup tag index full scan
     # (a IN b) OR c
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age IN [40, 25] OR player.name == "ABC" YIELD id(vertex) as id, player.age
+      LOOKUP ON player WHERE player.age IN [40, 25] OR player.name = "ABC" YIELD id(vertex) as id, player.age
       """
     Then the result should be, in any order:
       | id              | player.age |
@@ -124,7 +124,7 @@ Feature: Lookup tag index full scan
     # (a IN b) AND c
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name == "Kobe Bryant" YIELD id(vertex) as id, player.age
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name = "Kobe Bryant" YIELD id(vertex) as id, player.age
       """
     Then the result should be, in any order:
       | id            | player.age |
@@ -150,7 +150,7 @@ Feature: Lookup tag index full scan
     # c AND (a IN b)
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name == "Kobe Bryant" YIELD id(vertex) as id, player.age
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name = "Kobe Bryant" YIELD id(vertex) as id, player.age
       """
     Then the result should be, in any order:
       | id            | player.age |
@@ -164,7 +164,7 @@ Feature: Lookup tag index full scan
     # (https://github.com/vesoft-inc/nebula/issues/3524)
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age IN [40] AND player.name == "Kobe Bryant" YIELD id(vertex) as id, player.age
+      LOOKUP ON player WHERE player.age IN [40] AND player.name = "Kobe Bryant" YIELD id(vertex) as id, player.age
       """
     Then the result should be, in any order:
       | id            | player.age |

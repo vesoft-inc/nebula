@@ -142,7 +142,6 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("<=", TokenType::LE),
       CHECK_SEMANTIC_TYPE(">", TokenType::GT),
       CHECK_SEMANTIC_TYPE(">=", TokenType::GE),
-      CHECK_SEMANTIC_TYPE("==", TokenType::EQ),
       CHECK_SEMANTIC_TYPE("!=", TokenType::NE),
       CHECK_SEMANTIC_TYPE("<>", TokenType::NE),
       CHECK_SEMANTIC_TYPE("=~", TokenType::REG),

@@ -110,7 +110,7 @@ Feature: Yield Sentence
       | "Suns"    |
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team | YIELD $-.team WHERE 1 == 1
+      GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team | YIELD $-.team WHERE 1 = 1
       """
     Then the result should be, in any order:
       | $-.team   |
@@ -201,7 +201,7 @@ Feature: Yield Sentence
       | "Suns"    |
     When executing query:
       """
-      $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team;YIELD $var.team WHERE 1 == 1
+      $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team;YIELD $var.team WHERE 1 = 1
       """
     Then the result should be, in any order:
       | $var.team |

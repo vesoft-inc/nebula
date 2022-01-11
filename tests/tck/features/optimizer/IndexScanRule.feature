@@ -73,7 +73,7 @@ Feature: Match index selection
       WHERE
       v.player.name<="Aron Baynes"
       or v.player.name>"Yao Ming"
-      or v.player.name=="Kobe Bryant"
+      or v.player.name="Kobe Bryant"
       or v.player.age>40
       RETURN v
       """

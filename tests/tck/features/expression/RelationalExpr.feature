@@ -9,14 +9,14 @@ Feature: RelationalExpression
   Scenario: RelationalExpression basic
     When executing query:
       """
-      YIELD [1<2, 1<=1, 3>2, 2>=2, 2==2, 3!=2, 4<>3] AS int_test
+      YIELD [1<2, 1<=1, 3>2, 2>=2, 2=2, 3!=2, 4<>3] AS int_test
       """
     Then the result should be, in order:
       | int_test                                   |
       | [true, true, true, true, true, true, true] |
     When executing query:
       """
-      YIELD [1.2<2.4, 1.3<=1.300000001, 3.1>2.9, 2.3>=2.11, 2.0==2.000000009,
+      YIELD [1.2<2.4, 1.3<=1.300000001, 3.1>2.9, 2.3>=2.11, 2.0=2.000000009,
             3.3!=2.1, 4.2<>3.001] AS float_test
       """
     Then the result should be, in order:
@@ -40,15 +40,15 @@ Feature: RelationalExpression
       | [true, false, false, true, false] |
     When executing query:
       """
-      YIELD [1<2.4, 1<=1.300000001, 3>2.9, 2.3>=2, 2==2.000000009, 3.3!=2, 4<>3.001, 4<=[4],
-             true<>[true,true], 2.0==[1.9999999999999]] AS mixed_test
+      YIELD [1<2.4, 1<=1.300000001, 3>2.9, 2.3>=2, 2=2.000000009, 3.3!=2, 4<>3.001, 4<=[4],
+             true<>[true,true], 2.0=[1.9999999999999]] AS mixed_test
       """
     Then the result should be, in order:
       | mixed_test                                                    |
       | [true, true, true, true, true, true, true, NULL, true, false] |
     When executing query:
       """
-      YIELD ["10"<2.4, '1'<=1.300000001, 3>"2.9", "2.3">=true, true==2.000000009, false!=2,
+      YIELD ["10"<2.4, '1'<=1.300000001, 3>"2.9", "2.3">=true, true=2.000000009, false!=2,
              [1,3]<>3.001] AS non_numeric_test
       """
     Then the result should be, in order:
@@ -56,8 +56,8 @@ Feature: RelationalExpression
       | [NULL, NULL, NULL, NULL, false, true, true] |
     When executing query:
       """
-      YIELD ["10"<null, null<=1.300000001, 3>null, null>=true, null==null, null!=null, null<>false,
-             null<[2,3,null], [2,null]==[2,null], [2,null]<>[2,null,1]] AS null_test
+      YIELD ["10"<null, null<=1.300000001, 3>null, null>=true, null=null, null!=null, null<>false,
+             null<[2,3,null], [2,null]=[2,null], [2,null]<>[2,null,1]] AS null_test
       """
     Then the result should be, in order:
       | null_test                                                    |
@@ -98,7 +98,7 @@ Feature: RelationalExpression
     When executing query:
       """
       GO FROM "Tony Parker" OVER like
-      WHERE $$.player.age >= 33.000000000010 AND like.likeness == 90.0000000000001
+      WHERE $$.player.age >= 33.000000000010 AND like.likeness = 90.0000000000001
       YIELD like._dst AS id, like.likeness AS likeness, $$.player.age AS age
       """
     Then the result should be, in any order:
@@ -208,7 +208,7 @@ Feature: RelationalExpression
       """
       MATCH p = (n:player)<-[e:like]-(m)
       WHERE n.player.age >= 33 AND n.player.name <> "2010.0"
-            AND e.likeness == 90 AND n.player.nonExistTag <> null
+            AND e.likeness = 90 AND n.player.nonExistTag <> null
             AND e.likeness >= "12"
       RETURN n.player.name AS player, n.player.age AS age
       """

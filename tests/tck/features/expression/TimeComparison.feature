@@ -10,7 +10,7 @@ Feature: Time computation
     When executing query:
       """
       WITH duration(<lhs>) as x, duration(<rhs>) as d
-      RETURN x > d AS gt, x < d AS lt, x == d AS eq, x != d AS ne,
+      RETURN x > d AS gt, x < d AS lt, x = d AS eq, x != d AS ne,
       x >= d AS ge, x <= d AS le
       """
     Then the result should be, in any order:

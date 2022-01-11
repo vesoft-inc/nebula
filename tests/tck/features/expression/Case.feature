@@ -23,7 +23,7 @@ Feature: Case Expression
       | NULL |
     When executing query:
       """
-      YIELD CASE WHEN 4 > 5 THEN 0 WHEN 3+4==7 THEN 1 ELSE 2 END AS r
+      YIELD CASE WHEN 4 > 5 THEN 0 WHEN 3+4=7 THEN 1 ELSE 2 END AS r
       """
     Then the result should be, in any order:
       | r |

@@ -57,7 +57,7 @@ Feature: LDBC Business Intelligence Workload - Read
         <-[:HAS_CREATOR]-(message:Message)-[:HAS_TAG]->(`tag`:`Tag`)
       WHERE message.Message.creationDate >= "20091231230000000"
         AND message.Message.creationDate <= "20101107230000000"
-        AND (id(country) == "Ethiopia" OR id(country) == "Belarus")
+        AND (id(country) = "Ethiopia" OR id(country) = "Belarus")
       WITH
         country.Country.name AS countryName,
         toInteger(message.Message.creationDate)/100000000000%100 AS month,
@@ -99,12 +99,12 @@ Feature: LDBC Business Intelligence Workload - Read
         10 % 12 + 1 AS month2
       MATCH (`tag`:`Tag`)
       OPTIONAL MATCH (message1:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message1.creationDate)/10000000000000   == year1
-          AND toInteger(message1.creationDate)/100000000000%100 == month1
+        WHERE toInteger(message1.creationDate)/10000000000000   = year1
+          AND toInteger(message1.creationDate)/100000000000%100 = month1
       WITH year2, month2, `tag`, count(message1) AS countMonth1
       OPTIONAL MATCH (message2:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message2.creationDate)/10000000000000   == year2
-          AND toInteger(message2.creationDate)/100000000000%100 == month2
+        WHERE toInteger(message2.creationDate)/10000000000000   = year2
+          AND toInteger(message2.creationDate)/100000000000%100 = month2
       WITH
         `tag`,
         countMonth1,
@@ -128,7 +128,7 @@ Feature: LDBC Business Intelligence Workload - Read
         (country:Country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-
         (person:Person)<-[:HAS_MODERATOR]-(forum:Forum)-[:CONTAINER_OF]->
         (post:Post)-[:HAS_TAG]->(:`Tag`)-[:HAS_TYPE]->(:TagClass {name: "MusicalArtist"})
-      WHERE id(country) == "Burma"
+      WHERE id(country) = "Burma"
       RETURN
         forum.Forum.id AS forumId,
         forum.Forum.title AS forumTitle,
@@ -149,7 +149,7 @@ Feature: LDBC Business Intelligence Workload - Read
       MATCH
         (country:Country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-
         (person:Person)<-[:HAS_MEMBER]-(forum:Forum)
-      WHERE id(country) == "Belarus"
+      WHERE id(country) = "Belarus"
       WITH forum, count(person) AS numberOfMembers, forum.Forum.id AS forumId
       ORDER BY numberOfMembers DESC, forumId ASC
       LIMIT 100
@@ -178,7 +178,7 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
-      WHERE id(`tag`) == "Abbas_I_of_Persia"
+      WHERE id(`tag`) = "Abbas_I_of_Persia"
       OPTIONAL MATCH (:Person)-[like:LIKES]->(message)
       OPTIONAL MATCH (message)<-[:REPLY_OF]-(comment:`Comment`)
       WITH person, count(DISTINCT like) AS likeCount, count(DISTINCT comment) AS replyCount, count(DISTINCT message) AS messageCount
@@ -200,7 +200,7 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH (`tag`:`Tag`)
-      WHERE id(`tag`) == "Arnold_Schwarzenegger"
+      WHERE id(`tag`) = "Arnold_Schwarzenegger"
       MATCH (`tag`)<-[:HAS_TAG]-(message1:Message)-[:HAS_CREATOR]->(person1:Person)
       MATCH (`tag`)<-[:HAS_TAG]-(message2:Message)-[:HAS_CREATOR]->(person1)
       OPTIONAL MATCH (message2)<-[:LIKES]-(person2:Person)
@@ -224,7 +224,7 @@ Feature: LDBC Business Intelligence Workload - Read
       MATCH
         (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message),
         (message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
-      WHERE id(`tag`) == "Genghis_Khan" AND NOT `tag` == relatedTag
+      WHERE id(`tag`) = "Genghis_Khan" AND NOT `tag` = relatedTag
       RETURN
         relatedTag.`Tag`.name AS relatedTagName,
         count(DISTINCT comment) AS count
@@ -270,7 +270,7 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH (`tag`:`Tag`)
-      WHERE id(`tag`) == "John_Rhys-Davies"
+      WHERE id(`tag`) = "John_Rhys-Davies"
       OPTIONAL MATCH (`tag`)<-[interest:HAS_INTEREST]-(person:Person)
       WITH `tag`, collect(person) AS interestedPersons
       OPTIONAL MATCH (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
@@ -356,7 +356,7 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH (country:Country)<-[:IS_LOCATED_IN]-(message:Message)
-      WHERE id(country) == "Burma"
+      WHERE id(country) = "Burma"
       OPTIONAL MATCH (message)-[:HAS_TAG]->(`tag`:`Tag`)
       WITH
         toInteger(message.Message.creationDate)/10000000000000   AS year,
@@ -414,7 +414,7 @@ Feature: LDBC Business Intelligence Workload - Read
       """
       MATCH
         (country:Country)
-      WHERE id(country) == "Burma"
+      WHERE id(country) = "Burma"
       MATCH
         (country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-(person1:Person)
       OPTIONAL MATCH
@@ -428,7 +428,7 @@ Feature: LDBC Business Intelligence Workload - Read
       OPTIONAL MATCH
         (country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-(friend2:Person)-[:KNOWS]-(person2)
       WITH country, person2, count(friend2) AS friend2Count, socialNormal
-      WHERE friend2Count == socialNormal
+      WHERE friend2Count = socialNormal
       RETURN
         person2.Person.id AS person2Id,
         friend2Count AS count
@@ -444,7 +444,7 @@ Feature: LDBC Business Intelligence Workload - Read
       """
       MATCH
         (n:Person)-[:KNOWS*3..5]-(person:Person)
-      WHERE id(n) == "19791209310731"
+      WHERE id(n) = "19791209310731"
       WITH DISTINCT person
       MATCH
         (person)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(:Country {name: "Pakistan"}),
@@ -469,7 +469,7 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH (country:Country)
-      WHERE id(country) == "Spain"
+      WHERE id(country) = "Spain"
       MATCH (a:Person)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country)
       MATCH (b:Person)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country)
       MATCH (c:Person)-[:IS_LOCATED_IN]->(:City)-[:IS_PART_OF]->(country)
@@ -512,12 +512,12 @@ Feature: LDBC Business Intelligence Workload - Read
       MATCH
         (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum1:Forum)-[:HAS_MEMBER]->(stranger:Person)
-      WHERE id(tagClass) == "MusicalArtist"
+      WHERE id(tagClass) = "MusicalArtist"
       WITH DISTINCT stranger
       MATCH
         (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum2:Forum)-[:HAS_MEMBER]->(stranger)
-      WHERE id(tagClass) == "OfficeHolder"
+      WHERE id(tagClass) = "OfficeHolder"
       WITH DISTINCT stranger
       MATCH
         (person:Person)<-[:HAS_CREATOR]-(comment:`Comment`)-[:REPLY_OF*100]->(message:Message)-[:HAS_CREATOR]->(stranger)

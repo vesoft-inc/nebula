@@ -525,7 +525,7 @@ Feature: Insert int vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      LOOKUP ON person WHERE person.id = 1 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
@@ -538,7 +538,7 @@ Feature: Insert int vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      LOOKUP ON person WHERE person.id = 1 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
@@ -546,7 +546,7 @@ Feature: Insert int vid of vertex and edge
       | 200 |
     When executing query:
       """
-      LOOKUP ON person WHERE person.id == 2 YIELD id(vertex) as id
+      LOOKUP ON person WHERE person.id = 2 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
@@ -559,7 +559,7 @@ Feature: Insert int vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      LOOKUP ON like WHERE like.grade = 666 YIELD src(edge) as src, dst(edge) as dst
       """
     Then the result should be, in any order:
       | src | dst |
@@ -572,7 +572,7 @@ Feature: Insert int vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      LOOKUP ON like WHERE like.grade = 666 YIELD src(edge) as src, dst(edge) as dst
       """
     Then the result should be, in any order:
       | src | dst |
@@ -580,7 +580,7 @@ Feature: Insert int vid of vertex and edge
       | 300 | 400 |
     When executing query:
       """
-      LOOKUP ON like WHERE like.grade == 888 YIELD src(edge) as src, dst(edge) as dst
+      LOOKUP ON like WHERE like.grade = 888 YIELD src(edge) as src, dst(edge) as dst
       """
     Then the result should be, in any order:
       | src | dst |

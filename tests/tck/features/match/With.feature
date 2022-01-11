@@ -147,7 +147,7 @@ Feature: With clause
     When executing query:
       """
       MATCH (v:player)-[:like]->(v2)
-      WHERE v.player.name == "Tony Parker" and v2.player.age == 42
+      WHERE v.player.name = "Tony Parker" and v2.player.age = 42
       WITH *, v.player.age + 100 AS age
       RETURN *, v2.player.name
       """

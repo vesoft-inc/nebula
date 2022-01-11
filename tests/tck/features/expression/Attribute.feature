@@ -65,21 +65,21 @@ Feature: Attribute
       | UNKNOWN_PROP |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name
+      MATCH (v) WHERE id(v) = 'Tim Duncan' RETURN v.player.name
       """
     Then the result should be, in any order:
       | v.player.name |
       | "Tim Duncan"  |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.Name
+      MATCH (v) WHERE id(v) = 'Tim Duncan' RETURN v.player.Name
       """
     Then the result should be, in any order:
       | v.player.Name |
       | NULL          |
     When executing query:
       """
-      MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.likeness
+      MATCH (v)-[e:like]->() WHERE id(v) = 'Tim Duncan' RETURN e.likeness
       """
     Then the result should be, in any order:
       | e.likeness |
@@ -87,7 +87,7 @@ Feature: Attribute
       | 95         |
     When executing query:
       """
-      MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.Likeness
+      MATCH (v)-[e:like]->() WHERE id(v) = 'Tim Duncan' RETURN e.Likeness
       """
     Then the result should be, in any order:
       | e.Likeness   |
@@ -125,14 +125,14 @@ Feature: Attribute
       | UNKNOWN_PROP    |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.not_exists_attr
+      MATCH (v) WHERE id(v) = 'Tim Duncan' RETURN v.player.not_exists_attr
       """
     Then the result should be, in any order:
       | v.player.not_exists_attr |
       | NULL                     |
     When executing query:
       """
-      MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.not_exists_attr
+      MATCH (v)-[e:like]->() WHERE id(v) = 'Tim Duncan' RETURN e.not_exists_attr
       """
     Then the result should be, in any order:
       | e.not_exists_attr |
@@ -147,14 +147,14 @@ Feature: Attribute
     Then a SemanticError should be raised at runtime: `true.attr', expected type with attribute like Date, Time, DateTime, Map, Vertex or Edge but was BOOL: true
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name.not_exists_attr
+      MATCH (v) WHERE id(v) = 'Tim Duncan' RETURN v.name.not_exists_attr
       """
     Then the result should be, in any order:
       | v.name.not_exists_attr |
       | NULL                   |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name.test
+      MATCH (v) WHERE id(v) = 'Tim Duncan' RETURN v.player.name.test
       """
     Then the result should be, in any order:
       | v.player.name.test |

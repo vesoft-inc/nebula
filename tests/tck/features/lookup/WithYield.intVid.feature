@@ -6,7 +6,7 @@ Feature: Lookup with yield in integer vid
   Scenario: [1] tag with yield
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name
+      LOOKUP ON player WHERE player.age = 40 YIELD player.name
       """
     Then the result should be, in any order:
       | player.name     |
@@ -14,7 +14,7 @@ Feature: Lookup with yield in integer vid
       | 'Dirk Nowitzki' |
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name, player.age + 1
+      LOOKUP ON player WHERE player.age = 40 YIELD player.name, player.age + 1
       """
     Then the result should be, in any order:
       | player.name     | (player.age+1) |
@@ -22,7 +22,7 @@ Feature: Lookup with yield in integer vid
       | 'Dirk Nowitzki' | 41             |
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name, player.age + 1, vertex as node
+      LOOKUP ON player WHERE player.age = 40 YIELD player.name, player.age + 1, vertex as node
       """
     Then the result should be, in any order:
       | player.name     | (player.age+1) | node                                                          |
@@ -32,7 +32,7 @@ Feature: Lookup with yield in integer vid
   Scenario: [1] tag with yield rename
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name
+      LOOKUP ON player WHERE player.age = 40 YIELD player.name AS name
       """
     Then the result should be, in any order:
       | name            |
@@ -51,7 +51,7 @@ Feature: Lookup with yield in integer vid
   Scenario: [2] edge with yield
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
+      LOOKUP ON serve WHERE serve.start_year = 2008 and serve.end_year = 2019
       YIELD serve.start_year
       """
     Then the result should be, in any order:
@@ -60,7 +60,7 @@ Feature: Lookup with yield in integer vid
       | 2008             |
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
+      LOOKUP ON serve WHERE serve.start_year = 2008 and serve.end_year = 2019
       YIELD serve.start_year, edge as relationship
       """
     Then the result should be, in any order:
@@ -71,7 +71,7 @@ Feature: Lookup with yield in integer vid
   Scenario: [2] edge with yield rename
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
+      LOOKUP ON serve WHERE serve.start_year = 2008 and serve.end_year = 2019
       YIELD serve.start_year AS startYear
       """
     Then the result should be, in any order:
@@ -92,7 +92,7 @@ Feature: Lookup with yield in integer vid
       | 9             | [:like "Ray Allen"->"Rajon Rondo" @0 {likeness: 9}]        |
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
+      LOOKUP ON serve WHERE serve.start_year = 2008 and serve.end_year = 2019
       YIELD serve.start_year AS startYear | YIELD count(*) as nums
       """
     Then the result should be, in any order:

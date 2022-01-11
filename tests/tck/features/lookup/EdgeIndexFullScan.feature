@@ -106,7 +106,7 @@ Feature: Lookup edge index full scan
     When profiling query:
       """
       LOOKUP ON edge_1
-      WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col2_int==11
+      WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col2_int=11
       YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
@@ -140,7 +140,7 @@ Feature: Lookup edge index full scan
     When profiling query:
       """
       LOOKUP ON edge_1
-      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col2_int==11
+      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col2_int=11
       YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:

@@ -7,7 +7,7 @@ Feature: NULL related operations
     Given any graph
     When executing query:
       """
-      RETURN NULL IS NULL AS value1, NULL == NULL AS value2, NULL != NULL AS value3, NULL >= NULL AS value4,  NULL <= NULL AS value5
+      RETURN NULL IS NULL AS value1, NULL = NULL AS value2, NULL != NULL AS value3, NULL >= NULL AS value4,  NULL <= NULL AS value5
       """
     Then the result should be, in any order:
       | value1 | value2 | value3 | value4 | value5 |

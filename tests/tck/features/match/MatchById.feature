@@ -9,33 +9,33 @@ Feature: Match By Id
   Scenario: single node
     When executing query:
       """
-      MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      MATCH (n) WHERE id(n) = 'James Harden' RETURN n
       """
     Then the result should be, in any order, with relax comparison:
       | n                |
       | ("James Harden") |
     When executing query:
       """
-      MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN n
+      MATCH (n) WHERE id(n) = 'not_exist_vertex' RETURN n
       """
     Then the result should be, in any order, with relax comparison:
       | n |
     When executing query:
       """
-      MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN id(n)
+      MATCH (n) WHERE id(n) = 'not_exist_vertex' RETURN id(n)
       """
     Then the result should be, in any order, with relax comparison:
       | id(n) |
     When executing query:
       """
-      MATCH (n) WHERE id(n) == 'Tony Parker' RETURN id(n), labels(n)
+      MATCH (n) WHERE id(n) = 'Tony Parker' RETURN id(n), labels(n)
       """
     Then the result should be, in any order, with relax comparison:
       | id(n)         | labels(n)  |
       | 'Tony Parker' | ['player'] |
     When executing query:
       """
-      MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN labels(n)
+      MATCH (n) WHERE id(n) = 'not_exist_vertex' RETURN labels(n)
       """
     Then the result should be, in any order, with relax comparison:
       | labels(n) |
@@ -96,7 +96,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[r]-> (v2)
-      WHERE id(v1) == "LeBron James"
+      WHERE id(v1) = "LeBron James"
       RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -109,7 +109,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[r:serve|:like]-> (v2)
-      WHERE id(v1) == "LeBron James"
+      WHERE id(v1) = "LeBron James"
       RETURN type(r) AS Type, CASE WHEN v2.team.name IS NOT NULL THEN v2.team.name WHEN v2.player.name IS NOT NULL THEN v2.player.name END AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -122,7 +122,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[r:serve]-> (v2)
-      WHERE id(v1) == "LeBron James"
+      WHERE id(v1) = "LeBron James"
       RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -134,7 +134,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[r:serve]-> (v2 {name: "Cavaliers"})
-      WHERE id(v1) == "LeBron James"
+      WHERE id(v1) = "LeBron James"
       RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -144,7 +144,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v2)
-      WHERE id(v1) == "Danny Green"
+      WHERE id(v1) = "Danny Green"
       RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
@@ -155,7 +155,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) <-[:like]- (v2)
-      WHERE id(v1) == "Danny Green"
+      WHERE id(v1) = "Danny Green"
       RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
@@ -165,7 +165,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) <-[:like]-> (v2)
-      WHERE id(v1) == "Danny Green"
+      WHERE id(v1) = "Danny Green"
       RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
@@ -178,7 +178,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]- (v2)
-      WHERE id(v1) == "Danny Green"
+      WHERE id(v1) = "Danny Green"
       RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
@@ -193,7 +193,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v2) -[:like]-> (v3)
-      WHERE id(v1) == "Tim Duncan"
+      WHERE id(v1) = "Tim Duncan"
       RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
       """
     Then the result should be, in any order, with relax comparison:
@@ -207,7 +207,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
-      WHERE id(v1) == 'Dwyane Wade'
+      WHERE id(v1) = 'Dwyane Wade'
       RETURN v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -222,7 +222,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
-      WHERE id(v1) == 'Dwyane Wade'
+      WHERE id(v1) = 'Dwyane Wade'
       RETURN DISTINCT v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
@@ -237,7 +237,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       """
@@ -257,7 +257,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 3
@@ -270,7 +270,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
@@ -288,7 +288,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
@@ -302,7 +302,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 11
@@ -313,7 +313,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 0
@@ -323,7 +323,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1) -[:like]-> (v)
-      WHERE id(v1) == 'Dejounte Murray'
+      WHERE id(v1) = 'Dejounte Murray'
       RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY v.player.age DESC, v.player.name ASC
       LIMIT 0
@@ -334,7 +334,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)
-      WHERE id(n) == "Tony Parker"
+      WHERE id(n) = "Tony Parker"
       RETURN p,n
       """
     Then the result should be, in any order, with relax comparison:
@@ -343,7 +343,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)-[:like]->(m)
-      WHERE id(n) == "LeBron James"
+      WHERE id(n) = "LeBron James"
       RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
@@ -352,7 +352,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)<-[:like]-(m)
-      WHERE id(n) == "LeBron James"
+      WHERE id(n) = "LeBron James"
       RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
@@ -366,7 +366,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)-[:like]-(m)
-      WHERE id(n) == "LeBron James"
+      WHERE id(n) = "LeBron James"
       RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
@@ -381,7 +381,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)-[:like]->(m)-[:like]->(k)
-      WHERE id(n) == "LeBron James"
+      WHERE id(n) = "LeBron James"
       RETURN p, n.player.name, m.player.name, k.player.name
       """
     Then the result should be, in any order, with relax comparison:
@@ -390,7 +390,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH p = (n)-[:like]->()-[:like]->()
-      WHERE id(n) == "LeBron James"
+      WHERE id(n) = "LeBron James"
       RETURN *
       """
     Then the result should be, in any order, with relax comparison:
@@ -401,7 +401,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve*2..3{start_year: 2000}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -409,7 +409,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:like*2..3{likeness: 90}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -418,7 +418,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve*2..3{start_year: 2000}]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -426,7 +426,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:like*2..3{likeness: 90}]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -434,7 +434,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)<-[e:like*2..3{likeness: 90}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -443,7 +443,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve*2..3]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -516,7 +516,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve*2..3]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -524,7 +524,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:like*2..3]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -541,7 +541,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:like*2..3]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -841,7 +841,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:like*2..3{likeness: 90}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -850,7 +850,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve*2..3{start_year: 2000}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -858,7 +858,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve|like*2..3{likeness: 90}]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -868,7 +868,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve|like*2..3{likeness: 90}]-(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -877,7 +877,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (n)-[e:serve|like*2..3]->(v)
-      WHERE id(n) == "Tim Duncan"
+      WHERE id(n) = "Tim Duncan"
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
@@ -933,7 +933,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
-      WHERE id(v2) == 'Tim Duncan'
+      WHERE id(v2) = 'Tim Duncan'
       RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
@@ -942,7 +942,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
-      WHERE id(v3) == 'Spurs'
+      WHERE id(v3) = 'Spurs'
       RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
@@ -953,7 +953,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (v:player)-[e]-(v2)
-      WHERE id(v)=='Marco Belinelli'
+      WHERE id(v)='Marco Belinelli'
       RETURN v2
       """
     Then the result should be, in any order:

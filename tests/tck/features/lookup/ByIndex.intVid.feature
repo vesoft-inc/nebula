@@ -82,12 +82,12 @@ Feature: Lookup by index itself in integer vid
     Given a graph with space named "nba_int_vid"
     When executing query:
       """
-      LOOKUP ON team WHERE 1 + 1 == 2 YIELD vertex as node
+      LOOKUP ON team WHERE 1 + 1 = 2 YIELD vertex as node
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      LOOKUP ON team WHERE 1 + 1 == 2 YIELD team.name AS Name
+      LOOKUP ON team WHERE 1 + 1 = 2 YIELD team.name AS Name
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
@@ -424,22 +424,22 @@ Feature: Lookup by index itself in integer vid
     Given a graph with space named "nba_int_vid"
     When executing query:
       """
-      LOOKUP ON serve WHERE 1 + 1 == 2 YIELD serve.start_year
+      LOOKUP ON serve WHERE 1 + 1 = 2 YIELD serve.start_year
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      LOOKUP ON serve WHERE 1 + 1 == 2 YIELD serve.start_year AS startYear
+      LOOKUP ON serve WHERE 1 + 1 = 2 YIELD serve.start_year AS startYear
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year
+      LOOKUP ON serve WHERE serve.start_year = serve.end_year YIELD serve.start_year
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year AS startYear
+      LOOKUP ON serve WHERE serve.start_year = serve.end_year YIELD serve.start_year AS startYear
       """
     Then a SemanticError should be raised at runtime:
 
@@ -447,7 +447,7 @@ Feature: Lookup by index itself in integer vid
     Given a graph with space named "nba_int_vid"
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD id(vertex) as name, player.age AS Age
+      LOOKUP ON player WHERE player.age = 40 YIELD id(vertex) as name, player.age AS Age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | name            | Age |

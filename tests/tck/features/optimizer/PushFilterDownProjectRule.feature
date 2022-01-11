@@ -46,7 +46,7 @@ Feature: Push Filter down Project rule
       """
       MATCH (a:player)--(b)--(c)
       WITH a, b, c.player.age+1 AS cage
-      WHERE a.player.name == 'Tim Duncan' AND b.player.age > 40
+      WHERE a.player.name = 'Tim Duncan' AND b.player.age > 40
       RETURN DISTINCT a, b, cage
       """
     Then the result should be, in any order:

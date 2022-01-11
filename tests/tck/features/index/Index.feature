@@ -557,14 +557,14 @@ Feature: IndexTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col5, tag_1.col1
+      LOOKUP ON tag_1 WHERE tag_1.col5 = 5 YIELD tag_1.col5, tag_1.col1
       """
     Then the result should be, in any order:
       | tag_1.col5 | tag_1.col1 |
       | 5          | true       |
     When executing query:
       """
-      LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col1, tag_1.col5
+      LOOKUP ON tag_1 WHERE tag_1.col5 = 5 YIELD tag_1.col1, tag_1.col5
       """
     Then the result should be, in any order:
       | tag_1.col1 | tag_1.col5 |
@@ -698,7 +698,7 @@ Feature: IndexTest_Vid_String
     And wait 6 seconds
     When executing query:
       """
-      LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
+      LOOKUP ON alter_tag WHERE alter_tag.id = 1 YIELD alter_tag.type
       """
     Then the execution should be successful
     Then drop the used space
@@ -740,7 +740,7 @@ Feature: IndexTest_Vid_String
       | "rebuild_tag_space_all_tag_indexes" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_tag WHERE id_tag.id == 100 YIELD id(vertex) as id
+      LOOKUP ON id_tag WHERE id_tag.id = 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -748,7 +748,7 @@ Feature: IndexTest_Vid_String
       | "200" |
     When executing query:
       """
-      LOOKUP ON name_tag WHERE name_tag.name == "100" YIELD id(vertex) as id
+      LOOKUP ON name_tag WHERE name_tag.name = "100" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -795,7 +795,7 @@ Feature: IndexTest_Vid_String
       | "id_tag_index,name_tag_index" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_tag WHERE id_tag.id == 100 YIELD id(vertex) as id
+      LOOKUP ON id_tag WHERE id_tag.id = 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -803,7 +803,7 @@ Feature: IndexTest_Vid_String
       | "200" |
     When executing query:
       """
-      LOOKUP ON name_tag WHERE name_tag.name == "100" YIELD id(vertex) as id
+      LOOKUP ON name_tag WHERE name_tag.name = "100" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -811,7 +811,7 @@ Feature: IndexTest_Vid_String
       | "400" |
     When executing query:
       """
-      LOOKUP ON age_tag WHERE age_tag.age == 8 YIELD id(vertex) as id
+      LOOKUP ON age_tag WHERE age_tag.age = 8 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -854,14 +854,14 @@ Feature: IndexTest_Vid_String
       | "rebuild_edge_space_all_edge_indexes" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_edge WHERE id_edge.id == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON id_edge WHERE id_edge.id = 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "100" | "200" | 0    |
     When executing query:
       """
-      LOOKUP ON name_edge WHERE name_edge.name == "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON name_edge WHERE name_edge.name = "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
@@ -907,21 +907,21 @@ Feature: IndexTest_Vid_String
       | "id_edge_index,name_edge_index" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_edge WHERE id_edge.id == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON id_edge WHERE id_edge.id = 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "100" | "200" | 0    |
     When executing query:
       """
-      LOOKUP ON name_edge WHERE name_edge.name == "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON name_edge WHERE name_edge.name = "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "300" | "400" | 0    |
     When executing query:
       """
-      LOOKUP ON age_edge WHERE age_edge.age == 8 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON age_edge WHERE age_edge.age = 8 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src | dst | rank |
@@ -1064,7 +1064,7 @@ Feature: IndexTest_Vid_String
     Then wait the job to finish
     When executing query:
       """
-      LOOKUP ON student WHERE student.alias == "abc" YIELD id(vertex) as id
+      LOOKUP ON student WHERE student.alias = "abc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id      |
@@ -1094,7 +1094,7 @@ Feature: IndexTest_Vid_String
       | id |
     When executing query:
       """
-      LOOKUP ON student WHERE student.teacher == "a" YIELD id(vertex) as id
+      LOOKUP ON student WHERE student.teacher = "a" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -1121,7 +1121,7 @@ Feature: IndexTest_Vid_String
       | "Bob"  |
     When executing query:
       """
-      LOOKUP ON student WHERE student.alias == "abc" YIELD id(vertex) as id
+      LOOKUP ON student WHERE student.alias = "abc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id      |

@@ -9,7 +9,7 @@ Feature: Multi Query Parts
   Scenario: Multi Path Patterns
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2,
       CASE WHEN l.team.name is not null THEN l.team.name
       WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
@@ -28,7 +28,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (l)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n), (l)-[]-(n) WHERE id(m)="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2,
       CASE WHEN l.team.name is not null THEN l.team.name
       WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
@@ -47,7 +47,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
     Then the result should be, in order:
@@ -64,7 +64,7 @@ Feature: Multi Query Parts
       | "Aron Baynes" | "Tim Duncan" | "Manu Ginobili"     |
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l), (l)-[]-(h) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n), (n)-[]-(l), (l)-[]-(h) WHERE id(m)="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
@@ -83,7 +83,7 @@ Feature: Multi Query Parts
     # Below scenario is not suppoted for the execution plan has a scan.
     When executing query:
       """
-      MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)="Tim Duncan"
       RETURN m,n,a,c
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
@@ -91,7 +91,7 @@ Feature: Multi Query Parts
   Scenario: Multi Match
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       MATCH (n)-[]-(l)
       RETURN m.player.name AS n1, n.player.name AS n2,
       CASE WHEN l.player.name is not null THEN l.player.name
@@ -111,7 +111,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       MATCH (n)-[]-(l), (l)-[]-(h)
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
       ORDER BY n1, n2, n3, n4 LIMIT 10
@@ -130,7 +130,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       MATCH (n)-[]-(l)
       MATCH (l)-[]-(h)
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
@@ -152,7 +152,7 @@ Feature: Multi Query Parts
   Scenario: Optional Match
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       OPTIONAL MATCH (n)<-[:serve]-(l)
       RETURN m.player.name AS n1, n.player.name AS n2, l AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
@@ -171,7 +171,7 @@ Feature: Multi Query Parts
     # Below scenario is not suppoted for the execution plan has a scan.
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       OPTIONAL MATCH (a)<-[]-(b)
       RETURN m.player.name AS n1, n.player.name AS n2, a.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
@@ -180,7 +180,7 @@ Feature: Multi Query Parts
   Scenario: Multi Query Parts
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       MATCH (n)-[]-(l)
       RETURN n.player.name AS n1,
@@ -222,7 +222,7 @@ Feature: Multi Query Parts
     # Below scenario is not suppoted for the execution plan has a scan.
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       MATCH (a)-[]-(b)
       RETURN a.player.name AS n1, b.player.name AS n2 ORDER BY n1, n2 LIMIT 10
@@ -232,7 +232,7 @@ Feature: Multi Query Parts
   Scenario: Some Erros
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      MATCH (m)-[]-(n) WHERE id(m)="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       RETURN m
       """

@@ -672,7 +672,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id |
-      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123] AND 1 == 1 YIELD serve._dst
+      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123] AND 1 = 1 YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -684,7 +684,7 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-      $rA = YIELD $A.* WHERE $A.dst == 123;
+      $rA = YIELD $A.* WHERE $A.dst = 123;
       RETURN $rA IF $rA IS NOT NULL;
       GO FROM $A.dst OVER serve YIELD serve._dst
       """
@@ -696,7 +696,7 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-      $rA = YIELD $A.* WHERE 1 == 1;
+      $rA = YIELD $A.* WHERE 1 = 1;
       RETURN $rA IF $rA IS NOT NULL;
       GO FROM $A.dst OVER serve YIELD serve._dst
       """
@@ -707,10 +707,10 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dstA;
-      $rA = YIELD $A.* WHERE $A.dstA == 123;
+      $rA = YIELD $A.* WHERE $A.dstA = 123;
       RETURN $rA IF $rA IS NOT NULL;
       $B = GO FROM $A.dstA OVER like YIELD like._dst AS dstB;
-      $rB = YIELD $B.* WHERE $B.dstB == 456;
+      $rB = YIELD $B.* WHERE $B.dstB = 456;
       RETURN $rB IF $rB IS NOT NULL;
       GO FROM $B.dstB OVER serve YIELD serve._dst
       """
@@ -724,7 +724,7 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-      $rA = YIELD $A.* WHERE $A.dst == 123;
+      $rA = YIELD $A.* WHERE $A.dst = 123;
       RETURN $rA IF $rA IS NOT NULL;
       """
     Then the result should be, in any order, with relax comparison:
@@ -732,7 +732,7 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-      $rA = YIELD $A.* WHERE 1 == 1;
+      $rA = YIELD $A.* WHERE 1 = 1;
       RETURN $rA IF $rA IS NOT NULL;
       """
     Then the result should be, in any order, with relax comparison:
@@ -742,14 +742,14 @@ Feature: Go Sentence
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-       $rA = YIELD $A.* WHERE 1 == 1;
+       $rA = YIELD $A.* WHERE 1 = 1;
         RETURN $B IF $B IS NOT NULL
       """
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
-       $rA = YIELD $A.* WHERE 1 == 1;
+       $rA = YIELD $A.* WHERE 1 = 1;
         RETURN $B IF $A IS NOT NULL
       """
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
@@ -1754,7 +1754,7 @@ Feature: Go Sentence
   Scenario: Bugfix filter not pushdown
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE like._dst == "Tony Parker" YIELD like._dst | limit 10;
+      GO FROM "Tim Duncan" OVER like WHERE like._dst = "Tony Parker" YIELD like._dst | limit 10;
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst     |
@@ -1835,13 +1835,13 @@ Feature: Go Sentence
   Scenario: go step filter & step limit
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  LIMIT [1];
+      GO FROM "Tim Duncan" OVER like WHERE [like._dst = "Tony Parker"]  LIMIT [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst = "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -1882,13 +1882,13 @@ Feature: Go Sentence
   Scenario: go step filter & step sample
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      GO FROM "Tim Duncan" OVER like WHERE [like._dst = "Tony Parker"]  SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst = "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -1907,7 +1907,7 @@ Feature: Go Sentence
   Scenario: go from vertices looked up by index
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name |
+      LOOKUP ON player WHERE player.age = 40 YIELD player.name AS name |
       GO 1 TO 2 STEPS FROM $-.name OVER like REVERSELY YIELD like._dst AS dst, $$.player.name AS name
       """
     Then the result should be, in any order, with relax comparison:

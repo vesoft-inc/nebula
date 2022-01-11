@@ -122,7 +122,7 @@ Feature: Unwind clause
       MATCH p = (x:player{name: "Tim Duncan"})-[:like*..2]->(y)
       UNWIND nodes(p) as n
       WITH p, size(collect(distinct n)) AS testLength
-      WHERE testLength == length(p) + 1
+      WHERE testLength = length(p) + 1
       RETURN p
       """
     Then the result should be, in any order:

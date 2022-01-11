@@ -10,7 +10,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (n:Person)-[:IS_LOCATED_IN]->(p:Place)
-      WHERE id(n)==""
+      WHERE id(n)=""
       RETURN
         n.Person.firstName AS firstName,
         n.Person.lastName AS lastName,
@@ -29,7 +29,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (n:Person)<-[:HAS_CREATOR]-(m:Message)-[:REPLY_OF*0..100]->(p:Post)
-      WHERE id(n)==""
+      WHERE id(n)=""
       MATCH (p)-[:HAS_CREATOR]->(c)
       RETURN
         m.Message.id as messageId,
@@ -52,7 +52,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (n:Person)-[r:KNOWS]-(friend)
-      WHERE id(n) == ""
+      WHERE id(n) = ""
       RETURN
         toInteger(friend.Person.id) AS personId,
         friend.Person.firstName AS firstName,
@@ -67,7 +67,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (m:Message)
-      WHERE id(m) == ""
+      WHERE id(m) = ""
       RETURN
         m.Message.creationDate as messageCreationDate,
         CASE exists(m.Message.content)
@@ -82,7 +82,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (m:Message)-[:HAS_CREATOR]->(p:Person)
-      WHERE id(m) == ""
+      WHERE id(m) = ""
       RETURN
         p.Person.id AS personId,
         p.Person.firstName AS firstName,
@@ -96,7 +96,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (m:Message)-[:REPLY_OF*0..100]->(p:Post)<-[:CONTAINER_OF]-(f:Forum)-[:HAS_MODERATOR]->(mod:Person)
-      WHERE id(m) == ""
+      WHERE id(m) = ""
       RETURN
         f.Forum.id AS forumId,
         f.Forum.title AS forumTitle,
@@ -112,7 +112,7 @@ Feature: LDBC Interactive Workload - Short Reads
     When executing query:
       """
       MATCH (m:Message)<-[:REPLY_OF]-(c:`Comment`)-[:HAS_CREATOR]->(p:Person)
-      WHERE id(m) == ""
+      WHERE id(m) = ""
       OPTIONAL MATCH (m)-[:HAS_CREATOR]->(a:Person)-[r:KNOWS]-(p)
       RETURN
         c.`Comment`.id AS commentId,

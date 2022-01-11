@@ -100,7 +100,7 @@ Feature: tag and edge index tests from pytest
       | 'single_tag_index,multi_tag_index,disorder_tag_index' | 'FINISHED'   |
     When executing query:
       """
-      LOOKUP ON tag_1 WHERE tag_1.col2 == 18 YIELD tag_1.col1
+      LOOKUP ON tag_1 WHERE tag_1.col2 = 18 YIELD tag_1.col1
       """
     Then the result should be, in any order:
       | tag_1.col1 |
@@ -342,7 +342,7 @@ Feature: tag and edge index tests from pytest
     # Lookup
     When executing query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col2 == 22 YIELD edge_1.col2
+      LOOKUP ON edge_1 WHERE edge_1.col2 = 22 YIELD edge_1.col2
       """
     Then the result should be, in any order:
       | edge_1.col2 |

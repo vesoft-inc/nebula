@@ -290,7 +290,7 @@ Feature: Integer Vid Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*2..3]-()
-      WHERE e[1].likeness>95 AND e[2].likeness==100
+      WHERE e[1].likeness>95 AND e[2].likeness=100
       RETURN e
       """
     Then the result should be, in any order, with relax comparison:

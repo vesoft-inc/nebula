@@ -478,7 +478,7 @@ Feature: Shortest Path
   Scenario: Shortest Path With Filter
     When executing query:
       """
-      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT WHERE like.likeness == 90 OR like.likeness is empty UPTO 2 STEPS YIELD path as p
+      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT WHERE like.likeness = 90 OR like.likeness is empty UPTO 2 STEPS YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
       | p                                                                                                                                                                                                                            |

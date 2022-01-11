@@ -23,7 +23,7 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id           |
@@ -51,7 +51,7 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -77,7 +77,7 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id           |
@@ -105,7 +105,7 @@ Feature: Delete string vid of tag
       | EMPTY         | EMPTY               |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -131,7 +131,7 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id           |
@@ -159,7 +159,7 @@ Feature: Delete string vid of tag
       | EMPTY         | EMPTY               |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -185,14 +185,14 @@ Feature: Delete string vid of tag
       | "Tony Parker" | 36         |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id           |
       | "Tim Duncan" |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id            |
@@ -220,13 +220,13 @@ Feature: Delete string vid of tag
       | EMPTY       | EMPTY      |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name = "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |

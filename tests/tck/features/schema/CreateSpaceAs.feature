@@ -53,7 +53,7 @@ Feature: Create space as another space
       | ("1" :t1{col1: 1}) |
     When executing query:
       """
-      lookup on t1 where t1.col1 == 1 YIELD id(vertex) as id;
+      lookup on t1 where t1.col1 = 1 YIELD id(vertex) as id;
       """
     Then the result should be, in any order:
       | id  |
@@ -67,7 +67,7 @@ Feature: Create space as another space
       | [:e1 "1"->"2" @0 {col1: 1}] |
     When executing query:
       """
-      lookup on e1 where e1.col1 == 1 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
+      lookup on e1 where e1.col1 = 1 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
       """
     Then the result should be, in any order:
       | src | dst | rank |
@@ -145,7 +145,7 @@ Feature: Create space as another space
       | ("1" :t1{col1: 2}) |
     When executing query:
       """
-      lookup on t1 where t1.col1 == 2 YIELD id(vertex) as id;
+      lookup on t1 where t1.col1 = 2 YIELD id(vertex) as id;
       """
     Then the result should be, in any order:
       | id  |
@@ -159,7 +159,7 @@ Feature: Create space as another space
       | [:e1 "1"->"2" @0 {col1: 2}] |
     When executing query:
       """
-      lookup on e1 where e1.col1 == 2 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
+      lookup on e1 where e1.col1 = 2 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
       """
     Then the result should be, in any order:
       | src | dst | rank |

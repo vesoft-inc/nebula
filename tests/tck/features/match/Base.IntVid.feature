@@ -16,7 +16,7 @@ Feature: Basic match
       | ("Yao Ming") |
     When executing query:
       """
-      MATCH (v:player) WHERE v.player.name == "Yao Ming" RETURN v.player.age AS Age
+      MATCH (v:player) WHERE v.player.name = "Yao Ming" RETURN v.player.age AS Age
       """
     Then the result should be, in any order:
       | Age |

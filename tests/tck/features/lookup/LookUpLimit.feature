@@ -41,7 +41,7 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 YIELD id(vertex) as id | Limit 2 | ORDER BY $-.id
+      LOOKUP ON player WHERE player.age = 33 YIELD id(vertex) as id | Limit 2 | ORDER BY $-.id
       """
     Then the result should be, in any order:
       | id            |
@@ -57,7 +57,7 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | Limit 2 | ORDER BY $-.src
+      LOOKUP ON like WHERE like.likeness = 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | Limit 2 | ORDER BY $-.src
       """
     Then the result should be, in any order:
       | src           | dst           | rank  |
@@ -109,7 +109,7 @@ Feature: Push Limit down IndexScan Rule
       | 9  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 YIELD id(vertex) as id | LIMIT 3 | ORDER BY $-.id
+      LOOKUP ON player WHERE player.age = 33 YIELD id(vertex) as id | LIMIT 3 | ORDER BY $-.id
       """
     Then the result should be, in any order:
       | id            |
@@ -126,7 +126,7 @@ Feature: Push Limit down IndexScan Rule
       | 9  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | LIMIT 3 | ORDER BY $-.src
+      LOOKUP ON like WHERE like.likeness = 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | LIMIT 3 | ORDER BY $-.src
       """
     Then the result should be, in any order:
       | src           | dst           | rank  |

@@ -236,7 +236,7 @@ Feature: Groupby & limit Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR($-.following) AS following
       """
     Then the result should be, in any order, with relax comparison:
@@ -246,8 +246,8 @@ Feature: Groupby & limit Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
-      | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR(case when $-.following==true then 1 else 0 end) AS following
+      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
+      | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR(case when $-.following=true then 1 else 0 end) AS following
       """
     Then the result should be, in any order, with relax comparison:
       | dst             | following |
@@ -256,7 +256,7 @@ Feature: Groupby & limit Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-      |  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+      |  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND($-.following) AS following
       """
     Then the result should be, in any order, with relax comparison:
@@ -266,8 +266,8 @@ Feature: Groupby & limit Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
-      | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND(case when $-.following==true then 1 else 0 end) AS following
+      | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
+      | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND(case when $-.following=true then 1 else 0 end) AS following
       """
     Then the result should be, in any order, with relax comparison:
       | dst             | following |

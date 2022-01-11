@@ -1320,7 +1320,7 @@ Feature: Match seek by edge
       | NULL         | NULL        |
     When executing query:
       """
-      match (player)-[s:serve]->(team) where s.start_year == 2001 return player.player.name AS player, team.team.name AS team
+      match (player)-[s:serve]->(team) where s.start_year = 2001 return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1328,7 +1328,7 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (team)<-[s:serve]-(player) where s.start_year == 2001 return player.player.name AS player, team.team.name AS team
+      match (team)<-[s:serve]-(player) where s.start_year = 2001 return player.player.name AS player, team.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |
@@ -1336,7 +1336,7 @@ Feature: Match seek by edge
       | "Jason Kidd" | "Nets"      |
     When executing query:
       """
-      match (p)-[s:serve]-(t) where s.start_year == 2001 return p.player.name AS player, t.team.name AS team
+      match (p)-[s:serve]-(t) where s.start_year = 2001 return p.player.name AS player, t.team.name AS team
       """
     Then the result should be, in any order:
       | player       | team        |

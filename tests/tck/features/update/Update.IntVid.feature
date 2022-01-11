@@ -63,14 +63,14 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "English" AND $^.course.credits > 2
+      WHEN $^.course.name = "English" AND $^.course.credits > 2
       """
     Then the execution should be successful
     When executing query:
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "Math" AND $^.course.credits > 2
+      WHEN $^.course.name = "Math" AND $^.course.credits > 2
       """
     Then the execution should be successful
     When executing query:
@@ -86,7 +86,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "Math" AND $^.course.credits > 2
+      WHEN $^.course.name = "Math" AND $^.course.credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then the result should be, in any order:
@@ -96,7 +96,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "nonexistent" AND $^.course.credits > 2
+      WHEN $^.course.name = "nonexistent" AND $^.course.credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then the result should be, in any order:
@@ -231,7 +231,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $$.course.credits + 1
-      WHEN $$.course.name == "Math" AND $^.course.credits > $$.course.credits + 1
+      WHEN $$.course.name = "Math" AND $^.course.credits > $$.course.credits + 1
       YIELD $^.course.name AS Name, $^.course.credits AS Credits, $$.building.name
       """
     Then a SemanticError should be raised at runtime: Has wrong expr in `($$.course.credits+1)'
@@ -283,7 +283,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 103
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "CS" AND $^.course.credits > 2
+      WHEN $^.course.name = "CS" AND $^.course.credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then the result should be, in any order:
@@ -293,7 +293,7 @@ Feature: Update int vid of vertex and edge
     When executing query:
       """
       UPDATE VERTEX 104 SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "CS" AND credits > 2
+      WHEN $^.course.name = "CS" AND credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then a ExecutionError should be raised at runtime: Storage Error: Vertex or edge not found.
@@ -339,7 +339,7 @@ Feature: Update int vid of vertex and edge
       """
       UPSERT VERTEX 115
       SET student_default.name = "Kate", student_default.age = 12
-      WHEN $^.student_default.gender == "two"
+      WHEN $^.student_default.gender = "two"
       YIELD $^.student_default.name AS Name, $^.student_default.age AS Age, $^.student_default.gender AS gender
       """
     Then the result should be, in any order:
@@ -354,7 +354,7 @@ Feature: Update int vid of vertex and edge
       SET student_default.name = "Kate",
       student_default.age = $^.student_default.birthday + 1,
       student_default.birthday = $^.student_default.birthday + 1
-      WHEN $^.student_default.gender == "two"
+      WHEN $^.student_default.gender = "two"
       YIELD $^.student_default.name AS Name,
       $^.student_default.age AS Age,
       $^.student_default.gender AS gender,
@@ -392,10 +392,10 @@ Feature: Update int vid of vertex and edge
       """
       UPSERT EDGE ON select 201 -> 101@0
       SET grade = 3, year = 2019
-      WHEN $^.student.age > 15 AND $^.student.gender == "male"
+      WHEN $^.student.age > 15 AND $^.student.gender = "male"
       YIELD select.grade AS Grade, select.year AS Year
       """
-    Then a SemanticError should be raised at runtime: Has wrong expr in `(($^.student.age>15) AND ($^.student.gender=="male"))'
+    Then a SemanticError should be raised at runtime: Has wrong expr in `(($^.student.age>15) AND ($^.student.gender="male"))'
     When executing query:
       """
       UPSERT EDGE ON select 201 -> 101@0
@@ -483,7 +483,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 1010000
       SET course.credits = $^.course.credits + 1, name = "No9"
-      WHEN $^.course.name == "Math" AND $^.course.credits > 2
+      WHEN $^.course.name = "Math" AND $^.course.credits > 2
       YIELD select_default.grade AS Grade, select_default.year AS Year
       """
     Then a SemanticError should be raised at runtime: Multi schema name: ,course

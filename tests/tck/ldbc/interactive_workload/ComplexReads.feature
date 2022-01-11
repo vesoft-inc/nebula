@@ -12,7 +12,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "$firstName"}))
-      WHERE id(person) == ""
+      WHERE id(person) = ""
       WHERE person <> friend
       WITH friend, length(p) AS distance
       ORDER BY distance ASC, friend.lastName ASC, toInteger(friend.id) ASC
@@ -64,7 +64,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" and message.Message.creationDate <= $maxDate
+      WHERE id(n) = "" and message.Message.creationDate <= $maxDate
       RETURN
         friend.Person.id AS personId,
         friend.Person.firstName AS personFirstName,
@@ -89,8 +89,8 @@ Feature: LDBC Interactive Workload - Complex Reads
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(messageX:Message),
       (messageX)-[:IS_LOCATED_IN]->(countryX:Place)
       WHERE
-        id(person) == ""
-        AND not(person==friend)
+        id(person) = ""
+        AND not(person=friend)
         AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX))
         AND countryX.name=$countryXName AND messageX.creationDate>=$startDate
         AND messageX.creationDate<$endDate
@@ -123,13 +123,13 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(`tag`:`Tag`)
-      WHERE id(person) == "" AND post.Post.creationDate >= "$startDate"
+      WHERE id(person) = "" AND post.Post.creationDate >= "$startDate"
          AND post.Post.creationDate < "$endDate"
       WITH person, count(post) AS postsOnTag, `tag`
       OPTIONAL MATCH (person)-[:KNOWS]-()<-[:HAS_CREATOR]-(oldPost:Post)-[:HAS_TAG]->(`tag`)
       WHERE oldPost.Post.creationDate < $startDate
       WITH person, postsOnTag, `tag`, count(oldPost) AS cp
-      WHERE cp == 0
+      WHERE cp = 0
       RETURN
         `tag`.`Tag`.name AS tagName,
         sum(postsOnTag) AS postCount
@@ -142,8 +142,8 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[membership:HAS_MEMBER]-(forum:Forum)
-      WHERE id(person) == "" AND membership.joinDate>"$minDate"
-          AND not(person==friend)
+      WHERE id(person) = "" AND membership.joinDate>"$minDate"
+          AND not(person=friend)
       WITH DISTINCT friend, forum
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(forum)
       WITH forum, count(post) AS postCount
@@ -165,9 +165,9 @@ Feature: LDBC Interactive Workload - Complex Reads
       MATCH
         (person:Person)-[:KNOWS*1..2]-(friend:Person),
         (friend)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"$tagName"})
-      WHERE id(person) == "" AND not(person==friend)
+      WHERE id(person) = "" AND not(person=friend)
       MATCH (friendPost)-[:HAS_TAG]->(commonTag:`Tag`)
-      WHERE not(commonTag==knownTag)
+      WHERE not(commonTag=knownTag)
       WITH DISTINCT commonTag, knownTag, friend
       MATCH (commonTag)<-[:HAS_TAG]-(commonPost:Post)-[:HAS_TAG]->(knownTag)
       WHERE (commonPost)-[:HAS_CREATOR]->(friend)
@@ -185,7 +185,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)<-[:HAS_CREATOR]-(message:Message)<-[like:LIKES]-(liker:Person)
-      WHERE id(person) == ""
+      WHERE id(person) = ""
       WITH liker, message, like.creationDate AS likeTime, person
       ORDER BY likeTime DESC, toInteger(message.id) ASC
       WITH
@@ -214,7 +214,7 @@ Feature: LDBC Interactive Workload - Complex Reads
       """
       MATCH
         (start:Person)<-[:HAS_CREATOR]-(:Message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_CREATOR]->(person:Person)
-      WHERE id(start) == ""
+      WHERE id(start) = ""
       RETURN
         person.Person.id AS personId,
         person.Person.firstName AS personFirstName,
@@ -232,7 +232,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (n:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" AND message.Message.creationDate < "$maxDate"
+      WHERE id(n) = "" AND message.Message.creationDate < "$maxDate"
       RETURN DISTINCT
         friend.Person.id AS personId,
         friend.Person.firstName AS personFirstName,
@@ -255,7 +255,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*2..2]-(friend:Person)-[:IS_LOCATED_IN]->(city:Place)
-      WHERE id(person) == "" AND
+      WHERE id(person) = "" AND
         ((friend.birthday/100%100 = "$month" AND friend.birthday%100 >= 21) OR
         (friend.birthday/100%100 = "$nextMonth" AND friend.birthday%100 < 22))
         AND not(friend=person)
@@ -284,7 +284,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)
-      WHERE id(person) == "" AND not(person==friend)
+      WHERE id(person) = "" AND not(person=friend)
       WITH DISTINCT friend
       MATCH (friend)-[workAt:WORK_AT]->(company:Organisation)-[:IS_LOCATED_IN]->(:Place {name:"$countryName"})
       WHERE workAt.workFrom < $workFromYear
@@ -306,7 +306,7 @@ Feature: LDBC Interactive Workload - Complex Reads
       """
       MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(`comment`:`Comment`)-[:REPLY_OF]->(:Post)-[:HAS_TAG]->(`tag`:`Tag`),
         (`tag`)-[:HAS_TYPE]->(tagClass:TagClass)-[:IS_SUBCLASS_OF*0..100]->(baseTagClass:TagClass)
-      WHERE id(n)=="" AND (tagClass.TagClass.name == "$tagClassName" OR baseTagClass.TagClass.name == "$tagClassName")
+      WHERE id(n)="" AND (tagClass.TagClass.name = "$tagClassName" OR baseTagClass.TagClass.name = "$tagClassName")
       RETURN
         toInteger(friend.Person.id) AS personId,
         friend.Person.firstName AS personFirstName,

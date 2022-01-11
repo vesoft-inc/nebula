@@ -31,7 +31,7 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start            |              |                   |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age==30 YIELD id(vertex) as id | ORDER BY $-.id | Limit 2
+      LOOKUP ON player WHERE player.age=30 YIELD id(vertex) as id | ORDER BY $-.id | Limit 2
       """
     Then the result should be, in any order:
       | id               |
@@ -119,7 +119,7 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start             |              |                   |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | ORDER BY $-.src | Limit 2
+      LOOKUP ON like WHERE like.likeness = 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | ORDER BY $-.src | Limit 2
       """
     Then the result should be, in any order:
       | src                 | dst          | rank |
@@ -180,7 +180,7 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start            |              |                 |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age==30 YIELD player.name as name | ORDER BY $-.name desc | Limit 2
+      LOOKUP ON player WHERE player.age=30 YIELD player.name as name | ORDER BY $-.name desc | Limit 2
       """
     Then the result should be, in any order:
       | name                |
@@ -195,7 +195,7 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start              |              |                 |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age==30 YIELD player.name as name | ORDER BY $-.name | Limit 2
+      LOOKUP ON player WHERE player.age=30 YIELD player.name as name | ORDER BY $-.name | Limit 2
       """
     Then the result should be, in any order:
       | name             |
@@ -255,7 +255,7 @@ Feature: Push TopN down IndexScan Rule
       | 0  | Start             |              |                 |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 YIELD like.likeness as likeness | ORDER BY $-.likeness | Limit 2
+      LOOKUP ON like WHERE like.likeness = 90 YIELD like.likeness as likeness | ORDER BY $-.likeness | Limit 2
       """
     Then the result should be, in any order:
       | likeness |

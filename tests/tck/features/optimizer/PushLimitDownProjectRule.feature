@@ -10,7 +10,7 @@ Feature: Push Limit down project rule
     When profiling query:
       """
       MATCH p=(v:player)-[]->(n)
-      WHERE id(v)=="Tim Duncan" and n.player.age>30
+      WHERE id(v)="Tim Duncan" and n.player.age>30
       RETURN p LIMIT 100
       """
     Then the result should be, in any order:

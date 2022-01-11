@@ -21,14 +21,14 @@ Feature: Predicate
       | True |
     When executing query:
       """
-      YIELD single(n IN range(1, 5) WHERE n == 3) AS r
+      YIELD single(n IN range(1, 5) WHERE n = 3) AS r
       """
     Then the result should be, in any order:
       | r    |
       | True |
     When executing query:
       """
-      YIELD none(n IN range(1, 3) WHERE n == 0) AS r
+      YIELD none(n IN range(1, 3) WHERE n = 0) AS r
       """
     Then the result should be, in any order:
       | r    |
@@ -217,12 +217,12 @@ Feature: Predicate
     Given a graph with space named "nba"
     When executing query:
       """
-      YIELD single(n IN "Tom" WHERE n == 3) AS r
+      YIELD single(n IN "Tom" WHERE n = 3) AS r
       """
     Then a SemanticError should be raised at runtime: `"Tom"', expected LIST, but was STRING
     When executing query:
       """
-      YIELD single(n IN NULL WHERE n == 3) AS r
+      YIELD single(n IN NULL WHERE n = 3) AS r
       """
     Then the result should be, in any order:
       | r    |

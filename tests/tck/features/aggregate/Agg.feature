@@ -42,7 +42,7 @@ Feature: Basic Aggregate and GroupBy
       | 0  | NULL | 0  | NULL | NULL | NULL | NULL | NULL | NULL |
     When executing query:
       """
-      YIELD 3 AS x | YIELD case COUNT($-.x) == 1 when true THEN 1 ELSE 0 END as a
+      YIELD 3 AS x | YIELD case COUNT($-.x) = 1 when true THEN 1 ELSE 0 END as a
       """
     Then the result should be, in any order, with relax comparison:
       | a |
@@ -264,7 +264,7 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
          | GROUP BY $-.dst
            YIELD $-.dst AS dst, BIT_OR($-.following) AS following
       """
@@ -277,10 +277,10 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
          | GROUP BY $-.dst
            YIELD $-.dst AS dst,
-                 BIT_OR(case when $-.following==true then 1 else 0 end) AS following
+                 BIT_OR(case when $-.following=true then 1 else 0 end) AS following
       """
     Then the result should be, in any order, with relax comparison:
       | dst             | following |
@@ -291,7 +291,7 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
          | GROUP BY $-.dst
            YIELD $-.dst AS dst,
                  BIT_AND($-.following) AS following
@@ -305,10 +305,10 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
-         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following
+         | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst = 'Tim Duncan' as following
          | GROUP BY $-.dst
            YIELD $-.dst AS dst,
-                 BIT_AND(case when $-.following==true then 1 else 0 end) AS following
+                 BIT_AND(case when $-.following=true then 1 else 0 end) AS following
       """
     Then the result should be, in any order, with relax comparison:
       | dst             | following |
@@ -500,7 +500,7 @@ Feature: Basic Aggregate and GroupBy
       | True |
     When executing query:
       """
-      UNWIND [1,2,3] AS d RETURN ANY(l IN COLLECT(d) WHERE l==1) AS b
+      UNWIND [1,2,3] AS d RETURN ANY(l IN COLLECT(d) WHERE l=1) AS b
       """
     Then the result should be, in order, with relax comparison:
       | b    |
@@ -627,7 +627,7 @@ Feature: Basic Aggregate and GroupBy
     Then a SemanticError should be raised at runtime:  `$-.x', not exist prop `x'
     When executing query:
       """
-      YIELD case COUNT($-.x) == 1 when true THEN 1 ELSE 0 END as a
+      YIELD case COUNT($-.x) = 1 when true THEN 1 ELSE 0 END as a
       """
     Then a SemanticError should be raised at runtime:  `$-.x', not exist prop `x'
     When executing query:

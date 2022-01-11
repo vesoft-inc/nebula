@@ -121,7 +121,7 @@ Feature: Match seek by scan
   # When executing query:
   # """
   # MATCH ()-[e:is_teacher]->()
-  # WHERE e.start_year == 2018
+  # WHERE e.start_year = 2018
   # RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
   # LIMIT 3
   # """

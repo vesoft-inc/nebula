@@ -1,30 +1,30 @@
 Feature: Test lookup on tag index
   Examples:
     | where_condition                                                                    |
-    | lookup_tag_1.col1 == 201                                                           |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 == 201                              |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 200                              |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 != 200                              |
-    | lookup_tag_1.col1 >= 201 AND lookup_tag_1.col2 == 201                              |
+    | lookup_tag_1.col1 = 201                                                           |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 = 201                              |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 200                              |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 != 200                              |
+    | lookup_tag_1.col1 >= 201 AND lookup_tag_1.col2 = 201                              |
     | lookup_tag_1.col1 >= 201 AND lookup_tag_1.col1 <= 201                              |
     | lookup_tag_1.col1 >= 201 AND lookup_tag_1.col2 != 202                              |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 == 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 >= 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 != 202 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 == 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 >= 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 != 202 |
-    | lookup_tag_1.col1 != 202 AND lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 201 |
-    | lookup_tag_1.col1 != 202 AND lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 >= 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 = 201 AND lookup_tag_1.col3 = 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 = 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 >= 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 != 202 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 = 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 >= 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 != 202 AND lookup_tag_1.col3 != 202 |
+    | lookup_tag_1.col1 != 202 AND lookup_tag_1.col2 = 201 AND lookup_tag_1.col3 = 201 |
+    | lookup_tag_1.col1 != 202 AND lookup_tag_1.col2 = 201 AND lookup_tag_1.col3 >= 201 |
     | lookup_tag_1.col1 != 202 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col3 >= 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col1 == 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col1 >= 201 |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 == 201  |
-    | lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 200   |
-    | lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201                               |
-    | lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 >= 203                               |
-    | lookup_tag_1.col1 == 201 OR lookup_tag_1.col3 == 201                               |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col1 = 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 >= 201 AND lookup_tag_1.col1 >= 201 |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 = 201  |
+    | lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 200   |
+    | lookup_tag_1.col1 = 201 OR lookup_tag_1.col2 = 201                               |
+    | lookup_tag_1.col1 = 201 OR lookup_tag_1.col2 >= 203                               |
+    | lookup_tag_1.col1 = 201 OR lookup_tag_1.col3 = 201                               |
 
   Scenario Outline: [tag] different condition and yield test for string vid
     Given an empty graph

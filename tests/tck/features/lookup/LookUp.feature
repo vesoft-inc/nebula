@@ -31,14 +31,14 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 == 200 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 = 200 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | "200" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col1 == true YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col1 = true YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -66,14 +66,14 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col2 == 201 YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col2 = 201 YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "200" | "201" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col1 == 200 YIELD edge as e
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col1 = 200 YIELD edge as e
       """
     Then a SemanticError should be raised at runtime:
     Then drop the used space
@@ -102,14 +102,14 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 == 100 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 = 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | "220" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 == 100 OR lookup_tag_2.col2 == 200 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 = 100 OR lookup_tag_2.col2 = 200 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -151,7 +151,7 @@ Feature: LookUpTest_Vid_String
       | "225" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 >=100 AND lookup_tag_2.col4 == true YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 >=100 AND lookup_tag_2.col4 = true YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -179,14 +179,14 @@ Feature: LookUpTest_Vid_String
       | "223" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 == 100.5 AND lookup_tag_2.col2 == 100 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 = 100.5 AND lookup_tag_2.col2 = 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | "220" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 == 100.5 AND lookup_tag_2.col2 == 200 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 = 100.5 AND lookup_tag_2.col2 = 200 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -205,14 +205,14 @@ Feature: LookUpTest_Vid_String
       | "225" | 600.5 |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 == 100.5 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 = 100.5 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | "220" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 == 100.1 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 = 100.1 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -251,14 +251,14 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 = 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "220" | "221" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 == 100 OR lookup_edge_2.col2 == 200 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 = 100 OR lookup_edge_2.col2 = 200 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
@@ -297,7 +297,7 @@ Feature: LookUpTest_Vid_String
       | "220" | "225" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 >= 100 AND lookup_edge_2.col4 == true YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col2 >= 100 AND lookup_edge_2.col4 = true YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
@@ -324,14 +324,14 @@ Feature: LookUpTest_Vid_String
       | "220" | "224" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 == 100.5 AND lookup_edge_2.col2 == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 = 100.5 AND lookup_edge_2.col2 = 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "220" | "221" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 == 100.5 AND lookup_edge_2.col2 == 200 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 = 100.5 AND lookup_edge_2.col2 = 200 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src | dst | rank |
@@ -349,14 +349,14 @@ Feature: LookUpTest_Vid_String
       | 500.5 |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 == 100.5 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 = 100.5 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src   | dst   | rank |
       | "220" | "221" | 0    |
     When executing query:
       """
-      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 == 100.1 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col3 = 100.1 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
       | src | dst | rank |
@@ -397,7 +397,7 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE 1 == 1 YIELD vertex as node
+      LOOKUP ON lookup_tag_2 WHERE 1 = 1 YIELD vertex as node
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
@@ -454,7 +454,7 @@ Feature: LookUpTest_Vid_String
       | id |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == (true AND true) YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 = (true AND true) YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -466,7 +466,7 @@ Feature: LookUpTest_Vid_String
       | "225" |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == (true or false) YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 = (true or false) YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -479,7 +479,7 @@ Feature: LookUpTest_Vid_String
     # FIXME(aiee): should support later by folding constants
     # When executing query:
     # """
-    # LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == strcasecmp("HelLo", "HelLo")
+    # LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 = strcasecmp("HelLo", "HelLo")
     # """
     # Then the result should be, in any order:
     # | VertexID |
@@ -518,22 +518,22 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON student WHERE student.number == 1 YIELD teacher.age
+      LOOKUP ON student WHERE student.number = 1 YIELD teacher.age
       """
     Then a SemanticError should be raised at runtime.
     When executing query:
       """
-      LOOKUP ON student WHERE student.number == 1 YIELD teacher.age AS student_name
+      LOOKUP ON student WHERE student.number = 1 YIELD teacher.age AS student_name
       """
     Then a SemanticError should be raised at runtime.
     When executing query:
       """
-      LOOKUP ON student WHERE teacher.number == 1 YIELD student.age
+      LOOKUP ON student WHERE teacher.number = 1 YIELD student.age
       """
     Then a SemanticError should be raised at runtime.
     When executing query:
       """
-      LOOKUP ON student WHERE student.number == 1 YIELD id(vertex) as name, student.age
+      LOOKUP ON student WHERE student.number = 1 YIELD id(vertex) as name, student.age
       """
     Then the result should be, in any order:
       | name  | student.age |
@@ -568,22 +568,22 @@ Feature: LookUpTest_Vid_String
     And wait 6 seconds
     When executing query:
       """
-      LOOKUP ON t1 WHERE t1.c1 == 1 YIELD vertex as node
+      LOOKUP ON t1 WHERE t1.c1 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 WHERE t1.c1 == 1 AND t1.c2 > 1 YIELD vertex as node
+      LOOKUP ON t1 WHERE t1.c1 = 1 AND t1.c2 > 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 == 1 YIELD vertex as node
+      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 == 1 AND  t1.c3 == 1 YIELD vertex as node
+      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 = 1 AND  t1.c3 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
@@ -646,42 +646,42 @@ Feature: LookUpTest_Vid_String
     And wait 6 seconds
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c1 == 1 YIELD t1_str.c1
+      LOOKUP ON t1_str WHERE t1_str.c1 = 1 YIELD t1_str.c1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c1 == 1 AND t1_str.c2 >1 YIELD t1_str.c2
+      LOOKUP ON t1_str WHERE t1_str.c1 = 1 AND t1_str.c2 >1 YIELD t1_str.c2
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c3 == "a" YIELD t1_str.c4
+      LOOKUP ON t1_str WHERE t1_str.c3 = "a" YIELD t1_str.c4
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c4 == "a" YIELD t1_str.c1
+      LOOKUP ON t1_str WHERE t1_str.c4 = "a" YIELD t1_str.c1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c3 == "a"  AND t1_str.c4 == "a" YIELD t1_str.c1
+      LOOKUP ON t1_str WHERE t1_str.c3 = "a"  AND t1_str.c4 = "a" YIELD t1_str.c1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c3 == "a"  AND t1_str.c1 == 1 YIELD vertex as node
+      LOOKUP ON t1_str WHERE t1_str.c3 = "a"  AND t1_str.c1 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c3 == "a" AND t1_str.c2 == 1  AND t1_str.c1 == 1 YIELD vertex as node
+      LOOKUP ON t1_str WHERE t1_str.c3 = "a" AND t1_str.c2 = 1  AND t1_str.c1 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1_str WHERE t1_str.c4 == "a" AND t1_str.c3 == "a" AND t1_str.c2 == 1  AND t1_str.c1 == 1 YIELD vertex as node
+      LOOKUP ON t1_str WHERE t1_str.c4 = "a" AND t1_str.c3 = "a" AND t1_str.c2 = 1  AND t1_str.c1 = 1 YIELD vertex as node
       """
     Then the execution should be successful
     Then drop the used space
@@ -719,34 +719,34 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 = 1 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
       | "1" |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 AND tag_with_str.c2 == "ccc" YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 = 1 AND tag_with_str.c2 = "ccc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 AND tag_with_str.c2 == "c1_row1" YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 = 1 AND tag_with_str.c2 = "c1_row1" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
       | "1" |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 AND tag_with_str.c2 == "ab" YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 = 5 AND tag_with_str.c2 = "ab" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
       | "5" |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c2 == "abc" AND tag_with_str.c3 == "abc" YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c2 = "abc" AND tag_with_str.c3 = "abc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
@@ -754,7 +754,7 @@ Feature: LookUpTest_Vid_String
       | "4" |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 AND tag_with_str.c2 == "abca" AND tag_with_str.c3 == "bc" YIELD id(vertex) as id
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 = 5 AND tag_with_str.c2 = "abca" AND tag_with_str.c3 = "bc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id  |
@@ -784,10 +784,10 @@ Feature: LookUpTest_Vid_String
       LOOKUP ON
         identity
       WHERE
-        identity.NATION == "汉族" AND
+        identity.NATION = "汉族" AND
         identity.BIRTHDAY > 19620101 AND
         identity.BIRTHDAY < 20021231 AND
-        identity.BIRTHPLACE_CITY == "bbb"
+        identity.BIRTHPLACE_CITY = "bbb"
       YIELD
         id(vertex) as id;
       """
@@ -897,7 +897,7 @@ Feature: LookUpTest_Vid_String
       | src | dst | rank |
     When executing query:
       """
-      LOOKUP ON player where player.age == 35 YIELD id(vertex) as id
+      LOOKUP ON player where player.age = 35 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -932,28 +932,28 @@ Feature: LookUpTest_Vid_String
       | '121' |
     When executing query:
       """
-      LOOKUP ON player where player.name == "Useless" YIELD id(vertex) as id
+      LOOKUP ON player where player.name = "Useless" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | '121' |
     When executing query:
       """
-      LOOKUP ON player where player.name == "Useless" and player.age < 30 YIELD id(vertex) as id
+      LOOKUP ON player where player.name = "Useless" and player.age < 30 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | '121' |
     When executing query:
       """
-      LOOKUP ON team where team.name == "Warriors" YIELD id(vertex) as id
+      LOOKUP ON team where team.name = "Warriors" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
       | '200' |
     When executing query:
       """
-      LOOKUP ON team where team.name == "oopp" YIELD id(vertex) as id
+      LOOKUP ON team where team.name = "oopp" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id    |
@@ -973,7 +973,7 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == 'Tim' YIELD vertex as node
+      LOOKUP ON player WHERE player.name = 'Tim' YIELD vertex as node
       """
     Then an ExecutionError should be raised at runtime: There is no index to use at runtime
     Then drop the used space

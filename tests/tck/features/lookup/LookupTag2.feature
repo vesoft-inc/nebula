@@ -30,28 +30,28 @@ Feature: Test lookup on tag index 2
   Scenario Outline: [tag] simple tag test cases
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 202 YIELD vertex as node
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 = 201 OR lookup_tag_1.col2 = 201 AND lookup_tag_1.col3 = 202 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE col1 == 200 YIELD vertex as node;
+      LOOKUP ON lookup_tag_1 WHERE col1 = 200 YIELD vertex as node;
       """
-    Then a SemanticError should be raised at runtime: Expression (col1==200) not supported yet
+    Then a SemanticError should be raised at runtime: Expression (col1=200) not supported yet
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 200 OR lookup_tag_1.col5 == 20 YIELD vertex as node;
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 = 200 OR lookup_tag_1.col5 = 20 YIELD vertex as node;
       """
     Then a SemanticError should be raised at runtime: Invalid column: col5
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 300 YIELD id(vertex) as id
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 = 300 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
     When executing query:
       """
-      lookup on lookup_tag_1 WHERE lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 201 YIELD id(vertex) as id
+      lookup on lookup_tag_1 WHERE lookup_tag_1.col1 = 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 201 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |

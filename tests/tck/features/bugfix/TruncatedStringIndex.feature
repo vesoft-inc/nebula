@@ -25,19 +25,19 @@ Feature: Truncated string index
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON person WHERE person.name=="abc" YIELD id(vertex) as id
+      LOOKUP ON person WHERE person.name="abc" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
     When executing query:
       """
-      LOOKUP ON person WHERE person.name=="abc" YIELD person.name
+      LOOKUP ON person WHERE person.name="abc" YIELD person.name
       """
     Then the result should be, in any order:
       | person.name |
     When executing query:
       """
-      match (v:person) where v.person.name == "abc" return v;
+      match (v:person) where v.person.name = "abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
       | v |

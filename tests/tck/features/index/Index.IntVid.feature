@@ -551,14 +551,14 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col5, tag_1.col1
+      LOOKUP ON tag_1 WHERE tag_1.col5 = 5 YIELD tag_1.col5, tag_1.col1
       """
     Then the result should be, in any order:
       | tag_1.col5 | tag_1.col1 |
       | 5          | true       |
     When executing query:
       """
-      LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col1, tag_1.col5
+      LOOKUP ON tag_1 WHERE tag_1.col5 = 5 YIELD tag_1.col1, tag_1.col5
       """
     Then the result should be, in any order:
       | tag_1.col1 | tag_1.col5 |
@@ -692,7 +692,7 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When try to execute query:
       """
-      LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
+      LOOKUP ON alter_tag WHERE alter_tag.id = 1 YIELD alter_tag.type
       """
     Then the execution should be successful
     Then drop the used space

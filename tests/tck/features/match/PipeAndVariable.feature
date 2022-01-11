@@ -17,7 +17,7 @@ Feature: Pipe or use variable to store the lookup results
       OVER like REVERSELY
       YIELD
         $-.age AS age,
-        ('Tony Parker' == like._dst) AS liked,
+        ('Tony Parker' = like._dst) AS liked,
         like._src AS src,
         like._dst AS dst
       """
@@ -45,7 +45,7 @@ Feature: Pipe or use variable to store the lookup results
       OVER like REVERSELY
       YIELD
         $var.age AS age,
-        ('Tony Parker' == like._dst) AS liked,
+        ('Tony Parker' = like._dst) AS liked,
         like._src AS src,
         like._dst AS dst
       """
@@ -71,7 +71,7 @@ Feature: Pipe or use variable to store the lookup results
       YIELD player.age as age, id(vertex) as vid |
       GO FROM $-.vid OVER like REVERSELY YIELD $-.age AS age, like._dst AS dst |
       YIELD
-        any(d IN COLLECT(DISTINCT $-.dst) WHERE d=='Tony Parker') AS d,
+        any(d IN COLLECT(DISTINCT $-.dst) WHERE d='Tony Parker') AS d,
         $-.age as age
       """
     Then the result should be, in any order:
@@ -82,7 +82,7 @@ Feature: Pipe or use variable to store the lookup results
     When executing query:
       """
       LOOKUP ON player
-      WHERE player.name == 'Tim Duncan'
+      WHERE player.name = 'Tim Duncan'
       YIELD player.age as age, id(vertex) as vid
       | UNWIND $-.vid as a RETURN a
       """
@@ -102,12 +102,12 @@ Feature: Pipe or use variable to store the lookup results
     When executing query:
       """
       GO 2 STEPS FROM "Tim Duncan" OVER * YIELD dst(edge) as id
-      | MATCH (v:player {name: "Yao Ming"}) WHERE id(v) == $-.id RETURN v
+      | MATCH (v:player {name: "Yao Ming"}) WHERE id(v) = $-.id RETURN v
       """
     Then a SyntaxError should be raised at runtime: syntax error near `MATCH'
     When executing query:
       """
-      MATCH (v:player) WHERE id(v) == "Tim Duncan" RETURN id(v) as id
+      MATCH (v:player) WHERE id(v) = "Tim Duncan" RETURN id(v) as id
       | GO 2 STEPS FROM $-.id OVER * YIELD dst(edge) as id
       """
     Then a SyntaxError should be raised at runtime: syntax error near `| GO 2 S'

@@ -116,7 +116,7 @@ Feature: Push Filter down GetNeighbors rule
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
-      WHERE $^.player.age > 18 AND $$.team.name == "Spurs"
+      WHERE $^.player.age > 18 AND $$.team.name = "Spurs"
       YIELD $^.player.name AS name
       """
     Then the result should be, in any order:
@@ -125,7 +125,7 @@ Feature: Push Filter down GetNeighbors rule
     And the execution plan should be:
       | name         | dependencies | operator info                            |
       | Project      | 1            |                                          |
-      | Filter       | 2            | {"condition": "($$.team.name=="Spurs")"} |
+      | Filter       | 2            | {"condition": "($$.team.name="Spurs")"} |
       | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}         |
       | Start        |              |                                          |
 
@@ -134,7 +134,7 @@ Feature: Push Filter down GetNeighbors rule
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
-      WHERE $^.player.age > 18 OR $$.team.name == "Lakers"
+      WHERE $^.player.age > 18 OR $$.team.name = "Lakers"
       YIELD $^.player.name AS name
       """
     Then the result should be, in any order:
@@ -143,7 +143,7 @@ Feature: Push Filter down GetNeighbors rule
     And the execution plan should be:
       | name         | dependencies | operator info                                                   |
       | Project      | 1            |                                                                 |
-      | Filter       | 2            | {"condition": "($^.player.age>18) OR ($$.team.name=="Lakers")"} |
+      | Filter       | 2            | {"condition": "($^.player.age>18) OR ($$.team.name="Lakers")"} |
       | GetNeighbors | 3            |                                                                 |
       | Start        |              |                                                                 |
 
@@ -152,7 +152,7 @@ Feature: Push Filter down GetNeighbors rule
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
-      WHERE $$.team.name == "Lakers"
+      WHERE $$.team.name = "Lakers"
       YIELD $^.player.name AS name
       """
     Then the result should be, in any order:

@@ -9,7 +9,7 @@ Feature: Push Filter down LeftJoin rule
   Scenario: push filter down LeftJoin
     When profiling query:
       """
-      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
+      LOOKUP ON player WHERE player.name='Tim Duncan' YIELD id(vertex) as id
       | YIELD $-.id AS vid
       |  GO FROM $-.vid OVER like BIDIRECT
       WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')

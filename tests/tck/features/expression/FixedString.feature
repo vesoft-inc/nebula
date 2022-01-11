@@ -28,7 +28,7 @@ Feature: FixedString expression Eval
     # check fixed string expression with go
     When executing query:
       """
-      GO from 1 over fixed_string_edge_1 where $$.fixed_string_tag_1.c1 == "row" yield $$.fixed_string_tag_1.c1 as c1
+      GO from 1 over fixed_string_edge_1 where $$.fixed_string_tag_1.c1 = "row" yield $$.fixed_string_tag_1.c1 as c1
       """
     Then the result should be, in any order, with relax comparison:
       | c1    |
@@ -37,7 +37,7 @@ Feature: FixedString expression Eval
     # check fixed string expression with go
     When executing query:
       """
-      GO from 1 over fixed_string_edge_1 where $^.fixed_string_tag_1.c1 == "row" yield $$.fixed_string_tag_1.c1 as c1
+      GO from 1 over fixed_string_edge_1 where $^.fixed_string_tag_1.c1 = "row" yield $$.fixed_string_tag_1.c1 as c1
       """
     Then the result should be, in any order, with relax comparison:
       | c1    |
@@ -46,7 +46,7 @@ Feature: FixedString expression Eval
     # check fixed string expression with go
     When executing query:
       """
-      GO from 1 over fixed_string_edge_1 where fixed_string_edge_1.c1 == "row" yield $$.fixed_string_tag_1.c1 as c1
+      GO from 1 over fixed_string_edge_1 where fixed_string_edge_1.c1 = "row" yield $$.fixed_string_tag_1.c1 as c1
       """
     Then the result should be, in any order, with relax comparison:
       | c1    |

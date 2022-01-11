@@ -19,7 +19,7 @@ Feature: Parameter
   Scenario: cypher with parameters
     When executing query:
       """
-      MATCH (v:player)-[:like]->(n) WHERE id(v)==$p3 and n.player.age>$p1+29
+      MATCH (v:player)-[:like]->(n) WHERE id(v)=$p3 and n.player.age>$p1+29
       RETURN n.player.name AS dst LIMIT $p1+1
       """
     Then the result should be, in any order:

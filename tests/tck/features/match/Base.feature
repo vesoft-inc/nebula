@@ -26,7 +26,7 @@ Feature: Basic match
       | ("Null4" :player{age: -4, name: NULL}) |
     When executing query:
       """
-      MATCH (v:player) WHERE v.player.name == "Yao Ming" RETURN v.player.age AS Age
+      MATCH (v:player) WHERE v.player.name = "Yao Ming" RETURN v.player.age AS Age
       """
     Then the result should be, in any order:
       | Age |
@@ -67,13 +67,13 @@ Feature: Basic match
       | 'Tracy McGrady' | 39  |
     When executing query:
       """
-      MATCH (v:player) where v.player.name == null RETURN v
+      MATCH (v:player) where v.player.name = null RETURN v
       """
     Then the result should be, in any order, with relax comparison:
       | v |
     When executing query:
       """
-      MATCH (v:player) where v.player.name == 3 RETURN v
+      MATCH (v:player) where v.player.name = 3 RETURN v
       """
     Then the result should be, in any order, with relax comparison:
       | v |
@@ -86,7 +86,7 @@ Feature: Basic match
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     When executing query:
       """
-      MATCH (v:player) where v.player.age == 38 RETURN *, v.player.age + 100 AS age
+      MATCH (v:player) where v.player.age = 38 RETURN *, v.player.age + 100 AS age
       """
     Then the result should be, in any order, with relax comparison:
       | v                                                   | age |
@@ -227,7 +227,7 @@ Feature: Basic match
       | "Danny Green" | "Tim Duncan"      |
     When executing query:
       """
-      MATCH (v:player)-[e:like]-(v2) where v.player.age == 38 RETURN *
+      MATCH (v:player)-[e:like]-(v2) where v.player.age = 38 RETURN *
       """
     Then the result should be, in any order, with relax comparison:
       | v                                                   | e                                                        | v2                                                              |
@@ -238,7 +238,7 @@ Feature: Basic match
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]    | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})       |
     When executing query:
       """
-      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
+      MATCH (v:player)-[e:like]->(v2) where id(v) = "Tim Duncan" RETURN DISTINCT properties(e) as props, e
       """
     Then the result should be, in any order, with relax comparison:
       | props          | e                                                       |
@@ -246,7 +246,7 @@ Feature: Basic match
       | {likeness: 95} | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
     When executing query:
       """
-      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props
+      MATCH (v:player)-[e:like]->(v2) where id(v) = "Tim Duncan" RETURN DISTINCT properties(e) as props
       """
     Then the result should be, in any order, with relax comparison:
       | props          |
