@@ -12,7 +12,9 @@ StatusOr<int64_t> SegmentId::getId() {
 
   if (cur_ < segmentStart_ + step_ - 1) {
     // non-block prefetch next segment
-    if (cur_ == segmentStart_ + (step_ / 2) - 1) asyncFetchSegment();
+    if (cur_ == segmentStart_ + (step_ / 2) - 1) {
+      asyncFetchSegment();
+    }
     cur_ += 1;
   } else {  // cur == segment end
     if (segmentStart_ >= nextSegmentStart_) {
@@ -52,7 +54,7 @@ StatusOr<int64_t> SegmentId::fetchSegment() {
 
 Status SegmentId::init(int64_t step) {
   step_ = step;
-  if (step < 120000000) {
+  if (step < kMinStep_) {
     return Status::Error("Step is too small");
   }
 

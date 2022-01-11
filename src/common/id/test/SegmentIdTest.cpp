@@ -24,11 +24,14 @@ class MockMetaClient : public meta::BaseMetaClient {
   std::atomic_int64_t cur_{0};
 };
 
-TEST(SegmentIdTest, TestConcurrency) {
+// In this case, small step cause that id run out before asyncFetchSegment() finish.
+// So one segment replace another one. (one is from asyncFetchSegment(), another if from
+// fetchSegment())
+TEST(SegmentIdTest, TestConcurrencySmallStep) {
   MockMetaClient metaClient = MockMetaClient();
 
   int threadNum = 32;
-  int times = 10000000;
+  int times = 100000;
 
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
       PriorityThreadManager::newPriorityThreadManager(32));
@@ -38,7 +41,47 @@ TEST(SegmentIdTest, TestConcurrency) {
   SegmentId::initClient(&metaClient);
   SegmentId::initRunner(threadManager.get());
   SegmentId& generator = SegmentId::getInstance();
-  generator.step_ = 10000;
+  generator.step_ = 1000;
+
+  folly::ConcurrentHashMap<int64_t, int> map;
+  std::vector<std::thread> threads;
+  threads.reserve(threadNum);
+
+  auto proc = [&]() {
+    for (int i = 0; i < times; i++) {
+      StatusOr<int64_t> id = generator.getId();
+      ASSERT_TRUE(id.ok());
+      // check duplicated id
+      ASSERT_TRUE(map.find(id.value()) == map.end()) << "id: " << id.value();
+      map.insert(id.value(), 0);
+    }
+  };
+
+  for (int i = 0; i < threadNum; i++) {
+    threads.emplace_back(std::thread(proc));
+  }
+
+  for (int i = 0; i < threadNum; i++) {
+    threads[i].join();
+  }
+}
+
+// check the result (in the case of no fetchSegment() by useing big step)
+TEST(SegmentIdTest, TestConcurrencyBigStep) {
+  MockMetaClient metaClient = MockMetaClient();
+
+  int threadNum = 32;
+  int times = 100000;
+
+  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+      PriorityThreadManager::newPriorityThreadManager(32));
+  threadManager->setNamePrefix("executor");
+  threadManager->start();
+
+  SegmentId::initClient(&metaClient);
+  SegmentId::initRunner(threadManager.get());
+  SegmentId& generator = SegmentId::getInstance();
+  Status status = generator.init(120000000);
 
   folly::ConcurrentHashMap<int64_t, int> map;
   std::vector<std::thread> threads;
@@ -63,9 +106,9 @@ TEST(SegmentIdTest, TestConcurrency) {
   }
 
   // check the result
-  // for (int i = 0; i < (times * threadNum); i++) {
-  //   ASSERT_TRUE(map.find(i) != map.end()) << "id: " << i;
-  // }
+  for (int i = 0; i < (times * threadNum); i++) {
+    ASSERT_TRUE(map.find(i) != map.end()) << "id: " << i;
+  }
 }
 
 }  // namespace nebula

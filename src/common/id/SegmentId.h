@@ -12,7 +12,7 @@
 namespace nebula {
 // Segment auto-increase id
 class SegmentId {
-  FRIEND_TEST(SegmentIdTest, TestConcurrency);
+  FRIEND_TEST(SegmentIdTest, TestConcurrencySmallStep);
 
  public:
   static SegmentId& getInstance() {
@@ -43,9 +43,8 @@ class SegmentId {
  private:
   SegmentId() = default;
 
-  // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
-  // isn't updated. In this case, we will getSegmentId() directly. In case this function update
-  // after getSegmentId(), adding che here.
+  // when get id fast or fetchSegment() slow or fail, getSegmentId() directly.
+  // In this case, the new segment will overlap with the old one.
   void asyncFetchSegment();
 
   StatusOr<int64_t> fetchSegment();
@@ -57,6 +56,8 @@ class SegmentId {
 
   int64_t segmentStart_{-1};
   int64_t nextSegmentStart_{-1};
+
+  static inline constexpr int64_t kMinStep_{120000000};
 
   static inline meta::BaseMetaClient* client_{nullptr};
   static inline folly::Executor* runner_{nullptr};
