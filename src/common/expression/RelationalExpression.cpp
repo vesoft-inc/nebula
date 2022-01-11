@@ -216,7 +216,7 @@ std::string RelationalExpression::toString() const {
       op = ">=";
       break;
     case Kind::kRelEQ:
-      op = "==";
+      op = "=";
       break;
     case Kind::kRelNE:
       op = "!=";
