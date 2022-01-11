@@ -425,12 +425,12 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 
     // If the arithExpr has constant expr as member that is a string, do not rewrite
     if (lExpr->kind() == Expression::Kind::kConstant) {
-      if (static_cast<ConstantExpression *>(lExpr)->eval(ctx).isStr()) {
+      if (lExpr->eval(ctx).isStr()) {
         return false;
       }
     }
     if (rExpr->kind() == Expression::Kind::kConstant) {
-      if (static_cast<ConstantExpression *>(rExpr)->eval(ctx).isStr()) {
+      if (rExpr->eval(ctx).isStr()) {
         return false;
       }
     }
@@ -453,7 +453,9 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     auto relExpr = static_cast<const RelationalExpression *>(e);
     // Check right operand
     bool checkRightOperand = isEvaluableExpr(relExpr->right());
-    if (!checkRightOperand) return false;
+    if (!checkRightOperand) {
+      return false;
+    }
 
     // Check left operand
     bool checkLeftOperand = false;
