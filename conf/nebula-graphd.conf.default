@@ -84,8 +84,9 @@
 # System memory high watermark ratio, cancel the memory checking when the ratio greater than 1.0
 --system_memory_high_watermark_ratio=0.8
 
+########## metrics ##########
+--enable_space_level_metrics=false
+
 ########## experimental feature ##########
 # if use experimental features
 --enable_experimental_feature=false
-
---enable_space_level_metrics=false
