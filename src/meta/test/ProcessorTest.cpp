@@ -3763,6 +3763,16 @@ TEST(ProcessorTest, MergeZoneTest) {
     ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
   }
   {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8986", "default_zone_127.0.0.1_8987"};
+    req.zone_name_ref() = "default_zone_127.0.0.1_8988";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
     // Merge an empty zone list
     cpp2::MergeZoneReq req;
     req.zones_ref() = {};

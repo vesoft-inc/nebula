@@ -2279,6 +2279,13 @@ TEST(MetaClientTest, MergeZoneTest) {
     ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
   }
   {
+    auto result = client
+                      ->mergeZone({"default_zone_127.0.0.1_8986", "default_zone_127.0.0.1_8987"},
+                                  "default_zone_127.0.0.1_8988")
+                      .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
     // Merge zones is empty
     auto result = client->mergeZone({}, "new_zone").get();
     EXPECT_FALSE(result.ok());
