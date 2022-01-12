@@ -68,7 +68,10 @@ class StorageServer final {
   int32_t getAdminStoreSeqId();
 
   bool initWebService();
-
+  /**
+   * @brief used by all thrift client, and kvstore.
+   *        default num is 16
+   */
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
