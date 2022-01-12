@@ -26,13 +26,15 @@ class TestShowHosts(NebulaTestSuite):
                                  'Status',
                                  'Leader count',
                                  'Leader distribution',
-                                 'Partition distribution']
+                                 'Partition distribution',
+                                 'Version']
         expected_result_format = [[re.compile(r'\S+'),
                                    re.compile(r'\d+'),
                                    re.compile(r'ONLINE|OFFLINE'),
                                    re.compile(r'\d+'),
                                    re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+'),
-                                   re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+')]]
+                                   re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+'),
+                                   re.compile(r'\S+')]]
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
