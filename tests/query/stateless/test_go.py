@@ -33,7 +33,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
-        cmd = 'GO FROM "2002" OVER is_teacher WHERE strcasecmp($$.person.name, "Sandy") == 0 \
+        cmd = 'GO FROM "2002" OVER is_teacher WHERE strcasecmp($$.person.name, "Sandy") = 0 \
                 YIELD $$.person.name as name, $$.student.grade as grade;'
         # go 1 step with string function filter
         resp = self.execute(cmd)
@@ -44,7 +44,7 @@ class TestGoQuery(NebulaTestSuite):
 
         # go 1 step with var
         cmd = '$var = GO FROM "2002" OVER is_teacher \
-                WHERE strcasecmp($$.person.name, "Sandy") == 0 \
+                WHERE strcasecmp($$.person.name, "Sandy") = 0 \
                 YIELD is_teacher._dst as id; \
                 GO FROM $var.id OVER is_schoolmate REVERSELY \
                 YIELD is_schoolmate._src as src;'
