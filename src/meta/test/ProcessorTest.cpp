@@ -4106,6 +4106,38 @@ TEST(ProcessorTest, DivideZoneTest) {
     cpp2::DivideZoneReq req;
     req.zone_name_ref() = "default_zone";
     std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
     std::vector<HostAddr> hosts0 = {};
     zoneItems.emplace("zone_0", std::move(hosts0));
     std::vector<HostAddr> hosts1 = {};

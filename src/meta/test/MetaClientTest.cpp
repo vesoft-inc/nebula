@@ -2481,6 +2481,26 @@ TEST(MetaClientTest, DivideZoneTest) {
   }
   {
     std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
     std::vector<HostAddr> hosts0 = {};
     zoneItems.emplace("zone_0", std::move(hosts0));
     std::vector<HostAddr> hosts1 = {};
