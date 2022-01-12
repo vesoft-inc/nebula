@@ -204,7 +204,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 1 STEPS FROM $-.id OVER like "
-        "WHERE $-.id == \"2\" YIELD $-.id, like._dst";
+        "WHERE $-.id = \"2\" YIELD $-.id, like._dst";
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kFilter,
                                             PK::kInnerJoin,
@@ -221,7 +221,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 1 STEPS FROM $-.id OVER like "
-        "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
+        "WHERE $-.id = \"2\" YIELD DISTINCT $-.id, like._dst";
     std::vector<PlanNode::Kind> expected = {PK::kDataCollect,
                                             PK::kDedup,
                                             PK::kProject,
@@ -253,7 +253,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 2 STEPS FROM $-.id OVER like "
-        "WHERE $-.id == \"2\" YIELD $-.id, like._dst";
+        "WHERE $-.id = \"2\" YIELD $-.id, like._dst";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,      PK::kFilter,       PK::kInnerJoin,    PK::kInnerJoin, PK::kProject,
         PK::kGetNeighbors, PK::kLoop,         PK::kDedup,        PK::kDedup,     PK::kProject,
@@ -267,7 +267,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 2 STEPS FROM $-.id OVER like "
-        "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
+        "WHERE $-.id = \"2\" YIELD DISTINCT $-.id, like._dst";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect, PK::kDedup,   PK::kProject,      PK::kFilter,       PK::kInnerJoin,
         PK::kInnerJoin,   PK::kProject, PK::kGetNeighbors, PK::kLoop,         PK::kDedup,
@@ -564,7 +564,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
   {
     std::string query =
         "GO FROM \"1\" OVER like "
-        "WHERE like._dst == \"2\""
+        "WHERE like._dst = \"2\""
         "YIELD $^.person.name, like._dst, "
         "$$.person.name, $$.person.age + 1";
     std::vector<PlanNode::Kind> expected = {
@@ -582,7 +582,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
   {
     std::string query =
         "GO FROM \"1\" OVER like "
-        "WHERE like._dst == \"2\""
+        "WHERE like._dst = \"2\""
         "YIELD DISTINCT $^.person.name, like._dst, "
         "$$.person.name, $$.person.age + 1";
     std::vector<PlanNode::Kind> expected = {
@@ -635,7 +635,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
   }
   {
     std::string query =
-        "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name == \"me\" YIELD edge as e";
+        "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name = \"me\" YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
@@ -901,7 +901,7 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     std::string query =
         "$var = GO FROM \"2\" OVER like;"
         "GO FROM \"1\" OVER like YIELD like._dst AS id"
-        "| GO FROM $-.id OVER like WHERE $var.id == \"\" YIELD edge as e";
+        "| GO FROM $-.id OVER like WHERE $var.id = \"\" YIELD edge as e";
     EXPECT_FALSE(checkResult(query));
   }
   {
@@ -1207,7 +1207,7 @@ TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (v1) -[r]-> (v2) "
-        "WHERE id(v1) == \"LeBron James\""
+        "WHERE id(v1) = \"LeBron James\""
         "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
@@ -1224,7 +1224,7 @@ TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (v1)-[e:serve*2..3{start_year: 2000}]-(v2) "
-        "WHERE id(v1) == \"LeBron James\""
+        "WHERE id(v1) = \"LeBron James\""
         "RETURN v1, v2";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,

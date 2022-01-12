@@ -174,9 +174,9 @@ TEST_F(ExpressionParsingTest, Associativity) {
 
   ast = RelationalExpression::makeEQ(
       pool,
-      RelationalExpression::makeEQ(pool, make<ConstantExpression>(1), make<ConstantExpression>(2)),
-      make<ConstantExpression>(3));
-  add("1 == 2 == 3", ast);
+      make<ConstantExpression>(1),
+      RelationalExpression::makeEQ(pool, make<ConstantExpression>(2), make<ConstantExpression>(3)));
+  add("1 = 2 = 3", ast);
 
   ast = RelationalExpression::makeNE(
       pool,
@@ -377,7 +377,7 @@ TEST_F(ExpressionParsingTest, Precedence) {
                   pool, make<ConstantExpression>(2), make<ConstantExpression>(1))),
           RelationalExpression::makeEQ(
               pool, make<ConstantExpression>(3), make<ConstantExpression>(4))));
-  add("+1 OR 1 != 2 - 1 AND 3 == 4", ast);
+  add("+1 OR 1 != 2 - 1 AND 3 = 4", ast);
 
   ast = UnaryExpression::makeNot(
       pool,

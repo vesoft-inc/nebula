@@ -247,7 +247,7 @@ TEST_F(YieldValidatorTest, YieldPipe) {
     EXPECT_TRUE(checkResult(query, expected_));
   }
   {
-    auto query = go + "| YIELD $-.start WHERE 1 == 1";
+    auto query = go + "| YIELD $-.start WHERE 1 = 1";
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
@@ -340,7 +340,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
     EXPECT_TRUE(checkResult(query, expected_, {"$var.name"}));
   }
   {
-    auto query = var + "YIELD $var.name WHERE 1 == 1";
+    auto query = var + "YIELD $var.name WHERE 1 = 1";
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,

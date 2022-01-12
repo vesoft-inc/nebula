@@ -18,7 +18,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // pipe
   {
     const std::string query =
-        "LOOKUP ON person where person.age == 35 YIELD id(vertex) as id | "
+        "LOOKUP ON person where person.age = 35 YIELD id(vertex) as id | "
         "FETCH PROP ON person $-.id YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
@@ -33,7 +33,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // pipe with yield
   {
     const std::string query =
-        "LOOKUP ON person where person.age == 35 YIELD person.name AS name | "
+        "LOOKUP ON person where person.age = 35 YIELD person.name AS name | "
         "FETCH PROP ON person $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
@@ -48,7 +48,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // variable
   {
     const std::string query =
-        "$a = LOOKUP ON person where person.age == 35 YIELD id(vertex) as id; "
+        "$a = LOOKUP ON person where person.age = 35 YIELD id(vertex) as id; "
         "FETCH PROP ON person $a.id YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
@@ -63,7 +63,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // var with yield
   {
     const std::string query =
-        "$a = LOOKUP ON person where person.age == 35 YIELD person.name AS name;"
+        "$a = LOOKUP ON person where person.age = 35 YIELD person.name AS name;"
         "FETCH PROP ON person $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
@@ -83,8 +83,7 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query =
-        "LOOKUP ON person where person.age == 35 YIELD person.age + 1 AS age;";
+    const std::string query = "LOOKUP ON person where person.age = 35 YIELD person.age + 1 AS age;";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -98,7 +97,7 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
 TEST_F(LookupValidatorTest, InvalidFilterExpression) {
   {
     const std::string query =
-        "LOOKUP ON person where person.age == person.name YIELD vertex as node;";
+        "LOOKUP ON person where person.age = person.name YIELD vertex as node;";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {

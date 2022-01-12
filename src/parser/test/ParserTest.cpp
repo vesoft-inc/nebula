@@ -191,7 +191,7 @@ TEST_F(ParserTest, Go) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER friend WHERE person.name == \"Tom\"";
+    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER friend WHERE person.name = \"Tom\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -947,7 +947,7 @@ TEST_F(ParserTest, UpdateVertex) {
     std::string query =
         "UPDATE VERTEX \"12345\" "
         "SET person.name=\"Tom\", person.age=30, person.married=true "
-        "WHEN $^.job.salary > 10000 AND $^.job.name == \"CTO\" OR "
+        "WHEN $^.job.salary > 10000 AND $^.job.name = \"CTO\" OR "
         "$^.person.age < 30"
         "YIELD $^.person.name AS Name, $^.job.salary AS Salary, "
         "$^.person.create_time AS Time_";
@@ -958,7 +958,7 @@ TEST_F(ParserTest, UpdateVertex) {
     std::string query =
         "UPDATE VERTEX ON person \"12345\" "
         "SET name=\"Tom\", age=30, married=true "
-        "WHEN salary > 10000 AND name == \"CTO\" OR age < 30"
+        "WHEN salary > 10000 AND name = \"CTO\" OR age < 30"
         "YIELD name AS Name, salary AS Salary, create_time AS Time_";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -1087,7 +1087,7 @@ TEST_F(ParserTest, UpdateEdge) {
     std::string query =
         "UPDATE EDGE \"12345\" -> \"54321\"@789 OF transfer "
         "SET amount=3.14,time_=1537408527 "
-        "WHEN transfer.amount > 3.14 AND $^.person.name == \"Tom\"";
+        "WHEN transfer.amount > 3.14 AND $^.person.name = \"Tom\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1397,7 +1397,7 @@ TEST_F(ParserTest, Lookup) {
     ASSERT_FALSE(result.ok());
   }
   {
-    std::string query = "LOOKUP ON person WHERE person.gender == \"man\"";
+    std::string query = "LOOKUP ON person WHERE person.gender = \"man\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2524,7 +2524,7 @@ TEST_F(ParserTest, Match) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MATCH (a) -[m]- (b) WHERE a.name == 'Tom' RETURN a";
+    std::string query = "MATCH (a) -[m]- (b) WHERE a.name = 'Tom' RETURN a";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

@@ -475,7 +475,7 @@ TEST_F(MatchValidatorTest, validateAlias) {
   {
     std::string query =
         "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
-        "WHERE id(p._src) == \"Tim Duncan\""
+        "WHERE id(p._src) = \"Tim Duncan\""
         "RETURN p._src";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
@@ -484,7 +484,7 @@ TEST_F(MatchValidatorTest, validateAlias) {
   {
     std::string query =
         "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
-        "WHERE id(p._dst) == \"Tim Duncan\""
+        "WHERE id(p._dst) = \"Tim Duncan\""
         "RETURN p._dst";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
