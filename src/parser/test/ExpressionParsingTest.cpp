@@ -174,8 +174,8 @@ TEST_F(ExpressionParsingTest, Associativity) {
 
   ast = RelationalExpression::makeEQ(
       pool,
-      make<ConstantExpression>(1),
-      RelationalExpression::makeEQ(pool, make<ConstantExpression>(2), make<ConstantExpression>(3)));
+      RelationalExpression::makeEQ(pool, make<ConstantExpression>(1), make<ConstantExpression>(2)),
+      make<ConstantExpression>(3));
   add("1 = 2 = 3", ast);
 
   ast = RelationalExpression::makeNE(

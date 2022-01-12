@@ -405,7 +405,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %left QM COLON
 %left KW_OR KW_XOR
 %left KW_AND
-%left KW_NOT ASSIGN
+%left KW_NOT EQ
 %left NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
 %left PLUS MINUS
 %left STAR DIV MOD
@@ -672,7 +672,7 @@ expression_internal
     | expression_internal KW_IS_NOT_EMPTY {
         $$ = UnaryExpression::makeIsNotEmpty(qctx->objPool(), $1);
     }
-    | expression_internal ASSIGN expression_internal {
+    | expression_internal EQ expression_internal {
         $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
     }
     | expression_internal NE expression_internal {
@@ -941,7 +941,7 @@ list_comprehension_expression
     ;
 
 reduce_expression
-    : KW_REDUCE L_PAREN name_label ASSIGN expression_internal COMMA name_label KW_IN expression_internal PIPE expression_internal R_PAREN {
+    : KW_REDUCE L_PAREN name_label EQ expression_internal COMMA name_label KW_IN expression_internal PIPE expression_internal R_PAREN {
         auto *expr = ReduceExpression::make(qctx->objPool(), *$3, $5, *$7, $9, $11);
         nebula::graph::ParserUtil::rewriteReduce(qctx, expr, *$3, *$7);
         $$ = expr;
@@ -1719,7 +1719,7 @@ match_path
     : match_path_pattern {
         $$ = $1;
     }
-    | name_label ASSIGN match_path_pattern {
+    | name_label EQ match_path_pattern {
         $$ = $3;
         $$->setAlias($1);
     }
@@ -2377,10 +2377,10 @@ create_schema_prop_list
     ;
 
 create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN legal_integer {
+    : KW_TTL_DURATION EQ legal_integer {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN STRING {
+    | KW_TTL_COL EQ STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -2458,10 +2458,10 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN legal_integer {
+    : KW_TTL_DURATION EQ legal_integer {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN STRING {
+    | KW_TTL_COL EQ STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -2672,7 +2672,7 @@ drop_fulltext_index_sentence
     ;
 
 comment_prop_assignment
-    : KW_COMMENT ASSIGN STRING {
+    : KW_COMMENT EQ STRING {
         if ($3->size() > kCommentLengthLimit) {
             std::stringstream err;
             err << "Too long comment exceed ";
@@ -2729,13 +2729,13 @@ index_param_list
     ;
 
 index_param_item
-    : KW_S2_MAX_LEVEL ASSIGN legal_integer {
+    : KW_S2_MAX_LEVEL EQ legal_integer {
         if ($3 < 0 || $3 > 30) {
             throw nebula::GraphParser::syntax_error(@3, "'s2_max_level' value must be between 0 and 30 inclusive");
         }
         $$ = new IndexParamItem(IndexParamItem::S2_MAX_LEVEL, $3);
     }
-    | KW_S2_MAX_CELLS ASSIGN legal_integer {
+    | KW_S2_MAX_CELLS EQ legal_integer {
         if ($3 < 1 || $3 > 32) {
             throw nebula::GraphParser::syntax_error(@3, "'s2_max_cells' value must be between 1 and 32 inclusive");
         }
@@ -2934,7 +2934,7 @@ match_sentences
     }
 
 assignment_sentence
-    : VARIABLE ASSIGN set_sentence {
+    : VARIABLE EQ set_sentence {
         if (qctx->existParameter(*$1)) {
             delete $1;
             delete $3;
@@ -3084,10 +3084,10 @@ update_list
     ;
 
 update_item
-    : name_label ASSIGN expression {
+    : name_label EQ expression {
         $$ = new UpdateItem($1, $3);
     }
-    | name_label DOT name_label ASSIGN expression {
+    | name_label DOT name_label EQ expression {
         auto expr = LabelAttributeExpression::make(qctx->objPool(), LabelExpression::make(qctx->objPool(), *$1),
                                                  ConstantExpression::make(qctx->objPool(), *$3));
         $$ = new UpdateItem(expr, $5);
@@ -3471,10 +3471,10 @@ get_config_item
     ;
 
 set_config_item
-    : config_module_enum COLON name_label ASSIGN expression {
+    : config_module_enum COLON name_label EQ expression {
         $$ = new ConfigRowItem($1, $3, $5);
     }
-    | name_label ASSIGN expression {
+    | name_label EQ expression {
         $$ = new ConfigRowItem(meta::cpp2::ConfigModule::ALL, $1, $3);
     }
     ;
@@ -3586,31 +3586,31 @@ space_opt_list
     ;
 
 space_opt_item
-    : KW_PARTITION_NUM ASSIGN legal_integer {
+    : KW_PARTITION_NUM EQ legal_integer {
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
-    | KW_REPLICA_FACTOR ASSIGN legal_integer {
+    | KW_REPLICA_FACTOR EQ legal_integer {
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
-    | KW_CHARSET ASSIGN name_label {
+    | KW_CHARSET EQ name_label {
         // Currently support utf8, it is an alias for utf8mb4
         $$ = new SpaceOptItem(SpaceOptItem::CHARSET, *$3);
         delete $3;
     }
-    | KW_COLLATE ASSIGN name_label {
+    | KW_COLLATE EQ name_label {
         // Currently support utf8_bin, it is an alias for utf8mb4_bin
         $$ = new SpaceOptItem(SpaceOptItem::COLLATE, *$3);
         delete $3;
     }
-    | KW_VID_TYPE ASSIGN type_spec {
+    | KW_VID_TYPE EQ type_spec {
         $$ = new SpaceOptItem(SpaceOptItem::VID_TYPE, *$3);
         delete $3;
     }
-    | KW_ATOMIC_EDGE ASSIGN BOOL {
+    | KW_ATOMIC_EDGE EQ BOOL {
         $$ = new SpaceOptItem(SpaceOptItem::ATOMIC_EDGE, $3);
     }
     // TODO(YT) Create Spaces for different engines
-    // KW_ENGINE_TYPE ASSIGN name_label
+    // KW_ENGINE_TYPE EQ name_label
     ;
 
 drop_space_sentence
@@ -3835,14 +3835,14 @@ query_unique_identifier_value
     ;
 
 query_unique_identifier
-    : KW_PLAN ASSIGN query_unique_identifier_value {
+    : KW_PLAN EQ query_unique_identifier_value {
         $$ = new QueryUniqueIdentifier($3, ConstantExpression::make(qctx->objPool(), Value(-1)));
     }
-    | KW_SESSION ASSIGN query_unique_identifier_value COMMA KW_PLAN ASSIGN query_unique_identifier_value {
+    | KW_SESSION EQ query_unique_identifier_value COMMA KW_PLAN EQ query_unique_identifier_value {
         $$ = new QueryUniqueIdentifier($7, $3);
         $$->setSession();
     }
-    | KW_PLAN ASSIGN query_unique_identifier_value COMMA KW_SESSION ASSIGN query_unique_identifier_value {
+    | KW_PLAN EQ query_unique_identifier_value COMMA KW_SESSION EQ query_unique_identifier_value {
         $$ = new QueryUniqueIdentifier($3, $7);
         $$->setSession();
     }
@@ -3941,25 +3941,25 @@ explain_sentence
     : KW_EXPLAIN sentence {
         $$ = new ExplainSentence(new SequentialSentences($2));
     }
-    | KW_EXPLAIN KW_FORMAT ASSIGN STRING sentence {
+    | KW_EXPLAIN KW_FORMAT EQ STRING sentence {
         $$ = new ExplainSentence(new SequentialSentences($5), false, $4);
     }
     | KW_EXPLAIN L_BRACE seq_sentences R_BRACE {
         $$ = new ExplainSentence($3);
     }
-    | KW_EXPLAIN KW_FORMAT ASSIGN STRING L_BRACE seq_sentences R_BRACE {
+    | KW_EXPLAIN KW_FORMAT EQ STRING L_BRACE seq_sentences R_BRACE {
         $$ = new ExplainSentence($6, false, $4);
     }
     | KW_PROFILE sentence {
         $$ = new ExplainSentence(new SequentialSentences($2), true);
     }
-    | KW_PROFILE KW_FORMAT ASSIGN STRING sentence {
+    | KW_PROFILE KW_FORMAT EQ STRING sentence {
         $$ = new ExplainSentence(new SequentialSentences($5), true, $4);
     }
     | KW_PROFILE L_BRACE seq_sentences R_BRACE {
         $$ = new ExplainSentence($3, true);
     }
-    | KW_PROFILE KW_FORMAT ASSIGN STRING L_BRACE seq_sentences R_BRACE {
+    | KW_PROFILE KW_FORMAT EQ STRING L_BRACE seq_sentences R_BRACE {
         $$ = new ExplainSentence($6, true, $4);
     }
     | explain_sentence SEMICOLON {

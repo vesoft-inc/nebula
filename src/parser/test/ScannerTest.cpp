@@ -147,7 +147,7 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("=~", TokenType::REG),
 
       CHECK_SEMANTIC_TYPE("|", TokenType::PIPE),
-      CHECK_SEMANTIC_TYPE("=", TokenType::ASSIGN),
+      CHECK_SEMANTIC_TYPE("=", TokenType::EQ),
       CHECK_SEMANTIC_TYPE("(", TokenType::L_PAREN),
       CHECK_SEMANTIC_TYPE(")", TokenType::R_PAREN),
       CHECK_SEMANTIC_TYPE("[", TokenType::L_BRACKET),
