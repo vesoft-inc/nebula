@@ -845,6 +845,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Invalid param!");
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
+    case nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH:
+      return Status::Error("Zone not enough!");
+    case nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY:
+      return Status::Error("Zone is empty!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
       return Status::Error("Store failure!");
     case nebula::cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL:

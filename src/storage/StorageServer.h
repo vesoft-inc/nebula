@@ -11,6 +11,7 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/hdfs/HdfsHelper.h"
+#include "common/log/LogMonitor.h"
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/NebulaStore.h"
@@ -96,6 +97,8 @@ class StorageServer final {
   std::unique_ptr<TransactionManager> txnMan_{nullptr};
   // used for communicate between one storaged to another
   std::unique_ptr<InternalStorageClient> interClient_;
+
+  std::unique_ptr<LogMonitor> logMonitor_;
 
   ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
   std::mutex muStop_;

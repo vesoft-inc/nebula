@@ -495,6 +495,8 @@ struct LookupIndexResp {
     // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
     // or "edge_type_name.prop_alias" in the same order which specified in return_columns of request
     2: optional common.DataSet          data,
+    // stat_data only have one column, the column name is the order in LookupIndexRequest.stat_prop
+    3: optional common.DataSet          stat_data,
 }
 
 enum ScanType {
@@ -546,6 +548,7 @@ struct LookupIndexRequest {
     // max row count of each partition in this response
     6: optional i64                         limit,
     7: optional list<OrderBy>               order_by,
+    8: optional list<StatProp>              stat_columns,
 }
 
 
