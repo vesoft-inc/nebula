@@ -243,7 +243,7 @@ Feature: Match seek by id
       WHERE (id(v) + '') == 'James Harden'
       RETURN v.player.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
