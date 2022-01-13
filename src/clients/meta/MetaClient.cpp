@@ -30,7 +30,6 @@
 #include "webservice/Common.h"
 
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
