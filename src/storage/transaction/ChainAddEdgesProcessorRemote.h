@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORREMOTE_H
+#define STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORREMOTE_H
 
 #include "storage/BaseProcessor.h"
 #include "storage/transaction/ChainBaseProcessor.h"
@@ -36,3 +37,4 @@ class ChainAddEdgesProcessorRemote : public BaseProcessor<cpp2::ExecResponse> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

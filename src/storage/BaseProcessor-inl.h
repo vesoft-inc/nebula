@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_BASEPROCESSOR_INL_H
+#define STORAGE_BASEPROCESSOR_INL_H
 
 #include "storage/BaseProcessor.h"
 
@@ -188,3 +189,4 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
 
 }  // namespace storage
 }  // namespace nebula
+#endif

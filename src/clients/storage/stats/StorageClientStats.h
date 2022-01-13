@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CLIENTS_STORAGE_STATS_STORAGECLIENTSTATS_H
+#define CLIENTS_STORAGE_STATS_STORAGECLIENTSTATS_H
 
 #include "common/stats/StatsManager.h"
 
@@ -15,3 +16,4 @@ extern stats::CounterId kNumRpcSentToStoragedFailed;
 void initStorageClientStats();
 
 }  // namespace nebula
+#endif

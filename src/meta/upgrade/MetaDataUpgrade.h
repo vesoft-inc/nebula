@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef META_UPGRADE_METADATAUPGRADE_H
+#define META_UPGRADE_METADATAUPGRADE_H
 
 #include <rocksdb/db.h>
 
@@ -100,3 +101,4 @@ class MetaDataUpgrade final {
 
 }  // namespace meta
 }  // namespace nebula
+#endif

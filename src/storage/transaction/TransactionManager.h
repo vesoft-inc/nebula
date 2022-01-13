@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
+#define STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
 
 #include <folly/executors/Async.h>
 #include <storage/transaction/ChainBaseProcessor.h>
@@ -122,3 +123,4 @@ class TransactionManager {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

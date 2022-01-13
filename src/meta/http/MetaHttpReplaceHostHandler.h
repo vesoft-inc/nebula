@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
+#define META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
 
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -49,3 +50,4 @@ class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
 
 }  // namespace meta
 }  // namespace nebula
+#endif

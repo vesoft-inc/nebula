@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINRESUMEPROCESSOR_H
+#define STORAGE_TRANSACTION_CHAINRESUMEPROCESSOR_H
 
 #include "clients/storage/InternalStorageClient.h"
 #include "common/utils/NebulaKeyUtils.h"
@@ -29,3 +30,4 @@ class ChainResumeProcessor {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

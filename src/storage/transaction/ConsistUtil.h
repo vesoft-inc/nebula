@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CONSISTUTIL_H
+#define STORAGE_TRANSACTION_CONSISTUTIL_H
 
 #include "common/time/WallClock.h"
 #include "common/utils/MemoryLockWrapper.h"
@@ -115,3 +116,4 @@ class ConsistUtil final {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

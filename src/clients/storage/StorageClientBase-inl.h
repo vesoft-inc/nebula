@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
+#define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
 #include <folly/Try.h>
 
@@ -377,3 +378,4 @@ StorageClientBase<ClientType, ClientManagerType>::getHostPartsWithCursor(
 
 }  // namespace storage
 }  // namespace nebula
+#endif

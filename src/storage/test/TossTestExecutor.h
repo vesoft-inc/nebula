@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_TOSSTESTEXECUTOR_H
+#define STORAGE_TEST_TOSSTESTEXECUTOR_H
 
 #include "TossEnvironment.h"
 
@@ -387,3 +388,4 @@ struct UpdateExecutor {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

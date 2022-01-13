@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef KVSTORE_RATELIMITER_H
+#define KVSTORE_RATELIMITER_H
 
 #include <folly/TokenBucket.h>
 
@@ -47,3 +48,4 @@ class RateLimiter {
 
 }  // namespace kvstore
 }  // namespace nebula
+#endif

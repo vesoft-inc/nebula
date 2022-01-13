@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_STATS_STORAGESTATS_H
+#define STORAGE_STATS_STORAGESTATS_H
 
 #include "common/stats/StatsManager.h"
 
@@ -18,3 +19,4 @@ extern stats::CounterId kNumVerticesDeleted;
 void initStorageStats();
 
 }  // namespace nebula
+#endif

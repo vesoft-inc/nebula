@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNSCANEDGESAPPENDVERTICESRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNSCANEDGESAPPENDVERTICESRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -28,3 +29,4 @@ class PushLimitDownScanEdgesAppendVerticesRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

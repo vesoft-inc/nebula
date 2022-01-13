@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
+#define STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
 
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/LogEncoder.h"
@@ -155,3 +156,4 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
 
 }  // namespace storage
 }  // namespace nebula
+#endif

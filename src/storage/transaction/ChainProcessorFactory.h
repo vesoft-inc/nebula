@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
+#define STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
 
 #include "storage/CommonUtils.h"
 #include "storage/transaction/ChainBaseProcessor.h"
@@ -19,3 +20,4 @@ class ChainProcessorFactory {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

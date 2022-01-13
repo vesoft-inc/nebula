@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_STATS_STATSMANAGER_INL_H
+#define COMMON_STATS_STATSMANAGER_INL_H
 
 namespace nebula {
 namespace stats {
@@ -30,3 +31,4 @@ StatsManager::VT StatsManager::readValue(StatsHolder& stats,
 
 }  // namespace stats
 }  // namespace nebula
+#endif

@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNEDGEINDEXRANGESCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNEDGEINDEXRANGESCANRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -27,3 +28,4 @@ class PushLimitDownEdgeIndexRangeScanRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

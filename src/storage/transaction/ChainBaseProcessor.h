@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINBASEPROCESSOR_H
+#define STORAGE_TRANSACTION_CHAINBASEPROCESSOR_H
 
 #include "common/utils/MemoryLockWrapper.h"
 #include "storage/CommonUtils.h"
@@ -55,3 +56,4 @@ class ChainBaseProcessor {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

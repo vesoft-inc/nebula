@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef META_PROCESSORS_ADMIN_AGENTHBPROCESSOR_H
+#define META_PROCESSORS_ADMIN_AGENTHBPROCESSOR_H
 
 #include <gtest/gtest_prod.h>
 
@@ -55,3 +56,4 @@ class AgentHBProcessor : public BaseProcessor<cpp2::AgentHBResp> {
 
 }  // namespace meta
 }  // namespace nebula
+#endif

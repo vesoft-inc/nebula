@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CLIENTS_STORAGE_STORAGECLIENT_H
+#define CLIENTS_STORAGE_STORAGECLIENT_H
 
 #include <gtest/gtest_prod.h>
 
@@ -191,3 +192,4 @@ class StorageClient
 
 }  // namespace storage
 }  // namespace nebula
+#endif
