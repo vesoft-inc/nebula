@@ -85,7 +85,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
 }
 
 TEST_F(FilterTransformTest, TestNoRewrite) {
-  // Do not rewrite if the filter contains more than one different LabelAttribute expr
+  // Do not rewrite if the filter contains more than one different Label expr
   {
     // (v.age - 1 < v2.age + 2)  =>  Unchanged
     auto expr = ltExpr(minusExpr(laExpr("v", "age"), constantExpr(1)),

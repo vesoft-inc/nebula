@@ -570,9 +570,9 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  // If the filter contains more than one different LabelAttribute expr, this filter cannot be
-  // pushed down
-  auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
+  // If the filter contains more than one different Label expr, this filter cannot be
+  // pushed down, such as where v1.player.name == 'xxx' or v2.player.age == 20
+  auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
   // Deduplicate the list
   std::unordered_set<std::string> dedupPropExprSet;
   for (auto &iter : propExprs) {
