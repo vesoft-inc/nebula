@@ -22,7 +22,6 @@
 #include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
-#include "daemons/SetupLogging.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;

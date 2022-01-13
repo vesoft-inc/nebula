@@ -34,7 +34,6 @@
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
-#include "daemons/SetupLogging.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
