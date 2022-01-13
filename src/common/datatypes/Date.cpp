@@ -12,11 +12,6 @@
 
 namespace nebula {
 
-static inline std::string decimal(const std::string& number) {
-  auto find = std::find(number.begin(), number.end(), '.');
-  return std::string(find, number.end());
-}
-
 const int64_t kDaysSoFar[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
 const int64_t kLeapDaysSoFar[] = {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
 
