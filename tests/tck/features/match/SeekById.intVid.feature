@@ -310,6 +310,16 @@ Feature: Match seek by id
       """
     Then the result should be, in any order:
       | v |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE "Tim Duncan" == v.player.name
+            OR 23 + 1 == v.noexist.age - 3
+      RETURN v.name as name
+      """
+    Then the result should be, in any order:
+      | name         |
+      | "Tim Duncan" |
 
   Scenario: with arithmetic
     When executing query:

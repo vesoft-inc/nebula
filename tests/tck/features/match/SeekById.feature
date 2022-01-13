@@ -317,6 +317,28 @@ Feature: Match seek by id
       """
     Then the result should be, in any order:
       | v |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE "Tim Duncan" == v.player.name
+            OR 23 + 1 == v.noexist.age - 3
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(t)
+      WHERE "Tim Duncan" == v.player.name
+            OR 25 - 2 == v.player.age
+      RETURN t
+      """
+    Then the result should be, in any order:
+      | t                                                         |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"})     |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
 
   Scenario: Start from end
     When executing query:
