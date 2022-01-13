@@ -331,19 +331,15 @@ void DateTime::subDuration(const Duration& duration) {
 }
 
 std::string DateTime::toString() const {
-  auto microsecStr = folly::stringPrintf("%.9f", static_cast<uint32_t>(microsec) / 1000000.0);
-  auto decimalPart = decimal(microsecStr);
   // It's in current timezone already
-  return folly::stringPrintf(
-      "%hd-%02hhu-%02hhu"
-      "T%02hhu:%02hhu:%02hhu%s",
-      static_cast<int16_t>(year),
-      static_cast<uint8_t>(month),
-      static_cast<uint8_t>(day),
-      static_cast<uint8_t>(hour),
-      static_cast<uint8_t>(minute),
-      static_cast<uint8_t>(sec),
-      decimalPart.c_str());
+  return folly::sformat("{}-{:0>2}-{:0>2}T{:0>2}:{:0>2}:{:0>2}.{:0>6}000",
+                        static_cast<int16_t>(year),
+                        static_cast<uint8_t>(month),
+                        static_cast<uint8_t>(day),
+                        static_cast<uint8_t>(hour),
+                        static_cast<uint8_t>(minute),
+                        static_cast<uint8_t>(sec),
+                        static_cast<uint32_t>(microsec));
 }
 
 }  // namespace nebula
