@@ -570,32 +570,32 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
+  // Check if any overflow happen before filter tranform
+  auto initialConstFold = foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(initialConstFold);
+  auto newFilter = initialConstFold.value();
+
   // If the filter contains more than one different Label expr, this filter cannot be
   // pushed down, such as where v1.player.name == 'xxx' or v2.player.age == 20
-  auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
+  auto propExprs = ExpressionUtils::collectAll(newFilter, {Expression::Kind::kLabel});
   // Deduplicate the list
   std::unordered_set<std::string> dedupPropExprSet;
   for (auto &iter : propExprs) {
     dedupPropExprSet.emplace(iter->toString());
   }
   if (dedupPropExprSet.size() > 1) {
-    return const_cast<Expression *>(filter);
+    return const_cast<Expression *>(newFilter);
   }
 
-  // Check if any overflow happen before filter tranform
-  auto initialConstFold = foldConstantExpr(filter);
-  NG_RETURN_IF_ERROR(initialConstFold);
-
   // Rewrite relational expression
-  auto rewrittenExpr = initialConstFold.value();
-  rewrittenExpr = rewriteRelExpr(rewrittenExpr);
+  auto rewrittenExpr = rewriteRelExpr(newFilter);
 
   // Fold constant expression
   auto constantFoldRes = foldConstantExpr(rewrittenExpr);
   // If errors like overflow happened during the constant fold, stop transferming and return the
   // original expression
   if (!constantFoldRes.ok()) {
-    return const_cast<Expression *>(filter);
+    return const_cast<Expression *>(newFilter);
   }
   rewrittenExpr = constantFoldRes.value();
 

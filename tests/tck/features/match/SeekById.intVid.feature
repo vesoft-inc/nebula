@@ -208,12 +208,23 @@ Feature: Match seek by id
       RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
-      | Name         | Team        |
-      | 'Paul Gasol' | 'Grizzlies' |
-      | 'Paul Gasol' | 'Lakers'    |
-      | 'Paul Gasol' | 'Bulls'     |
-      | 'Paul Gasol' | 'Spurs'     |
-      | 'Paul Gasol' | 'Bucks'     |
+      | Name               | Team        |
+      | "Paul Gasol"       | "Bucks"     |
+      | "Paul Gasol"       | "Bulls"     |
+      | "Rudy Gay"         | "Grizzlies" |
+      | "Kyle Anderson"    | "Grizzlies" |
+      | "Paul Gasol"       | "Grizzlies" |
+      | "Marc Gasol"       | "Grizzlies" |
+      | "Vince Carter"     | "Grizzlies" |
+      | "Paul Gasol"       | "Spurs"     |
+      | "Dwight Howard"    | "Lakers"    |
+      | "Shaquille O'Neal" | "Lakers"    |
+      | "Steve Nash"       | "Lakers"    |
+      | "Paul Gasol"       | "Lakers"    |
+      | "Kobe Bryant"      | "Lakers"    |
+      | "JaVale McGee"     | "Lakers"    |
+      | "Rajon Rondo"      | "Lakers"    |
+      | "LeBron James"     | "Lakers"    |
 
   Scenario: can't refer
     When executing query:

@@ -208,12 +208,23 @@ Feature: Match seek by id
       RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
-      | Name         | Team        |
-      | 'Paul Gasol' | 'Grizzlies' |
-      | 'Paul Gasol' | 'Lakers'    |
-      | 'Paul Gasol' | 'Bulls'     |
-      | 'Paul Gasol' | 'Spurs'     |
-      | 'Paul Gasol' | 'Bucks'     |
+      | Name               | Team        |
+      | "Paul Gasol"       | "Bucks"     |
+      | "Paul Gasol"       | "Bulls"     |
+      | "Rudy Gay"         | "Grizzlies" |
+      | "Kyle Anderson"    | "Grizzlies" |
+      | "Paul Gasol"       | "Grizzlies" |
+      | "Marc Gasol"       | "Grizzlies" |
+      | "Vince Carter"     | "Grizzlies" |
+      | "Paul Gasol"       | "Spurs"     |
+      | "Dwight Howard"    | "Lakers"    |
+      | "Shaquille O'Neal" | "Lakers"    |
+      | "Steve Nash"       | "Lakers"    |
+      | "Paul Gasol"       | "Lakers"    |
+      | "Kobe Bryant"      | "Lakers"    |
+      | "JaVale McGee"     | "Lakers"    |
+      | "Rajon Rondo"      | "Lakers"    |
+      | "LeBron James"     | "Lakers"    |
 
   Scenario: can't refer
     When executing query:
@@ -327,18 +338,6 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | v                                                                                                           |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-    When executing query:
-      """
-      MATCH (v:player)-[e:like]->(t)
-      WHERE "Tim Duncan" == v.player.name
-            OR 25 - 2 == v.player.age
-      RETURN t
-      """
-    Then the result should be, in any order:
-      | t                                                         |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
-      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"})     |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
 
   Scenario: Start from end
     When executing query:
