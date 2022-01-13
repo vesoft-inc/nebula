@@ -31,7 +31,7 @@ Status CloudAuthenticator::auth(const std::string& user, const std::string& pass
   std::string userAndPasswd = user + ":" + password;
   std::string base64Str = proxygen::base64Encode(folly::StringPiece(userAndPasswd));
 
-  std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
+  std::string header = R"(-H "Content-Type: application/json"  -H "Authorization:Nebula )";
   header = header + base64Str + "\"";
   auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
 

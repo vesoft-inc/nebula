@@ -14,7 +14,7 @@ namespace graph {
 
 class Authenticator {
  public:
-  virtual ~Authenticator() {}
+  virtual ~Authenticator() = default;
 
   virtual Status NG_MUST_USE_RESULT auth(const std::string &user, const std::string &password) = 0;
 };
