@@ -49,6 +49,8 @@ class KVEngine {
                                                    bool sync,
                                                    bool wait) = 0;
 
+  virtual const void* GetSnapshot() = 0;
+  virtual void ReleaseSnapshot(const void* snapshot) = 0;
   // Read a single key
   virtual nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) = 0;
 
@@ -64,6 +66,7 @@ class KVEngine {
 
   // Get all results with 'prefix' str as prefix.
   virtual nebula::cpp2::ErrorCode prefix(const std::string& prefix,
+                                         const void* snapshot,
                                          std::unique_ptr<KVIterator>* iter) = 0;
 
   // Get all results with 'prefix' str as prefix starting form 'start'

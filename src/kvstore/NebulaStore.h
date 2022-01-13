@@ -123,6 +123,11 @@ class NebulaStore : public KVStore, public Handler {
     return options_.dataPaths_;
   }
 
+  const void* GetSnapshot(GraphSpaceID spaceId,
+                          PartitionID partID,
+                          bool canReadFromFollower = false) override;
+  void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override;
+
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
@@ -157,14 +162,16 @@ class NebulaStore : public KVStore, public Handler {
                                  PartitionID partId,
                                  const std::string& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 bool canReadFromFollower = false) override;
+                                 bool canReadFromFollower = false,
+                                 const void* snapshot = nullptr) override;
 
   // Delete the overloading with a rvalue `prefix'
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  std::string&& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 bool canReadFromFollower = false) override = delete;
+                                 bool canReadFromFollower = false,
+                                 const void* snapshot = nullptr) override = delete;
 
   // Get all results with prefix starting from start
   nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,

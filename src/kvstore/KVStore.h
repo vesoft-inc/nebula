@@ -78,6 +78,11 @@ class KVStore {
     return nullptr;
   }
 
+  virtual const void* GetSnapshot(GraphSpaceID spaceId,
+                                  PartitionID partID,
+                                  bool canReadFromFollower = false) = 0;
+  virtual void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) = 0;
+
   // Read a single key
   virtual nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                                       PartitionID partId,
@@ -118,14 +123,16 @@ class KVStore {
                                          PartitionID partId,
                                          const std::string& prefix,
                                          std::unique_ptr<KVIterator>* iter,
-                                         bool canReadFromFollower = false) = 0;
+                                         bool canReadFromFollower = false,
+                                         const void* snapshot = nullptr) = 0;
 
   // To forbid to pass rvalue via the `prefix' parameter.
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          std::string&& prefix,
                                          std::unique_ptr<KVIterator>* iter,
-                                         bool canReadFromFollower = false) = delete;
+                                         bool canReadFromFollower = false,
+                                         const void* snapshot = nullptr) = delete;
 
   // Get all results with prefix starting from start
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,

@@ -146,6 +146,14 @@ class RocksEngine : public KVEngine {
     return walPath_.c_str();
   }
 
+  const void* GetSnapshot() override {
+    return db_->GetSnapshot();
+  }
+
+  void ReleaseSnapshot(const void* snapshot) override {
+    db_->ReleaseSnapshot(reinterpret_cast<const rocksdb::Snapshot*>(snapshot));
+  }
+
   std::unique_ptr<WriteBatch> startBatchWrite() override;
 
   nebula::cpp2::ErrorCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
@@ -166,6 +174,7 @@ class RocksEngine : public KVEngine {
                                 std::unique_ptr<KVIterator>* iter) override;
 
   nebula::cpp2::ErrorCode prefix(const std::string& prefix,
+                                 const void* snapshot,
                                  std::unique_ptr<KVIterator>* iter) override;
 
   nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
@@ -173,9 +182,11 @@ class RocksEngine : public KVEngine {
                                           std::unique_ptr<KVIterator>* iter) override;
 
   nebula::cpp2::ErrorCode prefixWithExtractor(const std::string& prefix,
+                                              const void* snapshot,
                                               std::unique_ptr<KVIterator>* storageIter);
 
   nebula::cpp2::ErrorCode prefixWithoutExtractor(const std::string& prefix,
+                                                 const void* snapshot,
                                                  std::unique_ptr<KVIterator>* storageIter);
 
   nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) override;
