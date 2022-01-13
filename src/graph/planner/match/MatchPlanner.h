@@ -22,9 +22,16 @@ class MatchPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
-  StatusOr<SubPlan> connectSegments(AstContext* astCtx,
-                                    std::vector<SubPlan>& subplans,
-                                    std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses);
+  StatusOr<SubPlan> genPlan(CypherClauseContextBase* clauseCtx);
+
+  void connectMatch(const MatchClauseContext* match,
+                    const SubPlan& matchPlan,
+                    SubPlan& queryPartPlan);
+
+  Status connectQueryParts(const QueryPart& queryPart,
+                           const SubPlan& partPlan,
+                           QueryContext* qctx,
+                           SubPlan& queryPlan);
 };
 }  // namespace graph
 }  // namespace nebula

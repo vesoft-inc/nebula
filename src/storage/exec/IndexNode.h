@@ -70,6 +70,9 @@ struct InitContext {
   std::vector<std::string> returnColumns;
   // The index of name in `returncolumns`
   Map<std::string, size_t> retColMap;
+  // The columns in statColumns
+  // TODO(nivras) need refactor this, put statColumns in returnColumns
+  Set<std::string> statColumns;
 };
 
 class IndexNode {

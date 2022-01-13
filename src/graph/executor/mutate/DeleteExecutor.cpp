@@ -9,6 +9,7 @@
 #include "graph/context/QueryContext.h"
 #include "graph/executor/mutate/DeleteExecutor.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
@@ -208,6 +209,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
+  param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
       ->deleteEdges(param, std::move(edgeKeys))

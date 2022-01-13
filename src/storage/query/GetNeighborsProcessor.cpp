@@ -11,6 +11,7 @@
 #include "storage/exec/FilterNode.h"
 #include "storage/exec/GetNeighborsNode.h"
 #include "storage/exec/HashJoinNode.h"
+#include "storage/exec/MultiTagNode.h"
 #include "storage/exec/TagNode.h"
 
 namespace nebula {
@@ -79,6 +80,7 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
   auto plan = buildPlan(&contexts_.front(), &expCtxs_.front(), &resultDataSet_, limit, random);
   std::unordered_set<PartitionID> failedParts;
   for (const auto& partEntry : req.get_parts()) {
+    contexts_.front().resultStat_ = ResultStatus::NORMAL;
     auto partId = partEntry.first;
     for (const auto& row : partEntry.second) {
       CHECK_GE(row.values.size(), 1);
@@ -184,24 +186,32 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
                                                        bool random) {
   /*
   The StoragePlan looks like this:
-               +--------+---------+
-               | GetNeighborsNode |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |   AggregateNode  |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |    FilterNode    |
-               +--------+---------+
-                        |
-               +--------+---------+
-           +-->+   HashJoinNode   +<----+
-           |   +------------------+     |
-  +--------+---------+        +---------+--------+
-  |     TagNodes     |        |     EdgeNodes    |
-  +------------------+        +------------------+
+             +------------------+                      or, if there is no edge:
+             | GetNeighborsNode |
+             +--------+---------+                            +-----------------+
+                      |                                      |GetNeighborsNode |
+             +--------+---------+                            +--------+--------+
+             |   AggregateNode  |                                     |
+             +--------+---------+                              +------+------+
+                      |                                        |AggregateNode|
+             +--------+---------+                              +------+------+
+             |    FilterNode    |                                     |
+             +--------+---------+                               +-----+----+
+                      |                                         |FilterNode|
+             +--------+---------+                               +-----+----+
+         +-->+   HashJoinNode   +<----+                               |
+         |   +------------------+     |                        +------+-----+
++--------+---------+        +---------+--------+               |HashJoinNode|
+|     TagNodes     |        |     EdgeNodes    |               +------+-----+
++------------------+        +------------------+                      |
+                                                               +------+-----+
+                                                               |MultiTagNode|
+                                                               +------+-----+
+                                                                      |
+                                                                 +----+---+
+                                                                 |TagNodes|
+                                                                 +--------+
+
   */
   StoragePlan<VertexID> plan;
   std::vector<TagNode*> tags;
@@ -217,23 +227,39 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
     plan.addNode(std::move(edge));
   }
 
-  auto hashJoin =
-      std::make_unique<HashJoinNode>(context, tags, edges, &tagContext_, &edgeContext_, expCtx);
-  for (auto* tag : tags) {
-    hashJoin->addDependency(tag);
+  IterateNode<VertexID>* upstream = nullptr;
+  IterateNode<VertexID>* join = nullptr;
+  if (!edges.empty()) {
+    auto hashJoin =
+        std::make_unique<HashJoinNode>(context, tags, edges, &tagContext_, &edgeContext_, expCtx);
+    for (auto* tag : tags) {
+      hashJoin->addDependency(tag);
+    }
+    for (auto* edge : edges) {
+      hashJoin->addDependency(edge);
+    }
+    join = hashJoin.get();
+    upstream = hashJoin.get();
+    plan.addNode(std::move(hashJoin));
+  } else {
+    context->filterInvalidResultOut = true;
+    auto groupNode = std::make_unique<MultiTagNode>(context, tags, expCtx);
+    for (auto* tag : tags) {
+      groupNode->addDependency(tag);
+    }
+    join = groupNode.get();
+    upstream = groupNode.get();
+    plan.addNode(std::move(groupNode));
   }
-  for (auto* edge : edges) {
-    hashJoin->addDependency(edge);
-  }
-  IterateNode<VertexID>* join = hashJoin.get();
-  IterateNode<VertexID>* upstream = hashJoin.get();
-  plan.addNode(std::move(hashJoin));
 
   if (filter_) {
     auto filter =
         std::make_unique<FilterNode<VertexID>>(context, upstream, expCtx, filter_->clone());
     filter->addDependency(upstream);
     upstream = filter.get();
+    if (edges.empty()) {
+      filter.get()->setFilterMode(FilterMode::TAG_ONLY);
+    }
     plan.addNode(std::move(filter));
   }
 
@@ -302,8 +328,7 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::Trave
     // If the list is not given, no prop will be returned.
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  auto returnProps =
-      (*req.vertex_props_ref()).empty() ? buildAllTagProps() : *req.vertex_props_ref();
+  auto returnProps = *req.vertex_props_ref();
   auto ret = handleVertexProps(returnProps);
 
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -320,8 +345,7 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::Trav
     // If the list is not given, no prop will be returned.
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  auto returnProps = (*req.edge_props_ref()).empty() ? buildAllEdgeProps(*req.edge_direction_ref())
-                                                     : *req.edge_props_ref();
+  auto returnProps = *req.edge_props_ref();
   auto ret = handleEdgeProps(returnProps);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return ret;
@@ -406,7 +430,7 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
             VLOG(1) << "Can't find related prop " << propName << " on edge " << edgeName;
             return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
           }
-          auto ret = checkStatType(field, statProp.get_stat());
+          auto ret = checkStatType(*field, statProp.get_stat());
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
           }
@@ -432,32 +456,6 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
   }
   resultDataSet_.colNames[1] = std::move(colName);
 
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
-    const meta::SchemaProviderIf::Field* field, cpp2::StatType statType) {
-  // todo(doodle): how to deal with nullable fields? For now, null add anything
-  // is null, if there is even one null, the result will be invalid
-  auto fType = field->type();
-  switch (statType) {
-    case cpp2::StatType::SUM:
-    case cpp2::StatType::AVG:
-    case cpp2::StatType::MIN:
-    case cpp2::StatType::MAX: {
-      if (fType == nebula::cpp2::PropertyType::INT64 ||
-          fType == nebula::cpp2::PropertyType::INT32 ||
-          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
-          fType == nebula::cpp2::PropertyType::FLOAT ||
-          fType == nebula::cpp2::PropertyType::DOUBLE) {
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
-      }
-      return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;
-    }
-    case cpp2::StatType::COUNT: {
-      break;
-    }
-  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

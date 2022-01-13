@@ -1291,7 +1291,7 @@ TEST_F(ParserTest, FetchVertex) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "FETCH PROP ON person uuid(\"Tom\")";
+    std::string query = "FETCH PROP ON person uuid()";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1744,7 +1744,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "GO FROM UUID(\"tom\") OVER guest WHERE $-.EMAIL";
+    std::string query = "GO FROM UUID() OVER guest WHERE $-.EMAIL";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1758,7 +1758,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
   }
   {
     std::string query =
-        "GO FROM UUID(\"tom\") OVER like YIELD $$.tag1.EMAIL, like.users,"
+        "GO FROM UUID() OVER like YIELD $$.tag1.EMAIL, like.users,"
         "like._src, like._dst, like.type, $^.tag2.SPACE "
         "| ORDER BY $-.SPACE";
     auto result = parse(query);
@@ -1770,7 +1770,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
+    std::string query = "$var = GO FROM UUID() OVER like;GO FROM $var.SPACE OVER like";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2016,22 +2016,22 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA";
+    std::string query = "BALANCE IN ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA 1234567890";
+    std::string query = "BALANCE ACROSS ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,\"localhost\":50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2721,8 +2721,7 @@ TEST_F(ParserTest, MatchErrorCheck) {
     auto result = parse(query);
     ASSERT_FALSE(result.ok());
     auto error =
-        "SyntaxError: Invalid use of aggregating "
-        "function in this context. near `WHERE count(v)>1'";
+        "SyntaxError: Invalid use of aggregating function in where clause. near `count(v)>1'";
     ASSERT_EQ(error, result.status().toString());
   }
 }
@@ -2807,12 +2806,12 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "SHOW ZONES";
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"zone_0\"";
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO NEW ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2822,7 +2821,17 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO NEW ZONE \"default_zone_127.0.0.1_8988\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE \"zone_0\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO NEW ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2830,6 +2839,18 @@ TEST_F(ParserTest, Zone) {
     std::string query =
         "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE"
         " \"default_zone_127.0.0.1_8988\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO NEW ZONE"
+        " \"default_zone_127.0.0.1_8988\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DESC ZONE \"default_zone_127.0.0.1_8988\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2844,7 +2865,17 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "DESCRIBE ZONE \"default_zone_127.0.0.1_8988\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "DROP ZONE \"zone_0\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DROP ZONE \"default_zone_127.0.0.1_8988\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2872,13 +2903,11 @@ TEST_F(ParserTest, Zone) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
-
   {
     std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
-
   {
     std::string query = "RENAME ZONE \"old_name\" TO \"new_name\"";
     auto result = parse(query);
@@ -2886,6 +2915,20 @@ TEST_F(ParserTest, Zone) {
   }
   {
     std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "DIVIDE ZONE \"zone_0\" INTO \"z_1\" (127.0.0.1:8988) "
+        " \"z_2\" (127.0.0.1:8989)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "DIVIDE ZONE \"zone_0\" INTO \"z_1\" (127.0.0.1:8986,127.0.0.1:8987)"
+        " \"z_2\" (127.0.0.1:8988,127.0.0.1:8989)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -3163,10 +3206,10 @@ TEST_F(ParserTest, JobTest) {
   checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
-  checkTest("SUBMIT JOB BALANCE DATA", "SUBMIT JOB BALANCE DATA");
+  checkTest("SUBMIT JOB BALANCE IN ZONE", "SUBMIT JOB BALANCE IN ZONE");
   checkTest(
-      "SUBMIT JOB BALANCE DATA REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
-      "SUBMIT JOB BALANCE DATA REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
+      "SUBMIT JOB BALANCE IN ZONE REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
+      "SUBMIT JOB BALANCE IN ZONE REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
       "\"192.168.0.1\":50002");
   checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
@@ -3259,6 +3302,21 @@ TEST_F(ParserTest, DetectMemoryLeakTest) {
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ(result.value()->toString(),
               "YIELD reduce(totalNum = 10, n IN range(1,3) | (totalNum+n))");
+  }
+  {
+    std::string query = "CREATE TAG INDEX IF NOT EXISTS std_index ON t1(c1(4294967296), c2)";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+    ASSERT_EQ(result.status().toString(), "SyntaxError: Out of range: near `4294967296'");
+  }
+  {
+    std::string query = "$param = GO FROM 'Tony Parker' over like YIELD like._dst AS vv";
+    auto* ectx = qctx_->ectx();
+    ectx->setValue("param", "TestData");
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+    ASSERT_EQ(result.status().toString(),
+              "SyntaxError: Variable definition conflicts with a parameter near `$param'");
   }
 }
 

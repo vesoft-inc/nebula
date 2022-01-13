@@ -5,7 +5,6 @@
 
 #include "graph/validator/GoValidator.h"
 
-#include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
@@ -67,10 +66,6 @@ Status GoValidator::validateWhere(WhereClause* where) {
   }
 
   auto expr = where->filter();
-  if (graph::ExpressionUtils::findAny(expr, {Expression::Kind::kAggregate})) {
-    return Status::SemanticError("`%s', not support aggregate function in where sentence.",
-                                 expr->toString().c_str());
-  }
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto foldRes = ExpressionUtils::foldConstantExpr(where->filter());
   NG_RETURN_IF_ERROR(foldRes);
@@ -132,11 +127,6 @@ Status GoValidator::validateYield(YieldClause* yield) {
   auto& exprProps = goCtx_->exprProps;
 
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kPathBuild})) {
-      return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
-    }
-
     auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
     if (vertexExpr != nullptr &&
         static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {

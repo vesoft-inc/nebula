@@ -134,7 +134,7 @@ void MockCluster::initStorageKV(const char* dataPath,
                                 SchemaVer schemaVerCount,
                                 bool hasProp,
                                 bool hasListener,
-                                const std::vector<meta::cpp2::FTClient>& clients,
+                                const std::vector<meta::cpp2::ServiceClient>& clients,
                                 bool needCffBuilder) {
   FLAGS_heartbeat_interval_secs = 1;
   const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
@@ -169,7 +169,8 @@ void MockCluster::initStorageKV(const char* dataPath,
       if (clients.empty()) {
         LOG(FATAL) << "full text client list is empty";
       }
-      ret = metaClient_->signInFTService(meta::cpp2::FTServiceType::ELASTICSEARCH, clients).get();
+      ret =
+          metaClient_->signInService(meta::cpp2::ExternalServiceType::ELASTICSEARCH, clients).get();
       if (!ret.ok()) {
         LOG(FATAL) << "full text client sign in failed";
       }
@@ -225,10 +226,17 @@ void MockCluster::startStorage(HostAddr addr,
   storageAdminServer_->start("admin-storage", addr.port - 1, adminHandler);
   LOG(INFO) << "The admin storage daemon started on port " << storageAdminServer_->port_;
 
+#ifndef BUILD_STANDALONE
   graphStorageServer_ = std::make_unique<RpcServer>();
   auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
   graphStorageServer_->start("graph-storage", addr.port, graphHandler);
   LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
+#else
+  graphStorageServer_ = std::make_unique<LocalServer>();
+  auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+  graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+  LOG(INFO) << "The graph storage daemon started on Local server.";
+#endif
 }
 
 std::unique_ptr<meta::SchemaManager> MockCluster::memSchemaMan(SchemaVer schemaVerCount,

@@ -14,6 +14,7 @@ import json
 
 from nebula2.common.ttypes import NList, NMap, Value, ErrorCode
 from nebula2.data.DataObject import ValueWrapper
+from nebula2.Exception import AuthFailedException
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -174,6 +175,7 @@ def preload_space(
     load_nba_data,
     load_nba_int_vid_data,
     load_student_data,
+    load_ldbc_v0_3_3,
     session,
     graph_spaces,
 ):
@@ -184,6 +186,8 @@ def preload_space(
         graph_spaces["space_desc"] = load_nba_int_vid_data
     elif space == "student":
         graph_spaces["space_desc"] = load_student_data
+    elif space == "ldbc_v0_3_3":
+        graph_spaces["ldbc_v0_3_3"] = load_ldbc_v0_3_3
     else:
         raise ValueError(f"Invalid space name given: {space}")
     resp_ok(session, f'USE {space};', True)
@@ -336,7 +340,8 @@ def given_nebulacluster_with_param(
     nebula_svc.start()
     graph_ip = nebula_svc.graphd_processes[0].host
     graph_port = nebula_svc.graphd_processes[0].tcp_port
-    pool = get_conn_pool(graph_ip, graph_port)
+    # TODO add ssl pool if tests needed
+    pool = get_conn_pool(graph_ip, graph_port, None)
     sess = pool.get_session(user, password)
     class_fixture_variables["current_session"] = sess
     class_fixture_variables["sessions"].append(sess)
@@ -352,13 +357,32 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
     assert index < len(nebula_svc.graphd_processes)
     graphd_process = nebula_svc.graphd_processes[index]
     graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
-    pool = get_conn_pool(graph_ip, graph_port)
+    pool = get_conn_pool(graph_ip, graph_port, None)
     sess = pool.get_session(user, password)
     # do not release original session, as we may have cases to test multiple sessions.
     # connection could be released after cluster stopped.
     class_fixture_variables["current_session"] = sess
     class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["pool"] = pool
+
+# This is a workaround to test login retry because nebula-python treats
+# authentication failure as exception instead of error.
+@when(parse('login "{graph}" with "{user}" and "{password}" should fail:\n{msg}'))
+def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
+    index = parse_service_index(graph)
+    assert index is not None, "Invalid graph name, name is {}".format(graph)
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    assert index < len(nebula_svc.graphd_processes)
+    graphd_process = nebula_svc.graphd_processes[index]
+    graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
+    pool = get_conn_pool(graph_ip, graph_port, None)
+    try:
+        sess = pool.get_session(user, password)
+    except AuthFailedException as e:
+        assert msg in e.message
+    except:
+        raise
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):

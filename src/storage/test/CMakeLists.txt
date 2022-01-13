@@ -2,6 +2,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v2_thrift_obj>
     $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
@@ -57,6 +58,13 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
 )
+
+if(ENABLE_STANDALONE_VERSION)
+set(storage_test_deps
+    ${storage_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
 
 nebula_add_test(
     NAME
@@ -636,6 +644,26 @@ nebula_add_test(
         index_scan_limit_test
     SOURCES
         IndexScanLimitTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        index_scan_topN_test
+    SOURCES
+        IndexScanTopNTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_common_obj>
         $<TARGET_OBJECTS:meta_service_handler>

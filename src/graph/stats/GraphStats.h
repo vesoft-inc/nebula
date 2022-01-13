@@ -24,6 +24,7 @@ extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;
 extern stats::CounterId kNumKilledQueries;
+extern stats::CounterId kNumQueriesHitMemoryWatermark;
 
 extern stats::CounterId kOptimizerLatencyUs;
 
@@ -31,7 +32,6 @@ extern stats::CounterId kOptimizerLatencyUs;
 extern stats::CounterId kNumAggregateExecutors;
 extern stats::CounterId kNumSortExecutors;
 extern stats::CounterId kNumIndexScanExecutors;
-extern stats::CounterId kNumOomExecutors;
 
 // Server client traffic
 // extern stats::CounterId kReceivedBytes;

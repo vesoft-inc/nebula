@@ -6,7 +6,7 @@
 #ifndef STORAGE_TRANSACTION_RESUMEUPDATEPROCESSOR_H
 #define STORAGE_TRANSACTION_RESUMEUPDATEPROCESSOR_H
 
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -16,7 +16,7 @@ namespace storage {
  *  if the TxnManager background resume thread found a prime key
  *  it will create this processor to resume the complete update process
  */
-class ResumeUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
+class ResumeUpdateProcessor : public ChainUpdateEdgeLocalProcessor {
  public:
   static ResumeUpdateProcessor* instance(StorageEnv* env, const std::string& val) {
     return new ResumeUpdateProcessor(env, val);

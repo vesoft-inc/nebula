@@ -105,7 +105,7 @@ class FunctionCallExpression final : public Expression {
   }
 
  private:
-  explicit FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
+  FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
       : Expression(pool, Kind::kFunctionCall), name_(name), args_(args) {
     if (!name_.empty()) {
       auto funcResult = FunctionManager::get(name_, DCHECK_NOTNULL(args_)->numArgs());

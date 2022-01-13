@@ -122,6 +122,53 @@ class TagPropertyExpression final : public PropertyExpression {
   Value result_;
 };
 
+// label.tag_name.any_prop_name
+class LabelTagPropertyExpression final : public PropertyExpression {
+ public:
+  LabelTagPropertyExpression& operator=(const LabelTagPropertyExpression& rhs) = delete;
+  LabelTagPropertyExpression& operator=(LabelTagPropertyExpression&&) = delete;
+
+  static LabelTagPropertyExpression* make(ObjectPool* pool,
+                                          Expression* label = nullptr,
+                                          const std::string& tag = "",
+                                          const std::string& prop = "") {
+    return pool->add(new LabelTagPropertyExpression(pool, label, tag, prop));
+  }
+
+  std::string toString() const override;
+
+  bool operator==(const Expression& rhs) const override;
+
+  const Value& eval(ExpressionContext& ctx) override;
+
+  void accept(ExprVisitor* visitor) override;
+
+  Expression* clone() const override {
+    return LabelTagPropertyExpression::make(pool_, label_, sym(), prop());
+  }
+
+  const Expression* label() const {
+    return label_;
+  }
+
+  Expression* label() {
+    return label_;
+  }
+
+ private:
+  LabelTagPropertyExpression(ObjectPool* pool,
+                             Expression* label = nullptr,
+                             const std::string& tag = "",
+                             const std::string& prop = "")
+      : PropertyExpression(pool, Kind::kLabelTagProperty, "", tag, prop), label_(label) {}
+
+  void writeTo(Encoder& encoder) const override;
+  void resetFrom(Decoder& decoder) override;
+
+ private:
+  Expression* label_{nullptr};
+};
+
 // $-.any_prop_name
 class InputPropertyExpression final : public PropertyExpression {
  public:

@@ -79,10 +79,10 @@ class AggregateExpression final : public Expression {
   }
 
  private:
-  explicit AggregateExpression(ObjectPool* pool,
-                               const std::string& name = "",
-                               Expression* arg = nullptr,
-                               bool distinct = false)
+  AggregateExpression(ObjectPool* pool,
+                      const std::string& name = "",
+                      Expression* arg = nullptr,
+                      bool distinct = false)
       : Expression(pool, Kind::kAggregate), name_(name), distinct_(distinct) {
     arg_ = arg;
     auto aggFuncResult = AggFunctionManager::get(name_);

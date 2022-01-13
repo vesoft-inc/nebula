@@ -14,6 +14,11 @@
 namespace nebula {
 namespace storage {
 
+enum class FilterMode {
+  TAG_AND_EDGE = 0,
+  TAG_ONLY = 1,
+};
+
 /*
 FilterNode will receive the result from upstream, check whether tag data or edge
 data could pass the expression filter. FilterNode can only accept one upstream
@@ -59,27 +64,48 @@ class FilterNode : public IterateNode<T> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  void setFilterMode(FilterMode mode) {
+    mode_ = mode;
+  }
+
  private:
-  // return true when the value iter points to a value which can filter
   bool check() override {
-    if (filterExp_ != nullptr) {
-      expCtx_->reset(this->reader(), this->key().str());
-      // result is false when filter out
-      auto result = filterExp_->eval(*expCtx_);
-      // NULL is always false
-      auto ret = result.toBool();
-      if (ret.isBool() && ret.getBool()) {
-        return true;
-      }
-      return false;
+    if (filterExp_ == nullptr) {
+      return true;
     }
-    return true;
+    switch (mode_) {
+      case FilterMode::TAG_AND_EDGE:
+        return checkTagAndEdge();
+      case FilterMode::TAG_ONLY:
+        return checkTagOnly();
+      default:
+        return checkTagAndEdge();
+    }
+  }
+
+  bool checkTagOnly() {
+    auto result = filterExp_->eval(*expCtx_);
+    // NULL is always false
+    auto ret = result.toBool();
+    return ret.isBool() && ret.getBool();
+  }
+
+  // return true when the value iter points to a value which can filter
+  bool checkTagAndEdge() {
+    expCtx_->reset(this->reader(), this->key().str());
+    // result is false when filter out
+    auto result = filterExp_->eval(*expCtx_);
+    // NULL is always false
+    auto ret = result.toBool();
+    return ret.isBool() && ret.getBool();
   }
 
  private:
   RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
   Expression* filterExp_;
+  FilterMode mode_{FilterMode::TAG_AND_EDGE};
+  int32_t callCheck{0};
 };
 
 }  // namespace storage

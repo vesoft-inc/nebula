@@ -44,10 +44,12 @@ nebula_add_library(
     exec/IndexDedupNode.cpp
     exec/IndexEdgeScanNode.cpp
     exec/IndexLimitNode.cpp
+    exec/IndexAggregateNode.cpp
     exec/IndexProjectionNode.cpp
     exec/IndexScanNode.cpp
     exec/IndexSelectionNode.cpp
     exec/IndexVertexScanNode.cpp
+    exec/IndexTopNNode.cpp
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
@@ -71,17 +73,22 @@ nebula_add_library(
     storage_transaction_executor OBJECT
     transaction/TransactionManager.cpp
     transaction/ConsistUtil.cpp
-    transaction/ChainUpdateEdgeProcessorLocal.cpp
-    transaction/ChainUpdateEdgeProcessorRemote.cpp
+    transaction/ChainUpdateEdgeLocalProcessor.cpp
+    transaction/ChainUpdateEdgeRemoteProcessor.cpp
     transaction/ChainResumeProcessor.cpp
     transaction/ChainAddEdgesGroupProcessor.cpp
-    transaction/ChainAddEdgesProcessorLocal.cpp
-    transaction/ChainAddEdgesProcessorRemote.cpp
+    transaction/ChainAddEdgesLocalProcessor.cpp
+    transaction/ChainAddEdgesRemoteProcessor.cpp
     transaction/ResumeAddEdgeProcessor.cpp
     transaction/ResumeAddEdgeRemoteProcessor.cpp
     transaction/ResumeUpdateProcessor.cpp
     transaction/ResumeUpdateRemoteProcessor.cpp
     transaction/ChainProcessorFactory.cpp
+    transaction/ChainDeleteEdgesGroupProcessor.cpp
+    transaction/ChainDeleteEdgesLocalProcessor.cpp
+    transaction/ChainDeleteEdgesRemoteProcessor.cpp
+    transaction/ChainDeleteEdgesResumeProcessor.cpp
+    transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
 
 nebula_add_library(

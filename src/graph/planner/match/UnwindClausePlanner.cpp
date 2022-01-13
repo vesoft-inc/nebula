@@ -26,7 +26,8 @@ StatusOr<SubPlan> UnwindClausePlanner::transform(CypherClauseContextBase* clause
 }
 
 Status UnwindClausePlanner::buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan) {
-  auto* newUnwindExpr = MatchSolver::doRewrite(uctx->qctx, *uctx->aliasesUsed, uctx->unwindExpr);
+  auto* newUnwindExpr =
+      MatchSolver::doRewrite(uctx->qctx, uctx->aliasesAvailable, uctx->unwindExpr);
   auto* unwind = Unwind::make(uctx->qctx, nullptr, newUnwindExpr, uctx->alias);
   unwind->setColNames({uctx->alias});
   subPlan.root = unwind;

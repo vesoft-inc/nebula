@@ -439,6 +439,36 @@ class DropSpaceSentence final : public DropSentence {
   std::unique_ptr<std::string> clusterName_;
 };
 
+class AlterSpaceSentence final : public Sentence {
+ public:
+  AlterSpaceSentence(std::string* spaceName, meta::cpp2::AlterSpaceOp op)
+      : op_(op), spaceName_(spaceName) {
+    kind_ = Kind::kAlterSpace;
+  }
+  void addPara(const std::string& para) {
+    paras_.push_back(para);
+  }
+
+  std::string spaceName() const {
+    return *spaceName_;
+  }
+
+  const std::vector<std::string>& paras() const {
+    return paras_;
+  }
+
+  meta::cpp2::AlterSpaceOp alterSpaceOp() const {
+    return op_;
+  }
+
+  std::string toString() const override;
+
+ private:
+  meta::cpp2::AlterSpaceOp op_;
+  std::unique_ptr<std::string> spaceName_;
+  std::vector<std::string> paras_;
+};
+
 class DescribeSpaceSentence final : public Sentence {
  public:
   explicit DescribeSpaceSentence(std::string* spaceName) {
@@ -506,7 +536,7 @@ class ConfigRowItem {
 
 class ConfigBaseSentence : public Sentence {
  public:
-  explicit ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
+  ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
     kind_ = kind;
     configItem_.reset(item);
   }
@@ -650,16 +680,16 @@ class ShowStatsSentence final : public Sentence {
   std::string toString() const override;
 };
 
-class TSClientList final {
+class ServiceClientList final {
  public:
-  void addClient(nebula::meta::cpp2::FTClient* client) {
+  void addClient(nebula::meta::cpp2::ServiceClient* client) {
     clients_.emplace_back(client);
   }
 
   std::string toString() const;
 
-  std::vector<nebula::meta::cpp2::FTClient> clients() const {
-    std::vector<nebula::meta::cpp2::FTClient> result;
+  std::vector<nebula::meta::cpp2::ServiceClient> clients() const {
+    std::vector<nebula::meta::cpp2::ServiceClient> result;
     result.reserve(clients_.size());
     for (auto& client : clients_) {
       result.emplace_back(*client);
@@ -668,41 +698,63 @@ class TSClientList final {
   }
 
  private:
-  std::vector<std::unique_ptr<nebula::meta::cpp2::FTClient>> clients_;
+  std::vector<std::unique_ptr<nebula::meta::cpp2::ServiceClient>> clients_;
 };
 
-class ShowTSClientsSentence final : public Sentence {
+class ShowServiceClientsSentence final : public Sentence {
  public:
-  ShowTSClientsSentence() {
-    kind_ = Kind::kShowTSClients;
+  explicit ShowServiceClientsSentence(const meta::cpp2::ExternalServiceType& type) : type_(type) {
+    kind_ = Kind::kShowServiceClients;
   }
+
   std::string toString() const override;
+
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignInTextServiceSentence final : public Sentence {
+class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInTextServiceSentence(TSClientList* clients) {
-    kind_ = Kind::kSignInTSService;
+  explicit SignInServiceSentence(const meta::cpp2::ExternalServiceType& type,
+                                 ServiceClientList* clients)
+      : type_(type) {
+    kind_ = Kind::kSignInService;
     clients_.reset(clients);
   }
 
   std::string toString() const override;
 
-  TSClientList* clients() const {
+  ServiceClientList* clients() const {
     return clients_.get();
   }
 
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
+
  private:
-  std::unique_ptr<TSClientList> clients_;
+  std::unique_ptr<ServiceClientList> clients_;
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignOutTextServiceSentence final : public Sentence {
+class SignOutServiceSentence final : public Sentence {
  public:
-  SignOutTextServiceSentence() {
-    kind_ = Kind::kSignOutTSService;
+  explicit SignOutServiceSentence(const meta::cpp2::ExternalServiceType& type) : type_(type) {
+    kind_ = Kind::kSignOutService;
   }
 
   std::string toString() const override;
+
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
 class ShowSessionsSentence final : public Sentence {

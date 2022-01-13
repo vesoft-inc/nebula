@@ -274,19 +274,19 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
                   << ", part " << partId << ", remaining " << retry << " retry times"
                   << ", result " << static_cast<int32_t>(res);
         switch (res) {
-          case raftex::AppendLogResult::SUCCEEDED:
+          case nebula::cpp2::ErrorCode::SUCCEEDED:
             onFinished();
             return;
-          case raftex::AppendLogResult::E_INVALID_PEER:
+          case nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER:
             this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_PEER, partId);
             onFinished();
             return;
-          case raftex::AppendLogResult::E_NOT_A_LEADER: {
+          case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
             handleLeaderChanged(spaceId, partId);
             onFinished();
             return;
           }
-          case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
+          case nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT:
             LOG(INFO) << "Space " << spaceId << ", partId " << partId
                       << " is still sending snapshot, please wait...";
             break;

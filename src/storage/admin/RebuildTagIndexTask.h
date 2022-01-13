@@ -14,8 +14,7 @@ namespace storage {
 
 class RebuildTagIndexTask : public RebuildIndexTask {
  public:
-  explicit RebuildTagIndexTask(StorageEnv* env, TaskContext&& ctx)
-      : RebuildIndexTask(env, std::move(ctx)) {}
+  RebuildTagIndexTask(StorageEnv* env, TaskContext&& ctx) : RebuildIndexTask(env, std::move(ctx)) {}
 
  private:
   StatusOr<IndexItems> getIndexes(GraphSpaceID space) override;

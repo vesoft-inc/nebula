@@ -30,11 +30,11 @@ by `setTagProp` and `setEdgeProp`. Be sure about not pass the RowReader by
 */
 class StorageExpressionContext final : public ExpressionContext {
  public:
-  explicit StorageExpressionContext(size_t vIdLen,
-                                    bool isIntId,
-                                    const std::string& name = "",
-                                    const meta::NebulaSchemaProvider* schema = nullptr,
-                                    bool isEdge = false)
+  StorageExpressionContext(size_t vIdLen,
+                           bool isIntId,
+                           const std::string& name = "",
+                           const meta::NebulaSchemaProvider* schema = nullptr,
+                           bool isEdge = false)
       : vIdLen_(vIdLen), isIntId_(isIntId), name_(name), schema_(schema), isEdge_(isEdge) {}
 
   StorageExpressionContext(size_t vIdLen,

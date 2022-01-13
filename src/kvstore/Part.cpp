@@ -17,8 +17,6 @@ DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 namespace nebula {
 namespace kvstore {
 
-using nebula::raftex::AppendLogResult;
-
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
            HostAddr localAddr,
@@ -69,104 +67,96 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
   std::string log = encodeMultiValues(OP_PUT, key, value);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAppendBatch(std::string&& batch, KVCallback cb) {
   appendAsync(FLAGS_cluster_id, std::move(batch))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
   std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
   std::string log = encodeSingleValue(OP_REMOVE, key);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb) {
   std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncRemoveRange(folly::StringPiece start, folly::StringPiece end, KVCallback cb) {
   std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
   appendAsync(FLAGS_cluster_id, std::move(log))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::sync(KVCallback cb) {
-  sendCommandAsync("").thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-    callback(this->toResultCode(res));
-  });
+  sendCommandAsync("").thenValue(
+      [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
   atomicOpAsync(std::move(op))
-      .thenValue([this, callback = std::move(cb)](AppendLogResult res) mutable {
-        callback(this->toResultCode(res));
-      });
+      .thenValue(
+          [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_LEARNER, learner);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), learner, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), learner, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add learner " << learner
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
   std::string log = encodeHost(OP_TRANS_LEADER, target);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), target, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), target, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "transfer leader to " << target
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_PEER, peer);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), peer, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add peer " << peer
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
 void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_REMOVE_PEER, peer);
   sendCommandAsync(std::move(log))
-      .thenValue([callback = std::move(cb), peer, this](AppendLogResult res) mutable {
+      .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "remove peer " << peer
-                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
-        callback(this->toResultCode(res));
+                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        callback(code);
       });
 }
 
@@ -252,7 +242,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         // Make the number of values are an even number
         DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
-          VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+          VLOG(2) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
                   << ", val = " << folly::hexlify(kvs[i + 1]);
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -295,7 +285,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       case OP_BATCH_WRITE: {
         auto data = decodeBatchValue(log);
         for (auto& op : data) {
-          VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
+          VLOG(2) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
                   << ", val=" << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
@@ -517,25 +507,6 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   }
   return engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
-}
-
-// TODO(pandasheep) unify raft errorcode
-nebula::cpp2::ErrorCode Part::toResultCode(raftex::AppendLogResult res) {
-  switch (res) {
-    case raftex::AppendLogResult::SUCCEEDED:
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    case raftex::AppendLogResult::E_NOT_A_LEADER:
-      return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
-    case raftex::AppendLogResult::E_WRITE_BLOCKING:
-      return nebula::cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
-    case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
-      return nebula::cpp2::ErrorCode::E_ATOMIC_OP_FAILED;
-    case raftex::AppendLogResult::E_BUFFER_OVERFLOW:
-      return nebula::cpp2::ErrorCode::E_CONSENSUS_ERROR;
-    default:
-      LOG(ERROR) << idStr_ << "Consensus error " << static_cast<int32_t>(res);
-      return nebula::cpp2::ErrorCode::E_CONSENSUS_ERROR;
-  }
 }
 
 }  // namespace kvstore

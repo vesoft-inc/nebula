@@ -7,6 +7,9 @@
 
 #include "version/Version.h"
 
+DECLARE_uint32(expired_time_factor);
+DECLARE_int32(removed_threshold_sec);
+
 namespace nebula {
 namespace meta {
 

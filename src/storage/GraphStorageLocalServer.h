@@ -12,10 +12,9 @@
 #include <memory>
 
 #include "common/base/Base.h"
+#include "common/cpp/helpers.h"
 #include "folly/fibers/Semaphore.h"
 #include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
-#include "storage/GraphStorageServiceHandler.h"
-
 namespace nebula::storage {
 class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
                                       public nebula::cpp::NonMovable {
@@ -25,7 +24,7 @@ class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
     return instance;
   }
   void setThreadManager(std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager);
-  void setInterface(std::shared_ptr<GraphStorageServiceHandler> iface);
+  void setInterface(std::shared_ptr<apache::thrift::ServerInterface> handler);
   void stop();
   void serve();
 
@@ -37,6 +36,8 @@ class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
   folly::Future<cpp2::ExecResponse> future_addEdges(const cpp2::AddEdgesRequest& request);
   folly::Future<cpp2::GetPropResponse> future_getProps(const cpp2::GetPropRequest& request);
   folly::Future<cpp2::ExecResponse> future_deleteEdges(const cpp2::DeleteEdgesRequest& request);
+  folly::Future<cpp2::ExecResponse> future_chainDeleteEdges(
+      const cpp2::DeleteEdgesRequest& request);
   folly::Future<cpp2::ExecResponse> future_deleteVertices(
       const cpp2::DeleteVerticesRequest& request);
   folly::Future<cpp2::ExecResponse> future_deleteTags(const cpp2::DeleteTagsRequest& request);
@@ -59,7 +60,7 @@ class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
 
  private:
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager_;
-  std::shared_ptr<GraphStorageServiceHandler> handler_;
+  std::shared_ptr<apache::thrift::ServerInterface> handler_;
   folly::fibers::Semaphore sem_{0};
   static std::mutex mutex_;
   bool serving_ = {false};

@@ -63,7 +63,7 @@ class ArithmeticExpression final : public BinaryExpression {
   }
 
  private:
-  explicit ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+  ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : BinaryExpression(pool, kind, lhs, rhs) {}
 
  private:

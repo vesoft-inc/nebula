@@ -21,6 +21,11 @@ class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
 
  private:
   explicit DropZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+  nebula::cpp2::ErrorCode checkSpaceReplicaZone();
+
+  // Check whether the node holds zones on each space
+  nebula::cpp2::ErrorCode checkHostPartition(const HostAddr& address);
 };
 
 }  // namespace meta

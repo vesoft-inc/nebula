@@ -13,6 +13,7 @@
 #include "meta/processors/kv/RemoveProcessor.h"
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
+#include "meta/processors/parts/AlterSpaceProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -32,8 +33,11 @@
 #include "meta/processors/session/SessionManagerProcessor.h"
 #include "meta/processors/zone/AddHostsIntoZoneProcessor.h"
 #include "meta/processors/zone/AddHostsProcessor.h"
+#include "meta/processors/zone/DivideZoneProcessor.h"
 #include "meta/processors/zone/DropHostsProcessor.h"
+#include "meta/processors/zone/DropZoneProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
+#include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
 #include "meta/test/TestUtils.h"
 
@@ -320,6 +324,10 @@ TEST(ProcessorTest, SpaceTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
   int32_t hostsNum = 4;
   {
     cpp2::SpaceDesc properties;
@@ -485,6 +493,10 @@ TEST(ProcessorTest, CreateTagTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     cpp2::SpaceDesc properties;
@@ -690,6 +702,10 @@ TEST(ProcessorTest, CreateEdgeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space";
     properties.partition_num_ref() = 9;
@@ -880,6 +896,10 @@ TEST(ProcessorTest, KVOperationTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     cpp2::SpaceDesc properties;
@@ -2283,6 +2303,10 @@ TEST(ProcessorTest, SameNameTagsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space";
     properties.partition_num_ref() = 9;
@@ -2529,6 +2553,10 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   // mock one space and ten tag, ten edge
   {
@@ -3049,6 +3077,10 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     // Add host into zone with zone name conflict.
     cpp2::AddHostsIntoZoneReq req;
     req.zone_name_ref() = "zone_0";
@@ -3072,6 +3104,10 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     // Add existed hosts.
@@ -3179,6 +3215,10 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
     // Attempt to register heartbeat
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
@@ -3255,7 +3295,7 @@ TEST(ProcessorTest, DropHostsTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH, resp.get_code());
   }
   {
     cpp2::AddHostsIntoZoneReq req;
@@ -3292,6 +3332,11 @@ TEST(ProcessorTest, DropHostsTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
   }
   {
     // Show the zones created by add hosts
@@ -3335,6 +3380,24 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(4, resp.get_id().get_space_id());
   }
   {
+    // Create Space on cluster, the replica number same with the zone size
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space_on_zone_duplicate";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_1"};
+    properties.zone_names_ref() = std::move(zones);
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
     // Create Space on cluster, the replica number less than the zone size
     cpp2::SpaceDesc properties;
     properties.space_name_ref() = "default_space_on_zone_1";
@@ -3351,7 +3414,7 @@ TEST(ProcessorTest, DropHostsTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(5, resp.get_id().get_space_id());
+    ASSERT_EQ(6, resp.get_id().get_space_id());
   }
   {
     // Create Space on cluster, the replica number greater than the zone size
@@ -3369,7 +3432,7 @@ TEST(ProcessorTest, DropHostsTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH, resp.get_code());
   }
   {
     // Drop hosts which hold partition.
@@ -3637,6 +3700,840 @@ TEST(ProcessorTest, RenameZoneTest) {
     ASSERT_EQ("zone_0", zones[0]);
     ASSERT_EQ("z_1", zones[1]);
     ASSERT_EQ("zone_2", zones[2]);
+  }
+}
+
+TEST(ProcessorTest, MergeZoneTest) {
+  fs::TempDir rootPath("/tmp/MergeZoneTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  {
+    // Attempt to register heartbeat
+    const ClusterID kClusterId = 10;
+    for (auto i = 8986; i < 8990; i++) {
+      cpp2::HBReq req;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND, resp.get_code());
+    }
+  }
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    // Attempt to register heartbeat
+    const ClusterID kClusterId = 10;
+    for (auto i = 8986; i < 8990; i++) {
+      cpp2::HBReq req;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
+      auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto zones = resp.get_zones();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("default_zone_127.0.0.1_8986", zones[0].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[1].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[2].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8986", "default_zone_127.0.0.1_8987"};
+    req.zone_name_ref() = "default_zone_127.0.0.1_8988";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Merge an empty zone list
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {};
+    req.zone_name_ref() = "new_zone";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Merge only one zone
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"zone_0"};
+    req.zone_name_ref() = "new_zone";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Merge zones with duplicate
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"zone_0", "zone_0"};
+    req.zone_name_ref() = "new_zone";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Merge zones which is not exist
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"zone_0", "zone_not_exist"};
+    req.zone_name_ref() = "new_zone";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    // Merge zones which is not exist
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"zone_not_exist_0", "zone_not_exist_1"};
+    req.zone_name_ref() = "new_zone";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8986",
+                       "default_zone_127.0.0.1_8987",
+                       "default_zone_127.0.0.1_8988"};
+    req.zone_name_ref() = "zone_1";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8989", "zone_1"};
+    req.zone_name_ref() = "zone_1";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_zones().size());
+    ASSERT_EQ("zone_1", resp.get_zones()[0].get_zone_name());
+  }
+  // Merge zone with space test
+  {
+    // add hosts
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    const ClusterID kClusterId = 10;
+    for (auto i = 8976; i < 8979; i++) {
+      cpp2::HBReq req;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
+      auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+  }
+  {
+    // create space
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.zone_names_ref() = std::move(zones);
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"};
+    req.zone_name_ref() = "z_1";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // drop the original space and create another space with single replic
+    cpp2::DropSpaceReq req;
+    req.space_name_ref() = "default_space";
+    auto* processor = DropSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space_0";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.zone_names_ref() = std::move(zones);
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(2, resp.get_id().get_space_id());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"};
+    req.zone_name_ref() = "z_1";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::MergeZoneReq req;
+    req.zones_ref() = {"default_zone_127.0.0.1_8978", "z_1"};
+    req.zone_name_ref() = "z_1";
+    auto* processor = MergeZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::GetSpaceReq req;
+    req.space_name_ref() = "default_space_0";
+    auto* processor = GetSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto properties = resp.get_item().get_properties();
+    ASSERT_EQ("default_space_0", properties.get_space_name());
+    ASSERT_EQ(9, properties.get_partition_num());
+    ASSERT_EQ(1, properties.get_replica_factor());
+    ASSERT_EQ("utf8", properties.get_charset_name());
+    ASSERT_EQ("utf8_bin", properties.get_collate_name());
+    auto zones = properties.get_zone_names();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("z_1", zones[0]);
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(2, resp.get_zones().size());
+    ASSERT_EQ("z_1", resp.get_zones()[0].get_zone_name());
+    ASSERT_EQ("zone_1", resp.get_zones()[1].get_zone_name());
+  }
+}
+
+TEST(ProcessorTest, DivideZoneTest) {
+  fs::TempDir rootPath("/tmp/DivideZoneTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_zones().size());
+    ASSERT_EQ("default_zone", resp.get_zones()[0].get_zone_name());
+  }
+  {
+    // Split zone which not exist
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "zone_not_exist";
+
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    // Split zone with empty hosts
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Split zone with empty hosts
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Split zone and the sum is not all
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Split zone and the hosts is more than the total
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> hosts0 = {};
+    zoneItems.emplace("zone_0", std::move(hosts0));
+    std::vector<HostAddr> hosts1 = {};
+    zoneItems.emplace("zone_1", std::move(hosts1));
+    std::vector<HostAddr> hosts2 = {};
+    zoneItems.emplace("zone_2", std::move(hosts2));
+    std::vector<HostAddr> hosts3 = {};
+    zoneItems.emplace("zone_3", std::move(hosts3));
+    std::vector<HostAddr> hosts4 = {};
+    zoneItems.emplace("zone_4", std::move(hosts4));
+    std::vector<HostAddr> hosts5 = {};
+    zoneItems.emplace("zone_5", std::move(hosts5));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Split zone successfully
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(2, resp.get_zones().size());
+    ASSERT_EQ("another_zone", resp.get_zones()[0].get_zone_name());
+    ASSERT_EQ("one_zone", resp.get_zones()[1].get_zone_name());
+  }
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    TestUtils::registerHB(kv.get(), hosts);
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(3, resp.get_zones().size());
+    ASSERT_EQ("another_zone", resp.get_zones()[0].get_zone_name());
+    ASSERT_EQ("default_zone", resp.get_zones()[1].get_zone_name());
+    ASSERT_EQ("one_zone", resp.get_zones()[2].get_zone_name());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_EXISTED, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_EXISTED, resp.get_code());
+  }
+  {
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(4, resp.get_zones().size());
+    ASSERT_EQ("another_zone", resp.get_zones()[0].get_zone_name());
+    ASSERT_EQ("another_zone_1", resp.get_zones()[1].get_zone_name());
+    ASSERT_EQ("one_zone", resp.get_zones()[2].get_zone_name());
+    ASSERT_EQ("one_zone_1", resp.get_zones()[3].get_zone_name());
+  }
+}
+
+TEST(ProcessorTest, DropZoneTest) {
+  fs::TempDir rootPath("/tmp/DropZoneTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "zone_0";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "zone_1";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "zone_2";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsIntoZoneReq req;
+    req.zone_name_ref() = "zone_3";
+    req.is_new_ref() = true;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    // Attempt to register heartbeat
+    const ClusterID kClusterId = 10;
+    for (auto i = 8987; i < 8990; i++) {
+      cpp2::HBReq req;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
+      auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto zones = resp.get_zones();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("zone_0", zones[0].get_zone_name());
+    ASSERT_EQ("zone_1", zones[1].get_zone_name());
+    ASSERT_EQ("zone_2", zones[2].get_zone_name());
+    ASSERT_EQ("zone_3", zones[3].get_zone_name());
+  }
+  {
+    // Drop zone which is not exist
+    cpp2::DropZoneReq req;
+    req.zone_name_ref() = "zone_not_exist";
+    auto* processor = DropZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    // Drop zone successfully
+    cpp2::DropZoneReq req;
+    req.zone_name_ref() = "zone_0";
+    auto* processor = DropZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    // Drop zone which is droped
+    cpp2::DropZoneReq req;
+    req.zone_name_ref() = "zone_0";
+    auto* processor = DropZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
+  {
+    // Drop zone which is relation with space
+    cpp2::DropZoneReq req;
+    req.zone_name_ref() = "zone_1";
+    auto* processor = DropZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+  {
+    cpp2::DropSpaceReq req;
+    req.space_name_ref() = "default_space";
+    auto* processor = DropSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(2, resp.get_id().get_space_id());
+  }
+  {
+    cpp2::DropZoneReq req;
+    req.zone_name_ref() = "zone_1";
+    auto* processor = DropZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+}
+
+TEST(ProcessorTest, AlterSpaceTest) {
+  fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  TestUtils::assembleSpaceWithZone(kv, 1, 8, 1, 8, 8);
+  TestUtils::assembleZone(kv,
+                          {{"9", {HostAddr("127.0.0.1", 9)}},
+                           {"10", {HostAddr("127.0.0.1", 10)}},
+                           {"11", {HostAddr("127.0.0.1", 11)}}});
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"12"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "aaa";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"9"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"8"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.space_name_ref() = "test_space";
+    req.op_ref() = meta::cpp2::AlterSpaceOp::ADD_ZONE;
+    req.paras_ref() = {"9", "10", "11"};
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    std::string spaceKey = MetaKeyUtils::spaceKey(1);
+    std::string spaceVal;
+    kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+    meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+    const std::vector<std::string>& zones = properties.get_zone_names();
+    const std::vector<std::string>& res = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+    std::set<std::string> result(zones.begin(), zones.end());
+    std::set<std::string> expected(res.begin(), res.end());
+    ASSERT_EQ(result, expected);
   }
 }
 

@@ -268,8 +268,10 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
 
   return collectResponse(param.evb,
                          std::move(requests),
-                         [](ThriftClientType* client, const cpp2::DeleteEdgesRequest& r) {
-                           return client->future_deleteEdges(r);
+                         [useToss = param.useExperimentalFeature](
+                             ThriftClientType* client, const cpp2::DeleteEdgesRequest& r) {
+                           return useToss ? client->future_chainDeleteEdges(r)
+                                          : client->future_deleteEdges(r);
                          });
 }
 
@@ -483,6 +485,7 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
     bool isEdge,
     int32_t tagOrEdge,
     const std::vector<std::string>& returnCols,
+    std::vector<storage::cpp2::OrderBy> orderBy,
     int64_t limit) {
   // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
   auto space = param.space;
@@ -514,6 +517,7 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
     req.indices_ref() = spec;
     req.common_ref() = common;
     req.limit_ref() = limit;
+    req.order_by_ref() = orderBy;
   }
 
   return collectResponse(param.evb,

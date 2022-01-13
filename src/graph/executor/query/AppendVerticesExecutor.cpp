@@ -93,9 +93,12 @@ Status AppendVerticesExecutor::handleResp(
   ds.rows.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
     auto dstFound = map.find(src->eval(ctx(iter.get())));
-    auto row = static_cast<SequentialIter *>(iter.get())->moveRow();
     if (dstFound == map.end()) {
       continue;
+    }
+    Row row;
+    if (av->trackPrevPath()) {
+      row = *iter->row();
     }
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));

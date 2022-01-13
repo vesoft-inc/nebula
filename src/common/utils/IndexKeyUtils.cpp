@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
 #include "common/geo/GeoIndex.h"
+#include "common/utils/DefaultValueContext.h"
 
 namespace nebula {
 
@@ -170,23 +171,53 @@ Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
 
 // static
 StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
-    RowReader* reader, const meta::cpp2::IndexItem* indexItem) {
+    RowReader* reader,
+    const meta::cpp2::IndexItem* indexItem,
+    const meta::SchemaProviderIf* latestSchema) {
   if (reader == nullptr) {
     return Status::Error("Invalid row reader");
   }
   auto& cols = indexItem->get_fields();
   std::vector<Value> values;
   for (const auto& col : cols) {
-    auto v = reader->getValueByName(col.get_name());
+    auto propName = col.get_name();
+    auto val = readValueWithLatestSche(reader, propName, latestSchema);
+    if (!val.ok()) {
+      LOG(ERROR) << "prop error by : " << propName << ". status : " << val.status();
+      return val.status();
+    }
+    auto v = val.value();
     auto isNullable = col.nullable_ref().value_or(false);
     auto ret = checkValue(v, isNullable);
     if (!ret.ok()) {
-      LOG(ERROR) << "prop error by : " << col.get_name() << ". status : " << ret;
+      LOG(ERROR) << "prop error by : " << propName << ". status : " << ret;
       return ret;
     }
     values.emplace_back(std::move(v));
   }
   return encodeValues(std::move(values), indexItem);
+}
+
+// static
+StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(RowReader* reader,
+                                                       const std::string propName,
+                                                       const meta::SchemaProviderIf* latestSchema) {
+  auto value = reader->getValueByName(propName);
+  if (latestSchema == nullptr || !value.isNull() || value.getNull() != NullType::UNKNOWN_PROP) {
+    return value;
+  }
+  auto field = latestSchema->field(propName);
+  if (field == nullptr) {
+    return Status::Error("Unknown prop");
+  }
+  if (field->hasDefault()) {
+    DefaultValueContext expCtx;
+    auto expr = field->defaultValue()->clone();
+    return Expression::eval(expr, expCtx);
+  } else if (field->nullable()) {
+    return NullType::__NULL__;
+  }
+  return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
 }
 
 // static

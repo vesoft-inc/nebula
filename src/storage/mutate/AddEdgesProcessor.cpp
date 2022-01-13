@@ -161,8 +161,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
     dummyLock.reserve(newEdges.size());
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-    std::unordered_set<std::string> visited;
-    visited.reserve(newEdges.size());
+    deleteDupEdge(const_cast<std::vector<cpp2::NewEdge>&>(newEdges));
     for (auto& newEdge : newEdges) {
       auto edgeKey = *newEdge.key_ref();
       auto l = std::make_tuple(spaceId_,
@@ -203,9 +202,6 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
                                          edgeKey.dst_ref()->getStr());
-      if (ifNotExists_ && !visited.emplace(key).second) {
-        continue;
-      }
       auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
       if (!schema) {
         LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
@@ -252,7 +248,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 1 , Delete old version index if exists.
              */
             if (oReader != nullptr) {
-              auto ois = indexKeys(partId, oReader.get(), key, index);
+              auto ois = indexKeys(partId, oReader.get(), key, index, schema.get());
               if (!ois.empty()) {
                 // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
@@ -276,7 +272,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 2 , Insert new edge index
              */
             if (nReader != nullptr) {
-              auto niks = indexKeys(partId, nReader.get(), key, index);
+              auto niks = indexKeys(partId, nReader.get(), key, index, schema.get());
               if (!niks.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -384,7 +380,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
         }
 
         if (!val.empty()) {
-          auto ois = indexKeys(partId, oReader.get(), e.first, index);
+          auto ois = indexKeys(partId, oReader.get(), e.first, index, schema.get());
           if (!ois.empty()) {
             // Check the index is building for the specified partition or not.
             auto indexState = env_->getIndexState(spaceId_, partId);
@@ -416,7 +412,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
           }
         }
 
-        auto niks = indexKeys(partId, nReader.get(), e.first, index);
+        auto niks = indexKeys(partId, nReader.get(), e.first, index, schema.get());
         if (!niks.empty()) {
           auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
           auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
@@ -439,7 +435,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
       }
     }
     /*
-     * step 3 , Insert new vertex data
+     * step 3 , Insert new edge data
      */
     auto key = e.first;
     auto prop = e.second;
@@ -473,8 +469,9 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
     PartitionID partId,
     RowReader* reader,
     const folly::StringPiece& rawKey,
-    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
   }
@@ -485,6 +482,49 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
                                       NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
                                       NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str(),
                                       std::move(values).value());
+}
+
+/*
+ * Batch insert
+ * ifNotExist_ is true. Only keep the first one when edgeKey is same
+ * ifNotExist_ is false. Only keep the last one when edgeKey is same
+ */
+void AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
+  std::unordered_set<std::string> visited;
+  visited.reserve(edges.size());
+  if (ifNotExists_) {
+    auto iter = edges.begin();
+    while (iter != edges.end()) {
+      auto edgeKeyRef = iter->key_ref();
+      auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                         0,  // it's ok, just distinguish between different edgekey
+                                         edgeKeyRef->src_ref()->getStr(),
+                                         edgeKeyRef->get_edge_type(),
+                                         edgeKeyRef->get_ranking(),
+                                         edgeKeyRef->dst_ref()->getStr());
+      if (!visited.emplace(key).second) {
+        iter = edges.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  } else {
+    auto iter = edges.rbegin();
+    while (iter != edges.rend()) {
+      auto edgeKeyRef = iter->key_ref();
+      auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                         0,  // it's ok, just distinguish between different edgekey
+                                         edgeKeyRef->src_ref()->getStr(),
+                                         edgeKeyRef->get_edge_type(),
+                                         edgeKeyRef->get_ranking(),
+                                         edgeKeyRef->dst_ref()->getStr());
+      if (!visited.emplace(key).second) {
+        iter = decltype(iter)(edges.erase(std::next(iter).base()));
+      } else {
+        ++iter;
+      }
+    }
+  }
 }
 
 }  // namespace storage

@@ -10,7 +10,7 @@ Feature: combine filters
     When profiling query:
       """
       MATCH (v:player)-[:like]->(n)
-      WHERE v.age>40 AND n.age>42
+      WHERE v.player.age > 40 AND n.player.age > 42
       RETURN v, n
       """
     Then the result should be, in any order:

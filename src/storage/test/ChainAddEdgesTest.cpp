@@ -18,7 +18,7 @@
 #include "storage/test/ChainTestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 
 namespace nebula {
@@ -34,11 +34,11 @@ TEST(ChainAddEdgesTest, TestUtilsTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* processor = new FakeChainAddEdgesProcessorLocal(env);
+  auto* processor = new FakeChainAddEdgesLocalProcessor(env);
 
   processor->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
   processor->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -63,10 +63,10 @@ TEST(ChainAddEdgesTest, prepareLocalSucceedTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
@@ -91,10 +91,10 @@ TEST(ChainAddEdgesTest, processRemoteSucceededTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -122,11 +122,11 @@ TEST(ChainAddEdgesTest, processRemoteFailedTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_OUTDATED_TERM;
 
   LOG(INFO) << "Build AddEdgesRequest...";
@@ -144,6 +144,8 @@ TEST(ChainAddEdgesTest, processRemoteFailedTest) {
   // prime key should be deleted
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(0, numOfKey(req, util.genDoublePrime, env));
+
+  // env->txnMan_->stop();
 }
 
 TEST(ChainAddEdgesTest, processRemoteUnknownTest) {
@@ -151,11 +153,11 @@ TEST(ChainAddEdgesTest, processRemoteUnknownTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
@@ -182,12 +184,12 @@ TEST(ChainAddEdgesTest, processRemoteTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
   LOG(INFO) << "Build AddEdgesRequest...";
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
 

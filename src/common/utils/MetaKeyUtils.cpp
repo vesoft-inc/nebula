@@ -21,13 +21,13 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
     {"versions", {"__versions__", false}},
-    {"machines", {"__machines__", false}},
+    {"machines", {"__machines__", true}},
     {"host_dirs", {"__host_dirs__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
     {"zones", {"__zones__", true}},
-    {"ft_service", {"__ft_service__", false}},
+    {"services", {"__services__", false}},
     {"sessions", {"__sessions__", true}}};
 
 // SystemInfo will always be backed up
@@ -69,16 +69,16 @@ static const std::string kEdgesTable          = tableMaps.at("edges").first;    
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
 static const std::string kIndexTable          = tableMaps.at("index").first;          // NOLINT
 static const std::string kIndexStatusTable    = tableMaps.at("index_status").first;   // NOLINT
-static const std::string kUsersTable          = systemTableMaps.at("users").first;          // NOLINT
+static const std::string kUsersTable          = systemTableMaps.at("users").first;    // NOLINT
 static const std::string kRolesTable          = tableMaps.at("roles").first;          // NOLINT
-static const std::string kConfigsTable        = systemTableMaps.at("configs").first;        // NOLINT
-static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;      // NOLINT
-static const std::string kLeadersTable        = tableMaps.at("leaders").first;          // NOLINT
-static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;     // NOLINT
-static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
-static const std::string kZonesTable          = systemTableMaps.at("zones").first;            // NOLINT
-static const std::string kListenerTable       = tableMaps.at("listener").first;         // NOLINT
-static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;       // NOLINT
+static const std::string kConfigsTable        = systemTableMaps.at("configs").first;  // NOLINT
+static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;// NOLINT
+static const std::string kLeadersTable        = tableMaps.at("leaders").first;        // NOLINT
+static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;   // NOLINT
+static const std::string kGroupsTable         = systemTableMaps.at("groups").first;   // NOLINT
+static const std::string kZonesTable          = systemTableMaps.at("zones").first;    // NOLINT
+static const std::string kListenerTable       = tableMaps.at("listener").first;       // NOLINT
+static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;     // NOLINT
 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
@@ -89,7 +89,7 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 static const std::string kLocalIdTable        = tableMaps.at("local_id").first;         // NOLINT
 
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
-const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
+const std::string kServicesTable  = systemTableMaps.at("services").first;        // NOLINT
 const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
 
 const std::string kIdKey = systemInfoMaps.at("autoIncrementId").first;                // NOLINT
@@ -1155,27 +1155,33 @@ const std::string& MetaKeyUtils::statsKeyPrefix() {
   return kStatsTable;
 }
 
-std::string MetaKeyUtils::fulltextServiceKey() {
+std::string MetaKeyUtils::serviceKey(const meta::cpp2::ExternalServiceType& type) {
   std::string key;
-  key.reserve(kFTServiceTable.size());
-  key.append(kFTServiceTable.data(), kFTServiceTable.size());
+  key.reserve(kServicesTable.size() + sizeof(meta::cpp2::ExternalServiceType));
+  key.append(kServicesTable.data(), kServicesTable.size())
+      .append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::ExternalServiceType));
   return key;
 }
 
-std::string MetaKeyUtils::fulltextServiceVal(meta::cpp2::FTServiceType type,
-                                             const std::vector<meta::cpp2::FTClient>& clients) {
-  std::string val, cval;
-  apache::thrift::CompactSerializer::serialize(clients, &cval);
-  val.reserve(sizeof(meta::cpp2::FTServiceType) + cval.size());
-  val.append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::FTServiceType)).append(cval);
+const std::string& MetaKeyUtils::servicePrefix() {
+  return kServicesTable;
+}
+
+meta::cpp2::ExternalServiceType MetaKeyUtils::parseServiceType(folly::StringPiece rawData) {
+  auto offset = kServicesTable.size();
+  return *reinterpret_cast<const meta::cpp2::ExternalServiceType*>(rawData.data() + offset);
+}
+
+std::string MetaKeyUtils::serviceVal(const std::vector<meta::cpp2::ServiceClient>& clients) {
+  std::string val;
+  apache::thrift::CompactSerializer::serialize(clients, &val);
   return val;
 }
 
-std::vector<meta::cpp2::FTClient> MetaKeyUtils::parseFTClients(folly::StringPiece rawData) {
-  std::vector<meta::cpp2::FTClient> clients;
-  int32_t offset = sizeof(meta::cpp2::FTServiceType);
-  auto clientsRaw = rawData.subpiece(offset, rawData.size() - offset);
-  apache::thrift::CompactSerializer::deserialize(clientsRaw, clients);
+std::vector<meta::cpp2::ServiceClient> MetaKeyUtils::parseServiceClients(
+    folly::StringPiece rawData) {
+  std::vector<meta::cpp2::ServiceClient> clients;
+  apache::thrift::CompactSerializer::deserialize(rawData, clients);
   return clients;
 }
 

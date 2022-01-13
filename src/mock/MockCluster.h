@@ -18,6 +18,7 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
+#include "mock/LocalServer.h"
 #include "mock/RpcServer.h"
 #include "storage/BaseProcessor.h"
 #include "storage/GraphStorageServiceHandler.h"
@@ -79,7 +80,7 @@ class MockCluster {
                      SchemaVer schemaVerCount = 1,
                      bool hasProp = true,
                      bool hasListener = false,
-                     const std::vector<meta::cpp2::FTClient>& clients = {},
+                     const std::vector<meta::cpp2::ServiceClient>& clients = {},
                      bool needCffBuilder = false);
 
   std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers();
@@ -94,9 +95,11 @@ class MockCluster {
 
   void stop() {
     if (metaClient_) {
+      metaClient_->notifyStop();
       metaClient_->stop();
     }
     if (lMetaClient_) {
+      metaClient_->notifyStop();
       lMetaClient_->stop();
     }
     if (metaKV_) {
@@ -117,7 +120,11 @@ class MockCluster {
   std::unique_ptr<kvstore::NebulaStore> metaKV_{nullptr};
 
   std::unique_ptr<RpcServer> storageAdminServer_{nullptr};
+#ifndef BUILD_STANDALONE
   std::unique_ptr<RpcServer> graphStorageServer_{nullptr};
+#else
+  std::unique_ptr<LocalServer> graphStorageServer_{nullptr};
+#endif
   std::unique_ptr<kvstore::NebulaStore> storageKV_{nullptr};
   std::unique_ptr<storage::StorageEnv> storageEnv_{nullptr};
 

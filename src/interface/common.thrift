@@ -321,6 +321,7 @@ enum ErrorCode {
     E_KEY_NOT_FOUND                   = -17,
     E_USER_NOT_FOUND                  = -18,
     E_STATS_NOT_FOUND                 = -19,
+    E_SERVICE_NOT_FOUND               = -20,
 
     // backup failed
     E_BACKUP_FAILED                   = -24,
@@ -357,6 +358,8 @@ enum ErrorCode {
     E_CONFLICT                        = -2008,
     E_INVALID_PARM                    = -2009,
     E_WRONGCLUSTER                    = -2010,
+    E_ZONE_NOT_ENOUGH                 = -2011,
+    E_ZONE_IS_EMPTY                   = -2012,
 
     E_STORE_FAILURE                   = -2021,
     E_STORE_SEGMENT_ILLEGAL           = -2022,
@@ -402,7 +405,7 @@ enum ErrorCode {
     // ListClusterInfo Failure
     E_LIST_CLUSTER_FAILURE              = -2070,
     E_LIST_CLUSTER_GET_ABS_PATH_FAILURE = -2071,
-    E_GET_META_DIR_FAILURE              = -2072,
+    E_LIST_CLUSTER_NO_AGENT_FAILURE     = -2072,
 
     E_QUERY_NOT_FOUND                 = -2073,
     E_AGENT_HB_FAILUE                 = -2074,
@@ -418,9 +421,7 @@ enum ErrorCode {
     E_FIELD_UNSET                     = -3007,
     // Value exceeds the range of type
     E_OUT_OF_RANGE                    = -3008,
-    // Atomic operation failed
-    E_ATOMIC_OP_FAILED                = -3009,
-    E_DATA_CONFLICT_ERROR             = -3010, // data conflict, for index write without toss.
+    E_DATA_CONFLICT_ERROR             = -3010,     // data conflict, for index write without toss.
 
     E_WRITE_STALLED                   = -3011,
 
@@ -469,6 +470,33 @@ enum ErrorCode {
     E_WRITE_WRITE_CONFLICT            = -3073,
 
     E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
+    // get worker id
+    E_WORKER_ID_FAILED                = -3062,
+
+    // 35xx for storaged raft
+    E_RAFT_UNKNOWN_PART               = -3500,
+    // Raft consensus errors
+    E_RAFT_LOG_GAP                    = -3501,
+    E_RAFT_LOG_STALE                  = -3502,
+    E_RAFT_TERM_OUT_OF_DATE           = -3503,
+    // Raft state errors
+    E_RAFT_WAITING_SNAPSHOT           = -3511,
+    E_RAFT_SENDING_SNAPSHOT           = -3512,
+    E_RAFT_INVALID_PEER               = -3513,
+    E_RAFT_NOT_READY                  = -3514,
+    E_RAFT_STOPPED                    = -3515,
+    E_RAFT_BAD_ROLE                   = -3516,
+    // Local errors
+    E_RAFT_WAL_FAIL                   = -3521,
+    E_RAFT_HOST_STOPPED               = -3522,
+    E_RAFT_TOO_MANY_REQUESTS          = -3523,
+    E_RAFT_PERSIST_SNAPSHOT_FAILED    = -3524,
+    E_RAFT_RPC_EXCEPTION              = -3525,
+    E_RAFT_NO_WAL_FOUND               = -3526,
+    E_RAFT_HOST_PAUSED                = -3527,
+    E_RAFT_WRITE_BLOCKED              = -3528,
+    E_RAFT_BUFFER_OVERFLOW            = -3529,
+    E_RAFT_ATOMIC_OP_FAILED           = -3530,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

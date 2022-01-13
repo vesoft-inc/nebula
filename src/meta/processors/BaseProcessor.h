@@ -38,6 +38,11 @@ using SignType = storage::cpp2::EngineSignType;
     return;                                             \
   }
 
+#define CHECK_CODE_AND_BREAK()                      \
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) { \
+    break;                                          \
+  }
+
 /**
  * Check segment is consist of numbers and letters and should not empty.
  * */
@@ -120,7 +125,7 @@ class BaseProcessor {
   void doPut(std::vector<kvstore::KV> data);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>> doPrefix(
-      const std::string& key);
+      const std::string& key, bool canReadFromFollower = false);
 
   /**
    * General get function.
@@ -154,6 +159,11 @@ class BaseProcessor {
   void doMultiRemove(std::vector<std::string> keys);
 
   /**
+   * General batch function.
+   **/
+  void doBatchOperation(std::string batchOp);
+
+  /**
    * Get one auto-increment Id.
    * */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();
@@ -182,6 +192,8 @@ class BaseProcessor {
    * Check machine has been registered or not.
    * */
   nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
+
+  nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
 
   /**
    * Check hosts has been include by zone or not.

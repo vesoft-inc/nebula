@@ -20,12 +20,12 @@
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
 #include "meta/processors/config/SetConfigProcessor.h"
+#include "meta/processors/id/GetWorkerIdProcessor.h"
 #include "meta/processors/index/CreateEdgeIndexProcessor.h"
 #include "meta/processors/index/CreateTagIndexProcessor.h"
 #include "meta/processors/index/DropEdgeIndexProcessor.h"
 #include "meta/processors/index/DropTagIndexProcessor.h"
 #include "meta/processors/index/FTIndexProcessor.h"
-#include "meta/processors/index/FTServiceProcessor.h"
 #include "meta/processors/index/GetEdgeIndexProcessor.h"
 #include "meta/processors/index/GetTagIndexProcessor.h"
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
@@ -42,6 +42,7 @@
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
 #include "meta/processors/listener/ListenerProcessor.h"
+#include "meta/processors/parts/AlterSpaceProcessor.h"
 #include "meta/processors/parts/CreateSpaceAsProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
@@ -60,17 +61,18 @@
 #include "meta/processors/schema/GetTagProcessor.h"
 #include "meta/processors/schema/ListEdgesProcessor.h"
 #include "meta/processors/schema/ListTagsProcessor.h"
+#include "meta/processors/service/ServiceProcessor.h"
 #include "meta/processors/session/SessionManagerProcessor.h"
 #include "meta/processors/user/AuthenticationProcessor.h"
 #include "meta/processors/zone/AddHostsIntoZoneProcessor.h"
 #include "meta/processors/zone/AddHostsProcessor.h"
+#include "meta/processors/zone/DivideZoneProcessor.h"
 #include "meta/processors/zone/DropHostsProcessor.h"
 #include "meta/processors/zone/DropZoneProcessor.h"
 #include "meta/processors/zone/GetZoneProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
 #include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
-#include "meta/processors/zone/SplitZoneProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -83,6 +85,12 @@ namespace meta {
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpace(
     const cpp2::CreateSpaceReq& req) {
   auto* processor = CreateSpaceProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_alterSpace(
+    const cpp2::AlterSpaceReq& req) {
+  auto* processor = AlterSpaceProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -294,21 +302,21 @@ folly::Future<cpp2::ListIndexStatusResp> MetaServiceHandler::future_listEdgeInde
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_signInFTService(
-    const cpp2::SignInFTServiceReq& req) {
-  auto* processor = SignInFTServiceProcessor::instance(kvstore_);
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_signInService(
+    const cpp2::SignInServiceReq& req) {
+  auto* processor = SignInServiceProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_signOutFTService(
-    const cpp2::SignOutFTServiceReq& req) {
-  auto* processor = SignOutFTServiceProcessor::instance(kvstore_);
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_signOutService(
+    const cpp2::SignOutServiceReq& req) {
+  auto* processor = SignOutServiceProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ListFTClientsResp> MetaServiceHandler::future_listFTClients(
-    const cpp2::ListFTClientsReq& req) {
-  auto* processor = ListFTClientsProcessor::instance(kvstore_);
+folly::Future<cpp2::ListServiceClientsResp> MetaServiceHandler::future_listServiceClients(
+    const cpp2::ListServiceClientsReq& req) {
+  auto* processor = ListServiceClientsProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -459,8 +467,9 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_mergeZone(const cpp2::M
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_splitZone(const cpp2::SplitZoneReq& req) {
-  auto* processor = SplitZoneProcessor::instance(kvstore_);
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_divideZone(
+    const cpp2::DivideZoneReq& req) {
+  auto* processor = DivideZoneProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -557,6 +566,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::K
 folly::Future<cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
     const cpp2::VerifyClientVersionReq& req) {
   auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetWorkerIdResp> MetaServiceHandler::future_getWorkerId(
+    const cpp2::GetWorkerIdReq& req) {
+  auto* processor = GetWorkerIdProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

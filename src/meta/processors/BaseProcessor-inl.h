@@ -6,6 +6,7 @@
 #ifndef META_PROCESSORS_BASEPROCESSOR_INL_H
 #define META_PROCESSORS_BASEPROCESSOR_INL_H
 
+#include "interface/gen-cpp2/storage_types.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
@@ -27,9 +28,9 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
-BaseProcessor<RESP>::doPrefix(const std::string& key) {
+BaseProcessor<RESP>::doPrefix(const std::string& key, bool canReadFromFollower) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
+  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter, canReadFromFollower);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(2) << "Prefix Failed";
     return code;
@@ -79,6 +80,20 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
   kvstore_->asyncMultiRemove(kDefaultSpaceId,
                              kDefaultPartId,
                              std::move(keys),
+                             [this, &baton](nebula::cpp2::ErrorCode code) {
+                               this->handleErrorCode(code);
+                               baton.post();
+                             });
+  baton.wait();
+  this->onFinished();
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::doBatchOperation(std::string batchOp) {
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncAppendBatch(kDefaultSpaceId,
+                             kDefaultPartId,
+                             std::move(batchOp),
                              [this, &baton](nebula::cpp2::ErrorCode code) {
                                this->handleErrorCode(code);
                                baton.post();
@@ -243,6 +258,15 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::userExist(const std::string& accoun
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::machineExist(const std::string& machineKey) {
   auto ret = doGet(machineKey);
+  if (nebula::ok(ret)) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+  return nebula::error(ret);
+}
+
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+  auto ret = doGet(hostKey);
   if (nebula::ok(ret)) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }

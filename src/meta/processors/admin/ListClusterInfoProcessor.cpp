@@ -37,8 +37,8 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   }
   auto iter = nebula::value(iterRet).get();
   for (; iter->valid(); iter->next()) {
-    HostAddr addr = MetaKeyUtils::parseHostKey(iter->key());
-    HostInfo info = HostInfo::decode(iter->val());
+    auto addr = MetaKeyUtils::parseHostKey(iter->key());
+    auto info = HostInfo::decode(iter->val());
 
     cpp2::ServiceInfo service;
     service.role_ref() = info.role_;
@@ -97,9 +97,9 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
         agentCount++;
       }
     }
-    if (agentCount != 1) {
+    if (agentCount < 1) {
       LOG(ERROR) << folly::sformat("There are {} agent count is host {}", agentCount, host);
-      handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
+      handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE);
       onFinished();
       return;
     }

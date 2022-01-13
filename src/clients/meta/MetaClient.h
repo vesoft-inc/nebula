@@ -7,6 +7,7 @@
 #define CLIENTS_META_METACLIENT_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/container/F14Map.h>
 #include <folly/container/F14Set.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -14,6 +15,7 @@
 #include <gtest/gtest_prod.h>
 
 #include <atomic>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -71,6 +73,10 @@ using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 // Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
 using Listeners =
     std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
+
+// Get services
+using ServiceClientsList =
+    std::unordered_map<cpp2::ExternalServiceType, std::vector<cpp2::ServiceClient>>;
 
 struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
@@ -139,13 +145,14 @@ using IndexStatus = std::tuple<std::string, std::string, std::string>;
 using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>>;
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
+// Mapping of user name and remaining wrong password attempts
+using UserPasswordAttemptsRemain = folly::ConcurrentHashMap<std::string, uint32>;
+// Mapping of user name and the timestamp when the account is locked
+using UserLoginLockTime = folly::ConcurrentHashMap<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
-
-// get fulltext services
-using FulltextClientsList = std::vector<cpp2::FTClient>;
 
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
@@ -198,13 +205,13 @@ struct MetaClientOptions {
   std::string serviceName_ = "";
   // Whether to skip the config manager
   bool skipConfig_ = false;
-  // host role(graph/meta/storage) using this client
+  // Host role(graph/meta/storage) using this client
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
-  // data path list, used in storaged
+  // Data path list, used in storaged
   std::vector<std::string> dataPaths_;
-  // install path, used in metad/graphd/storaged
+  // Install path, used in metad/graphd/storaged
   std::string rootPath_;
 };
 
@@ -232,6 +239,8 @@ class MetaClient {
   bool isMetadReady();
 
   bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
+
+  void notifyStop();
 
   void stop();
 
@@ -265,6 +274,10 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
+
+  folly::Future<StatusOr<bool>> alterSpace(const std::string& spaceName,
+                                           meta::cpp2::AlterSpaceOp op,
+                                           const std::vector<std::string>& paras);
 
   folly::Future<StatusOr<std::vector<cpp2::PartItem>>> listParts(GraphSpaceID spaceId,
                                                                  std::vector<PartitionID> partIds);
@@ -443,15 +456,17 @@ class MetaClient {
   StatusOr<std::vector<RemoteListenerInfo>> getListenerHostTypeBySpacePartType(GraphSpaceID spaceId,
                                                                                PartitionID partId);
 
-  // Operations for fulltext services
-  folly::Future<StatusOr<bool>> signInFTService(cpp2::FTServiceType type,
-                                                const std::vector<cpp2::FTClient>& clients);
+  // Operations for services
+  folly::Future<StatusOr<bool>> signInService(const cpp2::ExternalServiceType& type,
+                                              const std::vector<cpp2::ServiceClient>& clients);
 
-  folly::Future<StatusOr<bool>> signOutFTService();
+  folly::Future<StatusOr<bool>> signOutService(const cpp2::ExternalServiceType& type);
 
-  folly::Future<StatusOr<std::vector<cpp2::FTClient>>> listFTClients();
+  folly::Future<StatusOr<ServiceClientsList>> listServiceClients(
+      const cpp2::ExternalServiceType& type);
 
-  StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
+  StatusOr<std::vector<cpp2::ServiceClient>> getServiceClientsFromCache(
+      const cpp2::ExternalServiceType& type);
 
   // Operations for fulltext index.
 
@@ -586,7 +601,7 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password);
+  Status authCheckFromCache(const std::string& account, const std::string& password);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
@@ -612,12 +627,12 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
 
+  folly::Future<StatusOr<bool>> divideZone(
+      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zoneItems);
+
   folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 
   folly::Future<StatusOr<bool>> dropZone(std::string zoneName);
-
-  folly::Future<StatusOr<bool>> splitZone(
-      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zones);
 
   folly::Future<StatusOr<bool>> addHostsIntoZone(std::vector<HostAddr> hosts,
                                                  std::string zoneName,
@@ -644,12 +659,18 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
+  folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
+
   HostAddr getMetaLeader() {
     return leader_;
   }
 
   int64_t HeartbeatTime() {
     return heartbeatTime_;
+  }
+
+  std::string getLocalIp() {
+    return options_.localHost_.toString();
   }
 
  protected:
@@ -678,7 +699,7 @@ class MetaClient {
 
   bool loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 
-  bool loadFulltextClients();
+  bool loadGlobalServiceClients();
 
   bool loadFulltextIndexes();
 
@@ -755,7 +776,7 @@ class MetaClient {
   std::atomic<int64_t> metadLastUpdateTime_{0};
 
   int64_t metaServerVersion_{-1};
-  static constexpr int64_t EXPECT_META_VERSION = 2;
+  static constexpr int64_t EXPECT_META_VERSION = 3;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
@@ -771,7 +792,8 @@ class MetaClient {
 
   // Only report dir info once when started
   bool dirInfoReported_ = false;
-  struct ThreadLocalInfo {
+
+  struct MetaData {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;
     SpaceNameIdMap spaceIndexByName_;
@@ -787,9 +809,12 @@ class MetaClient {
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
     UserPasswordMap userPasswordMap_;
-  };
 
-  const ThreadLocalInfo& getThreadLocalInfo();
+    SessionMap sessionMap_;
+    folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+
+    ServiceClientsList serviceClientList_;
+  };
 
   void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
 
@@ -808,13 +833,16 @@ class MetaClient {
 
   UserRolesMap userRolesMap_;
   UserPasswordMap userPasswordMap_;
+  UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
+  UserLoginLockTime userLoginLockTime_;
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
-  FulltextClientsList fulltextClientList_;
+
+  // Global service client
+  ServiceClientsList serviceClientList_;
   FTIndexMap fulltextIndexMap_;
 
-  mutable folly::RWSpinLock localCacheLock_;
   // The listener_ is the NebulaStore
   MetaChangedListener* listener_{nullptr};
   // The lock used to protect listener_
@@ -832,8 +860,9 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
-  std::atomic<SessionMap*> sessionMap_;
-  std::atomic<folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>*> killedPlans_;
+  SessionMap sessionMap_;
+  folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+  std::atomic<MetaData*> metadata_;
 };
 
 }  // namespace meta

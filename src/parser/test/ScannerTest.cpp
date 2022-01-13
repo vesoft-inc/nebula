@@ -431,6 +431,9 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("META", TokenType::KW_META),
       CHECK_SEMANTIC_TYPE("Meta", TokenType::KW_META),
       CHECK_SEMANTIC_TYPE("meta", TokenType::KW_META),
+      CHECK_SEMANTIC_TYPE("AGENT", TokenType::KW_AGENT),
+      CHECK_SEMANTIC_TYPE("Agent", TokenType::KW_AGENT),
+      CHECK_SEMANTIC_TYPE("agent", TokenType::KW_AGENT),
       CHECK_SEMANTIC_TYPE("STORAGE", TokenType::KW_STORAGE),
       CHECK_SEMANTIC_TYPE("Storage", TokenType::KW_STORAGE),
       CHECK_SEMANTIC_TYPE("storage", TokenType::KW_STORAGE),
@@ -505,7 +508,10 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("top", TokenType::KW_TOP),
       CHECK_SEMANTIC_TYPE("MERGE", TokenType::KW_MERGE),
       CHECK_SEMANTIC_TYPE("Merge", TokenType::KW_MERGE),
-      CHECK_SEMANTIC_TYPE("Merge", TokenType::KW_MERGE),
+      CHECK_SEMANTIC_TYPE("merge", TokenType::KW_MERGE),
+      CHECK_SEMANTIC_TYPE("DIVIDE", TokenType::KW_DIVIDE),
+      CHECK_SEMANTIC_TYPE("Divide", TokenType::KW_DIVIDE),
+      CHECK_SEMANTIC_TYPE("divide", TokenType::KW_DIVIDE),
       CHECK_SEMANTIC_TYPE("RENAME", TokenType::KW_RENAME),
       CHECK_SEMANTIC_TYPE("Rename", TokenType::KW_RENAME),
       CHECK_SEMANTIC_TYPE("rename", TokenType::KW_RENAME),
@@ -595,6 +601,32 @@ TEST(Scanner, Basic) {
   for (auto &item : validators) {
     ASSERT_TRUE(item());
   }
+}
+
+TEST(Scanner, LexColumnCount) {
+  using TokenType = nebula::GraphParser::token_type;
+  nebula::GraphParser::semantic_type yylval;
+  nebula::GraphParser::location_type yyloc;
+  GraphScanner scanner;
+  std::string stream("2..");
+
+  auto input = [&](char *buf, int maxSize) {
+    static int copied = 0;
+    int left = stream.size() - copied;
+    if (left == 0) {
+      return 0;
+    }
+    int n = left < maxSize ? left : maxSize;
+    ::memcpy(buf, &stream[copied], n);
+    copied += n;
+    return n;
+  };
+  scanner.setReadBuffer(input);
+  auto type = scanner.yylex(&yylval, &yyloc);
+  ASSERT_EQ(type, TokenType::INTEGER);
+  type = scanner.yylex(&yylval, &yyloc);
+  ASSERT_EQ(type, TokenType::DOT_DOT);
+  ASSERT_EQ(yyloc.begin.column, 2);
 }
 
 }  // namespace nebula

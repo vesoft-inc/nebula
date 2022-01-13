@@ -545,10 +545,16 @@ class IndexKeyUtils final {
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
   static StatusOr<std::vector<std::string>> collectIndexValues(
-      RowReader* reader, const meta::cpp2::IndexItem* indexItem);
+      RowReader* reader,
+      const meta::cpp2::IndexItem* indexItem,
+      const meta::SchemaProviderIf* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
+
+  static StatusOr<Value> readValueWithLatestSche(RowReader* reader,
+                                                 const std::string propName,
+                                                 const meta::SchemaProviderIf* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };
