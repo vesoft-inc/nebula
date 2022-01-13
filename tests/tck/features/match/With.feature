@@ -64,6 +64,38 @@ Feature: With clause
     Then the result should be, in any order:
       | count(a) |
       | 1        |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b.d.e
+      """
+    Then the result should be, in any order:
+      | x.b.d.e |
+      | 5       |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b.d
+      """
+    Then the result should be, in any order:
+      | x.b.d  |
+      | {e: 5} |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b
+      """
+    Then the result should be, in any order:
+      | x.b               |
+      | {c: 3, d: {e: 5}} |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.c
+      """
+    Then the result should be, in any order:
+      | x.c          |
+      | UNKNOWN_PROP |
 
   Scenario: match with return
     When executing query:
