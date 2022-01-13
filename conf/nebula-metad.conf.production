@@ -25,11 +25,12 @@
 
 ########## networking ##########
 # Comma separated Meta Server addresses
---meta_server_addrs=192.168.2.1:9559
+# Forbid loopback address in production environments
+--meta_server_addrs=:9559
 # Local IP used to identify the nebula-metad process.
-# Change it to an address other than loopback if the service is distributed or
-# will be accessed remotely.
---local_ip=192.168.2.1
+# Change it to the local address 
+# Forbid loopback address(like localhost, 127.0.0.1 ...) in production environments!
+--local_ip=
 # Meta daemon listening port
 --port=9559
 # HTTP service ip

@@ -27,11 +27,12 @@
 
 ########## networking ##########
 # Comma separated Meta server addresses
---meta_server_addrs=192.168.2.1:45500
+# Forbid loopback address in production environments
+--meta_server_addrs=:9559
 # Local IP used to identify the nebula-storaged process.
-# Change it to an address other than loopback if the service is distributed or
-# will be accessed remotely.
---local_ip=192.168.2.3
+# Change it to the local address 
+# Forbid loopback address(like localhost, 127.0.0.1 ...) in production environments!
+--local_ip=
 # Storage daemon listening port
 --port=9779
 # HTTP service ip

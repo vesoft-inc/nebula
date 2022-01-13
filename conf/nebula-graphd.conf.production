@@ -38,11 +38,12 @@
 
 ########## networking ##########
 # Comma separated Meta Server Addresses
---meta_server_addrs=127.0.0.1:9559
+# Forbid loopback address in production environments
+--meta_server_addrs=:9559
 # Local IP used to identify the nebula-graphd process.
-# Change it to an address other than loopback if the service is distributed or
-# will be accessed remotely.
---local_ip=127.0.0.1
+# Change it to the local address 
+# Forbid loopback address(like localhost, 127.0.0.1 ...) in production environments!
+--local_ip=
 # Network device to listen on
 --listen_netdev=any
 # Port to listen on
