@@ -32,7 +32,8 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto res = ExpressionUtils::filterTransform(expr);
     ASSERT(res.ok());
     auto expected = expr;
-    ASSERT_EQ(res.value(), expected) << res.value() << " vs. " << expected->toString();
+    ASSERT_EQ(res.value()->toString(), expected->toString())
+        << res.value()->toString() << " vs. " << expected->toString();
   }
   // (v.age + 1 < -9223372036854775808)  =>  unchanged
   {
@@ -40,7 +41,8 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto res = ExpressionUtils::filterTransform(expr);
     ASSERT(res.ok());
     auto expected = expr;
-    ASSERT_EQ(res.value(), expected) << res.value() << " vs. " << expected->toString();
+    ASSERT_EQ(res.value()->toString(), expected->toString())
+        << res.value()->toString() << " vs. " << expected->toString();
   }
   // (v.age - 1 < 9223372036854775807 + 1)  =>  overflow
   {
@@ -71,7 +73,8 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto res = ExpressionUtils::filterTransform(expr);
     ASSERT(res.ok());
     auto expected = expr;
-    ASSERT_EQ(res.value(), expected) << res.value()->toString() << " vs. " << expected->toString();
+    ASSERT_EQ(res.value()->toString(), expected->toString())
+        << res.value()->toString() << " vs. " << expected->toString();
   }
   // !!!(v.age + 1 < -9223372036854775808)  =>  unchanged
   {
@@ -80,7 +83,8 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto res = ExpressionUtils::filterTransform(expr);
     ASSERT(res.ok());
     auto expected = expr;
-    ASSERT_EQ(res.value(), expected) << res.value()->toString() << " vs. " << expected->toString();
+    ASSERT_EQ(res.value()->toString(), expected->toString())
+        << res.value()->toString() << " vs. " << expected->toString();
   }
 }
 

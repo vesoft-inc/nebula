@@ -588,7 +588,7 @@ StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter
   }
 
   // Rewrite relational expression
-  auto rewrittenExpr = rewriteRelExpr(newFilter);
+  auto rewrittenExpr = rewriteRelExpr(newFilter->clone());
 
   // Fold constant expression
   auto constantFoldRes = foldConstantExpr(rewrittenExpr);
