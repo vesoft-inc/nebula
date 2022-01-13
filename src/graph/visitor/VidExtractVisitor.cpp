@@ -85,7 +85,6 @@ void VidExtractVisitor::visit(ConstantExpression *expr) {
 
 void VidExtractVisitor::visit(UnaryExpression *expr) {
   if (expr->kind() == Expression::Kind::kUnaryNot) {
-    //        const auto *expr = static_cast<const UnaryExpression *>(expr);
     expr->operand()->accept(this);
     auto operandResult = moveVidPattern();
     if (operandResult.spec == VidPattern::Special::kInUsed) {
@@ -208,8 +207,12 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
                              {{fCallExpr->args()->args().front()->toString(),
                                {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
   } else {
-    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
-                             {{"", {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+    if (ExpressionUtils::isPropertyExpr(expr->left())) {
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{"", {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+    } else {
+      vidPattern_ = VidPattern{};
+    }
   }
 }
 
