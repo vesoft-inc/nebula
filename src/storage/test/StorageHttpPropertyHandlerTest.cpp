@@ -78,27 +78,11 @@ TEST(StorageHttpPropertyHandlerTest, ValidRequest) {
     std::string expect =
         R"([
   {
-    "Engine 0": "96",
-    "Engine 1": "96"
-  }
-])";
-    EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.block-cache-usage"));
-  }
-  {
-    std::string expect =
-        R"([
-  {
-    "Engine 0": "96",
-    "Engine 1": "96"
-  },
-  {
     "Engine 0": "0",
     "Engine 1": "0"
   }
 ])";
-    EXPECT_EQ(expect,
-              request("/rocksdb_property?space=1&property="
-                      "rocksdb.block-cache-usage,rocksdb.is-write-stopped"));
+    EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.is-write-stopped"));
   }
 }
 
