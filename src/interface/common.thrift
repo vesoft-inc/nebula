@@ -34,7 +34,7 @@ cpp_include "common/datatypes/DurationOps-inl.h"
  *
  */
 
-const binary (cpp.type = "char const *") version = "2.6.0"
+const binary (cpp.type = "char const *") version = "3.0.0"
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
