@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief For each host, make a default zone and add it into the zone.
+ */
 class AddHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AddHostsProcessor* instance(kvstore::KVStore* kvstore) {
