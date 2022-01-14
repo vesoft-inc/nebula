@@ -66,7 +66,7 @@ TEST_F(JobTest, JobFinishTime) {
     EXPECT_EQ(result.rows.size(), 1);
     EXPECT_EQ(result.rows[0][3],
               time::TimeUtils::rmDateTimeStrMs(
-                  time::TimeConversion::unixSecondsToDateTime(456).toString()));
+                  time::TimeConversion::unixSecondsToDateTime(123).toString()));
     EXPECT_EQ(result.rows[0][4], Value::kEmpty);
   }
 }
