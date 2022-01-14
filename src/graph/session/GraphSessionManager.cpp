@@ -340,7 +340,7 @@ void GraphSessionManager::subSessionCount(std::string key) {
     return ;
   }
   auto count = countFindPtr->second.get()->fetch_sub(1);
-  if (count == 0) {
+  if (count <= 0) {
     userIpSessionCount_.erase(countFindPtr);
   }
 }
