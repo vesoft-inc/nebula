@@ -208,12 +208,23 @@ Feature: Match seek by id
       RETURN v.player.name AS Name, t.team.name AS Team
       """
     Then the result should be, in any order:
-      | Name         | Team        |
-      | 'Paul Gasol' | 'Grizzlies' |
-      | 'Paul Gasol' | 'Lakers'    |
-      | 'Paul Gasol' | 'Bulls'     |
-      | 'Paul Gasol' | 'Spurs'     |
-      | 'Paul Gasol' | 'Bucks'     |
+      | Name               | Team        |
+      | "Paul Gasol"       | "Bucks"     |
+      | "Paul Gasol"       | "Bulls"     |
+      | "Rudy Gay"         | "Grizzlies" |
+      | "Kyle Anderson"    | "Grizzlies" |
+      | "Paul Gasol"       | "Grizzlies" |
+      | "Marc Gasol"       | "Grizzlies" |
+      | "Vince Carter"     | "Grizzlies" |
+      | "Paul Gasol"       | "Spurs"     |
+      | "Dwight Howard"    | "Lakers"    |
+      | "Shaquille O'Neal" | "Lakers"    |
+      | "Steve Nash"       | "Lakers"    |
+      | "Paul Gasol"       | "Lakers"    |
+      | "Kobe Bryant"      | "Lakers"    |
+      | "JaVale McGee"     | "Lakers"    |
+      | "Rajon Rondo"      | "Lakers"    |
+      | "LeBron James"     | "Lakers"    |
 
   Scenario: can't refer
     When executing query:
@@ -252,8 +263,7 @@ Feature: Match seek by id
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  @skip
-  Scenario: test OR logic (reason = "or logic optimization error")
+  Scenario: test OR logic
     When executing query:
       """
       MATCH (v)
@@ -261,13 +271,7 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then the result should be, in any order:
-      | Name                 |
-      | 'James Harden'       |
-      | 'Jonathon Simmons'   |
-      | 'Klay Thompson'      |
-      | 'Dejounte Murray'    |
-      | 'Kristaps Porzingis' |
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -275,10 +279,7 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then the result should be, in any order:
-      | Name                 |
-      | 'James Harden'       |
-      | 'Kristaps Porzingis' |
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -286,8 +287,71 @@ Feature: Match seek by id
             OR v.player.age != 23
       RETURN v.player.name AS Name
       """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.name == "Tim Duncan"
+            OR v.player.age == 23
+      RETURN v
+      """
     Then the result should be, in any order:
-      | Name |
+      | v                                                                                                           |
+      | ("Kristaps Porzingis" :player{age: 23, name: "Kristaps Porzingis"})                                         |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.name == "Tim Duncan"
+            OR v.noexist.age == 23
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.noexist == "Tim Duncan"
+            OR v.player.age == 23
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                                   |
+      | ("Kristaps Porzingis" :player{age: 23, name: "Kristaps Porzingis"}) |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.player.noexist == "Tim Duncan"
+            OR v.noexist.age == 23
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE "Tim Duncan" == v.player.name
+            OR 23 + 1 == v.noexist.age - 3
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+            OR id(v) == 'Yao Ming'
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                               |
+      | ("James Harden" :player{age: 29, name: "James Harden"})         |
+      | ("Jonathon Simmons" :player{age: 29, name: "Jonathon Simmons"}) |
+      | ("Klay Thompson" :player{age: 29, name: "Klay Thompson"})       |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})   |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                 |
 
   Scenario: Start from end
     When executing query:

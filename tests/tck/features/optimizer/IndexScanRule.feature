@@ -93,9 +93,10 @@ Feature: Match index selection
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 6  | Project        | 2            |               |
-      | 2  | AppendVertices | 5            |               |
-      | 5  | IndexScan      | 0            |               |
-      | 0  | Start          |              |               |
+      | 9  | Filter         | 3            |               |
+      | 3  | AppendVertices | 7            |               |
+      | 7  | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
 
   Scenario: degenerate to full tag scan
     When profiling query:
