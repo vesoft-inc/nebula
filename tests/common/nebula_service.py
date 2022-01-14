@@ -228,6 +228,8 @@ class NebulaService(object):
         # Login retry
         self.graphd_param['failed_login_attempts'] = '5'
         self.graphd_param['password_lock_time_in_secs'] = '10'
+        # expression depth limit
+        self.graphd_param['max_expression_depth'] = '128'
 
         self.storaged_param = copy.copy(_params)
         self.storaged_param['local_config'] = 'false'
