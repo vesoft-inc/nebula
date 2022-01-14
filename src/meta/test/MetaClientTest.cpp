@@ -2279,6 +2279,13 @@ TEST(MetaClientTest, MergeZoneTest) {
     ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
   }
   {
+    auto result = client
+                      ->mergeZone({"default_zone_127.0.0.1_8986", "default_zone_127.0.0.1_8987"},
+                                  "default_zone_127.0.0.1_8988")
+                      .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
     // Merge zones is empty
     auto result = client->mergeZone({}, "new_zone").get();
     EXPECT_FALSE(result.ok());
@@ -2473,6 +2480,26 @@ TEST(MetaClientTest, DivideZoneTest) {
     std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
     std::vector<HostAddr> oneHosts = {
         {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
     zoneItems.emplace("one_zone", std::move(oneHosts));
     std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
     zoneItems.emplace("another_zone", std::move(anotherHosts));

@@ -7,8 +7,10 @@
 
 #include <memory>
 #include <queue>
+#include <unordered_set>
 
 #include "common/base/ObjectPool.h"
+#include "common/expression/ArithmeticExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
@@ -415,30 +417,69 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
-  // Match relational expressions containing at least one arithmetic expr
-  auto matcher = [](const Expression *e) -> bool {
-    if (e->isRelExpr()) {
-      auto relExpr = static_cast<const RelationalExpression *>(e);
-      if (isEvaluableExpr(relExpr->right())) {
-        return true;
-      }
-      // TODO: To match arithmetic expression on both side
-      auto lExpr = relExpr->left();
-      if (lExpr->isArithmeticExpr()) {
-        auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
-        return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
+  QueryExpressionContext ctx(nullptr);
+
+  auto checkArithmExpr = [&ctx](const ArithmeticExpression *arithmExpr) -> bool {
+    auto lExpr = const_cast<Expression *>(arithmExpr->left());
+    auto rExpr = const_cast<Expression *>(arithmExpr->right());
+
+    // If the arithExpr has constant expr as member that is a string, do not rewrite
+    if (lExpr->kind() == Expression::Kind::kConstant) {
+      if (lExpr->eval(ctx).isStr()) {
+        return false;
       }
     }
-    return false;
+    if (rExpr->kind() == Expression::Kind::kConstant) {
+      if (rExpr->eval(ctx).isStr()) {
+        return false;
+      }
+    }
+    return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
+  };
+
+  // Match relational expressions following these rules:
+  // 1. the right operand of rel expr should be evaluable
+  // 2. the left operand of rel expr should be:
+  // 2.a an arithmetic expr that does not contains string and has at least one operand that is
+  // evaluable
+  // OR
+  // 2.b an relational expr so that it might could be simplified:
+  // ((v.age > 40 == true)  => (v.age > 40))
+  auto matcher = [&checkArithmExpr](const Expression *e) -> bool {
+    if (!e->isRelExpr()) {
+      return false;
+    }
+
+    auto relExpr = static_cast<const RelationalExpression *>(e);
+    // Check right operand
+    bool checkRightOperand = isEvaluableExpr(relExpr->right());
+    if (!checkRightOperand) {
+      return false;
+    }
+
+    // Check left operand
+    bool checkLeftOperand = false;
+    auto lExpr = relExpr->left();
+    // Left operand is arithmetical expr
+    if (lExpr->isArithmeticExpr()) {
+      auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+      checkLeftOperand = checkArithmExpr(arithmExpr);
+    } else if (lExpr->isRelExpr() ||
+               lExpr->kind() == Expression::Kind::kLabelAttribute) {  // for expressions that
+                                                                      // contain boolean literals
+                                                                      // such as (v.age <= null)
+      checkLeftOperand = true;
+    }
+    return checkLeftOperand;
   };
 
   // Simplify relational expressions involving boolean literals
-  auto simplifyBoolOperand =
-      [pool](RelationalExpression *relExpr, Expression *lExpr, Expression *rExpr) -> Expression * {
-    QueryExpressionContext ctx(nullptr);
+  auto simplifyBoolOperand = [pool, &ctx](RelationalExpression *relExpr,
+                                          Expression *lExpr,
+                                          Expression *rExpr) -> Expression * {
     if (rExpr->kind() == Expression::Kind::kConstant) {
       auto conExpr = static_cast<ConstantExpression *>(rExpr);
-      auto val = conExpr->eval(ctx(nullptr));
+      auto val = conExpr->eval(ctx);
       auto valType = val.type();
       // Rewrite to null if the expression contains any operand that is null
       if (valType == Value::Type::NULLVALUE) {
@@ -521,7 +562,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
     // case Expression::Kind::kMultiply:
     // case Expression::Kind::kDivision:
     default:
-      LOG(FATAL) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+      DLOG(ERROR) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
       break;
   }
 
@@ -529,13 +570,35 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  auto rewrittenExpr = const_cast<Expression *>(filter);
+  // Check if any overflow happen before filter tranform
+  auto initialConstFold = foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(initialConstFold);
+  auto newFilter = initialConstFold.value();
+
+  // If the filter contains more than one different Label expr, this filter cannot be
+  // pushed down, such as where v1.player.name == 'xxx' or v2.player.age == 20
+  auto propExprs = ExpressionUtils::collectAll(newFilter, {Expression::Kind::kLabel});
+  // Deduplicate the list
+  std::unordered_set<std::string> dedupPropExprSet;
+  for (auto &iter : propExprs) {
+    dedupPropExprSet.emplace(iter->toString());
+  }
+  if (dedupPropExprSet.size() > 1) {
+    return const_cast<Expression *>(newFilter);
+  }
+
   // Rewrite relational expression
-  rewrittenExpr = rewriteRelExpr(rewrittenExpr);
+  auto rewrittenExpr = rewriteRelExpr(newFilter->clone());
+
   // Fold constant expression
   auto constantFoldRes = foldConstantExpr(rewrittenExpr);
-  NG_RETURN_IF_ERROR(constantFoldRes);
+  // If errors like overflow happened during the constant fold, stop transferming and return the
+  // original expression
+  if (!constantFoldRes.ok()) {
+    return const_cast<Expression *>(newFilter);
+  }
   rewrittenExpr = constantFoldRes.value();
+
   // Reduce Unary expression
   rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr);
   return rewrittenExpr;
@@ -880,8 +943,9 @@ Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kin
       return Expression::Kind::kDivision;
     case Expression::Kind::kDivision:
       return Expression::Kind::kMultiply;
+    // There is no oppsite operation to Mod, return itself
     case Expression::Kind::kMod:
-      LOG(FATAL) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+      return Expression::Kind::kMod;
       break;
     default:
       LOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
