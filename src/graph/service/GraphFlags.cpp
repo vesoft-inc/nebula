@@ -71,6 +71,7 @@ DEFINE_bool(disable_octal_escape_char,
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
+DEFINE_int32(max_sessions_per_ip_per_user, 300, "Maximum number of sessions that can be created per IP and per user");
 
 // Sanity-checking Flag Values
 static bool ValidateSessIdleTimeout(const char* flagname, int32_t value) {

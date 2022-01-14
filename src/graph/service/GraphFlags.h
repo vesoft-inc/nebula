@@ -36,6 +36,7 @@ DECLARE_bool(enable_authorize);
 DECLARE_string(auth_type);
 DECLARE_string(cloud_http_url);
 DECLARE_uint32(max_allowed_statements);
+DECLARE_int32(max_sessions_per_ip_per_user);
 
 // Failed login attempt
 // value of failed_login_attempts is in the range from 0 to 32767.
@@ -44,6 +45,7 @@ DECLARE_uint32(failed_login_attempts);
 // value of password_lock_time_in_secs is in the range from 0 to 32767[secs].
 // The deault value is 0. A value of 0 disables the option.
 DECLARE_uint32(password_lock_time_in_secs);
+
 
 // optimizer
 DECLARE_bool(enable_optimizer);

@@ -75,6 +75,16 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   void updateSessionsToMeta();
 
   void updateSessionInfo(ClientSession* session);
+
+  /**
+   * add sessionCount
+   */
+  bool addSessionCount(std::string key);
+
+  /**
+   * sub sessionCount
+   */
+  void subSessionCount(std::string key);
 };
 
 }  // namespace graph
