@@ -103,8 +103,13 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::AdminJobOp jobOp,
 }
 
 Value SubmitJobExecutor::convertJobTimestampToDateTime(int64_t timestamp) {
-  return timestamp > 0 ? Value(time::TimeConversion::unixSecondsToDateTime(timestamp))
-                       : Value::kEmpty;
+  if (timestamp <= 0) {
+    return Value::kEmpty;
+  }
+
+  DateTime date = time::TimeConversion::unixSecondsToDateTime(timestamp);
+
+  return time::TimeUtils::rmDateTimeStrMs(date.toString());
 }
 
 nebula::DataSet SubmitJobExecutor::buildShowResultData(

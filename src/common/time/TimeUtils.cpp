@@ -223,5 +223,13 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return p.readTime(str);
 }
 
+/*static*/ const std::string TimeUtils::rmDateTimeStrMs(const std::string &str) {
+  auto pos = str.find('.');
+  if (pos == std::string::npos) {
+    return str;
+  }
+  return str.substr(0, pos);
+}
+
 }  // namespace time
 }  // namespace nebula

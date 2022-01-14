@@ -169,6 +169,17 @@ TEST(Time, Parse) {
   }
 }
 
+TEST(Time, RmStrMillsecond) {
+  {
+    auto result = time::TimeUtils::parseDateTime("2022-01-10 07:27:18");
+    ASSERT_TRUE(result.ok());
+    std::string dateTimeStr = result.value().toString();
+    ASSERT_EQ(dateTimeStr, "2022-01-10T07:27:18.000000000");
+
+    std::string dataStrWithoutMs = time::TimeUtils::rmDateTimeStrMs(dateTimeStr);
+    EXPECT_EQ(dataStrWithoutMs, "2022-01-10T07:27:18");
+  }
+}
 }  // namespace nebula
 
 int main(int argc, char **argv) {

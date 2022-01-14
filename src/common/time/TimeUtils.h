@@ -194,6 +194,8 @@ class TimeUtils {
     }
   }
 
+  static const std::string rmDateTimeStrMs(const std::string &str);
+
   static StatusOr<Value> toTimestamp(const Value &val);
 
   static StatusOr<Duration> durationFromMap(const Map &m);
