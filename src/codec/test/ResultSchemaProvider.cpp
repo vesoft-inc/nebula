@@ -22,7 +22,7 @@ ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
                                                            bool nullable,
                                                            int32_t offset,
                                                            size_t nullFlagPos,
-                                                           Expression* defaultValue,
+                                                           std::string defaultValue,
                                                            meta::cpp2::GeoShape geoShape)
     : name_(std::move(name)),
       type_(type),
@@ -42,14 +42,14 @@ PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
 }
 
 bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
-  return defaultValue_ != nullptr;
+  return defaultValue_ != "";
 }
 
 bool ResultSchemaProvider::ResultSchemaField::nullable() const {
   return nullable_;
 }
 
-Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const {
+const std::string& ResultSchemaProvider::ResultSchemaField::defaultValue() const {
   return defaultValue_;
 }
 
