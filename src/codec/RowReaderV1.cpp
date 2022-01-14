@@ -219,7 +219,7 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
     case PropertyType::STRING:
       return getString(index);
     default:
-      LOG(FATAL) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
+      LOG(ERROR) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
       return NullType::BAD_TYPE;
   }
 }

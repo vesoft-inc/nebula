@@ -25,26 +25,25 @@ class WriteBatch {
   /**
    * @brief Encode the operation of put key/value into write batch
    *
-   * @param key
-   * @param value
+   * @param key Key to put
+   * @param value Value to put
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) = 0;
 
   /**
-   * @brief Encode the operation of remove key/value into write batch
+   * @brief Encode the operation of remove key into write batch
    *
-   * @param key
-   * @param value
+   * @param key Key to remove
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode remove(folly::StringPiece key) = 0;
 
   /**
-   * @brief Encode the operation of range remove key/value into write batch
+   * @brief Encode the operation of remove keys in range [start, end) into write batch
    *
-   * @param key
-   * @param value
+   * @param start Start key to be removed, inclusive
+   * @param end End key to be removed, exclusive
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode removeRange(folly::StringPiece start, folly::StringPiece end) = 0;
