@@ -331,6 +331,20 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | name         |
       | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
+            OR id(v) == hash('Yao Ming')
+      RETURN v.player.name as name
+      """
+    Then the result should be, in any order:
+      | name               |
+      | "James Harden"     |
+      | "Jonathon Simmons" |
+      | "Klay Thompson"    |
+      | "Dejounte Murray"  |
+      | "Yao Ming"         |
 
   Scenario: with arithmetic
     When executing query:

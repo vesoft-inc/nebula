@@ -338,6 +338,20 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | v                                                                                                           |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+            OR id(v) == 'Yao Ming'
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                               |
+      | ("James Harden" :player{age: 29, name: "James Harden"})         |
+      | ("Jonathon Simmons" :player{age: 29, name: "Jonathon Simmons"}) |
+      | ("Klay Thompson" :player{age: 29, name: "Klay Thompson"})       |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})   |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                 |
 
   Scenario: Start from end
     When executing query:
