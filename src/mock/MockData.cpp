@@ -307,21 +307,29 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(Object
   if (!hasProp) {
     return schema;
   }
-  schema->addField("name", PropertyType::STRING, 0, false, ConstantExpression::make(pool, ""));
+  schema->addField(
+      "name", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "")->encode());
   // only age filed has no default value and nullable is false
   schema->addField("age", PropertyType::INT64, 0, false);
-  schema->addField("playing", PropertyType::BOOL, 0, false, ConstantExpression::make(pool, true));
-  schema->addField("career", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 10L));
-  schema->addField("startYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
-  schema->addField("endYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
-  schema->addField("games", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
-  schema->addField("avgScore", PropertyType::DOUBLE, 0, false, ConstantExpression::make(pool, 0.0));
-  schema->addField("serveTeams", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+  schema->addField(
+      "playing", PropertyType::BOOL, 0, false, ConstantExpression::make(pool, true)->encode());
+  schema->addField(
+      "career", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 10L)->encode());
+  schema->addField(
+      "startYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
+  schema->addField(
+      "endYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
+  schema->addField(
+      "games", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
+  schema->addField(
+      "avgScore", PropertyType::DOUBLE, 0, false, ConstantExpression::make(pool, 0.0)->encode());
+  schema->addField(
+      "serveTeams", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
 
   // Set ttl property
   if (FLAGS_mock_ttl_col) {
     schema->addField(
-        "insertTime", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+        "insertTime", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
     meta::cpp2::SchemaProp prop;
     prop.ttl_col_ref() = "insertTime";
     prop.ttl_duration_ref() = FLAGS_mock_ttl_duration;
@@ -329,8 +337,11 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(Object
   }
 
   // Use default value
-  schema->addField(
-      "country", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "America"));
+  schema->addField("country",
+                   PropertyType::STRING,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, "America")->encode());
   // Use nullable
   schema->addField("champions", PropertyType::INT64, 0, true);
 
@@ -355,21 +366,27 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeEdgeSchema(Object
     return schema;
   }
   schema->addField(
-      "playerName", PropertyType::STRING, 0, false, ConstantExpression::make(pool, ""));
-  schema->addField("teamName", PropertyType::STRING, 0, false, ConstantExpression::make(pool, ""));
+      "playerName", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "")->encode());
   schema->addField(
-      "startYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 2020L));
-  schema->addField("endYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 2020L));
+      "teamName", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "")->encode());
+  schema->addField(
+      "startYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 2020L)->encode());
+  schema->addField(
+      "endYear", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 2020L)->encode());
   // only teamCareer filed has no default value and nullable is false
   schema->addField("teamCareer", PropertyType::INT64, 0, false);
-  schema->addField("teamGames", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 1L));
   schema->addField(
-      "teamAvgScore", PropertyType::DOUBLE, 0, false, ConstantExpression::make(pool, 0.0));
+      "teamGames", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 1L)->encode());
+  schema->addField("teamAvgScore",
+                   PropertyType::DOUBLE,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, 0.0)->encode());
 
   // Set ttl property
   if (FLAGS_mock_ttl_col) {
     schema->addField(
-        "insertTime", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+        "insertTime", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L)->encode());
     meta::cpp2::SchemaProp prop;
     prop.ttl_col_ref() = "insertTime";
     prop.ttl_duration_ref() = FLAGS_mock_ttl_duration;
@@ -377,7 +394,8 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeEdgeSchema(Object
   }
 
   // Use default value
-  schema->addField("type", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "trade"));
+  schema->addField(
+      "type", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "trade")->encode());
   // Use nullable
   schema->addField("champions", PropertyType::INT64, 0, true);
 
@@ -530,26 +548,41 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTypicaSchemaV2(ObjectP
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
   schema->addField("col_bool", PropertyType::BOOL);
   schema->addField("col_bool_null", PropertyType::BOOL, 0, true);
-  schema->addField(
-      "col_bool_default", PropertyType::BOOL, 0, false, ConstantExpression::make(pool, true));
+  schema->addField("col_bool_default",
+                   PropertyType::BOOL,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, true)->encode());
   schema->addField("col_int", PropertyType::INT64);
   schema->addField("col_int_null", PropertyType::INT64, 0, true);
-  schema->addField(
-      "col_int_default", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 20L));
+  schema->addField("col_int_default",
+                   PropertyType::INT64,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, 20L)->encode());
   schema->addField("col_float", PropertyType::FLOAT);
   schema->addField("col_float_null", PropertyType::FLOAT, 0, true);
-  schema->addField(
-      "col_float_default", PropertyType::FLOAT, 0, false, ConstantExpression::make(pool, 2.2F));
+  schema->addField("col_float_default",
+                   PropertyType::FLOAT,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, 2.2F)->encode());
   schema->addField("col_str", PropertyType::STRING);
   schema->addField("col_str_null", PropertyType::STRING, 0, true);
-  schema->addField(
-      "col_str_default", PropertyType::STRING, 0, false, ConstantExpression::make(pool, "sky"));
+  schema->addField("col_str_default",
+                   PropertyType::STRING,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, "sky")->encode());
   schema->addField("col_date", PropertyType::DATE);
   schema->addField("col_date_null", PropertyType::DATE, 0, true);
 
   const Date date = {2020, 2, 20};
-  schema->addField(
-      "col_date_default", PropertyType::DATE, 0, false, ConstantExpression::make(pool, date));
+  schema->addField("col_date_default",
+                   PropertyType::DATE,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, date)->encode());
 
   return schema;
 }
