@@ -12,6 +12,7 @@
 namespace nebula {
 namespace graph {
 
+// interface for authentication
 class Authenticator {
  public:
   virtual ~Authenticator() = default;

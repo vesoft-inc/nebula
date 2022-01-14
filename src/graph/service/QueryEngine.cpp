@@ -24,6 +24,7 @@ DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds
 namespace nebula {
 namespace graph {
 
+// register planners, init optimizer and set memory monitor
 Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
                          meta::MetaClient* metaClient) {
   metaClient_ = metaClient;
@@ -54,6 +55,7 @@ void QueryEngine::execute(RequestContextPtr rctx) {
   instance->execute();
 }
 
+// setup memory monitor thread
 Status QueryEngine::setupMemoryMonitorThread() {
   memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
   if (!memoryMonitorThread_ || !memoryMonitorThread_->start("graph-memory-monitor")) {

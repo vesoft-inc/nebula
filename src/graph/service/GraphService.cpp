@@ -8,6 +8,7 @@
 #include <proxygen/lib/utils/CryptUtil.h>
 
 #include <boost/filesystem.hpp>
+#include <memory>
 
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
@@ -73,7 +74,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
   auto authResult = auth(username, password);
   if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
-    ctx->resp().errorMsg.reset(new std::string(authResult.toString()));
+    ctx->resp().errorMsg = std::make_unique<std::string>(authResult.toString());
     ctx->finish();
     stats::StatsManager::addValue(kNumAuthFailedSessions);
     stats::StatsManager::addValue(kNumAuthFailedSessionsBadUserNamePassword);
@@ -82,7 +83,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 
   if (sessionManager_->isOutOfConnections()) {
     ctx->resp().errorCode = ErrorCode::E_TOO_MANY_CONNECTIONS;
-    ctx->resp().errorMsg.reset(new std::string("Too many connections in the cluster"));
+    ctx->resp().errorMsg = std::make_unique<std::string>("Too many connections in the cluster");
     ctx->finish();
     stats::StatsManager::addValue(kNumAuthFailedSessions);
     stats::StatsManager::addValue(kNumAuthFailedSessionsOutOfMaxAllowed);
@@ -96,24 +97,24 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
       LOG(ERROR) << "Create session for userName: " << user << ", ip: " << cIp
                  << " failed: " << ret.status();
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(new std::string(ret.status().toString()));
+      ctx->resp().errorMsg = std::make_unique<std::string>(ret.status().toString());
       return ctx->finish();
     }
     auto sessionPtr = std::move(ret).value();
     if (sessionPtr == nullptr) {
       LOG(ERROR) << "Get session for sessionId is nullptr";
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(new std::string("Get session for sessionId is nullptr"));
+      ctx->resp().errorMsg = std::make_unique<std::string>("Get session for sessionId is nullptr");
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumOpenedSessions);
     stats::StatsManager::addValue(kNumActiveSessions);
     ctx->setSession(sessionPtr);
-    ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
-    ctx->resp().timeZoneOffsetSeconds.reset(
-        new int32_t(time::Timezone::getGlobalTimezone().utcOffsetSecs()));
-    ctx->resp().timeZoneName.reset(
-        new std::string(time::Timezone::getGlobalTimezone().stdZoneName()));
+    ctx->resp().sessionId = std::make_unique<int64_t>(ctx->session()->id());
+    ctx->resp().timeZoneOffsetSeconds =
+        std::make_unique<int32_t>(time::Timezone::getGlobalTimezone().utcOffsetSecs());
+    ctx->resp().timeZoneName =
+        std::make_unique<std::string>(time::Timezone::getGlobalTimezone().stdZoneName());
     return ctx->finish();
   };
 
@@ -148,16 +149,16 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
     if (!ret.ok()) {
       LOG(ERROR) << "Get session for sessionId: " << sessionId << " failed: " << ret.status();
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(new std::string(folly::stringPrintf(
-          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str())));
+      ctx->resp().errorMsg = std::make_unique<std::string>(folly::stringPrintf(
+          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str()));
       return ctx->finish();
     }
     auto sessionPtr = std::move(ret).value();
     if (sessionPtr == nullptr) {
       LOG(ERROR) << "Get session for sessionId: " << sessionId << " is nullptr";
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(
-          new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
+      ctx->resp().errorMsg = std::make_unique<std::string>(
+          folly::stringPrintf("SessionId[%ld] does not exist", sessionId));
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumQueries);

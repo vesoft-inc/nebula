@@ -34,11 +34,7 @@ Status CloudAuthenticator::auth(const std::string& user, const std::string& pass
   std::string header = R"(-H "Content-Type: application/json"  -H "Authorization:Nebula )";
   header = header + base64Str + "\"";
   auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
-
-  if (!result.ok()) {
-    LOG(ERROR) << result.status();
-    return result.status();
-  }
+  NG_LOG_AND_RETURN_IF_ERROR(result);
 
   try {
     auto json = folly::parseJson(result.value());

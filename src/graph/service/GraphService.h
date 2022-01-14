@@ -22,7 +22,7 @@ namespace graph {
 class GraphService final : public cpp2::GraphServiceSvIf {
  public:
   GraphService() = default;
-  ~GraphService() = default;
+  ~GraphService() override = default;
 
   Status NG_MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
                                  const HostAddr& hostAddr);

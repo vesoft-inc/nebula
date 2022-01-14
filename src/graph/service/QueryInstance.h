@@ -29,6 +29,7 @@ class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
   explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
   ~QueryInstance() = default;
 
+  // entrance of the Validate, Optimize, Schedule, Execute process
   void execute();
 
   QueryContext* qctx() const {
@@ -52,7 +53,7 @@ class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
 
   Status validateAndOptimize();
   // return true if continue to execute
-  bool explainOrContinue();
+  bool explainAndFinish();
   void addSlowQueryStats(uint64_t latency, const std::string& spaceName) const;
   void fillRespData(ExecutionResponse* resp);
   Status findBestPlan();
