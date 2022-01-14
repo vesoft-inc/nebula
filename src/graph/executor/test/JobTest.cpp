@@ -37,9 +37,13 @@ TEST_F(JobTest, JobFinishTime) {
     EXPECT_TRUE(status.ok());
     auto result = std::move(status).value();
     EXPECT_EQ(result.rows.size(), 2);
-    EXPECT_EQ(result.rows[0][3], Value(time::TimeConversion::unixSecondsToDateTime(123)));
+    EXPECT_EQ(result.rows[0][3],
+              time::TimeUtils::rmDateTimeStrMs(
+                  time::TimeConversion::unixSecondsToDateTime(123).toString()));
     EXPECT_EQ(result.rows[0][4], Value::kEmpty);
-    EXPECT_EQ(result.rows[1][3], Value(time::TimeConversion::unixSecondsToDateTime(456)));
+    EXPECT_EQ(result.rows[1][3],
+              time::TimeUtils::rmDateTimeStrMs(
+                  time::TimeConversion::unixSecondsToDateTime(456).toString()));
     EXPECT_EQ(result.rows[1][4], Value::kEmpty);
   }
   {
@@ -60,7 +64,9 @@ TEST_F(JobTest, JobFinishTime) {
     EXPECT_TRUE(status.ok());
     auto result = std::move(status).value();
     EXPECT_EQ(result.rows.size(), 1);
-    EXPECT_EQ(result.rows[0][3], Value(time::TimeConversion::unixSecondsToDateTime(123)));
+    EXPECT_EQ(result.rows[0][3],
+              time::TimeUtils::rmDateTimeStrMs(
+                  time::TimeConversion::unixSecondsToDateTime(456).toString()));
     EXPECT_EQ(result.rows[0][4], Value::kEmpty);
   }
 }
