@@ -39,10 +39,14 @@ Status GoValidator::validateImpl() {
           "A variable must be referred in FROM before used in WHERE or YIELD");
     }
     auto varPropsMap = exprProps.varProps();
-    if (varPropsMap.size() > 1) {
+    std::vector<std::string> keys;
+    for (const auto& elem : varPropsMap) {
+      keys.emplace_back(elem.first);
+    }
+    if (keys.size() > 1) {
       return Status::SemanticError("Multiple variable property is not supported in WHERE or YIELD");
     }
-    if (varPropsMap.front().first != goCtx_->from.userDefinedVarName) {
+    if (keys.front() != goCtx_->from.userDefinedVarName) {
       return Status::SemanticError(
           "A variable must be referred in FROM before used in WHERE or YIELD");
     }
