@@ -27,12 +27,19 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
 class NebulaProcess(object):
-    def __init__(self, name, ports, suffix_index=0, params=None):
+    def __init__(self, name, ports, suffix_index=0, params=None, is_standalone=False):
         if params is None:
             params = {}
-        assert len(ports) == 4, 'should have 4 ports but have {}'.format(len(ports))
-        self.name = name
-        self.tcp_port, self.tcp_internal_port, self.http_port, self.https_port = ports
+        if is_standalone == False:
+            assert len(ports) == 4, 'should have 4 ports but have {}'.format(len(ports))
+            self.name = name
+            self.tcp_port, self.tcp_internal_port, self.http_port, self.https_port = ports
+        else:
+            assert len(ports) == 12, 'should have 12 ports but have {}'.format(len(ports))
+            self.name = name
+            self.tcp_port, self.tcp_internal_port, self.http_port, self.https_port = ports[0:4]
+            self.meta_port, self.meta_tcp_internal_port, self.meta_http_port, self.meta_https_port = ports[4:8]
+            self.storage_port, self.storage_tcp_internal_port, self.storage_http_port, self.storage_https_port = ports[8:12]
         self.suffix_index = suffix_index
         self.params = params
         self.host = '127.0.0.1'
@@ -51,6 +58,8 @@ class NebulaProcess(object):
             'port': self.tcp_port,
             'ws_http_port': self.http_port,
             'ws_h2_port': self.https_port,
+            'meta_port': self.meta_port,
+            'storage_port': self.storage_port
         }
         # data path
         if self.name.upper() != 'GRAPHD':
@@ -109,6 +118,7 @@ class NebulaService(object):
         graphd_num=1,
         ca_signed=False,
         debug_log=True,
+        use_standalone=False,
         **kwargs,
     ):
         assert graphd_num > 0 and metad_num > 0 and storaged_num > 0
@@ -144,8 +154,41 @@ class NebulaService(object):
         self.ports_per_process = 4
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
-        self._make_params(**kwargs)
-        self.init_process()
+
+        if use_standalone == False:
+            self._make_params(**kwargs)
+            self.init_process()
+        else:
+            self._make_sa_params(**kwargs)
+            self.init_standalone()
+
+    def init_standalone(self):
+        process_count = self.metad_num + self.storaged_num + self.graphd_num
+        ports_count = process_count * self.ports_per_process
+        self.all_ports = self._find_free_port(ports_count)
+        print(self.all_ports)
+        index = 0
+        standalone = NebulaProcess(
+            "standalone",
+            self.all_ports[index : index + ports_count ],
+            index,
+            self.graphd_param,
+            is_standalone=True
+        )
+        self.graphd_processes.append(standalone)
+        self.all_processes = (
+            self.graphd_processes
+        )
+        # update meta address
+        meta_server_addrs = ','.join(
+            [
+                '{}:{}'.format(process.host, process.meta_port)
+                for process in self.graphd_processes
+            ]
+        )
+
+        for p in self.all_processes:
+            p.update_meta_server_addrs(meta_server_addrs)
 
     def init_process(self):
         process_count = self.metad_num + self.storaged_num + self.graphd_num
@@ -237,6 +280,38 @@ class NebulaService(object):
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)
 
+    def _make_sa_params(self, **kwargs):
+        _params = {
+            'heartbeat_interval_secs': 1,
+            'expired_time_factor': 60,
+        }
+        if self.ca_signed:
+            _params['cert_path'] = 'share/resources/test.derive.crt'
+            _params['key_path'] = 'share/resources/test.derive.key'
+            _params['ca_path'] = 'share/resources/test.ca.pem'
+
+        else:
+            _params['cert_path'] = 'share/resources/test.ca.pem'
+            _params['key_path'] = 'share/resources/test.ca.key'
+            _params['password_path'] = 'share/resources/test.ca.password'
+
+        if self.debug_log:
+            _params['v'] = '4'
+
+        self.graphd_param = copy.copy(_params)
+        self.graphd_param['local_config'] = 'false'
+        self.graphd_param['enable_authorize'] = 'true'
+        self.graphd_param['system_memory_high_watermark_ratio'] = '0.95'
+        self.graphd_param['num_rows_to_check_memory'] = '4'
+        self.graphd_param['session_reclaim_interval_secs'] = '2'
+        # Login retry
+        self.graphd_param['failed_login_attempts'] = '5'
+        self.graphd_param['password_lock_time_in_secs'] = '10'
+        self.graphd_param['raft_heartbeat_interval_secs'] = '30'
+        self.graphd_param['skip_wait_in_rate_limiter'] = 'true'
+        for p in [self.metad_param, self.storaged_param, self.graphd_param]:
+            p.update(kwargs)
+
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
 
@@ -245,6 +320,32 @@ class NebulaService(object):
         conf_path = self.src_dir + '/conf/'
 
         for item in ['nebula-graphd', 'nebula-storaged', 'nebula-metad']:
+            shutil.copy(bin_path + item, self.work_dir + '/bin/')
+            shutil.copy(
+                conf_path + '{}.conf.default'.format(item),
+                self.work_dir + '/conf/{}.conf'.format(item),
+            )
+
+        resources_dir = self.work_dir + '/share/resources/'
+        os.makedirs(resources_dir)
+
+        # timezone file
+        shutil.copy(
+            self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir
+        )
+        shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
+        # cert files
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.key', resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.pem', resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.password', resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.derive.key', resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.derive.crt', resources_dir)
+
+    def _copy_standalone_conf(self):
+        bin_path = self.build_dir + '/bin/'
+        conf_path = self.src_dir + '/conf/'
+
+        for item in ['nebula-standalone']:
             shutil.copy(bin_path + item, self.work_dir + '/bin/')
             shutil.copy(
                 conf_path + '{}.conf.default'.format(item),
@@ -328,6 +429,24 @@ class NebulaService(object):
             result = sk.connect_ex(('127.0.0.1', port))
             return result == 0
 
+    def install_standalone(self, work_dir=None):
+        if work_dir is not None:
+            self.work_dir = work_dir
+            print("workdir not exist")
+        if os.path.exists(self.work_dir):
+            shutil.rmtree(self.work_dir)
+        os.mkdir(self.work_dir)
+        print("work directory: " + self.work_dir)
+        os.chdir(self.work_dir)
+        installed_files = ['bin', 'conf', 'scripts']
+        for f in installed_files:
+            os.mkdir(self.work_dir + '/' + f)
+        self._copy_standalone_conf()
+        max_suffix = max([self.graphd_num, self.storaged_num, self.metad_num])
+        for i in range(max_suffix):
+            os.mkdir(self.work_dir + '/logs{}'.format(i))
+            os.mkdir(self.work_dir + '/pids{}'.format(i))
+
     def install(self, work_dir=None):
         if work_dir is not None:
             self.work_dir = work_dir
@@ -402,6 +521,64 @@ class NebulaService(object):
             [
                 "127.0.0.1:{}".format(str(storaged.tcp_port))
                 for storaged in self.storaged_processes
+            ]
+        )
+        cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
+        print("add hosts cmd is {}".format(cmd))
+        resp = client.execute(cmd)
+        assert resp.is_succeeded(), resp.error_msg()
+        client.release()
+
+        # wait nebula start
+        server_ports = [p.tcp_port for p in self.all_processes]
+        if not self._check_servers_status(server_ports):
+            self._collect_pids()
+            self.kill_all(signal.SIGKILL)
+            elapse = time.time() - start_time
+            raise Exception(f'nebula servers not ready in {elapse}s')
+
+        self._collect_pids()
+
+        return [p.tcp_port for p in self.graphd_processes]
+
+    def start_standalone(self):
+        os.chdir(self.work_dir)
+        start_time = time.time()
+        for p in self.all_processes:
+            print('start stand alone process')
+            p.start()
+
+        config = Config()
+        config.max_connection_pool_size = 20
+        config.timeout = 60000
+        # init connection pool
+        client_pool = ConnectionPool()
+        # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
+        ssl_config = get_ssl_config(self.is_graph_ssl, self.ca_signed)
+        print("begin to add hosts")
+        ok = False
+        # wait graph is ready, and then add hosts
+        for _ in range(20):
+            try:
+                ok = client_pool.init(
+                    [("127.0.0.1", self.graphd_processes[0].tcp_port)],
+                    config,
+                    ssl_config,
+                )
+                if ok:
+                    break
+            except:
+                pass
+            time.sleep(1)
+
+        assert ok, "graph is not ready"
+        # get session from the pool
+        client = client_pool.get_session('root', 'nebula')
+
+        hosts = ",".join(
+            [
+                "127.0.0.1:{}".format(str(storaged.storage_port))
+                for storaged in self.graphd_processes
             ]
         )
         cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
