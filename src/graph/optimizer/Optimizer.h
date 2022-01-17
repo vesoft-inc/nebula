@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
 namespace graph {
@@ -30,7 +31,10 @@ class Optimizer final {
   StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
 
  private:
+  Status preprocess(graph::PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID);
+
   StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
+
   Status doExploration(OptContext *octx, OptGroup *rootGroup);
 
   OptGroup *convertToGroup(OptContext *ctx,

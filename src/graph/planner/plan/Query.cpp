@@ -760,6 +760,42 @@ std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   return desc;
 }
 
+Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
+                                       graph::QueryContext* qctx,
+                                       GraphSpaceID spaceID) {
+  DCHECK(!colNames().empty());
+  auto& nodeAlias = colNames().back();
+  auto it = propsUsed.colsSet.find(nodeAlias);
+  if (it != propsUsed.colsSet.end()) {  // All properties are used
+    propsUsed.colsSet.erase(it);
+    NG_RETURN_IF_ERROR(depsPruneProperties(propsUsed, qctx, spaceID));
+    return Status::OK();
+  }
+
+  if (vFilter_ != nullptr) {
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID));
+  }
+  auto* vertexProps = props();
+  if (vertexProps != nullptr) {
+    auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
+    if (it2 != propsUsed.vertexPropsMap.end()) {
+      auto& tagPropsMap = it2->second;
+      auto prunedTagsProps = std::make_unique<std::vector<VertexProp>>();
+      prunedTagsProps->reserve(tagPropsMap.size());
+      for (auto& [tagId, tagProps] : tagPropsMap) {
+        VertexProp vProp;
+        vProp.tag_ref() = tagId;
+        vProp.props_ref() = std::vector<std::string>(tagProps.begin(), tagProps.end());
+        prunedTagsProps->emplace_back(std::move(vProp));
+      }
+      setVertexProps(std::move(prunedTagsProps));
+    }
+  }
+
+  NG_RETURN_IF_ERROR(depsPruneProperties(propsUsed, qctx, spaceID));
+  return Status::OK();
+}
+
 std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());

@@ -1544,6 +1544,10 @@ class AppendVertices final : public GetVertices {
     trackPrevPath_ = track;
   }
 
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
+
  private:
   AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : GetVertices(qctx,

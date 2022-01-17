@@ -289,10 +289,18 @@ class PlanNode {
     return static_cast<const T*>(this);
   }
 
+  virtual Status pruneProperties(PropertyTracker& propsUsed,
+                                 graph::QueryContext* qctx,
+                                 GraphSpaceID spaceID);
+
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
 
   virtual ~PlanNode() = default;
+
+  Status depsPruneProperties(PropertyTracker& propsUsed,
+                             graph::QueryContext* qctx,
+                             GraphSpaceID spaceID);
 
   static void addDescription(std::string key, std::string value, PlanNodeDescription* desc);
 
