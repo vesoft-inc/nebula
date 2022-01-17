@@ -52,7 +52,7 @@ class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
   void onError(Status);
 
   Status validateAndOptimize();
-  // return true if continue to execute
+  // Return true if continue to execute
   bool explainAndFinish();
   void addSlowQueryStats(uint64_t latency, const std::string& spaceName) const;
   void fillRespData(ExecutionResponse* resp);

@@ -40,7 +40,7 @@ bool GraphServer::start() {
     return false;
   }
 
-  // init worker id for snowflake generating unique id
+  // Init worker id for snowflake generating unique id
   nebula::Snowflake::initWorkerId(interface->metaClient_.get());
 
   graphThread_ = std::make_unique<std::thread>([&] {

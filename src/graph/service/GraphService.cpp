@@ -42,7 +42,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
 
-  // load data try 3 time
+  // Load data try 3 time
   bool loadDataOk = metaClient_->waitForMetadReady(3);
   if (!loadDataOk) {
     // Resort to retrying in the background
@@ -70,7 +70,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 
   auto ctx = std::make_unique<RequestContext<AuthResponse>>();
   auto future = ctx->future();
-  // check username and password failed
+  // Check username and password failed
   auto authResult = auth(username, password);
   if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
