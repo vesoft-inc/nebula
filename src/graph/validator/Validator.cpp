@@ -48,6 +48,7 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
       qctx_(DCHECK_NOTNULL(qctx)),
       vctx_(DCHECK_NOTNULL(qctx->vctx())) {}
 
+// Create validator according to sentence type.
 std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
   auto kind = sentence->kind();
   switch (kind) {
@@ -264,6 +265,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
   return std::make_unique<ReportError>(sentence, context);
 }
 
+// Entry of validating sentence.
+// Check session, switch space of validator context, create validators and validate.
 // static
 Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   DCHECK(sentence != nullptr);
@@ -287,6 +290,7 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   return Status::OK();
 }
 
+// Get output columns name of current validator(sentence).
 std::vector<std::string> Validator::getOutColNames() const {
   std::vector<std::string> colNames;
   colNames.reserve(outputs_.size());
@@ -296,6 +300,9 @@ std::vector<std::string> Validator::getOutColNames() const {
   return colNames;
 }
 
+// Append sub-plan to current plan.
+// \param node current plan
+// \param appended sub-plan to append
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
@@ -307,10 +314,15 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   return Status::OK();
 }
 
+// Append sub-plan to previous plan
+// \param root sub-plan to append
 Status Validator::appendPlan(PlanNode* root) {
   return appendPlan(tail_, root);
 }
 
+// Validate current sentence.
+// Check validator context, space, validate, duplicate reference columns,
+// check permission according to sentence kind and privilege of user.
 Status Validator::validate() {
   if (!vctx_) {
     VLOG(1) << "Validate context was not given.";
@@ -351,10 +363,12 @@ Status Validator::validate() {
   return Status::OK();
 }
 
+// Does one space chosen?
 bool Validator::spaceChosen() {
   return vctx_->spaceChosen();
 }
 
+// Deduce type of expression.
 StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   DeduceTypeVisitor visitor(qctx_, vctx_, inputs_, space_.id);
   const_cast<Expression*>(expr)->accept(&visitor);
@@ -364,6 +378,7 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   return visitor.type();
 }
 
+// Collect properties used in expression.
 Status Validator::deduceProps(const Expression* expr,
                               ExpressionProps& exprProps,
                               std::vector<TagID>* tagIds,
@@ -374,6 +389,7 @@ Status Validator::deduceProps(const Expression* expr,
   return std::move(visitor).status();
 }
 
+// Call planner to get final execution plan.
 Status Validator::toPlan() {
   auto* astCtx = getAstContext();
   if (astCtx != nullptr) {
@@ -388,6 +404,7 @@ Status Validator::toPlan() {
   return Status::OK();
 }
 
+// Disable duplicate columns of Input(Variable).
 Status Validator::checkDuplicateColName() {
   auto checkColName = [](const ColsDef& nameList) {
     std::unordered_set<std::string> names;
@@ -417,6 +434,8 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
+// Validate and build start vids.
+// Check vid type, construct expression to access vid.
 Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
   if (clause == nullptr) {
     return Status::SemanticError("From clause nullptr.");

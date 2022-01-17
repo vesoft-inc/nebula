@@ -34,6 +34,8 @@ Status InsertVerticesValidator::toPlan() {
   return Status::OK();
 }
 
+// Check validity of insert vertices.
+// Check schema validity.
 Status InsertVerticesValidator::check() {
   auto sentence = static_cast<InsertVerticesSentence *>(sentence_);
   ifNotExists_ = sentence->isIfNotExists();
@@ -88,6 +90,8 @@ Status InsertVerticesValidator::check() {
   return Status::OK();
 }
 
+// Check validity of vertices data.
+// Check vid type, check properties value, fill to NewVertex structure.
 Status InsertVerticesValidator::prepareVertices() {
   vertices_.reserve(rows_.size());
   for (auto i = 0u; i < rows_.size(); i++) {
@@ -163,6 +167,7 @@ Status InsertEdgesValidator::toPlan() {
   return Status::OK();
 }
 
+// Check edge type and properties.
 Status InsertEdgesValidator::check() {
   auto sentence = static_cast<InsertEdgesSentence *>(sentence_);
   ifNotExists_ = sentence->isIfNotExists();
@@ -198,6 +203,8 @@ Status InsertEdgesValidator::check() {
   return Status::OK();
 }
 
+// Check validity of vertices data.
+// Check edge key type, check properties value, fill to NewEdge structure.
 Status InsertEdgesValidator::prepareEdges() {
   auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
@@ -294,6 +301,7 @@ Status InsertEdgesValidator::prepareEdges() {
   return Status::OK();
 }
 
+// Check vid type, fill edges type when delete edges too.
 Status DeleteVerticesValidator::validateImpl() {
   auto sentence = static_cast<DeleteVerticesSentence *>(sentence_);
   spaceId_ = vctx_->whichSpace().id;
@@ -330,6 +338,7 @@ Status DeleteVerticesValidator::validateImpl() {
   return Status::OK();
 }
 
+// Fill vids to variable and construct expression to access it.
 std::string DeleteVerticesValidator::buildVIds() {
   auto input = vctx_->anonVarGen()->getVar();
   DataSet ds;
@@ -346,6 +355,7 @@ std::string DeleteVerticesValidator::buildVIds() {
   return input;
 }
 
+// Delete vertices and whole related edges(in/out bound).
 Status DeleteVerticesValidator::toPlan() {
   std::string vidVar;
   if (!vertices_.empty() && vidRef_ == nullptr) {
@@ -428,6 +438,8 @@ Status DeleteVerticesValidator::toPlan() {
   return Status::OK();
 }
 
+// Delete tags of vertices, can't delete vertex.
+// Check validity of vid type and tag.
 Status DeleteTagsValidator::validateImpl() {
   auto sentence = static_cast<DeleteTagsSentence *>(sentence_);
   spaceId_ = vctx_->whichSpace().id;
@@ -469,6 +481,7 @@ Status DeleteTagsValidator::validateImpl() {
   return Status::OK();
 }
 
+// Fill vids to variable and construct expression to access it.
 std::string DeleteTagsValidator::buildVIds() {
   auto input = vctx_->anonVarGen()->getVar();
   DataSet ds;
@@ -485,6 +498,7 @@ std::string DeleteTagsValidator::buildVIds() {
   return input;
 }
 
+// Construct vids and dedup them, the delete them.
 Status DeleteTagsValidator::toPlan() {
   std::string vIdVar;
   if (!vertices_.empty() && vidRef_ == nullptr) {
@@ -502,6 +516,7 @@ Status DeleteTagsValidator::toPlan() {
   return Status::OK();
 }
 
+// Check validity of edge type, check edge data.
 Status DeleteEdgesValidator::validateImpl() {
   auto sentence = static_cast<DeleteEdgesSentence *>(sentence_);
   auto spaceId = vctx_->whichSpace().id;
@@ -520,6 +535,7 @@ Status DeleteEdgesValidator::validateImpl() {
   return Status::OK();
 }
 
+// Fill edge key to variable, construct expression to access it.
 Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeKeys,
                                              const EdgeType edgeType) {
   edgeKeyVar_ = vctx_->anonVarGen()->getVar();
@@ -555,6 +571,7 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeK
   return Status::OK();
 }
 
+// Check validity of properties in expression, and check type of edge key expression.
 Status DeleteEdgesValidator::checkInput() {
   CHECK(!edgeKeyRefs_.empty());
   auto &edgeKeyRef = *edgeKeyRefs_.begin();
@@ -592,6 +609,7 @@ Status DeleteEdgesValidator::checkInput() {
   return Status::OK();
 }
 
+// Dedup edges and delete them.
 Status DeleteEdgesValidator::toPlan() {
   auto dedup = Dedup::make(qctx_, nullptr);
   dedup->setInputVar(edgeKeyVar_);
@@ -613,6 +631,8 @@ Status UpdateValidator::initProps() {
   return getReturnProps();
 }
 
+// Check validity of filter expression.
+// Rewrite expression to fit semantic, check filter expression type.
 Status UpdateValidator::getCondition() {
   auto *clause = sentence_->whenClause();
   if (clause && clause->filter()) {
@@ -639,6 +659,7 @@ Status UpdateValidator::getCondition() {
   return Status::OK();
 }
 
+// Check yield columns, rewrite symbol expression to fit semantic.
 Status UpdateValidator::getReturnProps() {
   auto *clause = sentence_->yieldClause();
   if (clause != nullptr) {
@@ -654,6 +675,7 @@ Status UpdateValidator::getReturnProps() {
   return Status::OK();
 }
 
+// Check update properties.
 Status UpdateValidator::getUpdateProps() {
   auto status = Status::OK();
   auto items = sentence_->updateList()->items();
@@ -700,6 +722,7 @@ Status UpdateValidator::getUpdateProps() {
   return status;
 }
 
+// Rewrite symbol expresion to fit semantic.
 Status UpdateValidator::checkAndResetSymExpr(Expression *inExpr,
                                              const std::string &symName,
                                              std::string &encodeStr) {

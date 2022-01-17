@@ -11,6 +11,8 @@
 namespace nebula {
 namespace graph {
 
+// Validate sub-sentences of SET statement.
+// Check columns of sub-sentences are the same.
 Status SetValidator::validateImpl() {
   NG_RETURN_IF_ERROR(lValidator_->validate());
   NG_RETURN_IF_ERROR(rValidator_->validate());
@@ -33,6 +35,7 @@ Status SetValidator::validateImpl() {
   return Status::OK();
 }
 
+// Combine two sub-plans by parallel dependencies.
 Status SetValidator::toPlan() {
   auto setSentence = static_cast<const SetSentence *>(sentence_);
   auto lRoot = DCHECK_NOTNULL(lValidator_->root());

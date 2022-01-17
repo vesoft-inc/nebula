@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 
+// Plan to download SST file from HDFS
 Status DownloadValidator::toPlan() {
   auto sentence = static_cast<DownloadSentence *>(sentence_);
   if (sentence->host() == nullptr || sentence->port() == 0 || sentence->path() == nullptr) {
