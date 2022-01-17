@@ -213,8 +213,8 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
-                                            const void* snapshot,
-                                            std::unique_ptr<KVIterator>* storageIter) {
+                                            std::unique_ptr<KVIterator>* storageIter,
+                                            const void* snapshot) {
   // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
   // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
   if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {

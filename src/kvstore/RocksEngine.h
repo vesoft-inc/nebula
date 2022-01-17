@@ -174,8 +174,8 @@ class RocksEngine : public KVEngine {
                                 std::unique_ptr<KVIterator>* iter) override;
 
   nebula::cpp2::ErrorCode prefix(const std::string& prefix,
-                                 const void* snapshot,
-                                 std::unique_ptr<KVIterator>* iter) override;
+                                 std::unique_ptr<KVIterator>* iter,
+                                 const void* snapshot = nullptr) override;
 
   nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
                                           const std::string& prefix,

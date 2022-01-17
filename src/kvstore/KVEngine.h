@@ -83,8 +83,8 @@ class KVEngine {
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode prefix(const std::string& prefix,
-                                         const void* snapshot,
-                                         std::unique_ptr<KVIterator>* iter) = 0;
+                                         std::unique_ptr<KVIterator>* iter,
+                                         const void* snapshot = nullptr) = 0;
 
   // Get all results with 'prefix' str as prefix starting form 'start'
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
