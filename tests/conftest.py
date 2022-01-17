@@ -217,6 +217,11 @@ def load_nba_int_vid_data():
 
 
 @pytest.fixture(scope="session")
+def load_ldbc_v0_3_3():
+    yield load_csv_data_once("ldbc_v0_3_3")
+
+
+@pytest.fixture(scope="session")
 def load_student_data():
     yield load_csv_data_once("student")
 

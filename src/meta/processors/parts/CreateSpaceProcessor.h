@@ -26,8 +26,9 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
   // Get the host with the least load in the zone
-  StatusOr<Hosts> pickHostsWithZone(const std::vector<std::string>& zones,
-                                    const std::unordered_map<std::string, Hosts>& zoneHosts);
+  ErrorOr<nebula::cpp2::ErrorCode, Hosts> pickHostsWithZone(
+      const std::vector<std::string>& zones,
+      const std::unordered_map<std::string, Hosts>& zoneHosts);
 
   // Get the zones with the least load
   StatusOr<std::vector<std::string>> pickLightLoadZones(int32_t replicaFactor);
