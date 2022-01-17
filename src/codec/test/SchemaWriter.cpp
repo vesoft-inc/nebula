@@ -90,8 +90,14 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
     nullFlagPos = numNullableFields_++;
   }
 
-  columns_.emplace_back(
-      name.toString(), type, size, nullable, offset, nullFlagPos, defaultValue, geoShape);
+  columns_.emplace_back(name.toString(),
+                        type,
+                        size,
+                        nullable,
+                        offset,
+                        nullFlagPos,
+                        defaultValue ? defaultValue->encode() : "",
+                        geoShape);
   nameIndex_.emplace(std::make_pair(hash, columns_.size() - 1));
 
   return *this;
