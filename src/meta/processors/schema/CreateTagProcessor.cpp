@@ -14,7 +14,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
   const auto& tagName = req.get_tag_name();
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::tagAndEdgeLock());
 
   // Check if the edge with same name exists
   auto conflictRet = getEdgeType(spaceId, tagName);
