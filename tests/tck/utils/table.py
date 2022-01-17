@@ -7,7 +7,7 @@ import io
 import re
 
 from tests.tck.utils.nbv import parse
-from nebula2.common.ttypes import DataSet, Row, Value
+from nebula3.common.ttypes import DataSet, Row, Value
 
 pattern = re.compile(r"^<\[(\w+)\]>$")
 

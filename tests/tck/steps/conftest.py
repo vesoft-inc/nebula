@@ -8,7 +8,7 @@ from pytest_bdd import (
     then,
 )
 
-from nebula2.common.ttypes import Value, NullType
+from nebula3.common.ttypes import Value, NullType
 from tests.tck.utils.nbv import register_function, parse
 
 # You could register functions that can be invoked from the parsing text
