@@ -262,6 +262,21 @@ jobs:
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
         timeout-minutes: 20
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
