@@ -228,7 +228,9 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
                                                          const void* snapshot,
                                                          std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
   options.prefix_same_as_start = true;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
@@ -241,7 +243,9 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
 nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
     const std::string& prefix, const void* snapshot, std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
   // prefix_same_as_start is false by default
   options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
@@ -372,7 +376,7 @@ std::vector<PartitionID> RocksEngine::allParts() {
   std::unique_ptr<KVIterator> iter;
   std::vector<PartitionID> parts;
   static const std::string prefixStr = NebulaKeyUtils::systemPrefix();
-  auto retCode = this->prefix(prefixStr, nullptr, &iter);
+  auto retCode = this->prefix(prefixStr, &iter);
   if (nebula::cpp2::ErrorCode::SUCCEEDED != retCode) {
     return parts;
   }
@@ -572,7 +576,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
   }
 
   std::unique_ptr<KVIterator> iter;
-  auto ret = prefix(tablePrefix, nullptr, &iter);
+  auto ret = prefix(tablePrefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
