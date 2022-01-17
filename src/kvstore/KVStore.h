@@ -78,9 +78,24 @@ class KVStore {
     return nullptr;
   }
 
+  /**
+   * @brief Get the Snapshot object
+   * 
+   * @param spaceId Space id
+   * @param partID Partition id
+   * @param canReadFromFollower Flag can read from follower.
+   * @return const void* Snapshot.
+   */
   virtual const void* GetSnapshot(GraphSpaceID spaceId,
                                   PartitionID partID,
                                   bool canReadFromFollower = false) = 0;
+  /**
+   * @brief Release snapshot.
+   * 
+   * @param spaceId Space id.
+   * @param partId Partition id.
+   * @param snapshot Snapshot to release.
+   */
   virtual void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) = 0;
 
   // Read a single key
@@ -118,7 +133,17 @@ class KVStore {
                                         std::unique_ptr<KVIterator>* iter,
                                         bool canReadFromFollower = false) = delete;
 
-  // Get all results with prefix.
+  /**
+   * @brief Get all results with prefix.
+   * 
+   * @param spaceId 
+   * @param partId 
+   * @param prefix 
+   * @param iter 
+   * @param canReadFromFollower 
+   * @param snapshot If set, read from snapshot.
+   * @return nebula::cpp2::ErrorCode 
+   */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          const std::string& prefix,
@@ -126,7 +151,17 @@ class KVStore {
                                          bool canReadFromFollower = false,
                                          const void* snapshot = nullptr) = 0;
 
-  // To forbid to pass rvalue via the `prefix' parameter.
+  /**
+   * @brief To forbid to pass rvalue via the `prefix' parameter.
+   * 
+   * @param spaceId 
+   * @param partId 
+   * @param prefix 
+   * @param iter 
+   * @param canReadFromFollower 
+   * @param snapshot 
+   * @return nebula::cpp2::ErrorCode 
+   */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          std::string&& prefix,

@@ -49,7 +49,17 @@ class KVEngine {
                                                    bool sync,
                                                    bool wait) = 0;
 
+  /**
+   * @brief Get the Snapshot from kv engine.
+   * 
+   * @return const void* snapshot pointer.
+   */
   virtual const void* GetSnapshot() = 0;
+  /**
+   * @brief Release snapshot from kv engine.
+   * 
+   * @param snapshot 
+   */
   virtual void ReleaseSnapshot(const void* snapshot) = 0;
   // Read a single key
   virtual nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) = 0;
@@ -64,7 +74,14 @@ class KVEngine {
                                         const std::string& end,
                                         std::unique_ptr<KVIterator>* iter) = 0;
 
-  // Get all results with 'prefix' str as prefix.
+  /**
+   * @brief Get all results with 'prefix' str as prefix.
+   * 
+   * @param prefix Prefix string.
+   * @param snapshot Snapshot from kv engine. nullptr means no snapshot.
+   * @param iter Iterator for this prefix range.
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode prefix(const std::string& prefix,
                                          const void* snapshot,
                                          std::unique_ptr<KVIterator>* iter) = 0;
