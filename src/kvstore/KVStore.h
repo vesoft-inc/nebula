@@ -80,7 +80,7 @@ class KVStore {
 
   /**
    * @brief Get the Snapshot object
-   * 
+   *
    * @param spaceId Space id
    * @param partID Partition id
    * @param canReadFromFollower Flag can read from follower.
@@ -91,7 +91,7 @@ class KVStore {
                                   bool canReadFromFollower = false) = 0;
   /**
    * @brief Release snapshot.
-   * 
+   *
    * @param spaceId Space id.
    * @param partId Partition id.
    * @param snapshot Snapshot to release.
@@ -135,14 +135,14 @@ class KVStore {
 
   /**
    * @brief Get all results with prefix.
-   * 
-   * @param spaceId 
-   * @param partId 
-   * @param prefix 
-   * @param iter 
-   * @param canReadFromFollower 
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix
+   * @param iter
+   * @param canReadFromFollower
    * @param snapshot If set, read from snapshot.
-   * @return nebula::cpp2::ErrorCode 
+   * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
@@ -153,14 +153,14 @@ class KVStore {
 
   /**
    * @brief To forbid to pass rvalue via the `prefix' parameter.
-   * 
-   * @param spaceId 
-   * @param partId 
-   * @param prefix 
-   * @param iter 
-   * @param canReadFromFollower 
-   * @param snapshot 
-   * @return nebula::cpp2::ErrorCode 
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix
+   * @param iter
+   * @param canReadFromFollower
+   * @param snapshot
+   * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,

@@ -51,14 +51,14 @@ class KVEngine {
 
   /**
    * @brief Get the Snapshot from kv engine.
-   * 
+   *
    * @return const void* snapshot pointer.
    */
   virtual const void* GetSnapshot() = 0;
   /**
    * @brief Release snapshot from kv engine.
-   * 
-   * @param snapshot 
+   *
+   * @param snapshot
    */
   virtual void ReleaseSnapshot(const void* snapshot) = 0;
   // Read a single key
@@ -76,7 +76,7 @@ class KVEngine {
 
   /**
    * @brief Get all results with 'prefix' str as prefix.
-   * 
+   *
    * @param prefix Prefix string.
    * @param snapshot Snapshot from kv engine. nullptr means no snapshot.
    * @param iter Iterator for this prefix range.
