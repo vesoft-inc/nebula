@@ -104,7 +104,7 @@ slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
 	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
 
-standalone_tck: jobs
+standalone-tck: jobs
 	$(test_j) tck/steps/test_tck.py
 
 tck: jobs slow-query
@@ -114,7 +114,7 @@ ldbc: currdir
 	$(test_j) tck/steps/test_ldbc.py
 
 test-all: test tck ldbc
-test-standalone-all: standalone_tck ldbc
+test-standalone-all: standalone-tck ldbc
 
 fail: currdir
 	python3 -m pytest \
