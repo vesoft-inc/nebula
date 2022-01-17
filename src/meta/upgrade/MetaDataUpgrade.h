@@ -5,12 +5,11 @@
 
 #pragma once
 
-#include <rocksdb/db.h>
-
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
 #include "meta/upgrade/v1/gen-cpp2/meta_types.h"
@@ -21,7 +20,7 @@ namespace meta {
 
 class MetaDataUpgrade final {
  public:
-  explicit MetaDataUpgrade(kvstore::KVStore *kv) : kv_(kv) {}
+  explicit MetaDataUpgrade(kvstore::KVEngine *engine) : engine_(engine) {}
 
   ~MetaDataUpgrade() = default;
 
@@ -52,21 +51,7 @@ class MetaDataUpgrade final {
 
  private:
   Status put(const folly::StringPiece &key, const folly::StringPiece &val) {
-    std::vector<kvstore::KV> data;
-    data.emplace_back(key.str(), val.str());
-    folly::Baton<true, std::atomic> baton;
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kv_->asyncMultiPut(kDefaultSpaceId,
-                       kDefaultPartId,
-                       std::move(data),
-                       [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                         if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                           ret = code;
-                           LOG(INFO) << "Put data error on meta server";
-                         }
-                         baton.post();
-                       });
-    baton.wait();
+    auto ret = engine_->put(key.str(), val.str());
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return Status::Error("Put data failed");
     }
@@ -74,19 +59,7 @@ class MetaDataUpgrade final {
   }
 
   Status put(std::vector<kvstore::KV> data) {
-    folly::Baton<true, std::atomic> baton;
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kv_->asyncMultiPut(kDefaultSpaceId,
-                       kDefaultPartId,
-                       std::move(data),
-                       [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                         if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                           ret = code;
-                           LOG(INFO) << "Put data error on meta server";
-                         }
-                         baton.post();
-                       });
-    baton.wait();
+    auto ret = engine_->multiPut(data);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return Status::Error("Put data failed");
     }
@@ -94,20 +67,7 @@ class MetaDataUpgrade final {
   }
 
   Status remove(const folly::StringPiece &key) {
-    std::vector<std::string> keys{key.str()};
-    folly::Baton<true, std::atomic> baton;
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kv_->asyncMultiRemove(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(keys),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Remove data error on meta server";
-                            }
-                            baton.post();
-                          });
-    baton.wait();
+    auto ret = engine_->remove(key.str());
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return Status::Error("Remove data failed");
     }
@@ -125,7 +85,7 @@ class MetaDataUpgrade final {
   nebula::meta::cpp2::GeoShape convertToGeoShape(nebula::meta::v2::cpp2::GeoShape shape);
 
  private:
-  kvstore::KVStore *kv_ = nullptr;
+  kvstore::KVEngine *engine_ = nullptr;
 };
 
 }  // namespace meta

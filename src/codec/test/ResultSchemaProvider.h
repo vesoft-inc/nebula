@@ -21,14 +21,14 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
                       bool nullable,
                       int32_t offset,
                       size_t nullFlagPos,
-                      Expression* defaultValue = nullptr,
+                      std::string defaultValue = "",
                       meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
 
     const char* name() const override;
     nebula::cpp2::PropertyType type() const override;
     bool nullable() const override;
     bool hasDefault() const override;
-    Expression* defaultValue() const override;
+    const std::string& defaultValue() const override;
     size_t size() const override;
     size_t offset() const override;
     size_t nullFlagPos() const override;
@@ -41,7 +41,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
     bool nullable_;
     int32_t offset_;
     size_t nullFlagPos_;
-    Expression* defaultValue_;
+    std::string defaultValue_;
     meta::cpp2::GeoShape geoShape_;
   };
 
