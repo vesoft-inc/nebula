@@ -16,6 +16,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   const auto& tagName = req.get_tag_name();
   folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
 
+  // Check if the edge with same name exists
   auto conflictRet = getEdgeType(spaceId, tagName);
   if (nebula::ok(conflictRet)) {
     LOG(ERROR) << "Failed to create tag `" << tagName
