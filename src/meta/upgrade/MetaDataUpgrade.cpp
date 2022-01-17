@@ -97,7 +97,7 @@ Status MetaDataUpgrade::rewriteSpacesV2ToV3(const folly::StringPiece &key,
     auto groupName = *oldProps.group_name_ref();
     auto groupKey = meta::v2::MetaServiceUtilsV2::groupKey(groupName);
     std::string zoneValue;
-    auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, std::move(groupKey), &zoneValue);
+    auto code = engine_->get(std::move(groupKey), &zoneValue);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return Status::Error("Get Group Failed");
     }
@@ -107,7 +107,7 @@ Status MetaDataUpgrade::rewriteSpacesV2ToV3(const folly::StringPiece &key,
   } else {
     const auto &zonePrefix = MetaKeyUtils::zonePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kv_->prefix(kDefaultSpaceId, kDefaultPartId, zonePrefix, &iter);
+    auto code = engine_->prefix(zonePrefix, &iter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return Status::Error("Get Zones Failed");
     }
