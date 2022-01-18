@@ -7,7 +7,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <set>
+
 #include "common/function/FunctionManager.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -299,8 +302,14 @@ std::vector<std::string> Validator::getOutColNames() const {
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
-  if (!node->isSingleInput()) {
-    return Status::SemanticError("%s not support to append an input.",
+
+  std::set<PlanNode::Kind> skipTypeSet = {PlanNode::Kind::kSwitchSpace};
+
+  // Note: there's check which forbids sentence like `[dql(or other) ngql];[cypher]`.
+  // So there's a kStart planNode in the cypher sentence of end.
+  // But this check is not needed for `use space` or other sentence.
+  if (skipTypeSet.find(appended->kind()) != skipTypeSet.end() || !node->isSingleInput()) {
+    return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
   static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
