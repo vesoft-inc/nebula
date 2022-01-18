@@ -755,8 +755,6 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
   auto& colNames = this->colNames();
   DCHECK_GE(colNames.size(), 2);
   auto& nodeAlias = colNames[colNames.size() - 2];
-  auto& edgeAlias = colNames.back();
-  UNUSED(edgeAlias);
 
   auto it = propsUsed.colsSet.find(nodeAlias);
   if (it != propsUsed.colsSet.end()) {  // All properties are used
@@ -767,44 +765,24 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
   if (vFilter_ != nullptr) {
     NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID));
   }
-  // if (eFilter_ != nullptr) {
-  //   NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(eFilter_, propsUsed, qctx,
-  //   spaceID));
-  // }
 
   auto* vertexProps = this->vertexProps();
   if (vertexProps != nullptr) {
-    auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
-    prunedVertexProps->reserve(vertexProps->size());
-
     auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
     if (it2 == propsUsed.vertexPropsMap.end()) {  // nodeAlias is not used
-      for (const auto& vProp : *vertexProps) {
-        VertexProp newVProp;
-        newVProp.tag_ref() = vProp.tag_ref().value();
-        std::vector<std::string> propNames{nebula::kTag};
-        newVProp.props_ref() = std::move(propNames);
-        prunedVertexProps->emplace_back(std::move(newVProp));
-      }
+      setVertexProps(nullptr);
     } else {
+      auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
       auto& usedVertexProps = it2->second;
-      for (const auto& vProp : *vertexProps) {
+      prunedVertexProps->reserve(usedVertexProps.size());
+      for (auto& [tagId, vProps] : usedVertexProps) {
         VertexProp newVProp;
-        auto tagID = vProp.tag_ref().value();
-        newVProp.tag_ref() = tagID;
-        std::vector<std::string> propNames{nebula::kTag};
-        auto it3 = usedVertexProps.find(tagID);
-        if (it3 != usedVertexProps.end()) {
-          for (const auto& prop : it3->second) {
-            propNames.emplace_back(prop);
-          }
-        }
-        newVProp.props_ref() = std::move(propNames);
+        newVProp.tag_ref() = tagId;
+        newVProp.props_ref() = std::vector<std::string>(vProps.begin(), vProps.end());
         prunedVertexProps->emplace_back(std::move(newVProp));
       }
+      setVertexProps(std::move(prunedVertexProps));
     }
-
-    setVertexProps(std::move(prunedVertexProps));
   }
 
   return depsPruneProperties(propsUsed, qctx, spaceID);
