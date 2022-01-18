@@ -5,10 +5,6 @@
 
 #include "graph/util/ExpressionUtils.h"
 
-#include <memory>
-#include <queue>
-#include <unordered_set>
-
 #include "common/base/ObjectPool.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/Expression.h"

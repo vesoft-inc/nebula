@@ -5,8 +5,6 @@
 #ifndef DAEMONS_METADAEMONINIT_H
 #define DAEMONS_METADAEMONINIT_H
 
-#include <memory>
-
 #include "common/base/Status.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "kvstore/KVStore.h"

@@ -6,8 +6,6 @@
 #ifndef GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
 #define GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
 
-#include <memory>
-
 #include "common/expression/ExprVisitor.h"
 #include "graph/util/SchemaUtil.h"
 

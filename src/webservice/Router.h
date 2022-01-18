@@ -8,10 +8,7 @@
 #include <proxygen/lib/http/HTTPMethod.h>
 
 #include <boost/core/noncopyable.hpp>
-#include <memory>
 #include <regex>
-#include <unordered_map>
-#include <vector>
 
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"

@@ -8,9 +8,6 @@
 #include <folly/String.h>
 #include <folly/json.h>
 
-#include <memory>
-#include <vector>
-
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -401,7 +398,7 @@ SingleInputNode::SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* 
 std::unique_ptr<PlanNodeDescription> SingleDependencyNode::explain() const {
   auto desc = PlanNode::explain();
   DCHECK(desc->dependencies == nullptr);
-  desc->dependencies.reset(new std::vector<int64_t>{dep()->id()});
+  desc->dependencies = std::make_unique<std::vector<int64_t>>(dep()->id());
   return desc;
 }
 
@@ -426,7 +423,7 @@ BinaryInputNode::BinaryInputNode(QueryContext* qctx,
 std::unique_ptr<PlanNodeDescription> BinaryInputNode::explain() const {
   auto desc = PlanNode::explain();
   DCHECK(desc->dependencies == nullptr);
-  desc->dependencies.reset(new std::vector<int64_t>{left()->id(), right()->id()});
+  desc->dependencies = std::make_unique<std::vector<int64_t>>(left()->id(), right()->id());
   folly::dynamic inputVar = folly::dynamic::object();
   inputVar.insert("leftVar", leftInputVar());
   inputVar.insert("rightVar", rightInputVar());
@@ -437,7 +434,7 @@ std::unique_ptr<PlanNodeDescription> BinaryInputNode::explain() const {
 std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
   auto desc = PlanNode::explain();
   DCHECK(desc->dependencies == nullptr);
-  desc->dependencies.reset(new std::vector<int64_t>(dependIds()));
+  desc->dependencies = std::make_unique<std::vector<int64_t>>(dependIds());
   return desc;
 }
 

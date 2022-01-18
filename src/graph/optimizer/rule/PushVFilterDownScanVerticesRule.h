@@ -6,8 +6,6 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 #define GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 
-#include <memory>
-
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {

@@ -8,10 +8,6 @@
 #include <folly/hash/Hash.h>
 #include <glog/logging.h>
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Geography.h"

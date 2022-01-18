@@ -6,8 +6,6 @@
 #ifndef GRAPH_VALIDATOR_EXPLAINVALIDATOR_H
 #define GRAPH_VALIDATOR_EXPLAINVALIDATOR_H
 
-#include <memory>
-
 #include "graph/validator/Validator.h"
 
 namespace nebula {

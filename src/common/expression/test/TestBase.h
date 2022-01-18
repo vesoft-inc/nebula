@@ -8,9 +8,6 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/algorithm/string.hpp>
-#include <memory>
-
 #include "common/base/ObjectPool.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"

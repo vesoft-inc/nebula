@@ -6,8 +6,6 @@
 #ifndef GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 
-#include <memory>
-
 #include "graph/executor/Executor.h"
 
 namespace nebula {

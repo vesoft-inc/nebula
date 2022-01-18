@@ -6,8 +6,6 @@
 #ifndef COMMON_EXPRESSION_SUBSCRIPTEXPRESSION_H_
 #define COMMON_EXPRESSION_SUBSCRIPTEXPRESSION_H_
 
-#include <memory>
-
 #include "common/expression/BinaryExpression.h"
 
 namespace nebula {

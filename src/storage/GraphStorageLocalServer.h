@@ -10,7 +10,6 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include <boost/core/noncopyable.hpp>
-#include <memory>
 
 #include "common/base/Base.h"
 #include "common/cpp/helpers.h"

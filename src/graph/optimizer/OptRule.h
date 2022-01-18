@@ -6,11 +6,6 @@
 #ifndef GRAPH_OPTIMIZER_OPTRULE_H_
 #define GRAPH_OPTIMIZER_OPTRULE_H_
 
-#include <initializer_list>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include "common/base/StatusOr.h"
 #include "graph/planner/plan/PlanNode.h"
 

@@ -8,8 +8,6 @@
 
 #include <folly/dynamic.h>
 
-#include <memory>
-
 #include "common/datatypes/Date.h"
 #include "common/datatypes/Duration.h"
 #include "common/thrift/ThriftTypes.h"

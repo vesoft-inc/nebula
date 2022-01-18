@@ -6,8 +6,6 @@
 #ifndef COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_
 #define COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_
 
-#include <memory>
-
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/LabelExpression.h"
 

@@ -6,8 +6,6 @@
 #include <folly/String.h>
 #include <gtest/gtest.h>
 
-#include <memory>
-
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/query/UnionExecutor.h"

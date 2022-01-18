@@ -4,9 +4,6 @@
  */
 #include "GraphServer.h"
 
-#include <memory>
-#include <utility>
-
 #include "common/id/Snowflake.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"

@@ -6,8 +6,6 @@
 #ifndef GRAPH_VISITOR_REWRITESYMEXPRVISITOR_H_
 #define GRAPH_VISITOR_REWRITESYMEXPRVISITOR_H_
 
-#include <memory>
-
 #include "common/expression/ExprVisitor.h"
 
 namespace nebula {

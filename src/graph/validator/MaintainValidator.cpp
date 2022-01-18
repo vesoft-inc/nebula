@@ -5,8 +5,6 @@
 
 #include "graph/validator/MaintainValidator.h"
 
-#include <memory>
-
 #include "common/base/Status.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"

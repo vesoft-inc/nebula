@@ -6,8 +6,6 @@
 #define COMMON_BASE_MURMURHASH2_H_
 
 #include <cstring>
-#include <memory>
-#include <string>
 #include <thread>
 #include <type_traits>
 
@@ -46,7 +44,7 @@ class MurmurHash2 {
     const uint64_t m = 0xc6a4a7935bd1e995;
     const uint32_t r = 47;
     uint64_t h = seed ^ (size * m);
-    const uint64_t *data = (const uint64_t *)str;
+    const uint64_t *data = reinterpret_cast<const uint64_t *>(str);
     const uint64_t *end = data + (size / 8);
     while (data != end) {
       uint64_t k = *data++;
@@ -59,7 +57,7 @@ class MurmurHash2 {
       h *= m;
     }
 
-    const unsigned char *data2 = (const unsigned char *)data;
+    const unsigned char *data2 = reinterpret_cast<const unsigned char *>(data);
     switch (size & 7) {
       case 7:
         h ^= uint64_t(data2[6]) << 48;  // fallthrough

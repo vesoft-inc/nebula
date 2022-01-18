@@ -6,9 +6,6 @@
 #ifndef PARSER_EXPLAINSENTENCE_H_
 #define PARSER_EXPLAINSENTENCE_H_
 
-#include <memory>
-#include <string>
-
 #include "parser/Sentence.h"
 
 namespace nebula {

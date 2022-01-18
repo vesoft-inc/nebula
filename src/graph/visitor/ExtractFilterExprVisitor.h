@@ -5,8 +5,6 @@
 #ifndef GRAPH_VISITOR_EXTRACTFILTEREXPRVISITOR_H_
 #define GRAPH_VISITOR_EXTRACTFILTEREXPRVISITOR_H_
 
-#include <memory>
-
 #include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {

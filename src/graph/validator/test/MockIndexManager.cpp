@@ -5,7 +5,6 @@
 
 #include "graph/validator/test/MockIndexManager.h"
 
-#include <memory>
 #include <vector>
 
 // tag index:

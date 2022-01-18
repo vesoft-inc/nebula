@@ -10,8 +10,6 @@
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
-#include <memory>
-
 #include "common/base/Base.h"
 #include "common/graph/GraphCpp2Ops.h"
 #include "common/graph/Response.h"
