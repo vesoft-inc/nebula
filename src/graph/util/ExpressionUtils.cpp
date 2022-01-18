@@ -18,6 +18,8 @@
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
 
+DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
+
 namespace nebula {
 namespace graph {
 
@@ -1221,7 +1223,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
       size -= 1;
     }
     depth += 1;
-    if (depth > ExpressionUtils::kMaxDepth) {
+    if (depth > FLAGS_max_expression_depth) {
       return false;
     }
   }
