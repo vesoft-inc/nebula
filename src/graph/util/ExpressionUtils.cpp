@@ -1063,22 +1063,25 @@ bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
 Status ExpressionUtils::extractPropsFromExprs(const Expression *expr,
                                               PropertyTracker &propsUsed,
                                               const graph::QueryContext *qctx,
-                                              GraphSpaceID spaceID) {
+                                              GraphSpaceID spaceID,
+                                              const std::string &entityAlias) {
   auto exprs = ExpressionUtils::collectAll(expr,
                                            {Expression::Kind::kLabelTagProperty,
                                             Expression::Kind::kInputProperty,
-                                            Expression::Kind::kVarProperty});
+                                            Expression::Kind::kVarProperty,
+                                            Expression::Kind::kTagProperty,
+                                            Expression::Kind::kEdgeProperty});
   for (auto *e : exprs) {
     switch (e->kind()) {
       case Expression::Kind::kLabelTagProperty: {
         auto *labelTagPropExpr = static_cast<const LabelTagPropertyExpression *>(e);
-        auto &labelName = labelTagPropExpr->label();
+        auto &nodeAlias = labelTagPropExpr->label();
         auto &tagName = labelTagPropExpr->sym();
         auto &propName = labelTagPropExpr->prop();
         auto ret = qctx->schemaMng()->toTagID(spaceID, tagName);
         NG_RETURN_IF_ERROR(ret);
         auto tagId = ret.value();
-        propsUsed.vertexPropsMap[labelName][tagId].emplace(propName);
+        propsUsed.vertexPropsMap[nodeAlias][tagId].emplace(propName);
         break;
       }
       case Expression::Kind::kInputProperty: {
@@ -1093,8 +1096,28 @@ Status ExpressionUtils::extractPropsFromExprs(const Expression *expr,
         propsUsed.colsSet.emplace(colName);
         break;
       }
-      case Expression::Kind::kTagProperty:
-      // case Expression::Kind::kPathBuilding:
+      case Expression::Kind::kTagProperty: {
+        auto *tagPropExpr = static_cast<const TagPropertyExpression *>(e);
+        auto &tagName = tagPropExpr->sym();
+        auto &propName = tagPropExpr->prop();
+        auto ret = qctx->schemaMng()->toTagID(spaceID, tagName);
+        NG_RETURN_IF_ERROR(ret);
+        auto tagId = ret.value();
+        DCHECK(!entityAlias.empty());
+        propsUsed.vertexPropsMap[entityAlias][tagId].emplace(propName);
+        break;
+      }
+      case Expression::Kind::kEdgeProperty: {
+        auto *edgePropExpr = static_cast<const EdgePropertyExpression *>(e);
+        auto &edgeName = edgePropExpr->sym();
+        auto &propName = edgePropExpr->prop();
+        auto ret = qctx->schemaMng()->toTagID(spaceID, edgeName);
+        NG_RETURN_IF_ERROR(ret);
+        auto edgeType = ret.value();
+        DCHECK(!entityAlias.empty());
+        propsUsed.vertexPropsMap[entityAlias][edgeType].emplace(propName);
+        break;
+      }
       default:
         break;
     }

@@ -763,7 +763,8 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
   }
 
   if (vFilter_ != nullptr) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(
+        ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
   }
 
   auto* vertexProps = this->vertexProps();
@@ -827,7 +828,8 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
   }
 
   if (vFilter_ != nullptr) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(
+        ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
   }
   auto* vertexProps = props();
   if (vertexProps != nullptr) {
