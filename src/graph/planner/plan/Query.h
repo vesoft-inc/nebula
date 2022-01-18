@@ -826,6 +826,10 @@ class Project final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
+
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
 

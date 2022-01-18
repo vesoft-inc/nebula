@@ -32,15 +32,18 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto root = qctx->plan()->root();
   auto spaceID = qctx->rctx()->session()->space().id;
 
-  auto status = preprocess(root, qctx, spaceID);
-  NG_RETURN_IF_ERROR(status);
+  // auto status = preprocess(root, qctx, spaceID);
+  // NG_RETURN_IF_ERROR(status);
 
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
   auto rootGroup = std::move(ret).value();
 
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
-  return rootGroup->getPlan();
+  auto *newRoot = rootGroup->getPlan();
+  auto status = preprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
+  NG_RETURN_IF_ERROR(status);
+  return newRoot;
 }
 
 Status Optimizer::preprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {

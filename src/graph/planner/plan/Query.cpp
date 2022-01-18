@@ -8,6 +8,7 @@
 #include <folly/String.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
+#include <glog/logging.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "graph/util/ExpressionUtils.h"
@@ -349,6 +350,20 @@ void Project::cloneMembers(const Project& p) {
   for (const auto& col : p.columns()->columns()) {
     cols_->addColumn(col->clone().release());
   }
+}
+
+Status Project::pruneProperties(PropertyTracker& propsUsed,
+                                graph::QueryContext* qctx,
+                                GraphSpaceID spaceID) {
+  if (cols_) {
+    for (auto* col : cols_->columns()) {
+      DCHECK_NOTNULL(col);
+      auto* expr = col->expr();
+      NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(expr, propsUsed, qctx, spaceID));
+    }
+  }
+
+  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
@@ -768,8 +783,7 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
   auto it = propsUsed.colsSet.find(nodeAlias);
   if (it != propsUsed.colsSet.end()) {  // All properties are used
     propsUsed.colsSet.erase(it);
-    NG_RETURN_IF_ERROR(depsPruneProperties(propsUsed, qctx, spaceID));
-    return Status::OK();
+    return depsPruneProperties(propsUsed, qctx, spaceID);
   }
 
   if (vFilter_ != nullptr) {
@@ -792,8 +806,7 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
     }
   }
 
-  NG_RETURN_IF_ERROR(depsPruneProperties(propsUsed, qctx, spaceID));
-  return Status::OK();
+  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
