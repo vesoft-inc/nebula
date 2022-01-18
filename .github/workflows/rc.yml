@@ -40,7 +40,7 @@ jobs:
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
-        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }} -t RelWithDebInfo -r OFF -p ON -s TRUE
+        run: ./package/package.sh -v ${{ steps.tag.outputs.tag }} -t RelWithDebInfo -r OFF -p ON -s TRUE
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
@@ -82,7 +82,7 @@ jobs:
         id: tagname
       - id: docker
         run: |
-          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d'.')
+          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d".")
           tag=""
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
             tag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:latest"
@@ -99,7 +99,8 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}

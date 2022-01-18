@@ -147,7 +147,6 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto spaceZones = properties.get_zone_names();
-
     bool replacement = false;
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);
@@ -170,6 +169,17 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   // Write the merged zone into meta service
   auto key = MetaKeyUtils::zoneKey(zoneName);
   std::vector<HostAddr> zoneHosts;
+  auto valueRet = doGet(key);
+  if (nebula::ok(valueRet)) {
+    auto it = std::find(zones.begin(), zones.end(), zoneName);
+    if (it == zones.end()) {
+      LOG(ERROR) << "The target zone should exist in merge zone list";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
+  }
+
   for (auto& zone : zones) {
     auto zoneKey = MetaKeyUtils::zoneKey(zone);
     auto zoneValueRet = doGet(std::move(zoneKey));

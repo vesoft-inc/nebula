@@ -34,6 +34,7 @@ set(common_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:log_monitor_obj>
 )
 
 set(storage_meta_deps
@@ -99,6 +100,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
+        $<TARGET_OBJECTS:meta_v2_thrift_obj>
         $<TARGET_OBJECTS:meta_v1_thrift_obj>
         ${common_deps}
         ${storage_meta_deps}

@@ -224,11 +224,11 @@ inline bool verifyType(const Value& val) {
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::DURATION:
     case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << val.type() << "for index.";
       return false;
-    } break;
+    }
     default: {
       return true;
     }

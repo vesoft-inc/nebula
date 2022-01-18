@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -17,6 +18,7 @@ enum class MetaVersion {
   UNKNOWN = 0,
   V1 = 1,
   V2 = 2,
+  V3 = 3,
 };
 
 /**
@@ -28,17 +30,21 @@ class MetaVersionMan final {
 
   static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
 
-  static bool setMetaVersionToKV(kvstore::KVStore* kv);
+  static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
 
-  static Status updateMetaV1ToV2(kvstore::KVStore* kv);
+  static Status updateMetaV1ToV2(kvstore::KVEngine* engine);
+
+  static Status updateMetaV2ToV3(kvstore::KVEngine* engine);
 
  private:
   static MetaVersion getVersionByHost(kvstore::KVStore* kv);
 
-  static Status doUpgrade(kvstore::KVStore* kv);
+  static Status doUpgradeV1ToV2(kvstore::KVEngine* engine);
+
+  static Status doUpgradeV2ToV3(kvstore::KVEngine* engine);
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_ROOTUSERMAN_H_
+#endif  // META_METAVERSIONMAN_H_

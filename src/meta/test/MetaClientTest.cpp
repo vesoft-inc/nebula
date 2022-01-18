@@ -45,7 +45,8 @@ TEST(MetaClientTest, InterfacesTest) {
   GraphSpaceID spaceId = 0;
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   {
@@ -356,7 +357,8 @@ TEST(MetaClientTest, TagTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
@@ -592,7 +594,8 @@ TEST(MetaClientTest, EdgeTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   meta::cpp2::SpaceDesc spaceDesc;
@@ -702,7 +705,8 @@ TEST(MetaClientTest, TagIndexTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
 
@@ -882,7 +886,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
   auto* client = cluster.metaClient_.get();
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
 
@@ -1203,6 +1208,7 @@ TEST(MetaClientTest, DiffTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
+  { TestUtils::registerHB(kv, {{"0", 0}}); }
 
   meta::MetaClientOptions options;
   options.localHost_ = {"0", 0};
@@ -1281,7 +1287,8 @@ TEST(MetaClientTest, ListenerDiffTest) {
   auto client = std::make_unique<meta::MetaClient>(threadPool, metaAddrs, options);
   {
     std::vector<HostAddr> hosts = {{"0", 0}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   client->waitForMetadReady();
@@ -1364,19 +1371,14 @@ TEST(MetaClientTest, ListenerDiffTest) {
 
 TEST(MetaClientTest, HeartbeatTest) {
   FLAGS_heartbeat_interval_secs = 1;
-  // const nebula::ClusterID kClusterId = 10;
   fs::TempDir rootPath("/tmp/HeartbeatTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   auto* kv = cluster.metaKV_.get();
 
-  // meta::MetaClientOptions options;
   TestUtils::createSomeHosts(kv, {{"0", 0}});
 
   HostAddr localHost("0", 0);
-  // options.localHost_ = localHost;
-  // options.clusterId_ = kClusterId;
-  // options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
 
@@ -1700,7 +1702,8 @@ TEST(MetaClientTest, ListenerTest) {
   auto client = std::make_shared<MetaClient>(threadPool, localhosts);
   {
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHosts(hosts).get();
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     EXPECT_TRUE(result.ok());
   }
   client->waitForMetadReady();
@@ -1899,6 +1902,7 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
+  auto* kv = cluster.metaKV_.get();
   {
     // Add host into zone with duplicate hosts
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
@@ -1951,6 +1955,7 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
     auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", false).get();
     EXPECT_FALSE(result.ok());
   }
+  { TestUtils::registerHB(kv, {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}}); }
   {
     // Drop hosts which is empty.
     std::vector<HostAddr> hosts = {};
@@ -2274,6 +2279,13 @@ TEST(MetaClientTest, MergeZoneTest) {
     ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
   }
   {
+    auto result = client
+                      ->mergeZone({"default_zone_127.0.0.1_8986", "default_zone_127.0.0.1_8987"},
+                                  "default_zone_127.0.0.1_8988")
+                      .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
     // Merge zones is empty
     auto result = client->mergeZone({}, "new_zone").get();
     EXPECT_FALSE(result.ok());
@@ -2468,6 +2480,26 @@ TEST(MetaClientTest, DivideZoneTest) {
     std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
     std::vector<HostAddr> oneHosts = {
         {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
     zoneItems.emplace("one_zone", std::move(oneHosts));
     std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
     zoneItems.emplace("another_zone", std::move(anotherHosts));

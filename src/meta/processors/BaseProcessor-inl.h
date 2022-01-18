@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "interface/gen-cpp2/storage_types.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
@@ -256,6 +257,15 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::userExist(const std::string& accoun
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::machineExist(const std::string& machineKey) {
   auto ret = doGet(machineKey);
+  if (nebula::ok(ret)) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+  return nebula::error(ret);
+}
+
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+  auto ret = doGet(hostKey);
   if (nebula::ok(ret)) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }

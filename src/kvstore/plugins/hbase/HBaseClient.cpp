@@ -188,7 +188,7 @@ ResultCode HBaseClient::range(const std::string& tableName,
     while (true) {
       std::vector<TResult> tResultList;
       client_->sync_getScannerRows(tResultList, scannerId, kScanRowNum);
-      if (tResultList.size() == 0) break;
+      if (tResultList.empty()) break;
       for (auto& tResult : tResultList) {
         std::vector<TColumnValue> tColumnValueList = tResult.columnValues;
         if (tColumnValueList.size() > 0) {

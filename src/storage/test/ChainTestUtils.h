@@ -226,14 +226,14 @@ class MetaClientTestUpdater {
   static void addLocalCache(meta::MetaClient& mClient,
                             GraphSpaceID spaceId,
                             std::shared_ptr<meta::SpaceInfoCache> spInfoCache) {
-    mClient.localCache_[spaceId] = spInfoCache;
+    mClient.metadata_.load()->localCache_[spaceId] = spInfoCache;
   }
 
   static meta::SpaceInfoCache* getLocalCache(meta::MetaClient* mClient, GraphSpaceID spaceId) {
-    if (mClient->localCache_.count(spaceId) == 0) {
+    if (mClient->metadata_.load()->localCache_.count(spaceId) == 0) {
       return nullptr;
     }
-    return mClient->localCache_[spaceId].get();
+    return mClient->metadata_.load()->localCache_[spaceId].get();
   }
 
   static void addPartTerm(meta::MetaClient* mClient,

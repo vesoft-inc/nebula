@@ -842,15 +842,16 @@ Feature: LookUpTest_Vid_String
         "104":("yyy", 28),
         "105":("zzz", 21),
         "106":("kkk", 21),
+        "121":("Useless", 60),
         "121":("Useless", 20);
-        INSERT VERTEX
-          team(name)
-        VALUES
-          "200":("Warriors"),
-          "201":("Nuggets"),
-          "202":("oopp"),
-          "203":("iiiooo"),
-          "204":("opl");
+      INSERT VERTEX
+        team(name)
+      VALUES
+        "200":("Warriors"),
+        "201":("Nuggets"),
+        "202":("oopp"),
+        "203":("iiiooo"),
+        "204":("opl");
       """
     When executing query:
       """
