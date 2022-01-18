@@ -26,7 +26,10 @@ PASSWORD_LOCK_TIME_IN_SECS ?= 0
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
 test_without_skip = python3 -m pytest -m "not skip"
+test_without_skip_sa = python3 -m pytest -m "not skip and not distonly"
 test_j = $(test_without_skip) -n$(J)
+test_j_sa = $(test_without_skip_sa) -n$(J)
+
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
@@ -105,7 +108,7 @@ slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
 
 standalone-tck: jobs
-	$(test_j) tck/steps/test_tck.py
+	$(test_j_sa) tck/steps/test_tck.py
 
 tck: jobs slow-query
 	$(test_j) tck/steps/test_tck.py

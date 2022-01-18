@@ -10,6 +10,7 @@ Feature: Test Authentication
       graphd:password_lock_time_in_secs=5
       """
 
+  @distonly
   Scenario: Test login with invalid password
     When executing query:
       """
@@ -62,6 +63,7 @@ Feature: Test Authentication
       Invalid password, remaining attempts: 4
       """
 
+  @distonly
   Scenario: Test login with invalid password multi users
     When executing query:
       """
