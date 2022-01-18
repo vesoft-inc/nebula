@@ -13,11 +13,29 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief UpdateResNode is used to calcaute the expressions whose results are need to return to
+ * graphd
+ *
+ * UpdateResNode is used to evaluate the expression in the yield clause
+ *
+ * @tparam T
+ *
+ * @see RelNode<T>
+ */
 template <typename T>
 class UpdateResNode : public RelNode<T> {
  public:
   using RelNode<T>::doExecute;
 
+  /**
+   * @brief Construct a new Update Res Node object
+   *
+   * @param context  Runtime context.
+   * @param updateNode UpdateNode may be UpdateTagNode or UpdateEdgeNode.
+   * @param returnPropsExp Expressions in yield clause.
+   * @param expCtx Expression context
+   */
   UpdateResNode(RuntimeContext* context,
                 RelNode<T>* updateNode,
                 std::vector<Expression*> returnPropsExp,
@@ -66,7 +84,10 @@ class UpdateResNode : public RelNode<T> {
   std::vector<Expression*> returnPropsExp_;
   StorageExpressionContext* expCtx_;
 
-  // return prop sets
+  /**
+   * @brief return prop sets
+   *
+   */
   nebula::DataSet* result_;
   bool insert_{false};
 };
