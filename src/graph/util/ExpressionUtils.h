@@ -19,6 +19,8 @@
 #include "graph/visitor/FindVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 
+DECLARE_int32(max_expression_depth);
+
 namespace nebula {
 class ObjectPool;
 namespace graph {
@@ -166,8 +168,6 @@ class ExpressionUtils {
   static bool isGeoIndexAcceleratedPredicate(const Expression* expr);
 
   static bool checkExprDepth(const Expression* expr);
-
-  static constexpr int32_t kMaxDepth = 512;
 };
 
 }  // namespace graph
