@@ -14,7 +14,7 @@ namespace graph {
 class MatchPlanner final : public Planner {
  public:
   static std::unique_ptr<MatchPlanner> make() {
-    return std::unique_ptr<MatchPlanner>(new MatchPlanner());
+    return std::make_unique<MatchPlanner>();
   }
 
   static bool match(AstContext* astCtx);
