@@ -846,8 +846,12 @@ TEST(BalanceTest, RecoveryTest) {
                     partCount,
                     6);
   balancer.recovery();
-  verifyBalanceTask(
-      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::IN_PROGRESS, partCount, 6);
+  verifyBalanceTask(kv,
+                    balancer.jobId_,
+                    BalanceTaskStatus::CATCH_UP_DATA,
+                    BalanceTaskResult::IN_PROGRESS,
+                    partCount,
+                    6);
   baton.reset();
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
     baton.post();
