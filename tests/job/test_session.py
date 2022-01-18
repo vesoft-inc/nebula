@@ -10,15 +10,15 @@ import time
 import pytest
 import concurrent
 
-from nebula2.fbthrift.transport import TSocket
-from nebula2.fbthrift.transport import TTransport
-from nebula2.fbthrift.protocol import TBinaryProtocol
+from nebula3.fbthrift.transport import TSocket
+from nebula3.fbthrift.transport import TTransport
+from nebula3.fbthrift.protocol import TBinaryProtocol
 
 
-from nebula2.gclient.net import Connection
-from nebula2.graph import GraphService
-from nebula2.common import ttypes
-from nebula2.data.ResultSet import ResultSet
+from nebula3.gclient.net import Connection
+from nebula3.graph import GraphService
+from nebula3.common import ttypes
+from nebula3.data.ResultSet import ResultSet
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestSession(NebulaTestSuite):
