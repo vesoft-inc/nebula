@@ -44,33 +44,40 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
     {Value::Type::DURATION, Value(Duration())},
 };
 
-#define DETECT_BIEXPR_TYPE(OP)                                                             \
-  expr->left()->accept(this);                                                              \
-  if (!ok()) return;                                                                       \
-  auto left = type_;                                                                       \
-  expr->right()->accept(this);                                                             \
-  if (!ok()) return;                                                                       \
-  auto right = type_;                                                                      \
-  auto lhs = kConstantValues.find(left);                                                   \
-  if (lhs == kConstantValues.end()) {                                                      \
-    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.", \
-                                    Value::toString(left).c_str());                        \
-    return;                                                                                \
-  }                                                                                        \
-  auto rhs = kConstantValues.find(right);                                                  \
-  if (rhs == kConstantValues.end()) {                                                      \
-    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.", \
-                                    Value::toString(right).c_str());                       \
-    return;                                                                                \
-  }                                                                                        \
-  auto detectVal = lhs->second OP rhs->second;                                             \
-  if (detectVal.isBadNull()) {                                                             \
-    std::stringstream ss;                                                                  \
-    ss << "`" << expr->toString() << "' is not a valid expression, "                       \
-       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'.";      \
-    status_ = Status::SemanticError(ss.str());                                             \
-    return;                                                                                \
-  }                                                                                        \
+#define DETECT_BIEXPR_TYPE(OP)                                                                  \
+  expr->left()->accept(this);                                                                   \
+  if (!ok()) return;                                                                            \
+  auto left = type_;                                                                            \
+  expr->right()->accept(this);                                                                  \
+  if (!ok()) return;                                                                            \
+  auto right = type_;                                                                           \
+  if (strcmp(#OP, "-") == 0 && (left == Value::Type::STRING || right == Value::Type::STRING)) { \
+    std::stringstream ss;                                                                       \
+    ss << "`" << expr->toString() << "' is not a valid expression, "                            \
+       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'.";           \
+    status_ = Status::SemanticError(ss.str());                                                  \
+    return;                                                                                     \
+  }                                                                                             \
+  auto lhs = kConstantValues.find(left);                                                        \
+  if (lhs == kConstantValues.end()) {                                                           \
+    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.",      \
+                                    Value::toString(left).c_str());                             \
+    return;                                                                                     \
+  }                                                                                             \
+  auto rhs = kConstantValues.find(right);                                                       \
+  if (rhs == kConstantValues.end()) {                                                           \
+    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.",      \
+                                    Value::toString(right).c_str());                            \
+    return;                                                                                     \
+  }                                                                                             \
+  auto detectVal = lhs->second OP rhs->second;                                                  \
+  if (detectVal.isBadNull()) {                                                                  \
+    std::stringstream ss;                                                                       \
+    ss << "`" << expr->toString() << "' is not a valid expression, "                            \
+       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'.";           \
+    status_ = Status::SemanticError(ss.str());                                                  \
+    return;                                                                                     \
+  }                                                                                             \
   type_ = detectVal.type()
 
 #define DETECT_NARYEXPR_TYPE(OP)                                                               \

@@ -33,6 +33,7 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
 
   std::vector<std::string> zoneNames;
   std::unordered_set<HostAddr> totalHosts;
+  size_t totalHostsSize = 0;
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneItems.begin(); iter != zoneItems.end(); iter++) {
@@ -65,6 +66,7 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
       break;
     }
 
+    totalHostsSize += hosts.size();
     std::copy(hosts.begin(), hosts.end(), std::inserter(totalHosts, totalHosts.end()));
 
     auto key = MetaKeyUtils::zoneKey(std::move(zone));
@@ -80,6 +82,13 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
 
   if (totalHosts.size() != zoneHosts.size()) {
     LOG(ERROR) << "The total host is not all hosts";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  if (totalHostsSize != totalHosts.size()) {
+    LOG(ERROR) << "The host in zone list have duplicate element";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;

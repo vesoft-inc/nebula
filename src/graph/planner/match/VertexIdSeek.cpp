@@ -42,6 +42,10 @@ bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
   if (vidResult.spec != VidExtractVisitor::VidPattern::Special::kInUsed) {
     return false;
   }
+  if (vidResult.nodes.size() > 1) {
+    // where id(v) == 'xxx' or id(t) == 'yyy'
+    return false;
+  }
   for (auto &nodeVid : vidResult.nodes) {
     if (nodeVid.second.kind == VidExtractVisitor::VidPattern::Vids::Kind::kIn) {
       if (nodeVid.first == node.alias) {

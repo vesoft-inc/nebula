@@ -212,7 +212,7 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
   }
   if (statTypes_.size() > 0) {
     auto indexAgg = dynamic_cast<IndexAggregateNode*>(plan.get());
-    statsDataSet_.emplace_back(std::move(indexAgg->calculateStats()));
+    statsDataSet_.emplace_back(indexAgg->calculateStats());
   }
   for (size_t i = 0; i < datasetList.size(); i++) {
     if (codeList[i] == ::nebula::cpp2::ErrorCode::SUCCEEDED) {

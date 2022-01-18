@@ -13,10 +13,10 @@ namespace meta {
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
+  const auto& tagName = req.get_tag_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
   auto ret = getTagId(spaceId, tagName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);

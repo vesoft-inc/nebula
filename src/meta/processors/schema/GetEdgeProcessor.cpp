@@ -11,10 +11,10 @@ namespace meta {
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto edgeName = req.get_edge_name();
+  const auto& edgeName = req.get_edge_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto edgeTypeRet = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(edgeTypeRet)) {
     LOG(ERROR) << "Get edge " << edgeName << " failed.";
