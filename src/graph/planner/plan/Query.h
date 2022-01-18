@@ -1507,6 +1507,10 @@ class Traverse final : public GetNeighbors {
     trackPrevPath_ = track;
   }
 
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
+
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : GetNeighbors(qctx, Kind::kTraverse, input, space) {
