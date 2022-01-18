@@ -28,6 +28,7 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 class NebulaProcess(object):
     def __init__(self, name, ports, suffix_index=0, params=None, is_standalone=False):
+        self.is_sa = is_standalone
         if params is None:
             params = {}
         if is_standalone == False:
@@ -52,15 +53,28 @@ class NebulaProcess(object):
         self.update_param({'meta_server_addrs': address})
 
     def _format_nebula_command(self):
-        process_params = {
-            'log_dir': 'logs{}'.format(self.suffix_index),
-            'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
-            'port': self.tcp_port,
-            'ws_http_port': self.http_port,
-            'ws_h2_port': self.https_port,
-            'meta_port': self.meta_port,
-            'storage_port': self.storage_port
-        }
+        if self.is_sa == False:
+            process_params = {
+                'log_dir': 'logs{}'.format(self.suffix_index),
+                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
+                'port': self.tcp_port,
+                'ws_http_port': self.http_port,
+                'ws_h2_port': self.https_port,
+            }
+        else:
+            process_params = {
+                'log_dir': 'logs{}'.format(self.suffix_index),
+                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
+                'port': self.tcp_port,
+                'ws_http_port': self.http_port,
+                'ws_h2_port': self.https_port,
+                'meta_port': self.meta_port,
+                'ws_meta_http_port': self.meta_http_port,
+                'ws_meta_h2_port': self.meta_https_port,
+                'storage_port': self.storage_port,
+                'ws_storage_http_port': self.storage_http_port,
+                'ws_storage_h2_port': self.storage_https_port,
+            }
         # data path
         if self.name.upper() != 'GRAPHD':
             process_params['data_path'] = 'data{}/{}'.format(

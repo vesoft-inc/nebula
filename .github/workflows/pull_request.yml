@@ -262,6 +262,11 @@ jobs:
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
         timeout-minutes: 20
+      - name: Setup Cluster
+        run: |
+          make standalone-up
+        working-directory: tests/
+        timeout-minutes: 60
       - name: TCK
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
