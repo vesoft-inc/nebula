@@ -13,8 +13,8 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-  auto tagName = req.get_tag_name();
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
+  const auto& tagName = req.get_tag_name();
 
   TagID tagId;
   auto indexKey = MetaKeyUtils::indexTagKey(spaceId, tagName);
