@@ -12,7 +12,7 @@ if __name__ == "__main__":
 else:
     from tests.tck.utils.mmh2 import mmh2
 
-from nebula2.common.ttypes import (
+from nebula3.common.ttypes import (
     Value,
     NullType,
     NMap,
