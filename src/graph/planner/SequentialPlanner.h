@@ -6,8 +6,6 @@
 #ifndef GRAPH_PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 #define GRAPH_PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 
-#include <memory>
-
 #include "graph/context/QueryContext.h"
 #include "graph/planner/Planner.h"
 
