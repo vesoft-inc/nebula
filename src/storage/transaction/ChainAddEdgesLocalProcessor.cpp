@@ -497,7 +497,9 @@ void ChainAddEdgesLocalProcessor::replaceNullWithDefaultValue(cpp2::AddEdgesRequ
       for (auto i = vals.size(); i < idxVec.size(); ++i) {
         auto field = schema->field(idxVec[i]);
         if (field->hasDefault()) {
-          auto expr = field->defaultValue()->clone();
+          auto exprStr = field->defaultValue();
+          ObjectPool pool;
+          auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
           auto defVal = Expression::eval(expr, expCtx);
           switch (defVal.type()) {
             case Value::Type::BOOL:

@@ -28,7 +28,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   req.part_id_ref() = partId;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -83,7 +83,7 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
   req.as_learner_ref() = asLearner;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -110,7 +110,7 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
   req.learner_ref() = learner;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -137,7 +137,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
   req.target_ref() = target;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -166,7 +166,7 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
   req.peer_ref() = peer;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -191,7 +191,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
   CHECK_NOTNULL(kv_);
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
@@ -267,7 +267,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
   req.part_id_ref() = partId;
   auto peerRet = getPeers(spaceId, partId);
   if (!nebula::ok(peerRet)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(peerRet));
+    LOG(INFO) << "Get peers failed: " << static_cast<int32_t>(nebula::error(peerRet));
     return Status::Error("Get peers failed");
   }
 
@@ -554,8 +554,8 @@ void AdminClient::getLeaderDist(const HostAddr& host,
         .then([pro = std::move(pro), host, retry, retryLimit, this](
                   folly::Try<storage::cpp2::GetLeaderPartsResp>&& t) mutable {
           if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
+            LOG(INFO) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                             t.exception().what().c_str());
             if (retry < retryLimit) {
               usleep(1000 * 50);
               getLeaderDist(
@@ -637,8 +637,8 @@ folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(
         .then([p = std::move(pro), storageHost, host](
                   folly::Try<storage::cpp2::CreateCPResp>&& t) mutable {
           if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
+            LOG(INFO) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                             t.exception().what().c_str());
             p.setValue(Status::Error("RPC failure in createCheckpoint"));
             return;
           }

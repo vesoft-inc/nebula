@@ -815,7 +815,9 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
 
       WriteResult r = WriteResult::SUCCEEDED;
       if (field->hasDefault()) {
-        auto expr = field->defaultValue()->clone();
+        ObjectPool pool;
+        auto& exprStr = field->defaultValue();
+        auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
         auto defVal = Expression::eval(expr, expCtx);
         switch (defVal.type()) {
           case Value::Type::NULLVALUE:
@@ -851,7 +853,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()
                        << ", default value: " << defVal
-                       << ", default value expr: " << field->defaultValue()->toString();
+                       << ", default value expr: " << field->defaultValue();
         }
       } else {
         // Set NULL
