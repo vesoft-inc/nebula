@@ -75,6 +75,8 @@
   X(E_CONFLICT, -2008)                                                        \
   X(E_INVALID_PARM, -2009)                                                    \
   X(E_WRONGCLUSTER, -2010)                                                    \
+  X(E_ZONE_NOT_ENOUGH, -2011)                                                 \
+  X(E_ZONE_IS_EMPTY, -2012)                                                   \
                                                                               \
   X(E_STORE_FAILURE, -2021)                                                   \
   X(E_STORE_SEGMENT_ILLEGAL, -2022)                                           \

@@ -12,9 +12,9 @@ import re
 import threading
 import json
 
-from nebula2.common.ttypes import NList, NMap, Value, ErrorCode
-from nebula2.data.DataObject import ValueWrapper
-from nebula2.Exception import AuthFailedException
+from nebula3.common.ttypes import NList, NMap, Value, ErrorCode
+from nebula3.data.DataObject import ValueWrapper
+from nebula3.Exception import AuthFailedException
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -37,8 +37,8 @@ from tests.common.nebula_service import NebulaService
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
-from nebula2.graph.ttypes import VerifyClientVersionReq
-from nebula2.graph.ttypes import VerifyClientVersionResp
+from nebula3.graph.ttypes import VerifyClientVersionReq
+from nebula3.graph.ttypes import VerifyClientVersionResp
 
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
@@ -175,6 +175,7 @@ def preload_space(
     load_nba_data,
     load_nba_int_vid_data,
     load_student_data,
+    load_ldbc_v0_3_3,
     session,
     graph_spaces,
 ):
@@ -185,6 +186,8 @@ def preload_space(
         graph_spaces["space_desc"] = load_nba_int_vid_data
     elif space == "student":
         graph_spaces["space_desc"] = load_student_data
+    elif space == "ldbc_v0_3_3":
+        graph_spaces["ldbc_v0_3_3"] = load_ldbc_v0_3_3
     else:
         raise ValueError(f"Invalid space name given: {space}")
     resp_ok(session, f'USE {space};', True)

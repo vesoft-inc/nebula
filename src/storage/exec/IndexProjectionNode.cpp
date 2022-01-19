@@ -15,6 +15,12 @@ nebula::cpp2::ErrorCode IndexProjectionNode::init(InitContext& ctx) {
   for (auto& col : requiredColumns_) {
     ctx.requiredColumns.insert(col);
   }
+  for (auto& col : ctx.statColumns) {
+    if (ctx.requiredColumns.find(col) == ctx.requiredColumns.end()) {
+      ctx.requiredColumns.insert(col);
+      requiredColumns_.push_back(col);
+    }
+  }
   auto ret = children_[0]->init(ctx);
   if (UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
     return ret;

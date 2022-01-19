@@ -13,8 +13,8 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-  auto edgeName = req.get_edge_name();
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
+  const auto& edgeName = req.get_edge_name();
 
   EdgeType edgeType;
   auto indexKey = MetaKeyUtils::indexEdgeKey(spaceId, edgeName);

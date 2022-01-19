@@ -9,7 +9,7 @@ import sys
 import pytest
 import time
 
-from nebula2.graph import ttypes
+from nebula3.graph import ttypes
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 

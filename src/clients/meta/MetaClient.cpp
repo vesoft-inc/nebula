@@ -364,8 +364,8 @@ bool MetaClient::loadData() {
     GraphSpaceID spaceId = spaceInfo.first;
     std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
     std::shared_ptr<SpaceInfoCache> infoDeepCopy = std::make_shared<SpaceInfoCache>(*info);
-    infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_, &infoDeepCopy->pool_);
-    infoDeepCopy->edgeSchemas_ = buildEdgeSchemas(infoDeepCopy->edgeItemVec_, &infoDeepCopy->pool_);
+    infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_);
+    infoDeepCopy->edgeSchemas_ = buildEdgeSchemas(infoDeepCopy->edgeItemVec_);
     infoDeepCopy->tagIndexes_ = buildIndexes(infoDeepCopy->tagIndexItemVec_);
     infoDeepCopy->edgeIndexes_ = buildIndexes(infoDeepCopy->edgeIndexItemVec_);
     newMetaData->localCache_[spaceId] = infoDeepCopy;
@@ -396,14 +396,14 @@ bool MetaClient::loadData() {
   return true;
 }
 
-TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool) {
+TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
   TagSchemas tagSchemas;
   TagID lastTagId = -1;
   for (auto& tagIt : tagItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
     for (const auto& colIt : tagIt.get_schema().get_columns()) {
-      addSchemaField(schema.get(), colIt, pool);
+      addSchemaField(schema.get(), colIt);
     }
     // handle schema property
     schema->setProp(tagIt.get_schema().get_schema_prop());
@@ -417,8 +417,7 @@ TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, Ob
   return tagSchemas;
 }
 
-EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec,
-                                         ObjectPool* pool) {
+EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
   EdgeSchemas edgeSchemas;
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
   EdgeType lastEdgeType = -1;
@@ -426,7 +425,7 @@ EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
     for (const auto& col : edgeIt.get_schema().get_columns()) {
-      MetaClient::addSchemaField(schema.get(), col, pool);
+      MetaClient::addSchemaField(schema.get(), col);
     }
     // handle shcem property
     schema->setProp(edgeIt.get_schema().get_schema_prop());
@@ -440,32 +439,19 @@ EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec
   return edgeSchemas;
 }
 
-void MetaClient::addSchemaField(NebulaSchemaProvider* schema,
-                                const cpp2::ColumnDef& col,
-                                ObjectPool* pool) {
+void MetaClient::addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col) {
   bool hasDef = col.default_value_ref().has_value();
   auto& colType = col.get_type();
   size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
   cpp2::GeoShape geoShape =
       colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
   bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
-  Expression* defaultValueExpr = nullptr;
+  std::string encoded;
   if (hasDef) {
-    auto encoded = *col.get_default_value();
-    defaultValueExpr = Expression::decode(pool, folly::StringPiece(encoded.data(), encoded.size()));
-
-    if (defaultValueExpr == nullptr) {
-      LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
-      hasDef = false;
-    }
+    encoded = *col.get_default_value();
   }
 
-  schema->addField(col.get_name(),
-                   colType.get_type(),
-                   len,
-                   nullable,
-                   hasDef ? defaultValueExpr : nullptr,
-                   geoShape);
+  schema->addField(col.get_name(), colType.get_type(), len, nullable, encoded, geoShape);
 }
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
@@ -493,9 +479,9 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   auto edgeItemVec = edgeRet.value();
   allEdgeMap[spaceId] = {};
   spaceInfoCache->tagItemVec_ = tagItemVec;
-  spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec, &spaceInfoCache->pool_);
+  spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec);
   spaceInfoCache->edgeItemVec_ = edgeItemVec;
-  spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec, &spaceInfoCache->pool_);
+  spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec);
 
   for (auto& tagIt : tagItemVec) {
     tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.get_tag_name()), tagIt.get_tag_id());
@@ -859,6 +845,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Invalid param!");
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
+    case nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH:
+      return Status::Error("Zone not enough!");
+    case nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY:
+      return Status::Error("Zone is empty!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
       return Status::Error("Store failure!");
     case nebula::cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL:

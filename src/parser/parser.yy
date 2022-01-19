@@ -560,7 +560,7 @@ expression
         if(!graph::ExpressionUtils::checkExprDepth($1)){
             // delete $1;
             std::ostringstream errStr;
-            errStr << "The above expression's depth exceeds the maximum depth:" << graph::ExpressionUtils::kMaxDepth;
+            errStr << "The above expression's depth exceeds the maximum depth:" << FLAGS_max_expression_depth;
             throw nebula::GraphParser::syntax_error(@1, errStr.str());
         }
         $$ = $1;
@@ -1635,47 +1635,19 @@ unwind_clause
 
 with_clause
     : KW_WITH match_return_items match_order_by match_skip match_limit where_clause {
-        if ($6 && graph::ExpressionUtils::findAny($6->filter(),{Expression::Kind::kAggregate})) {
-            delete($2);
-            delete($3);
-            delete($4);
-            delete($5);
-            delete($6);
-            throw nebula::GraphParser::syntax_error(@6, "Invalid use of aggregating function in this context.");
-        }
         $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
     }
     | KW_WITH KW_DISTINCT match_return_items match_order_by match_skip match_limit where_clause {
-        if ($7 && graph::ExpressionUtils::findAny($7->filter(),{Expression::Kind::kAggregate})) {
-            delete($3);
-            delete($4);
-            delete($5);
-            delete($6);
-            delete($7);
-            throw nebula::GraphParser::syntax_error(@7, "Invalid use of aggregating function in this context.");
-        }
         $$ = new WithClause($3, $4, $5, $6, $7, true);
     }
     ;
 
 match_clause
     : KW_MATCH match_path_list where_clause {
-        if ($3 && graph::ExpressionUtils::findAny($3->filter(),{Expression::Kind::kAggregate})) {
-            delete($2);
-            delete($3);
-            throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in this context.");
-        } else {
-            $$ = new MatchClause($2, $3, false/*optional*/);
-        }
+        $$ = new MatchClause($2, $3, false/*optional*/);
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
-        if ($4 && graph::ExpressionUtils::findAny($4->filter(),{Expression::Kind::kAggregate})) {
-            delete($3);
-            delete($4);
-            throw nebula::GraphParser::syntax_error(@4, "Invalid use of aggregating function in this context.");
-        } else {
-            $$ = new MatchClause($3, $4, true);
-        }
+        $$ = new MatchClause($3, $4, true);
     }
     ;
 

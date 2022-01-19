@@ -10,7 +10,7 @@ namespace java com.vesoft.nebula
 namespace go nebula
 namespace js nebula
 namespace csharp nebula
-namespace py nebula2.common
+namespace py nebula3.common
 
 cpp_include "common/thrift/ThriftTypes.h"
 cpp_include "common/datatypes/DateOps-inl.h"
@@ -34,7 +34,7 @@ cpp_include "common/datatypes/DurationOps-inl.h"
  *
  */
 
-const binary (cpp.type = "char const *") version = "2.6.0"
+const binary (cpp.type = "char const *") version = "3.0.0"
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
@@ -358,6 +358,8 @@ enum ErrorCode {
     E_CONFLICT                        = -2008,
     E_INVALID_PARM                    = -2009,
     E_WRONGCLUSTER                    = -2010,
+    E_ZONE_NOT_ENOUGH                 = -2011,
+    E_ZONE_IS_EMPTY                   = -2012,
 
     E_STORE_FAILURE                   = -2021,
     E_STORE_SEGMENT_ILLEGAL           = -2022,

@@ -15,11 +15,11 @@ from tests.common.utils import get_conn_pool, get_ssl_config
 from tests.common.constants import NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR, NEBULA_HOME
 from tests.common.nebula_service import NebulaService
 
-from nebula2.fbthrift.transport import TSocket
-from nebula2.fbthrift.transport import TTransport
-from nebula2.fbthrift.protocol import TBinaryProtocol
-from nebula2.gclient.net import Connection
-from nebula2.graph import GraphService
+from nebula3.fbthrift.transport import TSocket
+from nebula3.fbthrift.transport import TTransport
+from nebula3.fbthrift.protocol import TBinaryProtocol
+from nebula3.gclient.net import Connection
+from nebula3.graph import GraphService
 
 
 tests_collected = set()
@@ -214,6 +214,11 @@ def load_nba_data():
 @pytest.fixture(scope="session")
 def load_nba_int_vid_data():
     yield load_csv_data_once("nba_int_vid")
+
+
+@pytest.fixture(scope="session")
+def load_ldbc_v0_3_3():
+    yield load_csv_data_once("ldbc_v0_3_3")
 
 
 @pytest.fixture(scope="session")
