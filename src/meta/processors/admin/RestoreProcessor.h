@@ -13,6 +13,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Rebuild the host relative info after ingesting the table backup data to
+ *        the new cluster metad KV store.
+ *
+ */
 class RestoreProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RestoreProcessor* instance(kvstore::KVStore* kvstore) {

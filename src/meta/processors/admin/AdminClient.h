@@ -43,57 +43,168 @@ class AdminClient {
     return ioThreadPool_.get();
   }
 
+  /**
+   * @brief Transfer given partition's leader from now to dst
+   *
+   * @param spaceId
+   * @param partId
+   * @param leader
+   * @param dst
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                             PartitionID partId,
                                             const HostAddr& leader,
                                             const HostAddr& dst = kRandomPeer);
 
+  /**
+   * @brief Add a peer for given partition in specified host. The rpc
+   *        will be sent to the new partition peer, letting it know the
+   *        other peers.
+   *
+   * @param spaceId
+   * @param partId
+   * @param host
+   * @param asLearner Add an peer only as raft learner
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> addPart(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const HostAddr& host,
                                         bool asLearner);
 
+  /**
+   * @brief Add a learner for given partition. The rpc will be sent to
+   *        the partition leader, writting the add event as a log.
+   *
+   * @param spaceId
+   * @param partId
+   * @param learner
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> addLearner(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& learner);
 
+  /**
+   * @brief Waiting for give partition peer catching data
+   *
+   * @param spaceId
+   * @param partId
+   * @param target partition peer address
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
                                                       PartitionID partId,
                                                       const HostAddr& target);
 
   /**
-   * Add/Remove one peer for raft group (spaceId, partId).
-   * "added" should be true if we want to add one peer, otherwise it is false.
-   * */
+   * @brief Add/Remove one peer for partition (spaceId, partId).
+   *        "added" should be true if we want to add one peer, otherwise it is false.
+   * @param spaceId
+   * @param partId
+   * @param peer
+   * @param added
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> memberChange(GraphSpaceID spaceId,
                                              PartitionID partId,
                                              const HostAddr& peer,
                                              bool added);
 
+  /**
+   * @brief Update partition peers info in meta kvstore, remove peer 'src', add peer 'dst'
+   *
+   * @param spaceId
+   * @param partId
+   * @param src
+   * @param dst
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> updateMeta(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           const HostAddr& leader,
+                                           const HostAddr& src,
                                            const HostAddr& dst);
 
+  /**
+   * @brief Remove partition peer in given storage host
+   *
+   * @param spaceId
+   * @param partId
+   * @param host storage admin service address
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> removePart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host);
 
+  /**
+   * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
+   *
+   * @param spaceId
+   * @param partId
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> checkPeers(GraphSpaceID spaceId, PartitionID partId);
 
+  /**
+   * @brief Get the all partitions' leader distribution
+   *
+   * @param result
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
+  // used for snapshot and backup
+  /**
+   * @brief Create snapshots for given spaces in given host with specified snapshot name
+   *
+   * @param spaceIds spaces to create snapshot
+   * @param name snapshot name
+   * @param host storage host
+   * @return folly::Future<StatusOr<cpp2::HostBackupInfo>>
+   */
   virtual folly::Future<StatusOr<cpp2::HostBackupInfo>> createSnapshot(
       const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host);
 
+  /**
+   * @brief Drop snapshots of given spaces in given host with specified snapshot name
+   *
+   * @param spaceIds spaces to drop
+   * @param name snapshot name
+   * @param host storage host
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
                                              const std::string& name,
                                              const HostAddr& host);
 
+  /**
+   * @brief Blocking/Allowing writings to given spaces in specified storage host
+   *
+   * @param spaceIds
+   * @param sign BLOCK_ON: blocking, BLOCK_OFF: allowing
+   * @param host
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> blockingWrites(const std::set<GraphSpaceID>& spaceIds,
                                                storage::cpp2::EngineSignType sign,
                                                const HostAddr& host);
 
+  /**
+   * @brief Add storage admin task to given storage host
+   *
+   * @param cmd
+   * @param jobId
+   * @param taskId
+   * @param spaceId
+   * @param specificHosts if hosts are empty, will send request to all ative storage hosts
+   * @param taskSpecficParas
+   * @param parts
+   * @param concurrency
+   * @param statsResult
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> addTask(cpp2::AdminCmd cmd,
                                         int32_t jobId,
                                         int32_t taskId,
@@ -104,6 +215,14 @@ class AdminClient {
                                         int concurrency,
                                         cpp2::StatsItem* statsResult = nullptr);
 
+  /**
+   * @brief Stop stoarge admin task in given storage host
+   *
+   * @param target if target hosts are emtpy, will send request to all active storage hosts
+   * @param jobId
+   * @param taskId
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> stopTask(const std::vector<HostAddr>& target,
                                          int32_t jobId,
                                          int32_t taskId);

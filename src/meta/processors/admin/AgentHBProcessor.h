@@ -31,6 +31,9 @@ struct AgentHBCounters final {
 };
 extern AgentHBCounters kAgentHBCounters;
 
+/**
+ * @brief Agent heartbeat register agent to meta and pull all services info in agent's host
+ */
 class AgentHBProcessor : public BaseProcessor<cpp2::AgentHBResp> {
   FRIEND_TEST(AgentHBProcessorTest, AgentHBTest);
 

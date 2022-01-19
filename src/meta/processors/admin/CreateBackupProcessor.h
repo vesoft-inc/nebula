@@ -14,6 +14,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create backup files in each mtead and storaged services' local.
+ *
+ */
 class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
  public:
   static CreateBackupProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
