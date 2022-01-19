@@ -41,12 +41,18 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
   auto *newRoot = rootGroup->getPlan();
-  auto status = preprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
-  NG_RETURN_IF_ERROR(status);
+
+  auto status2 = postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
+  NG_RETURN_IF_ERROR(status2);
   return newRoot;
 }
 
-Status Optimizer::preprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
+// Status Optimizer::preprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
+//   ColumnTracker colsUsed;
+//   return root->pruneCulumns(colsUsed, qctx, spaceID);
+// }
+
+Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
   PropertyTracker propsUsed;
   return root->pruneProperties(propsUsed, qctx, spaceID);
 }

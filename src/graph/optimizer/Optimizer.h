@@ -33,6 +33,8 @@ class Optimizer final {
  private:
   Status preprocess(graph::PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID);
 
+  Status postprocess(graph::PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID);
+
   StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
 
   Status doExploration(OptContext *octx, OptGroup *rootGroup);

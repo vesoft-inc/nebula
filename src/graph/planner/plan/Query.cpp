@@ -356,9 +356,21 @@ Status Project::pruneProperties(PropertyTracker& propsUsed,
                                 graph::QueryContext* qctx,
                                 GraphSpaceID spaceID) {
   if (cols_) {
-    for (auto* col : cols_->columns()) {
-      DCHECK_NOTNULL(col);
+    const auto& columns = cols_->columns();
+    auto& colNames = this->colNames();
+    for (size_t i = 0; i < columns.size(); ++i) {
+      auto* col = DCHECK_NOTNULL(columns[i]);
       auto* expr = col->expr();
+      auto& alias = colNames[i];
+      if (expr->kind() == Expression::Kind::kInputProperty) {
+        auto* inputPropExpr = static_cast<InputPropertyExpression*>(expr);
+        auto& propName = inputPropExpr->prop();
+        NG_RETURN_IF_ERROR(propsUsed.update(alias, propName));
+      } else if (expr->kind() == Expression::Kind::kVarProperty) {
+        auto* varPropExpr = static_cast<VariablePropertyExpression*>(expr);
+        auto& propName = varPropExpr->prop();
+        NG_RETURN_IF_ERROR(propsUsed.update(alias, propName));
+      }
       NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(expr, propsUsed, qctx, spaceID));
     }
   }
