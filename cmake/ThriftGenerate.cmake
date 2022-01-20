@@ -86,7 +86,7 @@ add_custom_command(
     --gen "js:node:"
     --gen "csharp"
     --gen "java:hashcode"
-    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v2/,use_context"
+    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v3/,use_context"
     -o "." "${file_path}/${file_name}.thrift"
   COMMAND
     mkdir -p "./gen-rust/${file_name}"

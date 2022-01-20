@@ -14,6 +14,7 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(zoneKey);
+  // Check the source zone exist or not
   if (!nebula::ok(zoneValueRet)) {
     LOG(ERROR) << "Zone " << zoneName << " not existed error: "
                << apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
@@ -24,6 +25,23 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
 
   auto& zoneItems = req.get_zone_items();
   auto zoneHosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+
+  // if the source zone have only one host, it should not be split
+  if (zoneHosts.size() == 1) {
+    LOG(ERROR) << "Only one host is no need to split";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  // if the target zone list hold only one item, it should not be split
+  if (zoneItems.size() == 1) {
+    LOG(ERROR) << "Only one zone is no need to split";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
   if (zoneItems.size() > zoneHosts.size()) {
     LOG(ERROR) << "Zone Item should not greater than hosts size";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
@@ -35,12 +53,14 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   std::unordered_set<HostAddr> totalHosts;
   size_t totalHostsSize = 0;
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  // Remove original zone
+  batchHolder->remove(std::move(zoneKey));
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneItems.begin(); iter != zoneItems.end(); iter++) {
     auto zone = iter->first;
     auto hosts = iter->second;
     auto valueRet = doGet(MetaKeyUtils::zoneKey(zone));
-    if (nebula::ok(valueRet)) {
+    if (nebula::ok(valueRet) && zone != zoneName) {
       LOG(ERROR) << "Zone " << zone << " have existed";
       code = nebula::cpp2::ErrorCode::E_EXISTED;
       break;
@@ -48,9 +68,9 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
 
     auto it = std::find(zoneNames.begin(), zoneNames.end(), zone);
     if (it == zoneNames.end()) {
-      LOG(ERROR) << "Zone have duplicated name";
       zoneNames.emplace_back(zone);
     } else {
+      LOG(ERROR) << "Zone have duplicated name " << zone;
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
       break;
     }
@@ -109,8 +129,6 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
     return;
   }
 
-  // Remove original zone
-  batchHolder->remove(std::move(zoneKey));
   code = updateSpacesZone(batchHolder.get(), zoneName, zoneNames);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(code);

@@ -175,16 +175,26 @@ class TestUtils {
                             GraphSpaceID id,
                             int32_t partitionNum,
                             int32_t replica = 1,
-                            int32_t totalHost = 1) {
+                            int32_t totalHost = 1,
+                            bool multispace = false) {
     // mock the part distribution like create space
     cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "test_space";
+    if (multispace) {
+      properties.space_name_ref() = folly::stringPrintf("test_space_%d", id);
+    } else {
+      properties.space_name_ref() = "test_space";
+    }
     properties.partition_num_ref() = partitionNum;
     properties.replica_factor_ref() = replica;
     auto spaceVal = MetaKeyUtils::spaceVal(properties);
     std::vector<nebula::kvstore::KV> data;
-    data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
-                      std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    if (multispace) {
+      data.emplace_back(MetaKeyUtils::indexSpaceKey(folly::stringPrintf("test_space_%d", id)),
+                        std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    } else {
+      data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
+                        std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    }
     data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
 
     std::vector<HostAddr> allHosts;
@@ -205,6 +215,33 @@ class TestUtils {
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
       baton.post();
     });
+    baton.wait();
+  }
+
+  static void addZoneToSpace(kvstore::KVStore* kv,
+                             GraphSpaceID id,
+                             const std::vector<std::string>& zones) {
+    std::string spaceKey = MetaKeyUtils::spaceKey(id);
+    std::string spaceVal;
+    kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+    meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+    std::vector<std::string> curZones = properties.get_zone_names();
+    curZones.insert(curZones.end(), zones.begin(), zones.end());
+    properties.zone_names_ref() = curZones;
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
+    folly::Baton<true, std::atomic> baton;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kv->asyncMultiPut(kDefaultSpaceId,
+                      kDefaultPartId,
+                      std::move(data),
+                      [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                          ret = code;
+                          LOG(INFO) << "Put data error on meta server";
+                        }
+                        baton.post();
+                      });
     baton.wait();
   }
 
