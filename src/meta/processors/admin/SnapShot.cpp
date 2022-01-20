@@ -85,9 +85,8 @@ nebula::cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
     auto status = client_->dropSnapshot(spaces, name, host).get();
     if (!status.ok()) {
       auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
-      auto error = folly::stringPrintf(
+      LOG(INFO) << folly::stringPrintf(
           msg, name.c_str(), host.toString().c_str(), status.toString().c_str());
-      LOG(ERROR) << error;
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -109,8 +108,8 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
     LOG(INFO) << "will block write host: " << host;
     auto status = client_->blockingWrites(spaces, sign, host).get();
     if (!status.ok()) {
-      LOG(ERROR) << "Send blocking sign error on host " << host
-                 << ", errorcode: " << status.message();
+      LOG(INFO) << "Send blocking sign error on host " << host
+                << ", errorcode: " << status.message();
       ret = nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
       if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
         break;
@@ -127,8 +126,8 @@ Snapshot::getHostSpaces() {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get hosts meta data failed, error: "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get hosts meta data failed, error: "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

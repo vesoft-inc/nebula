@@ -25,8 +25,7 @@ class LockUtils {
   GENERATE_LOCK(id);
   GENERATE_LOCK(workerId);
   GENERATE_LOCK(localId);
-  GENERATE_LOCK(tag);
-  GENERATE_LOCK(edge);
+  GENERATE_LOCK(tagAndEdge);
   GENERATE_LOCK(tagIndex);
   GENERATE_LOCK(edgeIndex);
   GENERATE_LOCK(service);
