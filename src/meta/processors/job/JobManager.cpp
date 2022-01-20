@@ -414,12 +414,7 @@ size_t JobManager::jobSize() const {
 }
 
 bool JobManager::try_dequeue(std::pair<JbOp, JobID>& opJobId) {
-  if (highPriorityQueue_->try_dequeue(opJobId)) {
-    return true;
-  } else if (lowPriorityQueue_->try_dequeue(opJobId)) {
-    return true;
-  }
-  return false;
+  return (highPriorityQueue_->try_dequeue(opJobId)) || (lowPriorityQueue_->try_dequeue(opJobId));
 }
 
 void JobManager::enqueue(const JbOp& op, const JobID& jobId, const cpp2::AdminCmd& cmd) {

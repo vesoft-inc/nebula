@@ -87,7 +87,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
   int32_t replica = properties.get_replica_factor();
   LOG(INFO) << "Replica " << replica;
   if (dependentOnZone && !properties.get_zone_names().empty()) {
-    auto zoneNames = properties.get_zone_names();
+    const auto& zoneNames = properties.get_zone_names();
     int32_t zoneSize = zoneNames.size();
     LOG(INFO) << "Zone Size " << zoneSize;
     auto activeHostsRet = ActiveHostsMan::getActiveHostsWithZones(kvstore_, spaceId);
@@ -162,8 +162,8 @@ nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::assembleZoneParts(
     auto& hosts = zoneIter->second;
     auto name = zoneIter->first.second;
     zoneHosts_[name] = hosts;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
+    for (auto& hostIter : hosts) {
+      auto partIter = hostParts.find(hostIter);
       LOG(INFO) << "Zone " << name << " have the host " << it->first;
       if (partIter == hostParts.end()) {
         zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
@@ -173,11 +173,10 @@ nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::assembleZoneParts(
     }
   }
 
-  for (auto it = zoneHosts.begin(); it != zoneHosts.end(); it++) {
-    auto host = it->first.first;
-    auto& hosts = it->second;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto h = *hostIter;
+  for (auto& zoneHost : zoneHosts) {
+    auto host = zoneHost.first.first;
+    auto& hosts = zoneHost.second;
+    for (auto h : hosts) {
       auto iter = std::find_if(hostParts.begin(), hostParts.end(), [h](const auto& pair) -> bool {
         return h == pair.first;
       });
@@ -198,11 +197,11 @@ void LeaderBalanceJobExecutor::calDiff(const HostParts& hostParts,
                                        const std::vector<HostAddr>& activeHosts,
                                        std::vector<HostAddr>& expand,
                                        std::vector<HostAddr>& lost) {
-  for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
-    if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end() &&
-        std::find(lost.begin(), lost.end(), it->first) == lost.end()) {
-      lost.emplace_back(it->first);
+  for (const auto& hostPart : hostParts) {
+    VLOG(1) << "Original Host " << hostPart.first << ", parts " << hostPart.second.size();
+    if (std::find(activeHosts.begin(), activeHosts.end(), hostPart.first) == activeHosts.end() &&
+        std::find(lost.begin(), lost.end(), hostPart.first) == lost.end()) {
+      lost.emplace_back(hostPart.first);
     }
   }
   for (auto& h : activeHosts) {
@@ -220,7 +219,7 @@ LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(JobID jobId,
     : MetaJobExecutor(jobId, kvstore, adminClient, params),
       inLeaderBalance_(false),
       hostLeaderMap_(nullptr) {
-  executor_.reset(new folly::CPUThreadPoolExecutor(1));
+  executor_ = std::make_unique<folly::CPUThreadPoolExecutor>(1);
 }
 
 nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::finish(bool ret) {
@@ -243,7 +242,7 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
 
   bool expected = false;
   if (inLeaderBalance_.compare_exchange_strong(expected, true)) {
-    hostLeaderMap_.reset(new HostLeaderMap);
+    hostLeaderMap_ = std::make_unique<HostLeaderMap>();
     auto status = adminClient_->getLeaderDist(hostLeaderMap_.get()).get();
     if (!status.ok() || hostLeaderMap_->empty()) {
       inLeaderBalance_ = false;
@@ -287,6 +286,7 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
 
     inLeaderBalance_ = false;
     if (failed != 0) {
+      executorOnFinished_(meta::cpp2::JobStatus::FAILED);
       return Status::Error("partiton failed to transfer leader");
     }
     executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
@@ -354,10 +354,10 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   }
 
   if (dependentOnZone) {
-    for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
-      auto min = it->second.size() / replicaFactor;
-      VLOG(3) << "Host: " << it->first << " Bounds: " << min << " : " << min + 1;
-      hostBounds_[it->first] = std::make_pair(min, min + 1);
+    for (auto& allHostPart : allHostParts) {
+      auto min = allHostPart.second.size() / replicaFactor;
+      VLOG(3) << "Host: " << allHostPart.first << " Bounds: " << min << " : " << min + 1;
+      hostBounds_[allHostPart.first] = std::make_pair(min, min + 1);
     }
   } else {
     size_t activeSize = activeHosts.size();
@@ -377,8 +377,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
     VLOG(3) << "Build leader balance plan, expected min load: " << globalMin
             << ", max load: " << globalMax << " avg: " << globalAvg;
 
-    for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
-      hostBounds_[it->first] = std::make_pair(globalMin, globalMax);
+    for (auto& allHostPart : allHostParts) {
+      hostBounds_[allHostPart.first] = std::make_pair(globalMin, globalMax);
     }
   }
 
