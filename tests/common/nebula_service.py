@@ -20,8 +20,8 @@ from contextlib import closing
 
 from tests.common.constants import TMP_DIR
 from tests.common.utils import get_ssl_config
-from nebula2.gclient.net import ConnectionPool
-from nebula2.Config import Config
+from nebula3.gclient.net import ConnectionPool
+from nebula3.Config import Config
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
