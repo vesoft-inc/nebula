@@ -6,8 +6,6 @@
 #ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
 #define GRAPH_PLANNER_PLAN_PLANNODE_H_
 
-#include <bits/stdint-uintn.h>
-
 #include <type_traits>
 
 #include "common/expression/Expression.h"
