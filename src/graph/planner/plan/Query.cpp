@@ -781,7 +781,7 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
 
   auto it = propsUsed.colsSet.find(nodeAlias);
   if (it != propsUsed.colsSet.end()) {  // All properties are used
-    propsUsed.colsSet.erase(it);
+    // propsUsed.colsSet.erase(it);
     return depsPruneProperties(propsUsed, qctx, spaceID);
   }
 
@@ -858,7 +858,7 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
   auto& nodeAlias = colNames.back();
   auto it = propsUsed.colsSet.find(nodeAlias);
   if (it != propsUsed.colsSet.end()) {  // All properties are used
-    propsUsed.colsSet.erase(it);
+    // propsUsed.colsSet.erase(it);
     return depsPruneProperties(propsUsed, qctx, spaceID);
   }
 
