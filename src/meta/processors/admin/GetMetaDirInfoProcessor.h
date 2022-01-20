@@ -12,6 +12,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get meta dir info for each metad service, now only used in BR
+ *        Dir info contains root dir path and kv store data dir path.
+ *
+ */
 class GetMetaDirInfoProcessor : public BaseProcessor<cpp2::GetMetaDirInfoResp> {
  public:
   static GetMetaDirInfoProcessor* instance(kvstore::KVStore* kvstore) {
