@@ -273,7 +273,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
-  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value());
+  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(
+      transformRes.value(), whereClauseCtx.aliasesAvailable);
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -383,7 +384,8 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
           ExpressionUtils::hasAny(column->expr(), {Expression::Kind::kAggregate})) {
         retClauseCtx.yield->hasAgg_ = true;
       }
-      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(
+          column->expr(), retClauseCtx.yield->aliasesAvailable));
       exprs.push_back(column->expr());
       columns->addColumn(column->clone().release());
     }
@@ -459,7 +461,8 @@ Status MatchValidator::validateWith(const WithClause *with,
   }
   if (with->returnItems()->columns()) {
     for (auto *column : with->returnItems()->columns()->columns()) {
-      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(
+          column->expr(), withClauseCtx.yield->aliasesAvailable));
       columns->addColumn(column->clone().release());
     }
   }
@@ -819,7 +822,7 @@ Status MatchValidator::checkAlias(
       auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
       auto res = getAliasType(aliasesAvailable, name);
       NG_RETURN_IF_ERROR(res);
-      if (res.value() != AliasType::kNode) {
+      if (res.value() == AliasType::kEdge || res.value() == AliasType::kPath) {
         return Status::SemanticError("The type of `%s' should be tag", name.c_str());
       }
       return Status::OK();
