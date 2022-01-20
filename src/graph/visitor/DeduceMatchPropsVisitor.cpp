@@ -52,7 +52,7 @@ void DeduceMatchPropsVisitor::visit(LabelTagPropertyExpression *expr) {
     status_ = std::move(status).status();
     return;
   }
-  auto &nodeAlias = expr->label();
+  auto &nodeAlias = static_cast<VariablePropertyExpression *>(expr->label())->prop();
   auto &tagName = expr->sym();
   auto &propName = expr->prop();
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
