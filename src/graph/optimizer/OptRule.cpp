@@ -35,6 +35,11 @@ Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Patter
   return Pattern(kind, std::move(patterns));
 }
 
+/*static*/ Pattern Pattern::create(graph::PlanNode::Trait trait,
+                                   std::initializer_list<Pattern> patterns) {
+  return Pattern(trait, std::move(patterns));
+}
+
 StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
   if (!node_.match(groupNode->node())) {
     return Status::Error();

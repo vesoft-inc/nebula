@@ -40,23 +40,11 @@ nebula_add_library(
     rule/TagIndexFullScanRule.cpp
     rule/EdgeIndexFullScanRule.cpp
     rule/PushLimitDownIndexScanRule.cpp
-    rule/PushLimitDownTagIndexFullScanRule.cpp
-    rule/PushLimitDownTagIndexPrefixScanRule.cpp
-    rule/PushLimitDownTagIndexRangeScanRule.cpp
-    rule/PushLimitDownEdgeIndexFullScanRule.cpp
-    rule/PushLimitDownEdgeIndexPrefixScanRule.cpp
-    rule/PushLimitDownEdgeIndexRangeScanRule.cpp
     rule/PushLimitDownProjectRule.cpp
     rule/PushLimitDownScanAppendVerticesRule.cpp
     rule/GetEdgesTransformRule.cpp
     rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
     rule/PushTopNDownIndexScanRule.cpp
-    rule/PushTopNDownTagIndexFullScanRule.cpp
-    rule/PushTopNDownTagIndexPrefixScanRule.cpp
-    rule/PushTopNDownTagIndexRangeScanRule.cpp
-    rule/PushTopNDownEdgeIndexFullScanRule.cpp
-    rule/PushTopNDownEdgeIndexPrefixScanRule.cpp
-    rule/PushTopNDownEdgeIndexRangeScanRule.cpp
 )
 
 nebula_add_subdirectory(test)

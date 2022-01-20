@@ -42,7 +42,7 @@ struct MatchedResult {
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
 };
 
-// Match plan node by trait of plan node.
+// Match plan node by trait or kind of plan node.
 class MatchNode {
  public:
   explicit MatchNode(graph::PlanNode::Kind kind) : node_(kind) {}
@@ -64,12 +64,15 @@ class MatchNode {
 class Pattern final {
  public:
   static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
+  static Pattern create(graph::PlanNode::Trait trait, std::initializer_list<Pattern> patterns = {});
 
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
  private:
   explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
       : node_(kind), dependencies_(patterns) {}
+  explicit Pattern(graph::PlanNode::Trait trait, std::initializer_list<Pattern> patterns = {})
+      : node_(trait), dependencies_(patterns) {}
   StatusOr<MatchedResult> match(const OptGroup *group) const;
 
   MatchNode node_;

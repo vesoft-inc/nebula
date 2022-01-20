@@ -8,6 +8,8 @@
 
 #include <bits/stdint-uintn.h>
 
+#include <type_traits>
+
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
@@ -289,6 +291,13 @@ class PlanNode {
 
   const auto& traits() const {
     return traits_;
+  }
+
+  template <typename T>
+  const T* asNode() const {
+    static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
+    DCHECK_NOTNULL(dynamic_cast<const T*>(this));
+    return static_cast<const T*>(this);
   }
 
  protected:

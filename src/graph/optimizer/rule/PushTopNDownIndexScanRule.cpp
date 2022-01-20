@@ -30,7 +30,7 @@ const Pattern &PushTopNDownIndexScanRule::pattern() const {
   static Pattern pattern =
       Pattern::create(graph::PlanNode::Kind::kTopN,
                       {Pattern::create(graph::PlanNode::Kind::kProject,
-                                       {Pattern::create(graph::PlanNode::Kind::kIndexScan)})});
+                                       {Pattern::create(graph::PlanNode::Trait::kIndexScan)})});
   return pattern;
 }
 
@@ -42,7 +42,7 @@ StatusOr<OptRule::TransformResult> PushTopNDownIndexScanRule::transform(
 
   const auto topN = static_cast<const TopN *>(topNGroupNode->node());
   const auto project = static_cast<const Project *>(projectGroupNode->node());
-  const auto indexScan = static_cast<const IndexScan *>(indexScanGroupNode->node());
+  const auto indexScan = indexScanGroupNode->node()->asNode<graph::IndexScan>();
 
   int64_t limitRows = topN->offset() + topN->count();
 
