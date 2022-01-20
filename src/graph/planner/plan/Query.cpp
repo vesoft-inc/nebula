@@ -283,6 +283,17 @@ void Filter::cloneMembers(const Filter& f) {
   needStableFilter_ = f.needStableFilter();
 }
 
+Status Filter::pruneProperties(PropertyTracker& propsUsed,
+                               graph::QueryContext* qctx,
+                               GraphSpaceID spaceID) {
+  if (condition_ != nullptr) {
+    NG_RETURN_IF_ERROR(
+        ExpressionUtils::extractPropsFromExprs(condition_, propsUsed, qctx, spaceID));
+  }
+
+  return depsPruneProperties(propsUsed, qctx, spaceID);
+}
+
 void SetOp::cloneMembers(const SetOp& s) {
   BinaryInputNode::cloneMembers(s);
 }
@@ -788,11 +799,23 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
       auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
       auto& usedVertexProps = it2->second;
       prunedVertexProps->reserve(usedVertexProps.size());
-      for (auto& [tagId, vProps] : usedVertexProps) {
-        VertexProp newVProp;
-        newVProp.tag_ref() = tagId;
-        newVProp.props_ref() = std::vector<std::string>(vProps.begin(), vProps.end());
-        prunedVertexProps->emplace_back(std::move(newVProp));
+      for (auto& vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        auto& props = vertexProp.props_ref().value();
+        auto it3 = usedVertexProps.find(tagId);
+        if (it3 != usedVertexProps.end()) {
+          auto& usedProps = it3->second;
+          VertexProp newVProp;
+          newVProp.tag_ref() = tagId;
+          std::vector<std::string> newProps;
+          for (auto& prop : props) {
+            if (usedProps.find(prop) != usedProps.end()) {
+              newProps.emplace_back(prop);
+            }
+          }
+          newVProp.props_ref() = std::move(newProps);
+          prunedVertexProps->emplace_back(std::move(newVProp));
+        }
       }
       setVertexProps(std::move(prunedVertexProps));
     }
@@ -850,16 +873,28 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
     if (it2 != propsUsed.vertexPropsMap.end()) {
       auto& usedVertexProps = it2->second;
       prunedVertexProps->reserve(usedVertexProps.size());
-      for (auto& [tagId, vProps] : usedVertexProps) {
-        VertexProp newVProp;
-        newVProp.tag_ref() = tagId;
-        newVProp.props_ref() = std::vector<std::string>(vProps.begin(), vProps.end());
-        prunedVertexProps->emplace_back(std::move(newVProp));
+      for (auto& vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        auto& props = vertexProp.props_ref().value();
+        auto it3 = usedVertexProps.find(tagId);
+        if (it3 != usedVertexProps.end()) {
+          auto& usedProps = it3->second;
+          VertexProp newVProp;
+          newVProp.tag_ref() = tagId;
+          std::vector<std::string> newProps;
+          for (auto& prop : props) {
+            if (usedProps.find(prop) != usedProps.end()) {
+              newProps.emplace_back(prop);
+            }
+          }
+          newVProp.props_ref() = std::move(newProps);
+          prunedVertexProps->emplace_back(std::move(newVProp));
+        }
       }
     } else {
-      // AppendVertices should be deleted
-      // Mark the node as toBeDeleted
-      // It should be done by ColumnPruner
+      // AppendVertices should be deleted when no props are used by the parent node
+      // markAsToBeDeleted();
+      // It could be done by ColumnPruner
     }
     setVertexProps(std::move(prunedVertexProps));
   }

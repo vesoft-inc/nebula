@@ -730,6 +730,10 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
+
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
