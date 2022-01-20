@@ -218,6 +218,33 @@ class TestUtils {
     baton.wait();
   }
 
+  static void addZoneToSpace(kvstore::KVStore* kv,
+                             GraphSpaceID id,
+                             const std::vector<std::string>& zones) {
+    std::string spaceKey = MetaKeyUtils::spaceKey(id);
+    std::string spaceVal;
+    kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+    meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+    std::vector<std::string> curZones = properties.get_zone_names();
+    curZones.insert(curZones.end(), zones.begin(), zones.end());
+    properties.zone_names_ref() = curZones;
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
+    folly::Baton<true, std::atomic> baton;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kv->asyncMultiPut(kDefaultSpaceId,
+                      kDefaultPartId,
+                      std::move(data),
+                      [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                          ret = code;
+                          LOG(INFO) << "Put data error on meta server";
+                        }
+                        baton.post();
+                      });
+    baton.wait();
+  }
+
   static void assembleSpaceWithZone(kvstore::KVStore* kv,
                                     GraphSpaceID id,
                                     int32_t partitionNum,
