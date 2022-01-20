@@ -373,7 +373,9 @@ void PlanNode::releaseSymbols() {
 void PlanNode::updateSymbols() {
   auto symTbl = qctx_->symTable();
   for (auto out : outputVars_) {
-    out && symTbl->updateWrittenBy(out->name, out->name, this);
+    if (out != nullptr) {
+      symTbl->updateWrittenBy(out->name, out->name, this);
+    }
   }
 }
 
