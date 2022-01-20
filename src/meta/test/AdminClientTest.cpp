@@ -90,9 +90,7 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     auto f = pro.getFuture();
     storage::cpp2::CreateCPResp resp;
     storage::cpp2::ResponseCommon result;
-    std::vector<storage::cpp2::PartitionResult> partRetCode;
-    result.failed_parts_ref() = partRetCode;
-    resp.result_ref() = result;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     nebula::cpp2::CheckpointInfo cpInfo;
     cpInfo.path_ref() = "snapshot_path";
     resp.info_ref() = {cpInfo};
@@ -100,24 +98,26 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     return f;
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_dropCheckpoint(
+  folly::Future<storage::cpp2::DropCPResp> future_dropCheckpoint(
       const storage::cpp2::DropCPRequest& req) override {
-    RETURN_OK(req);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::DropCPResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::DropCPResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    pro.setValue(std::move(resp));
+    return f;
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_blockingWrites(
+  folly::Future<storage::cpp2::BlockResp> future_blockingWrites(
       const storage::cpp2::BlockingSignRequest& req) override {
-    RETURN_OK(req);
-  }
-
-  folly::Future<storage::cpp2::AdminExecResp> future_rebuildTagIndex(
-      const storage::cpp2::RebuildIndexRequest& req) override {
-    RETURN_OK(req);
-  }
-
-  folly::Future<storage::cpp2::AdminExecResp> future_rebuildEdgeIndex(
-      const storage::cpp2::RebuildIndexRequest& req) override {
-    RETURN_OK(req);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::BlockResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::BlockResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    pro.setValue(std::move(resp));
+    return f;
   }
 };
 

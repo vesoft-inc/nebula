@@ -16,7 +16,7 @@
 namespace nebula {
 namespace storage {
 
-class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class AdminTaskProcessor {
  public:
   static AdminTaskProcessor* instance(StorageEnv* env) {
     return new AdminTaskProcessor(env);
@@ -24,10 +24,18 @@ class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
   void process(const cpp2::AddAdminTaskRequest& req);
 
- private:
-  explicit AdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  folly::Future<cpp2::AddTaskResp> getFuture() {
+    return promise_.getFuture();
+  }
 
-  void onProcessFinished(nebula::meta::cpp2::StatsItem& result);
+ private:
+  explicit AdminTaskProcessor(StorageEnv* env) : env_(env) {}
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::AddTaskResp> promise_;
+  cpp2::AddTaskResp resp_;
 };
 
 }  // namespace storage

@@ -21,6 +21,7 @@ nebula_add_library(
     admin/RebuildEdgeIndexTask.cpp
     admin/RebuildFTIndexTask.cpp
     admin/StatsTask.cpp
+    admin/GetLeaderProcessor.cpp
 )
 
 nebula_add_library(

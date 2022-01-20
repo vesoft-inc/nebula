@@ -703,7 +703,7 @@ service GraphStorageService {
 //////////////////////////////////////////////////////////
 // Common response for admin methods
 struct AdminExecResp {
-    1: required ResponseCommon   result,
+    1: required ResponseCommon  result,
     2: optional meta.StatsItem  stats,
 }
 
@@ -759,27 +759,36 @@ struct CreateCPRequest {
     2: binary                     name,
 }
 
+struct CreateCPResp {
+    1: common.ErrorCode             code,
+    2: list<common.CheckpointInfo>  info,
+}
 
 struct DropCPRequest {
     1: list<common.GraphSpaceID>  space_ids,
     2: binary                     name,
 }
 
+struct DropCPResp {
+    1: common.ErrorCode             code,
+}
 
 enum EngineSignType {
     BLOCK_ON = 1,
     BLOCK_OFF = 2,
 }
 
-
 struct BlockingSignRequest {
     1: list<common.GraphSpaceID>    space_ids,
     2: required EngineSignType      sign,
 }
 
+struct BlockResp {
+    1: common.ErrorCode             code,
+}
 
 struct GetLeaderPartsResp {
-    1: required ResponseCommon result,
+    1: common.ErrorCode             code,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (
         cpp.template = "std::unordered_map") leader_parts;
 }
@@ -796,11 +805,6 @@ struct RebuildIndexRequest {
     1: common.GraphSpaceID          space_id,
     2: list<common.PartitionID>     parts,
     3: common.IndexID               index_id,
-}
-
-struct CreateCPResp {
-    1: required ResponseCommon      result,
-    2: list<common.CheckpointInfo>  info,
 }
 
 struct ListClusterInfoResp {
@@ -820,9 +824,17 @@ struct AddAdminTaskRequest {
     5: optional i32                         concurrency
 }
 
+struct AddTaskResp {
+    1: common.ErrorCode                     code,
+}
+
 struct StopAdminTaskRequest {
     1: i32                                  job_id
     2: i32                                  task_id
+}
+
+struct StopTaskResp {
+    1: common.ErrorCode                     code,
 }
 
 service StorageAdminService {
@@ -836,20 +848,16 @@ service StorageAdminService {
 
     // Interfaces for nebula cluster checkpoint
     CreateCPResp  createCheckpoint(1: CreateCPRequest req);
-    AdminExecResp dropCheckpoint(1: DropCPRequest req);
-    AdminExecResp blockingWrites(1: BlockingSignRequest req);
-
-    // Interfaces for rebuild index
-    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
-    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
+    DropCPResp    dropCheckpoint(1: DropCPRequest req);
+    BlockResp     blockingWrites(1: BlockingSignRequest req);
 
     // Return all leader partitions on this host
     GetLeaderPartsResp getLeaderParts(1: GetLeaderReq req);
     // Return all peers
     AdminExecResp checkPeers(1: CheckPeersReq req);
 
-    AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
-    AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
+    AddTaskResp   addAdminTask(1: AddAdminTaskRequest req);
+    StopTaskResp  stopAdminTask(1: StopAdminTaskRequest req);
 }
 
 
