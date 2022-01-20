@@ -67,12 +67,12 @@ class RewriteVisitor final : public ExprVisitorImpl {
   void visit(RelationalExpression*) override;
   void visit(SubscriptExpression*) override;
   void visit(PathBuildExpression*) override;
+  void visit(LabelTagPropertyExpression*) override;
   void visit(SubscriptRangeExpression*) override;
   void visit(ConstantExpression*) override {}
   void visit(LabelExpression*) override {}
   void visit(UUIDExpression*) override {}
   void visit(LabelAttributeExpression*) override {}
-  void visit(LabelTagPropertyExpression*) override {}
   void visit(VariableExpression*) override {}
   void visit(VersionedVariableExpression*) override {}
   void visit(TagPropertyExpression*) override {}
