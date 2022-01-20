@@ -33,7 +33,9 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto spaceID = qctx->rctx()->session()->space().id;
 
   // auto status = preprocess(root, qctx, spaceID);
-  // NG_RETURN_IF_ERROR(status);
+  // if (!status.ok()) {
+  //   LOG(ERROR) << "Failed to preprocess plan: " << status;
+  // }
 
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
@@ -43,7 +45,9 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto *newRoot = rootGroup->getPlan();
 
   auto status2 = postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
-  NG_RETURN_IF_ERROR(status2);
+  if (!status2.ok()) {
+    LOG(ERROR) << "Failed to postprocess plan: " << status2;
+  }
   return newRoot;
 }
 

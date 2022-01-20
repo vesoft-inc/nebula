@@ -8,6 +8,8 @@
 
 #include "graph/optimizer/OptRule.h"
 
+DECLARE_bool(enable_opt_collapse_project_rule);
+
 namespace nebula {
 namespace opt {
 
