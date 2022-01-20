@@ -366,11 +366,15 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs() {
 
 nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
   DCHECK(!raftLock_.try_lock());
+  nebula::cpp2::ErrorCode rc = canAppendLogs();
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return rc;
+  }
   if (UNLIKELY(term_ != termId)) {
     VLOG(2) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
     return nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
   }
-  return canAppendLogs();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 void RaftPart::addLearner(const HostAddr& addr) {
