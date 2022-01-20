@@ -132,7 +132,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewTags(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::schemaTagsPrefix(oldSpaceId);
   auto tagPrefix = doPrefix(prefix);
   if (!nebula::ok(tagPrefix)) {
@@ -164,7 +164,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewEdges(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::schemaEdgesPrefix(oldSpaceId);
   auto edgePrefix = doPrefix(prefix);
   if (!nebula::ok(edgePrefix)) {
@@ -196,7 +196,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewIndexes(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::indexPrefix(oldSpaceId);
   auto indexPrefix = doPrefix(prefix);
   if (!nebula::ok(indexPrefix)) {

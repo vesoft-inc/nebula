@@ -11,10 +11,10 @@ namespace meta {
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
+  const auto& tagName = req.get_tag_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto tagIdRet = getTagId(spaceId, tagName);
   if (!nebula::ok(tagIdRet)) {
     LOG(ERROR) << "Get tag " << tagName << " failed.";

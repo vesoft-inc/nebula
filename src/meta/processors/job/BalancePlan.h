@@ -95,6 +95,11 @@ class BalancePlan {
 
   void setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func);
 
+  template <typename InputIterator>
+  void insertTask(InputIterator first, InputIterator last) {
+    tasks_.insert(tasks_.end(), first, last);
+  }
+
  private:
   JobDescription jobDescription_;
   kvstore::KVStore* kv_ = nullptr;

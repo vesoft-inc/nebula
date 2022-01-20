@@ -47,3 +47,20 @@ Feature: Collapse Project Rule
       | 6  | Project            | 5            |               |
       | 5  | TagIndexPrefixScan | 0            |               |
       | 0  | Start              |              |               |
+    When profiling query:
+      """
+      MATCH (:player {name:"Tim Duncan"})-[e:like]->(dst)
+      WITH dst AS b
+      RETURN b.player.age AS age
+      """
+    Then the result should be, in any order:
+      | age |
+      | 36  |
+      | 41  |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                                                                                                                       |
+      | 11 | Project        | 4            |                                                                                                                                                                     |
+      | 4  | AppendVertices | 3            |                                                                                                                                                                     |
+      | 3  | Traverse       | 8            |                                                                                                                                                                     |
+      | 8  | IndexScan      | 2            | {"indexCtx": {"columnHints":{"scanType":"PREFIX","column":"name","beginValue":"\"Tim Duncan\"","endValue":"__EMPTY__","includeBegin":"true","includeEnd":"false"}}} |
+      | 2  | Start          |              |                                                                                                                                                                     |
