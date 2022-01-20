@@ -282,6 +282,8 @@ class PlanNode {
 
   void releaseSymbols();
 
+  void updateSymbols();
+
   static const char* toString(Kind kind);
   std::string toString() const;
 
