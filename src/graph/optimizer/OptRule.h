@@ -42,6 +42,25 @@ struct MatchedResult {
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
 };
 
+// Match plan node by trait of plan node.
+class MatchNode {
+ public:
+  explicit MatchNode(graph::PlanNode::Kind kind) : node_(kind) {}
+  explicit MatchNode(graph::PlanNode::Trait trait) : node_(trait) {}
+
+  bool match(graph::PlanNode *node) const {
+    if (std::holds_alternative<graph::PlanNode::Kind>(node_)) {
+      return std::get<graph::PlanNode::Kind>(node_) == node->kind();
+    } else {
+      auto find = node->traits().find(std::get<graph::PlanNode::Trait>(node_));
+      return find != node->traits().end();
+    }
+  }
+
+ private:
+  std::variant<graph::PlanNode::Kind, graph::PlanNode::Trait> node_;
+};
+
 class Pattern final {
  public:
   static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
@@ -49,10 +68,11 @@ class Pattern final {
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
  private:
-  Pattern() = default;
+  explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
+      : node_(kind), dependencies_(patterns) {}
   StatusOr<MatchedResult> match(const OptGroup *group) const;
 
-  graph::PlanNode::Kind kind_;
+  MatchNode node_;
   std::vector<Pattern> dependencies_;
 };
 

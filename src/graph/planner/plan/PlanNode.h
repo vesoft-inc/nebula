@@ -6,6 +6,8 @@
 #ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
 #define GRAPH_PLANNER_PLAN_PLANNODE_H_
 
+#include <bits/stdint-uintn.h>
+
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
@@ -182,6 +184,15 @@ class PlanNode {
     kKillQuery,
   };
 
+  enum class Trait : uint32_t {
+    // Means node query data
+    kQuery,
+    // Means node query data from storage directly
+    kExplore,
+    // Means node do index scan
+    kIndexScan,
+  };
+
   bool isQueryNode() const {
     return kind_ < Kind::kStart;
   }
@@ -276,6 +287,10 @@ class PlanNode {
     return cost_;
   }
 
+  const auto& traits() const {
+    return traits_;
+  }
+
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
 
@@ -298,6 +313,7 @@ class PlanNode {
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
+  std::unordered_set<Trait> traits_;
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
