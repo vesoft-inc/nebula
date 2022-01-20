@@ -301,12 +301,10 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
 
-  std::set<PlanNode::Kind> skipTypeSet = {PlanNode::Kind::kSwitchSpace};
-
   // Note: there's check which forbids sentence like `[dql(or other) ngql];[cypher]`.
   // So there's a kStart planNode in the cypher sentence of end.
   // But this check is not needed for `use space` or other sentence.
-  if (skipTypeSet.find(appended->kind()) == skipTypeSet.end() && !node->isSingleInput()) {
+  if (appended->kind() != PlanNode::Kind::kSwitchSpace && !node->isSingleInput()) {
     return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
