@@ -45,34 +45,33 @@ struct MatchedResult {
 // Match plan node by trait or kind of plan node.
 class MatchNode {
  public:
-  explicit MatchNode(graph::PlanNode::Kind kind) : node_(kind) {}
-  explicit MatchNode(graph::PlanNode::Trait trait) : node_(trait) {}
+  explicit MatchNode(graph::PlanNode::Kind kind) : node_({kind}) {}
+  explicit MatchNode(std::initializer_list<graph::PlanNode::Kind> kinds)
+      : node_(std::move(kinds)) {}
 
-  bool match(graph::PlanNode *node) const {
-    if (std::holds_alternative<graph::PlanNode::Kind>(node_)) {
-      return std::get<graph::PlanNode::Kind>(node_) == node->kind();
-    } else {
-      auto find = node->traits().find(std::get<graph::PlanNode::Trait>(node_));
-      return find != node->traits().end();
-    }
+  bool match(const graph::PlanNode *node) const {
+    auto find = node_.find(node->kind());
+    return find != node_.end();
   }
 
  private:
-  std::variant<graph::PlanNode::Kind, graph::PlanNode::Trait> node_;
+  std::unordered_set<graph::PlanNode::Kind> node_;
 };
 
 class Pattern final {
  public:
   static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
-  static Pattern create(graph::PlanNode::Trait trait, std::initializer_list<Pattern> patterns = {});
+  static Pattern create(std::initializer_list<graph::PlanNode::Kind> kinds,
+                        std::initializer_list<Pattern> patterns = {});
 
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
  private:
   explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
       : node_(kind), dependencies_(patterns) {}
-  explicit Pattern(graph::PlanNode::Trait trait, std::initializer_list<Pattern> patterns = {})
-      : node_(trait), dependencies_(patterns) {}
+  explicit Pattern(std::initializer_list<graph::PlanNode::Kind> kinds,
+                   std::initializer_list<Pattern> patterns = {})
+      : node_(std::move(kinds)), dependencies_(patterns) {}
   StatusOr<MatchedResult> match(const OptGroup *group) const;
 
   MatchNode node_;

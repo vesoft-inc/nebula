@@ -19,6 +19,17 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
+/*static*/ const std::initializer_list<graph::PlanNode::Kind>
+    PushLimitDownIndexScanRule::kIndexScanKinds{
+        graph::PlanNode::Kind::kIndexScan,
+        graph::PlanNode::Kind::kTagIndexFullScan,
+        graph::PlanNode::Kind::kTagIndexRangeScan,
+        graph::PlanNode::Kind::kTagIndexPrefixScan,
+        graph::PlanNode::Kind::kEdgeIndexFullScan,
+        graph::PlanNode::Kind::kEdgeIndexRangeScan,
+        graph::PlanNode::Kind::kEdgeIndexPrefixScan,
+    };
+
 std::unique_ptr<OptRule> PushLimitDownIndexScanRule::kInstance =
     std::unique_ptr<PushLimitDownIndexScanRule>(new PushLimitDownIndexScanRule());
 
@@ -27,8 +38,8 @@ PushLimitDownIndexScanRule::PushLimitDownIndexScanRule() {
 }
 
 const Pattern &PushLimitDownIndexScanRule::pattern() const {
-  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
-                                           {Pattern::create(graph::PlanNode::Trait::kIndexScan)});
+  static Pattern pattern =
+      Pattern::create(graph::PlanNode::Kind::kLimit, {Pattern::create(kIndexScanKinds)});
   return pattern;
 }
 

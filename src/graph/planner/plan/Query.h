@@ -100,9 +100,7 @@ class Explore : public SingleInputNode {
         dedup_(dedup),
         limit_(ConstantExpression::make(qctx_->objPool(), limit)),
         filter_(std::move(filter)),
-        orderBy_(std::move(orderBy)) {
-    traits_.insert({Trait::kExplore, Trait::kQuery});
-  }
+        orderBy_(std::move(orderBy)) {}
 
   Explore(QueryContext* qctx,
           Kind kind,
@@ -556,7 +554,6 @@ class IndexScan : public Explore {
     isEdge_ = isEdge;
     schemaId_ = schemaId;
     isEmptyResultSet_ = isEmptyResultSet;
-    traits_.emplace(Trait::kIndexScan);
   }
 
   void cloneMembers(const IndexScan&);

@@ -19,6 +19,17 @@ using nebula::graph::TopN;
 namespace nebula {
 namespace opt {
 
+/*static*/ const std::initializer_list<graph::PlanNode::Kind>
+    PushTopNDownIndexScanRule::kIndexScanKinds{
+        graph::PlanNode::Kind::kIndexScan,
+        graph::PlanNode::Kind::kTagIndexFullScan,
+        graph::PlanNode::Kind::kTagIndexRangeScan,
+        graph::PlanNode::Kind::kTagIndexPrefixScan,
+        graph::PlanNode::Kind::kEdgeIndexFullScan,
+        graph::PlanNode::Kind::kEdgeIndexRangeScan,
+        graph::PlanNode::Kind::kEdgeIndexPrefixScan,
+    };
+
 std::unique_ptr<OptRule> PushTopNDownIndexScanRule::kInstance =
     std::unique_ptr<PushTopNDownIndexScanRule>(new PushTopNDownIndexScanRule());
 
@@ -27,10 +38,9 @@ PushTopNDownIndexScanRule::PushTopNDownIndexScanRule() {
 }
 
 const Pattern &PushTopNDownIndexScanRule::pattern() const {
-  static Pattern pattern =
-      Pattern::create(graph::PlanNode::Kind::kTopN,
-                      {Pattern::create(graph::PlanNode::Kind::kProject,
-                                       {Pattern::create(graph::PlanNode::Trait::kIndexScan)})});
+  static Pattern pattern = Pattern::create(
+      graph::PlanNode::Kind::kTopN,
+      {Pattern::create(graph::PlanNode::Kind::kProject, {Pattern::create(kIndexScanKinds)})});
   return pattern;
 }
 
