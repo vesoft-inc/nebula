@@ -158,7 +158,9 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   AdminClient* adminClient_{nullptr};
 
   std::mutex muReportFinish_;
-  std::mutex muJobFinished_;
+  // The reason of using recursive_mutex is that, it's possible for a meta job try to get this lock
+  // in finish-callback in the same thread with runJobInternal
+  std::recursive_mutex muJobFinished_;
   std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
 };
 

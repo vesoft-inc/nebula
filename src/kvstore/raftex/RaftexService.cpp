@@ -155,10 +155,20 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
 }
 
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
-  folly::RWSpinLock::WriteHolder wh(partsLock_);
-  parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+  using FType = decltype(folly::makeFuture());
+  using FTValype = typename FType::value_type;
   // Stop the partition
-  part->stop();
+  folly::makeFuture()
+      .thenValue([this, &part](FTValype) {
+        folly::RWSpinLock::WriteHolder wh(partsLock_);
+        parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+      })
+      // the part->stop() would wait for requestOnGoing_ in Host, and the requestOnGoing_ will
+      // release in response in ioThreadPool,this may cause deadlock, so doing it in another
+      // threadpool to avoid this condition
+      .via(folly::getGlobalCPUExecutor())
+      .thenValue([part](FTValype) { part->stop(); })
+      .wait();
 }
 
 std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, PartitionID partId) {
