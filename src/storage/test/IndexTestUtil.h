@@ -71,6 +71,21 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     CHECK(false);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
+
+  const void* GetSnapshot(GraphSpaceID spaceId,
+                          PartitionID partID,
+                          bool canReadFromFollower = false) override {
+    UNUSED(spaceId);
+    UNUSED(partID);
+    UNUSED(canReadFromFollower);
+    return nullptr;
+  }
+  void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override {
+    UNUSED(spaceId);
+    UNUSED(partId);
+    UNUSED(snapshot);
+    return;
+  }
   // Read a single key
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
@@ -155,10 +170,12 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
                                  PartitionID partId,
                                  const std::string& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 bool canReadFromFollower = false) override {
+                                 bool canReadFromFollower = false,
+                                 const void* snapshot = nullptr) override {
     UNUSED(canReadFromFollower);
     UNUSED(spaceId);
     UNUSED(partId);
+    UNUSED(snapshot);  // Pity that mock kv don't have snap.
     CHECK_EQ(spaceId, spaceId_);
     auto mockIter = std::make_unique<MockKVIterator>(kv_, kv_.lower_bound(prefix));
     mockIter->setValidFunc([prefix](const decltype(kv_)::iterator& it) {

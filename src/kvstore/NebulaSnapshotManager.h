@@ -27,6 +27,7 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
  private:
   bool accessTable(GraphSpaceID spaceId,
                    PartitionID partId,
+                   const void* snapshot,
                    const std::string& prefix,
                    raftex::SnapshotCallback& cb,
                    std::vector<std::string>& data,
