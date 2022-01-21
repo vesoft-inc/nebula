@@ -20,8 +20,8 @@ from contextlib import closing
 
 from tests.common.constants import TMP_DIR
 from tests.common.utils import get_ssl_config
-from nebula2.gclient.net import ConnectionPool
-from nebula2.Config import Config
+from nebula3.gclient.net import ConnectionPool
+from nebula3.Config import Config
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
@@ -228,6 +228,8 @@ class NebulaService(object):
         # Login retry
         self.graphd_param['failed_login_attempts'] = '5'
         self.graphd_param['password_lock_time_in_secs'] = '10'
+        # expression depth limit
+        self.graphd_param['max_expression_depth'] = '128'
 
         self.storaged_param = copy.copy(_params)
         self.storaged_param['local_config'] = 'false'

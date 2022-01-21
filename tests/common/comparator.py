@@ -7,7 +7,7 @@ import re
 
 from enum import Enum
 from typing import Union, Dict, List
-from nebula2.common.ttypes import (
+from nebula3.common.ttypes import (
     DataSet,
     Edge,
     Path,

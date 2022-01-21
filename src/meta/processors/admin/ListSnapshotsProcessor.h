@@ -11,6 +11,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief List all snapshot info, CreateBackupProcessor
+ *        and CreateCheckpointProcessor will both
+ *        add snapshot info to metad's kv store.
+ *
+ */
 class ListSnapshotsProcessor : public BaseProcessor<cpp2::ListSnapshotsResp> {
  public:
   static ListSnapshotsProcessor* instance(kvstore::KVStore* kvstore) {

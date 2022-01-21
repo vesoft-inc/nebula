@@ -370,6 +370,15 @@ void PlanNode::releaseSymbols() {
   }
 }
 
+void PlanNode::updateSymbols() {
+  auto symTbl = qctx_->symTable();
+  for (auto out : outputVars_) {
+    if (out != nullptr) {
+      symTbl->updateWrittenBy(out->name, out->name, this);
+    }
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
   os << PlanNode::toString(kind);
   return os;

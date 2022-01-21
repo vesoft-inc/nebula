@@ -560,7 +560,7 @@ expression
         if(!graph::ExpressionUtils::checkExprDepth($1)){
             // delete $1;
             std::ostringstream errStr;
-            errStr << "The above expression's depth exceeds the maximum depth:" << graph::ExpressionUtils::kMaxDepth;
+            errStr << "The above expression's depth exceeds the maximum depth:" << FLAGS_max_expression_depth;
             throw nebula::GraphParser::syntax_error(@1, errStr.str());
         }
         $$ = $1;

@@ -26,7 +26,7 @@ class RowReaderV2 : public RowReader {
   FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
  public:
-  virtual ~RowReaderV2() = default;
+  ~RowReaderV2() override = default;
 
   Value getValueByName(const std::string& prop) const noexcept override;
   Value getValueByIndex(const int64_t index) const noexcept override;

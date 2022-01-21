@@ -75,6 +75,20 @@ class HBaseStore : public KVStore {
     return {-1, -1};
   }
 
+  const void* GetSnapshot(GraphSpaceID spaceId,
+                          PartitionID partID,
+                          bool canReadFromFollower = false) override {
+    UNUSED(spaceId);
+    UNUSED(partID);
+    UNUSED(canReadFromFollower);
+    return nullptr;
+  }
+  void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override {
+    UNUSED(spaceId);
+    UNUSED(partId);
+    UNUSED(snapshot);
+    return;
+  }
   ResultCode get(GraphSpaceID spaceId,
                  PartitionID partId,
                  const std::string& key,
@@ -110,14 +124,16 @@ class HBaseStore : public KVStore {
                     PartitionID partId,
                     const std::string& prefix,
                     std::unique_ptr<KVIterator>* iter,
-                    bool canReadFromFollower = false) override;
+                    bool canReadFromFollower = false,
+                    const void* snapshot = nullptr) override;
 
   // To forbid to pass rvalue via the `prefix' parameter.
   ResultCode prefix(GraphSpaceID spaceId,
                     PartitionID partId,
                     std::string&& prefix,
                     std::unique_ptr<KVIterator>* iter,
-                    bool canReadFromFollower = false) override = delete;
+                    bool canReadFromFollower = false,
+                    const void* snapshot = nullptr) override = delete;
 
   // Get all results with prefix starting from start
   ResultCode rangeWithPrefix(GraphSpaceID spaceId,
