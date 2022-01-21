@@ -91,8 +91,6 @@ struct SpaceInfoCache {
   std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
   Listeners listeners_;
-  // objPool used to decode when adding field
-  ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
 
   SpaceInfoCache() = default;
@@ -816,10 +814,10 @@ class MetaClient {
     ServiceClientsList serviceClientList_;
   };
 
-  void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
+  void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col);
 
-  TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool);
-  EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec, ObjectPool* pool);
+  TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec);
+  EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec);
 
   std::unique_ptr<thread::GenericWorker> bgThread_;
   SpaceNameIdMap spaceIndexByName_;

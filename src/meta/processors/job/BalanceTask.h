@@ -30,6 +30,7 @@ class BalanceTask {
   FRIEND_TEST(BalanceTest, TryToRecoveryTest);
   FRIEND_TEST(BalanceTest, RecoveryTest);
   FRIEND_TEST(BalanceTest, StopPlanTest);
+  FRIEND_TEST(BalanceTest, BalanceZonePlanComplexTest);
 
  public:
   BalanceTask() = default;
@@ -66,6 +67,26 @@ class BalanceTask {
 
   BalanceTaskResult result() const {
     return ret_;
+  }
+
+  const HostAddr& getSrcHost() const {
+    return src_;
+  }
+
+  const HostAddr& getDstHost() const {
+    return dst_;
+  }
+
+  void setSrcHost(const HostAddr& host) {
+    src_ = host;
+  }
+
+  void setDstHost(const HostAddr& host) {
+    dst_ = host;
+  }
+
+  PartitionID getPartId() const {
+    return partId_;
   }
 
  private:

@@ -67,8 +67,11 @@ void createSchema(meta::SchemaManager* schemaMan,
   auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
   schema->addField("c1", nebula::cpp2::PropertyType::INT64, 0, false);
-  schema->addField(
-      "c2", nebula::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+  schema->addField("c2",
+                   nebula::cpp2::PropertyType::INT64,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, 0L)->encode());
   meta::cpp2::SchemaProp prop;
   prop.ttl_col_ref() = "c2";
   prop.ttl_duration_ref() = duration;

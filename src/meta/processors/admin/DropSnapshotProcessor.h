@@ -14,6 +14,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop snapshot for all spaces. It could drop snapshots
+ *        created by CreateBackupProcessor or CreateCheckpointProcessor.
+ *
+ */
 class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropSnapshotProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
