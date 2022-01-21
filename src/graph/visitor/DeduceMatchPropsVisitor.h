@@ -7,6 +7,7 @@
 #define GRAPH_VISITOR_DEDUCEMATCHPROPSVISITOR_H
 
 #include "common/base/Status.h"
+#include "common/expression/FunctionCallExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/SubscriptExpression.h"
 #include "common/thrift/ThriftTypes.h"
@@ -43,6 +44,8 @@ class DeduceMatchPropsVisitor : public ExprVisitorImpl {
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
   // void visit(AttributeExpression* expr) override;
+  void visit(FunctionCallExpression* expr) override;
+
   void visit(SourcePropertyExpression* expr) override;
   void visit(DestPropertyExpression* expr) override;
   void visit(EdgeSrcIdExpression* expr) override;

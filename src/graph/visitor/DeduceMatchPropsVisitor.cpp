@@ -109,6 +109,19 @@ void DeduceMatchPropsVisitor::visit(VariablePropertyExpression *expr) {
 //   }
 // }
 
+void DeduceMatchPropsVisitor::visit(FunctionCallExpression *expr) {
+  auto funName = expr->name();
+  if (funName == "id" || funName == "src" || funName == "dst") {
+    return;
+  }
+  for (const auto &arg : expr->args()->args()) {
+    arg->accept(this);
+    if (!ok()) {
+      break;
+    }
+  }
+}
+
 void DeduceMatchPropsVisitor::visit(DestPropertyExpression *expr) {
   UNUSED(expr);
 }

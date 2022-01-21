@@ -369,20 +369,31 @@ Status Project::pruneProperties(PropertyTracker& propsUsed,
   if (cols_) {
     const auto& columns = cols_->columns();
     auto& colNames = this->colNames();
+    std::vector<bool> aliasExists(colNames.size(), false);
+    for (size_t i = 0; i < columns.size(); ++i) {
+      aliasExists[i] = propsUsed.hasAlias(colNames[i]);
+    }
     for (size_t i = 0; i < columns.size(); ++i) {
       auto* col = DCHECK_NOTNULL(columns[i]);
       auto* expr = col->expr();
       auto& alias = colNames[i];
-      if (expr->kind() == Expression::Kind::kInputProperty) {
-        auto* inputPropExpr = static_cast<InputPropertyExpression*>(expr);
-        auto& propName = inputPropExpr->prop();
-        NG_RETURN_IF_ERROR(propsUsed.update(alias, propName));
-      } else if (expr->kind() == Expression::Kind::kVarProperty) {
-        auto* varPropExpr = static_cast<VariablePropertyExpression*>(expr);
-        auto& propName = varPropExpr->prop();
-        NG_RETURN_IF_ERROR(propsUsed.update(alias, propName));
+      // First, try to rename alias
+      if (aliasExists[i]) {
+        if (expr->kind() == Expression::Kind::kInputProperty) {
+          auto* inputPropExpr = static_cast<InputPropertyExpression*>(expr);
+          auto& newAlias = inputPropExpr->prop();
+          NG_RETURN_IF_ERROR(propsUsed.update(alias, newAlias));
+        } else if (expr->kind() == Expression::Kind::kVarProperty) {
+          auto* varPropExpr = static_cast<VariablePropertyExpression*>(expr);
+          auto& newAlias = varPropExpr->prop();
+          NG_RETURN_IF_ERROR(propsUsed.update(alias, newAlias));
+        } else {
+          // How to handle this case?
+        }
+      } else {
+        // If not, try to extract properties from expression
+        NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(expr, propsUsed, qctx, spaceID));
       }
-      NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(expr, propsUsed, qctx, spaceID));
     }
   }
 

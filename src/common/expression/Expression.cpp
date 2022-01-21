@@ -742,6 +742,10 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
 }
 
 Status PropertyTracker::update(const std::string& oldName, const std::string& newName) {
+  if (oldName == newName) {
+    return Status::OK();
+  }
+
   auto it1 = vertexPropsMap.find(oldName);
   bool has1 = it1 != vertexPropsMap.end();
   auto it2 = edgePropsMap.find(oldName);
@@ -766,6 +770,11 @@ Status PropertyTracker::update(const std::string& oldName, const std::string& ne
   }
 
   return Status::OK();
+}
+
+bool PropertyTracker::hasAlias(const std::string& name) const {
+  return vertexPropsMap.find(name) != vertexPropsMap.end() ||
+         edgePropsMap.find(name) != edgePropsMap.end() || colsSet.find(name) != colsSet.end();
 }
 
 }  // namespace nebula

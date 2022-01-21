@@ -233,6 +233,7 @@ struct PropertyTracker {
   std::unordered_set<std::string> colsSet;
 
   Status update(const std::string& oldName, const std::string& newName);
+  bool hasAlias(const std::string& name) const;
 };
 
 }  // namespace nebula
