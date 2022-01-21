@@ -23,7 +23,6 @@ Feature: Push Limit down project rule
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                     |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 9  | DataCollect    | 19           |               |
       | 19 | Project        | 16           |               |
       | 16 | Limit          | 11           |               |
       | 11 | Filter         | 4            |               |
