@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/visitor/DeduceMatchPropsVisitor.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
 
 #include <sstream>
 
@@ -14,15 +14,15 @@ namespace nebula {
 namespace graph {
 
 // visitor
-DeduceMatchPropsVisitor::DeduceMatchPropsVisitor(const QueryContext *qctx,
-                                                 GraphSpaceID space,
-                                                 PropertyTracker &propsUsed,
-                                                 const std::string &entityAlias)
+PropertyTrackerVisitor::PropertyTrackerVisitor(const QueryContext *qctx,
+                                               GraphSpaceID space,
+                                               PropertyTracker &propsUsed,
+                                               const std::string &entityAlias)
     : qctx_(qctx), space_(space), propsUsed_(propsUsed), entityAlias_(entityAlias) {
   DCHECK(qctx != nullptr);
 }
 
-void DeduceMatchPropsVisitor::visit(TagPropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(TagPropertyExpression *expr) {
   auto &tagName = expr->sym();
   auto &propName = expr->prop();
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
@@ -34,7 +34,7 @@ void DeduceMatchPropsVisitor::visit(TagPropertyExpression *expr) {
   propsUsed_.vertexPropsMap[entityAlias_][tagId].emplace(propName);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgePropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
   auto &edgeName = expr->sym();
   auto &propName = expr->prop();
   auto ret = qctx_->schemaMng()->toEdgeType(space_, edgeName);
@@ -46,7 +46,7 @@ void DeduceMatchPropsVisitor::visit(EdgePropertyExpression *expr) {
   propsUsed_.edgePropsMap[entityAlias_][edgeType].emplace(propName);
 }
 
-void DeduceMatchPropsVisitor::visit(LabelTagPropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
   auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
@@ -64,17 +64,17 @@ void DeduceMatchPropsVisitor::visit(LabelTagPropertyExpression *expr) {
   propsUsed_.vertexPropsMap[nodeAlias][tagId].emplace(propName);
 }
 
-void DeduceMatchPropsVisitor::visit(InputPropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(InputPropertyExpression *expr) {
   auto &colName = expr->prop();
   propsUsed_.colsSet.emplace(colName);
 }
 
-void DeduceMatchPropsVisitor::visit(VariablePropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(VariablePropertyExpression *expr) {
   auto &colName = expr->prop();
   propsUsed_.colsSet.emplace(colName);
 }
 
-// void DeduceMatchPropsVisitor::visit(AttributeExpression *expr) {
+// void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 //   auto *lhs = expr->left();
 //   auto *rhs = expr->right();
 //   if (rhs->kind() != Expression::Kind::kConstant) {
@@ -109,7 +109,7 @@ void DeduceMatchPropsVisitor::visit(VariablePropertyExpression *expr) {
 //   }
 // }
 
-void DeduceMatchPropsVisitor::visit(FunctionCallExpression *expr) {
+void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
   auto funName = expr->name();
   if (funName == "id" || funName == "src" || funName == "dst") {
     return;
@@ -122,63 +122,63 @@ void DeduceMatchPropsVisitor::visit(FunctionCallExpression *expr) {
   }
 }
 
-void DeduceMatchPropsVisitor::visit(DestPropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(DestPropertyExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(SourcePropertyExpression *expr) {
+void PropertyTrackerVisitor::visit(SourcePropertyExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgeSrcIdExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgeSrcIdExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgeTypeExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgeTypeExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgeRankExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgeRankExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgeDstIdExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgeDstIdExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(UUIDExpression *expr) {
+void PropertyTrackerVisitor::visit(UUIDExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(VariableExpression *expr) {
+void PropertyTrackerVisitor::visit(VariableExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(VersionedVariableExpression *expr) {
+void PropertyTrackerVisitor::visit(VersionedVariableExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(LabelExpression *expr) {
+void PropertyTrackerVisitor::visit(LabelExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(LabelAttributeExpression *expr) {
+void PropertyTrackerVisitor::visit(LabelAttributeExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(ConstantExpression *expr) {
+void PropertyTrackerVisitor::visit(ConstantExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(ColumnExpression *expr) {
+void PropertyTrackerVisitor::visit(ColumnExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(VertexExpression *expr) {
+void PropertyTrackerVisitor::visit(VertexExpression *expr) {
   UNUSED(expr);
 }
 
-void DeduceMatchPropsVisitor::visit(EdgeExpression *expr) {
+void PropertyTrackerVisitor::visit(EdgeExpression *expr) {
   UNUSED(expr);
 }
 

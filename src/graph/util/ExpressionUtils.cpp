@@ -18,8 +18,8 @@
 #include "common/thrift/ThriftTypes.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
-#include "graph/visitor/DeduceMatchPropsVisitor.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
 
 DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
 
@@ -1066,7 +1066,7 @@ Status ExpressionUtils::extractPropsFromExprs(const Expression *expr,
                                               const graph::QueryContext *qctx,
                                               GraphSpaceID spaceID,
                                               const std::string &entityAlias) {
-  DeduceMatchPropsVisitor visitor(qctx, spaceID, propsUsed, entityAlias);
+  PropertyTrackerVisitor visitor(qctx, spaceID, propsUsed, entityAlias);
   const_cast<Expression *>(expr)->accept(&visitor);
   if (!visitor.ok()) {
     return visitor.status();

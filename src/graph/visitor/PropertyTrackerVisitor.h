@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_VISITOR_DEDUCEMATCHPROPSVISITOR_H
-#define GRAPH_VISITOR_DEDUCEMATCHPROPSVISITOR_H
+#ifndef GRAPH_VISITOR_PROPERTYTRACKERVISITOR_H
+#define GRAPH_VISITOR_PROPERTYTRACKERVISITOR_H
 
 #include "common/base/Status.h"
 #include "common/expression/FunctionCallExpression.h"
@@ -21,12 +21,12 @@ namespace graph {
 
 class QueryContext;
 
-class DeduceMatchPropsVisitor : public ExprVisitorImpl {
+class PropertyTrackerVisitor : public ExprVisitorImpl {
  public:
-  DeduceMatchPropsVisitor(const QueryContext* qctx,
-                          GraphSpaceID space,
-                          PropertyTracker& propsUsed,
-                          const std::string& entityAlias);
+  PropertyTrackerVisitor(const QueryContext* qctx,
+                         GraphSpaceID space,
+                         PropertyTracker& propsUsed,
+                         const std::string& entityAlias);
 
   bool ok() const override {
     return status_.ok();
@@ -73,4 +73,4 @@ class DeduceMatchPropsVisitor : public ExprVisitorImpl {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_VISITOR_DEDUCEMATCHPROPSVISITOR_H
+#endif  // GRAPH_VISITOR_PROPERTYTRACKERVISITOR_H
