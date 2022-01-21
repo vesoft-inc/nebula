@@ -589,6 +589,30 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
   return part->engine()->get(key, value);
 }
 
+const void* NebulaStore::GetSnapshot(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     bool canReadFromFollower) {
+  auto ret = part(spaceId, partId);
+  if (!ok(ret)) {
+    return nullptr;
+  }
+  auto part = nebula::value(ret);
+  if (!checkLeader(part, canReadFromFollower)) {
+    return nullptr;
+  }
+  return part->engine()->GetSnapshot();
+}
+
+void NebulaStore::ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) {
+  auto ret = part(spaceId, partId);
+  if (!ok(ret)) {
+    LOG(INFO) << "Failed to release snapshot for GraphSpaceID " << spaceId << " PartitionID"
+              << partId;
+  }
+  auto part = nebula::value(ret);
+  return part->engine()->ReleaseSnapshot(snapshot);
+}
+
 std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> NebulaStore::multiGet(
     GraphSpaceID spaceId,
     PartitionID partId,
@@ -634,7 +658,8 @@ nebula::cpp2::ErrorCode NebulaStore::prefix(GraphSpaceID spaceId,
                                             PartitionID partId,
                                             const std::string& prefix,
                                             std::unique_ptr<KVIterator>* iter,
-                                            bool canReadFromFollower) {
+                                            bool canReadFromFollower,
+                                            const void* snapshot) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {
     return error(ret);
@@ -643,7 +668,7 @@ nebula::cpp2::ErrorCode NebulaStore::prefix(GraphSpaceID spaceId,
   if (!checkLeader(part, canReadFromFollower)) {
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  return part->engine()->prefix(prefix, iter);
+  return part->engine()->prefix(prefix, iter, snapshot);
 }
 
 nebula::cpp2::ErrorCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
