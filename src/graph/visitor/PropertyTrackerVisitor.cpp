@@ -14,7 +14,6 @@
 namespace nebula {
 namespace graph {
 
-// visitor
 PropertyTrackerVisitor::PropertyTrackerVisitor(const QueryContext *qctx,
                                                GraphSpaceID space,
                                                PropertyTracker &propsUsed,

@@ -10,7 +10,6 @@
 #include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/context/ExpressionContext.h"
-#include "common/datatypes/Edge.h"
 #include "common/datatypes/Value.h"
 
 namespace nebula {

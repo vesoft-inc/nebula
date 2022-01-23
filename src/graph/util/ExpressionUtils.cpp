@@ -10,12 +10,10 @@
 #include <unordered_set>
 
 #include "common/base/ObjectPool.h"
-#include "common/base/Status.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
-#include "common/thrift/ThriftTypes.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
