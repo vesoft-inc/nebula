@@ -6,6 +6,7 @@
 #include "graph/visitor/PropertyTrackerVisitor.h"
 
 #include <sstream>
+#include <unordered_set>
 
 #include "common/expression/Expression.h"
 #include "graph/context/QueryContext.h"
@@ -110,15 +111,36 @@ void PropertyTrackerVisitor::visit(VariablePropertyExpression *expr) {
 // }
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
-  static const std::unordered_set<std::string> kIgnoreFuncs = {
-      "id", "src", "dst", "type", "typeid", "rank", "hash"};
+  static const std::unordered_set<std::string> kVertexIgnoreFuncs = {"id"};
+  static const std::unordered_set<std::string> kEdgeIgnoreFuncs = {
+      "src", "dst", "type", "typeid", "rank"};
 
   auto funName = expr->name();
-  if (kIgnoreFuncs.find(funName) != kIgnoreFuncs.end()) {
+  if (kVertexIgnoreFuncs.find(funName) != kVertexIgnoreFuncs.end()) {
+    DCHECK_EQ(expr->args()->numArgs(), 1);
+    auto argExpr = expr->args()->args()[0];
+    auto nodeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
+    if (!nodeAlias.empty()) {
+      auto it = propsUsed_.vertexPropsMap.find(nodeAlias);
+      if (it == propsUsed_.vertexPropsMap.end()) {
+        propsUsed_.vertexPropsMap[nodeAlias] = {};
+      }
+    }
+    return;
+  } else if (kEdgeIgnoreFuncs.find(funName) != kEdgeIgnoreFuncs.end()) {
+    DCHECK_EQ(expr->args()->numArgs(), 1);
+    auto argExpr = expr->args()->args()[0];
+    auto edgeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
+    if (!edgeAlias.empty()) {
+      auto it = propsUsed_.edgePropsMap.find(edgeAlias);
+      if (it == propsUsed_.edgePropsMap.end()) {
+        propsUsed_.edgePropsMap[edgeAlias] = {};
+      }
+    }
     return;
   }
 
-  for (const auto &arg : expr->args()->args()) {
+  for (auto *arg : expr->args()->args()) {
     arg->accept(this);
     if (!ok()) {
       break;
@@ -184,6 +206,18 @@ void PropertyTrackerVisitor::visit(VertexExpression *expr) {
 
 void PropertyTrackerVisitor::visit(EdgeExpression *expr) {
   UNUSED(expr);
+}
+
+std::string PropertyTrackerVisitor::extractColNameFromInputPropOrVarPropExpr(
+    const Expression *expr) {
+  if (expr->kind() == Expression::Kind::kInputProperty) {
+    auto *inputPropExpr = static_cast<const InputPropertyExpression *>(expr);
+    return inputPropExpr->prop();
+  } else if (expr->kind() == Expression::Kind::kVarProperty) {
+    auto *varPropExpr = static_cast<const VariablePropertyExpression *>(expr);
+    return varPropExpr->prop();
+  }
+  return "";
 }
 
 }  // namespace graph

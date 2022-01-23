@@ -27,6 +27,22 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
+    # And the execution plan should be:
+    #   | id | name           | dependencies | operator info                                              |
+    #   | 15 | DataCollect    | 16           |                                                            |
+    #   | 16 | TopN           | 12           |                                                            |
+    #   | 12 | Project        | 18           |                                                            |
+    #   | 18 | Project        | 17           |                                                            |
+    #   | 17 | Filter         | 9            |                                                            |
+    #   | 9  | BiInnerJoin    | 5, 8         |                                                            |
+    #   | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":2}]" }       |
+    #   | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":2}]" } |
+    #   | 2  | Dedup          | 1            |                                                            |
+    #   | 1  | PassThrough    | 3            |                                                            |
+    #   | 3  | Start          |              |                                                            |
+    #   | 8  | AppendVertices | 7            | {  "props": "[{\"tagId\":2,\"props\":[\"name\"]}]" }       |
+    #   | 7  | Traverse       | 6            | { "vertexProps": "[{\"tagId\":2,\"props\":[\"name\"]}]" }  |
+    #   | 6  | Argument       |              |                                                            |
     When profiling query:
       """
       MATCH (m)-[]-(n), (l)-[]-(n) WHERE id(m)=="Tim Duncan"

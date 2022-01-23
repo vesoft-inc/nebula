@@ -545,6 +545,18 @@ PlanNode* Aggregate::clone() const {
   return newAggregate;
 }
 
+Status Aggregate::pruneProperties(PropertyTracker& propsUsed,
+                                  graph::QueryContext* qctx,
+                                  GraphSpaceID spaceID) {
+  for (auto* groupKey : groupKeys_) {
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(groupKey, propsUsed, qctx, spaceID));
+  }
+  for (auto* groupItem : groupItems_) {
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(groupItem, propsUsed, qctx, spaceID));
+  }
+  return depsPruneProperties(propsUsed, qctx, spaceID);
+}
+
 void Aggregate::cloneMembers(const Aggregate& agg) {
   SingleInputNode::cloneMembers(agg);
 
@@ -809,6 +821,10 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
     } else {
       auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
       auto& usedVertexProps = it2->second;
+      if (usedVertexProps.empty()) {
+        setVertexProps(nullptr);
+        return depsPruneProperties(propsUsed, qctx, spaceID);
+      }
       prunedVertexProps->reserve(usedVertexProps.size());
       for (auto& vertexProp : *vertexProps) {
         auto tagId = vertexProp.tag_ref().value();
@@ -883,6 +899,10 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
     auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
     if (it2 != propsUsed.vertexPropsMap.end()) {
       auto& usedVertexProps = it2->second;
+      if (usedVertexProps.empty()) {
+        // markAsToBeDeleted();
+        // return depsPruneProperties(propsUsed, qctx, spaceID);
+      }
       prunedVertexProps->reserve(usedVertexProps.size());
       for (auto& vertexProp : *vertexProps) {
         auto tagId = vertexProp.tag_ref().value();
@@ -918,6 +938,18 @@ std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
   return desc;
+}
+
+Status BiJoin::pruneProperties(PropertyTracker& propsUsed,
+                               graph::QueryContext* qctx,
+                               GraphSpaceID spaceID) {
+  for (auto* hashKey : hashKeys_) {
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(hashKey, propsUsed, qctx, spaceID));
+  }
+  for (auto* probeKey : probeKeys_) {
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(probeKey, propsUsed, qctx, spaceID));
+  }
+  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 void BiJoin::cloneMembers(const BiJoin& j) {

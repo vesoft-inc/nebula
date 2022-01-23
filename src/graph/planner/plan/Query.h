@@ -1122,6 +1122,10 @@ class Aggregate final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
+
  private:
   Aggregate(QueryContext* qctx,
             PlanNode* input,
@@ -1600,6 +1604,10 @@ class BiJoin : public BinaryInputNode {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  Status pruneProperties(PropertyTracker& propsUsed,
+                         graph::QueryContext* qctx,
+                         GraphSpaceID spaceID) override;
 
  protected:
   BiJoin(QueryContext* qctx,
