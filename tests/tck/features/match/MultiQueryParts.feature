@@ -1,13 +1,14 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jie
 Feature: Multi Query Parts
 
   Background:
     Given a graph with space named "nba"
 
   Scenario: Multi Path Patterns
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2,
@@ -26,7 +27,26 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
-    When executing query:
+    When profiling query:
+      """
+      MATCH (m)-[]-(n), (l)-[]-(n) WHERE id(m)=="Tim Duncan"
+      RETURN m.player.name AS n1, n.player.name AS n2,
+      CASE WHEN l.team.name is not null THEN l.team.name
+      WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      """
+    Then the result should be, in order:
+      | n1           | n2            | n3           |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons"    |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"      |
+      | "Tim Duncan" | "Aron Baynes" | "Tim Duncan" |
+      | "Tim Duncan" | "Boris Diaw"  | "Hawks"      |
+      | "Tim Duncan" | "Boris Diaw"  | "Hornets"    |
+      | "Tim Duncan" | "Boris Diaw"  | "Jazz"       |
+      | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
+      | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
+      | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
+    When profiling query:
       """
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
@@ -43,7 +63,7 @@ Feature: Multi Query Parts
       | "Aron Baynes" | "Tim Duncan" | "Manu Ginobili"     |
       | "Aron Baynes" | "Tim Duncan" | "Manu Ginobili"     |
       | "Aron Baynes" | "Tim Duncan" | "Manu Ginobili"     |
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n), (n)-[]-(l), (l)-[]-(h) WHERE id(m)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
@@ -70,7 +90,7 @@ Feature: Multi Query Parts
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Match
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l)
@@ -90,7 +110,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l), (l)-[]-(h)
@@ -109,7 +129,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l)
@@ -129,7 +149,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    When executing query:
+    When profiling query:
       """
       MATCH (v:player{name:"Tony Parker"})
       WITH v AS a
@@ -142,7 +162,7 @@ Feature: Multi Query Parts
       | "Tim Duncan"  |
 
   Scenario: Optional Match
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (n)<-[:serve]-(l)
@@ -160,8 +180,8 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    # Below scenario is not supported for the execution plan has a scan.
-    When executing query:
+    # Below scenario is not suppoted for the execution plan has a scan.
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (a)<-[]-(b)
@@ -170,7 +190,7 @@ Feature: Multi Query Parts
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Query Parts
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
@@ -191,7 +211,7 @@ Feature: Multi Query Parts
       | "Boris Diaw"  | "Spurs"      |
       | "Boris Diaw"  | "Suns"       |
       | "Boris Diaw"  | "Tim Duncan" |
-    When executing query:
+    When profiling query:
       """
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
       WITH  m,count(*) AS lcount
@@ -201,7 +221,7 @@ Feature: Multi Query Parts
     Then the result should be, in order:
       | scount | lcount |
       | 19     | 110    |
-    When executing query:
+    When profiling query:
       """
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
       WITH  m,n
@@ -222,14 +242,14 @@ Feature: Multi Query Parts
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Some Erros
-    When executing query:
+    When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       RETURN m
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `m'
-    When executing query:
+    When profiling query:
       """
       MATCH (v:player)-[e]-(v:team) RETURN v, e
       """

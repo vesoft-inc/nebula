@@ -110,10 +110,14 @@ void PropertyTrackerVisitor::visit(VariablePropertyExpression *expr) {
 // }
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
+  static const std::unordered_set<std::string> kIgnoreFuncs = {
+      "id", "src", "dst", "type", "typeid", "rank", "hash"};
+
   auto funName = expr->name();
-  if (funName == "id" || funName == "src" || funName == "dst") {
+  if (kIgnoreFuncs.find(funName) != kIgnoreFuncs.end()) {
     return;
   }
+
   for (const auto &arg : expr->args()->args()) {
     arg->accept(this);
     if (!ok()) {
