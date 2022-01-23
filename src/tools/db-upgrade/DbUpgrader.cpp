@@ -219,7 +219,7 @@ void UpgraderSpace::runPartV1() {
               << partId;
     const auto& prefix = NebulaKeyUtilsV1::prefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -393,7 +393,7 @@ void UpgraderSpace::doProcessV1() {
     LOG(INFO) << "Start to handle system data in space id " << spaceId_;
     auto prefix = NebulaKeyUtilsV1::systemPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " get system data failed";
       LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed";
@@ -433,7 +433,7 @@ void UpgraderSpace::runPartV2() {
               << partId;
     auto prefix = NebulaKeyUtilsV2::partPrefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -601,7 +601,7 @@ void UpgraderSpace::doProcessV2() {
     LOG(INFO) << "Start to handle system data in space id " << spaceId_;
     auto prefix = NebulaKeyUtilsV2::systemPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " get system data failed.";
       LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed.";
@@ -894,7 +894,7 @@ void UpgraderSpace::runPartV3() {
               << partId;
     auto prefix = NebulaKeyUtilsV3::partTagPrefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
