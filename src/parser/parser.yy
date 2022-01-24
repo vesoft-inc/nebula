@@ -419,7 +419,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %%
 
 name_label
-    : LABEL { $$ = $1; }
+    : STRING { $$ = new std::string("$1"); }
     | unreserved_keyword { $$ = $1; }
     ;
 
