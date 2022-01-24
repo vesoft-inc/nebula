@@ -426,7 +426,7 @@ void AdminClient::getResponseFromHost(const HostAddr& host,
       });
 }
 
-// doodle: retry after delay
+// todo(doodle): retry after delay
 template <typename Request, typename RemoteFunc>
 void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                                         int32_t index,

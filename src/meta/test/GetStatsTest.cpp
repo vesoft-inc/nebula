@@ -80,15 +80,6 @@ struct JobCallBack {
 
 class GetStatsTest : public ::testing::Test {
  protected:
-  // doodle
-  /*
-  static void SetUpTestCase() {
-  }
-
-  static void TearDownTestCase() {
-  }
-  */
-
   void SetUp() override {
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/GetStatsTest.XXXXXX");
     mock::MockCluster cluster;

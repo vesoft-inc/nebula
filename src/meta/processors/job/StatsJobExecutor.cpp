@@ -200,7 +200,8 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   auto& hosts = nebula::value(errOrTargetHost);
   std::vector<folly::Future<StatusOr<bool>>> futures;
   for (auto& host : hosts) {
-    auto future = adminClient_->stopTask(Utils::getAdminAddrFromStoreAddr(host.first), jobId_, 0);
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    auto future = adminClient_->stopTask(host.first, jobId_, 0);
     futures.emplace_back(std::move(future));
   }
 

@@ -235,7 +235,7 @@ class AdminClient {
    * @tparam Request RPC request type
    * @tparam RemoteFunc Client's RPC function
    * @tparam RespGenerator The result generator based on RPC response
-   * @param host Storage host info
+   * @param host Admin ip:port of storage node
    * @param req RPC request
    * @param remoteFunc Client's RPC function
    * @param respGen The result generator based on RPC response
@@ -248,15 +248,16 @@ class AdminClient {
                                             RespGenerator respGen);
 
   /**
-   * @brief Send the rpc request to a storage node, the operation is only realted to the node, does
-   *        not have affect on a partition
+   * @brief Send the rpc request to a storage node, the operation is only realted to the spaces,
+   *        does not have affect on a partition. It may also return extra infomations, so return
+   *        StatusOr<Response> is necessary
    *
    * @tparam Request RPC request type
    * @tparam RemoteFunc Client's RPC function
    * @tparam RespGenerator The result generator based on RPC response
    * @tparam RpcResponse RPC response
    * @tparam Response The result type
-   * @param host Storage host info
+   * @param host Admin ip:port of storage node
    * @param req RPC request
    * @param remoteFunc Client's RPC function
    * @param respGen The result generator based on RPC response
@@ -281,7 +282,7 @@ class AdminClient {
    *
    * @tparam Request RPC request type
    * @tparam RemoteFunc Client's RPC function
-   * @param hosts All storage hosts which have the partition
+   * @param host Admin ip:port of storage nodes which has the partition
    * @param index The index of storage node in `hosts`, the rpc will be sent to the node
    * @param req RPC request
    * @param remoteFunc Client's RPC function
