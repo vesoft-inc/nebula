@@ -131,6 +131,14 @@ date
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
+  | INTEGER {
+    $$ = new nebula::Date($1, 1, 1);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    if (!result.ok()) {
+      delete $$;
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
+  }
   ;
 
 time

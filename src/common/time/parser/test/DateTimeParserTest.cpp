@@ -137,6 +137,13 @@ TEST(DatetimeReader, Date) {
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::Date(2019, 1, 1), result.value());
   }
+  // lack month and day
+  {
+    auto parser = time::DatetimeReader::makeDateReader();
+    auto result = parser.readDate("2019");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::Date(2019, 1, 1), result.value());
+  }
   // TODO
   // lack month
   // {
@@ -180,6 +187,11 @@ TEST(DatetimeReader, DateFailed) {
   {
     auto parser = time::DatetimeReader::makeDateReader();
     auto result = parser.readDate("2019-01-");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateReader();
+    auto result = parser.readDate("2019-");
     EXPECT_FALSE(result.ok()) << result.value();
   }
   // not exits prefix
