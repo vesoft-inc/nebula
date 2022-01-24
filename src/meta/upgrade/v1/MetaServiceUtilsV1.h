@@ -36,6 +36,11 @@ const std::string kJobArchive = "__job_mgr_archive_";             // NOLINT
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
 
+/**
+ * @brief Meta kv store utils to help parsing key and values.
+ *        These shoule be used to upgrade meta from 1.x to 2.x
+ *
+ */
 class MetaServiceUtilsV1 final {
  public:
   MetaServiceUtilsV1() = delete;

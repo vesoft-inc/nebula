@@ -18,6 +18,16 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief It will replace host info in meta partition table from
+ *        backup host to current cluster host.
+ *        It should be called after ingesting meta sst files when
+ *        restore cluster.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ *
+ */
 class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
   FRIEND_TEST(MetaHttpReplaceHandlerTest, FooTest);
 

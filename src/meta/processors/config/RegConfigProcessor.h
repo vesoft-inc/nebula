@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Register configuration in meta service, configuration item could be
+ *        set only after registered.
+ *
+ */
 class RegConfigProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RegConfigProcessor* instance(kvstore::KVStore* kvstore) {

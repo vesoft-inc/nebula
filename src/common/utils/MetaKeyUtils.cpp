@@ -760,13 +760,6 @@ std::string MetaKeyUtils::indexZoneKey(const std::string& name) {
   return key;
 }
 
-std::string MetaKeyUtils::assembleSegmentKey(const std::string& segment, const std::string& key) {
-  std::string segmentKey;
-  segmentKey.reserve(64);
-  segmentKey.append(segment).append(key.data(), key.size());
-  return segmentKey;
-}
-
 std::string MetaKeyUtils::userPrefix() {
   return kUsersTable;
 }

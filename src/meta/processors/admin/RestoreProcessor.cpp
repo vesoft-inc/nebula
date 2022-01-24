@@ -6,7 +6,6 @@
 #include "meta/processors/admin/RestoreProcessor.h"
 
 #include "common/fs/FileUtils.h"
-#include "meta/common/MetaCommon.h"
 
 namespace nebula {
 namespace meta {
