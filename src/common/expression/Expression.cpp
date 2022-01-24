@@ -747,24 +747,23 @@ Status PropertyTracker::update(const std::string& oldName, const std::string& ne
   }
 
   auto it1 = vertexPropsMap.find(oldName);
-  bool has1 = it1 != vertexPropsMap.end();
+  bool hasNodeAlias = it1 != vertexPropsMap.end();
   auto it2 = edgePropsMap.find(oldName);
-  bool has2 = it2 != edgePropsMap.end();
-  if (has1 && has2) {
+  bool hasEdgeAlias = it2 != edgePropsMap.end();
+  if (hasNodeAlias && hasEdgeAlias) {
     return Status::Error("Duplicated property name: %s", oldName.c_str());
   }
-  if (has1) {
-    vertexPropsMap[newName] = vertexPropsMap[oldName];
+  if (hasNodeAlias) {
+    vertexPropsMap[newName] = std::move(it1->second);
     vertexPropsMap.erase(it1);
   }
-  if (has2) {
-    edgePropsMap[newName] = edgePropsMap[oldName];
+  if (hasEdgeAlias) {
+    edgePropsMap[newName] = std::move(it2->second);
     edgePropsMap.erase(it2);
   }
 
   auto it3 = colsSet.find(oldName);
-  bool has3 = it3 != colsSet.end();
-  if (has3) {
+  if (it3 != colsSet.end()) {
     colsSet.erase(it3);
     colsSet.insert(newName);
   }
