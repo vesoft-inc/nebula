@@ -243,8 +243,6 @@ class MetaKeyUtils final {
 
   static std::string indexZoneKey(const std::string& name);
 
-  static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
-
   static std::string userPrefix();
 
   static std::string userKey(const std::string& account);
