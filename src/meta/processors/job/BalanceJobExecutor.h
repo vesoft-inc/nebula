@@ -73,6 +73,9 @@ class BalanceJobExecutor : public MetaJobExecutor {
     return Status::OK();
   }
 
+  void insertOneTask(const BalanceTask& task,
+                     std::map<PartitionID, std::vector<BalanceTask>>* existTasks);
+
  protected:
   std::unique_ptr<BalancePlan> plan_;
   std::unique_ptr<folly::Executor> executor_;

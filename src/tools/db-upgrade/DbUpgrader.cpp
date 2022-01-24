@@ -219,7 +219,7 @@ void UpgraderSpace::runPartV1() {
               << partId;
     const auto& prefix = NebulaKeyUtilsV1::prefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -393,7 +393,7 @@ void UpgraderSpace::doProcessV1() {
     LOG(INFO) << "Start to handle system data in space id " << spaceId_;
     auto prefix = NebulaKeyUtilsV1::systemPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " get system data failed";
       LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed";
@@ -433,7 +433,7 @@ void UpgraderSpace::runPartV2() {
               << partId;
     auto prefix = NebulaKeyUtilsV2::partPrefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -601,7 +601,7 @@ void UpgraderSpace::doProcessV2() {
     LOG(INFO) << "Start to handle system data in space id " << spaceId_;
     auto prefix = NebulaKeyUtilsV2::systemPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " get system data failed.";
       LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed.";
@@ -894,7 +894,7 @@ void UpgraderSpace::runPartV3() {
               << partId;
     auto prefix = NebulaKeyUtilsV3::partTagPrefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, nullptr, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -910,13 +910,17 @@ void UpgraderSpace::runPartV3() {
       }
       return;
     }
+    int64_t ingestFileCount = 0;
     auto write_sst = [&, this](const std::vector<kvstore::KV>& data) {
       ::rocksdb::Options option;
       option.create_if_missing = true;
       option.compression = ::rocksdb::CompressionType::kNoCompression;
       ::rocksdb::SstFileWriter sst_file_writer(::rocksdb::EnvOptions(), option);
-      std::string file = ::fmt::format(
-          ".nebula_upgrade.space-{}.part-{}.{}.sst", spaceId_, partId, std::time(nullptr));
+      std::string file = ::fmt::format(".nebula_upgrade.space-{}.part-{}-{}-{}.sst",
+                                       spaceId_,
+                                       partId,
+                                       ingestFileCount++,
+                                       std::time(nullptr));
       ::rocksdb::Status s = sst_file_writer.Open(file);
       if (!s.ok()) {
         LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"

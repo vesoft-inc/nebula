@@ -19,7 +19,6 @@ Feature: Push Limit down scan edges rule
       | /\d+/        |
     And the execution plan should be:
       | id | name           | dependencies | operator info  |
-      | 9  | DataCollect    | 19           |                |
       | 19 | Project        | 16           |                |
       | 16 | Limit          | 11           |                |
       | 11 | AppendVertices | 3            |                |
@@ -38,7 +37,6 @@ Feature: Push Limit down scan edges rule
       | /\w+/   |
     And the execution plan should be:
       | id | name           | dependencies | operator info  |
-      | 9  | DataCollect    | 19           |                |
       | 19 | Project        | 16           |                |
       | 16 | Limit          | 11           |                |
       | 11 | AppendVertices | 3            |                |

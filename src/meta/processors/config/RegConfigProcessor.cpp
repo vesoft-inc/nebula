@@ -28,7 +28,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
       } else {
         auto retCode = nebula::error(configRet);
         if (retCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-          LOG(ERROR) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+          LOG(INFO) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
           handleErrorCode(retCode);
           onFinished();
           return;
