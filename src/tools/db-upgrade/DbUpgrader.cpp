@@ -910,13 +910,17 @@ void UpgraderSpace::runPartV3() {
       }
       return;
     }
+    int64_t ingestFileCount = 0;
     auto write_sst = [&, this](const std::vector<kvstore::KV>& data) {
       ::rocksdb::Options option;
       option.create_if_missing = true;
       option.compression = ::rocksdb::CompressionType::kNoCompression;
       ::rocksdb::SstFileWriter sst_file_writer(::rocksdb::EnvOptions(), option);
-      std::string file = ::fmt::format(
-          ".nebula_upgrade.space-{}.part-{}.{}.sst", spaceId_, partId, std::time(nullptr));
+      std::string file = ::fmt::format(".nebula_upgrade.space-{}.part-{}-{}-{}.sst",
+                                       spaceId_,
+                                       partId,
+                                       ingestFileCount++,
+                                       std::time(nullptr));
       ::rocksdb::Status s = sst_file_writer.Open(file);
       if (!s.ok()) {
         LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
