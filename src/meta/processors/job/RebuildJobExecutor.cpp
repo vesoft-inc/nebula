@@ -9,7 +9,6 @@
 #include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);

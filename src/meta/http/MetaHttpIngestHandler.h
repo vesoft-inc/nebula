@@ -18,6 +18,16 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief Ingest should be called after download successfully.
+ *        It will instruct relative storaged to ingest sst files
+ *        from local download folder by sending http request.
+ *        It will handle one space each time.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ *
+ */
 class MetaHttpIngestHandler : public proxygen::RequestHandler {
  public:
   MetaHttpIngestHandler() = default;
