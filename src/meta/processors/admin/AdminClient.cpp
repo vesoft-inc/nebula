@@ -704,7 +704,7 @@ folly::Future<StatusOr<bool>> AdminClient::blockingWrites(const std::set<GraphSp
       adminAddr,
       std::move(req),
       [](auto client, auto request) { return client->future_blockingWrites(request); },
-      [](storage::cpp2::BlockResp&& resp) -> bool {
+      [](storage::cpp2::BlockingSignResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
       std::move(pro));
@@ -724,7 +724,7 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   auto f = pro.getFuture();
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
-  storage::cpp2::AddAdminTaskRequest req;
+  storage::cpp2::AddTaskRequest req;
   req.cmd_ref() = cmd;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
@@ -754,7 +754,7 @@ folly::Future<StatusOr<bool>> AdminClient::stopTask(const HostAddr& host,
   auto f = pro.getFuture();
 
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
-  storage::cpp2::StopAdminTaskRequest req;
+  storage::cpp2::StopTaskRequest req;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
   getResponseFromHost(

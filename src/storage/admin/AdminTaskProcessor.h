@@ -22,7 +22,7 @@ class AdminTaskProcessor {
     return new AdminTaskProcessor(env);
   }
 
-  void process(const cpp2::AddAdminTaskRequest& req);
+  void process(const cpp2::AddTaskRequest& req);
 
   folly::Future<cpp2::AddTaskResp> getFuture() {
     return promise_.getFuture();

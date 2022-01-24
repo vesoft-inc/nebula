@@ -109,12 +109,12 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     return f;
   }
 
-  folly::Future<storage::cpp2::BlockResp> future_blockingWrites(
+  folly::Future<storage::cpp2::BlockingSignResp> future_blockingWrites(
       const storage::cpp2::BlockingSignRequest& req) override {
     UNUSED(req);
-    folly::Promise<storage::cpp2::BlockResp> pro;
+    folly::Promise<storage::cpp2::BlockingSignResp> pro;
     auto f = pro.getFuture();
-    storage::cpp2::BlockResp resp;
+    storage::cpp2::BlockingSignResp resp;
     resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     pro.setValue(std::move(resp));
     return f;

@@ -13,7 +13,7 @@
 namespace nebula {
 namespace storage {
 
-void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
+void AdminTaskProcessor::process(const cpp2::AddTaskRequest& req) {
   auto taskManager = AdminTaskManager::instance();
 
   auto cb = [taskManager, jobId = req.get_job_id(), taskId = req.get_task_id()](

@@ -22,7 +22,7 @@ class SendBlockSignProcessor {
 
   void process(const cpp2::BlockingSignRequest& req);
 
-  folly::Future<cpp2::BlockResp> getFuture() {
+  folly::Future<cpp2::BlockingSignResp> getFuture() {
     return promise_.getFuture();
   }
 
@@ -32,8 +32,8 @@ class SendBlockSignProcessor {
   void onFinished();
 
   StorageEnv* env_{nullptr};
-  folly::Promise<cpp2::BlockResp> promise_;
-  cpp2::BlockResp resp_;
+  folly::Promise<cpp2::BlockingSignResp> promise_;
+  cpp2::BlockingSignResp resp_;
 };
 }  // namespace storage
 }  // namespace nebula

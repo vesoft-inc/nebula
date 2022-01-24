@@ -81,20 +81,20 @@ folly::Future<cpp2::DropCPResp> StorageAdminServiceHandler::future_dropCheckpoin
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::BlockResp> StorageAdminServiceHandler::future_blockingWrites(
+folly::Future<cpp2::BlockingSignResp> StorageAdminServiceHandler::future_blockingWrites(
     const cpp2::BlockingSignRequest& req) {
   auto* processor = SendBlockSignProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::AddTaskResp> StorageAdminServiceHandler::future_addAdminTask(
-    const cpp2::AddAdminTaskRequest& req) {
+    const cpp2::AddTaskRequest& req) {
   auto* processor = AdminTaskProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::StopTaskResp> StorageAdminServiceHandler::future_stopAdminTask(
-    const cpp2::StopAdminTaskRequest& req) {
+    const cpp2::StopTaskRequest& req) {
   auto* processor = StopAdminTaskProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }

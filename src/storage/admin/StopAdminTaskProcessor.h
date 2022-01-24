@@ -21,7 +21,7 @@ class StopAdminTaskProcessor {
     return new StopAdminTaskProcessor(env);
   }
 
-  void process(const cpp2::StopAdminTaskRequest& req);
+  void process(const cpp2::StopTaskRequest& req);
 
   folly::Future<cpp2::StopTaskResp> getFuture() {
     return promise_.getFuture();

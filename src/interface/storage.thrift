@@ -783,7 +783,7 @@ struct BlockingSignRequest {
     2: required EngineSignType      sign,
 }
 
-struct BlockResp {
+struct BlockingSignResp {
     1: common.ErrorCode             code,
 }
 
@@ -815,7 +815,7 @@ struct ListClusterInfoResp {
 struct ListClusterInfoReq {
 }
 
-struct AddAdminTaskRequest {
+struct AddTaskRequest {
     // rebuild index / flush / compact / statis
     1: meta.AdminCmd                        cmd
     2: i32                                  job_id
@@ -828,7 +828,7 @@ struct AddTaskResp {
     1: common.ErrorCode                     code,
 }
 
-struct StopAdminTaskRequest {
+struct StopTaskRequest {
     1: i32                                  job_id
     2: i32                                  task_id
 }
@@ -849,15 +849,15 @@ service StorageAdminService {
     // Interfaces for nebula cluster checkpoint
     CreateCPResp  createCheckpoint(1: CreateCPRequest req);
     DropCPResp    dropCheckpoint(1: DropCPRequest req);
-    BlockResp     blockingWrites(1: BlockingSignRequest req);
+    BlockingSignResp blockingWrites(1: BlockingSignRequest req);
 
     // Return all leader partitions on this host
     GetLeaderPartsResp getLeaderParts(1: GetLeaderReq req);
     // Return all peers
     AdminExecResp checkPeers(1: CheckPeersReq req);
 
-    AddTaskResp   addAdminTask(1: AddAdminTaskRequest req);
-    StopTaskResp  stopAdminTask(1: StopAdminTaskRequest req);
+    AddTaskResp   addAdminTask(1: AddTaskRequest req);
+    StopTaskResp  stopAdminTask(1: StopTaskRequest req);
 }
 
 
