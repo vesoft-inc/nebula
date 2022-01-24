@@ -10,7 +10,6 @@
 #include "common/network/NetworkUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
