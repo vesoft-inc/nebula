@@ -6,6 +6,7 @@ Feature: Check Expression Depth
   Background:
     Given a graph with space named "nba"
 
+  @SkipSpecialCase
   Scenario: yield exceeds expression
     When executing query:
       """

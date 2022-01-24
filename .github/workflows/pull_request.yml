@@ -167,7 +167,14 @@ jobs:
         timeout-minutes: 15
       - name: TCK
         run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+            ;;
+          clang-*)
+            make RM_DIR=false DEBUG=false SKIP_SPECIAL_CASE=true J=${{ steps.cmake.outputs.j }} tck
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 60
       - name: LDBC

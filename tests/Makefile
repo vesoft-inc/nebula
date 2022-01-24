@@ -21,6 +21,7 @@ CA_SIGNED ?= false
 CONTAINERIZED ?= false
 FAILED_LOGIN_ATTEMPTS ?= 0
 PASSWORD_LOCK_TIME_IN_SECS ?= 0
+SKIP_SPECIAL_CASE ?= false
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
@@ -93,7 +94,11 @@ slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
 
 tck: jobs slow-query
+ifeq ($(SKIP_SPECIAL_CASE),true)
+	$(test_j) -m "not SkipSpecialCase" tck/steps/test_tck.py
+else
 	$(test_j) tck/steps/test_tck.py
+endif
 
 ldbc: currdir
 	$(test_j) tck/steps/test_ldbc.py
