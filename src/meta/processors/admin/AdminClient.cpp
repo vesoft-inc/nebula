@@ -426,7 +426,6 @@ void AdminClient::getResponseFromHost(const HostAddr& host,
       });
 }
 
-// todo(doodle): retry after delay
 template <typename Request, typename RemoteFunc>
 void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                                         int32_t index,
@@ -487,6 +486,7 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                      auto resp = adminResp.result.get_failed_parts().front();
                      switch (resp.get_code()) {
                        case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                         // storage will return the address of data service ip:port
                          if (retry < retryLimit) {
                            HostAddr leader("", 0);
                            if (resp.get_leader() != nullptr) {

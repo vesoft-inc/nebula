@@ -123,9 +123,9 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
 
 class TestStorageServiceRetry : public TestStorageService {
  public:
-  TestStorageServiceRetry(std::string addr, Port adminPort) {
+  void setLeader(std::string leaderAddr, Port leaderAdminPort) {
     // when leader change returned, the port is always data port
-    leader_ = Utils::getStoreAddrFromAdminAddr(HostAddr(addr, adminPort));
+    leader_ = Utils::getStoreAddrFromAdminAddr(HostAddr(leaderAddr, leaderAdminPort));
   }
 
   folly::Future<storage::cpp2::AdminExecResp> future_addLearner(
@@ -154,7 +154,6 @@ TEST(AdminClientTest, SimpleTest) {
   LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
   std::string localIp("127.0.0.1");
-  // network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
   fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   auto client = std::make_unique<AdminClient>(kv.get());
@@ -185,17 +184,17 @@ TEST(AdminClientTest, SimpleTest) {
 }
 
 TEST(AdminClientTest, RetryTest) {
+  std::string localIp("127.0.0.1");
+
   auto rpcServer1 = std::make_unique<mock::RpcServer>();
   auto handler1 = std::make_shared<TestStorageService>();
   rpcServer1->start("storage-admin-1", 0, handler1);
   LOG(INFO) << "Start storage server on " << rpcServer1->port_;
 
-  std::string localIp("127.0.0.1");
-  // network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-
   auto rpcServer2 = std::make_unique<mock::RpcServer>();
-  auto handler2 = std::make_shared<TestStorageServiceRetry>(localIp, rpcServer1->port_);
+  auto handler2 = std::make_shared<TestStorageServiceRetry>();
   rpcServer2->start("storage-admin-2", 0, handler2);
+  handler2->setLeader(localIp, rpcServer1->port_);
   LOG(INFO) << "Start storage2 server on " << rpcServer2->port_;
 
   LOG(INFO) << "Now test interfaces with retry to leader!";
@@ -291,6 +290,82 @@ TEST(AdminClientTest, RetryTest) {
     ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0]);
     ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1]);
     ASSERT_EQ(HostAddr("1", 1), hosts[2]);
+  }
+}
+
+TEST(AdminClientTest, LearnerBecomeLeaderTest) {
+  // Three replica, server 1/2/3 is normal replica, server 4 is the learner at first and it
+  // becomes leader
+  auto rpcServer1 = std::make_unique<mock::RpcServer>();
+  auto rpcServer2 = std::make_unique<mock::RpcServer>();
+  auto rpcServer3 = std::make_unique<mock::RpcServer>();
+  auto rpcServer4 = std::make_unique<mock::RpcServer>();
+  auto handler1 = std::make_shared<TestStorageServiceRetry>();
+  auto handler2 = std::make_shared<TestStorageServiceRetry>();
+  auto handler3 = std::make_shared<TestStorageServiceRetry>();
+  auto handler4 = std::make_shared<TestStorageService>();
+  rpcServer1->start("storage-admin-1", 0, handler1);
+  rpcServer2->start("storage-admin-2", 0, handler2);
+  rpcServer3->start("storage-admin-3", 0, handler3);
+  rpcServer4->start("storage-admin-4", 0, handler4);
+  LOG(INFO) << "Start storage1 server on " << rpcServer1->port_;
+  LOG(INFO) << "Start storage2 server on " << rpcServer2->port_;
+  LOG(INFO) << "Start storage3 server on " << rpcServer3->port_;
+  LOG(INFO) << "Start storage4 server on " << rpcServer4->port_;
+
+  // server1 believes server2 is leader
+  // server2 believes server3 is leader
+  // server3 believes server4 is leader
+  // so a request send to server1 need to be retried for 3 times, and be processed in server4
+  std::string localIp("127.0.0.1");
+  handler1->setLeader(localIp, rpcServer2->port_);
+  handler2->setLeader(localIp, rpcServer3->port_);
+  handler3->setLeader(localIp, rpcServer4->port_);
+
+  LOG(INFO) << "Now test interfaces with retry to leader!";
+  fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
+  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+  {
+    LOG(INFO) << "Write the part information, server 1/2/3 is the normal replica";
+    // The request will be sent to rpcServer1 first
+    std::vector<HostAddr> thriftPeers;
+    thriftPeers.emplace_back(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}));
+    thriftPeers.emplace_back(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}));
+    thriftPeers.emplace_back(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer3->port_}));
+
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::partKey(0, 1), MetaKeyUtils::partVal(thriftPeers));
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
+    baton.wait();
+  }
+
+  LOG(INFO) << "Now test interfaces with retry to leader!";
+  auto client = std::make_unique<AdminClient>(kv.get());
+  for (int32_t retryTime = 0; retryTime < 3; retryTime++) {
+    FLAGS_max_retry_times_admin_op = retryTime;
+    LOG(INFO) << "Test member change by adding a fake host";
+    folly::Baton<true, std::atomic> baton;
+    client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
+      CHECK(!st.ok());
+      CHECK_EQ("Leader changed!", st.toString());
+      baton.post();
+    });
+    baton.wait();
+  }
+  FLAGS_max_retry_times_admin_op = 3;
+  {
+    LOG(INFO) << "Test member change by adding a fake host";
+    folly::Baton<true, std::atomic> baton;
+    client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
+      CHECK(st.ok());
+      baton.post();
+    });
+    baton.wait();
   }
 }
 
