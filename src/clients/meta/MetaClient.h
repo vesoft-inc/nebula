@@ -371,25 +371,6 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listEdgeIndexStatus(GraphSpaceID spaceId);
 
-  // Operations for custom kv
-  folly::Future<StatusOr<bool>> multiPut(std::string segment,
-                                         std::vector<std::pair<std::string, std::string>> pairs);
-
-  folly::Future<StatusOr<std::string>> get(std::string segment, std::string key);
-
-  folly::Future<StatusOr<std::vector<std::string>>> multiGet(std::string segment,
-                                                             std::vector<std::string> keys);
-
-  folly::Future<StatusOr<std::vector<std::string>>> scan(std::string segment,
-                                                         std::string start,
-                                                         std::string end);
-
-  folly::Future<StatusOr<bool>> remove(std::string segment, std::string key);
-
-  folly::Future<StatusOr<bool>> removeRange(std::string segment,
-                                            std::string start,
-                                            std::string end);
-
   // Operations for users.
   folly::Future<StatusOr<bool>> createUser(std::string account,
                                            std::string password,
@@ -588,14 +569,6 @@ class MetaClient {
   Status checkEdgeIndexed(GraphSpaceID space, IndexID indexID);
 
   const std::vector<HostAddr>& getAddresses();
-
-  folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
-                                                          TagID tagId,
-                                                          const std::string& field);
-
-  folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
-                                                           EdgeType edgeType,
-                                                           const std::string& field);
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
