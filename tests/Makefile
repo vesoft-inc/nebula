@@ -33,7 +33,7 @@ install-deps:
 install-nebula-py: install-deps
 	git clone --branch v2.6.0 https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
-		&& pip3 install --user . -i $(PYPI_MIRROR)
+		&& pip3 install --user --upgrade . -i $(PYPI_MIRROR)
 	rm -rf $(CURR_DIR)/nebula-python
 
 gherkin-fmt: install-deps
