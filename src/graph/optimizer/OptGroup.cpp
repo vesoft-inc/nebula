@@ -45,6 +45,7 @@ void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   DCHECK(groupNode != nullptr);
   DCHECK(groupNode->group() == this);
   groupNodes_.emplace_back(groupNode);
+  groupNode->node()->updateSymbols();
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {

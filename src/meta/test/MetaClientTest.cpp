@@ -2546,9 +2546,10 @@ TEST(MetaClientTest, DivideZoneTest) {
   }
   {
     std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
-    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}};
     zoneItems.emplace("one_zone_1", std::move(oneHosts));
-    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    std::vector<HostAddr> anotherHosts = {
+        {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
     zoneItems.emplace("another_zone_1", std::move(anotherHosts));
     auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_TRUE(result.ok());
@@ -2578,6 +2579,51 @@ TEST(MetaClientTest, DivideZoneTest) {
     ASSERT_EQ("one_zone", zones[1]);
     ASSERT_EQ("one_zone_1", zones[2]);
     ASSERT_EQ("another_zone_1", zones[3]);
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}};
+    zoneItems.emplace("one_zone_1_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8976}};
+    zoneItems.emplace("one_zone_1_2", std::move(anotherHosts));
+    auto result = client->divideZone("one_zone_1", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1_1", std::move(hosts));
+    auto result = client->divideZone("another_zone_1", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8977}};
+    zoneItems.emplace("another_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1_1", std::move(anotherHosts));
+    auto result = client->divideZone("another_zone_1", std::move(zoneItems)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(5, zones.size());
+    ASSERT_EQ("another_zone", zones[0].get_zone_name());
+    ASSERT_EQ("another_zone_1", zones[1].get_zone_name());
+    ASSERT_EQ("another_zone_1_1", zones[2].get_zone_name());
+    ASSERT_EQ("one_zone", zones[3].get_zone_name());
+    ASSERT_EQ("one_zone_1", zones[4].get_zone_name());
+  }
+  {
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8977}};
+    zoneItems.emplace("another_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    auto result = client->divideZone("another_zone_1", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
   }
   cluster.stop();
 }

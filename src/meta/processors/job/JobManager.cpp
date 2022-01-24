@@ -143,7 +143,7 @@ void JobManager::scheduleThread() {
 
 // @return: true if all task dispatched, else false
 bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
-  std::lock_guard<std::mutex> lk(muJobFinished_);
+  std::lock_guard<std::recursive_mutex> lk(muJobFinished_);
   std::unique_ptr<JobExecutor> je =
       JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
   JobExecutor* jobExec = je.get();
@@ -173,7 +173,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   if (jobExec->isMetaJob()) {
     jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
       if (status == meta::cpp2::JobStatus::STOPPED) {
-        std::lock_guard<std::mutex> lkg(muJobFinished_);
+        std::lock_guard<std::recursive_mutex> lkg(muJobFinished_);
         cleanJob(jobDesc.getJobId());
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
@@ -205,7 +205,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
   LOG(INFO) << folly::sformat(
       "{}, jobId={}, result={}", __func__, jobId, apache::thrift::util::enumNameSafe(jobStatus));
   // normal job finish may race to job stop
-  std::lock_guard<std::mutex> lk(muJobFinished_);
+  std::lock_guard<std::recursive_mutex> lk(muJobFinished_);
   auto optJobDescRet = JobDescription::loadJobDescription(jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     LOG(WARNING) << folly::sformat("can't load job, jobId={}", jobId);

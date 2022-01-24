@@ -154,6 +154,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
+  folly::SharedMutex::ReadHolder zHolder(LockUtils::zoneLock());
   for (auto& zone : zones) {
     auto zoneKey = MetaKeyUtils::zoneKey(zone);
     auto ret = doGet(zoneKey);
