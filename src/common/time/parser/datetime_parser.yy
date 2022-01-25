@@ -79,39 +79,22 @@ enum class Type {
 
 datetime
   : DATETIMEPRFEIX date date_time_delimiter time opt_time_zone {
-    if (outputType != nebula::time::Type::kDateTime) {
-      delete $2;
-      delete $4;
-      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
-    }
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$2, *$4), -$5));
     *output = $$;
     delete $2;
     delete $4;
   }
   | DATETIMEPRFEIX date {
-    if (outputType != nebula::time::Type::kDateTime) {
-      delete $2;
-      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
-    }
     $$ = new DateTime(*$2);
     *output = $$;
     delete $2;
   }
   | DATEPRFEIX date {
-    if (outputType != nebula::time::Type::kDate) {
-      delete $2;
-      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
-    }
     $$ = new DateTime(*$2);
     *output = $$;
     delete $2;
   }
   | TIMEPRFEIX time opt_time_zone {
-    if (outputType != nebula::time::Type::kTime) {
-      delete $2;
-      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
-    }
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), -$3));
     *output = $$;
     delete $2;
