@@ -608,6 +608,7 @@ void NebulaStore::ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, cons
   if (!ok(ret)) {
     LOG(INFO) << "Failed to release snapshot for GraphSpaceID " << spaceId << " PartitionID"
               << partId;
+    return;
   }
   auto part = nebula::value(ret);
   return part->engine()->ReleaseSnapshot(snapshot);
