@@ -217,16 +217,25 @@ class TestUtils {
                             GraphSpaceID id,
                             int32_t partitionNum,
                             int32_t replica = 1,
-                            int32_t totalHost = 1) {
+                            int32_t totalHost = 1,
+                            bool multispace = false) {
     // mock the part distribution like create space
     cpp2::SpaceDesc properties;
-    properties.set_space_name("test_space");
-    properties.set_partition_num(partitionNum);
-    properties.set_replica_factor(replica);
-    auto spaceVal = MetaServiceUtils::spaceVal(properties);
+    if (multispace) {
+      properties.space_name_ref() = folly::stringPrintf("test_space_%d", id);
+    } else {
+      properties.space_name_ref() = "test_space";
+    }
+    properties.partition_num_ref() = partitionNum;
+    properties.replica_factor_ref() = replica;
     std::vector<nebula::kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space"),
-                      std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    if (multispace) {
+      data.emplace_back(MetaServiceUtils::indexSpaceKey(folly::stringPrintf("test_space_%d", id)),
+                        std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    } else {
+      data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space"),
+                        std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    }
     data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
 
     std::vector<HostAddr> allHosts;
