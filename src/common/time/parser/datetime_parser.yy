@@ -59,7 +59,7 @@ enum class Type {
 %token KW_TIME_ID
 
 /* symbols */
-%token TIME_DELIMITER SPACE POSITIVE NEGATIVE DATETIMEPRFEIX DATEPRFEIX TIMEPRFEIX
+%token TIME_DELIMITER SPACE POSITIVE NEGATIVE KW_DATETIME KW_DATE KW_TIME
 
 /* token type specification */
 %token <intVal> INTEGER
@@ -78,23 +78,23 @@ enum class Type {
 %%
 
 datetime
-  : DATETIMEPRFEIX date date_time_delimiter time opt_time_zone {
+  : KW_DATETIME date date_time_delimiter time opt_time_zone {
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$2, *$4), -$5));
     *output = $$;
     delete $2;
     delete $4;
   }
-  | DATETIMEPRFEIX date {
+  | KW_DATETIME date {
     $$ = new DateTime(*$2);
     *output = $$;
     delete $2;
   }
-  | DATEPRFEIX date {
+  | KW_DATE date {
     $$ = new DateTime(*$2);
     *output = $$;
     delete $2;
   }
-  | TIMEPRFEIX time opt_time_zone {
+  | KW_TIME time opt_time_zone {
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), -$3));
     *output = $$;
     delete $2;

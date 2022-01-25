@@ -31,9 +31,9 @@ R_BRACKET                   "]"
 "+"                     { return TokenType::POSITIVE; }
 "-"                     { return TokenType::NEGATIVE; }
 
-"DATETIME__"            { return TokenType::DATETIMEPRFEIX; }
-"DATE__"                { return TokenType::DATEPRFEIX; }
-"TIME__"                { return TokenType::TIMEPRFEIX; }
+"DATETIME__"            { return TokenType::KW_DATETIME; }
+"DATE__"                { return TokenType::KW_DATE; }
+"TIME__"                { return TokenType::KW_TIME; }
 
 
 {DEC}+                  {
