@@ -59,8 +59,8 @@ nebula::cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& 
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_CONFIG_NOT_FOUND;
     }
-    LOG(ERROR) << "Set config " << name << " failed, error "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Set config " << name << " failed, error "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

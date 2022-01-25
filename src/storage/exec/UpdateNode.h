@@ -54,7 +54,9 @@ class UpdateNode : public RelNode<T> {
   nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
                                                 const std::string& name) {
     if (field->hasDefault()) {
-      auto expr = field->defaultValue()->clone();
+      ObjectPool pool;
+      auto& exprStr = field->defaultValue();
+      auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
       props_[field->name()] = Expression::eval(expr, *expCtx_);
     } else if (field->nullable()) {
       props_[name] = Value::kNullValue;

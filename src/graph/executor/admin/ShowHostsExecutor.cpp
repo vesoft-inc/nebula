@@ -30,7 +30,8 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
                "Status",
                "Leader count",
                "Leader distribution",
-               "Partition distribution"});
+               "Partition distribution",
+               "Version"});
 
     std::map<std::string, int64_t> leaderPartsCount;
     std::map<std::string, int64_t> allPartsCount;
@@ -82,6 +83,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       r.emplace_back(leaderCount);
       r.emplace_back(leaders.str());
       r.emplace_back(parts.str());
+      r.emplace_back(host.version_ref().has_value() ? Value(*host.version_ref()) : Value());
       v.emplace_back(std::move(r));
     }  // row loop
     {
@@ -148,7 +150,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
           LOG(ERROR) << resp.status();
           return resp.status();
         }
-        auto value = std::move(resp).value();
+        auto value = std::forward<decltype(resp)>(resp).value();
         if (type == meta::cpp2::ListHostType::ALLOC) {
           return finish(makeTraditionalResult(value));
         }

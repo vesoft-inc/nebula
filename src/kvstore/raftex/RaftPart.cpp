@@ -366,11 +366,15 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs() {
 
 nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
   DCHECK(!raftLock_.try_lock());
+  nebula::cpp2::ErrorCode rc = canAppendLogs();
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return rc;
+  }
   if (UNLIKELY(term_ != termId)) {
     VLOG(2) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
     return nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
   }
-  return canAppendLogs();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 void RaftPart::addLearner(const HostAddr& addr) {
@@ -697,19 +701,19 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   // until majority accept the logs, the leadership changes, or
   // the partition stops
   VLOG(2) << idStr_ << "Calling appendLogsInternal()";
-  AppendLogsIterator it(firstId,
-                        termId,
-                        std::move(swappedOutLogs),
-                        [this](AtomicOp opCB) -> folly::Optional<std::string> {
-                          CHECK(opCB != nullptr);
-                          auto opRet = opCB();
-                          if (!opRet.hasValue()) {
-                            // Failed
-                            sendingPromise_.setOneSingleValue(
-                                nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
-                          }
-                          return opRet;
-                        });
+  AppendLogsIterator it(
+      firstId,
+      termId,
+      std::move(swappedOutLogs),
+      [this](AtomicOp opCB) -> folly::Optional<std::string> {
+        CHECK(opCB != nullptr);
+        auto opRet = opCB();
+        if (!opRet.hasValue()) {
+          // Failed
+          sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+        }
+        return opRet;
+      });
   appendLogsInternal(std::move(it), termId);
 
   return retFuture;
@@ -964,19 +968,18 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
           // continue to replicate the logs
           sendingPromise_ = std::move(cachingPromise_);
           cachingPromise_.reset();
-          iter = AppendLogsIterator(
-              firstLogId,
-              currTerm,
-              std::move(logs_),
-              [this](AtomicOp op) -> folly::Optional<std::string> {
-                auto opRet = op();
-                if (!opRet.hasValue()) {
-                  // Failed
-                  sendingPromise_.setOneSingleValue(
-                      nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
-                }
-                return opRet;
-              });
+          iter = AppendLogsIterator(firstLogId,
+                                    currTerm,
+                                    std::move(logs_),
+                                    [this](AtomicOp op) -> folly::Optional<std::string> {
+                                      auto opRet = op();
+                                      if (!opRet.hasValue()) {
+                                        // Failed
+                                        sendingPromise_.setOneSingleValue(
+                                            nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+                                      }
+                                      return opRet;
+                                    });
           logs_.clear();
           bufferOverFlow_ = false;
         }
