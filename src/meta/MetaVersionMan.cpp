@@ -95,7 +95,7 @@ Status MetaVersionMan::updateMetaV1ToV2(kvstore::KVEngine* engine) {
 
 Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   CHECK_NOTNULL(engine);
-  auto snapshot = folly::format("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr()).str();
+  auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
 
   std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
   if (!fs::FileUtils::exist(path) && !fs::FileUtils::makeDir(path)) {
