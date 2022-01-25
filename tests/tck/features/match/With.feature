@@ -64,6 +64,38 @@ Feature: With clause
     Then the result should be, in any order:
       | count(a) |
       | 1        |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b.d.e
+      """
+    Then the result should be, in any order:
+      | x.b.d.e |
+      | 5       |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b.d
+      """
+    Then the result should be, in any order:
+      | x.b.d  |
+      | {e: 5} |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.b
+      """
+    Then the result should be, in any order:
+      | x.b               |
+      | {c: 3, d: {e: 5}} |
+    When executing query:
+      """
+      WITH {a:1, b:{c:3, d:{e:5}}} AS x
+      RETURN x.c
+      """
+    Then the result should be, in any order:
+      | x.c          |
+      | UNKNOWN_PROP |
 
   Scenario: match with return
     When executing query:
@@ -185,6 +217,23 @@ Feature: With clause
     Then the result should be, in any order, with relax comparison:
       | avg  | max |
       | 90.0 | 90  |
+    When executing query:
+      """
+      MATCH (:player {name:"Tim Duncan"})-[e:like]->(dst)
+      WITH dst AS b
+      RETURN b.player.age AS age, b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age | b                                                         |
+      | 36  | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | 41  | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      MATCH (:player {name:"Tim Duncan"})-[e:like]->(dst)
+      WITH dst AS b
+      RETURN b.age AS age, b
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `b.age', should use the format `var.tag.prop'
 
   @skip
   Scenario: with match return

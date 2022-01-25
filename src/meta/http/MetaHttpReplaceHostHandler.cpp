@@ -84,7 +84,7 @@ void MetaHttpReplaceHostHandler::onEOM() noexcept {
         .body("Replace Host successfully")
         .sendWithEOM();
   } else {
-    LOG(ERROR) << "Replace Host failed";
+    LOG(INFO) << "Replace Host failed";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
                 WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
@@ -102,8 +102,8 @@ void MetaHttpReplaceHostHandler::requestComplete() noexcept {
 }
 
 void MetaHttpReplaceHostHandler::onError(ProxygenError error) noexcept {
-  LOG(ERROR) << "Web Service MetaHttpReplaceHostHandler got error : "
-             << proxygen::getErrorString(error);
+  LOG(INFO) << "Web Service MetaHttpReplaceHostHandler got error : "
+            << proxygen::getErrorString(error);
 }
 
 bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string ipv4To) {
@@ -113,7 +113,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
   auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
   if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     errMsg_ = folly::stringPrintf("can't get space prefix=%s", spacePrefix.c_str());
-    LOG(ERROR) << errMsg_;
+    LOG(INFO) << errMsg_;
     return false;
   }
 
@@ -131,7 +131,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
       errMsg_ = folly::stringPrintf("can't get partPrefix=%s", partPrefix.c_str());
-      LOG(ERROR) << errMsg_;
+      LOG(INFO) << errMsg_;
       return false;
     }
 

@@ -13,7 +13,7 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
   const auto& user = req.get_user();
   auto ret = userExist(user);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "User does not exist, errorCode: " << apache::thrift::util::enumNameSafe(ret);
+    LOG(INFO) << "User does not exist, errorCode: " << apache::thrift::util::enumNameSafe(ret);
     handleErrorCode(ret);
     onFinished();
     return;
@@ -34,8 +34,8 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
   resp_.session_ref() = session;
   ret = doSyncPut(std::move(data));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Put data error on meta server, errorCode: "
-               << apache::thrift::util::enumNameSafe(ret);
+    LOG(INFO) << "Put data error on meta server, errorCode: "
+              << apache::thrift::util::enumNameSafe(ret);
   }
   handleErrorCode(ret);
   onFinished();
@@ -53,7 +53,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
-      LOG(WARNING) << "Session id `" << sessionId << "' not found";
+      LOG(INFO) << "Session id '" << sessionId << "' not found";
       if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
         errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
       }
@@ -95,8 +95,8 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
 
   auto ret = doSyncPut(std::move(data));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Put data error on meta server, errorCode: "
-               << apache::thrift::util::enumNameSafe(ret);
+    LOG(INFO) << "Put data error on meta server, errorCode: "
+              << apache::thrift::util::enumNameSafe(ret);
     handleErrorCode(ret);
     onFinished();
     return;
@@ -140,7 +140,7 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
   auto ret = doGet(sessionKey);
   if (!nebula::ok(ret)) {
     auto errCode = nebula::error(ret);
-    LOG(ERROR) << "Session id `" << sessionId << "' not found";
+    LOG(INFO) << "Session id `" << sessionId << "' not found";
     if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
     }
@@ -162,7 +162,7 @@ void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
   auto ret = doGet(sessionKey);
   if (!nebula::ok(ret)) {
     auto errCode = nebula::error(ret);
-    LOG(ERROR) << "Session id `" << sessionId << "' not found";
+    LOG(INFO) << "Session id `" << sessionId << "' not found";
     if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
     }
@@ -186,7 +186,7 @@ void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
-      LOG(ERROR) << "Session id `" << sessionId << "' not found";
+      LOG(INFO) << "Session id `" << sessionId << "' not found";
       if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
         errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
       }
@@ -211,8 +211,8 @@ void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
 
   auto putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Put data error on meta server, errorCode: "
-               << apache::thrift::util::enumNameSafe(putRet);
+    LOG(INFO) << "Put data error on meta server, errorCode: "
+              << apache::thrift::util::enumNameSafe(putRet);
   }
   handleErrorCode(putRet);
   onFinished();

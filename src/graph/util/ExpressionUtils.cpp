@@ -18,6 +18,8 @@
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
 
+DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
+
 namespace nebula {
 namespace graph {
 
@@ -126,18 +128,24 @@ bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext
 }
 
 // rewrite Attribute to LabelTagProp
-Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
+Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
+    const Expression *expr, const std::unordered_map<std::string, AliasType> &aliasTypeMap) {
   ObjectPool *pool = expr->getObjPool();
 
-  auto matcher = [](const Expression *e) -> bool {
-    if (e->kind() == Expression::Kind::kAttribute) {
-      auto attrExpr = static_cast<const AttributeExpression *>(e);
-      if (attrExpr->left()->kind() == Expression::Kind::kLabelAttribute &&
-          attrExpr->right()->kind() == Expression::Kind::kConstant) {
-        return true;
-      }
+  auto matcher = [&aliasTypeMap](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kAttribute) {
+      return false;
     }
-    return false;
+    auto attrExpr = static_cast<const AttributeExpression *>(e);
+    if (attrExpr->left()->kind() != Expression::Kind::kLabelAttribute) {
+      return false;
+    }
+    auto label = static_cast<const LabelAttributeExpression *>(attrExpr->left())->left()->name();
+    auto iter = aliasTypeMap.find(label);
+    if (iter == aliasTypeMap.end() || iter->second != AliasType::kNode) {
+      return false;
+    }
+    return true;
   };
 
   auto rewriter = [pool](const Expression *e) -> Expression * {
@@ -570,32 +578,32 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  // If the filter contains more than one different LabelAttribute expr, this filter cannot be
-  // pushed down
-  auto propExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
+  // Check if any overflow happen before filter tranform
+  auto initialConstFold = foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(initialConstFold);
+  auto newFilter = initialConstFold.value();
+
+  // If the filter contains more than one different Label expr, this filter cannot be
+  // pushed down, such as where v1.player.name == 'xxx' or v2.player.age == 20
+  auto propExprs = ExpressionUtils::collectAll(newFilter, {Expression::Kind::kLabel});
   // Deduplicate the list
   std::unordered_set<std::string> dedupPropExprSet;
   for (auto &iter : propExprs) {
     dedupPropExprSet.emplace(iter->toString());
   }
   if (dedupPropExprSet.size() > 1) {
-    return const_cast<Expression *>(filter);
+    return const_cast<Expression *>(newFilter);
   }
 
-  // Check if any overflow happen before filter tranform
-  auto initialConstFold = foldConstantExpr(filter);
-  NG_RETURN_IF_ERROR(initialConstFold);
-
   // Rewrite relational expression
-  auto rewrittenExpr = initialConstFold.value();
-  rewrittenExpr = rewriteRelExpr(rewrittenExpr);
+  auto rewrittenExpr = rewriteRelExpr(newFilter->clone());
 
   // Fold constant expression
   auto constantFoldRes = foldConstantExpr(rewrittenExpr);
   // If errors like overflow happened during the constant fold, stop transferming and return the
   // original expression
   if (!constantFoldRes.ok()) {
-    return const_cast<Expression *>(filter);
+    return const_cast<Expression *>(newFilter);
   }
   rewrittenExpr = constantFoldRes.value();
 
@@ -1221,7 +1229,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
       size -= 1;
     }
     depth += 1;
-    if (depth > ExpressionUtils::kMaxDepth) {
+    if (depth > FLAGS_max_expression_depth) {
       return false;
     }
   }

@@ -89,18 +89,20 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   if (whereCtx && whereCtx->filter) {
     auto* filter = whereCtx->filter;
     const auto& nodeAlias = nodeCtx->info->alias;
+    const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
 
     if (filter->kind() == Expression::Kind::kLogicalOr) {
       auto exprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
-      bool labelMatched = true;
+      bool matched = true;
       for (auto* expr : exprs) {
         auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
-        if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias) {
-          labelMatched = false;
+        if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias ||
+            tagPropExpr->sym() != schemaName) {
+          matched = false;
           break;
         }
       }
-      if (labelMatched) {
+      if (matched) {
         auto flattenFilter = ExpressionUtils::flattenInnerLogicalExpr(filter);
         DCHECK_EQ(flattenFilter->kind(), Expression::Kind::kLogicalOr);
         auto& filterItems = static_cast<LogicalExpression*>(flattenFilter)->operands();
@@ -120,7 +122,6 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
           storage::cpp2::IndexQueryContext ctx;
           ctx.filter_ref() = Expression::encode(*flattenFilter);
           scan->setIndexQueryContext({ctx});
-          whereCtx.reset();
         }
       }
     }

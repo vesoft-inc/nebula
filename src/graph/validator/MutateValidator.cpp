@@ -251,9 +251,12 @@ Status InsertEdgesValidator::prepareEdges() {
       auto iter = std::find(propNames_.begin(), propNames_.end(), propName);
       if (iter == propNames_.end()) {
         if (field->hasDefault()) {
-          auto *defaultValue = field->defaultValue();
-          DCHECK(!!defaultValue);
-          auto v = defaultValue->eval(QueryExpressionContext()(nullptr));
+          auto &defaultValue = field->defaultValue();
+          DCHECK(!defaultValue.empty());
+          ObjectPool pool;
+          auto expr = Expression::decode(
+              &pool, folly::StringPiece(defaultValue.data(), defaultValue.size()));
+          auto v = expr->eval(QueryExpressionContext()(nullptr));
           entirePropValues.emplace_back(v);
         } else {
           if (!field->nullable()) {
