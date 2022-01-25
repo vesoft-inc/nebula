@@ -79,8 +79,6 @@ struct SpaceInfoCache {
   Indexes tagIndexes_;
   Indexes edgeIndexes_;
   Listeners listeners_;
-  // objPool used to decode when adding field
-  ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
 };
 
