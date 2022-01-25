@@ -19,8 +19,10 @@ void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq& req) {
   nebula::cpp2::DirInfo dir;
   dir.data_ref() = datapaths;
   dir.root_ref() = boost::filesystem::current_path().string();
-  resp_.dir_ref() = std::move(dir);
+  VLOG(1) << "Get meta dir info, data paths size: " << dir.get_data().size()
+          << ", root path:" << dir.get_root();
 
+  resp_.dir_ref() = std::move(dir);
   resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
 }

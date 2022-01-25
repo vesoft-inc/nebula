@@ -17,6 +17,11 @@ namespace nebula::meta::v2 {
 
 const std::string kGroupsTable = "__groups__";  // NOLINT
 
+/**
+ * @brief Meta kv store utils to help parsing key and values.
+ *        These shoule be used to upgrade meta from 2.x to 3.x
+ *
+ */
 class MetaServiceUtilsV2 final {
  public:
   MetaServiceUtilsV2() = delete;
