@@ -79,8 +79,8 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -B build
@@ -90,8 +90,8 @@ jobs:
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_COVERAGE=on \
