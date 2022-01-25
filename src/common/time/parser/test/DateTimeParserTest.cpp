@@ -264,14 +264,13 @@ TEST(DatetimeReader, Time) {
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::Time(22, 22, 0, 0), result.value());
   }
-  // TODO
   // lack minute
-  // {
-  // auto parser = time::DatetimeReader::makeTimeReader();
-  // auto result = parser.readTime("22");
-  // ASSERT_TRUE(result.ok()) << result.status();
-  // EXPECT_EQ(nebula::Time(22, 0, 0, 0), result.value());
-  // }
+  {
+    auto parser = time::DatetimeReader::makeTimeReader();
+    auto result = parser.readTime("22");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::Time(22, 0, 0, 0), result.value());
+  }
 }
 
 TEST(DatetimeReader, TimeFailed) {
