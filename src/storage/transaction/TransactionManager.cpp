@@ -162,7 +162,6 @@ void TransactionManager::addPrime(GraphSpaceID spaceId,
     if (lk) {
       lk->unlock(egKey);
     }
-    // delPrime(spaceId, partId, termId, egKey);
     return;
   }
   auto fut = proc->getFinished();
@@ -173,7 +172,6 @@ void TransactionManager::addPrime(GraphSpaceID spaceId,
       if (lk) {
         lk->unlock(egKey);
       }
-      // env_->txnMan_->delPrime(spaceId, partId, termId, egKey);
     }
   });
   addChainTask(proc);

@@ -288,7 +288,6 @@ cpp2::AddEdgesRequest ChainAddEdgesLocalProcessor::reverseRequest(
 }
 
 void ChainAddEdgesLocalProcessor::finish() {
-  auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
   if (rcPrepare_ == Code::SUCCEEDED) {
     VLOG(1) << uuid_ << execDesc_ << makeReadableEdge(req_)
             << ", rcPrepare_=" << apache::thrift::util::enumNameSafe(rcPrepare_)
@@ -307,6 +306,26 @@ void ChainAddEdgesLocalProcessor::finish() {
 
     if (rcRemote_ == Code::E_RPC_FAILURE) {
       reportFailed(ResumeType::RESUME_REMOTE);
+      break;
+    }
+  } while (0);
+
+  auto rc = Code::SUCCEEDED;
+  do {
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      rc = rcPrepare_;
+      break;
+    }
+
+    if (rcCommit_ != Code::SUCCEEDED) {
+      rc = rcCommit_;
+      break;
+    }
+
+    // rcCommit_ may be set SUCCEEDED in abort().
+    // which we should return the error code or remote.
+    if (rcRemote_ != Code::E_RPC_FAILURE) {
+      rc = rcRemote_;
       break;
     }
   } while (0);

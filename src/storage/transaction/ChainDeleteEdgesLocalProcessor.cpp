@@ -344,7 +344,25 @@ void ChainDeleteEdgesLocalProcessor::finish() {
     }
   } while (0);
 
-  auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
+  auto rc = Code::SUCCEEDED;
+  do {
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      rc = rcPrepare_;
+      break;
+    }
+
+    if (rcCommit_ != Code::SUCCEEDED) {
+      rc = rcCommit_;
+      break;
+    }
+
+    // rcCommit_ may be set SUCCEEDED in abort().
+    // which we should return the error code or remote.
+    if (rcRemote_ != Code::E_RPC_FAILURE) {
+      rc = rcRemote_;
+      break;
+    }
+  } while (0);
   pushResultCode(rc, localPartId_);
   finished_.setValue(rc);
   onFinished();
