@@ -32,14 +32,25 @@ TEST(DatetimeReader, DateTime) {
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 22, 3, 233300), result.value());
   }
-  // TODO
   // lack month
-  // {
-  // auto parser = time::DatetimeReader::makeDateTimeReader();
-  // auto result = parser.readDatetime("2019T22:22:3.2333");
-  // ASSERT_TRUE(result.ok()) << result.status();
-  // EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 22, 3, 233300), result.value());
-  // }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019T22:22:3.2333");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 22, 3, 233300), result.value());
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019T22:22");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 22, 0, 0), result.value());
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019T22");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 0, 0, 0), result.value());
+  }
   // lack us
   {
     auto parser = time::DatetimeReader::makeDateTimeReader();
@@ -54,14 +65,32 @@ TEST(DatetimeReader, DateTime) {
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 22, 0, 0), result.value());
   }
-  // TODO
   // lack minute
-  // {
-  // auto parser = time::DatetimeReader::makeDateTimeReader();
-  // auto result = parser.readDatetime("2019-1T22");
-  // ASSERT_TRUE(result.ok()) << result.status();
-  // EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 0, 0, 0), result.value());
-  // }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019-1T22");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 22, 0, 0, 0), result.value());
+  }
+  // datetime just include date
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019-1-1");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 0, 0, 0, 0), result.value());
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019-1");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 0, 0, 0, 0), result.value());
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::DateTime(2019, 1, 1, 0, 0, 0, 0), result.value());
+  }
 }
 
 TEST(DatetimeReader, DateTimeFailed) {
@@ -144,14 +173,13 @@ TEST(DatetimeReader, Date) {
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::Date(2019, 1, 1), result.value());
   }
-  // TODO
   // lack month
-  // {
-  // auto parser = time::DatetimeReader::makeDateReader();
-  // auto result = parser.readDate("2019");
-  // ASSERT_TRUE(result.ok()) << result.status();
-  // EXPECT_EQ(nebula::Date(2019, 1, 1), result.value());
-  // }
+  {
+    auto parser = time::DatetimeReader::makeDateReader();
+    auto result = parser.readDate("2019");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::Date(2019, 1, 1), result.value());
+  }
 }
 
 TEST(DatetimeReader, DateFailed) {

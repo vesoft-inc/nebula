@@ -59,7 +59,7 @@ enum class Type {
 %token KW_TIME_ID
 
 /* symbols */
-%token TIME_DELIMITER SPACE POSITIVE NEGATIVE
+%token TIME_DELIMITER SPACE POSITIVE NEGATIVE DATETIMEPRFEIX DATEPRFEIX TIMEPRFEIX
 
 /* token type specification */
 %token <intVal> INTEGER
@@ -78,34 +78,43 @@ enum class Type {
 %%
 
 datetime
-  : date date_time_delimiter time opt_time_zone {
+  : DATETIMEPRFEIX date date_time_delimiter time opt_time_zone {
     if (outputType != nebula::time::Type::kDateTime) {
-      delete $1;
-      delete $3;
-      throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
+      delete $2;
+      delete $4;
+      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
     }
-    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$1, *$3), -$4));
+    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$2, *$4), -$5));
     *output = $$;
-    delete $1;
-    delete $3;
+    delete $2;
+    delete $4;
   }
-  | date {
+  | DATETIMEPRFEIX date {
+    if (outputType != nebula::time::Type::kDateTime) {
+      delete $2;
+      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
+    }
+    $$ = new DateTime(*$2);
+    *output = $$;
+    delete $2;
+  }
+  | DATEPRFEIX date {
     if (outputType != nebula::time::Type::kDate) {
-      delete $1;
-      throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
+      delete $2;
+      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
     }
-    $$ = new DateTime(*$1);
+    $$ = new DateTime(*$2);
     *output = $$;
-    delete $1;
+    delete $2;
   }
-  | time opt_time_zone {
+  | TIMEPRFEIX time opt_time_zone {
     if (outputType != nebula::time::Type::kTime) {
-      delete $1;
-      throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
+      delete $2;
+      throw DatetimeParser::syntax_error(@2, "Mismatched date time type.");
     }
-    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $1->hour, $1->minute, $1->sec, $1->microsec), -$2));
+    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), -$3));
     *output = $$;
-    delete $1;
+    delete $2;
   }
   ;
 
@@ -162,6 +171,14 @@ time
   }
   | INTEGER TIME_DELIMITER INTEGER {
     $$ = new nebula::Time($1, $3, 0, 0);
+    auto result = nebula::time::TimeUtils::validateTime(*$$);
+    if (!result.ok()) {
+      delete $$;
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
+  }
+  | INTEGER {
+    $$ = new nebula::Time($1, 0, 0, 0);
     auto result = nebula::time::TimeUtils::validateTime(*$$);
     if (!result.ok()) {
       delete $$;
