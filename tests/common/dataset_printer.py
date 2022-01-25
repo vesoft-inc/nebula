@@ -6,7 +6,7 @@ import re
 
 from typing import List, Union
 
-from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex
+from nebula3.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex
 
 Pattern = type(re.compile(r'\d+'))
 

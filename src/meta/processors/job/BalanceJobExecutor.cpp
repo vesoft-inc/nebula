@@ -88,6 +88,36 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::save(const std::string& k, const std
   return rc;
 }
 
+void BalanceJobExecutor::insertOneTask(
+    const BalanceTask& task, std::map<PartitionID, std::vector<BalanceTask>>* existTasks) {
+  std::vector<BalanceTask>& taskVec = existTasks->operator[](task.getPartId());
+  if (taskVec.empty()) {
+    taskVec.emplace_back(task);
+  } else {
+    for (auto it = taskVec.begin(); it != taskVec.end(); it++) {
+      if (task.getDstHost() == it->getSrcHost() && task.getSrcHost() == it->getDstHost()) {
+        taskVec.erase(it);
+        return;
+      } else if (task.getDstHost() == it->getSrcHost()) {
+        BalanceTask newTask(task);
+        newTask.setDstHost(it->getDstHost());
+        taskVec.erase(it);
+        insertOneTask(newTask, existTasks);
+        return;
+      } else if (task.getSrcHost() == it->getDstHost()) {
+        BalanceTask newTask(task);
+        newTask.setSrcHost(it->getSrcHost());
+        taskVec.erase(it);
+        insertOneTask(newTask, existTasks);
+        return;
+      } else {
+        continue;
+      }
+    }
+    taskVec.emplace_back(task);
+  }
+}
+
 nebula::cpp2::ErrorCode SpaceInfo::loadInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore) {
   spaceId_ = spaceId;
   std::string spaceKey = MetaKeyUtils::spaceKey(spaceId);

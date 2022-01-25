@@ -1558,6 +1558,15 @@ void mockSchemas(kvstore::KVStore* kv) {
   schemas.emplace_back(MetaKeyUtils::schemaEdgeKey(1, edgeType, ver),
                        MetaKeyUtils::schemaVal("test_edge", srcsch));
 
+  // space 2
+  schemas.emplace_back(MetaKeyUtils::indexTagKey(2, "test_tag"), tagIdVal);
+  schemas.emplace_back(MetaKeyUtils::schemaTagKey(2, tagId, ver),
+                       MetaKeyUtils::schemaVal("test_tag", srcsch));
+
+  schemas.emplace_back(MetaKeyUtils::indexEdgeKey(2, "test_edge"), edgeTypeVal);
+  schemas.emplace_back(MetaKeyUtils::schemaEdgeKey(2, edgeType, ver),
+                       MetaKeyUtils::schemaVal("test_edge", srcsch));
+
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
@@ -1570,6 +1579,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   fs::TempDir rootPath("/tmp/CreateFTIndexTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
+  TestUtils::assembleSpace(kv.get(), 2, 1, 1, 1, true);
   mockSchemas(kv.get());
   for (auto id : {5, 6}) {
     // expected error. column col_fixed_string_2 is fixed_string,
@@ -1627,7 +1637,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       } else {
         schemaId.edge_type_ref() = 6;
       }
-      index.space_id_ref() = 2;
+      index.space_id_ref() = 3;
       index.depend_schema_ref() = std::move(schemaId);
       index.fields_ref() = {"col_string"};
       req.fulltext_index_name_ref() = "test_ft_index";
@@ -1824,6 +1834,63 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND, resp.get_code());
+  }
+
+  // expected success
+  // Different spaces, the same tag name(same tagId), create full-text indexes with different names.
+  {
+    {
+      for (auto i = 0; i < 2; ++i) {
+        cpp2::CreateFTIndexReq req;
+        cpp2::FTIndex index;
+        nebula::cpp2::SchemaID schemaId;
+        schemaId.tag_id_ref() = 5;
+        index.space_id_ref() = i + 1;
+        index.depend_schema_ref() = std::move(schemaId);
+        index.fields_ref() = {"col_string", "col_fixed_string_1"};
+        req.fulltext_index_name_ref() = folly::stringPrintf("ft_tag_index_space%d", i + 1);
+        req.index_ref() = std::move(index);
+
+        auto* processor = CreateFTIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+      }
+    }
+    {
+      cpp2::ListFTIndexesReq req;
+      auto* processor = ListFTIndexesProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+      auto indexes = resp.get_indexes();
+      ASSERT_EQ(2, indexes.size());
+      for (auto i = 0u; i < indexes.size(); ++i) {
+        auto key = folly::stringPrintf("ft_tag_index_space%u", i + 1);
+        auto iter = indexes.find(key);
+        ASSERT_NE(indexes.end(), iter);
+        std::vector<std::string> fields = {"col_string", "col_fixed_string_1"};
+        ASSERT_EQ(fields, iter->second.get_fields());
+        ASSERT_EQ(i + 1, iter->second.get_space_id());
+        nebula::cpp2::SchemaID schemaId;
+        schemaId.tag_id_ref() = 5;
+        ASSERT_EQ(schemaId, iter->second.get_depend_schema());
+      }
+    }
+    {
+      for (auto i = 0; i < 2; ++i) {
+        cpp2::DropFTIndexReq req;
+        req.space_id_ref() = i + 1;
+        req.fulltext_index_name_ref() = folly::stringPrintf("ft_tag_index_space%d", i + 1);
+        auto* processor = DropFTIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+      }
+    }
   }
 }
 
@@ -2282,7 +2349,6 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     ASSERT_EQ(14, resp.get_id().get_index_id());
   }
 }
-
 }  // namespace meta
 }  // namespace nebula
 

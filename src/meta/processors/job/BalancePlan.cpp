@@ -8,7 +8,6 @@
 #include <folly/synchronization/Baton.h>
 
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
@@ -234,7 +233,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
         if (task.ret_ == BalanceTaskResult::FAILED || task.ret_ == BalanceTaskResult::INVALID) {
           task.ret_ = BalanceTaskResult::IN_PROGRESS;
         }
-        task.status_ = BalanceTaskStatus::START;
         auto activeHostRet = ActiveHostsMan::isLived(kv, task.dst_);
         if (!nebula::ok(activeHostRet)) {
           auto retCode = nebula::error(activeHostRet);

@@ -15,14 +15,16 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "graph/context/ast/CypherAstContext.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "graph/visitor/FindVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 
+DECLARE_int32(max_expression_depth);
+
 namespace nebula {
 class ObjectPool;
 namespace graph {
-
 class ExpressionUtils {
  public:
   explicit ExpressionUtils(...) = delete;
@@ -55,7 +57,8 @@ class ExpressionUtils {
 
   static bool isEvaluableExpr(const Expression* expr, const QueryContext* qctx = nullptr);
 
-  static Expression* rewriteAttr2LabelTagProp(const Expression* expr);
+  static Expression* rewriteAttr2LabelTagProp(
+      const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
@@ -166,8 +169,6 @@ class ExpressionUtils {
   static bool isGeoIndexAcceleratedPredicate(const Expression* expr);
 
   static bool checkExprDepth(const Expression* expr);
-
-  static constexpr int32_t kMaxDepth = 512;
 };
 
 }  // namespace graph
