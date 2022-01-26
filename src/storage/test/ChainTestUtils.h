@@ -19,7 +19,8 @@ extern const int32_t mockSpaceVidLen;
 
 using KeyGenerator = std::function<std::string(PartitionID partId, const cpp2::NewEdge& edge)>;
 
-struct TransactionManagerTester {
+class TransactionManagerTester {
+ public:
   explicit TransactionManagerTester(TransactionManager* p) : man_(p) {}
 
   void stop() {
