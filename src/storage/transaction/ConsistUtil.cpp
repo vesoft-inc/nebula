@@ -12,50 +12,54 @@
 #include "common/utils/NebulaKeyUtils.h"
 namespace nebula {
 namespace storage {
-
-static const std::string kPrimeTable{"__prime__"};              // NOLINT
-static const std::string kDoublePrimeTable{"__prime_prime__"};  // NOLINT
-
-std::string ConsistUtil::primeTable() {
-  return kPrimeTable;
+std::string ConsistUtil::primeTable(PartitionID partId) {
+  auto item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kPrime);
+  std::string key;
+  key.reserve(sizeof(PartitionID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+  return key;
 }
 
-std::string ConsistUtil::doublePrimeTable() {
-  return kDoublePrimeTable;
+std::string ConsistUtil::doublePrimeTable(PartitionID partId) {
+  auto item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kDoublePrime);
+  std::string key;
+  key.reserve(sizeof(PartitionID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+  return key;
 }
 
 std::string ConsistUtil::primePrefix(PartitionID partId) {
-  return kPrimeTable + NebulaKeyUtils::edgePrefix(partId);
+  return primeTable(partId) + NebulaKeyUtils::edgePrefix(partId);
 }
 
 std::string ConsistUtil::doublePrimePrefix(PartitionID partId) {
-  return kDoublePrimeTable + NebulaKeyUtils::edgePrefix(partId);
+  return doublePrimeTable(partId) + NebulaKeyUtils::edgePrefix(partId);
 }
 
 std::string ConsistUtil::primeKey(size_t vIdLen, PartitionID partId, const cpp2::EdgeKey& edgeKey) {
-  return kPrimeTable + NebulaKeyUtils::edgeKey(vIdLen,
-                                               partId,
-                                               edgeKey.get_src().getStr(),
-                                               edgeKey.get_edge_type(),
-                                               edgeKey.get_ranking(),
-                                               edgeKey.get_dst().getStr());
+  return primeTable(partId) + NebulaKeyUtils::edgeKey(vIdLen,
+                                                      partId,
+                                                      edgeKey.get_src().getStr(),
+                                                      edgeKey.get_edge_type(),
+                                                      edgeKey.get_ranking(),
+                                                      edgeKey.get_dst().getStr());
 }
 
 folly::StringPiece ConsistUtil::edgeKeyFromPrime(const folly::StringPiece& key) {
-  return folly::StringPiece(key.begin() + kPrimeTable.size(), key.end());
+  return folly::StringPiece(key.begin() + sizeof(PartitionID), key.end());
 }
 
 folly::StringPiece ConsistUtil::edgeKeyFromDoublePrime(const folly::StringPiece& key) {
-  return folly::StringPiece(key.begin() + kDoublePrimeTable.size(), key.end());
+  return folly::StringPiece(key.begin() + sizeof(PartitionID), key.end());
 }
 
 std::string ConsistUtil::doublePrime(size_t vIdLen, PartitionID partId, const cpp2::EdgeKey& key) {
-  return kDoublePrimeTable + NebulaKeyUtils::edgeKey(vIdLen,
-                                                     partId,
-                                                     key.get_src().getStr(),
-                                                     key.get_edge_type(),
-                                                     key.get_ranking(),
-                                                     key.get_dst().getStr());
+  return doublePrimeTable(partId) + NebulaKeyUtils::edgeKey(vIdLen,
+                                                            partId,
+                                                            key.get_src().getStr(),
+                                                            key.get_edge_type(),
+                                                            key.get_ranking(),
+                                                            key.get_dst().getStr());
 }
 
 RequestType ConsistUtil::parseType(folly::StringPiece val) {
@@ -123,7 +127,6 @@ void ConsistUtil::reverseEdgeKeyInplace(cpp2::EdgeKey& edgeKey) {
 }
 
 int64_t ConsistUtil::toInt(const ::nebula::Value& val) {
-  // return ConsistUtil::toInt2(val.toString());
   auto str = val.toString();
   if (str.size() < 3) {
     return 0;
@@ -131,19 +134,19 @@ int64_t ConsistUtil::toInt(const ::nebula::Value& val) {
   return *reinterpret_cast<int64*>(const_cast<char*>(str.data() + 1));
 }
 
-int64_t ConsistUtil::toInt2(const std::string& str) {
-  if (str.size() < 8) {
-    return 0;
-  }
-  return *reinterpret_cast<int64*>(const_cast<char*>(str.data()));
-}
-
-std::string ConsistUtil::readableKey(size_t vidLen, const std::string& rawKey) {
+std::string ConsistUtil::readableKey(size_t vidLen, bool isIntVid, const std::string& rawKey) {
   auto src = NebulaKeyUtils::getSrcId(vidLen, rawKey);
   auto dst = NebulaKeyUtils::getDstId(vidLen, rawKey);
   auto rank = NebulaKeyUtils::getRank(vidLen, rawKey);
   std::stringstream ss;
-  ss << ConsistUtil::toInt2(src.str()) << "->" << ConsistUtil::toInt2(dst.str()) << "@" << rank;
+  ss << std::boolalpha << "isIntVid=" << isIntVid << ", ";
+  if (isIntVid) {
+    ss << *reinterpret_cast<int64*>(const_cast<char*>(src.begin())) << "--"
+       << *reinterpret_cast<int64*>(const_cast<char*>(dst.begin()));
+  } else {
+    ss << src.str() << "--" << dst.str();
+  }
+  ss << "@" << rank;
   return ss.str();
 }
 
@@ -181,12 +184,14 @@ cpp2::DeleteEdgesRequest DeleteEdgesRequestHelper::parseDeleteEdgesRequest(const
   return req;
 }
 
-std::string DeleteEdgesRequestHelper::explain(const cpp2::DeleteEdgesRequest& req) {
+std::string DeleteEdgesRequestHelper::explain(const cpp2::DeleteEdgesRequest& req, bool isIntVid) {
   std::stringstream oss;
   for (auto& partOfKeys : req.get_parts()) {
     for (auto& key : partOfKeys.second) {
-      oss << ConsistUtil::toInt(key.get_src()) << "->" << ConsistUtil::toInt(key.get_dst()) << "@"
-          << key.get_ranking() << ", ";
+      if (isIntVid) {
+        oss << ConsistUtil::toInt(key.get_src()) << "->" << ConsistUtil::toInt(key.get_dst()) << "@"
+            << key.get_ranking() << ", ";
+      }
     }
   }
   return oss.str();

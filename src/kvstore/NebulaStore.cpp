@@ -584,7 +584,8 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
   }
   auto part = nebula::value(ret);
   if (!checkLeader(part, canReadFromFollower)) {
-    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+    return part->isLeader() ? nebula::cpp2::ErrorCode::E_LEADER_LEASE_FAILED
+                            : nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   return part->engine()->get(key, value);
 }
