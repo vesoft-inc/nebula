@@ -137,10 +137,9 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     ret = hostExist(hostKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "The host " << host << " not existed!";
-      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
-      break;
+    } else {
+      holder->remove(std::move(hostKey));
     }
-    holder->remove(std::move(hostKey));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
