@@ -13,10 +13,10 @@ import time
 import yaml
 from typing import Pattern
 
-from nebula2.Config import Config, SSL_config
-from nebula2.common import ttypes as CommonTtypes
-from nebula2.gclient.net import Session
-from nebula2.gclient.net import ConnectionPool
+from nebula3.Config import Config, SSL_config
+from nebula3.common import ttypes as CommonTtypes
+from nebula3.gclient.net import Session
+from nebula3.gclient.net import ConnectionPool
 
 from tests.common.constants import NB_TMP_PATH, NEBULA_HOME
 from tests.common.csv_import import CSVImporter

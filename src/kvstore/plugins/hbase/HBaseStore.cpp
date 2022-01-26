@@ -292,9 +292,11 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& prefix,
                               std::unique_ptr<KVIterator>* iter,
-                              bool canReadFromFollower) {
+                              bool canReadFromFollower,
+                              const void* snapshot) {
   UNUSED(partId);
   UNUSED(canReadFromFollower);
+  UNUSED(snapshot);
   return this->prefix(spaceId, prefix, iter);
 }
 

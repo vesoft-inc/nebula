@@ -148,6 +148,17 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tony Parker"})
+      WITH v AS a
+      MATCH p=(o:player{name:"Tim Duncan"})-[]->(a)
+      RETURN o.player.name
+      """
+    Then the result should be, in order:
+      | o.player.name |
+      | "Tim Duncan"  |
+      | "Tim Duncan"  |
 
   Scenario: Optional Match
     When executing query:

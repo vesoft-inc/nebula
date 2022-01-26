@@ -13,10 +13,10 @@ namespace meta {
 void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto edgeName = req.get_edge_name();
+  const auto& edgeName = req.get_edge_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
   auto ret = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);

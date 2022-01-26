@@ -11,6 +11,10 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
+  if (sentence_->getCmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
+      sentence_->getCmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
+    return Status::SemanticError("Data balance not support");
+  }
   if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
