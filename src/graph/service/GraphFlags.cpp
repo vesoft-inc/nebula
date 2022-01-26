@@ -84,3 +84,4 @@ static bool ValidateSessIdleTimeout(const char* flagname, int32_t value) {
   return false;
 }
 DEFINE_validator(session_idle_timeout_secs, &ValidateSessIdleTimeout);
+DEFINE_validator(client_idle_timeout_secs, &ValidateSessIdleTimeout);
