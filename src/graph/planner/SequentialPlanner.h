@@ -27,6 +27,8 @@ class SequentialPlanner final : public Planner {
 
   void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
 
+  void rmLeftTailStartNode(PlanNode* root, PlanNode* tail, Sentence::Kind appendPlanKind);
+
  private:
   SequentialPlanner() = default;
 };

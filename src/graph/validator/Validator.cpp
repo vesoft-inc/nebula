@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/function/FunctionManager.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -300,7 +301,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
 
-  if (appended->kind() != PlanNode::Kind::kSwitchSpace && !node->isSingleInput()) {
+  if (!node->isSingleInput()) {
     return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
@@ -310,26 +311,6 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
 
 Status Validator::appendPlan(PlanNode* root) {
   return appendPlan(tail_, root);
-}
-
-// When appending plans, it need to remove left tail plannode.
-// Because the left tail plannode is StartNode that need to remove it,
-// and remain one size for add dependency
-void Validator::rmLeftTailStartNode(Sentence::Kind appendPlanKind) {
-  if (appendPlanKind != Sentence::Kind::kUse || sentence_->kind() == Sentence::Kind::kMatch ||
-      tail_->kind() != PlanNode::Kind::kStart || root_->dependencies().size() == 0UL) {
-    return;
-  }
-
-  PlanNode* node = root_;
-  while (node->dependencies()[0]->dependencies().size() > 0UL) {
-    node = const_cast<PlanNode*>(node->dependencies()[0]);
-  }
-  if (node->dependencies().size() == 1UL) {
-    // Remain one size for add dependency
-    node->dependencies()[0] = nullptr;
-    tail_ = node;
-  }
 }
 
 Status Validator::validate() {

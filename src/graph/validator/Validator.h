@@ -112,8 +112,6 @@ class Validator {
     return sentence_;
   }
 
-  void rmLeftTailStartNode(Sentence::Kind appendPlanKind);
-
  protected:
   Validator(Sentence* sentence, QueryContext* qctx);
 
