@@ -16,10 +16,10 @@ namespace storage {
  *  if the TxnManager background resume thread found a prime key
  *  it will create this processor to resume the complete update process
  */
-class ResumeUpdateProcessor : public ChainUpdateEdgeLocalProcessor {
+class ChainResumeUpdatePrimeProcessor : public ChainUpdateEdgeLocalProcessor {
  public:
-  static ResumeUpdateProcessor* instance(StorageEnv* env, const std::string& val) {
-    return new ResumeUpdateProcessor(env, val);
+  static ChainResumeUpdatePrimeProcessor* instance(StorageEnv* env, const std::string& val) {
+    return new ChainResumeUpdatePrimeProcessor(env, val);
   }
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> prepareLocal() override;
@@ -28,12 +28,10 @@ class ResumeUpdateProcessor : public ChainUpdateEdgeLocalProcessor {
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> processLocal(nebula::cpp2::ErrorCode code) override;
 
-  void finish() override;
-
-  virtual ~ResumeUpdateProcessor() = default;
+  virtual ~ChainResumeUpdatePrimeProcessor() = default;
 
  protected:
-  ResumeUpdateProcessor(StorageEnv* env, const std::string& val);
+  ChainResumeUpdatePrimeProcessor(StorageEnv* env, const std::string& val);
 
   bool lockEdge();
 };

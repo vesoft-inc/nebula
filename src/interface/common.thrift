@@ -497,6 +497,7 @@ enum ErrorCode {
     E_RAFT_WRITE_BLOCKED              = -3528,
     E_RAFT_BUFFER_OVERFLOW            = -3529,
     E_RAFT_ATOMIC_OP_FAILED           = -3530,
+    E_LEADER_LEASE_FAILED             = -3531,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

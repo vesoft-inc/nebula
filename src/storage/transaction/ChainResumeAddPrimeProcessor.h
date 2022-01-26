@@ -11,11 +11,13 @@
 namespace nebula {
 namespace storage {
 
-class ResumeAddEdgeRemoteProcessor : public ChainAddEdgesLocalProcessor {
+class ChainResumeAddPrimeProcessor : public ChainAddEdgesLocalProcessor {
  public:
-  static ResumeAddEdgeRemoteProcessor* instance(StorageEnv* env, const std::string& val) {
-    return new ResumeAddEdgeRemoteProcessor(env, val);
+  static ChainResumeAddPrimeProcessor* instance(StorageEnv* env, const std::string& val) {
+    return new ChainResumeAddPrimeProcessor(env, val);
   }
+
+  virtual ~ChainResumeAddPrimeProcessor() = default;
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> prepareLocal() override;
 
@@ -23,10 +25,8 @@ class ResumeAddEdgeRemoteProcessor : public ChainAddEdgesLocalProcessor {
 
   folly::SemiFuture<nebula::cpp2::ErrorCode> processLocal(nebula::cpp2::ErrorCode code) override;
 
-  virtual ~ResumeAddEdgeRemoteProcessor() = default;
-
  protected:
-  ResumeAddEdgeRemoteProcessor(StorageEnv* env, const std::string& val);
+  ChainResumeAddPrimeProcessor(StorageEnv* env, const std::string& val);
 };
 
 }  // namespace storage

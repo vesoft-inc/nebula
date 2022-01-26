@@ -98,13 +98,18 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
 
   void eraseDoublePrime();
 
-  folly::SemiFuture<Code> forwardToDelegateProcessor();
+  /**
+   * @brief will call normal AddEdgesProcess to do real insert.
+   *
+   * @return folly::SemiFuture<Code>
+   */
+  folly::SemiFuture<Code> commit();
 
   /// if any operation failed or can not determined(RPC error)
   /// call this to leave a record in transaction manager
   /// the record can be scanned by the background resume thread
   /// then will do fail over logic
-  void addUnfinishedEdge(ResumeType type);
+  void reportFailed(ResumeType type);
 
   /*** consider the following case:
    *
@@ -120,36 +125,42 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
    * */
   void replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req);
 
-  std::string makeReadableEdge(const cpp2::AddEdgesRequest& req);
+  /**
+   * @brief check is an error code belongs to kv store
+   *        we can do retry / recover if we meet a kv store error
+   *        but if we meet a logical error (retry will alwasy failed)
+   *        we should return error directly.
+   * @param code
+   * @return true
+   * @return false
+   */
+  bool isKVStoreError(Code code);
 
-  int64_t toInt(const ::nebula::Value& val);
+  std::string makeReadableEdge(const cpp2::AddEdgesRequest& req);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID localPartId_;
   PartitionID remotePartId_;
   cpp2::AddEdgesRequest req_;
+  TransactionManager::SPtrLock lkCore_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
-  // term at prepareLocal, not allowed to change during execution
-  TermID term_{-1};
-
-  // set to true when prime insert succeed
-  // in processLocal(), we check this to determine if need to do abort()
-  bool primeInserted_{false};
 
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
   folly::Optional<int64_t> edgeVer_{folly::none};
-  int64_t resumedEdgeVer_{-1};
 
-  // for debug / trace purpose
+  // for trace purpose
   std::string uuid_;
+
+  // as we print all description in finish(),
+  // we can log execution clue in this
+  std::string execDesc_;
 
   // for debug, edge "100"->"101" will print like 2231303022->2231303122
   // which is hard to recognize. Transform to human readable format
   std::string readableEdgeDesc_;
-  nebula::cpp2::PropertyType spaceVidType_{nebula::cpp2::PropertyType::UNKNOWN};
 };
 
 }  // namespace storage

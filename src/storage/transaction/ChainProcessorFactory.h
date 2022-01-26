@@ -15,7 +15,15 @@ namespace storage {
 
 class ChainProcessorFactory {
  public:
-  static ChainBaseProcessor* makeProcessor(StorageEnv* env, const ResumeOptions& options);
+  static ChainBaseProcessor* makeProcessor(StorageEnv* env,
+                                           TermID termId,
+                                           const ResumeOptions& options);
+
+  static ChainBaseProcessor* make(StorageEnv* env,
+                                  GraphSpaceID spaceId,
+                                  TermID termId,
+                                  const std::string& edgeKey,
+                                  ResumeType type);
 };
 
 }  // namespace storage
