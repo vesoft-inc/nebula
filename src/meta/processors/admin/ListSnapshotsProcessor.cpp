@@ -15,7 +15,7 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Snapshot prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Snapshot prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

@@ -237,6 +237,18 @@ void RewriteVisitor::visit(PathBuildExpression *expr) {
   }
 }
 
+void RewriteVisitor::visit(LabelTagPropertyExpression *expr) {
+  if (!care(expr->kind())) {
+    return;
+  }
+  auto label = expr->label();
+  if (matcher_(label)) {
+    expr->setLabel(rewriter_(label));
+  } else {
+    label->accept(this);
+  }
+}
+
 void RewriteVisitor::visit(AttributeExpression *expr) {
   if (!care(expr->kind())) {
     return;

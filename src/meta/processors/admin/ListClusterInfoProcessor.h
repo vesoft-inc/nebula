@@ -12,6 +12,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get cluster topology, grouping all the cluster service(metad/storaged/graphd/agent)
+ *        by hostname(or ip).
+ *        Now it is only used in BR tools.
+ */
 class ListClusterInfoProcessor : public BaseProcessor<cpp2::ListClusterInfoResp> {
  public:
   static ListClusterInfoProcessor* instance(kvstore::KVStore* kvstore) {

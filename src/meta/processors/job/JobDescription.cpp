@@ -10,8 +10,8 @@
 #include <boost/stacktrace.hpp>
 #include <stdexcept>
 
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVIterator.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/job/JobUtils.h"
 

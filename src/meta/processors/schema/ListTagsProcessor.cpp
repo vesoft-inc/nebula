@@ -12,7 +12,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::schemaTagsPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {

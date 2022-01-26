@@ -10,7 +10,6 @@
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/BalanceJobExecutor.h"

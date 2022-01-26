@@ -35,12 +35,6 @@
 #include "meta/processors/job/ListEdgeIndexStatusProcessor.h"
 #include "meta/processors/job/ListTagIndexStatusProcessor.h"
 #include "meta/processors/job/ReportTaskProcessor.h"
-#include "meta/processors/kv/GetProcessor.h"
-#include "meta/processors/kv/MultiGetProcessor.h"
-#include "meta/processors/kv/MultiPutProcessor.h"
-#include "meta/processors/kv/RemoveProcessor.h"
-#include "meta/processors/kv/RemoveRangeProcessor.h"
-#include "meta/processors/kv/ScanProcessor.h"
 #include "meta/processors/listener/ListenerProcessor.h"
 #include "meta/processors/parts/AlterSpaceProcessor.h"
 #include "meta/processors/parts/CreateSpaceAsProcessor.h"
@@ -154,38 +148,6 @@ folly::Future<cpp2::ListPartsResp> MetaServiceHandler::future_listParts(
 folly::Future<cpp2::GetPartsAllocResp> MetaServiceHandler::future_getPartsAlloc(
     const cpp2::GetPartsAllocReq& req) {
   auto* processor = GetPartsAllocProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_multiPut(const cpp2::MultiPutReq& req) {
-  auto* processor = MultiPutProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::GetResp> MetaServiceHandler::future_get(const cpp2::GetReq& req) {
-  auto* processor = GetProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::MultiGetResp> MetaServiceHandler::future_multiGet(
-    const cpp2::MultiGetReq& req) {
-  auto* processor = MultiGetProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ScanResp> MetaServiceHandler::future_scan(const cpp2::ScanReq& req) {
-  auto* processor = ScanProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_remove(const cpp2::RemoveReq& req) {
-  auto* processor = RemoveProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeRange(
-    const cpp2::RemoveRangeReq& req) {
-  auto* processor = RemoveRangeProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
