@@ -124,6 +124,16 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     status = rocksdb::DB::Open(options, path, &db);
   }
   CHECK(status.ok()) << status.ToString();
+  if (!readonly && spaceId_ != 0 /* only for storage*/) {
+    rocksdb::ReadOptions readOptions;
+    std::string dataVersionValue = "";
+    status = db->Get(readOptions, NebulaKeyUtils::dataVersionKey(), &dataVersionValue);
+    if (status.IsNotFound()) {
+      rocksdb::WriteOptions writeOptions;
+      status = db->Put(writeOptions, NebulaKeyUtils::dataVersionKey(), "3.0");
+    }
+    CHECK(status.ok()) << status.ToString();
+  }
   db_.reset(db);
   extractorLen_ = sizeof(PartitionID) + vIdLen;
   partsNum_ = allParts().size();
