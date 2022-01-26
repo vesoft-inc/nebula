@@ -38,6 +38,9 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
   folly::Executor* executor_{nullptr};
   std::unique_ptr<PlanContext> planContext_;
   std::unique_ptr<RuntimeContext> context_;
+  /**
+   * @brief the final output
+   */
   nebula::DataSet resultDataSet_;
   std::vector<nebula::DataSet> partResults_;
 };
