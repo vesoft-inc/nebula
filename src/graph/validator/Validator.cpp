@@ -312,6 +312,18 @@ Status Validator::appendPlan(PlanNode* root) {
   return appendPlan(tail_, root);
 }
 
+void Validator::rmLeftTailStartNode() {
+  PlanNode* node = root_;
+  if (node->dependencies().size() == 0UL) return;
+
+  while (node->dependencies()[0]->dependencies().size() > 0UL) {
+    node = const_cast<PlanNode*>(node->dependencies()[0]);
+  }
+  if (node->dependencies().size() == 1UL) {
+    node->dependencies().clear();
+  }
+}
+
 Status Validator::validate() {
   if (!vctx_) {
     VLOG(1) << "Validate context was not given.";

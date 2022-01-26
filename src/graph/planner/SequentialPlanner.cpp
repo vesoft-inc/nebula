@@ -24,6 +24,9 @@ StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
   subPlan.root = validators.back()->root();
   ifBuildDataCollect(subPlan, qctx);
   for (auto iter = validators.begin(); iter < validators.end() - 1; ++iter) {
+    if ((iter + 1)->get()->tail()->kind() == PlanNode::Kind::kStart) {
+      (iter + 1)->get()->rmLeftTailStartNode();
+    }
     NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
   }
   if (validators.front()->tail()->isSingleInput()) {
