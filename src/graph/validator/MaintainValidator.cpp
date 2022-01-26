@@ -570,7 +570,7 @@ Status ListZonesValidator::toPlan() {
 }
 
 Status AddHostsIntoZoneValidator::validateImpl() {
-  return Status::OK();
+  return Status::SemanticError("Add hosts into zone is unsupported");
 }
 
 Status AddHostsIntoZoneValidator::toPlan() {
