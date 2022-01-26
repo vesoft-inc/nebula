@@ -207,7 +207,7 @@ class FakeChainAddEdgesLocalProcessor : public ChainAddEdgesLocalProcessor {
     rcCommit_ = rc;
   }
 
-  void finish() {
+  void finish() override {
     auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
     pushResultCode(rc, localPartId_);
     finished_.setValue(rc);
