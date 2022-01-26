@@ -6,6 +6,7 @@ Feature: Test sessions
   Background:
     Given a nebulacluster with 3 graphd and 1 metad and 1 storaged
 
+  @distonly
   Scenario: Show sessions
     When executing query:
       """
@@ -32,6 +33,7 @@ Feature: Test sessions
       | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
       | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
 
+  @distonly
   Scenario: Show local sessions
     When executing query:
       """
