@@ -10,39 +10,37 @@
 void printHelp() {
   fprintf(
       stderr,
-      R"(  ./db_upgrade --src_db_path=<path to rocksdb> --dst_db_path=<path to rocksdb> --upgrade_meta_server=<ip:port,...> --upgrade_version=<1|2>
+      R"(  ./db_upgrade --src_db_path=<path to rocksdb> --dst_db_path=<path to rocksdb> --upgrade_meta_server=<ip:port,...> --upgrade_version=2:3
 
 desc:
-        This tool is used to upgrade data from nebula 1.x or the previous versions of nebula 2.0 RC
-        to nebula 2.0 GA version.
+        This tool is used to upgrade data from nebula 2.0GA to 3.0
 
 required:
        --src_db_path=<path to rocksdb>
-         Source data path(data_path in storage 1.x conf) to the rocksdb data directory.
+         Source data path to the rocksdb data directory.
          This is an absolute path, multi paths should be split by comma.
-         If nebula 1.x was installed in /usr/local/nebula,
+         If old nebula was installed in /usr/local/nebula,
          the db_path would be /usr/local/nebula/data/storage
          Default: ""
 
        --dst_db_path=<path to rocksdb>
-         Destination data path(data_path in storage 2.0 conf) to the rocksdb data directory.
+         Destination data path to the rocksdb data directory.
          This is an absolute path, multi paths should be split by comma.
-         If nebula 2.0 was installed in /usr/local/nebulav2,
-         the db_path would be /usr/local/nebulav2/data/storage
+         If new nebula was installed in /usr/local/nebula_new,
+         the db_path would be /usr/local/nebulav_new/data/storage
          Default: ""
 
          note:
          The number of paths in src_db_path is equal to the number of paths in dst_db_path, and
          src_db_path and dst_db_path must be different.
+         For 2.0GA to 3.0, dst_db_path is useless.
 
        --upgrade_meta_server=<ip:port,...>
          A list of meta severs' ip:port separated by comma.
          Default: 127.0.0.1:45500
 
-       --upgrade_version=<1:2|2RC:2|2:3>
-         This tool can only upgrade 1.x data, 2.0 RC, or 2.0 GA data.
-         1:2        upgrade the data from 1.x to 2.0GA
-         2RC:2      upgrade the data from 2.0RC to 2.0GA
+       --upgrade_version=<2:3>
+         This tool can only upgrade 2.0GA.
          2:3        upgrade the data from 2.0GA to 3.0
          Default: ""
 
@@ -165,7 +163,7 @@ int main(int argc, char* argv[]) {
   CHECK_NOTNULL(schemaMan);
   CHECK_NOTNULL(indexMan);
 
-  std::vector<std::string> versions = {"1:2", "2RC:2", "2:3"};
+  std::vector<std::string> versions = {"2:3"};
   if (std::find(versions.begin(), versions.end(), FLAGS_upgrade_version) == versions.end()) {
     LOG(ERROR) << "Flag upgrade_version : " << FLAGS_upgrade_version;
     return EXIT_FAILURE;

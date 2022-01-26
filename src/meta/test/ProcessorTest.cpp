@@ -319,8 +319,33 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv.get(), hosts);
+    // Attempt to register heartbeat
+    const ClusterID kClusterId = 10;
+    for (auto i = 0; i < 4; i++) {
+      cpp2::HBReq req;
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr(std::to_string(i), i);
+      req.cluster_id_ref() = kClusterId;
+      auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+  }
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto zones = resp.get_zones();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("default_zone_0_0", zones[0].get_zone_name());
+    ASSERT_EQ("default_zone_1_1", zones[1].get_zone_name());
+    ASSERT_EQ("default_zone_2_2", zones[2].get_zone_name());
+    ASSERT_EQ("default_zone_3_3", zones[3].get_zone_name());
   }
   int32_t hostsNum = 4;
   {
@@ -472,6 +497,31 @@ TEST(ProcessorTest, SpaceTest) {
     dprocessor->process(dreq);
     auto dresp = std::move(df).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, dresp.get_code());
+  }
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"4", 4}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 8;
+    properties.replica_factor_ref() = 5;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH, resp.get_code());
   }
 }
 
@@ -2569,7 +2619,6 @@ TEST(ProcessorTest, HostsTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -2610,7 +2659,6 @@ TEST(ProcessorTest, HostsTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -2749,7 +2797,6 @@ TEST(ProcessorTest, HostsTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -2770,7 +2817,6 @@ TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -2824,7 +2870,6 @@ TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -2871,7 +2916,6 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -3028,7 +3072,6 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -3049,7 +3092,6 @@ TEST(ProcessorTest, DropHostsTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -3080,7 +3122,6 @@ TEST(ProcessorTest, DropHostsTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -3446,7 +3487,6 @@ TEST(ProcessorTest, RenameZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;
@@ -3568,7 +3608,6 @@ TEST(ProcessorTest, MergeZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8986; i < 8990; i++) {
       cpp2::HBReq req;
-      req.role_ref() = cpp2::HostRole::STORAGE;
       req.host_ref() = HostAddr("127.0.0.1", i);
       req.cluster_id_ref() = kClusterId;
       req.role_ref() = cpp2::HostRole::STORAGE;

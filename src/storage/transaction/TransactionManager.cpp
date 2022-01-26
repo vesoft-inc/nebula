@@ -12,47 +12,106 @@
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
-#include "storage/transaction/ChainResumeProcessor.h"
+#include "storage/transaction/ChainProcessorFactory.h"
 
 namespace nebula {
 namespace storage {
 
 DEFINE_int32(resume_interval_secs, 10, "Resume interval");
-
-ProcessorCounters kForwardTranxCounters;
+DEFINE_int32(toss_worker_num, 16, "Resume interval");
 
 TransactionManager::TransactionManager(StorageEnv* env) : env_(env) {
   LOG(INFO) << "TransactionManager ctor()";
-  exec_ = std::make_shared<folly::IOThreadPoolExecutor>(10);
-  iClient_ = env_->interClient_;
-  resumeThread_ = std::make_unique<thread::GenericWorker>();
+  exec_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_toss_worker_num);
+}
+
+bool TransactionManager::start() {
   std::vector<std::pair<GraphSpaceID, PartitionID>> existParts;
   auto fn = std::bind(&TransactionManager::onNewPartAdded, this, std::placeholders::_1);
   static_cast<::nebula::kvstore::NebulaStore*>(env_->kvstore_)
       ->registerOnNewPartAdded("TransactionManager", fn, existParts);
-  for (auto& partOfSpace : existParts) {
-    scanPrimes(partOfSpace.first, partOfSpace.second);
+  for (auto&& [spaceId, partId] : existParts) {
+    auto [termId, rc] = getTermFromKVStore(spaceId, partId);
+    if (rc != Code::SUCCEEDED) {
+      continue;
+    }
+    scanPrimes(spaceId, partId, termId);
+  }
+  return true;
+}
+
+void TransactionManager::monitorPoolStat(folly::ThreadPoolExecutor* pool, const std::string& msg) {
+  monPoolStats_.emplace_back(std::make_pair(pool, msg));
+}
+
+void TransactionManager::bgPrintPoolStat() {
+  while (!stop_) {
+    for (auto&& [pool, msg] : monPoolStats_) {
+      VLOG(1) << dumpPoolStat(pool, msg);
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(20));
   }
 }
 
-TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID spaceId,
-                                                              GraphSpaceID partId,
-                                                              bool checkWhiteList) {
+std::string TransactionManager::dumpPoolStat(folly::ThreadPoolExecutor* exec,
+                                             const std::string& msg) {
+  auto stats = exec->getPoolStats();
+  std::stringstream oss;
+  oss << "\npoolStats: " << msg << "\n\t threadCount = " << stats.threadCount
+      << "\n\t idleThreadCount = " << stats.idleThreadCount
+      << "\n\t activeThreadCount = " << stats.activeThreadCount
+      << "\n\t pendingTaskCount = " << stats.pendingTaskCount
+      << "\n\t totalTaskCount = " << stats.totalTaskCount << "\n";
+  return oss.str();
+}
+
+void TransactionManager::stop() {
+  LOG(INFO) << "TransactionManager stop()";
+  stop_ = true;
+}
+
+void TransactionManager::join() {
+  LOG(INFO) << "TransactionManager join()";
+  exec_->stop();
+}
+
+void TransactionManager::addChainTask(ChainBaseProcessor* proc) {
+  if (stop_) {
+    return;
+  }
+  folly::via(exec_.get())
+      .thenValue([=](auto&&) { return proc->prepareLocal(); })
+      .thenValue([=](auto&& code) { return proc->processRemote(code); })
+      .thenValue([=](auto&& code) { return proc->processLocal(code); })
+      .ensure([=]() { proc->finish(); });
+}
+
+TransactionManager::SPtrLock TransactionManager::getLockCore(GraphSpaceID spaceId,
+                                                             GraphSpaceID partId,
+                                                             TermID termId,
+                                                             bool checkWhiteList) {
   if (checkWhiteList) {
-    if (scannedParts_.find(std::make_pair(spaceId, partId)) == scannedParts_.end()) {
+    auto currTermKey = std::make_pair(spaceId, partId);
+    auto it = currTerm_.find(currTermKey);
+    if (it == currTerm_.end()) {
+      return nullptr;
+    }
+    if (it->second != termId) {
       return nullptr;
     }
   }
-  auto it = memLocks_.find(spaceId);
+  MemLockKey key = std::make_tuple(spaceId, partId, termId);
+  auto it = memLocks_.find(key);
   if (it != memLocks_.end()) {
-    return it->second.get();
+    return it->second;
   }
 
-  auto item = memLocks_.insert(spaceId, std::make_unique<LockCore>());
-  return item.first->second.get();
+  auto item = memLocks_.insert(key, std::make_shared<LockCore>());
+  return item.first->second;
 }
 
-std::pair<TermID, Code> TransactionManager::getTerm(GraphSpaceID spaceId, PartitionID partId) {
+std::pair<TermID, Code> TransactionManager::getTermFromKVStore(GraphSpaceID spaceId,
+                                                               PartitionID partId) {
   TermID termId = -1;
   auto rc = Code::SUCCEEDED;
   auto part = env_->kvstore_->part(spaceId, partId);
@@ -67,13 +126,13 @@ std::pair<TermID, Code> TransactionManager::getTerm(GraphSpaceID spaceId, Partit
 bool TransactionManager::checkTermFromCache(GraphSpaceID spaceId,
                                             PartitionID partId,
                                             TermID termId) {
-  auto termOfMeta = env_->metaClient_->getTermFromCache(spaceId, partId);
-  if (termOfMeta.ok()) {
-    if (termId < termOfMeta.value()) {
+  auto termFromMeta = env_->metaClient_->getTermFromCache(spaceId, partId);
+  if (termFromMeta.ok()) {
+    if (termId < termFromMeta.value()) {
       LOG(WARNING) << "checkTerm() failed: "
                    << "spaceId=" << spaceId << ", partId=" << partId
                    << ", in-coming term=" << termId
-                   << ", term in meta cache=" << termOfMeta.value();
+                   << ", term in meta cache=" << termFromMeta.value();
       return false;
     }
   }
@@ -89,75 +148,33 @@ bool TransactionManager::checkTermFromCache(GraphSpaceID spaceId,
   return true;
 }
 
-void TransactionManager::resumeThread() {
-  SCOPE_EXIT {
-    resumeThread_->addDelayTask(
-        FLAGS_resume_interval_secs * 1000, &TransactionManager::resumeThread, this);
-  };
-  ChainResumeProcessor proc(env_);
-  proc.process();
-}
-
-bool TransactionManager::start() {
-  if (!resumeThread_->start()) {
-    LOG(ERROR) << "resume thread start failed";
-    return false;
-  }
-  resumeThread_->addDelayTask(
-      FLAGS_resume_interval_secs * 1000, &TransactionManager::resumeThread, this);
-  return true;
-}
-
-void TransactionManager::stop() {
-  exec_->stop();
-  resumeThread_->stop();
-  resumeThread_->wait();
-}
-
-std::string TransactionManager::makeLockKey(GraphSpaceID spaceId, const std::string& edge) {
-  std::string lockKey;
-  lockKey.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID)).append(edge);
-  return lockKey;
-}
-
-std::string TransactionManager::getEdgeKey(const std::string& lockKey) {
-  std::string edgeKey(lockKey.c_str() + sizeof(GraphSpaceID));
-  return edgeKey;
-}
-
-void TransactionManager::addPrime(GraphSpaceID spaceId, const std::string& edge, ResumeType type) {
-  VLOG(1) << "addPrime() space=" << spaceId << ", hex=" << folly::hexlify(edge)
+void TransactionManager::addPrime(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  TermID termId,
+                                  const std::string& egKey,
+                                  ResumeType type) {
+  VLOG(2) << "addPrime() space=" << spaceId << ", hex=" << folly::hexlify(egKey)
           << ", ResumeType=" << static_cast<int>(type);
-  auto key = makeLockKey(spaceId, edge);
-  dangleEdges_.insert(std::make_pair(key, type));
-}
-
-void TransactionManager::delPrime(GraphSpaceID spaceId, const std::string& edge) {
-  VLOG(1) << "delPrime() space=" << spaceId << ", hex=" << folly::hexlify(edge) << ", readable "
-          << ConsistUtil::readableKey(8, edge);
-  auto key = makeLockKey(spaceId, edge);
-  dangleEdges_.erase(key);
-
-  auto partId = NebulaKeyUtils::getPart(edge);
-  auto* lk = getLockCore(spaceId, partId, false);
-  lk->unlock(edge);
-}
-
-void TransactionManager::scanAll() {
-  LOG(INFO) << "scanAll()";
-  std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> leaders;
-  if (env_->kvstore_->allLeader(leaders) == 0) {
-    LOG(INFO) << "no leader found, skip any resume process";
+  auto* proc = ChainProcessorFactory::make(env_, spaceId, termId, egKey, type);
+  if (proc == nullptr) {
+    VLOG(1) << "delPrime() space=" << spaceId << ", hex=" << folly::hexlify(egKey);
+    auto lk = getLockCore(spaceId, partId, termId, false);
+    if (lk) {
+      lk->unlock(egKey);
+    }
     return;
   }
-  for (auto& leader : leaders) {
-    auto spaceId = leader.first;
-    for (auto& partInfo : leader.second) {
-      auto partId = partInfo.get_part_id();
-      scanPrimes(spaceId, partId);
+  auto fut = proc->getFinished();
+  std::move(fut).thenValue([=](auto&& code) {
+    if (code == Code::SUCCEEDED) {
+      VLOG(2) << "delPrime() space=" << spaceId << ", hex=" << folly::hexlify(egKey);
+      auto lk = getLockCore(spaceId, partId, termId, false);
+      if (lk) {
+        lk->unlock(egKey);
+      }
     }
-  }
-  LOG(INFO) << "finish scanAll()";
+  });
+  addChainTask(proc);
 }
 
 void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
@@ -175,75 +192,73 @@ void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::Call
                               opt.spaceId,
                               opt.partId,
                               opt.term);
-  scannedParts_.erase(std::make_pair(opt.spaceId, opt.partId));
-  dangleEdges_.clear();
+  auto currTermKey = std::make_pair(opt.spaceId, opt.partId);
+  auto currTermIter = currTerm_.find(currTermKey);
+  if (currTermIter == currTerm_.end()) {
+    return;
+  }
+  auto memLockKey = std::make_tuple(opt.spaceId, opt.partId, currTermIter->second);
+  memLocks_.erase(memLockKey);
 }
 
 void TransactionManager::onLeaderElectedWrapper(
     const ::nebula::kvstore::Part::CallbackOptions& opt) {
   LOG(INFO) << folly::sformat(
       "leader get do scanPrimes space={}, part={}, term={}", opt.spaceId, opt.partId, opt.term);
-  scanPrimes(opt.spaceId, opt.partId);
+  scanPrimes(opt.spaceId, opt.partId, opt.term);
 }
 
-void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
-  LOG(INFO) << folly::sformat("{}(), spaceId={}, partId={}", __func__, spaceId, partId);
+void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId, TermID termId) {
+  LOG(INFO) << folly::sformat(
+      "{}(), space={}, part={}, term={}", __func__, spaceId, partId, termId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto prefix = ConsistUtil::primePrefix(partId);
   auto rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (; iter->valid(); iter->next()) {
-      auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key());
-      VLOG(1) << "scanned edgekey: " << folly::hexlify(edgeKey)
-              << ", readable: " << ConsistUtil::readableKey(8, edgeKey.str());
-      auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      auto insSucceed = dangleEdges_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
-      if (!insSucceed.second) {
-        LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
-      }
-      auto* lk = getLockCore(spaceId, partId, false);
-      auto succeed = lk->try_lock(edgeKey.str());
+      auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key()).str();
+      VLOG(1) << "scanned prime edge: " << folly::hexlify(edgeKey);
+      auto lk = getLockCore(spaceId, partId, termId, false);
+      auto succeed = lk->try_lock(edgeKey);
       if (!succeed) {
-        LOG(ERROR) << "not supposed to lock fail: " << folly::hexlify(edgeKey);
+        LOG(ERROR) << "not supposed to lock fail: "
+                   << ", spaceId " << spaceId << ", partId " << partId << ", termId " << termId
+                   << folly::hexlify(edgeKey);
       }
+      addPrime(spaceId, partId, termId, edgeKey, ResumeType::RESUME_CHAIN);
     }
   } else {
     VLOG(1) << "primePrefix() " << apache::thrift::util::enumNameSafe(rc);
-    if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      return;
-    }
   }
 
   prefix = ConsistUtil::doublePrimePrefix(partId);
   rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (; iter->valid(); iter->next()) {
-      auto edgeKey = ConsistUtil::edgeKeyFromDoublePrime(iter->key());
-      auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      auto insSucceed = dangleEdges_.insert(std::make_pair(lockKey, ResumeType::RESUME_REMOTE));
-      if (!insSucceed.second) {
-        LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
-      }
-      auto* lk = getLockCore(spaceId, partId, false);
-      auto succeed = lk->try_lock(edgeKey.str());
+      auto edgeKey = ConsistUtil::edgeKeyFromDoublePrime(iter->key()).str();
+      VLOG(1) << "scanned double prime edge: " << folly::hexlify(edgeKey);
+      auto lk = getLockCore(spaceId, partId, termId, false);
+      auto succeed = lk->try_lock(edgeKey);
       if (!succeed) {
-        LOG(ERROR) << "not supposed to lock fail: " << folly::hexlify(edgeKey);
+        LOG(ERROR) << "not supposed to lock fail: "
+                   << ", space " << spaceId << ", partId " << partId << ", termId " << termId
+                   << folly::hexlify(edgeKey);
       }
+      addPrime(spaceId, partId, termId, edgeKey, ResumeType::RESUME_REMOTE);
     }
   } else {
     VLOG(1) << "doublePrimePrefix() " << apache::thrift::util::enumNameSafe(rc);
-    if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      return;
-    }
   }
-  auto partOfSpace = std::make_pair(spaceId, partId);
-  auto insRet = scannedParts_.insert(std::make_pair(partOfSpace, 0));
-  LOG(INFO) << "insert space=" << spaceId << ", part=" << partId
-            << ", into white list suc=" << std::boolalpha << insRet.second;
+
+  auto currTermKey = std::make_pair(spaceId, partId);
+  currTerm_.insert_or_assign(currTermKey, termId);
+
+  LOG(INFO) << "set curr term spaceId = " << spaceId << ", partId = " << partId
+            << ", termId = " << termId;
 }
 
-folly::ConcurrentHashMap<std::string, ResumeType>* TransactionManager::getDangleEdges() {
-  return &dangleEdges_;
+folly::EventBase* TransactionManager::getEventBase() {
+  return exec_->getEventBase();
 }
 
 }  // namespace storage
