@@ -62,7 +62,6 @@ using RemoteListeners =
     std::unordered_map<GraphSpaceID,
                        std::unordered_map<PartitionID, std::vector<RemoteListenerInfo>>>;
 
-
 }  // namespace meta
 }  // namespace nebula
 
