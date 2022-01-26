@@ -10,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVStore.h"
 
@@ -124,13 +125,14 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     status = rocksdb::DB::Open(options, path, &db);
   }
   CHECK(status.ok()) << status.ToString();
-  if (!readonly && spaceId_ != 0 /* only for storage*/) {
+  if (!readonly && spaceId_ != kDefaultSpaceId /* only for storage*/) {
     rocksdb::ReadOptions readOptions;
     std::string dataVersionValue = "";
     status = db->Get(readOptions, NebulaKeyUtils::dataVersionKey(), &dataVersionValue);
     if (status.IsNotFound()) {
       rocksdb::WriteOptions writeOptions;
-      status = db->Put(writeOptions, NebulaKeyUtils::dataVersionKey(), "3.0");
+      status = db->Put(
+          writeOptions, NebulaKeyUtils::dataVersionKey(), NebulaKeyUtils::dataVersionValue());
     }
     CHECK(status.ok()) << status.ToString();
   }
