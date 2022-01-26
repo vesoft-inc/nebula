@@ -75,31 +75,15 @@ void MetaHttpReplaceHostHandler::onEOM() noexcept {
       break;
   }
 
-  if (replaceHostInPart(ipv4From_, ipv4To_)) {
-    LOG(INFO) << "Replace Host in partition successfully";
+  if (replaceHostInPart(ipv4From_, ipv4To_) && replaceHostInZone(ipv4From_, ipv4To_)) {
+    LOG(INFO) << "Replace Host in partition and zone successfully";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))
-        .body("Replace Host in partition successfully")
+        .body("Replace Host in partition and zone successfully")
         .sendWithEOM();
   } else {
-    LOG(INFO) << "Replace Host in partition failed";
-    ResponseBuilder(downstream_)
-        .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
-                WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
-        .body(errMsg_)
-        .sendWithEOM();
-  }
-
-  if (replaceHostInZone(ipv4From_, ipv4To_)) {
-    LOG(INFO) << "Replace Host in zone successfully";
-    ResponseBuilder(downstream_)
-        .status(WebServiceUtils::to(HttpStatusCode::OK),
-                WebServiceUtils::toString(HttpStatusCode::OK))
-        .body("Replace Host in zone successfully")
-        .sendWithEOM();
-  } else {
-    LOG(INFO) << "Replace Host in zone failed";
+    LOG(INFO) << "Replace Host in partition and zone failed";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
                 WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
