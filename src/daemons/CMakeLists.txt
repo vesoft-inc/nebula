@@ -101,7 +101,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
-        $<TARGET_OBJECTS:meta_v1_thrift_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
@@ -243,7 +242,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
-        $<TARGET_OBJECTS:meta_v1_thrift_obj>
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES
