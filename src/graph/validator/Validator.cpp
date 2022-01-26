@@ -312,7 +312,10 @@ Status Validator::appendPlan(PlanNode* root) {
   return appendPlan(tail_, root);
 }
 
-void Validator::rmLeftTailStartNode() {
+// remove the left tail node which is start plannode
+void Validator::rmLeftTailStartNode(PlanNode* appendPlanRoot) {
+  if (appendPlanRoot->kind() != PlanNode::Kind::kSwitchSpace) return;
+  if (tail_->kind() != PlanNode::Kind::kStart) return;
   PlanNode* node = root_;
   if (node->dependencies().size() == 0UL) return;
 
@@ -320,7 +323,8 @@ void Validator::rmLeftTailStartNode() {
     node = const_cast<PlanNode*>(node->dependencies()[0]);
   }
   if (node->dependencies().size() == 1UL) {
-    node->dependencies().clear();
+    node->dependencies().pop_back();
+    tail_ = node;
   }
 }
 

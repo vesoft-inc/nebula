@@ -206,6 +206,12 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                  matchClauseCtx->sentence->toString().c_str());
   }
 
+  if (matchClausePlan.tail->isSingleInput()) {
+    auto start = StartNode::make(matchClauseCtx->qctx);
+    matchClausePlan.tail->setDep(0, start);
+    matchClausePlan.tail = start;
+  }
+
   return Status::OK();
 }
 
