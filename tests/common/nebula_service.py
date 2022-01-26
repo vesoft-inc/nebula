@@ -597,7 +597,7 @@ class NebulaService(object):
                 for storaged in self.graphd_processes
             ]
         )
-        cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
+        cmd = "ADD HOSTS {}".format(hosts)
         print("add hosts cmd is {}".format(cmd))
         resp = client.execute(cmd)
         assert resp.is_succeeded(), resp.error_msg()
