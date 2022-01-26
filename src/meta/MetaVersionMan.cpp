@@ -377,8 +377,8 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> zoneIter;
     auto code = engine->prefix(zonePrefix, &zoneIter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get active hosts failed";
-      return Status::Error("Get hosts failed");
+      LOG(ERROR) << "Get zones failed";
+      return Status::Error("Get zones failed");
     }
 
     while (zoneIter->valid()) {

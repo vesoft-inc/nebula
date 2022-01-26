@@ -4,6 +4,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+import pytest
 import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite
@@ -22,6 +23,7 @@ class TestAdmin(NebulaTestSuite):
     def cleanup(self):
         pass
 
+    @pytest.mark.skip(reason="The change of minloglevel will influence case in test_configs.py")
     def test_config(self):
         '''
         @brief Testing about configuration query

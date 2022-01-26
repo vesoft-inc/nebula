@@ -17,6 +17,8 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
   FRIEND_TEST(BalanceTest, BalanceZoneRemainderPlanTest);
   FRIEND_TEST(BalanceTest, NormalZoneTest);
   FRIEND_TEST(BalanceTest, StopPlanTest);
+  FRIEND_TEST(BalanceTest, BalanceZonePlanComplexTest);
+  FRIEND_TEST(BalanceTest, NormalZoneComplexTest);
 
  public:
   ZoneBalanceJobExecutor(JobDescription jobDescription,
@@ -25,6 +27,7 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
                          const std::vector<std::string>& params)
       : BalanceJobExecutor(jobDescription.getJobId(), kvstore, adminClient, params),
         jobDescription_(jobDescription) {}
+
   nebula::cpp2::ErrorCode prepare() override;
   nebula::cpp2::ErrorCode stop() override;
 
@@ -38,7 +41,7 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
   nebula::cpp2::ErrorCode rebalanceActiveZones(
       std::vector<Zone*>* sortedActiveZones,
       std::map<std::string, std::vector<Host*>>* sortedZoneHosts,
-      std::vector<BalanceTask>* tasks);
+      std::map<PartitionID, std::vector<BalanceTask>>* existTasks);
 
  private:
   std::vector<std::string> lostZones_;

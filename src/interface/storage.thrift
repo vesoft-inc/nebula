@@ -9,7 +9,7 @@ namespace java com.vesoft.nebula.storage
 namespace go nebula.storage
 namespace csharp nebula.storage
 namespace js nebula.storage
-namespace py nebula2.storage
+namespace py nebula3.storage
 
 include "common.thrift"
 include "meta.thrift"
