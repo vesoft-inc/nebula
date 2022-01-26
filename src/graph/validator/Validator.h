@@ -112,8 +112,7 @@ class Validator {
     return sentence_;
   }
 
-  // remove the left tail node from the plan
-  void rmLeftTailStartNode(PlanNode* appendPlanRoot);
+  void rmLeftTailStartNode(Sentence::Kind appendPlanKind);
 
  protected:
   Validator(Sentence* sentence, QueryContext* qctx);

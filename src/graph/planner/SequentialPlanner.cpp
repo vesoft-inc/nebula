@@ -24,7 +24,10 @@ StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
   subPlan.root = validators.back()->root();
   ifBuildDataCollect(subPlan, qctx);
   for (auto iter = validators.begin(); iter < validators.end() - 1; ++iter) {
-    (iter + 1)->get()->rmLeftTailStartNode(iter->get()->root());
+    // Remove left tail kStart plannode before append plan.
+    // It allows that kUse sentence append kMatch Sentence.
+    // For example: Use ...; Match ...
+    (iter + 1)->get()->rmLeftTailStartNode(iter->get()->sentence()->kind());
     NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
   }
   if (validators.front()->tail()->isSingleInput()) {
