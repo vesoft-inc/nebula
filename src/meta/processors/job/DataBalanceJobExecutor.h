@@ -35,13 +35,6 @@ class DataBalanceJobExecutor : public BalanceJobExecutor {
    */
   nebula::cpp2::ErrorCode prepare() override;
 
-  /**
-   * @brief Mark the job as stopped
-   *
-   * @return
-   */
-  nebula::cpp2::ErrorCode stop() override;
-
  protected:
   /**
    * @brief Build a balance plan and run

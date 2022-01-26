@@ -180,7 +180,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Check if the peer has catched up data from leader. If leader is sending the
    * snapshot, the method will return false.
    * */
-  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer);
+  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer, const std::string& path);
 
   bool linkCurrentWAL(const char* newPath);
 
@@ -220,7 +220,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // leader + followers
   std::vector<HostAddr> peers() const;
 
-  std::vector<HostAndPath> hostAndPaths() const;
+  std::vector<HostAndPath> followersHostAndPaths() const;
 
   std::set<HostAddr> listeners() const;
 

@@ -42,7 +42,7 @@ NebulaStore::~NebulaStore() {
   learners_.clear();
   spaceListeners_.clear();
   bgWorkers_->stop();
-  // bgWorkers_->wait();
+  bgWorkers_->wait();
   storeWorker_->stop();
   storeWorker_->wait();
   LOG(INFO) << "~NebulaStore()";
@@ -86,6 +86,7 @@ bool NebulaStore::loadPartFromDataPath() {
   LOG(INFO) << "Scan the local path, and init the spaces_";
   std::unordered_set<std::pair<GraphSpaceID, PartitionID>> spacePartIdSet;
   for (auto& path : options_.dataPaths_) {
+    LOG(INFO) << "data path: " << path;
     auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
     auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
     for (auto& dir : dirs) {
@@ -185,7 +186,6 @@ void NebulaStore::loadPartFromPartManager() {
     }
     std::sort(partIds.begin(), partIds.end());
     for (auto& partId : partIds) {
-      // auto path = options_.partMan_->getPath(storeSvcAddr_, spaceId, partId);
       addPart(spaceId, partId, false, "");
     }
   }
@@ -317,8 +317,10 @@ void NebulaStore::addPart(GraphSpaceID spaceId,
                           bool asLearner,
                           const std::string& path,
                           const std::vector<HostAndPath>& peers) {
+  LOG(INFO) << "NebulaStore::addPart path: " << path;
   folly::RWSpinLock::WriteHolder wh(&lock_);
-  KVEngine* targetEngine;
+  KVEngine* targetEngine = nullptr;
+  // std::unique_ptr<KVEngine> targetEngine;
   auto spaceIt = this->spaces_.find(spaceId);
   CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
   auto& engines = spaceIt->second->engines_;
@@ -345,24 +347,38 @@ void NebulaStore::addPart(GraphSpaceID spaceId,
     }
     CHECK_GE(minIndex, 0) << "engines number:" << engines.size();
     targetEngine = engines[minIndex].get();
+
+    spaceIt->second->parts_.emplace(partId,
+                                    newPart(spaceId, partId, targetEngine, asLearner, peers));
   } else {
-    LOG(INFO) << "Using path: " << path;
+    for (int i = 0; i < 10; i++) {
+      LOG(INFO) << "Using path: " << path;
+    }
     for (auto& engine : engines) {
       LOG(INFO) << "Engine Data Root " << engine->getDataRoot();
       if (strcmp(engine->getDataRoot(), path.c_str()) == 0) {
+        LOG(INFO) << "Find Data Root " << engine->getDataRoot();
         targetEngine = engine.get();
       }
     }
   }
 
   // Write the information into related engine.
-  targetEngine->addPart(partId);
-  if (path.empty()) {
-    LOG(INFO) << "Path is empty";
-    spaceIt->second->parts_.emplace(partId,
-                                    newPart(spaceId, partId, targetEngine, asLearner, peers));
+  if (targetEngine != nullptr) {
+    targetEngine->addPart(partId);
   } else {
-    LOG(INFO) << "Path is not empty";
+    int32_t size = std::count(path.begin(), path.end(), '/');
+    std::vector<std::string> tokens;
+    folly::split("/", path, tokens);
+    std::vector<std::string> parts;
+    for (int32_t index = 0; index < size - 1; index++) {
+      parts.emplace_back(tokens[index]);
+    }
+
+    auto np = folly::join("/", parts);
+    LOG(INFO) << "Using npath: " << np;
+    auto e = newEngine(spaceId, np, options_.walPath_);
+    targetEngine = e.get();
     auto spaceLearnerIt = this->learners_.find(spaceId);
     auto& learners = spaceLearnerIt->second->learners_;
     auto partLearnerIt = learners.find(partId);
@@ -370,26 +386,23 @@ void NebulaStore::addPart(GraphSpaceID spaceId,
       learners.emplace(partId, newPart(spaceId, partId, targetEngine, asLearner, peers));
     }
   }
-
   LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added";
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           //  const std::string& path,
                                            KVEngine* engine,
                                            bool asLearner,
                                            const std::vector<HostAndPath>& defaultPeers) {
   auto walPath = folly::stringPrintf("%s/wal/%d", engine->getWalRoot(), partId);
   std::shared_ptr<kvstore::PartManager> partMan(options_.partMan_.get());
-
   auto canonical = boost::filesystem::canonical(engine->getDataRoot());
-  auto dataPath = canonical.parent_path().parent_path();
+  auto dataPath = canonical.parent_path().parent_path().string();
   LOG(INFO) << "dataPath : " << dataPath;
   auto part = std::make_shared<Part>(spaceId,
                                      partId,
                                      raftAddr_,
-                                     dataPath.string(),
+                                     dataPath,
                                      walPath,
                                      engine,
                                      ioPool_,
@@ -497,6 +510,8 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, const std
       } else {
         LOG(INFO) << "Remove the original part using path:" << path;
         raftService_->removePartition(partIt->second);
+        diskMan_->removePartFromPath(spaceId, partId, path);
+
         partIt->second->resetPart();
         spaceIt->second->parts_.erase(partId);
 

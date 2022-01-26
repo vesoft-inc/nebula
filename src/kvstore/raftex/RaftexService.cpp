@@ -151,7 +151,9 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   // todo(doodle): If we need to start both listener and normal replica on same
   // hosts, this class need to be aware of type.
   folly::RWSpinLock::WriteHolder wh(partsLock_);
-  parts_.emplace(std::make_tuple(part->spaceId(), part->partitionId(), part->path()), part);
+  auto spaceId = part->spaceId();
+  auto path = folly::stringPrintf("%s/nebula/%d", part->path().c_str(), spaceId);
+  parts_.emplace(std::make_tuple(spaceId, part->partitionId(), path), part);
 }
 
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
@@ -161,7 +163,9 @@ void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
   folly::makeFuture()
       .thenValue([this, &part](FTValype) {
         folly::RWSpinLock::WriteHolder wh(partsLock_);
-        parts_.erase(std::make_tuple(part->spaceId(), part->partitionId(), part->path()));
+        auto spaceId = part->spaceId();
+        auto path = folly::stringPrintf("%s/nebula/%d", part->path().c_str(), spaceId);
+        parts_.erase(std::make_tuple(spaceId, part->partitionId(), path));
       })
       // the part->stop() would wait for requestOnGoing_ in Host, and the requestOnGoing_ will
       // release in response in ioThreadPool,this may cause deadlock, so doing it in another
@@ -175,12 +179,14 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId,
                                                   PartitionID partId,
                                                   const std::string& path) {
   folly::RWSpinLock::ReadHolder rh(partsLock_);
+  std::string p;
   for (auto iter = parts_.begin(); iter != parts_.end(); iter++) {
     LOG(INFO) << "Space " << std::get<0>(iter->first) << " Part " << std::get<1>(iter->first)
               << " Path " << std::get<2>(iter->first);
+    p = std::get<2>(iter->first);
   }
 
-  auto it = parts_.find(std::make_tuple(spaceId, partId, path));
+  auto it = parts_.find(std::make_tuple(spaceId, partId, p));
   if (it == parts_.end()) {
     // Part not found
     LOG(WARNING) << "Cannot find the part " << partId << " in the graph space " << spaceId
@@ -223,6 +229,8 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
   auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (!part) {
     // Not found
+    LOG(WARNING) << "Append Log Cannot find the part " << req.get_part() << " in the graph space "
+                 << req.get_space() << ", path " << req.get_path();
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
     return;
   }

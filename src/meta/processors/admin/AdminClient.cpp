@@ -34,7 +34,6 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   }
 
   auto peers = std::move(nebula::value(partHosts));
-  HostAndPath leaderAndPath = HostAndPath(src, path);
   auto it = std::find(peers.begin(), peers.end(), src);
   if (it == peers.end()) {
     return Status::PartNotFound();
@@ -46,8 +45,8 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   auto target = dst;
   if (dst == kRandomPeer) {
     for (auto& p : peers) {
-      if (p.host != src) {
-        auto retCode = ActiveHostsMan::isLived(kv_, p.host);
+      if (p != src) {
+        auto retCode = ActiveHostsMan::isLived(kv_, p);
         if (nebula::ok(retCode) && nebula::value(retCode)) {
           target = HostAndPath(p, "");
           break;
@@ -121,7 +120,6 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
   if (!nebula::ok(partHosts)) {
     LOG(INFO) << "Get peers failed: "
               << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
-  
     return Status::Error("Get peers failed");
   }
 
@@ -219,7 +217,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
   }
 
   auto peers = std::move(nebula::value(partHosts));
-  auto strHosts = [](const std::vector<HostAndPath>& hosts) -> std::string {
+  auto strHosts = [](const std::vector<HostAddr>& hosts) -> std::string {
     std::stringstream peersStr;
     for (auto& h : hosts) {
       peersStr << h << ",";
@@ -326,7 +324,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
       }
     }
     auto f = getResponseFromPart(
-        Utils::getAdminAddrFromStoreAddr(p.host),
+        Utils::getAdminAddrFromStoreAddr(p),
         req,
         [](auto client, auto request) { return client->future_checkPeers(request); },
         [](auto&& resp) -> Status {
@@ -453,7 +451,7 @@ void AdminClient::getResponseFromHost(const HostAddr& host,
 }
 
 template <typename Request, typename RemoteFunc>
-void AdminClient::getResponseFromLeader(std::vector<HostAndPath> hosts,
+void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                                         int32_t index,
                                         Request req,
                                         RemoteFunc remoteFunc,
@@ -591,19 +589,14 @@ void AdminClient::getResponseFromLeader(std::vector<HostAndPath> hosts,
 }
 
 // todo(doodle): add related locks
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAndPath>>
-AdminClient::getPeers(GraphSpaceID spaceId, PartitionID partId) {
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId,
+                                                                              PartitionID partId) {
   CHECK_NOTNULL(kv_);
   auto partKey = MetaKeyUtils::partKey(spaceId, partId);
   std::string value;
   auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
     auto hosts = MetaKeyUtils::parsePartVal(value);
-    // std::vector<HostAndPath> hostPaths(hosts.size());
-    // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](const auto& host) {
-    //   return HostAndPath(host, "");
-    // });
-    // return hostPaths;
     return hosts;
   }
   return code;
@@ -817,11 +810,6 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   auto f = pro.getFuture();
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
-  // std::vector<HostAndPath> hostPaths(hosts.size());
-  // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](auto& host) -> HostAndPath {
-  //   return HostAndPath(host, "");
-  // });
-
   storage::cpp2::AddTaskRequest req;
   req.cmd_ref() = cmd;
   req.job_id_ref() = jobId;
@@ -855,11 +843,6 @@ folly::Future<StatusOr<bool>> AdminClient::stopTask(const HostAddr& host,
   storage::cpp2::StopTaskRequest req;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
-  
-  // std::vector<HostAndPath> hostPaths(hosts.size());
-  // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](auto& host) -> HostAndPath {
-  //   return HostAndPath(host, "");
-  // });
 
   getResponseFromHost(
       adminAddr,

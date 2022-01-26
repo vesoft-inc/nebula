@@ -131,12 +131,8 @@ void BalanceTask::invoke() {
       client_->waitingForCatchUpData(spaceId_, partId_, dst_, dstPath_)
           .thenValue([this](auto&& resp) {
             if (!resp.ok()) {
-<<<<<<< HEAD
-              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
-=======
-              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status "
-                         << resp;
->>>>>>> adapt admin processor
+              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status "
+                        << resp;
               ret_ = BalanceTaskResult::FAILED;
             } else {
               LOG(INFO) << "CATCH_UP_DATA SUCCESSED -> MEMBER_CHANGE_ADD";
@@ -169,12 +165,7 @@ void BalanceTask::invoke() {
       client_->memberChange(spaceId_, partId_, src_, srcPath_, false)
           .thenValue([this](auto&& resp) {
             if (!resp.ok()) {
-<<<<<<< HEAD
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status " << resp;
-=======
-              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status "
-                         << resp;
->>>>>>> adapt admin processor
               ret_ = BalanceTaskResult::FAILED;
             } else {
               LOG(INFO) << "MEMBER_CHANGE_REMOVE SUCCESSED -> UPDATE_PART_META";
@@ -192,12 +183,7 @@ void BalanceTask::invoke() {
             // The callback will be called inside raft set value. So don't call
             // invoke directly here.
             if (!resp.ok()) {
-<<<<<<< HEAD
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status " << resp;
-=======
-              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status "
-                         << resp;
->>>>>>> adapt admin processor
               ret_ = BalanceTaskResult::FAILED;
             } else {
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta succeeded!";

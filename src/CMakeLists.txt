@@ -5,7 +5,7 @@
 nebula_add_subdirectory(clients)
 nebula_add_subdirectory(codec)
 nebula_add_subdirectory(common)
-#nebula_add_subdirectory(daemons)
+nebula_add_subdirectory(daemons)
 nebula_add_subdirectory(graph)
 nebula_add_subdirectory(interface)
 nebula_add_subdirectory(kvstore)

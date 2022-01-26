@@ -395,15 +395,16 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
 
 void RaftPart::addLearner(const HostAddr& addr, const std::string& path) {
   CHECK(!raftLock_.try_lock());
-  if (addr == addr_) {
+  if (addr == addr_ && path == path_) {
     LOG(INFO) << idStr_ << "I am learner!";
     return;
   }
-  auto it = std::find_if(
-      hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
+  auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr, &path](const auto& h) {
+    return h->address() == addr && h->path() == path;
+  });
   if (it == hosts_.end()) {
-    hosts_.emplace_back(std::make_shared<Host>(addr, path, shared_from_this(), true));
     LOG(INFO) << idStr_ << "Add learner " << addr << " on path " << path;
+    hosts_.emplace_back(std::make_shared<Host>(addr, path, shared_from_this(), true));
   } else {
     LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
               << ((*it)->isLearner() ? " learner " : " group member");
@@ -503,9 +504,9 @@ void RaftPart::addPeer(const HostAddr& peer, const std::string& path) {
     return h->address() == peer && h->path() == path;
   });
   if (it == hosts_.end()) {
+    LOG(INFO) << idStr_ << "Add peer " << peer << " on path " << path;
     hosts_.emplace_back(std::make_shared<Host>(peer, path, shared_from_this()));
     updateQuorum();
-    LOG(INFO) << idStr_ << "Add peer " << peer << " on path " << path;
   } else {
     if ((*it)->isLearner()) {
       LOG(INFO) << idStr_ << "The host " << peer << " has been existed as learner, promote it!";
@@ -541,18 +542,16 @@ void RaftPart::removePeer(const HostAddr& peer, const std::string& path) {
   }
 }
 
-nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate, const std::string& path) {
+nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate,
+                                            const std::string& /*path*/) {
   CHECK(!raftLock_.try_lock());
-  auto hosts = hostAndPaths();
-  // auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate, &path, this](const auto& h) {
-  //   return h.host == candidate && h.path == path;
-  // });
+  // auto hosts = followersHostAndPaths();
+  auto hosts = followers();
   auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate, this](const auto& h) {
-    return h.host == candidate;
+    return h->address() == candidate;  // && h.path == path;
   });
   if (it == hosts.end()) {
-    LOG(INFO) << idStr_ << "The candidate " << candidate << " path " << path
-              << " is not in my peers";
+    LOG(INFO) << idStr_ << "The candidate " << candidate << " is not in my peers";
     return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -1229,17 +1228,22 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
     collectNSucceeded(
         gen::from(hosts) |
             gen::map([eb, this, self = shared_from_this(), voteReq](std::shared_ptr<Host> host) {
+              auto req = voteReq;
               auto targetAddress =
                   HostAddr(voteReq.get_candidate_addr(), voteReq.get_candidate_port());
+              auto targetPathRet = partMan_->getPath(
+                  Utils::getStoreAddrFromRaftAddr(targetAddress), spaceId_, partId_);
 
-              auto req = voteReq;
-              LOG(INFO) << "Host Address " << targetAddress << " Path " << host->path();
-              auto path = host->path();
-              req.path_ref() = std::move(path);
+              // assume it's ok
+              // if (targetPathRet.ok()) {
+              auto path = targetPathRet.value();
+              LOG(INFO) << "Host Address " << targetAddress << " Path " << path;
+              req.path_ref() = path;
               LOG(INFO) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
               return via(eb, [req, host, eb]() -> Future<cpp2::AskForVoteResponse> {
                 return host->askForVote(req, eb);
               });
+              // }
             }) |
             gen::as<std::vector>(),
         // Number of succeeded required
@@ -1680,6 +1684,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
 
 template <typename REQ>
 nebula::cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
+  LOG(INFO) << "verifyLeader";
   DCHECK(!raftLock_.try_lock());
   auto peer = HostAddr(req.get_leader_addr(), req.get_leader_port());
   auto path = req.get_path();
@@ -1969,12 +1974,15 @@ std::vector<HostAddr> RaftPart::peers() const {
   return peer;
 }
 
-std::vector<HostAndPath> RaftPart::hostAndPaths() const {
-  LOG(INFO) << "host " << addr_ << " path " << path_;
-  std::vector<HostAndPath> peer{HostAndPath(addr_, path_)};
+std::vector<HostAndPath> RaftPart::followersHostAndPaths() const {
+  // auto p = folly::stringPrintf("%s/nebula/%d", path_.c_str(), spaceId_);
+  // LOG(INFO) << "host " << addr_ << " path " << p;
+  // std::vector<HostAndPath> peer{HostAndPath(addr_, p)};
+  LOG(INFO) << "hosts size " << hosts_.size();
+  std::vector<HostAndPath> peer{};
   for (auto& host : hosts_) {
-    LOG(INFO) << "host " << host->address() << " path " << host->path() + "/nebula/0";
-    peer.emplace_back(host->address(), host->path() + "/nebula/0");
+    LOG(INFO) << "host " << host->address() << " path " << host->path();
+    peer.emplace_back(host->address(), host->path());
   }
   return peer;
 }
@@ -2014,19 +2022,19 @@ void RaftPart::reset() {
   lastTotalSize_ = 0;
 }
 
-nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {
+nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer, const std::string& path) {
   std::lock_guard<std::mutex> lck(raftLock_);
   LOG(INFO) << idStr_ << "Check whether I catch up";
   if (role_ != Role::LEADER) {
     LOG(INFO) << idStr_ << "I am not the leader";
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  if (peer == addr_) {
+  if (peer == addr_ && path == path_) {
     LOG(INFO) << idStr_ << "I am the leader";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   for (auto& host : hosts_) {
-    if (host->addr_ == peer) {
+    if (host->addr_ == peer && host->path_ == path) {
       if (host->followerCommittedLogId_ == 0 ||
           host->followerCommittedLogId_ < wal_->firstLogId()) {
         LOG(INFO) << idStr_ << "The committed log id of peer is " << host->followerCommittedLogId_
@@ -2051,17 +2059,17 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAndPath>& peers) {
   // To avoid the iterator invalid, we use another container for it.
   decltype(hosts_) hosts = hosts_;
   for (auto& h : hosts) {
-    LOG(INFO) << idStr_ << "Check host " << h->addr_;
-    auto it = std::find_if(
-        peers.begin(), peers.end(), [&](const auto& peer) { return peer.host == h->addr_; });
+    LOG(INFO) << idStr_ << "Check host " << h->addr_ << ", path " << h->path_;
+    auto it = std::find_if(peers.begin(), peers.end(), [&](const auto& peer) {
+      return peer.host == h->addr_ && peer.path == h->path_;
+    });
     if (it == peers.end()) {
       LOG(INFO) << idStr_ << "The peer " << h->addr_ << " should not exist in my peers";
-      removePeer(h->addr_, h->path_);
+      // removePeer(h->addr_, h->path_); ?
     }
   }
   for (auto& p : peers) {
     LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
-    // TODO(darion)
     addPeer(p.host, p.path);
   }
 }

@@ -1428,6 +1428,12 @@ StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId, Part
   if (partAllocIter == cache->partsAlloc_.end()) {
     return Status::Error("Part not found in cache, spaceid: %d, partid: %d", spaceId, partId);
   }
+
+  LOG(INFO) << "Space " << spaceId << " part " << partId;
+  for (auto& hps : partAllocIter->second) {
+    LOG(INFO) << "host and path " << hps;
+  }
+
   PartHosts ph;
   ph.spaceId_ = spaceId;
   ph.partId_ = partId;

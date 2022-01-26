@@ -186,9 +186,6 @@ class MemPartManager final : public PartManager {
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
 
-  // std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation(
-  //     GraphSpaceID spaceId) override;
-
   StatusOr<std::string> getPath(HostAddr host, GraphSpaceID spaceId, PartitionID partId) override;
 
  public:
@@ -215,9 +212,6 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
-
-  // std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation(
-  //     GraphSpaceID spaceId) override;
 
   StatusOr<std::string> getPath(HostAddr host, GraphSpaceID spaceId, PartitionID partId) override;
 

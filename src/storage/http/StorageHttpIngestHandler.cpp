@@ -61,7 +61,7 @@ void StorageHttpIngestHandler::onEOM() noexcept {
   }
 
   if (ingestSSTFiles(space_)) {
-    LOG(ERROR) << "SSTFile ingest successfully ";
+    LOG(ERROR) << "SSTFile ingest successfully";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))

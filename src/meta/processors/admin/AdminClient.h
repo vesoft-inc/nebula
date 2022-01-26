@@ -305,7 +305,7 @@ class AdminClient {
    * @param retryLimit Max retry times
    */
   template <typename Request, typename RemoteFunc>
-  void getResponseFromLeader(std::vector<HostAndPath> hosts,
+  void getResponseFromLeader(std::vector<HostAddr> hosts,
                              int32_t index,
                              Request req,
                              RemoteFunc remoteFunc,

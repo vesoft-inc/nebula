@@ -178,6 +178,6 @@ set(meta_test_deps
 endif()
 
 nebula_add_subdirectory(http)
-nebula_add_subdirectory(test)
+#nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)
 nebula_add_subdirectory(stats)

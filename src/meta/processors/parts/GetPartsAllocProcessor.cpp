@@ -31,18 +31,22 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
 
     for (auto& host : partHosts) {
-      auto diskPartsPrefix = MetaKeyUtils::diskPartsPrefix(host, spaceId);
-      auto diskPartsIterRet = doPrefix(diskPartsPrefix);
-      if (nebula::ok(diskPartsIterRet)) {
-        auto diskPartsIter = nebula::value(diskPartsIterRet).get();
-        while (diskPartsIter->valid()) {
-          auto diskPartsKey = diskPartsIter->key();
-          auto path = MetaKeyUtils::parseDiskPartsPath(diskPartsKey);
-          partLocation.emplace_back(host, path);
-          diskPartsIter->next();
-        }
+      // auto diskPartsPrefix = MetaKeyUtils::diskPartsPrefix(host, spaceId);
+      auto hostDirKey = MetaKeyUtils::hostDirKey(host.host, host.port);
+      auto hostDirRet = doGet(hostDirKey);
+      if (!nebula::ok(hostDirRet)) {
+        LOG(ERROR) << "Get host disk info failed";
+        continue;
+      }
+
+      auto hostDirVal = nebula::value(hostDirRet);
+      auto hostDir = MetaKeyUtils::parseHostDir(hostDirVal);
+      for (const auto& data : hostDir.get_data()) {
+        LOG(INFO) << "Data Path " << data;
+        partLocation.emplace_back(host, data);
       }
     }
+
     parts.emplace(partId, std::move(partLocation));
     iter->next();
   }

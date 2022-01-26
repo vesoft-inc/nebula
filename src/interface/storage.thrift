@@ -793,13 +793,10 @@ struct BlockingSignRequest {
     2: required EngineSignType      sign,
 }
 
-<<<<<<< HEAD
 struct BlockingSignResp {
     1: common.ErrorCode             code,
 }
 
-=======
->>>>>>> Support Disk Balance
 struct GetLeaderPartsResp {
     1: common.ErrorCode             code,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (

@@ -31,7 +31,12 @@ class DiskBalanceJobExecutor : public BalanceJobExecutor {
 
  protected:
   folly::Future<Status> executeInternal() override;
+
   Status buildBalancePlan() override;
+
+  ErrorOr<nebula::cpp2::ErrorCode, DiskParts> assemblePartLocation(HostAddr host,
+                                                                   GraphSpaceID spaceId,
+                                                                   int32_t& totalParts);
 
   nebula::cpp2::ErrorCode detachDiskBalance(const HostAddr& host,
                                             GraphSpaceID spaceId,

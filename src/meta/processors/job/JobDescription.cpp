@@ -53,9 +53,6 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
 
     auto cmd = std::get<0>(tup);
     auto paras = std::get<1>(tup);
-    for (auto p : paras) {
-      LOG(INFO) << "p = " << p;
-    }
     auto status = std::get<2>(tup);
     auto startTime = std::get<3>(tup);
     auto stopTime = std::get<4>(tup);

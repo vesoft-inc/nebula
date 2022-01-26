@@ -133,6 +133,9 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       return;
     }
 
+    for (int i = 0; i < 10; i++) {
+      LOG(INFO) << "req.get_path() " << req.get_path();
+    }
     LOG(INFO) << "Receive add part for space " << req.get_space_id() << ", part " << partId;
     auto* store = static_cast<kvstore::NebulaStore*>(env_->kvstore_);
     auto ret = store->space(spaceId);
@@ -141,10 +144,6 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       store->addSpace(spaceId);
     }
     std::vector<HostAndPath> peers;
-    // TODO
-    // for (auto& p : req.get_peers()) {
-    //   peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p), "");
-    // }
     store->addPart(spaceId, partId, req.get_as_learner(), req.get_path(), peers);
     onFinished();
   }
@@ -273,10 +272,10 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
     auto part = nebula::value(ret);
     auto peer = kvstore::NebulaStore::getRaftAddr(req.get_target());
 
-    folly::async([this, part, peer, spaceId, partId] {
+    folly::async([this, part, peer, path, spaceId, partId] {
       int retry = FLAGS_waiting_catch_up_retry_times;
       while (retry-- > 0) {
-        auto res = part->isCatchedUp(peer);
+        auto res = part->isCatchedUp(peer, path);
         LOG(INFO) << "Waiting for catching up data, peer " << peer << ", space " << spaceId
                   << ", part " << partId << ", remaining " << retry << " retry times"
                   << ", result " << static_cast<int32_t>(res);
@@ -331,40 +330,12 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     auto part = nebula::value(ret);
     std::vector<HostAndPath> peers;
-    // for (auto& p : req.get_peers()) {
-    //   peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
-    // }
     part->checkAndResetPeers(peers);
     this->onFinished();
   }
 
  private:
   explicit CheckPeersProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
-};
-
-class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
- public:
-  static GetLeaderProcessor* instance(StorageEnv* env) {
-    return new GetLeaderProcessor(env);
-  }
-
-  void process(const cpp2::GetLeaderReq&) {
-    CHECK_NOTNULL(env_->kvstore_);
-    std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> allLeaders;
-    env_->kvstore_->allLeader(allLeaders);
-    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-    for (auto& spaceLeaders : allLeaders) {
-      auto& spaceId = spaceLeaders.first;
-      for (auto& partLeader : spaceLeaders.second) {
-        leaderIds[spaceId].emplace_back(partLeader.get_part_id());
-      }
-    }
-    resp_.leader_parts_ref() = std::move(leaderIds);
-    this->onFinished();
-  }
-
- private:
-  explicit GetLeaderProcessor(StorageEnv* env) : BaseProcessor<cpp2::GetLeaderPartsResp>(env) {}
 };
 
 class GetPartsDistProcessor : public BaseProcessor<cpp2::GetPartsDistResp> {

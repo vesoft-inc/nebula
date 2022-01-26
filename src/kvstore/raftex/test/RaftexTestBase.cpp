@@ -187,11 +187,12 @@ void setupRaft(int32_t numCopies,
   LOG(INFO) << "services size: " << services.size();
   for (size_t i = 0; i < services.size(); i++) {
     LOG(INFO) << "TestShard start";
+    // auto path = folly::stringPrintf("%s/nebula/1", paths[i].c_str());
     copies.emplace_back(std::make_shared<test::TestShard>(copies.size(),
                                                           services[i],
                                                           1,  // Shard ID
                                                           allHosts[i],
-                                                          paths[i],
+                                                          paths[i] + "/nebula/1",
                                                           wals[i],
                                                           services[i]->getIOThreadPool(),
                                                           workers,

@@ -270,11 +270,32 @@ void MetaServerBasedPartManager::onCheckRemoteListeners(
 StatusOr<std::string> MetaServerBasedPartManager::getPath(HostAddr host,
                                                           GraphSpaceID spaceId,
                                                           PartitionID partId) {
+  LOG(INFO) << "Space " << spaceId << " Part " << partId << " Host " << host;
   LOG(INFO) << "MetaServerBasedPartManager getPath";
-  UNUSED(host);
-  UNUSED(spaceId);
-  UNUSED(partId);
-  return Status::OK();
+  auto ret = client_->getPartsAlloc(spaceId).get();
+  if (!ret.ok()) {
+    LOG(ERROR) << "Get path not found";
+    return Status::Error("Get path not found");
+  }
+
+  auto& partsAlloc = ret.value();
+  for (auto [part, hps] : partsAlloc) {
+    LOG(INFO) << "Part " << part;
+
+    if (part != partId) {
+      continue;
+    }
+
+    for (const auto& hp : hps) {
+      LOG(INFO) << "Host And Path " << hp;
+      if (hp.host == host) {
+        LOG(INFO) << "Get " << folly::stringPrintf("%s/nebula/%d", hp.path.c_str(), spaceId);
+        return folly::stringPrintf("%s/nebula/%d", hp.path.c_str(), spaceId);
+      }
+    }
+  }
+  LOG(ERROR) << "Get path not found 2";
+  return Status::Error("Get path not found 2");
 }
 }  // namespace kvstore
 }  // namespace nebula
