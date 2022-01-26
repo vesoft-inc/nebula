@@ -113,7 +113,6 @@ nebula_add_library(
 
 add_dependencies(
     meta_version_man_obj
-    meta_v1_thrift_obj
     meta_v2_thrift_obj
 )
 
@@ -122,7 +121,6 @@ set(meta_test_deps
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
     $<TARGET_OBJECTS:meta_v2_thrift_obj>
-    $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
