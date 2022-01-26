@@ -300,7 +300,7 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
 
-  if (!node->isSingleInput()) {
+  if (appended->kind() != PlanNode::Kind::kSwitchSpace && !node->isSingleInput()) {
     return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
@@ -323,7 +323,8 @@ void Validator::rmLeftTailStartNode(PlanNode* appendPlanRoot) {
     node = const_cast<PlanNode*>(node->dependencies()[0]);
   }
   if (node->dependencies().size() == 1UL) {
-    node->dependencies().pop_back();
+    // remain one size for add dependency
+    node->dependencies()[0] = nullptr;
     tail_ = node;
   }
 }
