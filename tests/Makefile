@@ -34,7 +34,7 @@ install-deps:
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
-		&& python setup.py bdist_wheel
+		&& python setup.py bdist_wheel \
 		&& pip3 install --user --force-reinstall ./dist/* -i $(PYPI_MIRROR)
 	rm -rf $(CURR_DIR)/nebula-python
 
