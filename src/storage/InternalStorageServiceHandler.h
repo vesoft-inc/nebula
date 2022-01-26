@@ -22,13 +22,14 @@ class InternalStorageServiceHandler final : public cpp2::InternalStorageServiceS
  public:
   explicit InternalStorageServiceHandler(StorageEnv* env);
 
-  folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::ChainAddEdgesRequest& p_req);
+  folly::Future<cpp2::ExecResponse> future_chainAddEdges(
+      const cpp2::ChainAddEdgesRequest& p_req) override;
 
   folly::Future<cpp2::UpdateResponse> future_chainUpdateEdge(
-      const cpp2::ChainUpdateEdgeRequest& p_req);
+      const cpp2::ChainUpdateEdgeRequest& p_req) override;
 
   folly::Future<cpp2::ExecResponse> future_chainDeleteEdges(
-      const cpp2::ChainDeleteEdgesRequest& p_req);
+      const cpp2::ChainDeleteEdgesRequest& p_req) override;
 
  private:
   StorageEnv* env_{nullptr};
