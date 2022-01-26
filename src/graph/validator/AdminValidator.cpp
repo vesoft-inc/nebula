@@ -21,8 +21,9 @@ Status CreateSpaceValidator::validateImpl() {
   auto status = Status::OK();
   spaceDesc_.space_name_ref() = std::move(*(sentence->spaceName()));
   if (sentence->zoneNames()) {
-    spaceDesc_.zone_names_ref() = sentence->zoneNames()->zoneNames();
+    return Status::SemanticError("Create space with zone is unsupported");
   }
+
   StatusOr<std::string> retStatusOr;
   std::string result;
   auto *charsetInfo = qctx_->getCharsetInfo();
@@ -323,10 +324,6 @@ Status ShowListenerValidator::toPlan() {
 }
 
 Status AddHostsValidator::validateImpl() {
-  return Status::OK();
-}
-
-Status AddHostsValidator::toPlan() {
   auto sentence = static_cast<AddHostsSentence *>(sentence_);
   auto hosts = sentence->hosts()->hosts();
   if (hosts.empty()) {
@@ -337,7 +334,12 @@ Status AddHostsValidator::toPlan() {
   if (it != hosts.end()) {
     return Status::SemanticError("Host have duplicated");
   }
+  return Status::OK();
+}
 
+Status AddHostsValidator::toPlan() {
+  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
   auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
   root_ = addHost;
   tail_ = root_;
@@ -345,10 +347,6 @@ Status AddHostsValidator::toPlan() {
 }
 
 Status DropHostsValidator::validateImpl() {
-  return Status::OK();
-}
-
-Status DropHostsValidator::toPlan() {
   auto sentence = static_cast<DropHostsSentence *>(sentence_);
   auto hosts = sentence->hosts()->hosts();
   if (hosts.empty()) {
@@ -359,7 +357,12 @@ Status DropHostsValidator::toPlan() {
   if (it != hosts.end()) {
     return Status::SemanticError("Host have duplicated");
   }
+  return Status::OK();
+}
 
+Status DropHostsValidator::toPlan() {
+  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
   auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
   root_ = dropHost;
   tail_ = root_;
