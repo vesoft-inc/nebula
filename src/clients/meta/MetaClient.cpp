@@ -340,32 +340,20 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   EdgeSchemas edgeSchemas;
   TagID lastTagId = -1;
 
-  auto addSchemaField = [&spaceInfoCache](NebulaSchemaProvider* schema,
-                                          const cpp2::ColumnDef& col) {
+  auto addSchemaField = [](NebulaSchemaProvider* schema, const cpp2::ColumnDef& col) {
     bool hasDef = col.default_value_ref().has_value();
     auto& colType = col.get_type();
     size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
     cpp2::GeoShape geoShape =
         colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
     bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
-    Expression* defaultValueExpr = nullptr;
+    std::string defaultValueExprStr = "";
     if (hasDef) {
-      auto encoded = *col.get_default_value();
-      defaultValueExpr = Expression::decode(&(spaceInfoCache->pool_),
-                                            folly::StringPiece(encoded.data(), encoded.size()));
-
-      if (defaultValueExpr == nullptr) {
-        LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
-        hasDef = false;
-      }
+      defaultValueExprStr = *col.get_default_value();
     }
 
-    schema->addField(col.get_name(),
-                     colType.get_type(),
-                     len,
-                     nullable,
-                     hasDef ? defaultValueExpr : nullptr,
-                     geoShape);
+    schema->addField(
+        col.get_name(), colType.get_type(), len, nullable, defaultValueExprStr, geoShape);
   };
 
   for (auto& tagIt : tagItemVec) {

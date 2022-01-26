@@ -154,8 +154,7 @@ Status CreateTagValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema));
   NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema));
   // Save the schema in validateContext
-  auto pool = qctx_->objPool();
-  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema);
   vctx_->addSchema(name, schemaPro);
   createCtx_->name = std::move(name);
   createCtx_->schema = std::move(schema);
@@ -177,8 +176,7 @@ Status CreateEdgeValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema));
   NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema));
   // Save the schema in validateContext
-  auto pool = qctx_->objPool();
-  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema);
   vctx_->addSchema(name, schemaPro);
   createCtx_->name = std::move(name);
   createCtx_->schema = std::move(schema);

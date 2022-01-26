@@ -25,7 +25,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
                 cpp2::PropertyType type,
                 bool nullable,
                 bool hasDefault,
-                Expression* defaultValue,
+                std::string defaultValue,
                 size_t size,
                 size_t offset,
                 size_t nullFlagPos,
@@ -48,7 +48,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 
     bool hasDefault() const override { return hasDefault_; }
 
-    Expression* defaultValue() const override { return defaultValue_; }
+    const std::string& defaultValue() const override { return defaultValue_; }
 
     size_t size() const override { return size_; }
 
@@ -66,7 +66,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
     cpp2::PropertyType type_;
     bool nullable_;
     bool hasDefault_;
-    Expression* defaultValue_;
+    std::string defaultValue_;
     size_t size_;
     size_t offset_;
     size_t nullFlagPos_;
@@ -97,7 +97,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
                 cpp2::PropertyType type,
                 size_t fixedStrLen = 0,
                 bool nullable = false,
-                Expression* defaultValue = nullptr,
+                std::string defaultValue = "",
                 cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
   static std::size_t fieldSize(cpp2::PropertyType type, std::size_t fixedStrLimit);
