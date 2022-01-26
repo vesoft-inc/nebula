@@ -80,7 +80,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
@@ -179,7 +179,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -230,7 +230,7 @@ Feature: Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"

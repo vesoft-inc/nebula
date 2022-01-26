@@ -84,14 +84,6 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    # Below scenario is not suppoted for the execution plan has a scan.
-    When executing query:
-      """
-      USE nba;
-      MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
-      RETURN m,n,a,c
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Line Multi Match
     When executing query:
@@ -189,15 +181,6 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    # Below scenario is not suppoted for the execution plan has a scan.
-    When executing query:
-      """
-      USE nba;
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
-      OPTIONAL MATCH (a)<-[]-(b)
-      RETURN m.player.name AS n1, n.player.name AS n2, a.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Line Multi Query Parts
     When executing query:
@@ -244,16 +227,6 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
-    # Below scenario is not suppoted for the execution plan has a scan.
-    When executing query:
-      """
-      USE nba;
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
-      WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
-      MATCH (a)-[]-(b)
-      RETURN a.player.name AS n1, b.player.name AS n2 ORDER BY n1, n2 LIMIT 10
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Multi Line Some Erros
     When executing query:
