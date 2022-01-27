@@ -62,14 +62,6 @@ using RemoteListeners =
     std::unordered_map<GraphSpaceID,
                        std::unordered_map<PartitionID, std::vector<RemoteListenerInfo>>>;
 
-inline bool checkSegment(const std::string& segment) {
-  static const std::regex pattern("^[0-9a-zA-Z]+$");
-  if (!segment.empty() && std::regex_match(segment, pattern)) {
-    return true;
-  }
-  return false;
-}
-
 }  // namespace meta
 }  // namespace nebula
 

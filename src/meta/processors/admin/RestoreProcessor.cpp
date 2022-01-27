@@ -6,7 +6,6 @@
 #include "meta/processors/admin/RestoreProcessor.h"
 
 #include "common/fs/FileUtils.h"
-#include "meta/common/MetaCommon.h"
 
 namespace nebula {
 namespace meta {
@@ -100,7 +99,6 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4
     bool needUpdate = false;
     auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
     auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
-    std::vector<HostAddr> DesHosts;
     for (auto& host : hosts) {
       if (host == ipv4From) {
         needUpdate = true;

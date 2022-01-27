@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief List all registered configs in given module
+ *
+ */
 class ListConfigsProcessor : public BaseProcessor<cpp2::ListConfigsResp> {
  public:
   static ListConfigsProcessor* instance(kvstore::KVStore* kvstore) {

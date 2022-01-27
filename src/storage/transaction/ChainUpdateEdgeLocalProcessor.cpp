@@ -17,6 +17,7 @@ namespace storage {
 
 void ChainUpdateEdgeLocalProcessor::process(const cpp2::UpdateEdgeRequest& req) {
   if (!prepareRequest(req)) {
+    pushResultCode(rcPrepare_, localPartId_);
     onFinished();
   }
 
@@ -28,26 +29,21 @@ bool ChainUpdateEdgeLocalProcessor::prepareRequest(const cpp2::UpdateEdgeRequest
   spaceId_ = req.get_space_id();
   localPartId_ = req_.get_part_id();
 
-  auto rc = getSpaceVidLen(spaceId_);
-  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    pushResultCode(rc, localPartId_);
+  rcPrepare_ = getSpaceVidLen(spaceId_);
+  if (rcPrepare_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return false;
   }
 
-  std::tie(term_, code_) = env_->txnMan_->getTerm(spaceId_, localPartId_);
-  if (code_ != Code::SUCCEEDED) {
+  std::tie(term_, rcPrepare_) = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
+  if (rcPrepare_ != Code::SUCCEEDED) {
     return false;
   }
   return true;
 }
 
-/**
- * 1. set mem lock
- * 2. set edge prime
- * */
 folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::prepareLocal() {
   if (!setLock()) {
-    LOG(INFO) << "set lock failed, return E_WRITE_WRITE_CONFLICT";
+    rcPrepare_ = Code::E_WRITE_WRITE_CONFLICT;
     return Code::E_WRITE_WRITE_CONFLICT;
   }
 
@@ -61,18 +57,14 @@ folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::prepareLocal() {
   auto c = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiPut(
       spaceId_, localPartId_, std::move(data), [p = std::move(c.first), this](auto rc) mutable {
-        if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
-          primeInserted_ = true;
-        } else {
-          VLOG(1) << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
-        }
+        rcPrepare_ = rc;
         p.setValue(rc);
       });
   return std::move(c.second);
 }
 
 folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processRemote(Code code) {
-  LOG(INFO) << "prepareLocal()=" << apache::thrift::util::enumNameSafe(code);
+  VLOG(1) << " prepareLocal(): " << apache::thrift::util::enumNameSafe(code);
   if (code != Code::SUCCEEDED) {
     return code;
   }
@@ -82,41 +74,78 @@ folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processRemote(Code code) 
 }
 
 folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::processLocal(Code code) {
-  LOG(INFO) << "processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
-  if (code != Code::SUCCEEDED && code_ == Code::SUCCEEDED) {
-    code_ = code;
+  VLOG(1) << " processRemote(): " << apache::thrift::util::enumNameSafe(code);
+  if (rcPrepare_ != Code::SUCCEEDED) {
+    return rcPrepare_;
   }
 
-  auto currTerm = env_->txnMan_->getTerm(spaceId_, localPartId_);
+  auto currTerm = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
   if (currTerm.first != term_) {
-    LOG(WARNING) << "E_LEADER_CHANGED during prepare and commit local";
-    code_ = Code::E_LEADER_CHANGED;
+    rcCommit_ = Code::E_LEADER_CHANGED;
+    return rcCommit_;
   }
 
-  if (code == Code::E_RPC_FAILURE) {
+  if (rcRemote_ == Code::E_RPC_FAILURE) {
     appendDoublePrime();
-    addUnfinishedEdge(ResumeType::RESUME_REMOTE);
   }
 
-  if (code == Code::SUCCEEDED || code == Code::E_RPC_FAILURE) {
-    erasePrime();
-    forwardToDelegateProcessor();
-  } else {
-    if (primeInserted_) {
-      abort();
+  erasePrime();
+
+  if (rcRemote_ != Code::SUCCEEDED && rcRemote_ != Code::E_RPC_FAILURE) {
+    // prepare succeed and remote failed
+    return abort();
+  }
+
+  return commit();
+}
+
+void ChainUpdateEdgeLocalProcessor::finish() {
+  VLOG(1) << " commitLocal()=" << apache::thrift::util::enumNameSafe(rcCommit_);
+  do {
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      break;
     }
-  }
+    if (isKVStoreError(rcCommit_)) {
+      reportFailed(ResumeType::RESUME_CHAIN);
+      break;
+    }
+    if (rcRemote_ == Code::E_RPC_FAILURE) {
+      reportFailed(ResumeType::RESUME_REMOTE);
+      break;
+    }
+  } while (0);
 
-  return code_;
+  auto rc = Code::SUCCEEDED;
+  do {
+    if (rcPrepare_ != Code::SUCCEEDED) {
+      rc = rcPrepare_;
+      break;
+    }
+
+    if (rcCommit_ != Code::SUCCEEDED) {
+      rc = rcCommit_;
+      break;
+    }
+
+    if (rcRemote_ != Code::E_RPC_FAILURE) {
+      rc = rcRemote_;
+      break;
+    }
+  } while (0);
+
+  pushResultCode(rc, req_.get_part_id());
+  finished_.setValue(rc);
+  onFinished();
 }
 
 void ChainUpdateEdgeLocalProcessor::doRpc(folly::Promise<Code>&& promise, int retry) noexcept {
   try {
     if (retry > retryLimit_) {
-      promise.setValue(Code::E_LEADER_CHANGED);
+      rcRemote_ = Code::E_LEADER_CHANGED;
+      promise.setValue(rcRemote_);
       return;
     }
-    auto* iClient = env_->txnMan_->getInternalClient();
+    auto* iClient = env_->interClient_;
     folly::Promise<Code> p;
     auto reversedReq = reverseRequest(req_);
 
@@ -124,17 +153,16 @@ void ChainUpdateEdgeLocalProcessor::doRpc(folly::Promise<Code>&& promise, int re
     iClient->chainUpdateEdge(reversedReq, term_, ver_, std::move(p));
     std::move(f)
         .thenTry([=, p = std::move(promise)](auto&& t) mutable {
-          auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
-          VLOG(1) << "code = " << apache::thrift::util::enumNameSafe(code);
-          switch (code) {
+          rcRemote_ = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
+          switch (rcRemote_) {
             case Code::E_LEADER_CHANGED:
               doRpc(std::move(p), ++retry);
               break;
             default:
-              p.setValue(code);
+              p.setValue(rcRemote_);
               break;
           }
-          return code;
+          return rcRemote_;
         })
         .get();
   } catch (std::exception& ex) {
@@ -155,23 +183,27 @@ void ChainUpdateEdgeLocalProcessor::appendDoublePrime() {
   kvAppend_.emplace_back(std::make_pair(std::move(key), std::move(val)));
 }
 
-void ChainUpdateEdgeLocalProcessor::forwardToDelegateProcessor() {
-  kUpdateEdgeCounters.init("update_edge");
+folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::commit() {
+  VLOG(1) << __func__ << "()";
   UpdateEdgeProcessor::ContextAdjuster fn = [=](EdgeContext& ctx) {
     ctx.kvAppend = std::move(kvAppend_);
     ctx.kvErased = std::move(kvErased_);
   };
 
+  auto [pro, fut] = folly::makePromiseContract<Code>();
   auto* proc = UpdateEdgeProcessor::instance(env_);
   proc->adjustContext(std::move(fn));
   auto f = proc->getFuture();
+  std::move(f).thenTry([&, p = std::move(pro)](auto&& t) mutable {
+    if (t.hasValue()) {
+      resp_ = std::move(t.value());
+      rcCommit_ = getErrorCode(resp_);
+    }
+    p.setValue(rcCommit_);
+  });
+
   proc->process(req_);
-  auto resp = std::move(f).get();
-  code_ = getErrorCode(resp);
-  if (code_ != Code::SUCCEEDED) {
-    addUnfinishedEdge(ResumeType::RESUME_CHAIN);
-  }
-  std::swap(resp_, resp);
+  return std::move(fut);
 }
 
 Code ChainUpdateEdgeLocalProcessor::checkAndBuildContexts(const cpp2::UpdateEdgeRequest&) {
@@ -182,26 +214,21 @@ std::string ChainUpdateEdgeLocalProcessor::sEdgeKey(const cpp2::UpdateEdgeReques
   return ConsistUtil::edgeKey(spaceVidLen_, req.get_part_id(), req.get_edge_key());
 }
 
-void ChainUpdateEdgeLocalProcessor::finish() {
-  LOG(INFO) << "ChainUpdateEdgeLocalProcessor::finish()";
-  pushResultCode(code_, req_.get_part_id());
-  onFinished();
-}
+folly::SemiFuture<Code> ChainUpdateEdgeLocalProcessor::abort() {
+  VLOG(1) << __func__ << "()";
+  if (kvErased_.empty()) {
+    return Code::SUCCEEDED;
+  }
 
-void ChainUpdateEdgeLocalProcessor::abort() {
-  auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, req_.get_edge_key());
-  kvErased_.emplace_back(std::move(key));
-
-  folly::Baton<true, std::atomic> baton;
-  env_->kvstore_->asyncMultiRemove(
-      req_.get_space_id(), req_.get_part_id(), std::move(kvErased_), [&](auto rc) mutable {
-        LOG(INFO) << " abort()=" << apache::thrift::util::enumNameSafe(rc);
-        if (rc != Code::SUCCEEDED) {
-          addUnfinishedEdge(ResumeType::RESUME_CHAIN);
-        }
-        baton.post();
-      });
-  baton.wait();
+  auto [pro, fut] = folly::makePromiseContract<Code>();
+  env_->kvstore_->asyncMultiRemove(req_.get_space_id(),
+                                   req_.get_part_id(),
+                                   std::move(kvErased_),
+                                   [&, p = std::move(pro)](auto rc) mutable {
+                                     rcCommit_ = rc;
+                                     p.setValue(rc);
+                                   });
+  return std::move(fut);
 }
 
 cpp2::UpdateEdgeRequest ChainUpdateEdgeLocalProcessor::reverseRequest(
@@ -221,12 +248,12 @@ cpp2::UpdateEdgeRequest ChainUpdateEdgeLocalProcessor::reverseRequest(
 
 bool ChainUpdateEdgeLocalProcessor::setLock() {
   auto spaceId = req_.get_space_id();
-  auto* lockCore = env_->txnMan_->getLockCore(spaceId, req_.get_part_id());
-  if (lockCore == nullptr) {
+  lkCore_ = env_->txnMan_->getLockCore(spaceId, req_.get_part_id(), term_);
+  if (lkCore_ == nullptr) {
     return false;
   }
   auto key = ConsistUtil::edgeKey(spaceVidLen_, req_.get_part_id(), req_.get_edge_key());
-  lk_ = std::make_unique<MemoryLockGuard<std::string>>(lockCore, key);
+  lk_ = std::make_unique<MemoryLockGuard<std::string>>(lkCore_.get(), key);
   return lk_->isLocked();
 }
 
@@ -240,13 +267,20 @@ nebula::cpp2::ErrorCode ChainUpdateEdgeLocalProcessor::getErrorCode(
   return parts.front().get_code();
 }
 
-void ChainUpdateEdgeLocalProcessor::addUnfinishedEdge(ResumeType type) {
-  LOG(INFO) << "addUnfinishedEdge()";
+void ChainUpdateEdgeLocalProcessor::reportFailed(ResumeType type) {
+  VLOG(1) << __func__ << "()";
   if (lk_ != nullptr) {
-    lk_->forceUnlock();
+    lk_->setAutoUnlock(false);
   }
   auto key = ConsistUtil::edgeKey(spaceVidLen_, req_.get_part_id(), req_.get_edge_key());
-  env_->txnMan_->addPrime(spaceId_, key, type);
+  env_->txnMan_->addPrime(spaceId_, localPartId_, term_, key, type);
+}
+
+bool ChainUpdateEdgeLocalProcessor::isKVStoreError(nebula::cpp2::ErrorCode code) {
+  auto iCode = static_cast<int>(code);
+  auto kvStoreErrorCodeBegin = static_cast<int>(nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART);
+  auto kvStoreErrorCodeEnd = static_cast<int>(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+  return iCode >= kvStoreErrorCodeBegin && iCode <= kvStoreErrorCodeEnd;
 }
 
 }  // namespace storage

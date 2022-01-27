@@ -17,13 +17,23 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief It will replace host info in meta partition table from
+ *        backup host to current cluster host.
+ *        It will replace given host in zone table and partition table. Notice that,
+ *        it only replace the host without port.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ *
+ */
 class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
   FRIEND_TEST(MetaHttpReplaceHandlerTest, FooTest);
 
  public:
   MetaHttpReplaceHostHandler() = default;
 
-  void init(nebula::kvstore::KVStore *kvstore);
+  void init(nebula::kvstore::KVStore* kvstore);
 
   void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -37,14 +47,15 @@ class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
 
   void onError(proxygen::ProxygenError error) noexcept override;
 
-  bool replaceHost(std::string ipv4From, std::string ipv4To);
+  bool replaceHostInPart(std::string ipv4From, std::string ipv4To);
+  bool replaceHostInZone(std::string ipv4From, std::string ipv4To);
 
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
   std::string errMsg_;
   std::string ipv4From_;
   std::string ipv4To_;
-  nebula::kvstore::KVStore *kvstore_;
+  nebula::kvstore::KVStore* kvstore_;
 };
 
 }  // namespace meta
