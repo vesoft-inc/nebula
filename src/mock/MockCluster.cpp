@@ -213,6 +213,7 @@ void MockCluster::initStorageKV(const char* dataPath,
 
   txnMan_ = std::make_unique<storage::TransactionManager>(storageEnv_.get());
   storageEnv_->txnMan_ = txnMan_.get();
+  txnMan_->start();
 }
 
 void MockCluster::startStorage(HostAddr addr,
