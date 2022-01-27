@@ -1893,6 +1893,27 @@ Value Value::toInt() const {
   }
 }
 
+Value Value::toSet() const {
+  switch (type_) {
+    case Value::Type::__EMPTY__:
+    case Value::Type::NULLVALUE: {
+      return Value::kNullValue;
+    }
+    case Value::Type::SET: {
+      return *this;
+    }
+    case Value::Type::LIST: {
+      Set set;
+      for (auto& item : getList().values) {
+        set.values.emplace(item);
+      }
+      return set;
+    }
+    default: {
+      return Value::kNullBadType;
+    }
+  }
+}
 Value Value::lessThan(const Value& v) const {
   if (empty() || v.empty()) {
     return (v.isNull() || isNull()) ? Value::kNullValue : Value::kEmpty;
