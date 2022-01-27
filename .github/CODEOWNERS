@@ -3,4 +3,4 @@
 /src/kvstore/raftex/ @critical27 @sherman-the-tank
 /cmake/ @sherman-the-tank @yixinglu @dutor
 *.thrift @vesoft-inc/tech-committee-reviewers
-*.yy @CPWstatic
+*.yy @CPWstatic @dutor
