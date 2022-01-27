@@ -2,7 +2,6 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <bits/stdint-intn.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
