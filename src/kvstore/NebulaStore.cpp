@@ -584,7 +584,8 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
   }
   auto part = nebula::value(ret);
   if (!checkLeader(part, canReadFromFollower)) {
-    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+    return part->isLeader() ? nebula::cpp2::ErrorCode::E_LEADER_LEASE_FAILED
+                            : nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   return part->engine()->get(key, value);
 }
@@ -608,6 +609,7 @@ void NebulaStore::ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, cons
   if (!ok(ret)) {
     LOG(INFO) << "Failed to release snapshot for GraphSpaceID " << spaceId << " PartitionID"
               << partId;
+    return;
   }
   auto part = nebula::value(ret);
   return part->engine()->ReleaseSnapshot(snapshot);
