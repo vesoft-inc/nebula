@@ -155,6 +155,10 @@ class LabelTagPropertyExpression final : public PropertyExpression {
     return label_;
   }
 
+  void setLabel(Expression* label) {
+    label_ = label;
+  }
+
  private:
   LabelTagPropertyExpression(ObjectPool* pool,
                              Expression* label = nullptr,

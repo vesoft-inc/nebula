@@ -10,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVStore.h"
 
@@ -124,6 +125,17 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     status = rocksdb::DB::Open(options, path, &db);
   }
   CHECK(status.ok()) << status.ToString();
+  if (!readonly && spaceId_ != kDefaultSpaceId /* only for storage*/) {
+    rocksdb::ReadOptions readOptions;
+    std::string dataVersionValue = "";
+    status = db->Get(readOptions, NebulaKeyUtils::dataVersionKey(), &dataVersionValue);
+    if (status.IsNotFound()) {
+      rocksdb::WriteOptions writeOptions;
+      status = db->Put(
+          writeOptions, NebulaKeyUtils::dataVersionKey(), NebulaKeyUtils::dataVersionValue());
+    }
+    CHECK(status.ok()) << status.ToString();
+  }
   db_.reset(db);
   extractorLen_ = sizeof(PartitionID) + vIdLen;
   partsNum_ = allParts().size();
@@ -213,19 +225,24 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
-                                            std::unique_ptr<KVIterator>* storageIter) {
+                                            std::unique_ptr<KVIterator>* storageIter,
+                                            const void* snapshot) {
   // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
   // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
   if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
-    return prefixWithExtractor(prefix, storageIter);
+    return prefixWithExtractor(prefix, snapshot, storageIter);
   } else {
-    return prefixWithoutExtractor(prefix, storageIter);
+    return prefixWithoutExtractor(prefix, snapshot, storageIter);
   }
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& prefix,
+                                                         const void* snapshot,
                                                          std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
   options.prefix_same_as_start = true;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
@@ -236,8 +253,11 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
-    const std::string& prefix, std::unique_ptr<KVIterator>* storageIter) {
+    const std::string& prefix, const void* snapshot, std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
   // prefix_same_as_start is false by default
   options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);

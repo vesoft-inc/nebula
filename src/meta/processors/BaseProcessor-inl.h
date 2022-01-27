@@ -166,7 +166,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId()
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGlobalId() {
   // A read lock has been added before call
-  static const std::string kIdKey = "__id__";
+  static const std::string kIdKey = MetaKeyUtils::idKey();
   int32_t id;
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
@@ -279,7 +279,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::includeByZone(const std::vector<Hos
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (!nebula::ok(iterRet)) {
     code = nebula::error(iterRet);
-    LOG(ERROR) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(code);
     return code;
   }
 
@@ -289,7 +289,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::includeByZone(const std::vector<Hos
     auto zoneHosts = MetaKeyUtils::parseZoneHosts(iter->val());
     for (const auto& host : hosts) {
       if (std::find(zoneHosts.begin(), zoneHosts.end(), host) != zoneHosts.end()) {
-        LOG(ERROR) << "Host overlap found in zone " << name;
+        LOG(INFO) << "Host overlap found in zone " << name;
         code = nebula::cpp2::ErrorCode::E_CONFLICT;
         break;
       }
@@ -356,7 +356,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestTag
   const auto& key = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
   auto ret = doPrefix(key);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Tag Prefix " << key << " failed";
+    LOG(INFO) << "Tag Prefix " << key << " failed";
     return nebula::error(ret);
   }
 
@@ -364,7 +364,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestTag
   if (iter->valid()) {
     return MetaKeyUtils::parseSchema(iter->val());
   } else {
-    LOG(ERROR) << "Tag Prefix " << key << " not found";
+    LOG(INFO) << "Tag Prefix " << key << " not found";
     return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
   }
 }
@@ -375,7 +375,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestEdg
   const auto& key = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto ret = doPrefix(key);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Edge Prefix " << key << " failed";
+    LOG(INFO) << "Edge Prefix " << key << " failed";
     return nebula::error(ret);
   }
 
@@ -383,7 +383,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestEdg
   if (iter->valid()) {
     return MetaKeyUtils::parseSchema(iter->val());
   } else {
-    LOG(ERROR) << "Edge Prefix " << key << " not found";
+    LOG(INFO) << "Edge Prefix " << key << " not found";
     return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
   }
 }
@@ -490,8 +490,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
   auto iterRet = doPrefix(indexPrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Tag or edge index prefix failed, error :"
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Tag or edge index prefix failed, error :"
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   auto indexIter = nebula::value(iterRet).get();
@@ -509,6 +509,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
   }
   return items;
 }
+
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
     GraphSpaceID spaceId, int32_t tagOrEdge) {
@@ -516,8 +517,8 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
   auto iterRet = doPrefix(indexPrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Tag or edge fulltext index prefix failed, error :"
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Tag or edge fulltext index prefix failed, error :"
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   auto indexIter = nebula::value(iterRet).get();
@@ -550,8 +551,8 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
             return tCol.name == iCol.name;
           });
           if (it != indexCols.end()) {
-            LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
-                       << ", column : " << tCol.name;
+            LOG(INFO) << "Index conflict, index :" << index.get_index_name()
+                      << ", column : " << tCol.name;
             return nebula::cpp2::ErrorCode::E_CONFLICT;
           }
         }
@@ -560,6 +561,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
     const std::vector<std::string>& cols, const std::vector<cpp2::AlterSchemaItem>& alterItems) {
@@ -571,7 +573,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
         auto it =
             std::find_if(cols.begin(), cols.end(), [&](const auto& c) { return c == iCol.name; });
         if (it != cols.end()) {
-          LOG(ERROR) << "fulltext index conflict";
+          LOG(INFO) << "fulltext index conflict";
           return nebula::cpp2::ErrorCode::E_CONFLICT;
         }
       }
@@ -592,7 +594,7 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>
       return false;
     }
   }
-  LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
+  LOG(INFO) << "Index " << item.get_index_name() << " has existed";
   return true;
 }
 

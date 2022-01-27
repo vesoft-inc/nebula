@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Set configuration of given module's given name,
+ *
+ */
 class SetConfigProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static SetConfigProcessor* instance(kvstore::KVStore* kvstore) {
@@ -19,6 +23,15 @@ class SetConfigProcessor : public BaseProcessor<cpp2::ExecResp> {
 
   void process(const cpp2::SetConfigReq& req);
 
+  /**
+   * @brief Helper function to set configuration to a single module.
+   *
+   * @param module should not be cpp2::ConfigModule::ALL
+   * @param name
+   * @param value
+   * @param data
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode setConfig(const cpp2::ConfigModule& module,
                                     const std::string& name,
                                     const Value& value,
