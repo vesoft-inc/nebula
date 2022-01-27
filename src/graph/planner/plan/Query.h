@@ -1555,7 +1555,7 @@ class AppendVertices final : public GetVertices {
                     nullptr,
                     false,
                     {},
-                    0,
+                    -1,  // means no limit
                     nullptr) {}
 
   void cloneMembers(const AppendVertices& a);

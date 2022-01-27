@@ -22,6 +22,9 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
 
 void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
   spaceId_ = req.get_space_id();
+  // negative number means no limit
+  const auto rawLimit = req.limit_ref().value_or(-1);
+  limit_ = rawLimit < 0 ? std::numeric_limits<int64_t>::max() : rawLimit;
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (auto& p : req.get_parts()) {
@@ -199,7 +202,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
     tags.emplace_back(tag.get());
     plan.addNode(std::move(tag));
   }
-  auto output = std::make_unique<GetTagPropNode>(context, tags, result);
+  auto output = std::make_unique<GetTagPropNode>(context, tags, result, limit_);
   for (auto* tag : tags) {
     output->addDependency(tag);
   }
@@ -216,7 +219,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* conte
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
-  auto output = std::make_unique<GetEdgePropNode>(context, edges, result);
+  auto output = std::make_unique<GetEdgePropNode>(context, edges, result, limit_);
   for (auto* edge : edges) {
     output->addDependency(edge);
   }
