@@ -238,6 +238,10 @@ class PlanNode {
     return dependencies_;
   }
 
+  auto& dependencies() {
+    return dependencies_;
+  }
+
   const PlanNode* dep(size_t index = 0) const {
     DCHECK_LT(index, dependencies_.size());
     return dependencies_.at(index);
