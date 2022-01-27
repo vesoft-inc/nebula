@@ -22,6 +22,8 @@ template <typename T>
     switch (stResp.status().code()) {
       case Status::Code::kLeaderChanged:
         return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+      case Status::Code::kError:
+        return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
       default:
         LOG(ERROR) << "not impl error transform: code="
                    << static_cast<int32_t>(stResp.status().code());
@@ -69,8 +71,8 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
 
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
     auto code = getErrorCode(t);
+    VLOG(1) << "chainUpdateEdge rpc: " << apache::thrift::util::enumNameSafe(code);
     if (code == ::nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
       chainUpdateEdge(reversedRequest, termOfSrc, optVersion, std::move(p));
     } else {
       p.setValue(code);
@@ -108,7 +110,6 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
     auto code = getErrorCode(t);
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
       chainAddEdges(directReq, termId, optVersion, std::move(p));
     } else {
       p.setValue(code);
@@ -165,7 +166,6 @@ void InternalStorageClient::chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
     auto code = getErrorCode(t);
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
       chainDeleteEdges(req, txnId, termId, std::move(p));
     } else {
       p.setValue(code);

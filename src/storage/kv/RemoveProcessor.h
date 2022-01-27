@@ -14,6 +14,9 @@ namespace storage {
 
 extern ProcessorCounters kRemoveCounters;
 
+/**
+ * @brief this is a simple remove() interface when storage run in KV mode.
+ */
 class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:
   static RemoveProcessor* instance(StorageEnv* env,
