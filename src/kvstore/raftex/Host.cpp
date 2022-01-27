@@ -270,9 +270,27 @@ Host::prepareAppendLogRequest() {
   VLOG(2) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
 
+  auto makeReq = [this]() -> std::shared_ptr<cpp2::AppendLogRequest> {
+    auto req = std::make_shared<cpp2::AppendLogRequest>();
+    req->space_ref() = part_->spaceId();
+    req->part_ref() = part_->partitionId();
+    req->current_term_ref() = logTermToSend_;
+    req->committed_log_id_ref() = committedLogId_;
+    req->leader_addr_ref() = part_->address().host;
+    req->leader_port_ref() = part_->address().port;
+    req->last_log_term_sent_ref() = lastLogTermSent_;
+    req->last_log_id_sent_ref() = lastLogIdSent_;
+    return req;
+  };
+
   // We need to use lastLogIdSent_ + 1 to check whether need to send snapshot
   if (UNLIKELY(lastLogIdSent_ + 1 < part_->wal()->firstLogId())) {
     return startSendSnapshot();
+  }
+
+  if (lastLogIdSent_ == logIdToSend_) {
+    auto req = makeReq();
+    return req;
   }
 
   if (lastLogIdSent_ + 1 > part_->wal()->lastLogId()) {
@@ -285,16 +303,7 @@ Host::prepareAppendLogRequest() {
 
   auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
   if (it->valid()) {
-    auto req = std::make_shared<cpp2::AppendLogRequest>();
-    req->space_ref() = part_->spaceId();
-    req->part_ref() = part_->partitionId();
-    req->current_term_ref() = logTermToSend_;
-    req->committed_log_id_ref() = committedLogId_;
-    req->leader_addr_ref() = part_->address().host;
-    req->leader_port_ref() = part_->address().port;
-    req->last_log_term_sent_ref() = lastLogTermSent_;
-    req->last_log_id_sent_ref() = lastLogIdSent_;
-
+    auto req = makeReq();
     std::vector<cpp2::RaftLogEntry> logs;
     for (size_t cnt = 0; it->valid() && cnt < FLAGS_max_appendlog_batch_size; ++(*it), ++cnt) {
       cpp2::RaftLogEntry entry;
