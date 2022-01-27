@@ -31,6 +31,15 @@ const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
   return DCHECK_NOTNULL(result->node)->node();
 }
 
+void MatchedResult::eraseAll() {
+  if (node != nullptr) {
+    node->node()->releaseSymbols();
+  }
+  for (auto &dep : dependencies) {
+    dep.eraseAll();
+  }
+}
+
 Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns) {
   Pattern pattern;
   pattern.kind_ = kind;

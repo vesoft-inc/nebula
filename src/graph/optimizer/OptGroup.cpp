@@ -81,8 +81,12 @@ Status OptGroup::explore(const OptRule *rule) {
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
     if (result.eraseAll) {
-      for (auto gnode : groupNodes_) {
-        gnode->node()->releaseSymbols();
+      matched.eraseAll();  // erase current mached sub-plan
+      // erase not matched sub-plan
+      for (auto it = groupNodes_.begin(); it != groupNodes_.end(); ++it) {
+        if (it != iter) {
+          (*it)->eraseAll();
+        }
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
@@ -100,7 +104,7 @@ Status OptGroup::explore(const OptRule *rule) {
     }
 
     if (result.eraseCurr) {
-      (*iter)->node()->releaseSymbols();
+      matched.eraseAll();
       iter = groupNodes_.erase(iter);
     } else {
       ++iter;
@@ -143,6 +147,12 @@ const PlanNode *OptGroup::getPlan() const {
   const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
   DCHECK(minGroupNode != nullptr);
   return minGroupNode->getPlan();
+}
+
+void OptGroup::eraseAll() {
+  for (auto &groupNode : groupNodes_) {
+    groupNode->eraseAll();
+  }
 }
 
 OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
@@ -208,6 +218,16 @@ const PlanNode *OptGroupNode::getPlan() const {
     node_->setDep(i, dependencies_[i]->getPlan());
   }
   return node_;
+}
+
+void OptGroupNode::eraseAll() {
+  node_->releaseSymbols();
+  for (auto body : bodies_) {
+    body->eraseAll();
+  }
+  for (auto dep : dependencies_) {
+    dep->eraseAll();
+  }
 }
 
 }  // namespace opt

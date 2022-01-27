@@ -44,6 +44,9 @@ class OptGroup final {
   double getCost() const;
   const graph::PlanNode *getPlan() const;
 
+  // Release all symbols
+  void eraseAll();
+
  private:
   explicit OptGroup(OptContext *ctx) noexcept;
 
@@ -101,6 +104,9 @@ class OptGroupNode final {
   Status explore(const OptRule *rule);
   double getCost() const;
   const graph::PlanNode *getPlan() const;
+
+  // Release all symbols
+  void eraseAll();
 
  private:
   OptGroupNode(graph::PlanNode *node, const OptGroup *group) noexcept;
