@@ -34,16 +34,19 @@ class DatetimeReader {
   }
 
   StatusOr<DateTime> readDatetime(std::string input) {
+    input = kDatetimePrefix + input;
     return read(std::move(input));
   }
 
   StatusOr<Date> readDate(std::string input) {
+    input = kDatePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
     return result.value().date();
   }
 
   StatusOr<Time> readTime(std::string input) {
+    input = kTimePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
     return result.value().time();
@@ -61,6 +64,10 @@ class DatetimeReader {
   DatetimeParser parser_;
   std::string error_;
   DateTime *dt_{nullptr};
+
+  inline static const std::string kDatetimePrefix = "DATETIME__";
+  inline static const std::string kDatePrefix = "DATE__";
+  inline static const std::string kTimePrefix = "TIME__";
 };
 
 }  // namespace time
