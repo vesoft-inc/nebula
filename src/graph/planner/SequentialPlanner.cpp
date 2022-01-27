@@ -24,6 +24,10 @@ StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
   subPlan.root = validators.back()->root();
   ifBuildDataCollect(subPlan, qctx);
   for (auto iter = validators.begin(); iter < validators.end() - 1; ++iter) {
+    // Remove left tail kStart plannode before append plan.
+    // It allows that kUse sentence to append kMatch Sentence.
+    // For example: Use ...; Match ...
+    rmLeftTailStartNode((iter + 1)->get(), iter->get()->sentence()->kind());
     NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
   }
   if (validators.front()->tail()->isSingleInput()) {
@@ -57,6 +61,28 @@ void SequentialPlanner::ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx)
     }
     default:
       break;
+  }
+}
+
+// When appending plans, it need to remove left tail plannode.
+// Because the left tail plannode is StartNode which needs to be removed,
+// and remain one size for add dependency
+// TODO: It's a temporary solution, remove it after Execute multiple sequences one by one.
+void SequentialPlanner::rmLeftTailStartNode(Validator* validator, Sentence::Kind appendPlanKind) {
+  if (appendPlanKind != Sentence::Kind::kUse ||
+      validator->tail()->kind() != PlanNode::Kind::kStart ||
+      validator->root()->dependencies().size() == 0UL) {
+    return;
+  }
+
+  PlanNode* node = validator->root();
+  while (node->dependencies()[0]->dependencies().size() > 0UL) {
+    node = const_cast<PlanNode*>(node->dependencies()[0]);
+  }
+  if (node->dependencies().size() == 1UL) {
+    // Remain one size for add dependency
+    node->dependencies()[0] = nullptr;
+    validator->setTail(node);
   }
 }
 }  // namespace graph
