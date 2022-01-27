@@ -1,14 +1,15 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: Multi Query Parts
+Feature: Multi Line Multi Query Parts
 
   Background:
     Given a graph with space named "nba"
 
-  Scenario: Multi Path Patterns
+  Scenario: Multi Line Multi Path Patterns
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2,
       CASE WHEN l.team.name is not null THEN l.team.name
@@ -28,6 +29,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
@@ -45,6 +47,7 @@ Feature: Multi Query Parts
       | "Aron Baynes" | "Tim Duncan" | "Manu Ginobili"     |
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n), (n)-[]-(l), (l)-[]-(h) WHERE id(m)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
       ORDER BY n1, n2, n3, n4 LIMIT 10
@@ -61,17 +64,11 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    # Below scenario is not supported for the execution plan has a scan.
-    When executing query:
-      """
-      MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
-      RETURN m,n,a,c
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  Scenario: Multi Match
+  Scenario: Multi Line Multi Match
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l)
       RETURN m.player.name AS n1, n.player.name AS n2,
@@ -92,6 +89,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l), (l)-[]-(h)
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
@@ -111,6 +109,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l)
       MATCH (l)-[]-(h)
@@ -131,6 +130,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
     When executing query:
       """
+      USE nba;
       MATCH (v:player{name:"Tony Parker"})
       WITH v AS a
       MATCH p=(o:player{name:"Tim Duncan"})-[]->(a)
@@ -141,9 +141,10 @@ Feature: Multi Query Parts
       | "Tim Duncan"  |
       | "Tim Duncan"  |
 
-  Scenario: Optional Match
+  Scenario: Multi Line Optional Match
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (n)<-[:serve]-(l)
       RETURN m.player.name AS n1, n.player.name AS n2, l AS n3 ORDER BY n1, n2, n3 LIMIT 10
@@ -160,18 +161,11 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    # Below scenario is not supported for the execution plan has a scan.
-    When executing query:
-      """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
-      OPTIONAL MATCH (a)<-[]-(b)
-      RETURN m.player.name AS n1, n.player.name AS n2, a.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  Scenario: Multi Query Parts
+  Scenario: Multi Line Multi Query Parts
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       MATCH (n)-[]-(l)
@@ -193,6 +187,7 @@ Feature: Multi Query Parts
       | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
+      USE nba;
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
       WITH  m,count(*) AS lcount
       MATCH (m)--(n)
@@ -203,6 +198,7 @@ Feature: Multi Query Parts
       | 19     | 110    |
     When executing query:
       """
+      USE nba;
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
       WITH  m,n
       MATCH (m)--(n)
@@ -211,19 +207,11 @@ Feature: Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
-    # Below scenario is not supported for the execution plan has a scan.
-    When executing query:
-      """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
-      WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
-      MATCH (a)-[]-(b)
-      RETURN a.player.name AS n1, b.player.name AS n2 ORDER BY n1, n2 LIMIT 10
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  Scenario: Some Erros
+  Scenario: Multi Line Some Erros
     When executing query:
       """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       WITH n, n.player.name AS n1 ORDER BY n1 LIMIT 10
       RETURN m
@@ -231,6 +219,7 @@ Feature: Multi Query Parts
     Then a SemanticError should be raised at runtime: Alias used but not defined: `m'
     When executing query:
       """
+      USE nba;
       MATCH (v:player)-[e]-(v:team) RETURN v, e
       """
     Then a SemanticError should be raised at runtime: `v': Redefined alias in a single path pattern.
