@@ -39,7 +39,7 @@ struct TaskContext {
   using CallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&)>;
 
   TaskContext() = default;
-  TaskContext(const cpp2::AddAdminTaskRequest& req, CallBack cb)
+  TaskContext(const cpp2::AddTaskRequest& req, CallBack cb)
       : cmd_(req.get_cmd()),
         jobId_(req.get_job_id()),
         taskId_(req.get_task_id()),
