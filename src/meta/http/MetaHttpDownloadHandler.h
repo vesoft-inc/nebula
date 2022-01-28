@@ -19,6 +19,14 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief Download sst files from hdfs to every storaged download folder.
+ *        It will send download http request to every storaged, letting them
+ *        download the corressponding sst files.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ */
 class MetaHttpDownloadHandler : public proxygen::RequestHandler {
  public:
   MetaHttpDownloadHandler() = default;

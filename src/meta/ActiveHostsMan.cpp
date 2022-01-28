@@ -8,7 +8,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/utils/Utils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -62,10 +61,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     }
   }
   // indicate whether any leader info is updated
-  bool hasUpdate = false;
-  if (!data.empty()) {
-    hasUpdate = true;
-  }
+  bool hasUpdate = !data.empty();
   data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
