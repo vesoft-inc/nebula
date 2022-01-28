@@ -172,9 +172,8 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
 
   std::vector<folly::SemiFuture<Status>> futures;
   for (auto& address : addresses) {
-    // transform to the admin host
-    auto h = Utils::getAdminAddrFromStoreAddr(address.first);
-    futures.emplace_back(executeInternal(std::move(h), std::move(address.second)));
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    futures.emplace_back(executeInternal(std::move(address.first), std::move(address.second)));
   }
 
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
