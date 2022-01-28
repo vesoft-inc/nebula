@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get dynamic configuration by given name in given module(all, meta, graph, storage)
+ *
+ */
 class GetConfigProcessor : public BaseProcessor<cpp2::GetConfigResp> {
  public:
   static GetConfigProcessor* instance(kvstore::KVStore* kvstore) {

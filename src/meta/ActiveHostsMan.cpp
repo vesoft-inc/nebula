@@ -8,7 +8,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/utils/Utils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -62,10 +61,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     }
   }
   // indicate whether any leader info is updated
-  bool hasUpdate = false;
-  if (!data.empty()) {
-    hasUpdate = true;
-  }
+  bool hasUpdate = !data.empty();
   data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
@@ -228,21 +224,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     activeHosts.insert(activeHosts.end(), hosts.begin(), hosts.end());
   }
   return activeHosts;
-}
-
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveAdminHosts(
-    kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
-  auto hostsRet = getActiveHosts(kv, expiredTTL, role);
-  if (!nebula::ok(hostsRet)) {
-    return nebula::error(hostsRet);
-  }
-  auto hosts = nebula::value(hostsRet);
-
-  std::vector<HostAddr> adminHosts(hosts.size());
-  std::transform(hosts.begin(), hosts.end(), adminHosts.begin(), [](const auto& h) {
-    return Utils::getAdminAddrFromStoreAddr(h);
-  });
-  return adminHosts;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, bool> ActiveHostsMan::isLived(kvstore::KVStore* kv,

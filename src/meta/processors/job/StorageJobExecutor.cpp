@@ -10,7 +10,6 @@
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/BalanceJobExecutor.h"
@@ -173,9 +172,8 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
 
   std::vector<folly::SemiFuture<Status>> futures;
   for (auto& address : addresses) {
-    // transform to the admin host
-    auto h = Utils::getAdminAddrFromStoreAddr(address.first);
-    futures.emplace_back(executeInternal(std::move(h), std::move(address.second)));
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    futures.emplace_back(executeInternal(std::move(address.first), std::move(address.second)));
   }
 
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;

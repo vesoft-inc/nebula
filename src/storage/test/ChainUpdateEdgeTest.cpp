@@ -21,22 +21,26 @@
 #include "storage/test/TestUtils.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
-#include "storage/transaction/ChainResumeProcessor.h"
 #include "storage/transaction/ChainUpdateEdgeRemoteProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 
 namespace nebula {
 namespace storage {
 
-// using Code = ::nebula::cpp2::ErrorCode;
-
 constexpr int32_t mockSpaceId = 1;
 constexpr int32_t mockPartNum = 6;
+constexpr int32_t fackTerm = 1;
 constexpr int32_t mockSpaceVidLen = 32;
 
 ChainTestUtils gTestUtil;
-
 ChainUpdateEdgeTestHelper helper;
+
+/**
+ * @brief do a normal update will succeeded
+ * 1. prepare environment
+ * 2. do an normal update (with out any error)
+ * 3. check edge request updated
+ */
 TEST(ChainUpdateEdgeTest, updateTest1) {
   fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
   mock::MockCluster cluster;
@@ -44,29 +48,44 @@ TEST(ChainUpdateEdgeTest, updateTest1) {
   auto* env = cluster.storageEnv_.get();
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
+  MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
+  auto stPartsNum = env->metaClient_->partsNum(mockSpaceId);
+  if (stPartsNum.ok()) {
+    LOG(INFO) << "stPartsNum.value()=" << stPartsNum.value();
+  }
 
   auto parts = cluster.getTotalParts();
+  LOG(INFO) << "parts: " << parts;
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
 
   LOG(INFO) << "Test updateTest1...";
   auto req = helper.makeDefaultRequest();
 
-  env->txnMan_->iClient_ = FakeInternalStorageClient::instance(env);
+  env->interClient_ = FakeInternalStorageClient::instance(env);
   auto reversedRequest = helper.reverseRequest(env, req);
 
   auto* proc = new FakeChainUpdateProcessor(env);
-  LOG(INFO) << "proc: " << proc;
   auto f = proc->getFuture();
   proc->process(req);
   auto resp = std::move(f).get();
 
-  EXPECT_TRUE(helper.checkResp2(resp));
+  EXPECT_TRUE(helper.checkResp(resp));
   EXPECT_TRUE(helper.checkRequestUpdated(env, req));
   EXPECT_TRUE(helper.checkRequestUpdated(env, reversedRequest));
   EXPECT_TRUE(helper.edgeExist(env, req));
   EXPECT_FALSE(helper.primeExist(env, req));
   EXPECT_FALSE(helper.doublePrimeExist(env, req));
 }
+
+/**
+ * @brief updateTest2 (update non-exist edge will fail)
+ * 1. prepare environment
+ * 2. do a failed update
+ * 3. check result
+ *    3.1 edge not updated
+ *    3.2 prime not exist
+ *    3.3 double prime not exist
+ */
 
 TEST(ChainUpdateEdgeTest, updateTest2) {
   fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
@@ -75,6 +94,7 @@ TEST(ChainUpdateEdgeTest, updateTest2) {
   auto* env = cluster.storageEnv_.get();
   auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
+  MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
   auto parts = cluster.getTotalParts();
   EXPECT_TRUE(QueryTestUtils::mockEdgeData(env, parts, mockSpaceVidLen));
@@ -89,12 +109,12 @@ TEST(ChainUpdateEdgeTest, updateTest2) {
 
   auto* proc = new FakeChainUpdateProcessor(env);
   auto f = proc->getFuture();
-  proc->rcProcessRemote = Code::E_KEY_NOT_FOUND;
+  proc->setRemoteCode(Code::E_KEY_NOT_FOUND);
   proc->process(badRequest);
   auto resp = std::move(f).get();
 
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
-  EXPECT_FALSE(helper.checkResp2(resp));
+  EXPECT_FALSE(helper.checkResp(resp));
   EXPECT_FALSE(helper.edgeExist(env, badRequest));
   EXPECT_FALSE(helper.primeExist(env, badRequest));
   EXPECT_FALSE(helper.doublePrimeExist(env, badRequest));
@@ -119,8 +139,9 @@ TEST(ChainUpdateEdgeTest, updateTest3) {
 
   auto* proc = new FakeChainUpdateProcessor(env);
   auto f = proc->getFuture();
-  proc->rcProcessRemote = Code::SUCCEEDED;
-  proc->rcProcessLocal = Code::SUCCEEDED;
+  proc->setRemoteCode(Code::SUCCEEDED);
+  proc->setCommitCode(Code::SUCCEEDED);
+
   proc->process(goodRequest);
   auto resp = std::move(f).get();
 
@@ -146,9 +167,12 @@ TEST(ChainUpdateEdgeTest, updateTest4) {
   EXPECT_FALSE(helper.primeExist(env, goodRequest));
   EXPECT_FALSE(helper.doublePrimeExist(env, goodRequest));
 
+  UPCLT iClient(FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED));
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient.get());
+
   auto* proc = new FakeChainUpdateProcessor(env);
   auto f = proc->getFuture();
-  proc->rcProcessRemote = Code::E_RPC_FAILURE;
+  proc->setRemoteCode(Code::E_RPC_FAILURE);
   proc->process(goodRequest);
   auto resp = std::move(f).get();
 
@@ -161,6 +185,8 @@ TEST(ChainUpdateEdgeTest, updateTest4) {
 }  // namespace nebula
 
 int main(int argc, char** argv) {
+  FLAGS_trace_toss = true;
+  FLAGS_v = 1;
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, false);
   google::SetStderrLogging(google::INFO);
@@ -168,30 +194,6 @@ int main(int argc, char** argv) {
 }
 
 //              ***** Test Plan *****
-/**
- * @brief updateTest1 (update a normal edge will succeed)
- *                  previous      update
- *  prepareLocal    succeed         succeed
- *  processRemote   succeed         succeed
- *  processLocal    succeed         succeed
- *  expect: edge            true
- *          edge prime      false
- *          double prime    false
- *          prop changed    true
- */
-
-/**
- * @brief updateTest2 (update non-exist edge will fail)
- *                  previous      update
- *  prepareLocal    failed      succeed
- *  processRemote   skip        succeed
- *  processLocal    failed      succeed
- *  expect: edge            false
- *          edge prime      false
- *          double prime    false
- *          prop changed    true
- */
-
 /**
  * @brief updateTest3 (remote update failed will not change anything)
  *                  previous      update

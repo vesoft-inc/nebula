@@ -42,7 +42,7 @@ void ChainAddEdgesRemoteProcessor::process(const cpp2::ChainAddEdgesRequest& req
       // need to do this after set spaceVidLen_
       auto keys = getStrEdgeKeys(req);
       for (auto& key : keys) {
-        LOG(INFO) << uuid_ << ", key = " << folly::hexlify(key);
+        VLOG(2) << uuid_ << ", key = " << folly::hexlify(key);
       }
     }
     commit(req);
@@ -61,7 +61,7 @@ void ChainAddEdgesRemoteProcessor::commit(const cpp2::ChainAddEdgesRequest& req)
       rc = part.code;
       handleErrorCode(part.code, spaceId, part.get_part_id());
     }
-    VLOG(1) << uuid_ << " " << apache::thrift::util::enumNameSafe(rc);
+    VLOG(2) << uuid_ << " " << apache::thrift::util::enumNameSafe(rc);
     this->result_ = resp.get_result();
     this->onFinished();
   });

@@ -7,7 +7,6 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
@@ -60,17 +59,27 @@ nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
 
 folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
                                                         std::vector<PartitionID>&& parts) {
-  cpp2::StatsItem item;
-  statsItem_.emplace(address, item);
-  return adminClient_->addTask(cpp2::AdminCmd::STATS,
-                               jobId_,
-                               taskId_++,
-                               space_,
-                               {std::move(address)},
-                               {},
-                               std::move(parts),
-                               concurrency_,
-                               &(statsItem_[address]));
+  folly::Promise<Status> pro;
+  auto f = pro.getFuture();
+  adminClient_
+      ->addTask(cpp2::AdminCmd::STATS,
+                jobId_,
+                taskId_++,
+                space_,
+                std::move(address),
+                {},
+                std::move(parts),
+                concurrency_)
+      .then([pro = std::move(pro)](auto&& t) mutable {
+        CHECK(!t.hasException());
+        auto status = std::move(t).value();
+        if (status.ok()) {
+          pro.setValue(Status::OK());
+        } else {
+          pro.setValue(status.status());
+        }
+      });
+  return f;
 }
 
 void showStatsItem(const cpp2::StatsItem& item, const std::string& msg) {
@@ -188,9 +197,10 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   }
 
   auto& hosts = nebula::value(errOrTargetHost);
-  std::vector<folly::Future<Status>> futures;
+  std::vector<folly::Future<StatusOr<bool>>> futures;
   for (auto& host : hosts) {
-    auto future = adminClient_->stopTask({Utils::getAdminAddrFromStoreAddr(host.first)}, jobId_, 0);
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    auto future = adminClient_->stopTask(host.first, jobId_, 0);
     futures.emplace_back(std::move(future));
   }
 

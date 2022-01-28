@@ -154,22 +154,6 @@ class ShowCollationSentence final : public Sentence {
   std::string toString() const override;
 };
 
-class ShowGroupsSentence final : public Sentence {
- public:
-  ShowGroupsSentence() {
-    kind_ = Kind::kShowGroups;
-  }
-  std::string toString() const override;
-};
-
-class ShowZonesSentence final : public Sentence {
- public:
-  ShowZonesSentence() {
-    kind_ = Kind::kShowZones;
-  }
-  std::string toString() const override;
-};
-
 class SpaceOptItem final {
  public:
   using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;

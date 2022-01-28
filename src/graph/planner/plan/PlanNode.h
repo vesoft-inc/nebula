@@ -238,6 +238,10 @@ class PlanNode {
     return dependencies_;
   }
 
+  auto& dependencies() {
+    return dependencies_;
+  }
+
   const PlanNode* dep(size_t index = 0) const {
     DCHECK_LT(index, dependencies_.size());
     return dependencies_.at(index);
@@ -276,6 +280,13 @@ class PlanNode {
 
   double cost() const {
     return cost_;
+  }
+
+  template <typename T>
+  const T* asNode() const {
+    static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
+    DCHECK(dynamic_cast<const T*>(this) != nullptr);
+    return static_cast<const T*>(this);
   }
 
  protected:
