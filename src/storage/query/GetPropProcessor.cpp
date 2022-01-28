@@ -199,7 +199,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
     tags.emplace_back(tag.get());
     plan.addNode(std::move(tag));
   }
-  auto output = std::make_unique<GetTagPropNode>(context, tags, result);
+  auto output = std::make_unique<GetTagPropNode>(context, tags, result, filter_);
   for (auto* tag : tags) {
     output->addDependency(tag);
   }
@@ -216,7 +216,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* conte
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
-  auto output = std::make_unique<GetEdgePropNode>(context, edges, result);
+  auto output = std::make_unique<GetEdgePropNode>(context, edges, result, filter_);
   for (auto* edge : edges) {
     output->addDependency(edge);
   }
@@ -248,14 +248,28 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildTagContext(req);
+    code = buildTagContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
   } else {
     code = getSpaceEdgeSchema();
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildEdgeContext(req);
+    code = buildEdgeContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
   }
+  code = buildFilter(req, [](const cpp2::GetPropRequest& r) -> const std::string* {
+    if (r.filter_ref().has_value()) {
+      return r.get_filter();
+    } else {
+      return nullptr;
+    }
+  });
+  return code;
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {

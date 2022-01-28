@@ -19,8 +19,15 @@ class GetTagPropNode : public QueryNode<VertexID> {
 
   GetTagPropNode(RuntimeContext* context,
                  std::vector<TagNode*> tagNodes,
-                 nebula::DataSet* resultDataSet)
-      : context_(context), tagNodes_(std::move(tagNodes)), resultDataSet_(resultDataSet) {
+                 nebula::DataSet* resultDataSet,
+                 Expression* filter)
+      : context_(context),
+        tagNodes_(std::move(tagNodes)),
+        resultDataSet_(resultDataSet),
+        expCtx_(filter == nullptr
+                    ? nullptr
+                    : new StorageExpressionContext(context->vIdLen(), context->isIntId())),
+        filter_(filter) {
     name_ = "GetTagPropNode";
   }
 
@@ -56,20 +63,36 @@ class GetTagPropNode : public QueryNode<VertexID> {
     auto isIntId = context_->isIntId();
     for (auto* tagNode : tagNodes_) {
       ret = tagNode->collectTagPropsIfValid(
-          [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+          [&row, tagNode, this](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             for (const auto& prop : *props) {
               if (prop.returned_) {
                 row.emplace_back(Value());
               }
+              if (prop.filtered_ && expCtx_ != nullptr) {
+                expCtx_->setTagProp(tagNode->getTagName(), prop.name_, Value());
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           },
-          [&row, vIdLen, isIntId](
+          [&row, vIdLen, isIntId, tagNode, this](
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            if (!QueryUtils::collectVertexProps(key, vIdLen, isIntId, reader, props, row).ok()) {
-              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+            for (const auto& prop : *props) {
+              if (!(prop.returned_ || (prop.filtered_ && expCtx_ != nullptr))) {
+                continue;
+              }
+              auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+              if (!value.ok()) {
+                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+              }
+              if (prop.returned_) {
+                VLOG(2) << "Collect prop " << prop.name_;
+                row.emplace_back(value.value());
+              }
+              if (prop.filtered_ && expCtx_ != nullptr) {
+                expCtx_->setTagProp(tagNode->getTagName(), prop.name_, std::move(value).value());
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
@@ -77,7 +100,12 @@ class GetTagPropNode : public QueryNode<VertexID> {
         return ret;
       }
     }
-    resultDataSet_->rows.emplace_back(std::move(row));
+    if (filter_ == nullptr || (QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
+      resultDataSet_->rows.emplace_back(std::move(row));
+    }
+    if (expCtx_ != nullptr) {
+      expCtx_->clear();
+    }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
@@ -85,6 +113,8 @@ class GetTagPropNode : public QueryNode<VertexID> {
   RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   nebula::DataSet* resultDataSet_;
+  std::unique_ptr<StorageExpressionContext> expCtx_{nullptr};
+  Expression* filter_{nullptr};
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
@@ -93,8 +123,15 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
 
   GetEdgePropNode(RuntimeContext* context,
                   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
-                  nebula::DataSet* resultDataSet)
-      : context_(context), edgeNodes_(std::move(edgeNodes)), resultDataSet_(resultDataSet) {
+                  nebula::DataSet* resultDataSet,
+                  Expression* filter)
+      : context_(context),
+        edgeNodes_(std::move(edgeNodes)),
+        resultDataSet_(resultDataSet),
+        expCtx_(filter == nullptr
+                    ? nullptr
+                    : new StorageExpressionContext(context->vIdLen(), context->isIntId())),
+        filter_(filter) {
     QueryNode::name_ = "GetEdgePropNode";
   }
 
@@ -109,20 +146,36 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
     auto isIntId = context_->isIntId();
     for (auto* edgeNode : edgeNodes_) {
       ret = edgeNode->collectEdgePropsIfValid(
-          [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+          [&row, edgeNode, this](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             for (const auto& prop : *props) {
               if (prop.returned_) {
                 row.emplace_back(Value());
               }
+              if (prop.filtered_ && expCtx_ != nullptr) {
+                expCtx_->setEdgeProp(edgeNode->getEdgeName(), prop.name_, Value());
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           },
-          [&row, vIdLen, isIntId](
+          [&row, vIdLen, isIntId, edgeNode, this](
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            if (!QueryUtils::collectEdgeProps(key, vIdLen, isIntId, reader, props, row).ok()) {
-              return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+            for (const auto& prop : *props) {
+              if (!(prop.returned_ || (prop.filtered_ && expCtx_ != nullptr))) {
+                continue;
+              }
+              auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
+              if (!value.ok()) {
+                return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+              }
+              if (prop.returned_) {
+                VLOG(2) << "Collect prop " << prop.name_;
+                row.emplace_back(value.value());
+              }
+              if (prop.filtered_ && expCtx_ != nullptr) {
+                expCtx_->setEdgeProp(edgeNode->getEdgeName(), prop.name_, std::move(value).value());
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
@@ -130,7 +183,12 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
         return ret;
       }
     }
-    resultDataSet_->rows.emplace_back(std::move(row));
+    if (filter_ == nullptr || (QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
+      resultDataSet_->rows.emplace_back(std::move(row));
+    }
+    if (expCtx_ != nullptr) {
+      expCtx_->clear();
+    }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
@@ -138,6 +196,8 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
   RuntimeContext* context_;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes_;
   nebula::DataSet* resultDataSet_;
+  std::unique_ptr<StorageExpressionContext> expCtx_{nullptr};
+  Expression* filter_{nullptr};
 };
 
 }  // namespace storage

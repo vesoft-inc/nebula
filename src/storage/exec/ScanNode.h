@@ -13,10 +13,6 @@ namespace storage {
 
 using Cursor = std::string;
 
-inline bool vTrue(const Value& v) {
-  return v.isBool() && v.getBool();
-}
-
 // Node to scan vertices of one partition
 class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
@@ -153,7 +149,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         }
       }
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-          (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+          (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
         resultDataSet_->rows.emplace_back(std::move(row));
       }
       expCtx_->clear();
@@ -294,7 +290,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
       }
     }
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-        (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+        (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
       resultDataSet_->rows.emplace_back(std::move(row));
     }
     expCtx_->clear();

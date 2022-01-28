@@ -17,6 +17,10 @@ namespace storage {
 
 class QueryUtils final {
  public:
+  static inline bool vTrue(const Value& v) {
+    return v.isBool() && v.getBool();
+  }
+
   enum class ReturnColType : uint16_t {
     kVid,
     kTag,
