@@ -87,6 +87,10 @@ class Validator {
     exprProps_ = exprProps;
   }
 
+  void setTail(PlanNode* tail) {
+    tail_ = tail;
+  }
+
   const std::set<std::string>& userDefinedVarNameList() const {
     return userDefinedVarNameList_;
   }
