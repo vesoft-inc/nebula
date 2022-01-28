@@ -6,6 +6,8 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNINDEXSCANRULE_H
 #define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNINDEXSCANRULE_H
 
+#include <initializer_list>
+
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
@@ -24,6 +26,8 @@ class PushLimitDownIndexScanRule final : public OptRule {
   PushLimitDownIndexScanRule();
 
   static std::unique_ptr<OptRule> kInstance;
+
+  static const std::initializer_list<graph::PlanNode::Kind> kIndexScanKinds;
 };
 
 }  // namespace opt
