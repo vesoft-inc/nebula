@@ -212,7 +212,7 @@ bool ESListener::writeData(const std::vector<nebula::plugin::DocItem>& items) co
   if (isNeedWriteOneByOne) {
     return writeDatum(items);
   }
-  LOG(INFO) << idStr_ << "Failed to bulk into es.";
+  LOG(WARNING) << idStr_ << "Failed to bulk into es.";
   return false;
 }
 

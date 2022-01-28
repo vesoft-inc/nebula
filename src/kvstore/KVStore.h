@@ -102,7 +102,7 @@ class KVStore {
    *
    * @param spaceId Space id
    * @param partID Partition id
-   * @param canReadFromFollower Flag can read from follower.
+   * @param canReadFromFollower
    * @return const void* Snapshot.
    */
   virtual const void* GetSnapshot(GraphSpaceID spaceId,
@@ -124,7 +124,7 @@ class KVStore {
    * @param partId
    * @param key
    * @param value
-   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @param canReadFromFollower
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
@@ -140,7 +140,7 @@ class KVStore {
    * @param partId
    * @param keys Keys to read
    * @param values Pointers of value
-   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @param canReadFromFollower
    * @return Return std::vector<Status> when suceeded: Result status of each key, if key[i] does not
    * exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
    * failed
@@ -160,7 +160,7 @@ class KVStore {
    * @param start Start key, inclusive
    * @param end End key, exclusive
    * @param iter Iterator in range [start, end), returns by kv engine
-   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @param canReadFromFollower
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
@@ -181,24 +181,14 @@ class KVStore {
                                         bool canReadFromFollower = false) = delete;
 
   /**
-<<<<<<< HEAD
-   * @brief Get all results with prefix.
-   *
-   * @param spaceId
-   * @param partId
-   * @param prefix
-   * @param iter
-   * @param canReadFromFollower
-   * @param snapshot If set, read from snapshot.
-=======
    * @brief Get all results with 'prefix' str as prefix.
    *
    * @param spaceId
    * @param partId
    * @param prefix Key of prefix to seek
    * @param iter Iterator of keys starts with 'prefix', returns by kv engine
-   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
->>>>>>> 67c9cd281 (add header comments)
+   * @param canReadFromFollower
+   * @param snapshot If set, read from snapshot.
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
@@ -209,19 +199,7 @@ class KVStore {
                                          const void* snapshot = nullptr) = 0;
 
   /**
-<<<<<<< HEAD
-   * @brief To forbid to pass rvalue via the `prefix' parameter.
-   *
-   * @param spaceId
-   * @param partId
-   * @param prefix
-   * @param iter
-   * @param canReadFromFollower
-   * @param snapshot
-   * @return nebula::cpp2::ErrorCode
-=======
    * @brief To forbid to pass rvalue via the 'prefix' parameter.
->>>>>>> 67c9cd281 (add header comments)
    */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
@@ -238,7 +216,7 @@ class KVStore {
    * @param start Start key, inclusive
    * @param prefix The prefix of keys to iterate
    * @param iter Iterator of keys starts with 'prefix' beginning from 'start', returns by kv engine
-   * @param canReadFromFollower Whether check if current kvstore is leader of given partition
+   * @param canReadFromFollower
    * @return nebula::cpp2::ErrorCode
    */
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
