@@ -21,8 +21,10 @@ void initStorageStats() {
   kNumTagsDeleted = stats::StatsManager::registerStats("num_tags_deleted", "rate, sum");
   kNumVerticesDeleted = stats::StatsManager::registerStats("num_vertices_deleted", "rate, sum");
 
+#ifndef BUILD_STANDALONE
   initMetaClientStats();
   initKVStats();
+#endif
 }
 
 }  // namespace nebula

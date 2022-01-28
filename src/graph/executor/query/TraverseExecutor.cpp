@@ -80,11 +80,10 @@ folly::Future<Status> TraverseExecutor::traverse() {
     DataSet emptyResult;
     return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
-  getNeighbors();
-  return promise_.getFuture();
+  return getNeighbors();
 }
 
-void TraverseExecutor::getNeighbors() {
+folly::Future<Status> TraverseExecutor::getNeighbors() {
   currentStep_++;
   time::Duration getNbrTime;
   StorageClient* storageClient = qctx_->getStorageClient();
@@ -93,7 +92,7 @@ void TraverseExecutor::getNeighbors() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-  storageClient
+  return storageClient
       ->getNeighbors(param,
                      reqDs_.colNames,
                      std::move(reqDs_.rows),
@@ -112,7 +111,7 @@ void TraverseExecutor::getNeighbors() {
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
-        handleResponse(resp);
+        return handleResponse(std::move(resp));
       });
 }
 
@@ -140,11 +139,11 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
   otherStats_.emplace(folly::sformat("step {}", currentStep_), ss.str());
 }
 
-void TraverseExecutor::handleResponse(RpcResponse& resps) {
+folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
   SCOPED_TIMER(&execTime_);
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
   if (!result.ok()) {
-    promise_.setValue(std::move(result).status());
+    return folly::makeFuture<Status>(std::move(result).status());
   }
 
   auto& responses = resps.responses();
@@ -162,21 +161,20 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
 
   auto status = buildInterimPath(iter.get());
   if (!status.ok()) {
-    promise_.setValue(status);
-    return;
+    return folly::makeFuture<Status>(std::move(status));
   }
   if (!isFinalStep()) {
     if (reqDs_.rows.empty()) {
       if (range_ != nullptr) {
-        promise_.setValue(buildResult());
+        return folly::makeFuture<Status>(buildResult());
       } else {
-        promise_.setValue(Status::OK());
+        return folly::makeFuture<Status>(Status::OK());
       }
     } else {
-      getNeighbors();
+      return getNeighbors();
     }
   } else {
-    promise_.setValue(buildResult());
+    return folly::makeFuture<Status>(buildResult());
   }
 }
 

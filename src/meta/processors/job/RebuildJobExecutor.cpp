@@ -9,7 +9,6 @@
 #include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -60,9 +59,10 @@ nebula::cpp2::ErrorCode RebuildJobExecutor::stop() {
   }
 
   auto& hosts = nebula::value(errOrTargetHost);
-  std::vector<folly::Future<Status>> futures;
+  std::vector<folly::Future<StatusOr<bool>>> futures;
   for (auto& host : hosts) {
-    auto future = adminClient_->stopTask({Utils::getAdminAddrFromStoreAddr(host.first)}, jobId_, 0);
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    auto future = adminClient_->stopTask(host.first, jobId_, 0);
     futures.emplace_back(std::move(future));
   }
 

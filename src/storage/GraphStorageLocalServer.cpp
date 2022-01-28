@@ -26,7 +26,6 @@ std::shared_ptr<GraphStorageLocalServer> instance_ = nullptr;
 
 void GraphStorageLocalServer::setThreadManager(
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager) {
-  // lock?
   threadManager_ = threadManager;
 }
 

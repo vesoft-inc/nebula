@@ -16,16 +16,20 @@ void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     LOG(INFO) << "Receive block sign for space " << spaceId << ", block: " << sign;
     auto code = env_->kvstore_->setWriteBlocking(spaceId, sign);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      cpp2::PartitionResult thriftRet;
-      thriftRet.code_ref() = code;
-      codes_.emplace_back(std::move(thriftRet));
       LOG(INFO) << "set block sign failed, error: " << apache::thrift::util::enumNameSafe(code);
+      resp_.code_ref() = code;
       onFinished();
       return;
     }
   }
 
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
+}
+
+void SendBlockSignProcessor::onFinished() {
+  this->promise_.setValue(std::move(resp_));
+  delete this;
 }
 
 }  // namespace storage

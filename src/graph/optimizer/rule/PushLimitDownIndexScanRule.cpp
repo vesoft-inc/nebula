@@ -19,6 +19,17 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
+/*static*/ const std::initializer_list<graph::PlanNode::Kind>
+    PushLimitDownIndexScanRule::kIndexScanKinds{
+        graph::PlanNode::Kind::kIndexScan,
+        graph::PlanNode::Kind::kTagIndexFullScan,
+        graph::PlanNode::Kind::kTagIndexRangeScan,
+        graph::PlanNode::Kind::kTagIndexPrefixScan,
+        graph::PlanNode::Kind::kEdgeIndexFullScan,
+        graph::PlanNode::Kind::kEdgeIndexRangeScan,
+        graph::PlanNode::Kind::kEdgeIndexPrefixScan,
+    };
+
 std::unique_ptr<OptRule> PushLimitDownIndexScanRule::kInstance =
     std::unique_ptr<PushLimitDownIndexScanRule>(new PushLimitDownIndexScanRule());
 
@@ -27,8 +38,8 @@ PushLimitDownIndexScanRule::PushLimitDownIndexScanRule() {
 }
 
 const Pattern &PushLimitDownIndexScanRule::pattern() const {
-  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
-                                           {Pattern::create(graph::PlanNode::Kind::kIndexScan)});
+  static Pattern pattern =
+      Pattern::create(graph::PlanNode::Kind::kLimit, {Pattern::create(kIndexScanKinds)});
   return pattern;
 }
 
@@ -39,7 +50,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownIndexScanRule::transform(
   auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto indexScan = static_cast<const IndexScan *>(indexScanGroupNode->node());
+  const auto indexScan = indexScanGroupNode->node()->asNode<graph::IndexScan>();
 
   int64_t limitRows = limit->offset() + limit->count(qctx);
   if (indexScan->limit(qctx) >= 0 && limitRows >= indexScan->limit(qctx)) {
