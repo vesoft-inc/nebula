@@ -697,19 +697,19 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   // until majority accept the logs, the leadership changes, or
   // the partition stops
   VLOG(4) << idStr_ << "Calling appendLogsInternal()";
-  AppendLogsIterator it(firstId,
-                        termId,
-                        std::move(swappedOutLogs),
-                        [this](AtomicOp opCB) -> folly::Optional<std::string> {
-                          CHECK(opCB != nullptr);
-                          auto opRet = opCB();
-                          if (!opRet.hasValue()) {
-                            // Failed
-                            sendingPromise_.setOneSingleValue(
-                                nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
-                          }
-                          return opRet;
-                        });
+  AppendLogsIterator it(
+      firstId,
+      termId,
+      std::move(swappedOutLogs),
+      [this](AtomicOp opCB) -> folly::Optional<std::string> {
+        CHECK(opCB != nullptr);
+        auto opRet = opCB();
+        if (!opRet.hasValue()) {
+          // Failed
+          sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+        }
+        return opRet;
+      });
   appendLogsInternal(std::move(it), termId);
 
   return retFuture;
