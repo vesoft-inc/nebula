@@ -27,7 +27,7 @@ nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::getAllSpaces(
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get all spaces failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get all spaces failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -50,8 +50,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId << " "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -72,15 +72,15 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
   std::string value;
   retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
   auto properties = MetaKeyUtils::parseSpace(value);
   if (totalParts != properties.get_partition_num()) {
-    LOG(ERROR) << "Partition number not equals " << totalParts << " : "
-               << properties.get_partition_num();
+    LOG(INFO) << "Partition number not equals " << totalParts << " : "
+              << properties.get_partition_num();
     return false;
   }
 
@@ -113,7 +113,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
 
     auto zonePartsRet = assembleZoneParts(zoneNames, confirmedHostParts);
     if (zonePartsRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Assemble Zone Parts failed";
+      LOG(INFO) << "Assemble Zone Parts failed";
       return zonePartsRet;
     }
   }
@@ -132,8 +132,8 @@ nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::assembleZoneParts(
     std::string zoneValue;
     auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zone " << zoneName
-                 << " failed: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get zone " << zoneName
+                << " failed: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
 
@@ -199,14 +199,14 @@ void LeaderBalanceJobExecutor::calDiff(const HostParts& hostParts,
                                        std::vector<HostAddr>& expand,
                                        std::vector<HostAddr>& lost) {
   for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
+    LOG(INFO) << "Original Host " << it->first << ", parts " << it->second.size();
     if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end() &&
         std::find(lost.begin(), lost.end(), it->first) == lost.end()) {
       lost.emplace_back(it->first);
     }
   }
   for (auto& h : activeHosts) {
-    VLOG(1) << "Active host " << h;
+    LOG(INFO) << "Active host " << h;
     if (hostParts.find(h) == hostParts.end()) {
       expand.emplace_back(h);
     }
@@ -259,8 +259,8 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
       auto balanceResult = buildLeaderBalancePlan(
           hostLeaderMap_.get(), spaceId, replicaFactor, dependentOnZone, plan);
       if (!nebula::ok(balanceResult) || !nebula::value(balanceResult)) {
-        LOG(ERROR) << "Building leader balance plan failed "
-                   << "Space: " << spaceId;
+        LOG(INFO) << "Building leader balance plan failed "
+                  << "Space: " << spaceId;
         continue;
       }
       simplifyLeaderBalancePlan(spaceId, plan);
@@ -312,7 +312,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << static_cast<int32_t>(retCode);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId << static_cast<int32_t>(retCode);
     return retCode;
   }
 
@@ -334,7 +334,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   } else {
     auto retVal = nebula::value(result);
     if (!retVal || totalParts == 0 || allHostParts.empty()) {
-      LOG(ERROR) << "Invalid space " << spaceId;
+      LOG(INFO) << "Invalid space " << spaceId;
       return false;
     }
   }
@@ -349,14 +349,14 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   }
 
   if (activeHosts.empty()) {
-    LOG(ERROR) << "No active hosts";
+    LOG(INFO) << "No active hosts";
     return false;
   }
 
   if (dependentOnZone) {
     for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
       auto min = it->second.size() / replicaFactor;
-      VLOG(3) << "Host: " << it->first << " Bounds: " << min << " : " << min + 1;
+      LOG(INFO) << "Host: " << it->first << " Bounds: " << min << " : " << min + 1;
       hostBounds_[it->first] = std::make_pair(min, min + 1);
     }
   } else {
@@ -374,8 +374,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
       globalMax = std::floor(static_cast<double>(leaderParts) / activeSize *
                              (1 + FLAGS_leader_balance_deviation));
     }
-    VLOG(3) << "Build leader balance plan, expected min load: " << globalMin
-            << ", max load: " << globalMax << " avg: " << globalAvg;
+    LOG(INFO) << "Build leader balance plan, expected min load: " << globalMin
+              << ", max load: " << globalMax << " avg: " << globalAvg;
 
     for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
       hostBounds_[it->first] = std::make_pair(globalMin, globalMax);
@@ -391,8 +391,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
       auto& hostMaxLoad = hostBounds_[host].second;
       int32_t partSize = hostEntry.second.size();
       if (hostMinLoad <= partSize && partSize <= hostMaxLoad) {
-        VLOG(3) << partSize << " is between min load " << hostMinLoad << " and max load "
-                << hostMaxLoad;
+        LOG(INFO) << partSize << " is between min load " << hostMinLoad << " and max load "
+                  << hostMaxLoad;
         continue;
       }
 
@@ -440,7 +440,7 @@ int32_t LeaderBalanceJobExecutor::acquireLeaders(HostParts& allHostParts,
   auto& targetLeaders = leaderHostParts[target];
   size_t minLoad = hostBounds_[target].first;
   for (const auto& partId : diff) {
-    VLOG(3) << "Try acquire leader for part " << partId;
+    LOG(INFO) << "Try acquire leader for part " << partId;
     // find the leader of partId
     auto sources = peersMap[partId];
     for (const auto& source : sources) {
@@ -451,8 +451,8 @@ int32_t LeaderBalanceJobExecutor::acquireLeaders(HostParts& allHostParts,
       // if peer is the leader of partId and can transfer, then transfer it to
       // host
       auto& sourceLeaders = leaderHostParts[source];
-      VLOG(3) << "Check peer: " << source << " min load: " << minLoad
-              << " peerLeaders size: " << sourceLeaders.size();
+      LOG(INFO) << "Check peer: " << source << " min load: " << minLoad
+                << " peerLeaders size: " << sourceLeaders.size();
       auto it = std::find(sourceLeaders.begin(), sourceLeaders.end(), partId);
       if (it != sourceLeaders.end() && minLoad < sourceLeaders.size()) {
         sourceLeaders.erase(it);

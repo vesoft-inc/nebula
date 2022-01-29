@@ -32,16 +32,16 @@ const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
 }
 
 Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns) {
-  Pattern pattern;
-  pattern.kind_ = kind;
-  for (auto &p : patterns) {
-    pattern.dependencies_.emplace_back(p);
-  }
-  return pattern;
+  return Pattern(kind, std::move(patterns));
+}
+
+/*static*/ Pattern Pattern::create(std::initializer_list<graph::PlanNode::Kind> kinds,
+                                   std::initializer_list<Pattern> patterns) {
+  return Pattern(std::move(kinds), std::move(patterns));
 }
 
 StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
-  if (groupNode->node()->kind() != kind_) {
+  if (!node_.match(groupNode->node())) {
     return Status::Error();
   }
 

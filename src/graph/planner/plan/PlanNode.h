@@ -282,6 +282,13 @@ class PlanNode {
     return cost_;
   }
 
+  template <typename T>
+  const T* asNode() const {
+    static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
+    DCHECK(dynamic_cast<const T*>(this) != nullptr);
+    return static_cast<const T*>(this);
+  }
+
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
 

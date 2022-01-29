@@ -2130,9 +2130,11 @@ def CheckForHeaderGuard(filename, clean_lines, error):
     if Search(r'//\s*NOLINT\(build/header_guard\)', i):
       return
 
-  # Allow pragma once instead of header guards
+  # notallow pragma once
   for i in raw_lines:
     if Search(r'^\s*#pragma\s+once', i):
+      error(filename, 0, 'build/header_guard', 5,
+        'Pragma once not allowed, please use ifndef Instead')
       return
 
   cppvar = GetHeaderGuardCPPVariable(filename)
