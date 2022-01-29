@@ -22,12 +22,6 @@
 namespace nebula {
 namespace time {
 class DatetimeScanner;
-
-enum class Type {
-  kDate,
-  kTime,
-  kDateTime,
-};
 }
 }
 
