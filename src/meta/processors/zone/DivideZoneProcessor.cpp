@@ -16,8 +16,8 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   auto zoneValueRet = doGet(zoneKey);
   // Check the source zone exist or not
   if (!nebula::ok(zoneValueRet)) {
-    LOG(ERROR) << "Zone " << zoneName << " not existed error: "
-               << apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
+    LOG(INFO) << "Zone " << zoneName << " not existed error: "
+              << apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
     handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
     onFinished();
     return;
@@ -43,7 +43,7 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   }
 
   if (zoneItems.size() > zoneHosts.size()) {
-    LOG(ERROR) << "Zone Item should not greater than hosts size";
+    LOG(INFO) << "Zone Item should not greater than hosts size";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
@@ -61,13 +61,14 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
     auto hosts = iter->second;
     auto valueRet = doGet(MetaKeyUtils::zoneKey(zone));
     if (nebula::ok(valueRet) && zone != zoneName) {
-      LOG(ERROR) << "Zone " << zone << " have existed";
+      LOG(INFO) << "Zone " << zone << " have existed";
       code = nebula::cpp2::ErrorCode::E_EXISTED;
       break;
     }
 
     auto it = std::find(zoneNames.begin(), zoneNames.end(), zone);
     if (it == zoneNames.end()) {
+      LOG(INFO) << "Zone have duplicated name";
       zoneNames.emplace_back(zone);
     } else {
       LOG(ERROR) << "Zone have duplicated name " << zone;
@@ -76,12 +77,12 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
     }
 
     if (hosts.empty()) {
-      LOG(ERROR) << "Hosts should not be empty";
+      LOG(INFO) << "Hosts should not be empty";
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
     }
 
     if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
-      LOG(ERROR) << "Zone have duplicated host";
+      LOG(INFO) << "Zone have duplicated host";
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
       break;
     }
@@ -101,14 +102,14 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   }
 
   if (totalHosts.size() != zoneHosts.size()) {
-    LOG(ERROR) << "The total host is not all hosts";
+    LOG(INFO) << "The total host is not all hosts";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
   if (totalHostsSize != totalHosts.size()) {
-    LOG(ERROR) << "The host in zone list have duplicate element";
+    LOG(INFO) << "The host in zone list have duplicate element";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
@@ -117,7 +118,7 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   for (auto& host : totalHosts) {
     auto iter = std::find(zoneHosts.begin(), zoneHosts.end(), host);
     if (iter == zoneHosts.end()) {
-      LOG(ERROR) << "Host " << host << " not exist in original zone";
+      LOG(INFO) << "Host " << host << " not exist in original zone";
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
       break;
     }
@@ -148,7 +149,7 @@ nebula::cpp2::ErrorCode DivideZoneProcessor::updateSpacesZone(
   auto ret = doPrefix(prefix);
 
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "List spaces failed";
+    LOG(INFO) << "List spaces failed";
     return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   }
 

@@ -47,7 +47,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   std::string value;
   auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't access kvstore, ret = " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Can't access kvstore, ret = " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   auto optJobRet = JobDescription::makeJobDescription(jobKey, value);
@@ -56,7 +56,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
     if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
         nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
+      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     executorOnFinished_(status);
   });
@@ -124,8 +124,8 @@ nebula::cpp2::ErrorCode SpaceInfo::loadInfo(GraphSpaceID spaceId, kvstore::KVSto
   std::string spaceVal;
   auto rc = kvstore->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get space info " << spaceId
-               << " failed, error: " << apache::thrift::util::enumNameSafe(rc);
+    LOG(INFO) << "Get space info " << spaceId
+              << " failed, error: " << apache::thrift::util::enumNameSafe(rc);
     return rc;
   }
   meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
@@ -137,8 +137,8 @@ nebula::cpp2::ErrorCode SpaceInfo::loadInfo(GraphSpaceID spaceId, kvstore::KVSto
     auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
     auto retCode = kvstore->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zone " << zoneName
-                 << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get zone " << zoneName
+                << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
     std::vector<HostAddr> hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
@@ -152,8 +152,8 @@ nebula::cpp2::ErrorCode SpaceInfo::loadInfo(GraphSpaceID spaceId, kvstore::KVSto
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId << " "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   for (; iter->valid(); iter->next()) {

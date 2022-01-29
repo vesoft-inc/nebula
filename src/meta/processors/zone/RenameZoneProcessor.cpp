@@ -18,7 +18,7 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
   auto originalZoneKey = MetaKeyUtils::zoneKey(originalZoneName);
   auto originalZoneValueRet = doGet(std::move(originalZoneKey));
   if (!nebula::ok(originalZoneValueRet)) {
-    LOG(ERROR) << "Zone " << originalZoneName << " not existed";
+    LOG(INFO) << "Zone " << originalZoneName << " not existed";
     handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
     onFinished();
     return;
@@ -29,7 +29,7 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (nebula::ok(zoneValueRet)) {
-    LOG(ERROR) << "Zone " << zoneName << " have existed";
+    LOG(INFO) << "Zone " << zoneName << " have existed";
     handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     onFinished();
     return;
@@ -38,7 +38,7 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
   const auto& prefix = MetaKeyUtils::spacePrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "List spaces failed";
+    LOG(INFO) << "List spaces failed";
     handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
     onFinished();
     return;
