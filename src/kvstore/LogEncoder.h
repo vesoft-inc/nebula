@@ -5,7 +5,7 @@
 
 #ifndef KVSTORE_LOGENCODER_H_
 #define KVSTORE_LOGENCODER_H_
-
+#include <boost/core/noncopyable.hpp>
 #include "common/cpp/helpers.h"
 #include "kvstore/Common.h"
 
@@ -54,7 +54,7 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
 int64_t getTimestamp(const folly::StringPiece& command);
 
-class BatchHolder : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class BatchHolder : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   BatchHolder() = default;
   ~BatchHolder() = default;

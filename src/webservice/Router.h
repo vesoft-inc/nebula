@@ -5,7 +5,7 @@
 
 #ifndef WEBSERVICE_ROUTER_H_
 #define WEBSERVICE_ROUTER_H_
-
+#include <boost/core/noncopyable.hpp>
 #include <proxygen/lib/http/HTTPMethod.h>
 
 #include <memory>
@@ -67,7 +67,7 @@ class Route final {
   std::vector<std::string> groups_;
 };
 
-class Router final : public cpp::NonCopyable, public cpp::NonMovable {
+class Router final : public boost::noncopyable, public cpp::NonMovable {
  public:
   explicit Router(const std::string &prefix) : prefix_(prefix), webSvc_(nullptr) {}
   Router(const std::string &prefix, const WebService *webSvc)

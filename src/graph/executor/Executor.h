@@ -6,6 +6,7 @@
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
 #define GRAPH_EXECUTOR_EXECUTOR_H_
 
+#include <boost/core/noncopyable.hpp>
 #include <folly/futures/Future.h>
 
 #include <set>
@@ -25,7 +26,7 @@ namespace graph {
 class PlanNode;
 class QueryContext;
 
-class Executor : private cpp::NonCopyable, private cpp::NonMovable {
+class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
   static Executor *create(const PlanNode *node, QueryContext *qctx);

@@ -21,7 +21,6 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:memory_obj>
-    $<TARGET_OBJECTS:concurrent_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:conf_obj>

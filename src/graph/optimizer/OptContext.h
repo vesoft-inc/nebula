@@ -6,6 +6,7 @@
 #ifndef GRAPH_OPTIMIZER_OPTCONTEXT_H_
 #define GRAPH_OPTIMIZER_OPTCONTEXT_H_
 
+#include <boost/core/noncopyable.hpp>
 #include <memory>
 #include <unordered_map>
 
@@ -23,7 +24,7 @@ namespace opt {
 
 class OptGroupNode;
 
-class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
+class OptContext final : private boost::noncopyable, private cpp::NonMovable {
  public:
   explicit OptContext(graph::QueryContext *qctx);
 

@@ -5,6 +5,8 @@
 #ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
 
+#include <boost/core/noncopyable.hpp>
+#include "common/cpp/helpers.h"
 #include "common/thread/GenericWorker.h"
 
 /**
@@ -21,7 +23,7 @@
 namespace nebula {
 namespace thread {
 
-class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class GenericThreadPool final : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   GenericThreadPool();
   ~GenericThreadPool();

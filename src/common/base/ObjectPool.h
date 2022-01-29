@@ -5,7 +5,7 @@
 
 #ifndef COMMON_BASE_OBJECTPOOL_H_
 #define COMMON_BASE_OBJECTPOOL_H_
-
+#include <boost/core/noncopyable.hpp>
 #include <folly/SpinLock.h>
 
 #include <functional>
@@ -15,13 +15,14 @@
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
 
+
 namespace nebula {
 
 class Expression;
 
 typedef std::lock_guard<folly::SpinLock> SLGuard;
 
-class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
+class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
  public:
   ObjectPool() {}
 

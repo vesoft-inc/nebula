@@ -6,6 +6,7 @@
 #ifndef GRAPH_SCHEDULER_SCHEDULER_H_
 #define GRAPH_SCHEDULER_SCHEDULER_H_
 
+#include <boost/core/noncopyable.hpp>
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "graph/executor/Executor.h"
@@ -13,7 +14,7 @@
 
 namespace nebula {
 namespace graph {
-class Scheduler : private cpp::NonCopyable, private cpp::NonMovable {
+class Scheduler : private boost::noncopyable, private cpp::NonMovable {
  public:
   Scheduler() = default;
   virtual ~Scheduler() = default;

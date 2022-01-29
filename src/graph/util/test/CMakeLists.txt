@@ -16,7 +16,7 @@ nebula_add_test(
         IdGeneratorTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:concurrent_obj>
+        
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
