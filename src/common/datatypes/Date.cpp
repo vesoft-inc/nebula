@@ -12,11 +12,6 @@
 
 namespace nebula {
 
-static inline std::string decimal(const std::string& number) {
-  auto find = std::find(number.begin(), number.end(), '.');
-  return std::string(find, number.end());
-}
-
 const int64_t kDaysSoFar[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
 const int64_t kLeapDaysSoFar[] = {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
 
@@ -211,10 +206,11 @@ void Time::subDuration(const Duration& duration) {
 }
 
 std::string Time::toString() const {
-  auto microsecStr = folly::stringPrintf("%.9f", static_cast<uint32_t>(microsec) / 1000000.0);
-  auto decimalPart = decimal(microsecStr);
-  // It's in current timezone already
-  return folly::stringPrintf("%02d:%02d:%02d%s", hour, minute, sec, decimalPart.c_str());
+  return folly::sformat("{:0>2}:{:0>2}:{:0>2}.{:0>6}000",
+                        static_cast<uint8_t>(hour),
+                        static_cast<uint8_t>(minute),
+                        static_cast<uint8_t>(sec),
+                        static_cast<uint32_t>(microsec));
 }
 
 void DateTime::addDuration(const Duration& duration) {
@@ -331,19 +327,15 @@ void DateTime::subDuration(const Duration& duration) {
 }
 
 std::string DateTime::toString() const {
-  auto microsecStr = folly::stringPrintf("%.9f", static_cast<uint32_t>(microsec) / 1000000.0);
-  auto decimalPart = decimal(microsecStr);
   // It's in current timezone already
-  return folly::stringPrintf(
-      "%hd-%02hhu-%02hhu"
-      "T%02hhu:%02hhu:%02hhu%s",
-      static_cast<int16_t>(year),
-      static_cast<uint8_t>(month),
-      static_cast<uint8_t>(day),
-      static_cast<uint8_t>(hour),
-      static_cast<uint8_t>(minute),
-      static_cast<uint8_t>(sec),
-      decimalPart.c_str());
+  return folly::sformat("{}-{:0>2}-{:0>2}T{:0>2}:{:0>2}:{:0>2}.{:0>6}000",
+                        static_cast<int16_t>(year),
+                        static_cast<uint8_t>(month),
+                        static_cast<uint8_t>(day),
+                        static_cast<uint8_t>(hour),
+                        static_cast<uint8_t>(minute),
+                        static_cast<uint8_t>(sec),
+                        static_cast<uint32_t>(microsec));
 }
 
 }  // namespace nebula
