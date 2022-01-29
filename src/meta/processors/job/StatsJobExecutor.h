@@ -48,10 +48,6 @@ class StatsJobExecutor : public StorageJobExecutor {
   std::string toTempKey(int32_t jobId);
 
   nebula::cpp2::ErrorCode doRemove(const std::string& key);
-
- private:
-  // Stats results
-  std::unordered_map<HostAddr, cpp2::StatsItem> statsItem_;
 };
 
 }  // namespace meta

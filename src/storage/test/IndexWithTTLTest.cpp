@@ -430,7 +430,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
@@ -499,7 +499,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
@@ -570,7 +570,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
@@ -641,7 +641,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 15;
