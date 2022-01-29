@@ -36,8 +36,24 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
   nebula::cpp2::ErrorCode finish(bool ret = true) override;
 
  protected:
+  /**
+   * @brief Build balance plan and run
+   *
+   * @return
+   */
   folly::Future<Status> executeInternal() override;
 
+  /**
+   * @brief Build a plan to balance leader
+   *
+   * @param hostLeaderMap
+   * @param spaceId
+   * @param replicaFactor
+   * @param dependentOnZone
+   * @param plan
+   * @param useDeviation
+   * @return
+   */
   ErrorOr<nebula::cpp2::ErrorCode, bool> buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
                                                                 GraphSpaceID spaceId,
                                                                 int32_t replicaFactor,
@@ -45,6 +61,18 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
                                                                 LeaderBalancePlan& plan,
                                                                 bool useDeviation = true);
 
+  /**
+   * @brief Host will loop for the partition which is not leader, and try to acuire the leader
+   *
+   * @param allHostParts
+   * @param leaderHostParts
+   * @param peersMap
+   * @param activeHosts
+   * @param target
+   * @param plan
+   * @param spaceId
+   * @return
+   */
   int32_t acquireLeaders(HostParts& allHostParts,
                          HostParts& leaderHostParts,
                          PartAllocation& peersMap,
@@ -70,6 +98,14 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
                                                       HostParts& hostParts,
                                                       int32_t& totalParts);
 
+  /**
+   * @brief Compare and get the lost hosts and expand hosts
+   *
+   * @param hostParts
+   * @param activeHosts
+   * @param expand
+   * @param lost
+   */
   void calDiff(const HostParts& hostParts,
                const std::vector<HostAddr>& activeHosts,
                std::vector<HostAddr>& expand,

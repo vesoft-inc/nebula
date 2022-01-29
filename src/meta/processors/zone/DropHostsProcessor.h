@@ -12,6 +12,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop hosts from this cluster
+ * The hosts should not hold any parts
+ * It will remove the hosts from zones they belong to,
+ * and detach the machine from cluster
+ */
 class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropHostsProcessor* instance(kvstore::KVStore* kvstore) {
@@ -23,6 +29,13 @@ class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
  private:
   explicit DropHostsProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
+  /**
+   * @brief check all spaces to find the zone, and remove it from the space
+   *
+   * @param zoneName
+   * @param holder
+   * @return
+   */
   nebula::cpp2::ErrorCode checkRelatedSpaceAndCollect(const std::string& zoneName,
                                                       kvstore::BatchHolder* holder);
 };

@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Rename a zone
+ */
 class RenameZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RenameZoneProcessor* instance(kvstore::KVStore* kvstore) {

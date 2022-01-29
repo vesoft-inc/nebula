@@ -24,7 +24,7 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
     if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
         nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
+      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     executorOnFinished_(status);
   });
@@ -102,8 +102,8 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     for (Host* h : hostVec) {
       totalPartNum += h->parts_.size();
     }
-    if (hostVec.empty()) {
-      LOG(ERROR) << "rebalance error: zone has no host";
+    if (hostVec.size() == 0) {
+      LOG(INFO) << "rebalance error: zone has no host";
       return;
     }
     avgPartNum = totalPartNum / hostVec.size();
@@ -196,7 +196,7 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::stop() {
 nebula::cpp2::ErrorCode DataBalanceJobExecutor::prepare() {
   auto spaceRet = getSpaceIdFromName(paras_.back());
   if (!nebula::ok(spaceRet)) {
-    LOG(ERROR) << "Can't find the space: " << paras_.back();
+    LOG(INFO) << "Can't find the space: " << paras_.back();
     return nebula::error(spaceRet);
   }
   GraphSpaceID spaceId = nebula::value(spaceRet);
