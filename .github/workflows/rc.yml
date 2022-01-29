@@ -144,9 +144,7 @@ jobs:
         id: cmake
         run: |
           cmake \
-              -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-              -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
-              -DCMAKE_BUILD_TYPE=Debug \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DENABLE_TESTING=on \
               -B build
           echo "::set-output name=j::8"
