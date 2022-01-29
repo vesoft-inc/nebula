@@ -32,15 +32,26 @@ class StatsJobExecutor : public StorageJobExecutor {
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
 
-  // Summarize the results of statsItem_
+  /**
+   * @brief Summarize the results of statsItem_
+   *
+   * @param exeSuccessed
+   * @return
+   */
   nebula::cpp2::ErrorCode finish(bool exeSuccessed) override;
 
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) override;
 
  private:
-  // Stats job writes an additional data.
-  // The additional data is written when the stats job passes the check
-  // function. Update this additional data when job finishes.
+  /**
+   * @brief Stats job writes an additional data.
+   * The additional data is written when the stats job passes the check
+   * function. Update this additional data when job finishes.
+   *
+   * @param key
+   * @param val
+   * @return
+   */
   nebula::cpp2::ErrorCode save(const std::string& key, const std::string& val);
 
   void addStats(cpp2::StatsItem& lhs, const cpp2::StatsItem& rhs);
