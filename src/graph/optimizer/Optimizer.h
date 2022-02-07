@@ -10,6 +10,8 @@
 #include "common/base/StatusOr.h"
 #include "common/thrift/ThriftTypes.h"
 
+DECLARE_bool(enable_optimizer_property_pruner_rule);
+
 namespace nebula {
 namespace graph {
 class PlanNode;

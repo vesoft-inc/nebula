@@ -286,8 +286,7 @@ Status Filter::pruneProperties(PropertyTracker& propsUsed,
                                graph::QueryContext* qctx,
                                GraphSpaceID spaceID) {
   if (condition_ != nullptr) {
-    NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExprs(condition_, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(condition_, propsUsed, qctx, spaceID));
   }
 
   return depsPruneProperties(propsUsed, qctx, spaceID);
@@ -376,7 +375,7 @@ Status Project::pruneProperties(PropertyTracker& propsUsed,
       auto* col = DCHECK_NOTNULL(columns[i]);
       auto* expr = col->expr();
       auto& alias = colNames[i];
-      // First, try to rename alias
+      // If the alias exists, try to rename alias
       if (aliasExists[i]) {
         if (expr->kind() == Expression::Kind::kInputProperty) {
           auto* inputPropExpr = static_cast<InputPropertyExpression*>(expr);
@@ -386,12 +385,14 @@ Status Project::pruneProperties(PropertyTracker& propsUsed,
           auto* varPropExpr = static_cast<VariablePropertyExpression*>(expr);
           auto& newAlias = varPropExpr->prop();
           NG_RETURN_IF_ERROR(propsUsed.update(alias, newAlias));
-        } else {
+        } else {  // eg. "PathBuild[$-.x,$-.__VAR_0,$-.y] AS p"
           // How to handle this case?
+          propsUsed.colsSet.erase(alias);
+          NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(expr, propsUsed, qctx, spaceID));
         }
       } else {
-        // If not, try to extract properties from expression
-        NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(expr, propsUsed, qctx, spaceID));
+        // Otherwise, extract properties from the column expression
+        NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(expr, propsUsed, qctx, spaceID));
       }
     }
   }
@@ -548,10 +549,10 @@ Status Aggregate::pruneProperties(PropertyTracker& propsUsed,
                                   graph::QueryContext* qctx,
                                   GraphSpaceID spaceID) {
   for (auto* groupKey : groupKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(groupKey, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(groupKey, propsUsed, qctx, spaceID));
   }
   for (auto* groupItem : groupItems_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(groupItem, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(groupItem, propsUsed, qctx, spaceID));
   }
   return depsPruneProperties(propsUsed, qctx, spaceID);
 }
@@ -800,20 +801,20 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
   auto& colNames = this->colNames();
   DCHECK_GE(colNames.size(), 2);
   auto& nodeAlias = colNames[colNames.size() - 2];
-
-  auto it = propsUsed.colsSet.find(nodeAlias);
-  if (it != propsUsed.colsSet.end()) {  // All properties are used
-    // propsUsed.colsSet.erase(it);
-    return depsPruneProperties(propsUsed, qctx, spaceID);
-  }
+  auto& edgeAlias = colNames.back();
 
   if (vFilter_ != nullptr) {
     NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
+        ExpressionUtils::extractPropsFromExpr(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
+  }
+
+  if (eFilter_ != nullptr) {
+    NG_RETURN_IF_ERROR(
+        ExpressionUtils::extractPropsFromExpr(eFilter_, propsUsed, qctx, spaceID, edgeAlias));
   }
 
   auto* vertexProps = this->vertexProps();
-  if (vertexProps != nullptr) {
+  if (propsUsed.colsSet.find(nodeAlias) == propsUsed.colsSet.end() && vertexProps != nullptr) {
     auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
     if (it2 == propsUsed.vertexPropsMap.end()) {  // nodeAlias is not used
       setVertexProps(nullptr);
@@ -845,6 +846,44 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
       }
       setVertexProps(std::move(prunedVertexProps));
     }
+  }
+
+  static const std::unordered_set<std::string> reservedEdgeProps = {
+      nebula::kSrc, nebula::kType, nebula::kRank, nebula::kDst};
+  auto* edgeProps = this->edgeProps();
+  if (propsUsed.colsSet.find(edgeAlias) == propsUsed.colsSet.end() && edgeProps != nullptr) {
+    auto prunedEdgeProps = std::make_unique<std::vector<EdgeProp>>();
+    prunedEdgeProps->reserve(edgeProps->size());
+    auto it2 = propsUsed.edgePropsMap.find(edgeAlias);
+
+    for (auto& edgeProp : *edgeProps) {
+      auto edgeType = edgeProp.type_ref().value();
+      auto& props = edgeProp.props_ref().value();
+      EdgeProp newEProp;
+      newEProp.type_ref() = edgeType;
+      std::vector<std::string> newProps{reservedEdgeProps.begin(), reservedEdgeProps.end()};
+      std::unordered_set<std::string> usedProps;
+      if (it2 != propsUsed.edgePropsMap.end()) {
+        auto& usedEdgeProps = it2->second;
+        auto it3 = usedEdgeProps.find(std::abs(edgeType));
+        if (it3 != usedEdgeProps.end()) {
+          usedProps = {it3->second.begin(), it3->second.end()};
+        }
+        auto it4 = usedEdgeProps.find(0);
+        if (it4 != usedEdgeProps.end()) {
+          usedProps.insert(it4->second.begin(), it4->second.end());
+        }
+      }
+      for (auto& prop : props) {
+        if (reservedEdgeProps.find(prop) == reservedEdgeProps.end() &&
+            usedProps.find(prop) != usedProps.end()) {
+          newProps.emplace_back(prop);
+        }
+      }
+      newEProp.props_ref() = std::move(newProps);
+      prunedEdgeProps->emplace_back(std::move(newEProp));
+    }
+    setEdgeProps(std::move(prunedEdgeProps));
   }
 
   return depsPruneProperties(propsUsed, qctx, spaceID);
@@ -890,7 +929,7 @@ Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
 
   if (vFilter_ != nullptr) {
     NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExprs(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
+        ExpressionUtils::extractPropsFromExpr(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
   }
   auto* vertexProps = props();
   if (vertexProps != nullptr) {
@@ -943,10 +982,10 @@ Status BiJoin::pruneProperties(PropertyTracker& propsUsed,
                                graph::QueryContext* qctx,
                                GraphSpaceID spaceID) {
   for (auto* hashKey : hashKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(hashKey, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(hashKey, propsUsed, qctx, spaceID));
   }
   for (auto* probeKey : probeKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExprs(probeKey, propsUsed, qctx, spaceID));
+    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(probeKey, propsUsed, qctx, spaceID));
   }
   return depsPruneProperties(propsUsed, qctx, spaceID);
 }

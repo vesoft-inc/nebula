@@ -20,6 +20,8 @@ using nebula::graph::QueryContext;
 using nebula::graph::Select;
 using nebula::graph::SingleDependencyNode;
 
+DEFINE_bool(enable_optimizer_property_pruner_rule, true, "");
+
 namespace nebula {
 namespace opt {
 
@@ -57,8 +59,11 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 // }
 
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
-  PropertyTracker propsUsed;
-  return root->pruneProperties(propsUsed, qctx, spaceID);
+  if (FLAGS_enable_optimizer_property_pruner_rule) {
+    PropertyTracker propsUsed;
+    return root->pruneProperties(propsUsed, qctx, spaceID);
+  }
+  return Status::OK();
 }
 
 StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {

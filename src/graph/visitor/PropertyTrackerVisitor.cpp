@@ -74,40 +74,44 @@ void PropertyTrackerVisitor::visit(VariablePropertyExpression *expr) {
   propsUsed_.colsSet.emplace(colName);
 }
 
-// void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
-//   auto *lhs = expr->left();
-//   auto *rhs = expr->right();
-//   if (rhs->kind() != Expression::Kind::kConstant) {
-//     return;
-//   }
-//   auto *constExpr = static_cast<ConstantExpression *>(rhs);
-//   auto &propName = constExpr->value();
-//   switch (lhs->kind()) {
-//     case Expression::Kind::kVarProperty: {  // $e.name
-//       auto *varPropExpr = static_cast<VariablePropertyExpression *>(lhs);
-//       auto &edgeAlias = varPropExpr->prop();
-//       propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
-//       break;
-//     }
-//     case Expression::Kind::kInputProperty: {
-//       auto *inputPropExpr = static_cast<InputPropertyExpression *>(lhs);
-//       auto &edgeAlias = inputPropExpr->prop();
-//       propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
-//       break;
-//     }
-//     case Expression::Kind::kSubscript: {  // $-.e[0].name
-//       auto *subscriptExpr = static_cast<SubscriptExpression *>(lhs);
-//       auto *subLeftExpr = subscriptExpr->left();
-//       if (subLeftExpr->kind() == Expression::Kind::kInputProperty) {
-//         auto *inputPropExpr = static_cast<InputPropertyExpression *>(subLeftExpr);
-//         auto &edgeAlias = inputPropExpr->prop();
-//         propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
-//       }
-//     }
-//     default:
-//       break;
-//   }
-// }
+void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
+  auto *lhs = expr->left();
+  auto *rhs = expr->right();
+  if (rhs->kind() != Expression::Kind::kConstant) {
+    return;
+  }
+  auto *constExpr = static_cast<ConstantExpression *>(rhs);
+  auto &constVal = constExpr->value();
+  if (constVal.type() != Value::Type::STRING) {
+    return;
+  }
+  auto &propName = constVal.getStr();
+  switch (lhs->kind()) {
+    case Expression::Kind::kVarProperty: {  // $e.name
+      auto *varPropExpr = static_cast<VariablePropertyExpression *>(lhs);
+      auto &edgeAlias = varPropExpr->prop();
+      propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+      break;
+    }
+    case Expression::Kind::kInputProperty: {
+      auto *inputPropExpr = static_cast<InputPropertyExpression *>(lhs);
+      auto &edgeAlias = inputPropExpr->prop();
+      propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+      break;
+    }
+    case Expression::Kind::kSubscript: {  // $-.e[0].name
+      auto *subscriptExpr = static_cast<SubscriptExpression *>(lhs);
+      auto *subLeftExpr = subscriptExpr->left();
+      if (subLeftExpr->kind() == Expression::Kind::kInputProperty) {
+        auto *inputPropExpr = static_cast<InputPropertyExpression *>(subLeftExpr);
+        auto &edgeAlias = inputPropExpr->prop();
+        propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+      }
+    }
+    default:
+      break;
+  }
+}
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
   static const std::unordered_set<std::string> kVertexIgnoreFuncs = {"id"};

@@ -43,7 +43,7 @@ class PropertyTrackerVisitor : public ExprVisitorImpl {
   void visit(LabelTagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
-  // void visit(AttributeExpression* expr) override;
+  void visit(AttributeExpression* expr) override;
   void visit(FunctionCallExpression* expr) override;
 
   void visit(SourcePropertyExpression* expr) override;
