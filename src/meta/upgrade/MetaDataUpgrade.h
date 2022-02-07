@@ -5,7 +5,6 @@
 
 #ifndef META_UPGRADE_METADATAUPGRADE_H
 #define META_UPGRADE_METADATAUPGRADE_H
-
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/utils/MetaKeyUtils.h"
