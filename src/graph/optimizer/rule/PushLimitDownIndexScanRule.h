@@ -8,8 +8,6 @@
 
 #include <initializer_list>
 
-#include <initializer_list>
-
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
