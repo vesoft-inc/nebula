@@ -19,10 +19,10 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       ret = nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND;
-      LOG(ERROR) << "SpaceId " << spaceId
-                 << " no stats info, please execute `submit job stats' under space firstly.";
+      LOG(INFO) << "SpaceId " << spaceId
+                << " no stats info, please execute `submit job stats' under space firstly.";
     } else {
-      LOG(ERROR) << "Show stats failed, error " << apache::thrift::util::enumNameSafe(ret);
+      LOG(INFO) << "Show stats failed, error " << apache::thrift::util::enumNameSafe(ret);
     }
 
     handleErrorCode(ret);
@@ -32,8 +32,8 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   auto statsItem = MetaKeyUtils::parseStatsVal(val);
   auto statsJobStatus = statsItem.get_status();
   if (statsJobStatus != cpp2::JobStatus::FINISHED) {
-    LOG(ERROR) << "SpaceId " << spaceId
-               << " stats job is running or failed, please execute `show jobs' firstly.";
+    LOG(INFO) << "SpaceId " << spaceId
+              << " stats job is running or failed, please execute `show jobs' firstly.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED);
     onFinished();
     return;

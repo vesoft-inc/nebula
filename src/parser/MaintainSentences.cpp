@@ -426,22 +426,22 @@ std::string MergeZoneSentence::toString() const {
   buf.reserve(128);
   buf += "MERGE ZONE ";
   buf += zoneNames_->toString();
-  buf += " INTO \"";
+  buf += " INTO `";
   buf += *zoneName_;
-  buf += "\"";
+  buf += "`";
   return buf;
 }
 
 std::string DropZoneSentence::toString() const {
-  return folly::stringPrintf("DROP ZONE \"%s\"", zoneName_.get()->c_str());
+  return folly::stringPrintf("DROP ZONE `%s`", zoneName_.get()->c_str());
 }
 
 std::string DivideZoneSentence::toString() const {
   std::string buf;
   buf.reserve(128);
-  buf += "DIVIDE ZONE \"";
+  buf += "DIVIDE ZONE `";
   buf += *zoneName_;
-  buf += "\" INTO ";
+  buf += "` INTO ";
   buf += zoneItems_->toString();
   return buf;
 }
@@ -449,16 +449,16 @@ std::string DivideZoneSentence::toString() const {
 std::string RenameZoneSentence::toString() const {
   std::string buf;
   buf.reserve(128);
-  buf += "RENAME ZONE \"";
+  buf += "RENAME ZONE `";
   buf += *originalZoneName_;
-  buf += "\" TO \"";
+  buf += "` TO `";
   buf += *zoneName_;
-  buf += "\"";
+  buf += "`";
   return buf;
 }
 
 std::string DescribeZoneSentence::toString() const {
-  return folly::stringPrintf("DESCRIBE ZONE \"%s\"", zoneName_.get()->c_str());
+  return folly::stringPrintf("DESCRIBE ZONE `%s`", zoneName_.get()->c_str());
 }
 
 std::string ShowZonesSentence::toString() const {
@@ -471,12 +471,12 @@ std::string AddHostsIntoZoneSentence::toString() const {
   buf += "ADD HOSTS ";
   buf += address_->toString();
   if (isNew_) {
-    buf += " INTO NEW ZONE \"";
+    buf += " INTO NEW ZONE `";
   } else {
-    buf += " INTO ZONE \"";
+    buf += " INTO ZONE `";
   }
   buf += *zoneName_;
-  buf += "\"";
+  buf += "`";
   return buf;
 }
 

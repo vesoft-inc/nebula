@@ -29,17 +29,33 @@ class MetaJobExecutor : public JobExecutor {
 
   virtual ~MetaJobExecutor() = default;
 
-  // Check the arguments about the job.
+  /**
+   * @brief Check the arguments about the job.
+   *
+   * @return
+   */
   bool check() override;
 
-  // Prepare the Job info from the arguments.
+  /**
+   * @brief Prepare the Job info from the arguments.
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode prepare() override;
 
-  // The skeleton to run the job.
-  // You should rewrite the executeInternal to trigger the calling.
+  /**
+   * @brief  The skeleton to run the job.
+   * You should rewrite the executeInternal to trigger the calling.
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode execute() override;
 
-  // Stop the job when the user cancel it.
+  /**
+   * @brief Stop the job when the user cancel it.
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode stop() override;
 
   nebula::cpp2::ErrorCode finish(bool) override;
