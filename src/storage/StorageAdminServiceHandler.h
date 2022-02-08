@@ -39,16 +39,14 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
   folly::Future<cpp2::CreateCPResp> future_createCheckpoint(
       const cpp2::CreateCPRequest& req) override;
 
-  folly::Future<cpp2::AdminExecResp> future_dropCheckpoint(const cpp2::DropCPRequest& req) override;
+  folly::Future<cpp2::DropCPResp> future_dropCheckpoint(const cpp2::DropCPRequest& req) override;
 
-  folly::Future<cpp2::AdminExecResp> future_blockingWrites(
+  folly::Future<cpp2::BlockingSignResp> future_blockingWrites(
       const cpp2::BlockingSignRequest& req) override;
 
-  folly::Future<cpp2::AdminExecResp> future_addAdminTask(
-      const cpp2::AddAdminTaskRequest& req) override;
+  folly::Future<cpp2::AddTaskResp> future_addAdminTask(const cpp2::AddTaskRequest& req) override;
 
-  folly::Future<cpp2::AdminExecResp> future_stopAdminTask(
-      const cpp2::StopAdminTaskRequest& req) override;
+  folly::Future<cpp2::StopTaskResp> future_stopAdminTask(const cpp2::StopTaskRequest& req) override;
 
  private:
   StorageEnv* env_{nullptr};

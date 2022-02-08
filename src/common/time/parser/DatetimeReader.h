@@ -16,41 +16,32 @@ namespace time {
 
 class DatetimeReader {
  public:
+  DatetimeReader();
+
   ~DatetimeReader() {
     if (dt_ != nullptr) delete dt_;
   }
 
-  static inline DatetimeReader makeDateReader() {
-    return DatetimeReader(Type::kDate);
-  }
-
-  static inline DatetimeReader makeTimeReader() {
-    return DatetimeReader(Type::kTime);
-  }
-
-  static inline DatetimeReader makeDateTimeReader() {
-    return DatetimeReader(Type::kDateTime);
-  }
-
   StatusOr<DateTime> readDatetime(std::string input) {
+    input = kDatetimePrefix + input;
     return read(std::move(input));
   }
 
   StatusOr<Date> readDate(std::string input) {
+    input = kDatePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
     return result.value().date();
   }
 
   StatusOr<Time> readTime(std::string input) {
+    input = kTimePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
     return result.value().time();
   }
 
  private:
-  explicit DatetimeReader(Type type);
-
   StatusOr<DateTime> read(std::string input);
 
   std::string buffer_;
@@ -60,6 +51,10 @@ class DatetimeReader {
   DatetimeParser parser_;
   std::string error_;
   DateTime *dt_{nullptr};
+
+  inline static const std::string kDatetimePrefix = "DATETIME__";
+  inline static const std::string kDatePrefix = "DATE__";
+  inline static const std::string kTimePrefix = "TIME__";
 };
 
 }  // namespace time

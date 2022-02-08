@@ -8,6 +8,7 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/planner/Planner.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
@@ -26,6 +27,8 @@ class SequentialPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
   void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
+
+  void rmLeftTailStartNode(Validator* validator, Sentence::Kind appendPlanKind);
 
  private:
   SequentialPlanner() = default;

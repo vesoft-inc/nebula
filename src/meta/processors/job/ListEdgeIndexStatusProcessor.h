@@ -13,6 +13,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Show status all rebuild-edge-index jobs
+ */
 class ListEdgeIndexStatusProcessor : public BaseProcessor<cpp2::ListIndexStatusResp> {
  public:
   static ListEdgeIndexStatusProcessor* instance(kvstore::KVStore* kvstore) {

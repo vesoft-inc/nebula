@@ -17,7 +17,7 @@ namespace meta {
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
   auto spaceRet = getSpaceIdFromName(paras_.back());
   if (!nebula::ok(spaceRet)) {
-    LOG(ERROR) << "Can't find the space: " << paras_.back();
+    LOG(INFO) << "Can't find the space: " << paras_.back();
     return nebula::error(spaceRet);
   }
   GraphSpaceID spaceId = nebula::value(spaceRet);
@@ -47,7 +47,7 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
     if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
         nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
+      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     if (status == meta::cpp2::JobStatus::FINISHED) {
       nebula::cpp2::ErrorCode ret = updateMeta();
@@ -85,8 +85,8 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
                           [&baton, &ret](nebula::cpp2::ErrorCode code) {
                             if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
                               ret = code;
-                              LOG(ERROR) << "Can't write the kvstore, ret = "
-                                         << static_cast<int32_t>(code);
+                              LOG(INFO) << "Can't write the kvstore, ret = "
+                                        << static_cast<int32_t>(code);
                             }
                             baton.post();
                           });
@@ -121,8 +121,8 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::rebalanceActiveZones(
   for (auto& z : sortedActiveZonesRef) {
     totalPartNum += z->partNum_;
   }
-  if (sortedActiveZonesRef.empty()) {
-    LOG(ERROR) << "rebalance error: no active zones";
+  if (sortedActiveZonesRef.size() == 0) {
+    LOG(INFO) << "rebalance error: no active zones";
     return nebula::cpp2::ErrorCode::E_NO_HOSTS;
   }
   avgPartNum = totalPartNum / sortedActiveZonesRef.size();

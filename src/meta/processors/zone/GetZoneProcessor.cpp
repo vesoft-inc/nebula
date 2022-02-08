@@ -18,8 +18,8 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
     }
-    LOG(ERROR) << "Get zone " << zoneName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get zone " << zoneName
+              << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

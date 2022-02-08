@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get stats of a job, return error if the job is running or failed
+ */
 class GetStatsProcessor : public BaseProcessor<cpp2::GetStatsResp> {
  public:
   static GetStatsProcessor* instance(kvstore::KVStore* kvstore) {

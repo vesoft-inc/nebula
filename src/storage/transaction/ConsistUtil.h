@@ -17,13 +17,9 @@ namespace nebula {
 namespace storage {
 class ConsistUtil final {
  public:
-  static std::string primeTable();
+  static std::string primeTable(PartitionID partId);
 
-  static std::string doublePrimeTable();
-
-  static std::string deletePrimeTable();
-
-  static std::string deleteDoublePrimeTable();
+  static std::string doublePrimeTable(PartitionID partId);
 
   static std::string edgeKey(size_t vIdLen, PartitionID partId, const cpp2::EdgeKey& key);
 
@@ -87,9 +83,7 @@ class ConsistUtil final {
    */
   static int64_t toInt(const ::nebula::Value& val);
 
-  static int64_t toInt2(const std::string& val);
-
-  static std::string readableKey(size_t vidLen, const std::string& rawKey);
+  static std::string readableKey(size_t vidLen, bool isIntId, const std::string& rawKey);
 
   static std::vector<std::string> toStrKeys(const cpp2::DeleteEdgesRequest& req, int vidLen);
 
@@ -104,7 +98,7 @@ struct DeleteEdgesRequestHelper final {
 
   static cpp2::DeleteEdgesRequest parseDeleteEdgesRequest(const std::string& val);
 
-  static std::string explain(const cpp2::DeleteEdgesRequest& req);
+  static std::string explain(const cpp2::DeleteEdgesRequest& req, bool isIntVid);
 };
 
 }  // namespace storage
