@@ -43,7 +43,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
     case cpp2::AlterSchemaOp::ADD:
       for (auto it = cols.begin(); it != cols.end(); ++it) {
         if (it->get_name() == col.get_name()) {
-          LOG(ERROR) << "Column existing: " << col.get_name();
+          LOG(INFO) << "Column existing: " << col.get_name();
           return nebula::cpp2::ErrorCode::E_EXISTED;
         }
       }
@@ -55,14 +55,14 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
         if (colName == it->get_name()) {
           // If this col is ttl_col, change not allowed
           if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
-            LOG(ERROR) << "Column: " << colName << " as ttl_col, change not allowed";
+            LOG(INFO) << "Column: " << colName << " as ttl_col, change not allowed";
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           *it = col;
           return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
       }
-      LOG(ERROR) << "Column not found: " << col.get_name();
+      LOG(INFO) << "Column not found: " << col.get_name();
       if (isEdge) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
@@ -79,13 +79,13 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
           return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
       }
-      LOG(ERROR) << "Column not found: " << col.get_name();
+      LOG(INFO) << "Column not found: " << col.get_name();
       if (isEdge) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
       return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
     default:
-      LOG(ERROR) << "Alter schema operator not supported";
+      LOG(INFO) << "Alter schema operator not supported";
       return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
   }
 }
@@ -97,7 +97,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
                                                           bool isEdge) {
   if (existIndex && (alterSchemaProp.ttl_duration_ref().has_value() ||
                      alterSchemaProp.ttl_col_ref().has_value())) {
-    LOG(ERROR) << "Has index, can't change ttl";
+    LOG(INFO) << "Has index, can't change ttl";
     return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
   }
   if (alterSchemaProp.ttl_duration_ref().has_value()) {
@@ -120,7 +120,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
         // Only integer and timestamp columns can be used as ttl_col
         if (colType != nebula::cpp2::PropertyType::INT64 &&
             colType != nebula::cpp2::PropertyType::TIMESTAMP) {
-          LOG(ERROR) << "TTL column type illegal";
+          LOG(INFO) << "TTL column type illegal";
           return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
         }
         existed = true;
@@ -130,7 +130,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
     }
 
     if (!existed) {
-      LOG(ERROR) << "TTL column not found: " << ttlCol;
+      LOG(INFO) << "TTL column not found: " << ttlCol;
       if (isEdge) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
@@ -142,7 +142,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
   if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
       (!schemaProp.get_ttl_col() ||
        (schemaProp.get_ttl_col() && schemaProp.get_ttl_col()->empty()))) {
-    LOG(WARNING) << "Implicit ttl_col not support";
+    LOG(INFO) << "Implicit ttl_col not support";
     return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
   }
 

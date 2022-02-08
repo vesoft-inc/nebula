@@ -704,7 +704,7 @@ Feature: Basic match
     When executing query:
       """
       USE nba;
-      MATCH (n:player) RETURN n LIMIT 1;
+      MATCH (n:player) WHERE id(n) == "Boris Diaw" RETURN n;
       """
     Then the result should be, in any order:
       | n                                                   |
