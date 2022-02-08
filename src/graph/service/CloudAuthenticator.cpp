@@ -3,8 +3,9 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <proxygen/lib/utils/CryptUtil.h>
 #include "graph/service/CloudAuthenticator.h"
+
+#include <proxygen/lib/utils/CryptUtil.h>
 
 #include "common/base/Status.h"
 #include "common/http/HttpClient.h"

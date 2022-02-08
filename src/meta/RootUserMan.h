@@ -7,6 +7,7 @@
 #define META_ROOTUSERMAN_H_
 
 #include <proxygen/lib/utils/CryptUtil.h>
+
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"

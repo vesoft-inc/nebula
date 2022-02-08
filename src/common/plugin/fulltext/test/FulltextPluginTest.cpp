@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-
 #include "common/network/NetworkUtils.h"
 #include "common/plugin/fulltext/FTUtils.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"

@@ -3,8 +3,10 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <proxygen/lib/utils/CryptUtil.h>
 #include "graph/executor/admin/ChangePasswordExecutor.h"
+
+#include <proxygen/lib/utils/CryptUtil.h>
+
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
