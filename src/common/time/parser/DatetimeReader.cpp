@@ -8,7 +8,7 @@
 namespace nebula {
 namespace time {
 
-DatetimeReader::DatetimeReader(Type type) : parser_(scanner_, error_, &dt_, type) {
+DatetimeReader::DatetimeReader() : parser_(scanner_, error_, &dt_) {
   // Callback invoked by DatetimeScanner
   auto readBuffer = [this](char *buf, int maxSize) -> int {
     // Reach the end
