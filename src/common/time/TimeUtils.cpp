@@ -205,21 +205,21 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
 }
 
 /*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
-  auto p = DatetimeReader::makeDateTimeReader();
+  auto p = DatetimeReader();
   auto result = p.readDatetime(str);
   NG_RETURN_IF_ERROR(result);
   return result.value();
 }
 
 /*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string &str) {
-  auto p = DatetimeReader::makeDateReader();
+  auto p = DatetimeReader();
   auto result = p.readDate(str);
   NG_RETURN_IF_ERROR(result);
   return result.value();
 }
 
 /*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
-  auto p = DatetimeReader::makeTimeReader();
+  auto p = DatetimeReader();
   return p.readTime(str);
 }
 
