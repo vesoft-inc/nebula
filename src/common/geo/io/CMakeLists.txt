@@ -2,10 +2,18 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-if(ENABLE_VERBOSE_BISON)
-    set(bison_flags "-Werror -v")
+if(ENABLE_ERROR)
+  if(ENABLE_VERBOSE_BISON)
+      set(bison_flags "-Werror -v")
+  else()
+      set(bison_flags "-Werror")
+  endif()
 else()
-    set(bison_flags "-Werror")
+  if(ENABLE_VERBOSE_BISON)
+      set(bison_flags "-v")
+  else()
+      set(bison_flags "")
+  endif()
 endif()
 bison_target(Parser wkt/wkt_parser.yy ${CMAKE_CURRENT_BINARY_DIR}/wkt/WKTParser.cpp COMPILE_FLAGS ${bison_flags})
 flex_target(Scanner wkt/wkt_scanner.lex ${CMAKE_CURRENT_BINARY_DIR}/wkt/WKTScanner.cpp)

@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_DATATYPES_DURATION_H
+#define COMMON_DATATYPES_DURATION_H
 
 #include <folly/dynamic.h>
 
@@ -150,3 +151,4 @@ struct hash<nebula::Duration> {
 };
 
 }  // namespace std
+#endif

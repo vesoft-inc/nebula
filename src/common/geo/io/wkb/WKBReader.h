@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_GEO_IO_WKB_WKBREADER_H
+#define COMMON_GEO_IO_WKB_WKBREADER_H
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -45,3 +46,4 @@ class WKBReader {
 
 }  // namespace geo
 }  // namespace nebula
+#endif

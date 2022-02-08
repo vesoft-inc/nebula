@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_PLANNER_MATCH_ARGUMENTFINDER_H
+#define GRAPH_PLANNER_MATCH_ARGUMENTFINDER_H
 
 #include "graph/planner/match/StartVidFinder.h"
 
@@ -29,3 +30,4 @@ class ArgumentFinder final : public StartVidFinder {
 
 }  // namespace graph
 }  // namespace nebula
+#endif

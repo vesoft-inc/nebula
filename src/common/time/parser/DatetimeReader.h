@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_TIME_PARSER_DATETIMEREADER_H
+#define COMMON_TIME_PARSER_DATETIMEREADER_H
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -59,3 +60,4 @@ class DatetimeReader {
 
 }  // namespace time
 }  // namespace nebula
+#endif
