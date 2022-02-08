@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/function/FunctionManager.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -218,7 +219,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:
-      return std::make_unique<ListZonesValidator>(sentence, context);
+      return std::make_unique<ShowZonesValidator>(sentence, context);
     case Sentence::Kind::kAddHostsIntoZone:
       return std::make_unique<AddHostsIntoZoneValidator>(sentence, context);
     case Sentence::Kind::kAddListener:
@@ -306,8 +307,9 @@ std::vector<std::string> Validator::getOutColNames() const {
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
+
   if (!node->isSingleInput()) {
-    return Status::SemanticError("%s not support to append an input.",
+    return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
   static_cast<SingleDependencyNode*>(node)->dependsOn(appended);

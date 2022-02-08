@@ -15,15 +15,14 @@ void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
   auto serviceKey = MetaKeyUtils::serviceKey(type);
   auto ret = doGet(serviceKey);
   if (nebula::ok(ret)) {
-    LOG(ERROR) << "Service already exists.";
+    LOG(INFO) << "Service already exists.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     onFinished();
     return;
   } else {
     auto retCode = nebula::error(ret);
     if (retCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      LOG(ERROR) << "Sign in service failed, error: "
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Sign in service failed, error: " << apache::thrift::util::enumNameSafe(retCode);
       handleErrorCode(retCode);
       onFinished();
       return;
@@ -44,10 +43,10 @@ void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      LOG(ERROR) << "Sign out service failed, service not exists.";
+      LOG(INFO) << "Sign out service failed, service not exists.";
     } else {
-      LOG(ERROR) << "Sign out service failed, error: "
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Sign out service failed, error: "
+                << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -66,7 +65,7 @@ void ListServiceClientsProcessor::process(const cpp2::ListServiceClientsReq& req
   auto ret = doGet(serviceKey);
   if (!nebula::ok(ret) && nebula::error(ret) != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "List service failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List service failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

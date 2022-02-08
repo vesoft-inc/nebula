@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <initializer_list>
+
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
@@ -23,6 +25,7 @@ class PushTopNDownIndexScanRule final : public OptRule {
   PushTopNDownIndexScanRule();
 
   static std::unique_ptr<OptRule> kInstance;
+  static const std::initializer_list<graph::PlanNode::Kind> kIndexScanKinds;
 };
 
 }  // namespace opt

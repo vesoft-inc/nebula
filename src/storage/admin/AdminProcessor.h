@@ -335,31 +335,6 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit CheckPeersProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
-class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
- public:
-  static GetLeaderProcessor* instance(StorageEnv* env) {
-    return new GetLeaderProcessor(env);
-  }
-
-  void process(const cpp2::GetLeaderReq&) {
-    CHECK_NOTNULL(env_->kvstore_);
-    std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> allLeaders;
-    env_->kvstore_->allLeader(allLeaders);
-    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-    for (auto& spaceLeaders : allLeaders) {
-      auto& spaceId = spaceLeaders.first;
-      for (auto& partLeader : spaceLeaders.second) {
-        leaderIds[spaceId].emplace_back(partLeader.get_part_id());
-      }
-    }
-    resp_.leader_parts_ref() = std::move(leaderIds);
-    this->onFinished();
-  }
-
- private:
-  explicit GetLeaderProcessor(StorageEnv* env) : BaseProcessor<cpp2::GetLeaderPartsResp>(env) {}
-};
-
 }  // namespace storage
 }  // namespace nebula
 

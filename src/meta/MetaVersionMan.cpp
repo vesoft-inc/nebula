@@ -10,7 +10,6 @@
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobUtils.h"
 #include "meta/upgrade/MetaDataUpgrade.h"
-#include "meta/upgrade/v1/MetaServiceUtilsV1.h"
 #include "meta/upgrade/v2/MetaServiceUtilsV2.h"
 
 DEFINE_bool(null_type, true, "set schema to support null type");
@@ -60,53 +59,20 @@ bool MetaVersionMan::setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion v
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-// static
-Status MetaVersionMan::updateMetaV1ToV2(kvstore::KVEngine* engine) {
-  CHECK_NOTNULL(engine);
-  auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
-
-  std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
-  if (!fs::FileUtils::exist(path) && !fs::FileUtils::makeDir(path)) {
-    LOG(ERROR) << "Make checkpoint dir: " << path << " failed";
-    return Status::Error("Create snapshot file failed");
-  }
-
-  std::string dataPath = folly::sformat("{}/data", path);
-  auto code = engine->createCheckpoint(dataPath);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Create snapshot failed: " << snapshot;
-    return Status::Error("Create snapshot failed");
-  }
-
-  auto status = doUpgradeV1ToV2(engine);
-  if (!status.ok()) {
-    // rollback by snapshot
-    return status;
-  }
-
-  // delete snapshot file
-  auto checkpointPath = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
-
-  if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
-  }
-  return Status::OK();
-}
-
 Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   CHECK_NOTNULL(engine);
   auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
 
   std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
   if (!fs::FileUtils::exist(path) && !fs::FileUtils::makeDir(path)) {
-    LOG(ERROR) << "Make checkpoint dir: " << path << " failed";
+    LOG(INFO) << "Make checkpoint dir: " << path << " failed";
     return Status::Error("Create snapshot file failed");
   }
 
   std::string dataPath = folly::sformat("{}/data", path);
   auto code = engine->createCheckpoint(dataPath);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Create snapshot failed: " << snapshot;
+    LOG(INFO) << "Create snapshot failed: " << snapshot;
     return Status::Error("Create snapshot failed");
   }
 
@@ -119,252 +85,9 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   // delete snapshot file
   auto checkpointPath = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
   if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
+    LOG(INFO) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
   }
   return Status::OK();
-}
-
-// static
-Status MetaVersionMan::doUpgradeV1ToV2(kvstore::KVEngine* engine) {
-  MetaDataUpgrade upgrader(engine);
-  {
-    // kSpacesTable
-    auto prefix = nebula::meta::v1::kSpacesTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printSpacesV1(iter->val());
-        }
-        status = upgrader.rewriteSpaces(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kPartsTable
-    auto prefix = nebula::meta::v1::kPartsTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printParts(iter->key(), iter->val());
-        }
-        status = upgrader.rewriteParts(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kHostsTable
-    auto prefix = nebula::meta::v1::kHostsTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printHost(iter->key(), iter->val());
-        }
-        status = upgrader.rewriteHosts(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kLeadersTable
-    auto prefix = nebula::meta::v1::kLeadersTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printLeaders(iter->key());
-        }
-        status = upgrader.rewriteLeaders(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kTagsTable
-    auto prefix = nebula::meta::v1::kTagsTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printSchemas(iter->val());
-        }
-        status = upgrader.rewriteSchemas(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kEdgesTable
-    auto prefix = nebula::meta::v1::kEdgesTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printSchemas(iter->val());
-        }
-        status = upgrader.rewriteSchemas(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kIndexesTable
-    auto prefix = nebula::meta::v1::kIndexesTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printIndexes(iter->val());
-        }
-        status = upgrader.rewriteIndexes(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kConfigsTable
-    auto prefix = nebula::meta::v1::kConfigsTable;
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (FLAGS_print_info) {
-          upgrader.printConfigs(iter->key(), iter->val());
-        }
-        status = upgrader.rewriteConfigs(iter->key(), iter->val());
-        if (!status.ok()) {
-          LOG(ERROR) << status;
-          return status;
-        }
-        iter->next();
-      }
-    }
-  }
-
-  {
-    // kJob
-    auto prefix = JobUtil::jobPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = engine->prefix(prefix, &iter);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      Status status = Status::OK();
-      while (iter->valid()) {
-        if (JobDescription::isJobKey(iter->key())) {
-          if (FLAGS_print_info) {
-            upgrader.printJobDesc(iter->key(), iter->val());
-          }
-          status = upgrader.rewriteJobDesc(iter->key(), iter->val());
-          if (!status.ok()) {
-            LOG(ERROR) << status;
-            return status;
-          }
-        } else {
-          // the job key format is change, need to delete the old format
-          status = upgrader.deleteKeyVal(iter->key());
-          if (!status.ok()) {
-            LOG(ERROR) << status;
-            return status;
-          }
-        }
-        iter->next();
-      }
-    }
-  }
-
-  // delete
-  {
-    std::vector<std::string> prefixes({nebula::meta::v1::kIndexStatusTable,
-                                       nebula::meta::v1::kDefaultTable,
-                                       nebula::meta::v1::kCurrJob,
-                                       nebula::meta::v1::kJobArchive});
-    std::unique_ptr<kvstore::KVIterator> iter;
-    for (auto& prefix : prefixes) {
-      auto ret = engine->prefix(prefix, &iter);
-      if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-        Status status = Status::OK();
-        while (iter->valid()) {
-          if (prefix == nebula::meta::v1::kIndexesTable) {
-            if (FLAGS_print_info) {
-              upgrader.printIndexes(iter->val());
-            }
-            auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(iter->val());
-            auto spaceId = MetaKeyUtils::parseIndexesKeySpaceID(iter->key());
-            status = upgrader.deleteKeyVal(
-                MetaKeyUtils::indexIndexKey(spaceId, oldItem.get_index_name()));
-            if (!status.ok()) {
-              LOG(ERROR) << status;
-              return status;
-            }
-          }
-          status = upgrader.deleteKeyVal(iter->key());
-          if (!status.ok()) {
-            LOG(ERROR) << status;
-            return status;
-          }
-          iter->next();
-        }
-      }
-    }
-  }
-  if (!setMetaVersionToKV(engine, MetaVersion::V2)) {
-    return Status::Error("Persist meta version failed");
-  } else {
-    return Status::OK();
-  }
 }
 
 Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
@@ -377,7 +100,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> zoneIter;
     auto code = engine->prefix(zonePrefix, &zoneIter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get active hosts failed";
+      LOG(INFO) << "Get active hosts failed";
       return Status::Error("Get hosts failed");
     }
 
@@ -393,7 +116,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> iter;
     code = engine->prefix(prefix, &iter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get active hosts failed";
+      LOG(INFO) << "Get active hosts failed";
       return Status::Error("Get hosts failed");
     }
 
@@ -420,7 +143,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     }
     auto status = upgrader.saveMachineAndZone(std::move(data));
     if (!status.ok()) {
-      LOG(ERROR) << status;
+      LOG(INFO) << status;
       return status;
     }
   }
@@ -431,7 +154,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = engine->prefix(prefix, &iter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get spaces failed";
+      LOG(INFO) << "Get spaces failed";
       return Status::Error("Get spaces failed");
     }
 
@@ -441,7 +164,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
       }
       auto status = upgrader.rewriteSpacesV2ToV3(iter->key(), iter->val());
       if (!status.ok()) {
-        LOG(ERROR) << status;
+        LOG(INFO) << status;
         return status;
       }
       iter->next();

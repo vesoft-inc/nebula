@@ -68,7 +68,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     parameter.space_id_ref() = spaceId;
     parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
+    cpp2::AddTaskRequest request;
     request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
     request.job_id_ref() = ++gJobId;
     request.task_id_ref() = 13;
@@ -133,7 +133,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     parameter.space_id_ref() = spaceId;
     parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
+    cpp2::AddTaskRequest request;
     request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
     request.job_id_ref() = ++gJobId;
     request.task_id_ref() = 14;
@@ -204,7 +204,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     parameter.space_id_ref() = spaceId;
     parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
+    cpp2::AddTaskRequest request;
     request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
     request.job_id_ref() = ++gJobId;
     request.task_id_ref() = 15;

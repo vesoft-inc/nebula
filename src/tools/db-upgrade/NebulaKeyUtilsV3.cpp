@@ -15,7 +15,7 @@ std::string NebulaKeyUtilsV3::partTagPrefix(PartitionID partId) {
 }
 std::string NebulaKeyUtilsV3::getVertexKey(folly::StringPiece tagKey) {
   std::string key = tagKey.toString();
-  key[3] = static_cast<uint32_t>(kVertex);
+  key[0] = static_cast<uint32_t>(kVertex);
   key.resize(key.size() - sizeof(TagID));
   return key;
 }

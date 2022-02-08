@@ -154,6 +154,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
+  folly::SharedMutex::ReadHolder zHolder(LockUtils::zoneLock());
   for (auto& zone : zones) {
     auto zoneKey = MetaKeyUtils::zoneKey(zone);
     auto ret = doGet(zoneKey);
@@ -174,6 +175,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     return;
   }
 
+  int32_t activeZoneSize = 0;
   std::unordered_map<std::string, Hosts> zoneHosts;
   for (auto& zone : zones) {
     auto zoneKey = MetaKeyUtils::zoneKey(zone);
@@ -193,14 +195,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       auto key = MetaKeyUtils::hostKey(host.host, host.port);
       auto ret = doGet(key);
       if (!nebula::ok(ret)) {
-        code = nebula::error(ret);
         LOG(ERROR) << "Get host " << host << " failed.";
-        break;
+        continue;
       }
 
       HostInfo info = HostInfo::decode(nebula::value(ret));
       if (now - info.lastHBTimeInMilliSec_ <
           FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
+        activeZoneSize += 1;
         auto hostIter = hostLoading_.find(host);
         if (hostIter == hostLoading_.end()) {
           hostLoading_[host] = 0;
@@ -215,6 +217,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
     CHECK_CODE_AND_BREAK();
     zoneHosts[zone] = std::move(hosts);
+  }
+
+  if (replicaFactor > activeZoneSize) {
+    LOG(ERROR) << "Replication number should less than or equal to active zone number.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH);
+    onFinished();
+    return;
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

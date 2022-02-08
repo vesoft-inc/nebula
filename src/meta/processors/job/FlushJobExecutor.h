@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Executor for flush job, always called by job manager
+ */
 class FlushJobExecutor : public SimpleConcurrentJobExecutor {
  public:
   FlushJobExecutor(JobID jobId,
@@ -18,6 +21,13 @@ class FlushJobExecutor : public SimpleConcurrentJobExecutor {
                    AdminClient* adminClient,
                    const std::vector<std::string>& params);
 
+  /**
+   * @brief
+   *
+   * @param address The host that task command send to
+   * @param parts Parts that the host contains
+   * @return
+   */
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
 };

@@ -382,9 +382,9 @@ class DescribeZoneValidator final : public Validator {
   Status toPlan() override;
 };
 
-class ListZonesValidator final : public Validator {
+class ShowZonesValidator final : public Validator {
  public:
-  ListZonesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+  ShowZonesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 

@@ -10,17 +10,18 @@
 namespace nebula {
 namespace opt {
 
-class PushTopNDownEdgeIndexPrefixScanRule final : public OptRule {
+class EliminateRowCollectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
-  StatusOr<OptRule::TransformResult> transform(OptContext *ctx,
-                                               const MatchedResult &matched) const override;
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+
+  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 
   std::string toString() const override;
 
  private:
-  PushTopNDownEdgeIndexPrefixScanRule();
+  EliminateRowCollectRule();
 
   static std::unique_ptr<OptRule> kInstance;
 };

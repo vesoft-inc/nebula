@@ -52,5 +52,6 @@ const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) 
   auto pipe = static_cast<const PipedSentence*>(sentence);
   return getFirstSentence(pipe->left());
 }
+
 }  // namespace graph
 }  // namespace nebula

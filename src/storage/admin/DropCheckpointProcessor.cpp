@@ -20,14 +20,19 @@ void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
     }
 
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      cpp2::PartitionResult res;
-      res.code_ref() = code;
-      codes_.emplace_back(std::move(res));
-      break;
+      resp_.code_ref() = code;
+      onFinished();
+      return;
     }
   }
 
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
+}
+
+void DropCheckpointProcessor::onFinished() {
+  this->promise_.setValue(std::move(resp_));
+  delete this;
 }
 
 }  // namespace storage
