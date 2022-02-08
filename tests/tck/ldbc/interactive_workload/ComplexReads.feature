@@ -11,9 +11,9 @@ Feature: LDBC Interactive Workload - Complex Reads
     # TODO: shortestPath syntax is not supported for now
     When executing query:
       """
-      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "$firstName"}))
-      WHERE id(person) == ""
-      WHERE person <> friend
+      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "Baruch"}))
+      WHERE id(person) == "person-4139"
+      AND person <> friend
       WITH friend, length(p) AS distance
       ORDER BY distance ASC, friend.lastName ASC, toInteger(friend.id) ASC
       LIMIT 20
@@ -63,18 +63,29 @@ Feature: LDBC Interactive Workload - Complex Reads
   Scenario: 2. Recent messages by your friends
     When executing query:
       """
-      MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" and message.Message.creationDate <= $maxDate
+      MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message)
+      WHERE id(n) == "person-4139" and
+      CASE exists(message.Post.creationDate) 
+        WHEN true THEN message.Post.creationDate <= "2011-03-12T18:26:25.436"
+        ELSE message.Comment.creationDate <= "2011-03-12T18:26:25.436"
+      END
       RETURN
-        friend.Person.id AS personId,
+        id(friend) AS personId,
         friend.Person.firstName AS personFirstName,
         friend.Person.lastName AS personLastName,
-        toInteger(message.Message.id) AS messageId,
-        CASE exists(message.Message.content)
-          WHEN true THEN message.Message.content
-          ELSE message.Message.imageFile
-        END AS messageContent,
-        message.Message.creationDate AS messageCreationDate
+        id(message) AS messageId,
+        CASE exists(message.Post.creationDate) 
+          WHEN true THEN 
+            CASE message.Post.content != ""
+              WHEN true THEN message.Post.content 
+              ELSE message.Post.imageFile 
+            END 
+          ELSE message.`Comment`.content 
+        END AS messageContent, 
+        CASE exists(message.Post.creationDate) 
+          WHEN true THEN message.Post.creationDate 
+          ELSE message.`Comment`.creationDate
+        END AS messageCreationDate
       ORDER BY messageCreationDate DESC, messageId ASC
       LIMIT 20
       """

@@ -34,7 +34,7 @@ Feature: LDBC Interactive Workload - Short Reads
       RETURN id(m) as messageId, 
         CASE exists(m.Post.creationDate) 
           WHEN true THEN 
-            CASE exists(m.Post.content) 
+            CASE m.Post.content != ""
               WHEN true THEN m.Post.content 
               ELSE m.Post.imageFile 
             END 
@@ -81,7 +81,7 @@ Feature: LDBC Interactive Workload - Short Reads
         END as messageCreationDate, 
         CASE exists(m.Post.creationDate) 
           WHEN true THEN 
-            CASE exists(m.Post.content) 
+            CASE m.Post.content != ""
               WHEN true THEN m.Post.content 
               ELSE m.Post.imageFile 
             END 
