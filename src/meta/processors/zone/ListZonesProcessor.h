@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get all zones info
+ */
 class ListZonesProcessor : public BaseProcessor<cpp2::ListZonesResp> {
  public:
   static ListZonesProcessor* instance(kvstore::KVStore* kvstore) {

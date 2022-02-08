@@ -33,19 +33,19 @@ nebula_add_test(
   )
 
 
-# nebula_add_test(
-#    NAME
-#        meta_http_replace_test
-#    SOURCES
-#        MetaHttpReplaceHandlerTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:storage_http_handler>
-#        $<TARGET_OBJECTS:meta_http_handler>
-#        ${meta_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        ${PROXYGEN_LIBRARIES}
-#        wangle
-#        gtest
-# )
+nebula_add_test(
+   NAME
+       meta_http_replace_test
+   SOURCES
+       MetaHttpReplaceHandlerTest.cpp
+   OBJECTS
+       $<TARGET_OBJECTS:storage_http_handler>
+       $<TARGET_OBJECTS:meta_http_handler>
+       ${meta_test_deps}
+   LIBRARIES
+       ${ROCKSDB_LIBRARIES}
+       ${THRIFT_LIBRARIES}
+       ${PROXYGEN_LIBRARIES}
+       wangle
+       gtest
+)

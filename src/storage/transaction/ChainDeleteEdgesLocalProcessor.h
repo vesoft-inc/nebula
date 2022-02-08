@@ -86,6 +86,7 @@ class ChainDeleteEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   PartitionID localPartId_;
   PartitionID remotePartId_;
   cpp2::DeleteEdgesRequest req_;
+  TransactionManager::SPtrLock lkCore_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
   /**
@@ -106,8 +107,6 @@ class ChainDeleteEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   std::vector<kvstore::KV> doublePrimes_;
 
   std::string txnId_;
-
-  ::nebula::cpp2::PropertyType spaceVidType_{::nebula::cpp2::PropertyType::UNKNOWN};
 
   // for debug, edge "100"->"101" will print like 2231303022->2231303122
   // which is hard to recognize. Transform to human readable format

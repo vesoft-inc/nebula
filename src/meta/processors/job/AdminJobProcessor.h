@@ -13,6 +13,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Make admin job operation, including ADD SHOW_All SHOW STOP RECOVER
+ */
 class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
  public:
   static AdminJobProcessor* instance(kvstore::KVStore* kvstore, AdminClient* adminClient) {

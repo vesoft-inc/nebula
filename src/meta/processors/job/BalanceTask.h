@@ -18,6 +18,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief A balance task mainly include jobID, spaceId, partId, srcHost, dstHost, status, result
+ * The jobID, spaceId, partId, srcHost, dstHost make an unique id for the task
+ */
 class BalanceTask {
   friend class BalancePlan;
   FRIEND_TEST(BalanceTest, BalanceTaskTest);
@@ -61,6 +65,9 @@ class BalanceTask {
     return commandStr_;
   }
 
+  /**
+   * @brief Running this task
+   */
   void invoke();
 
   void rollback();
@@ -99,6 +106,11 @@ class BalanceTask {
         "%s:%d->%s:%d", src_.host.c_str(), src_.port, dst_.host.c_str(), dst_.port);
   }
 
+  /**
+   * @brief Save this task into kvStore
+   *
+   * @return
+   */
   bool saveInStore();
 
   int64_t startTime() const {
