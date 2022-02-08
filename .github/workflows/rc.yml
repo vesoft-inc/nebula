@@ -40,7 +40,7 @@ jobs:
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
-        run: ./package/package.sh -v ${{ steps.tag.outputs.tag }} -t RelWithDebInfo -r OFF -p ON -s TRUE
+        run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
