@@ -16,7 +16,6 @@
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
 
-
 namespace nebula {
 
 class Expression;
