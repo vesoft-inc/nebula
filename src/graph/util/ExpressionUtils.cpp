@@ -5,10 +5,6 @@
 
 #include "graph/util/ExpressionUtils.h"
 
-#include <memory>
-#include <queue>
-#include <unordered_set>
-
 #include "common/base/ObjectPool.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/Expression.h"
@@ -25,16 +21,14 @@ namespace nebula {
 namespace graph {
 
 bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
-  auto kind = expr->kind();
-
-  return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
-                                              Expression::Kind::kLabelTagProperty,
-                                              Expression::Kind::kEdgeProperty,
-                                              Expression::Kind::kInputProperty,
-                                              Expression::Kind::kVarProperty,
-                                              Expression::Kind::kDstProperty,
-                                              Expression::Kind::kSrcProperty}
-      .count(kind);
+  return isKindOf(expr,
+                  {Expression::Kind::kTagProperty,
+                   Expression::Kind::kLabelTagProperty,
+                   Expression::Kind::kEdgeProperty,
+                   Expression::Kind::kInputProperty,
+                   Expression::Kind::kVarProperty,
+                   Expression::Kind::kDstProperty,
+                   Expression::Kind::kSrcProperty});
 }
 
 const Expression *ExpressionUtils::findAny(const Expression *self,
@@ -57,8 +51,8 @@ const Expression *ExpressionUtils::findAny(const Expression *self,
   return nullptr;
 }
 
-// Find all expression fit any kind
-// Empty for not found any one
+// Finds all expressions fit the exprected list
+// Returns an empty vector if no expression found
 std::vector<const Expression *> ExpressionUtils::collectAll(
     const Expression *self, const std::unordered_set<Expression::Kind> &expected) {
   auto finder = [&expected](const Expression *expr) -> bool {
@@ -83,52 +77,12 @@ bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryCon
   return false;
 }
 
-std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
-  return collectAll(expr,
-                    {Expression::Kind::kTagProperty,
-                     Expression::Kind::kLabelTagProperty,
-                     Expression::Kind::kEdgeProperty,
-                     Expression::Kind::kDstProperty,
-                     Expression::Kind::kSrcProperty,
-                     Expression::Kind::kEdgeSrc,
-                     Expression::Kind::kEdgeType,
-                     Expression::Kind::kEdgeRank,
-                     Expression::Kind::kEdgeDst,
-                     Expression::Kind::kVertex,
-                     Expression::Kind::kEdge});
-}
-
-std::vector<const Expression *> ExpressionUtils::findAllInputVariableProp(const Expression *expr) {
-  return collectAll(expr, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
-}
-
-bool ExpressionUtils::isConstExpr(const Expression *expr) {
-  return !hasAny(expr,
-                 {Expression::Kind::kInputProperty,
-                  Expression::Kind::kVarProperty,
-                  Expression::Kind::kVar,
-                  Expression::Kind::kVersionedVar,
-                  Expression::Kind::kLabelAttribute,
-                  Expression::Kind::kLabelTagProperty,
-                  Expression::Kind::kTagProperty,
-                  Expression::Kind::kEdgeProperty,
-                  Expression::Kind::kDstProperty,
-                  Expression::Kind::kSrcProperty,
-                  Expression::Kind::kEdgeSrc,
-                  Expression::Kind::kEdgeType,
-                  Expression::Kind::kEdgeRank,
-                  Expression::Kind::kEdgeDst,
-                  Expression::Kind::kVertex,
-                  Expression::Kind::kEdge});
-}
-
 bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext *qctx) {
   EvaluableExprVisitor visitor(qctx);
   const_cast<Expression *>(expr)->accept(&visitor);
   return visitor.ok();
 }
 
-// rewrite Attribute to LabelTagProp
 Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
     const Expression *expr, const std::unordered_map<std::string, AliasType> &aliasTypeMap) {
   ObjectPool *pool = expr->getObjPool();
@@ -166,53 +120,6 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-// rewrite LabelAttr to EdgeProp
-Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
-    return e->kind() == Expression::Kind::kLabelAttribute;
-  };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
-    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
-    auto leftName = labelAttrExpr->left()->name();
-    auto rightName = labelAttrExpr->right()->value().getStr();
-    return EdgePropertyExpression::make(pool, leftName, rightName);
-  };
-
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
-}
-
-// rewrite var in VariablePropExpr to another var
-Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string newVar) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
-    return e->kind() == Expression::Kind::kVarProperty;
-  };
-  auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
-    auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
-    auto newProp = varPropExpr->prop();
-    return VariablePropertyExpression::make(pool, newVar, newProp);
-  };
-
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
-}
-
-// rewrite parameter to Constant
-Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryContext *qctx) {
-  auto matcher = [qctx](const Expression *e) -> bool {
-    return e->kind() == Expression::Kind::kVar &&
-           qctx->existParameter(static_cast<const VariableExpression *>(e)->var());
-  };
-  auto rewriter = [qctx](const Expression *e) -> Expression * {
-    DCHECK_EQ(e->kind(), Expression::Kind::kVar);
-    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
-    return ConstantExpression::make(qctx->objPool(), v);
-  };
-
-  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
-}
-
-// rewrite LabelAttr to tagProp
 Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
@@ -228,7 +135,49 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-// rewrite Agg to VarProp
+Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kLabelAttribute;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
+    auto leftName = labelAttrExpr->left()->name();
+    auto rightName = labelAttrExpr->right()->value().getStr();
+    return EdgePropertyExpression::make(pool, leftName, rightName);
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
+Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string newVar) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVarProperty;
+  };
+  auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
+    auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
+    auto newProp = varPropExpr->prop();
+    return VariablePropertyExpression::make(pool, newVar, newProp);
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
+Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryContext *qctx) {
+  auto matcher = [qctx](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVar &&
+           qctx->existParameter(static_cast<const VariableExpression *>(e)->var());
+  };
+  auto rewriter = [qctx](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kVar);
+    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+    return ConstantExpression::make(qctx->objPool(), v);
+  };
+
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
 Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
@@ -703,11 +652,11 @@ void ExpressionUtils::splitFilter(const Expression *expr,
   auto filterUnpickedPtr = LogicalExpression::makeAnd(pool);
 
   std::vector<Expression *> &operands = logicExpr->operands();
-  for (auto iter = operands.begin(); iter != operands.end(); ++iter) {
-    if (picker((*iter))) {
-      filterPickedPtr->addOperand((*iter)->clone());
+  for (auto &operand : operands) {
+    if (picker(operand)) {
+      filterPickedPtr->addOperand(operand->clone());
     } else {
-      filterUnpickedPtr->addOperand((*iter)->clone());
+      filterUnpickedPtr->addOperand(operand->clone());
     }
   }
   auto foldLogicalExpr = [](const LogicalExpression *e) -> Expression * {
@@ -850,9 +799,7 @@ std::vector<Expression *> ExpressionUtils::expandImplOr(const Expression *expr) 
 }
 
 Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
-  auto func = aggExpr->name();
-  std::transform(func.begin(), func.end(), func.begin(), ::toupper);
-
+  const auto &func = aggExpr->name();
   NG_RETURN_IF_ERROR(AggFunctionManager::find(func));
 
   auto *aggArg = aggExpr->arg();

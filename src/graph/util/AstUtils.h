@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 
+// Used to test GQL parser
 class AstUtils final {
  public:
   explicit AstUtils(...) = delete;
