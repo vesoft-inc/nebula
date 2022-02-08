@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_TOSSTESTUTILS_H
+#define STORAGE_TEST_TOSSTESTUTILS_H
 
 #include <folly/Benchmark.h>
 #include <folly/Format.h>
@@ -243,3 +244,4 @@ struct TossTestUtils {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

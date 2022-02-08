@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXSCANNODE_H
+#define STORAGE_EXEC_INDEXSCANNODE_H
 #include <gtest/gtest_prod.h>
 
 #include <cstring>
@@ -444,3 +445,4 @@ inline QualifiedStrategy::Result QualifiedStrategy::operator()(const folly::Stri
 }  // namespace storage
 
 }  // namespace nebula
+#endif
