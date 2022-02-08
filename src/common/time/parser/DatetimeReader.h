@@ -16,20 +16,10 @@ namespace time {
 
 class DatetimeReader {
  public:
+  DatetimeReader();
+
   ~DatetimeReader() {
     if (dt_ != nullptr) delete dt_;
-  }
-
-  static inline DatetimeReader makeDateReader() {
-    return DatetimeReader(Type::kDate);
-  }
-
-  static inline DatetimeReader makeTimeReader() {
-    return DatetimeReader(Type::kTime);
-  }
-
-  static inline DatetimeReader makeDateTimeReader() {
-    return DatetimeReader(Type::kDateTime);
   }
 
   StatusOr<DateTime> readDatetime(std::string input) {
@@ -52,8 +42,6 @@ class DatetimeReader {
   }
 
  private:
-  explicit DatetimeReader(Type type);
-
   StatusOr<DateTime> read(std::string input);
 
   std::string buffer_;
