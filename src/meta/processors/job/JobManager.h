@@ -6,11 +6,11 @@
 #ifndef META_JOBMANAGER_H_
 #define META_JOBMANAGER_H_
 
-#include <boost/core/noncopyable.hpp>
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/concurrency/UnboundedQueue.h>
 #include <gtest/gtest_prod.h>
 
+#include <boost/core/noncopyable.hpp>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"

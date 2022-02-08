@@ -6,6 +6,7 @@
 #ifndef KVSTORE_LOGENCODER_H_
 #define KVSTORE_LOGENCODER_H_
 #include <boost/core/noncopyable.hpp>
+
 #include "common/cpp/helpers.h"
 #include "kvstore/Common.h"
 

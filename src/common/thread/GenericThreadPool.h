@@ -6,6 +6,7 @@
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
 
 #include <boost/core/noncopyable.hpp>
+
 #include "common/cpp/helpers.h"
 #include "common/thread/GenericWorker.h"
 
@@ -119,7 +120,7 @@ class GenericThreadPool final : public boost::noncopyable, public nebula::cpp::N
 };
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
+auto GenericThreadPool::addTask(F &&f, Args &&...args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto idx = nextThread_++ % nrThreads_;
@@ -127,14 +128,14 @@ auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addTask(F &&f, Args &&... args) ->
+auto GenericThreadPool::addTask(F &&f, Args &&...args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto idx = nextThread_++ % nrThreads_;
   return pool_[idx]->addTask(std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
+auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&...args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto idx = nextThread_++ % nrThreads_;
@@ -142,14 +143,14 @@ auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&... args) ->
+auto GenericThreadPool::addDelayTask(size_t ms, F &&f, Args &&...args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto idx = nextThread_++ % nrThreads_;
   return pool_[idx]->addDelayTask(ms, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
-uint64_t GenericThreadPool::addRepeatTask(size_t ms, F &&f, Args &&... args) {
+uint64_t GenericThreadPool::addRepeatTask(size_t ms, F &&f, Args &&...args) {
   auto idx = nextThread_++ % nrThreads_;
   auto id = pool_[idx]->addRepeatTask(ms, std::forward<F>(f), std::forward<Args>(args)...);
   return ((idx << GenericWorker::TIMER_ID_BITS) | id);

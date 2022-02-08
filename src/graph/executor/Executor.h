@@ -6,9 +6,9 @@
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
 #define GRAPH_EXECUTOR_EXECUTOR_H_
 
-#include <boost/core/noncopyable.hpp>
 #include <folly/futures/Future.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <set>
 #include <string>
 #include <vector>

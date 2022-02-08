@@ -5,16 +5,16 @@
 
 #ifndef COMMON_BASE_OBJECTPOOL_H_
 #define COMMON_BASE_OBJECTPOOL_H_
-#include <boost/core/noncopyable.hpp>
+
 #include <folly/SpinLock.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <functional>
 #include <list>
 #include <type_traits>
 
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
-
 
 namespace nebula {
 
@@ -44,7 +44,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&... args) {
+  T *makeAndAdd(Args &&...args) {
     return add(new T(std::forward<Args>(args)...));
   }
 

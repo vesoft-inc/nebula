@@ -2,8 +2,9 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <boost/thread/barrier.hpp>
 #include <gtest/gtest.h>
+
+#include <boost/thread/barrier.hpp>
 
 #include "common/base/Base.h"
 #include "graph/util/IdGenerator.h"

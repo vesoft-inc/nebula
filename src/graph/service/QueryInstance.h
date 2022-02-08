@@ -7,6 +7,7 @@
 #define GRAPH_SERVICE_QUERYINSTANCE_H_
 
 #include <boost/core/noncopyable.hpp>
+
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "graph/context/QueryContext.h"

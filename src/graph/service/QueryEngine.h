@@ -6,8 +6,9 @@
 #ifndef GRAPH_SERVICE_QUERYENGINE_H_
 #define GRAPH_SERVICE_QUERYENGINE_H_
 
-#include <boost/core/noncopyable.hpp>
 #include <folly/executors/IOThreadPoolExecutor.h>
+
+#include <boost/core/noncopyable.hpp>
 
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClient.h"

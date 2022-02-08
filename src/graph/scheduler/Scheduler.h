@@ -7,6 +7,7 @@
 #define GRAPH_SCHEDULER_SCHEDULER_H_
 
 #include <boost/core/noncopyable.hpp>
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "graph/executor/Executor.h"

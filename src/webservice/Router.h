@@ -5,9 +5,9 @@
 
 #ifndef WEBSERVICE_ROUTER_H_
 #define WEBSERVICE_ROUTER_H_
-#include <boost/core/noncopyable.hpp>
 #include <proxygen/lib/http/HTTPMethod.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <memory>
 #include <regex>
 #include <unordered_map>
