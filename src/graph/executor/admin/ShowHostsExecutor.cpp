@@ -10,7 +10,8 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
-#include "webservice/WebService.h"
+
+DECLARE_int32(ws_http_port);
 
 namespace nebula {
 namespace graph {
