@@ -28,25 +28,6 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (l)-[]-(n) WHERE id(m)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2,
-      CASE WHEN l.team.name is not null THEN l.team.name
-      WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
-      """
-    Then the result should be, in order:
-      | n1           | n2            | n3           |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics"    |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons"    |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"      |
-      | "Tim Duncan" | "Aron Baynes" | "Tim Duncan" |
-      | "Tim Duncan" | "Boris Diaw"  | "Hawks"      |
-      | "Tim Duncan" | "Boris Diaw"  | "Hornets"    |
-      | "Tim Duncan" | "Boris Diaw"  | "Jazz"       |
-      | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
-      | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
-      | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
-    When executing query:
-      """
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
       RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
@@ -80,7 +61,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
@@ -179,7 +160,7 @@ Feature: Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -230,7 +211,7 @@ Feature: Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
-    # Below scenario is not suppoted for the execution plan has a scan.
+    # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"

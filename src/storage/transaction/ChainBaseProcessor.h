@@ -20,6 +20,8 @@ using Code = ::nebula::cpp2::ErrorCode;
  *
  */
 class ChainBaseProcessor {
+  friend class ChainProcessorFactory;
+
  public:
   virtual ~ChainBaseProcessor() = default;
 
@@ -42,14 +44,10 @@ class ChainBaseProcessor {
   virtual void finish() = 0;
 
  protected:
-  void setErrorCode(Code code) {
-    if (code_ == Code::SUCCEEDED) {
-      code_ = code;
-    }
-  }
-
- protected:
-  Code code_ = Code::SUCCEEDED;
+  Code rcPrepare_ = Code::SUCCEEDED;
+  Code rcRemote_ = Code::E_UNKNOWN;
+  Code rcCommit_ = Code::E_UNKNOWN;
+  TermID term_;
   folly::Promise<Code> finished_;
 };
 

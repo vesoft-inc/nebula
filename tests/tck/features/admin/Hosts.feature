@@ -46,14 +46,14 @@ Feature: Admin hosts
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:
       """
-      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3) on "default_zone";
+      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3) on default_zone;
       """
-    Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
+    Then a SemanticError should be raised at runtime: Create space with zone is unsupported
     When executing query:
       """
-      CREATE SPACE space_without_vid_type on "default_zone";
+      CREATE SPACE space_without_vid_type on default_zone;
       """
-    Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
+    Then a SemanticError should be raised at runtime: Create space with zone is unsupported
     When executing query:
       """
       CREATE SPACE space_specify_vid_type(partition_num=9, replica_factor=1, vid_type=FIXED_STRING(8));

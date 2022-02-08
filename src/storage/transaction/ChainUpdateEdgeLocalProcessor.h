@@ -49,9 +49,9 @@ class ChainUpdateEdgeLocalProcessor
 
   void doRpc(folly::Promise<Code>&& promise, int retry = 0) noexcept;
 
-  folly::SemiFuture<Code> processNormalLocal(Code code);
+  folly::SemiFuture<Code> commit();
 
-  void abort();
+  folly::SemiFuture<Code> abort();
 
   bool prepareRequest(const cpp2::UpdateEdgeRequest& req);
 
@@ -59,15 +59,13 @@ class ChainUpdateEdgeLocalProcessor
 
   void appendDoublePrime();
 
-  void forwardToDelegateProcessor();
-
   std::string sEdgeKey(const cpp2::UpdateEdgeRequest& req);
 
   cpp2::UpdateEdgeRequest reverseRequest(const cpp2::UpdateEdgeRequest& req);
 
   bool setLock();
 
-  void addUnfinishedEdge(ResumeType type);
+  void reportFailed(ResumeType type);
 
   int64_t getVersion(const cpp2::UpdateEdgeRequest& req);
 
@@ -75,8 +73,11 @@ class ChainUpdateEdgeLocalProcessor
 
   Code checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req) override;
 
+  bool isKVStoreError(nebula::cpp2::ErrorCode code);
+
  protected:
   cpp2::UpdateEdgeRequest req_;
+  TransactionManager::SPtrLock lkCore_;
   std::unique_ptr<TransactionManager::LockGuard> lk_;
   PartitionID localPartId_;
   int retryLimit_{10};

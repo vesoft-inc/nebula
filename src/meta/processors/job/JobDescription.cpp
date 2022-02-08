@@ -46,7 +46,7 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
     auto key = parseKey(rawkey);
 
     if (!isSupportedValue(rawval)) {
-      LOG(ERROR) << "not supported data ver of job " << key;
+      LOG(INFO) << "not supported data ver of job " << key;
       return nebula::cpp2::ErrorCode::E_INVALID_JOB;
     }
     auto tup = parseVal(rawval);
@@ -61,7 +61,7 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
     auto stopTime = std::get<4>(tup);
     return JobDescription(key, cmd, paras, status, startTime, stopTime);
   } catch (std::exception& ex) {
-    LOG(ERROR) << ex.what();
+    LOG(INFO) << ex.what();
   }
   return nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
@@ -178,7 +178,7 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::loadJobDescript
   std::string val;
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Loading Job Description Failed" << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Loading Job Description Failed" << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return makeJobDescription(key, val);
