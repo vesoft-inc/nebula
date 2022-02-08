@@ -8,10 +8,10 @@ Feature: LDBC Interactive Workload - Complex Reads
 
   @skip
   Scenario: 1. Friends with certain name
-    # TODO: shortestPath syntax is not supported for now
+    # TODO: shortestPath syntax
     When executing query:
       """
-      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "Baruch"}))
+      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "Baruch
       WHERE id(person) == "person-4139"
       AND person <> friend
       WITH friend, length(p) AS distance
@@ -74,7 +74,7 @@ Feature: LDBC Interactive Workload - Complex Reads
         friend.Person.firstName AS personFirstName,
         friend.Person.lastName AS personLastName,
         id(message) AS messageId,
-        CASE exists(message.Post.creationDate) 
+        CASE exists(message.Post.content) 
           WHEN true THEN 
             CASE message.Post.content != ""
               WHEN true THEN message.Post.content 
@@ -95,7 +95,7 @@ Feature: LDBC Interactive Workload - Complex Reads
   @skip
   Scenario: 3. Friends and friends of friends that have been to given countries
     When executing query:
-      # TODO: WHERE not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX)) not supported now
+      # TODO: WHERE patterns
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(messageX:Message),
       (messageX)-[:IS_LOCATED_IN]->(countryX:Place)
@@ -134,11 +134,11 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(`tag`:`Tag`)
-      WHERE id(person) == "" AND post.Post.creationDate >= "$startDate"
-         AND post.Post.creationDate < "$endDate"
+      WHERE id(person) == "person-4139" AND post.Post.creationDate >= "2011-03-10"
+         AND post.Post.creationDate < "2011-03-12"
       WITH person, count(post) AS postsOnTag, `tag`
       OPTIONAL MATCH (person)-[:KNOWS]-()<-[:HAS_CREATOR]-(oldPost:Post)-[:HAS_TAG]->(`tag`)
-      WHERE oldPost.Post.creationDate < $startDate
+      WHERE oldPost.Post.creationDate < "2011-03-10"
       WITH person, postsOnTag, `tag`, count(oldPost) AS cp
       WHERE cp == 0
       RETURN
@@ -153,13 +153,14 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[membership:HAS_MEMBER]-(forum:Forum)
-      WHERE id(person) == "" AND membership.joinDate>"$minDate"
-          AND not(person==friend)
+      WHERE id(person) == "person-4139" 
+        AND membership.joinDate>"2010-03-10"
+        AND not(person==friend)
       WITH DISTINCT friend, forum
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(forum)
       WITH forum, count(post) AS postCount
       RETURN
-        toInteger(forum.Forum.id) AS forumId,
+        id(forum) AS forumId,
         forum.Forum.title AS forumTitle,
         postCount
       ORDER BY postCount DESC, forumId ASC
@@ -170,7 +171,7 @@ Feature: LDBC Interactive Workload - Complex Reads
 
   @skip
   Scenario: 6. Tag co-occurrence
-    # TODO: WHERE (commonPost)-[:HAS_CREATOR]->(friend)
+    # TODO: WHERE patterns
     When executing query:
       """
       MATCH
@@ -192,7 +193,7 @@ Feature: LDBC Interactive Workload - Complex Reads
 
   @skip
   Scenario: 7. Recent likers
-    # TODO: RETURN not((liker)-[:KNOWS]-(person)) AS isNew
+    # TODO: RETURN patterns
     When executing query:
       """
       MATCH (person:Person)<-[:HAS_CREATOR]-(message:Message)<-[like:LIKES]-(liker:Person)
@@ -223,15 +224,14 @@ Feature: LDBC Interactive Workload - Complex Reads
   Scenario: 8. Recent replies
     When executing query:
       """
-      MATCH
-        (start:Person)<-[:HAS_CREATOR]-(:Message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_CREATOR]->(person:Person)
-      WHERE id(start) == ""
+      MATCH (start:Person)<-[:HAS_CREATOR]-(m)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_CREATOR]->(person:Person)
+      WHERE id(start) == "person-4139"
       RETURN
-        person.Person.id AS personId,
+        id(person) AS personId,
         person.Person.firstName AS personFirstName,
         person.Person.lastName AS personLastName,
         comment.`Comment`.creationDate AS commentCreationDate,
-        toInteger(comment.`Comment`.id) AS commentId,
+        id(comment) AS commentId,
         comment.`Comment`.content AS commentContent
       ORDER BY commentCreationDate DESC, commentId ASC
       LIMIT 20
@@ -242,18 +242,25 @@ Feature: LDBC Interactive Workload - Complex Reads
   Scenario: 9. Recent messages by friends or friends of friends
     When executing query:
       """
-      MATCH (n:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" AND message.Message.creationDate < "$maxDate"
+      MATCH (n:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(message)
+      WHERE id(n) == "person-4139" AND message.Message.creationDate < "2020-01-01"
       RETURN DISTINCT
-        friend.Person.id AS personId,
+        id(friend) AS personId,
         friend.Person.firstName AS personFirstName,
         friend.Person.lastName AS personLastName,
-        toInteger(message.Message.id) AS messageId,
-        CASE exists(message.Message.content)
-          WHEN true THEN message.Message.content
-          ELSE message.Message.imageFile
-        END AS messageContent,
-        message.Message.creationDate AS messageCreationDate
+        id(message) AS messageId,
+        CASE exists(message.Post.content) 
+          WHEN true THEN 
+            CASE message.Post.content != ""
+              WHEN true THEN message.Post.content 
+              ELSE message.Post.imageFile 
+            END 
+          ELSE message.`Comment`.content 
+        END AS messageContent, 
+        CASE exists(message.Post.creationDate) 
+          WHEN true THEN message.Post.creationDate 
+          ELSE message.`Comment`.creationDate
+        END AS messageCreationDate
       ORDER BY messageCreationDate DESC, messageId ASC
       LIMIT 20
       """
@@ -295,12 +302,12 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)
-      WHERE id(person) == "" AND not(person==friend)
+      WHERE id(person) == "person-4139" AND person<>friend
       WITH DISTINCT friend
-      MATCH (friend)-[workAt:WORK_AT]->(company:Organisation)-[:IS_LOCATED_IN]->(:Place {name:"$countryName"})
-      WHERE workAt.workFrom < $workFromYear
+      MATCH (friend)-[workAt:WORK_AT]->(company:Organisation)-[:IS_LOCATED_IN]->(:Place {name:"Jordan"})
+      WHERE workAt.workFrom < "2020"
       RETURN
-        toInteger(friend.Person.id) AS personId,
+        id(friend) AS personId,
         friend.Person.firstName AS personFirstName,
         friend.Person.lastName AS personLastName,
         company.Organisation.name AS organizationName,
