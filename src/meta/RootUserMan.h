@@ -6,8 +6,8 @@
 #ifndef META_ROOTUSERMAN_H_
 #define META_ROOTUSERMAN_H_
 
+#include <proxygen/lib/utils/CryptUtil.h>
 #include "common/base/Base.h"
-#include "common/encryption/MD5Utils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
 
@@ -34,7 +34,7 @@ class RootUserMan {
 
   static bool initRootUser(kvstore::KVStore* kv) {
     LOG(INFO) << "Init root user";
-    auto encodedPwd = encryption::MD5Utils::md5Encode("nebula");
+    auto encodedPwd = proxygen::md5Encode(folly::StringPiece("nebula"));
     auto userKey = MetaKeyUtils::userKey("root");
     auto userVal = MetaKeyUtils::userVal(std::move(encodedPwd));
     auto roleKey = MetaKeyUtils::roleKey(kDefaultSpaceId, "root");
