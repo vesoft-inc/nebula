@@ -16,6 +16,7 @@
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
 
+
 namespace nebula {
 
 class Expression;
@@ -44,7 +45,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&...args) {
+  T *makeAndAdd(Args &&... args) {
     return add(new T(std::forward<Args>(args)...));
   }
 
