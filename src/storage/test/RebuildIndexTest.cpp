@@ -77,7 +77,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"4", "5"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
@@ -164,7 +164,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
   parameter.parts_ref() = parts;
   parameter.task_specific_paras_ref() = {"103", "104"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 16;
@@ -261,7 +261,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
   parameter.parts_ref() = std::move(parts);
   parameter.task_specific_paras_ref() = {"4", "5"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 11;
@@ -322,7 +322,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
   parameter.parts_ref() = std::move(parts);
   parameter.task_specific_paras_ref() = {"4", "5"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 12;
@@ -366,7 +366,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.parts_ref() = std::move(parts);
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
@@ -422,7 +422,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
   parameter.parts_ref() = std::move(parts);
   parameter.task_specific_paras_ref() = {"103", "104"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 14;
@@ -484,7 +484,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   parameter.parts_ref() = std::move(parts);
   parameter.task_specific_paras_ref() = {"103", "104"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 15;
@@ -528,7 +528,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
   parameter.parts_ref() = std::move(parts);
   parameter.task_specific_paras_ref() = {"103", "104"};
 
-  cpp2::AddAdminTaskRequest request;
+  cpp2::AddTaskRequest request;
   request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 16;

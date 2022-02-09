@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_PLANNER_MATCH_SCANSEEK_H
+#define GRAPH_PLANNER_MATCH_SCANSEEK_H
 
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/StartVidFinder.h"
@@ -33,3 +34,4 @@ class ScanSeek final : public StartVidFinder {
 };
 }  // namespace graph
 }  // namespace nebula
+#endif

@@ -26,14 +26,14 @@ nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
   std::string spaceName = paras_.back();
   auto errOrSpaceId = getSpaceIdFromName(spaceName);
   if (!nebula::ok(errOrSpaceId)) {
-    LOG(ERROR) << "Can't find the space: " << spaceName;
+    LOG(INFO) << "Can't find the space: " << spaceName;
     return nebula::error(errOrSpaceId);
   }
 
   space_ = nebula::value(errOrSpaceId);
   ErrOrHosts errOrHost = getTargetHost(space_);
   if (!nebula::ok(errOrHost)) {
-    LOG(ERROR) << "Can't get any host according to space";
+    LOG(INFO) << "Can't get any host according to space";
     return nebula::error(errOrHost);
   }
 

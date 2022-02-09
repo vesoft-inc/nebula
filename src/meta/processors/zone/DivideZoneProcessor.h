@@ -12,6 +12,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Divide an existing zone to several zones
+ */
 class DivideZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DivideZoneProcessor* instance(kvstore::KVStore* kvstore) {
@@ -24,6 +27,14 @@ class DivideZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit DivideZoneProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
+  /**
+   * @brief remove the originalZoneName and add the zoneNames in batchHolder
+   *
+   * @param batchHolder
+   * @param originalZoneName
+   * @param zoneNames
+   * @return
+   */
   nebula::cpp2::ErrorCode updateSpacesZone(kvstore::BatchHolder* batchHolder,
                                            const std::string& originalZoneName,
                                            const std::vector<std::string>& zoneNames);

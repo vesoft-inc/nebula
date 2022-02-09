@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_EXPRVISITORBASE_H
+#define STORAGE_EXPRVISITORBASE_H
 #include "common/expression/ExprVisitor.h"
 namespace nebula {
 namespace storage {
@@ -70,3 +71,4 @@ class ExprVisitorBase : public ::nebula::ExprVisitor {
 };
 }  // namespace storage
 }  // namespace nebula
+#endif

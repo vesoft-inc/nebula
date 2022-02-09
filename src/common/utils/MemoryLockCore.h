@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_UTILS_MEMORYLOCKCORE_H
+#define COMMON_UTILS_MEMORYLOCKCORE_H
 
 #include <folly/concurrency/ConcurrentHashMap.h>
 
@@ -79,3 +80,4 @@ class MemoryLockCore {
 };
 
 }  // namespace nebula
+#endif

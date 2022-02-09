@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CODEC_INCLUDE_NEBULACODEC_H
+#define CODEC_INCLUDE_NEBULACODEC_H
 
 #include "common/base/StatusOr.h"
 #include "common/meta/SchemaProviderIf.h"
@@ -24,3 +25,4 @@ class NebulaCodec {
 };
 
 }  // namespace nebula
+#endif

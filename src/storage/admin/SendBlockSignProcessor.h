@@ -14,7 +14,7 @@
 
 namespace nebula {
 namespace storage {
-class SendBlockSignProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class SendBlockSignProcessor {
  public:
   static SendBlockSignProcessor* instance(StorageEnv* env) {
     return new SendBlockSignProcessor(env);
@@ -22,8 +22,18 @@ class SendBlockSignProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
   void process(const cpp2::BlockingSignRequest& req);
 
+  folly::Future<cpp2::BlockingSignResp> getFuture() {
+    return promise_.getFuture();
+  }
+
  private:
-  explicit SendBlockSignProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit SendBlockSignProcessor(StorageEnv* env) : env_(env) {}
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::BlockingSignResp> promise_;
+  cpp2::BlockingSignResp resp_;
 };
 }  // namespace storage
 }  // namespace nebula

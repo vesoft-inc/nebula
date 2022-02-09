@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop zone from the cluster
+ * The hosts that belong to the zone should not contain any parts
+ * It will drop the hosts too
+ */
 class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropZoneProcessor* instance(kvstore::KVStore* kvstore) {
@@ -22,9 +27,19 @@ class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  private:
   explicit DropZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
+  /**
+   * @brief check all spaces if they have enough zones to hold replica when dropping one zone
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode checkSpaceReplicaZone();
 
-  // Check whether the node holds zones on each space
+  /**
+   * @brief Check whether the node holds zones on each space
+   *
+   * @param address
+   * @return
+   */
   nebula::cpp2::ErrorCode checkHostPartition(const HostAddr& address);
 };
 

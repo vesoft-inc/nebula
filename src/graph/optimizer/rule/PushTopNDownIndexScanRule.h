@@ -3,7 +3,10 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
+
+#include <initializer_list>
 
 #include "graph/optimizer/OptRule.h"
 
@@ -23,7 +26,9 @@ class PushTopNDownIndexScanRule final : public OptRule {
   PushTopNDownIndexScanRule();
 
   static std::unique_ptr<OptRule> kInstance;
+  static const std::initializer_list<graph::PlanNode::Kind> kIndexScanKinds;
 };
 
 }  // namespace opt
 }  // namespace nebula
+#endif

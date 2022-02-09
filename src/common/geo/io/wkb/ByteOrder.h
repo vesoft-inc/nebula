@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_GEO_IO_WKB_BYTEORDER_H
+#define COMMON_GEO_IO_WKB_BYTEORDER_H
 
 #include <boost/endian/conversion.hpp>
 
@@ -76,3 +77,4 @@ struct ByteOrderData {
 
 }  // namespace geo
 }  // namespace nebula
+#endif

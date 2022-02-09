@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_DATATYPES_DURATIONOPS_INL_H
+#define COMMON_DATATYPES_DURATIONOPS_INL_H
 
 #include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
@@ -199,3 +200,4 @@ uint32_t Cpp2Ops<nebula::Duration>::serializedSizeZC(Protocol const* proto,
 
 }  // namespace thrift
 }  // namespace apache
+#endif

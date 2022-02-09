@@ -27,10 +27,30 @@ struct Host {
 struct Zone {
   Zone() = default;
   explicit Zone(const std::string name) : zoneName_(name) {}
+
+  /**
+   * @brief Check if this zone contains the host
+   *
+   * @param ha
+   * @return
+   */
   bool hasHost(const HostAddr& ha) {
     return hosts_.find(ha) != hosts_.end();
   }
+
+  /**
+   * @brief Get part number in the zone
+   *
+   * @return
+   */
   int32_t calPartNum();
+
+  /**
+   * @brief Check if the part exists in the zone
+   *
+   * @param partId
+   * @return
+   */
   bool partExist(PartitionID partId);
 
   std::string zoneName_;
@@ -39,7 +59,21 @@ struct Zone {
 };
 
 struct SpaceInfo {
+  /**
+   * @brief Load hosts and zones info of this space from kvStore
+   *
+   * @param spaceId
+   * @param kvstore
+   * @return
+   */
   nebula::cpp2::ErrorCode loadInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore);
+
+  /**
+   * @brief Check if this space contains the host
+   *
+   * @param ha
+   * @return
+   */
   bool hasHost(const HostAddr& ha);
 
   std::string name_;
@@ -49,26 +83,66 @@ struct SpaceInfo {
   std::map<std::string, Zone> zones_;
 };
 
+/**
+ * @brief The base class for balance
+ */
 class BalanceJobExecutor : public MetaJobExecutor {
  public:
   BalanceJobExecutor(JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& params);
-
+  /**
+   * @brief Check if paras are legal
+   *
+   * @return
+   */
   bool check() override;
 
+  /**
+   * @brief See implementation in child class
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode prepare() override;
 
+  /**
+   * @brief Stop this job
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode stop() override;
 
+  /**
+   * @brief Finish this job
+   *
+   * @param ret True means succeed, false means failed
+   * @return
+   */
   nebula::cpp2::ErrorCode finish(bool ret = true) override;
 
+  /**
+   * @brief Read balance plan and balance tasks from kvStore
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode recovery() override;
 
  protected:
+  /**
+   * @brief Save one kv pair into kvStore
+   *
+   * @param k key
+   * @param v value
+   * @return
+   */
   nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
+  /**
+   * @brief See implementation in child class
+   *
+   * @return
+   */
   virtual Status buildBalancePlan() {
     return Status::OK();
   }

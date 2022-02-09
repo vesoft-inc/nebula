@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef GRAPH_PLANNER_NGQL_MAINTAINPLANNER_H
+#define GRAPH_PLANNER_NGQL_MAINTAINPLANNER_H
 
 #include "common/base/Base.h"
 #include "graph/planner/Planner.h"
@@ -59,3 +60,4 @@ class AlterEdgePlanner final : public Planner {
 
 }  // namespace graph
 }  // namespace nebula
+#endif
