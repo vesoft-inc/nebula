@@ -1247,7 +1247,10 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
 }
 
 /**
- * diskPartsKey = kDiskPartsTable + len(serialized(hostAddr)) + serialized(hostAddr) + path
+ * diskPartsKey = kDiskPartsTable +
+ *                len(serialized(hostAddr)) + serialized(hostAddr) +
+ *                space id +
+ *                disk path
  */
 
 HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
