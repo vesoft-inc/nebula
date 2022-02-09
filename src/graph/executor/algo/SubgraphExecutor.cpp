@@ -29,23 +29,43 @@ folly::Future<Status> SubgraphExecutor::execute() {
 
   VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
-  DCHECK(iter && iter->isGetNeighborsIter());
+  std::unordered_set<Value> currentVids;
+  currentVids.reserve(iter->size());
+  historyVids_.reserve(historyVids_.size() + iter->size());
   if (currentStep == 1) {
     for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(nebula::kVid);
-      historyVids_.emplace(src);
+      currentVids.emplace(src);
     }
     iter->reset();
   }
-  for (; iter->valid(); iter->next()) {
+  auto& biDirectEdgeTypes = subgraph->biDirectEdgeTypes();
+  while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);
-    if (historyVids_.emplace(dst).second) {
-      Row row;
-      row.values.emplace_back(std::move(dst));
-      ds.rows.emplace_back(std::move(row));
+    if (historyVids_.find(dst) != historyVids_.end()) {
+      if (biDirectEdgeTypes.empty()) {
+        iter->next();
+      } else {
+        const auto& type = iter->getEdgeProp("*", nebula::kType);
+        if (type.isInt() && biDirectEdgeTypes.find(type.getInt()) != biDirectEdgeTypes.end()) {
+          iter->erase();
+        } else {
+          iter->next();
+        }
+      }
+    } else {
+      if (currentVids.emplace(dst).second) {
+        Row row;
+        row.values.emplace_back(std::move(dst));
+        ds.rows.emplace_back(std::move(row));
+      }
+      iter->next();
     }
   }
-
+  iter->reset();
+  // update historyVids
+  historyVids_.insert(std::make_move_iterator(currentVids.begin()),
+                      std::make_move_iterator(currentVids.end()));
   VLOG(1) << "Next step vid is : " << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
@@ -56,15 +76,25 @@ void SubgraphExecutor::oneMoreStep() {
   VLOG(1) << "OneMoreStep Input: " << subgraph->inputVar() << " Output: " << output;
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
   DCHECK(iter && iter->isGetNeighborsIter());
+  auto& biDirectEdgeTypes = subgraph->biDirectEdgeTypes();
 
   ResultBuilder builder;
   builder.value(iter->valuePtr());
   while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);
-    if (historyVids_.find(dst) == historyVids_.end()) {
-      iter->unstableErase();
+    if (historyVids_.find(dst) != historyVids_.end()) {
+      if (biDirectEdgeTypes.empty()) {
+        iter->next();
+      } else {
+        const auto& type = iter->getEdgeProp("*", nebula::kType);
+        if (type.isInt() && biDirectEdgeTypes.find(type.getInt()) != biDirectEdgeTypes.end()) {
+          iter->erase();
+        } else {
+          iter->next();
+        }
+      }
     } else {
-      iter->next();
+      iter->erase();
     }
   }
   iter->reset();

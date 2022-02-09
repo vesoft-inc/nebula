@@ -72,10 +72,12 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
 
 Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
+  auto& biEdgeTypes = subgraphCtx_->biDirectEdgeTypes;
   if (out != nullptr) {
     auto space = vctx_->whichSpace();
     auto edges = out->edges();
-    edgeTypes.reserve(edgeTypes.size() + edges.size());
+    edgeTypes.reserve(edgeTypes.size() + edges.size() * 2);
+    biEdgeTypes.reserve(edges.size() * 2);
     for (auto* e : out->edges()) {
       if (e->alias() != nullptr) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
@@ -86,8 +88,9 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
 
       auto v = et.value();
       edgeTypes.emplace(v);
-      v = -v;
-      edgeTypes.emplace(v);
+      edgeTypes.emplace(-v);
+      biEdgeTypes.emplace(v);
+      biEdgeTypes.emplace(-v);
     }
   }
   return Status::OK();

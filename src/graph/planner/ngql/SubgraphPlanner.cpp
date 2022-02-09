@@ -19,6 +19,7 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
   bool getEdgeProp = subgraphCtx_->withProp && subgraphCtx_->getEdgeProp;
   const auto& space = subgraphCtx_->space;
   auto& edgeTypes = subgraphCtx_->edgeTypes;
+  auto& biDirectEdgeTypes = subgraphCtx_->biDirectEdgeTypes;
 
   if (edgeTypes.empty()) {
     const auto allEdgesSchema = qctx->schemaMng()->getAllLatestVerEdgeSchema(space.id);
@@ -27,6 +28,8 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
     for (const auto& edge : allEdges) {
       edgeTypes.emplace(edge.first);
       edgeTypes.emplace(-edge.first);
+      biDirectEdgeTypes.emplace(edge.first);
+      biDirectEdgeTypes.emplace(-edge.first);
     }
   }
   std::vector<EdgeType> vEdgeTypes(edgeTypes.begin(), edgeTypes.end());
@@ -70,6 +73,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   subgraphCtx_->loopSteps = loopSteps;
   auto* subgraph = Subgraph::make(qctx, gn, oneMoreStepOutput, loopSteps, steps.steps() + 1);
   subgraph->setOutputVar(input);
+  subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
   subgraph->setColNames({nebula::kVid});
 
   auto* condition = loopCondition(steps.steps() + 1, gn->outputVar());

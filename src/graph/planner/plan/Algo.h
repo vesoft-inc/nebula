@@ -153,6 +153,14 @@ class Subgraph final : public SingleInputNode {
     return steps_;
   }
 
+  const std::unordered_set<EdgeType> biDirectEdgeTypes() const {
+    return biDirectEdgeTypes_;
+  }
+
+  void setBiDirectEdgeTypes(std::unordered_set<EdgeType> edgeTypes) {
+    biDirectEdgeTypes_ = std::move(edgeTypes);
+  }
+
  private:
   Subgraph(QueryContext* qctx,
            PlanNode* input,
@@ -167,6 +175,7 @@ class Subgraph final : public SingleInputNode {
   std::string oneMoreStepOutput_;
   std::string currentStepVar_;
   uint32_t steps_;
+  std::unordered_set<EdgeType> biDirectEdgeTypes_;
 };
 
 class BiCartesianProduct final : public BinaryInputNode {

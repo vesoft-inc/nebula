@@ -8,7 +8,6 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
 
-DEFINE_bool(test_subgraph, false, "reserve uniqueEdges 's size");
 namespace nebula {
 namespace graph {
 folly::Future<Status> DataCollectExecutor::execute() {
@@ -64,9 +63,6 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
   DataSet ds;
   ds.colNames = std::move(colNames_);
-  size_t numEdges = 0;
-  std::vector<std::unique_ptr<Iterator>> iters;
-  iters.reserve(vars.size());
   for (auto i = vars.begin(); i != vars.end(); ++i) {
     const auto& hist = ectx_->getHistory(*i);
     for (auto j = hist.begin(); j != hist.end(); ++j) {
@@ -75,40 +71,26 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
       }
       auto iter = (*j).iter();
       auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-      numEdges += gnIter->size();
-      iters.emplace_back(std::move(iter));
-    }
-  }
-
-  std::unordered_set<std::tuple<Value, EdgeType, EdgeRanking, Value>> uniqueEdges;
-  if (FLAGS_test_subgraph) {
-    uniqueEdges.reserve(numEdges);
-  }
-  for (const auto& iter : iters) {
-    List vertices;
-    List edges;
-    auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-    auto originVertices = gnIter->getVertices();
-    vertices.reserve(originVertices.size());
-    for (auto& v : originVertices.values) {
-      if (UNLIKELY(!v.isVertex())) {
-        continue;
+      List vertices;
+      List edges;
+      auto originVertices = gnIter->getVertices();
+      vertices.reserve(originVertices.size());
+      for (auto& v : originVertices.values) {
+        if (UNLIKELY(!v.isVertex())) {
+          continue;
+        }
+        vertices.emplace_back(std::move(v));
       }
-      vertices.emplace_back(std::move(v));
-    }
-    auto originEdges = gnIter->getEdges();
-    edges.reserve(originEdges.size());
-    for (auto& edge : originEdges.values) {
-      if (UNLIKELY(!edge.isEdge())) {
-        continue;
-      }
-      const auto& e = edge.getEdge();
-      auto edgeKey = std::make_tuple(e.src, e.type, e.ranking, e.dst);
-      if (uniqueEdges.emplace(std::move(edgeKey)).second) {
+      auto originEdges = gnIter->getEdges();
+      edges.reserve(originEdges.size());
+      for (auto& edge : originEdges.values) {
+        if (UNLIKELY(!edge.isEdge())) {
+          continue;
+        }
         edges.emplace_back(std::move(edge));
       }
+      ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
     }
-    ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
   }
   result_.setDataSet(std::move(ds));
   return Status::OK();

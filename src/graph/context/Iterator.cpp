@@ -468,6 +468,7 @@ List GetNeighborsIter::getVertices() {
   valid_ = true;
   colIdx_ = -2;
   for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
+    rowsUpperBound_ = currentDs_->ds->rows.end();
     for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
          ++currentRow_) {
       vertices.values.emplace_back(getVertex());

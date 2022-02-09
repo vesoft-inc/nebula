@@ -127,6 +127,7 @@ struct SubgraphContext final : public AstContext {
   YieldColumns* yieldExpr;
   std::vector<std::string> colNames;
   std::unordered_set<EdgeType> edgeTypes;
+  std::unordered_set<EdgeType> biDirectEdgeTypes;
   bool withProp{false};
   bool getVertexProp{false};
   bool getEdgeProp{false};

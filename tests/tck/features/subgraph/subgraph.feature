@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: subgraph
 
   Background:
@@ -325,6 +326,7 @@ Feature: subgraph
       | <[vertex2]>      | <[edge2]>     |
       | <[vertex3]>      | <[edge3]>     |
 
+  @jmm
   Scenario: two steps in and out edge
     When executing query:
       """
