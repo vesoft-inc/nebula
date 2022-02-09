@@ -200,7 +200,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       // Parse a geography from the wkb, normalize it and then verify its validity.
       auto geogRet = Geography::fromWKB(wkb, true, true);
       if (!geogRet.ok()) {
-        LOG(ERROR) << "Geography::fromWKB failed: " << geogRet.status();
+        LOG(WARNING) << "Geography::fromWKB failed: " << geogRet.status();
         return Value::kNullBadData;  // Is it ok to return Value::kNullBadData?
       }
       return std::move(geogRet).value();

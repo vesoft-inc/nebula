@@ -12,9 +12,19 @@
 namespace nebula {
 namespace kvstore {
 
+/**
+ * @brief Factory to build listener
+ */
 class ListenerFactory {
  public:
   template <typename... Args>
+  /**
+   * @brief Create a Listener object
+   *
+   * @param type Type of listener
+   * @param args Other parameters
+   * @return std::shared_ptr<Listener>
+   */
   static std::shared_ptr<Listener> createListener(meta::cpp2::ListenerType type, Args&&... args) {
     if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
       return std::make_shared<ESListener>(std::forward<Args>(args)...);
