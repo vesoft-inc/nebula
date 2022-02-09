@@ -113,7 +113,7 @@ Status GrantRoleValidator::validateImpl() {
   auto roles = metaClient->getRolesByUserFromCache(*account);
   for (const auto &role : roles) {
     if (role.get_role_type() == meta::cpp2::RoleType::GOD) {
-      return Status::SemanticError("User `%s' is GOD, cannot be granted.", account->c_str());
+      return Status::SemanticError("User '%s' is GOD, cannot be granted.", account->c_str());
     }
   }
   return Status::OK();

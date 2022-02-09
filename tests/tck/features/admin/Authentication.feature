@@ -118,3 +118,10 @@ Feature: Test Authentication
     Then the execution should be successful
     When login "graphd[0]" with "user1" and "nebula1"
     Then the execution should be successful
+
+  Scenario: God can't be granted
+    When executing query:
+      """
+      GRANT ROLE User ON test TO root
+      """
+    Then a SemanticError should be raised at runtime: User 'root' is GOD, cannot be granted.
