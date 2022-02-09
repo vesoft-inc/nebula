@@ -22,7 +22,7 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
 
 void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
   spaceId_ = req.get_space_id();
-  // negative number means no limit
+  // Negative number means no limit
   const auto rawLimit = req.limit_ref().value_or(-1);
   limit_ = rawLimit < 0 ? std::numeric_limits<int64_t>::max() : rawLimit;
   auto retCode = getSpaceVidLen(spaceId_);
