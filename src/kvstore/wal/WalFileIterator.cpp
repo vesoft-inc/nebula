@@ -15,13 +15,13 @@ namespace wal {
 WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startId, LogID lastId)
     : wal_(wal), lastId_(lastId), currId_(startId) {
   if (currId_ > lastId_) {
-    LOG(ERROR) << wal_->idStr_ << "The log " << currId_ << " is out of range, the lastLogId is "
-               << lastId_;
+    VLOG(3) << wal_->idStr_ << "The log " << currId_ << " is out of range, the lastLogId is "
+            << lastId_;
     return;
   }
 
   if (startId < wal_->firstLogId()) {
-    VLOG(1) << wal_->idStr_ << "The given log id " << startId
+    VLOG(3) << wal_->idStr_ << "The given log id " << startId
             << " is out of the range, the wal firstLogId is " << wal_->firstLogId();
     currId_ = lastId_ + 1;
     return;
@@ -31,8 +31,8 @@ WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startI
   wal_->accessAllWalInfo([this](WalFileInfoPtr info) {
     int fd = open(info->path(), O_RDONLY);
     if (fd < 0) {
-      LOG(ERROR) << "Failed to open wal file \"" << info->path() << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to open wal file \"" << info->path() << "\" (" << errno
+                   << "): " << strerror(errno);
       currId_ = lastId_ + 1;
       return false;
     }
@@ -48,7 +48,7 @@ WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startI
   });
 
   if (idRanges_.empty() || idRanges_.front().first > currId_) {
-    LOG(ERROR) << "LogID " << currId_ << " is out of the wal files range";
+    VLOG(3) << "LogID " << currId_ << " is out of the wal files range";
     currId_ = lastId_ + 1;
     return;
   }
@@ -108,7 +108,7 @@ LogIterator& WalFileIterator::operator++() {
   ++currId_;
   if (currId_ >= nextFirstId_) {
     // Need to roll over to next file
-    VLOG(2) << "Current ID is " << currId_ << ", and the first ID in the next file is "
+    VLOG(4) << "Current ID is " << currId_ << ", and the first ID in the next file is "
             << nextFirstId_ << ", so need to move to the next file";
     // Close the current file
     CHECK_EQ(close(fds_.front()), 0);
@@ -142,7 +142,7 @@ LogIterator& WalFileIterator::operator++() {
       // Read the logID
       if (pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), currPos_) !=
           static_cast<ssize_t>(sizeof(LogID))) {
-        LOG(WARNING) << "Failed to read logId currPos = " << currPos_;
+        VLOG(3) << "Failed to read logId currPos = " << currPos_;
         eof_ = true;
         break;
       }
@@ -151,7 +151,7 @@ LogIterator& WalFileIterator::operator++() {
       if (pread(
               fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)) !=
           static_cast<ssize_t>(sizeof(TermID))) {
-        LOG(WARNING) << "Failed to read term currPos = " << currPos_;
+        VLOG(3) << "Failed to read term currPos = " << currPos_;
         eof_ = true;
         break;
       }
@@ -161,7 +161,7 @@ LogIterator& WalFileIterator::operator++() {
                 sizeof(int32_t),
                 currPos_ + sizeof(TermID) + sizeof(LogID)) !=
           static_cast<ssize_t>(sizeof(int32_t))) {
-        LOG(WARNING) << "Failed to read log length currPos = " << currPos_;
+        VLOG(3) << "Failed to read log length currPos = " << currPos_;
         eof_ = true;
         break;
       }
