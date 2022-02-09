@@ -29,7 +29,7 @@ class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
   explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
   ~QueryInstance() = default;
 
-  // entrance of the Validate, Optimize, Schedule, Execute process
+  // Entrance of the Validate, Optimize, Schedule, Execute process
   void execute();
 
   QueryContext* qctx() const {

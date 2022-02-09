@@ -83,7 +83,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 
   if (sessionManager_->isOutOfConnections()) {
     ctx->resp().errorCode = ErrorCode::E_TOO_MANY_CONNECTIONS;
-    ctx->resp().errorMsg = std::make_unique<std::string>("Too many connections in the cluster");
+    ctx->resp().errorMsg.reset(new std::string("Too many connections in the cluster"));
     ctx->finish();
     stats::StatsManager::addValue(kNumAuthFailedSessions);
     stats::StatsManager::addValue(kNumAuthFailedSessionsOutOfMaxAllowed);
@@ -97,24 +97,24 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
       LOG(ERROR) << "Create session for userName: " << user << ", ip: " << cIp
                  << " failed: " << ret.status();
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg = std::make_unique<std::string>(ret.status().toString());
+      ctx->resp().errorMsg.reset(new std::string("Get session for sessionId is nullptr"));
       return ctx->finish();
     }
     auto sessionPtr = std::move(ret).value();
     if (sessionPtr == nullptr) {
       LOG(ERROR) << "Get session for sessionId is nullptr";
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg = std::make_unique<std::string>("Get session for sessionId is nullptr");
+      ctx->resp().errorMsg.reset(new std::string("Get session for sessionId is nullptr"));
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumOpenedSessions);
     stats::StatsManager::addValue(kNumActiveSessions);
     ctx->setSession(sessionPtr);
-    ctx->resp().sessionId = std::make_unique<int64_t>(ctx->session()->id());
-    ctx->resp().timeZoneOffsetSeconds =
-        std::make_unique<int32_t>(time::Timezone::getGlobalTimezone().utcOffsetSecs());
-    ctx->resp().timeZoneName =
-        std::make_unique<std::string>(time::Timezone::getGlobalTimezone().stdZoneName());
+    ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
+    ctx->resp().timeZoneOffsetSeconds.reset(
+        new int32_t(time::Timezone::getGlobalTimezone().utcOffsetSecs()));
+    ctx->resp().timeZoneName.reset(
+        new std::string(time::Timezone::getGlobalTimezone().stdZoneName()));
     return ctx->finish();
   };
 
