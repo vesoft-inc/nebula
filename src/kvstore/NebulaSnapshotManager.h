@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef KVSTORE_NEBULASNAPSHOTMANAGER_H
+#define KVSTORE_NEBULASNAPSHOTMANAGER_H
 
 #include <folly/TokenBucket.h>
 
@@ -39,3 +40,4 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
 
 }  // namespace kvstore
 }  // namespace nebula
+#endif

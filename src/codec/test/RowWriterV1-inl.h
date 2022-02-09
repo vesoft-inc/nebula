@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CODEC_TEST_ROWWRITERV1_INL_H
+#define CODEC_TEST_ROWWRITERV1_INL_H
 
 namespace nebula {
 
@@ -45,3 +46,4 @@ typename std::enable_if<std::is_integral<T>::value>::type RowWriterV1::writeInt(
 }
 
 }  // namespace nebula
+#endif

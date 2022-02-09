@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef COMMON_LOG_LOGMONITOR_H
+#define COMMON_LOG_LOGMONITOR_H
 
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
@@ -41,3 +42,4 @@ class LogMonitor {
 };
 
 }  // namespace nebula
+#endif

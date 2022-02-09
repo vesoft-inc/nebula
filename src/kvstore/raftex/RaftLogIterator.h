@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef KVSTORE_RAFTEX_RAFTLOGITERATOR_H
+#define KVSTORE_RAFTEX_RAFTLOGITERATOR_H
 
 #include "common/base/Base.h"
 #include "common/utils/LogIterator.h"
@@ -36,3 +37,4 @@ class RaftLogIterator final : public LogIterator {
 
 }  // namespace raftex
 }  // namespace nebula
+#endif
