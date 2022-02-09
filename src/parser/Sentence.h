@@ -216,9 +216,9 @@ class ZoneNameList final {
   std::string toString() const {
     std::string buf;
     for (const auto &zone : zones_) {
-      buf += "\"";
+      buf += "`";
       buf += *zone;
-      buf += "\"";
+      buf += "`";
       buf += ",";
     }
     if (!zones_.empty()) {
@@ -243,9 +243,9 @@ class ZoneItem final {
 
   std::string toString() const {
     std::string buf;
-    buf += "\"";
+    buf += "`";
     buf += *zone_;
-    buf += "\"";
+    buf += "`";
     buf += " (";
     buf += hosts_->toString();
     buf += ")";

@@ -48,7 +48,7 @@ class RootUserMan {
     kv->asyncMultiPut(
         kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Put failed, error " << static_cast<int32_t>(code);
+            LOG(INFO) << "Put failed, error " << static_cast<int32_t>(code);
             ret = false;
           }
           baton.post();

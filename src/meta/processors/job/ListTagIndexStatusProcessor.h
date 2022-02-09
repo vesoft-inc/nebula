@@ -13,6 +13,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Show status all rebuild-tag-index jobs
+ */
 class ListTagIndexStatusProcessor : public BaseProcessor<cpp2::ListIndexStatusResp> {
  public:
   static ListTagIndexStatusProcessor* instance(kvstore::KVStore* kvstore) {

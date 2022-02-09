@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_TIME_PARSER_DATETIMESCANNER_H
+#define COMMON_TIME_PARSER_DATETIMESCANNER_H
 
 #include "common/base/Base.h"
 
@@ -74,3 +75,4 @@ class DatetimeScanner : public yyFlexLexer {
 
 }  // namespace time
 }  // namespace nebula
+#endif

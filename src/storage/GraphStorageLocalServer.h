@@ -3,7 +3,9 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_GRAPHSTORAGELOCALSERVER_H
+#define STORAGE_GRAPHSTORAGELOCALSERVER_H
+
 #include <folly/fibers/Semaphore.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -64,3 +66,4 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
   bool serving_ = {false};
 };
 }  // namespace nebula::storage
+#endif

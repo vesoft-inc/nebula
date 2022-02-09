@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_CHAINTESTUTILS_H
+#define STORAGE_TEST_CHAINTESTUTILS_H
 
 #include "storage/CommonUtils.h"
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
@@ -621,3 +622,4 @@ struct ChainUpdateEdgeTestHelper {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

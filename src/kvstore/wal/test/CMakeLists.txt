@@ -43,8 +43,9 @@ nebula_add_test(
     SOURCES
         AtomicLogBufferTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:base_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )
 
@@ -55,8 +56,9 @@ nebula_add_executable(
         LogBufferBenchmark.cpp
         InMemoryLogBuffer.cpp
     OBJECTS
-        $<TARGET_OBJECTS:base_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         follybenchmark
         boost_regex
 )

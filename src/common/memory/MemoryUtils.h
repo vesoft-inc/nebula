@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_MEMORY_MEMORYUTILS_H
+#define COMMON_MEMORY_MEMORYUTILS_H
 
 #include <atomic>
 #include <cstdint>
@@ -33,3 +34,4 @@ class MemoryUtils final {
 };
 
 }  // namespace nebula
+#endif

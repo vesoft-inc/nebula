@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Executor for balance in zone, always called by job manager
+ */
 class DataBalanceJobExecutor : public BalanceJobExecutor {
   FRIEND_TEST(BalanceTest, BalanceDataPlanTest);
   FRIEND_TEST(BalanceTest, NormalDataTest);
@@ -24,11 +27,36 @@ class DataBalanceJobExecutor : public BalanceJobExecutor {
                          const std::vector<std::string>& params)
       : BalanceJobExecutor(jobDescription.getJobId(), kvstore, adminClient, params),
         jobDescription_(jobDescription) {}
+
+  /**
+   * @brief Parse paras to lost hosts
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode prepare() override;
+
+  /**
+   * @brief Mark the job as stopped
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode stop() override;
 
  protected:
+  /**
+   * @brief Build a balance plan and run
+   *
+   * @return
+   */
   folly::Future<Status> executeInternal() override;
+
+  /**
+   * @brief Build a balance plan, which balance data in each zone
+   * First, move parts from lost hosts to active hosts
+   * Second, rebalance the active hosts in each zone
+   *
+   * @return
+   */
   Status buildBalancePlan() override;
 
  private:
