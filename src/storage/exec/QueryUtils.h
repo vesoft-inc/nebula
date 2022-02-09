@@ -10,6 +10,7 @@
 #include "common/expression/Expression.h"
 #include "common/utils/DefaultValueContext.h"
 #include "storage/CommonUtils.h"
+#include "storage/context/StorageExpressionContext.h"
 #include "storage/query/QueryBaseProcessor.h"
 
 namespace nebula {
@@ -169,15 +170,21 @@ class QueryUtils final {
                                    bool isIntId,
                                    RowReader* reader,
                                    const std::vector<PropContext>* props,
-                                   nebula::List& list) {
+                                   nebula::List& list,
+                                   StorageExpressionContext* expCtx = nullptr,
+                                   const std::string& tagName = "") {
     for (const auto& prop : *props) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+        continue;
+      }
+      auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+      NG_RETURN_IF_ERROR(value);
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
-        auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
-        if (!value.ok()) {
-          return value.status();
-        }
-        list.emplace_back(std::move(value).value());
+        list.emplace_back(value.value());
+      }
+      if (prop.filtered_ && expCtx != nullptr) {
+        expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
       }
     }
     return Status::OK();
@@ -188,15 +195,21 @@ class QueryUtils final {
                                  bool isIntId,
                                  RowReader* reader,
                                  const std::vector<PropContext>* props,
-                                 nebula::List& list) {
+                                 nebula::List& list,
+                                 StorageExpressionContext* expCtx = nullptr,
+                                 const std::string& edgeName = "") {
     for (const auto& prop : *props) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+        continue;
+      }
+      auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
+      NG_RETURN_IF_ERROR(value);
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
-        auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
-        if (!value.ok()) {
-          return value.status();
-        }
-        list.emplace_back(std::move(value).value());
+        list.emplace_back(value.value());
+      }
+      if (prop.filtered_ && expCtx != nullptr) {
+        expCtx->setEdgeProp(edgeName, prop.name_, std::move(value).value());
       }
     }
     return Status::OK();

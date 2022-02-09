@@ -78,21 +78,10 @@ class GetTagPropNode : public QueryNode<VertexID> {
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            for (const auto& prop : *props) {
-              if (!(prop.returned_ || (prop.filtered_ && expCtx_ != nullptr))) {
-                continue;
-              }
-              auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
-              if (!value.ok()) {
-                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-              }
-              if (prop.returned_) {
-                VLOG(2) << "Collect prop " << prop.name_;
-                row.emplace_back(value.value());
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setTagProp(tagNode->getTagName(), prop.name_, std::move(value).value());
-              }
+            auto status = QueryUtils::collectVertexProps(
+                key, vIdLen, isIntId, reader, props, row, expCtx_.get(), tagNode->getTagName());
+            if (!status.ok()) {
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
@@ -161,21 +150,10 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            for (const auto& prop : *props) {
-              if (!(prop.returned_ || (prop.filtered_ && expCtx_ != nullptr))) {
-                continue;
-              }
-              auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
-              if (!value.ok()) {
-                return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-              }
-              if (prop.returned_) {
-                VLOG(2) << "Collect prop " << prop.name_;
-                row.emplace_back(value.value());
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setEdgeProp(edgeNode->getEdgeName(), prop.name_, std::move(value).value());
-              }
+            auto status = QueryUtils::collectEdgeProps(
+                key, vIdLen, isIntId, reader, props, row, expCtx_.get(), edgeNode->getEdgeName());
+            if (!status.ok()) {
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
