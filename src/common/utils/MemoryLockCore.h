@@ -74,6 +74,10 @@ class MemoryLockCore {
     return hashMap_.size();
   }
 
+  bool contains(const Key& key) {
+    return hashMap_.find(key) == hashMap_.end();
+  }
+
  protected:
   folly::ConcurrentHashMap<Key, int> hashMap_;
 };

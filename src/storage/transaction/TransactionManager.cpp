@@ -22,7 +22,8 @@ DEFINE_int32(toss_worker_num, 16, "Resume interval");
 
 TransactionManager::TransactionManager(StorageEnv* env) : env_(env) {
   LOG(INFO) << "TransactionManager ctor()";
-  exec_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_toss_worker_num);
+  worker_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_toss_worker_num);
+  controller_ = std::make_shared<folly::IOThreadPoolExecutor>(1);
 }
 
 bool TransactionManager::start() {
@@ -72,14 +73,15 @@ void TransactionManager::stop() {
 
 void TransactionManager::join() {
   LOG(INFO) << "TransactionManager join()";
-  exec_->stop();
+  worker_->stop();
+  controller_->stop();
 }
 
 void TransactionManager::addChainTask(ChainBaseProcessor* proc) {
   if (stop_) {
     return;
   }
-  folly::via(exec_.get())
+  folly::via(worker_.get())
       .thenValue([=](auto&&) { return proc->prepareLocal(); })
       .thenValue([=](auto&& code) { return proc->processRemote(code); })
       .thenValue([=](auto&& code) { return proc->processLocal(code); })
@@ -192,13 +194,16 @@ void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::Call
                               opt.spaceId,
                               opt.partId,
                               opt.term);
-  auto currTermKey = std::make_pair(opt.spaceId, opt.partId);
-  auto currTermIter = currTerm_.find(currTermKey);
-  if (currTermIter == currTerm_.end()) {
-    return;
+  // clean some out-dated item in memory lock
+  for (auto cit = memLocks_.cbegin(); cit != memLocks_.cend(); ++cit) {
+    auto& [spaceId, partId, termId] = cit->first;
+    if (spaceId == opt.spaceId && partId == opt.partId && termId < opt.term) {
+      auto sptrLockCore = cit->second;
+      if (sptrLockCore->size() == 0) {
+        cit = memLocks_.erase(cit);
+      }
+    }
   }
-  auto memLockKey = std::make_tuple(opt.spaceId, opt.partId, currTermIter->second);
-  memLocks_.erase(memLockKey);
 }
 
 void TransactionManager::onLeaderElectedWrapper(
@@ -211,54 +216,69 @@ void TransactionManager::onLeaderElectedWrapper(
 void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId, TermID termId) {
   LOG(INFO) << folly::sformat(
       "{}(), space={}, part={}, term={}", __func__, spaceId, partId, termId);
+  std::vector<std::string> prefixVec{ConsistUtil::primePrefix(partId),
+                                     ConsistUtil::doublePrimePrefix(partId)};
+  std::vector<ResumeType> resumeVec{ResumeType::RESUME_CHAIN, ResumeType::RESUME_REMOTE};
+  auto termKey = std::make_pair(spaceId, partId);
+  auto itCurrTerm = currTerm_.find(termKey);
+  TermID prevTerm = itCurrTerm == currTerm_.end() ? -1 : itCurrTerm->second;
+
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = ConsistUtil::primePrefix(partId);
-  auto rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
-  if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (; iter->valid(); iter->next()) {
-      auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key()).str();
-      VLOG(1) << "scanned prime edge: " << folly::hexlify(edgeKey);
-      auto lk = getLockCore(spaceId, partId, termId, false);
-      auto succeed = lk->try_lock(edgeKey);
-      if (!succeed) {
-        LOG(ERROR) << "not supposed to lock fail: "
-                   << ", spaceId " << spaceId << ", partId " << partId << ", termId " << termId
-                   << folly::hexlify(edgeKey);
+  for (auto i = 0U; i != prefixVec.size(); ++i) {
+    auto rc = env_->kvstore_->prefix(spaceId, partId, prefixVec[i], &iter);
+    if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (; iter->valid(); iter->next()) {
+        auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key()).str();
+        VLOG(1) << "scanned prime edge: " << folly::hexlify(edgeKey);
+        auto lk = getLockCore(spaceId, partId, termId, false);
+        auto succeed = lk->try_lock(edgeKey);
+        if (!succeed) {
+          LOG(ERROR) << "not supposed to lock fail: "
+                     << ", spaceId " << spaceId << ", partId " << partId << ", termId " << termId
+                     << folly::hexlify(edgeKey);
+        }
+        auto prevMemLockKey = std::make_tuple(spaceId, partId, prevTerm);
+        auto prevMemLockIter = memLocks_.find(prevMemLockKey);
+        auto spLock = prevMemLockIter == memLocks_.end() ? nullptr : prevMemLockIter->second;
+        auto hasUnfinishedTask = [lk = spLock, key = edgeKey] {
+          return (lk != nullptr) && lk->contains(key);
+        };
+
+        if (!hasUnfinishedTask()) {
+          addPrime(spaceId, partId, termId, edgeKey, resumeVec[i]);
+        } else {
+          folly::Promise<folly::Unit> pro;
+          auto fut = pro.getFuture();
+          std::move(fut).thenValue(
+              [=](auto&&) { addPrime(spaceId, partId, termId, edgeKey, resumeVec[i]); });
+          waitUntil(std::move(hasUnfinishedTask), std::move(pro));
+        }
       }
-      addPrime(spaceId, partId, termId, edgeKey, ResumeType::RESUME_CHAIN);
+    } else {
+      VLOG(1) << "primePrefix() " << apache::thrift::util::enumNameSafe(rc);
     }
-  } else {
-    VLOG(1) << "primePrefix() " << apache::thrift::util::enumNameSafe(rc);
   }
 
-  prefix = ConsistUtil::doublePrimePrefix(partId);
-  rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
-  if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (; iter->valid(); iter->next()) {
-      auto edgeKey = ConsistUtil::edgeKeyFromDoublePrime(iter->key()).str();
-      VLOG(1) << "scanned double prime edge: " << folly::hexlify(edgeKey);
-      auto lk = getLockCore(spaceId, partId, termId, false);
-      auto succeed = lk->try_lock(edgeKey);
-      if (!succeed) {
-        LOG(ERROR) << "not supposed to lock fail: "
-                   << ", space " << spaceId << ", partId " << partId << ", termId " << termId
-                   << folly::hexlify(edgeKey);
-      }
-      addPrime(spaceId, partId, termId, edgeKey, ResumeType::RESUME_REMOTE);
-    }
-  } else {
-    VLOG(1) << "doublePrimePrefix() " << apache::thrift::util::enumNameSafe(rc);
-  }
-
-  auto currTermKey = std::make_pair(spaceId, partId);
-  currTerm_.insert_or_assign(currTermKey, termId);
+  currTerm_.insert_or_assign(termKey, termId);
+  prevTerms_.insert_or_assign(termKey, prevTerm);
 
   LOG(INFO) << "set curr term spaceId = " << spaceId << ", partId = " << partId
             << ", termId = " << termId;
 }
 
 folly::EventBase* TransactionManager::getEventBase() {
-  return exec_->getEventBase();
+  return worker_->getEventBase();
+}
+
+void TransactionManager::waitUntil(std::function<bool()>&& cond, folly::Promise<folly::Unit>&& p) {
+  controller_->add([cond = std::move(cond), p = std::move(p), this]() mutable {
+    if (cond()) {
+      p.setValue(folly::Unit());
+    } else {
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+      this->waitUntil(std::move(cond), std::move(p));
+    }
+  });
 }
 
 }  // namespace storage

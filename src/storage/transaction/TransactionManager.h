@@ -29,7 +29,6 @@ class TransactionManager {
   friend class TransactionManagerTester;
   using LockGuard = MemoryLockGuard<std::string>;
   using LockCore = MemoryLockCore<std::string>;
-  using UPtrLock = std::unique_ptr<LockCore>;
   using SPtrLock = std::shared_ptr<LockCore>;
 
  public:
@@ -129,12 +128,18 @@ class TransactionManager {
   // this is a callback register to Part::onLostLeadership
   void onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
 
+  void waitUntil(std::function<bool()>&& cond, folly::Promise<folly::Unit>&& p);
+
  protected:
   using SpacePart = std::pair<GraphSpaceID, PartitionID>;
 
   StorageEnv* env_{nullptr};
-  std::shared_ptr<folly::IOThreadPoolExecutor> exec_;
+  std::shared_ptr<folly::IOThreadPoolExecutor> worker_;
+  std::shared_ptr<folly::IOThreadPoolExecutor> controller_;
 
+  /**
+   * @brief used for a remote processor to record the term of its "local Processor"
+   */
   folly::ConcurrentHashMap<SpacePart, TermID> cachedTerms_;
 
   using MemLockKey = std::tuple<GraphSpaceID, PartitionID, TermID>;
@@ -144,7 +149,9 @@ class TransactionManager {
    * @brief every raft part need to do a scan,
    *        only scanned part allowed to insert edges
    */
-  folly::ConcurrentHashMap<std::pair<GraphSpaceID, PartitionID>, TermID> currTerm_;
+  folly::ConcurrentHashMap<SpacePart, TermID> currTerm_;
+
+  folly::ConcurrentHashMap<SpacePart, TermID> prevTerms_;
 };
 
 }  // namespace storage
