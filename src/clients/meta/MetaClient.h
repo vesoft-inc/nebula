@@ -185,7 +185,6 @@ struct MetaClientOptions {
   MetaClientOptions(const MetaClientOptions& opt)
       : localHost_(opt.localHost_),
         clusterId_(opt.clusterId_.load()),
-        inStoraged_(opt.inStoraged_),
         serviceName_(opt.serviceName_),
         skipConfig_(opt.skipConfig_),
         role_(opt.role_),
@@ -197,13 +196,12 @@ struct MetaClientOptions {
   HostAddr localHost_{"", 0};
   // Current cluster Id, it is required by storaged only.
   std::atomic<ClusterID> clusterId_{0};
-  // If current client being used in storaged.
-  bool inStoraged_ = false;
   // Current service name, used in StatsManager
   std::string serviceName_ = "";
   // Whether to skip the config manager
   bool skipConfig_ = false;
-  // Host role(graph/meta/storage) using this client
+  // Host role(graph/meta/storage) using this client, and UNKNOWN role will not send heartbeat, used
+  // for tools such as upgrader
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
