@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef META_PROCESSORS_BASEPROCESSOR_INL_H
+#define META_PROCESSORS_BASEPROCESSOR_INL_H
 
 #include "interface/gen-cpp2/storage_types.h"
 #include "meta/processors/BaseProcessor.h"
@@ -632,3 +633,4 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
 
 }  // namespace meta
 }  // namespace nebula
+#endif

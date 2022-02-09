@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXAGGREGATENODE_H
+#define STORAGE_EXEC_INDEXAGGREGATENODE_H
 #include "storage/exec/IndexNode.h"
 
 namespace nebula {
@@ -47,3 +48,4 @@ class IndexAggregateNode : public IndexNode {
 
 }  // namespace storage
 }  // namespace nebula
+#endif
