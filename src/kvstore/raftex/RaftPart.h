@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_RAFTPART_H_
@@ -16,6 +15,7 @@
 #include "common/time/Duration.h"
 #include "common/utils/LogIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/raftex_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
@@ -33,21 +33,6 @@ class FileBasedWal;
 }  // namespace wal
 
 namespace raftex {
-
-enum class AppendLogResult {
-  SUCCEEDED = 0,
-  E_ATOMIC_OP_FAILURE = -1,
-  E_NOT_A_LEADER = -2,
-  E_STOPPED = -3,
-  E_NOT_READY = -4,
-  E_BUFFER_OVERFLOW = -5,
-  E_WAL_FAILURE = -6,
-  E_TERM_OUT_OF_DATE = -7,
-  E_SENDING_SNAPSHOT = -8,
-  E_INVALID_PEER = -9,
-  E_NOT_ENOUGH_ACKS = -10,
-  E_WRITE_BLOCKING = -11,
-};
 
 enum class LogType {
   NORMAL = 0x00,
@@ -109,22 +94,34 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return role_ == Role::LEARNER;
   }
 
-  ClusterID clusterId() const { return clusterId_; }
+  ClusterID clusterId() const {
+    return clusterId_;
+  }
 
-  GraphSpaceID spaceId() const { return spaceId_; }
+  GraphSpaceID spaceId() const {
+    return spaceId_;
+  }
 
-  PartitionID partitionId() const { return partId_; }
+  PartitionID partitionId() const {
+    return partId_;
+  }
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
   HostAddr leader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return leader_;
   }
 
-  TermID termId() const { return term_; }
+  TermID termId() const {
+    return term_;
+  }
 
-  std::shared_ptr<wal::FileBasedWal> wal() const { return wal_; }
+  std::shared_ptr<wal::FileBasedWal> wal() const {
+    return wal_;
+  }
 
   void addLearner(const HostAddr& learner);
 
@@ -162,23 +159,23 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    *
    * If the source == -1, the current clusterId will be used
    ****************************************************************/
-  folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
+  folly::Future<nebula::cpp2::ErrorCode> appendAsync(ClusterID source, std::string log);
 
   /****************************************************************
    * Run the op atomically.
    ***************************************************************/
-  folly::Future<AppendLogResult> atomicOpAsync(AtomicOp op);
+  folly::Future<nebula::cpp2::ErrorCode> atomicOpAsync(AtomicOp op);
 
   /**
    * Asynchronously send one command.
    * */
-  folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+  folly::Future<nebula::cpp2::ErrorCode> sendCommandAsync(std::string log);
 
   /**
    * Check if the peer has catched up data from leader. If leader is sending the
    * snapshot, the method will return false.
    * */
-  AppendLogResult isCatchedUp(const HostAddr& peer);
+  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer);
 
   bool linkCurrentWAL(const char* newPath);
 
@@ -197,6 +194,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Methods to process incoming raft requests
    *
    ****************************************************/
+  void getState(cpp2::GetStateResponse& resp);
+
   // Process the incoming leader election request
   void processAskForVoteRequest(const cpp2::AskForVoteRequest& req, cpp2::AskForVoteResponse& resp);
 
@@ -213,7 +212,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   bool needToCleanWal();
 
-  // leader + follwers
+  // leader + followers
   std::vector<HostAddr> peers() const;
 
   std::set<HostAddr> listeners() const;
@@ -222,6 +221,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Reset the part, clean up all data and WALs.
   void reset();
+
+  uint64_t execTime() const {
+    return execTime_;
+  }
 
  protected:
   // Protected constructor to prevent from instantiating directly
@@ -237,22 +240,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
            std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
            std::shared_ptr<kvstore::DiskManager> diskMan);
 
-  enum class Status {
-    STARTING = 0,     // The part is starting, not ready for service
-    RUNNING,          // The part is running
-    STOPPED,          // The part has been stopped
-    WAITING_SNAPSHOT  // Waiting for the snapshot.
-  };
+  using Status = cpp2::Status;
+  using Role = cpp2::Role;
 
-  enum class Role {
-    LEADER = 1,  // the leader
-    FOLLOWER,    // following a leader
-    CANDIDATE,   // Has sent AskForVote request
-    LEARNER      // It is the same with FOLLOWER,
-                 // except it does not participate in leader election
-  };
-
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
 
   // The method will be invoked by start()
   //
@@ -269,14 +262,22 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // a new leader
   virtual void onElected(TermID term) = 0;
 
+  // called after leader committed first log
+  // (a little bit later onElected)
+  // leader need to set some internal status after elected.
+  virtual void onLeaderReady(TermID term) = 0;
+
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
   // Check if we can accept candidate's message
-  virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
+  virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate);
 
-  // The inherited classes need to implement this method to commit
-  // a batch of log messages
-  virtual nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) = 0;
+  // The inherited classes need to implement this method to commit a batch of log messages.
+  // Return {error code, last commit log id, last commit log term}.
+  // When no logs applied to state machine or error occurs when calling commitLogs,
+  // kNoCommitLogId and kNoCommitLogTerm are returned.
+  virtual std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(
+      std::unique_ptr<LogIterator> iter, bool wait) = 0;
 
   virtual bool preProcessLog(LogID logId,
                              TermID termId,
@@ -290,7 +291,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
                                                      bool finished) = 0;
 
   // Clean up extra data about the part, usually related to state machine
-  virtual void cleanup() = 0;
+  virtual nebula::cpp2::ErrorCode cleanup() = 0;
 
   void addPeer(const HostAddr& peer);
 
@@ -299,7 +300,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
  private:
   // A list of <idx, resp>
   // idx  -- the index of the peer
-  // resp -- coresponding response of peer[index]
+  // resp -- corresponding response of peer[index]
   using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
   using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
   using HeartbeatResponses = std::vector<std::pair<size_t, cpp2::HeartbeatResponse>>;
@@ -315,7 +316,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   const char* roleStr(Role role) const;
 
   template <typename REQ>
-  cpp2::ErrorCode verifyLeader(const REQ& req);
+  nebula::cpp2::ErrorCode verifyLeader(const REQ& req);
 
   /*****************************************************************
    *
@@ -340,32 +341,40 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   void cleanupSnapshot();
 
   // The method sends out AskForVote request
-  // It return true if a leader is elected, otherwise returns false
-  bool leaderElection();
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  folly::Future<bool> leaderElection(bool isPreVote);
 
   // The method will fill up the request object and return TRUE
   // if the election should continue. Otherwise the method will
   // return FALSE
   bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
-                              std::vector<std::shared_ptr<Host>>& hosts);
+                              std::vector<std::shared_ptr<Host>>& hosts,
+                              bool isPreVote);
 
-  // The method returns the partition's role after the election
-  Role processElectionResponses(const ElectionResponses& results,
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  bool handleElectionResponses(const ElectionResponses& resps,
+                               const std::vector<std::shared_ptr<Host>>& hosts,
+                               TermID proposedTerm,
+                               bool isPreVote);
+
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  bool processElectionResponses(const ElectionResponses& results,
                                 std::vector<std::shared_ptr<Host>> hosts,
-                                TermID proposedTerm);
+                                TermID proposedTerm,
+                                bool isPreVote);
 
   // Check whether new logs can be appended
   // Pre-condition: The caller needs to hold the raftLock_
-  AppendLogResult canAppendLogs();
+  nebula::cpp2::ErrorCode canAppendLogs();
 
   // Also check if term has changed
   // Pre-condition: The caller needs to hold the raftLock_
-  AppendLogResult canAppendLogs(TermID currTerm);
+  nebula::cpp2::ErrorCode canAppendLogs(TermID currTerm);
 
-  folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                LogType logType,
-                                                std::string log,
-                                                AtomicOp cb = nullptr);
+  folly::Future<nebula::cpp2::ErrorCode> appendLogAsync(ClusterID source,
+                                                        LogType logType,
+                                                        std::string log,
+                                                        AtomicOp cb = nullptr);
 
   void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
@@ -391,7 +400,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // counted in
   std::vector<std::shared_ptr<Host>> followers() const;
 
-  bool checkAppendLogResult(AppendLogResult res);
+  bool checkAppendLogResult(nebula::cpp2::ErrorCode res);
 
   void updateQuorum();
 
@@ -488,13 +497,13 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   mutable std::mutex logsLock_;
   std::atomic_bool replicatingLogs_{false};
   std::atomic_bool bufferOverFlow_{false};
-  PromiseSet<AppendLogResult> cachingPromise_;
+  PromiseSet<nebula::cpp2::ErrorCode> cachingPromise_;
   LogCache logs_;
 
   // Partition level lock to synchronize the access of the partition
   mutable std::mutex raftLock_;
 
-  PromiseSet<AppendLogResult> sendingPromise_;
+  PromiseSet<nebula::cpp2::ErrorCode> sendingPromise_;
 
   Status status_;
   Role role_;
@@ -503,37 +512,31 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   HostAddr leader_;
 
   // After voted for somebody, it will not be empty anymore.
-  // And it will be reset to empty after current election finished.
   HostAddr votedAddr_;
 
   // The current term id
   // the term id proposed by that candidate
   TermID term_{0};
-  // During normal operation, proposedTerm_ is equal to term_,
-  // when the partition becomes a candidate, proposedTerm_ will be
-  // bumped up by 1 every time when sending out the AskForVote
-  // Request
 
-  // If voted for somebody, the proposeTerm will be reset to the candidate
-  // propose term. So we could use it to prevent revote if someone else ask for
-  // vote for current proposedTerm.
+  // Once we have voted some one in formal election, we will set votedTerm_ and votedAddr_.
+  // To prevent we have voted more than once in a same term
+  TermID votedTerm_{0};
 
-  // TODO(heng) We should persist it on the disk in the future
-  // Otherwise, after restart the whole cluster, maybe the stale
-  // leader still has the unsend log with larger term, and after other
-  // replicas elected the new leader, the stale one will not join in the
-  // Raft group any more.
-  TermID proposedTerm_{0};
-
-  // The id and term of the last-sent log
+  // As for leader lastLogId_ is the log id which has been replicated to majority peers.
+  // As for follower lastLogId_ is only a latest log id from current leader or any leader of
+  // previous term. Not all logs before lastLogId_ could be applied for follower.
   LogID lastLogId_{0};
   TermID lastLogTerm_{0};
-  // The id for the last globally committed log (from the leader)
+
+  // The last id and term when logs has been applied to state machine
   LogID committedLogId_{0};
+  TermID committedLogTerm_{0};
+  static constexpr LogID kNoCommitLogId{-1};
+  static constexpr TermID kNoCommitLogTerm{-1};
 
   // To record how long ago when the last leader message received
   time::Duration lastMsgRecvDur_;
-  // To record how long ago when the last log message or heartbeat was sent
+  // To record how long ago when the last log message was sent
   time::Duration lastMsgSentDur_;
   // To record when the last message was accepted by majority peers
   uint64_t lastMsgAcceptedTime_{0};
@@ -572,9 +575,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Used to bypass the stale command
   int64_t startTimeMs_ = 0;
 
-  std::atomic<uint64_t> weight_;
-
   std::atomic<bool> blocking_{false};
+
+  // For stats info
+  uint64_t execTime_{0};
 };
 
 }  // namespace raftex

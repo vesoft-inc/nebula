@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/GetTagProcessor.h"
@@ -12,10 +11,10 @@ namespace meta {
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
+  const auto& tagName = req.get_tag_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto tagIdRet = getTagId(spaceId, tagName);
   if (!nebula::ok(tagIdRet)) {
     LOG(ERROR) << "Get tag " << tagName << " failed.";
@@ -26,9 +25,9 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   auto tagId = nebula::value(tagIdRet);
 
   std::string schemaValue;
-  // Get the lastest version
+  // Get the latest version
   if (ver < 0) {
-    auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
+    auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(tagPrefix);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
@@ -48,7 +47,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     }
     schemaValue = iter->val().str();
   } else {
-    auto tagKey = MetaServiceUtils::schemaTagKey(spaceId, tagId, ver);
+    auto tagKey = MetaKeyUtils::schemaTagKey(spaceId, tagId, ver);
     auto ret = doGet(tagKey);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName << ", version "
@@ -63,7 +62,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   VLOG(3) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName << ", version " << ver;
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
+  resp_.schema_ref() = MetaKeyUtils::parseSchema(schemaValue);
   onFinished();
 }
 

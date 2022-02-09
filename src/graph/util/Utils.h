@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_UTIL_UTILS_H_
@@ -13,8 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace nebula {
-namespace util {
+namespace nebula::graph::util {
 
 template <typename Container, typename Fn>
 std::string join(const Container& container, Fn fn, const std::string& delimiter = ",") {
@@ -25,7 +23,6 @@ std::string join(const Container& container, Fn fn, const std::string& delimiter
   return folly::join(delimiter, strs);
 }
 
-}  // namespace util
-}  // namespace nebula
+}  // namespace nebula::graph::util
 
 #endif  // GRAPH_UTIL_UTILS_H_

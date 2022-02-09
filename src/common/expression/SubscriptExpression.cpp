@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/SubscriptExpression.h"
@@ -106,14 +105,18 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
 std::string SubscriptExpression::toString() const {
   std::string buf;
   buf.reserve(256);
-  buf += left()->toString();
+  auto lhs = left();
+  auto rhs = right();
+  buf += lhs ? lhs->toString() : "";
   buf += '[';
-  buf += right()->toString();
+  buf += rhs ? rhs->toString() : "";
   buf += ']';
   return buf;
 }
 
-void SubscriptExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SubscriptExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 // For the positive range bound it start from begin,
 // for the negative range bound it start from end
@@ -187,7 +190,7 @@ const Value& SubscriptRangeExpression::eval(ExpressionContext& ctx) {
 std::string SubscriptRangeExpression::toString() const {
   std::string buf;
   buf.reserve(32);
-  buf += list_->toString();
+  buf += list_ ? list_->toString() : "";
   buf += '[';
   if (lo_ != nullptr) {
     buf += lo_->toString();
@@ -200,7 +203,9 @@ std::string SubscriptRangeExpression::toString() const {
   return buf;
 }
 
-void SubscriptRangeExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SubscriptRangeExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 bool SubscriptRangeExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {

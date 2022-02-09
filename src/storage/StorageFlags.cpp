@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/StorageFlags.h"
@@ -41,10 +40,9 @@ DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cp
 
 DEFINE_bool(trace_toss, false, "output verbose log of toss");
 
-DEFINE_int32(max_edge_returned_per_vertex, INT_MAX, "Max edge number returnred searching vertex");
+DEFINE_int32(max_edge_returned_per_vertex, INT_MAX, "Max edge number returned searching vertex");
 
 DEFINE_bool(query_concurrently,
             false,
             "whether to run query of each part concurrently, only lookup and "
             "go are supported");
-DEFINE_bool(profile_storage_detail, false, "Whether to profile storage plan detail");

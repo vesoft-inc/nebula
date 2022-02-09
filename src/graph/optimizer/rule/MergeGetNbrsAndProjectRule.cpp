@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/MergeGetNbrsAndProjectRule.h"
@@ -25,7 +24,9 @@ namespace opt {
 std::unique_ptr<OptRule> MergeGetNbrsAndProjectRule::kInstance =
     std::unique_ptr<MergeGetNbrsAndProjectRule>(new MergeGetNbrsAndProjectRule());
 
-MergeGetNbrsAndProjectRule::MergeGetNbrsAndProjectRule() { RuleSet::QueryRules().addRule(this); }
+MergeGetNbrsAndProjectRule::MergeGetNbrsAndProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &MergeGetNbrsAndProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
@@ -75,7 +76,9 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
   return result;
 }
 
-std::string MergeGetNbrsAndProjectRule::toString() const { return "MergeGetNbrsAndProjectRule"; }
+std::string MergeGetNbrsAndProjectRule::toString() const {
+  return "MergeGetNbrsAndProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

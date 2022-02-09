@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/json.h>
@@ -127,7 +126,7 @@ TEST(StatsReaderTest, GetStatsTest) {
   {
     // get all stats(sum,count,avg,rate)
     std::string resp;
-    ASSERT_TRUE(getUrl("/stats?stats= ", resp));
+    ASSERT_TRUE(getUrl("/stats?stats=", resp));
     EXPECT_FALSE(resp.empty());
   }
 

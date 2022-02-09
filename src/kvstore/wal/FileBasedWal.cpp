@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/wal/FileBasedWal.h"
@@ -227,7 +226,7 @@ void FileBasedWal::scanAllWalFiles() {
 
   if (!walFiles_.empty()) {
     auto it = walFiles_.rbegin();
-    // Try to scan last wal, if it is invalid or empty, scan the privous one
+    // Try to scan last wal, if it is invalid or empty, scan the previous one
     scanLastWal(it->second, it->second->firstId());
     if (it->second->lastId() <= 0) {
       unlink(it->second->path());
@@ -354,7 +353,6 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
   }
   lastLogId_ = logId;
   lastLogTerm_ = term;
-  LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
   CHECK_GT(pos, 0) << "This wal should have been deleted";
   if (pos < FileUtils::fileSize(path)) {
@@ -415,7 +413,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (head != foot) {
-      LOG(ERROR) << "Message size doen't match: " << head << " != " << foot;
+      LOG(ERROR) << "Message size doesn't match: " << head << " != " << foot;
       break;
     }
 
@@ -611,6 +609,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
       VLOG(1) << "Roll back to log " << id << ", the last WAL file is now \""
               << walFiles_.rbegin()->second->path() << "\"";
       rollbackInFile(walFiles_.rbegin()->second, id);
+      CHECK_EQ(lastLogId_, id);
+      CHECK_EQ(walFiles_.rbegin()->second->lastId(), id);
     }
   }
 
@@ -632,7 +632,7 @@ bool FileBasedWal::reset() {
   std::vector<std::string> files = FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
   for (auto& fn : files) {
     auto absFn = FileUtils::joinPath(dir_, fn);
-    LOG(INFO) << "Removing " << absFn;
+    VLOG(1) << "Removing " << absFn;
     unlink(absFn.c_str());
   }
   lastLogId_ = firstLogId_ = 0;
@@ -645,7 +645,7 @@ void FileBasedWal::cleanWAL() {
     return;
   }
   auto now = time::WallClock::fastNowInSec();
-  // In theory we only need to keep the latest wal file because it is beging
+  // In theory we only need to keep the latest wal file because it is being
   // written now. However, sometimes will trigger raft snapshot even only a
   // small amount of logs is missing, especially when we reboot all storage, so
   // se keep one more wal.
@@ -713,6 +713,15 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
   }
 
   return count;
+}
+
+TermID FileBasedWal::getLogTerm(LogID id) {
+  TermID term = -1;
+  auto iter = iterator(id, id);
+  if (iter->valid()) {
+    term = iter->logTerm();
+  }
+  return term;
 }
 
 }  // namespace wal

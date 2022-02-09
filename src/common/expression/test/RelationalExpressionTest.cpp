@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "common/expression/test/TestBase.h"
 
@@ -96,15 +95,78 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(1 <= 1, true);
   }
   {
-    TEST_EXPR(empty == empty, true);
-    TEST_EXPR(empty == null, Value::kNullValue);
-    TEST_EXPR(empty != null, Value::kNullValue);
-    TEST_EXPR(empty != 1, true);
-    TEST_EXPR(empty != true, true);
-    TEST_EXPR(empty > "1", Value::kEmpty);
-    TEST_EXPR(empty < 1, Value::kEmpty);
-    TEST_EXPR(empty >= 1.11, Value::kEmpty);
-
+    // empty == empty
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value());
+    auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
+  }
+  {
+    // empty == null
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
+    auto *expr = RelationalExpression::makeEQ(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value::kNullValue.type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value::kNullValue) << "check failed: " << expr->toString();
+  }
+  {
+    // empty != null
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(NullType::__NULL__));
+    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value::kNullValue.type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value::kNullValue) << "check failed: " << expr->toString();
+  }
+  {
+    // empty != 1
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(1));
+    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
+  }
+  {
+    // empty != true
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(true));
+    auto *expr = RelationalExpression::makeNE(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value(true).type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value(true)) << "check failed: " << expr->toString();
+  }
+  {
+    // empty > "1"
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value("1"));
+    auto *expr = RelationalExpression::makeGT(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
+  }
+  {
+    // empty < 1
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(1));
+    auto *expr = RelationalExpression::makeLT(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
+  }
+  {
+    // empty >= 1.11
+    auto *operand1 = ConstantExpression::make(&pool, Value());
+    auto *operand2 = ConstantExpression::make(&pool, Value(1.11));
+    auto *expr = RelationalExpression::makeGE(&pool, operand1, operand2);
+    auto eval = Expression::eval(expr, gExpCtxt);
+    EXPECT_EQ(eval.type(), Value::kEmpty.type()) << "type check failed: " << expr->toString();
+    EXPECT_EQ(eval, Value::kEmpty) << "check failed: " << expr->toString();
+  }
+  {
     TEST_EXPR(null != 1, Value::kNullValue);
     TEST_EXPR(null != true, Value::kNullValue);
     TEST_EXPR(null > "1", Value::kNullValue);
@@ -1343,11 +1405,3 @@ TEST_F(RelationalExpressionTest, NotContainsToString) {
   }
 }
 }  // namespace nebula
-
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  folly::init(&argc, &argv, true);
-  google::SetStderrLogging(google::INFO);
-
-  return RUN_ALL_TESTS();
-}

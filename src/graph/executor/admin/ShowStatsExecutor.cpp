@@ -1,16 +1,15 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ShowStatsExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -22,7 +21,7 @@ folly::Future<Status> ShowStatsExecutor::execute() {
   return qctx()->getMetaClient()->getStats(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<meta::cpp2::StatsItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show staus failed: " << resp.status();
+          LOG(ERROR) << "SpaceId: " << spaceId << ", Show status failed: " << resp.status();
           return resp.status();
         }
         auto statsItem = std::move(resp).value();

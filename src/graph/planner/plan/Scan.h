@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_SCAN_H_
@@ -15,7 +14,9 @@ namespace graph {
 // Logical Plan
 class EdgeIndexScan : public IndexScan {
  public:
-  const std::string& edgeType() const { return edgeType_; }
+  const std::string& edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   EdgeIndexScan(QueryContext* qctx,
@@ -46,6 +47,11 @@ class EdgeIndexScan : public IndexScan {
                   kind),
         edgeType_(edgeType) {}
 
+  void cloneMembers(const EdgeIndexScan& es) {
+    IndexScan::cloneMembers(es);
+    edgeType_ = es.edgeType_;
+  }
+
   std::string edgeType_;
 };
 
@@ -75,6 +81,12 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                                         std::move(orderBy),
                                                         limit,
                                                         filter));
+  }
+
+  PlanNode* clone() const override {
+    auto* newEdgeIndexPrefixScan = EdgeIndexPrefixScan::make(qctx_, nullptr, "");
+    newEdgeIndexPrefixScan->cloneMembers(*this);
+    return newEdgeIndexPrefixScan;
   }
 
  private:
@@ -133,6 +145,12 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                                        filter));
   }
 
+  PlanNode* clone() const override {
+    auto* newEdgeIndexRangeScan = EdgeIndexRangeScan::make(qctx_, nullptr, "");
+    newEdgeIndexRangeScan->cloneMembers(*this);
+    return newEdgeIndexRangeScan;
+  }
+
  private:
   EdgeIndexRangeScan(QueryContext* qctx,
                      PlanNode* input,
@@ -189,6 +207,12 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                                       filter));
   }
 
+  PlanNode* clone() const override {
+    auto* newEdgeIndexFullScan = EdgeIndexFullScan::make(qctx_, nullptr, "");
+    newEdgeIndexFullScan->cloneMembers(*this);
+    return newEdgeIndexFullScan;
+  }
+
  private:
   EdgeIndexFullScan(QueryContext* qctx,
                     PlanNode* input,
@@ -221,7 +245,9 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
 
 class TagIndexScan : public IndexScan {
  public:
-  const std::string& tagName() const { return tagName_; }
+  const std::string& tagName() const {
+    return tagName_;
+  }
 
  protected:
   TagIndexScan(QueryContext* qctx,
@@ -252,6 +278,11 @@ class TagIndexScan : public IndexScan {
                   kind),
         tagName_(tagName) {}
 
+  void cloneMembers(const TagIndexScan& ts) {
+    IndexScan::cloneMembers(ts);
+    tagName_ = ts.tagName_;
+  }
+
   std::string tagName_;
 };
 
@@ -281,6 +312,12 @@ class TagIndexPrefixScan : public TagIndexScan {
                                                        std::move(orderBy),
                                                        limit,
                                                        filter));
+  }
+
+  PlanNode* clone() const {
+    auto* newTagIndexPrefixScan = TagIndexPrefixScan::make(qctx_, nullptr, "");
+    newTagIndexPrefixScan->cloneMembers(*this);
+    return newTagIndexPrefixScan;
   }
 
  private:
@@ -339,6 +376,12 @@ class TagIndexRangeScan : public TagIndexScan {
                                                       filter));
   }
 
+  PlanNode* clone() const {
+    auto* newTagIndexRangeScan = TagIndexRangeScan::make(qctx_, nullptr, "");
+    newTagIndexRangeScan->cloneMembers(*this);
+    return newTagIndexRangeScan;
+  }
+
  private:
   TagIndexRangeScan(QueryContext* qctx,
                     PlanNode* input,
@@ -393,6 +436,12 @@ class TagIndexFullScan final : public TagIndexScan {
                                                      std::move(orderBy),
                                                      limit,
                                                      filter));
+  }
+
+  PlanNode* clone() const {
+    auto* newTagIndexFullScan = TagIndexFullScan::make(qctx_, nullptr, "");
+    newTagIndexFullScan->cloneMembers(*this);
+    return newTagIndexFullScan;
   }
 
  private:

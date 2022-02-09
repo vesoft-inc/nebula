@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/thread/GenericWorker.h"
@@ -87,7 +86,9 @@ bool GenericWorker::wait() {
   return true;
 }
 
-void GenericWorker::loop() { event_base_dispatch(evbase_); }
+void GenericWorker::loop() {
+  event_base_dispatch(evbase_);
+}
 
 void GenericWorker::notify() {
   if (notifier_ == nullptr) {
@@ -143,10 +144,10 @@ void GenericWorker::onNotify() {
     }
   }
   {
-    decltype(purgingingTimers_) newcomings;
+    decltype(purgingTimers_) newcomings;
     {
       std::lock_guard<std::mutex> guard(lock_);
-      newcomings.swap(purgingingTimers_);
+      newcomings.swap(purgingTimers_);
     }
     for (auto id : newcomings) {
       purgeTimerInternal(id);
@@ -154,7 +155,9 @@ void GenericWorker::onNotify() {
   }
 }
 
-GenericWorker::Timer::Timer(std::function<void(void)> cb) { callback_ = std::move(cb); }
+GenericWorker::Timer::Timer(std::function<void(void)> cb) {
+  callback_ = std::move(cb);
+}
 
 GenericWorker::Timer::~Timer() {
   if (ev_ != nullptr) {
@@ -165,7 +168,7 @@ GenericWorker::Timer::~Timer() {
 void GenericWorker::purgeTimerTask(uint64_t id) {
   {
     std::lock_guard<std::mutex> guard(lock_);
-    purgingingTimers_.emplace_back(id);
+    purgingTimers_.emplace_back(id);
   }
   notify();
 }

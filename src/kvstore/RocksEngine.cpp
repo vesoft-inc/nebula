@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/RocksEngine.h"
@@ -11,9 +10,9 @@
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVStore.h"
-#include "kvstore/RocksEngineConfig.h"
 
 DEFINE_bool(move_files, false, "Move the SST files instead of copy when ingest into dataset");
 
@@ -64,7 +63,9 @@ class RocksWriteBatch : public WriteBatch {
     }
   }
 
-  rocksdb::WriteBatch* data() { return &batch_; }
+  rocksdb::WriteBatch* data() {
+    return &batch_;
+  }
 };
 
 }  // Anonymous namespace
@@ -124,7 +125,19 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     status = rocksdb::DB::Open(options, path, &db);
   }
   CHECK(status.ok()) << status.ToString();
+  if (!readonly && spaceId_ != kDefaultSpaceId /* only for storage*/) {
+    rocksdb::ReadOptions readOptions;
+    std::string dataVersionValue = "";
+    status = db->Get(readOptions, NebulaKeyUtils::dataVersionKey(), &dataVersionValue);
+    if (status.IsNotFound()) {
+      rocksdb::WriteOptions writeOptions;
+      status = db->Put(
+          writeOptions, NebulaKeyUtils::dataVersionKey(), NebulaKeyUtils::dataVersionValue());
+    }
+    CHECK(status.ok()) << status.ToString();
+  }
   db_.reset(db);
+  extractorLen_ = sizeof(PartitionID) + vIdLen;
   partsNum_ = allParts().size();
   LOG(INFO) << "open rocksdb on " << path;
 
@@ -202,7 +215,7 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  options.total_order_seek = true;
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
@@ -212,8 +225,41 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
-                                            std::unique_ptr<KVIterator>* storageIter) {
+                                            std::unique_ptr<KVIterator>* storageIter,
+                                            const void* snapshot) {
+  // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
+  // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
+  if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
+    return prefixWithExtractor(prefix, snapshot, storageIter);
+  } else {
+    return prefixWithoutExtractor(prefix, snapshot, storageIter);
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& prefix,
+                                                         const void* snapshot,
+                                                         std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
+  options.prefix_same_as_start = true;
+  rocksdb::Iterator* iter = db_->NewIterator(options);
+  if (iter) {
+    iter->Seek(rocksdb::Slice(prefix));
+  }
+  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
+    const std::string& prefix, const void* snapshot, std::unique_ptr<KVIterator>* storageIter) {
+  rocksdb::ReadOptions options;
+  if (snapshot != nullptr) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
+  // prefix_same_as_start is false by default
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
@@ -226,11 +272,22 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
                                                      const std::string& prefix,
                                                      std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  // prefix_same_as_start is false by default
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
   storageIter->reset(new RocksPrefixIter(iter, prefix));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
+  rocksdb::ReadOptions options;
+  options.total_order_seek = true;
+  rocksdb::Iterator* iter = db_->NewIterator(options);
+  iter->SeekToFirst();
+  storageIter->reset(new RocksCommonIter(iter));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -353,7 +410,9 @@ std::vector<PartitionID> RocksEngine::allParts() {
   return parts;
 }
 
-int32_t RocksEngine::totalPartsNum() { return partsNum_; }
+int32_t RocksEngine::totalPartsNum() {
+  return partsNum_;
+}
 
 nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& files,
                                             bool verifyFileChecksum) {
@@ -394,6 +453,16 @@ nebula::cpp2::ErrorCode RocksEngine::setDBOption(const std::string& configKey,
   } else {
     LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::getProperty(
+    const std::string& property) {
+  std::string value;
+  if (!db_->GetProperty(property, &value)) {
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  } else {
+    return value;
   }
 }
 
@@ -472,54 +541,27 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
     } else if (!status.ok()) {
       LOG(FATAL) << status.ToString();
     }
-    LOG(INFO) << "restore from latest backup succesfully"
+    LOG(INFO) << "restore from latest backup successfully"
               << ", backup path " << backupPath_ << ", wal path " << walDir << ", data path "
               << dataPath;
   }
 }
 
-nebula::cpp2::ErrorCode RocksEngine::createCheckpoint(const std::string& name) {
-  LOG(INFO) << "Begin checkpoint : " << dataPath_;
-
-  /*
-   * The default checkpoint directory structure is :
-   *   |--FLAGS_data_path
-   *   |----nebula
-   *   |------space1
-   *   |--------data
-   *   |--------wal
-   *   |--------checkpoints
-   *   |----------snapshot1
-   *   |------------data
-   *   |------------wal
-   *   |----------snapshot2
-   *   |----------snapshot3
-   *
-   */
-
-  auto checkpointPath =
-      folly::stringPrintf("%s/checkpoints/%s/data", dataPath_.c_str(), name.c_str());
-  LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+nebula::cpp2::ErrorCode RocksEngine::createCheckpoint(const std::string& checkpointPath) {
+  LOG(INFO) << "Target checkpoint data path : " << checkpointPath;
   if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Remove exist dir failed of checkpoint : " << checkpointPath;
+    LOG(ERROR) << "Remove exist checkpoint data dir failed: " << checkpointPath;
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
-  }
-
-  auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
-  if (!FileUtils::exist(parent)) {
-    if (!FileUtils::makeDir(parent)) {
-      LOG(ERROR) << "Make dir " << parent << " failed";
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
   }
 
   rocksdb::Checkpoint* checkpoint;
   rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
-  std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
   if (!status.ok()) {
     LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
   }
+
+  std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
   status = cp->CreateCheckpoint(checkpointPath, 0);
   if (!status.ok()) {
     LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
@@ -545,47 +587,43 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
     }
   }
 
-  rocksdb::Options options;
-  options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
-  rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
-
   std::unique_ptr<KVIterator> iter;
   auto ret = prefix(tablePrefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
-
   if (!iter->valid()) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
 
+  rocksdb::Options options;
+  options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+  rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
   auto s = sstFileWriter.Open(backupPath);
   if (!s.ok()) {
     LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
   }
 
-  while (iter->valid()) {
+  for (; iter->valid(); iter->next()) {
     if (filter && filter(iter->key())) {
-      iter->next();
       continue;
     }
+
     s = sstFileWriter.Put(iter->key().toString(), iter->val().toString());
     if (!s.ok()) {
       LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
       sstFileWriter.Finish();
       return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
     }
-    iter->next();
   }
 
   s = sstFileWriter.Finish();
   if (!s.ok()) {
-    LOG(WARNING) << "Failure to insert data when backupTable,  " << backupPath
+    LOG(WARNING) << "Failed to insert data when backupTable,  " << backupPath
                  << ", error: " << s.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
-
   if (sstFileWriter.FileSize() == 0) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
@@ -593,8 +631,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
   if (backupPath[0] == '/') {
     return backupPath;
   }
-
-  auto result = nebula::fs::FileUtils::realPath(backupPath.c_str());
+  auto result = FileUtils::realPath(backupPath.c_str());
   if (!result.ok()) {
     return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
   }

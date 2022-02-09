@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/test/RowWriterV1.h"
@@ -9,10 +8,12 @@
 namespace nebula {
 
 using meta::SchemaProviderIf;
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
-RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) { CHECK(!!schema_); }
+RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) {
+  CHECK(!!schema_);
+}
 
 int64_t RowWriterV1::size() const noexcept {
   auto offsetBytes = calcOccupiedBytes(cord_.size());

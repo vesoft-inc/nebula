@@ -554,15 +554,15 @@ Feature: IndexTest_Vid_Int
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col5, tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col5 | tag_1.col1 |
-      | 100      | 5          | true       |
+      | tag_1.col5 | tag_1.col1 |
+      | 5          | true       |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col1, tag_1.col5
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 | tag_1.col5 |
-      | 100      | true       | 5          |
+      | tag_1.col1 | tag_1.col5 |
+      | true       | 5          |
     Then drop the used space
 
   Scenario: IndexTest IntVid RebuildTagIndexStatusInfo

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_
@@ -47,13 +46,21 @@ class LabelAttributeExpression final : public Expression {
                                           static_cast<ConstantExpression*>(right()->clone()));
   }
 
-  const LabelExpression* left() const { return lhs_; }
+  const LabelExpression* left() const {
+    return lhs_;
+  }
 
-  LabelExpression* left() { return lhs_; }
+  LabelExpression* left() {
+    return lhs_;
+  }
 
-  const ConstantExpression* right() const { return rhs_; }
+  const ConstantExpression* right() const {
+    return rhs_;
+  }
 
-  ConstantExpression* right() { return rhs_; }
+  ConstantExpression* right() {
+    return rhs_;
+  }
 
   std::string toString() const override;
 
@@ -68,11 +75,11 @@ class LabelAttributeExpression final : public Expression {
   }
 
   void writeTo(Encoder&) const override {
-    LOG(FATAL) << "LabelAttributeExpression not supporte to encode.";
+    LOG(FATAL) << "LabelAttributeExpression not supported to encode.";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(FATAL) << "LabelAttributeExpression not supporte to decode.";
+    LOG(FATAL) << "LabelAttributeExpression not supported to decode.";
   }
 
  private:

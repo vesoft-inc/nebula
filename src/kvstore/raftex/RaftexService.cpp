@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/RaftexService.h"
@@ -9,6 +8,8 @@
 #include <folly/ScopeGuard.h>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
+#include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/RaftPart.h"
 
 namespace nebula {
@@ -60,6 +61,9 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
                                      std::shared_ptr<folly::Executor> workers,
                                      uint16_t port) {
   LOG(INFO) << "Init thrift server for raft service, port: " << port;
+  if (FLAGS_enable_ssl) {
+    server_->setSSLConfig(nebula::sslContextConfig());
+  }
   server_->setPort(port);
   server_->setIdleTimeout(std::chrono::seconds(0));
   if (pool != nullptr) {
@@ -94,7 +98,9 @@ void RaftexService::serve() {
     return;
   }
 
-  SCOPE_EXIT { server_->cleanUp(); };
+  SCOPE_EXIT {
+    server_->cleanUp();
+  };
 
   status_.store(STATUS_RUNNING);
   LOG(INFO) << "Start the Raftex Service successfully";
@@ -113,7 +119,8 @@ std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
 }
 
 void RaftexService::stop() {
-  if (status_.load() != STATUS_RUNNING) {
+  int expected = STATUS_RUNNING;
+  if (!status_.compare_exchange_strong(expected, STATUS_NOT_RUNNING)) {
     return;
   }
 
@@ -148,10 +155,20 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
 }
 
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
-  folly::RWSpinLock::WriteHolder wh(partsLock_);
-  parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+  using FType = decltype(folly::makeFuture());
+  using FTValype = typename FType::value_type;
   // Stop the partition
-  part->stop();
+  folly::makeFuture()
+      .thenValue([this, &part](FTValype) {
+        folly::RWSpinLock::WriteHolder wh(partsLock_);
+        parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+      })
+      // the part->stop() would wait for requestOnGoing_ in Host, and the requestOnGoing_ will
+      // release in response in ioThreadPool,this may cause deadlock, so doing it in another
+      // threadpool to avoid this condition
+      .via(folly::getGlobalCPUExecutor())
+      .thenValue([part](FTValype) { part->stop(); })
+      .wait();
 }
 
 std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, PartitionID partId) {
@@ -168,11 +185,21 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, Partitio
   return it->second;
 }
 
+void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) {
+  auto part = findPart(req.get_space(), req.get_part());
+  if (part != nullptr) {
+    part->getState(resp);
+  } else {
+    resp.term_ref() = -1;
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
+  }
+}
+
 void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) {
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
     return;
   }
 
@@ -183,7 +210,7 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
     return;
   }
 
@@ -195,7 +222,7 @@ void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
     return;
   }
 
@@ -209,7 +236,7 @@ void RaftexService::async_eb_heartbeat(
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
     callback->result(resp);
     return;
   }

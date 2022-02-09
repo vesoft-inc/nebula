@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_ROCKSENGINE_H_
@@ -15,6 +14,7 @@
 #include "common/base/Base.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/RocksEngineConfig.h"
 
 namespace nebula {
 namespace kvstore {
@@ -30,9 +30,13 @@ class RocksRangeIter : public KVIterator {
     return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
   }
 
-  void next() override { iter_->Next(); }
+  void next() override {
+    iter_->Next();
+  }
 
-  void prev() override { iter_->Prev(); }
+  void prev() override {
+    iter_->Prev();
+  }
 
   folly::StringPiece key() const override {
     return folly::StringPiece(iter_->key().data(), iter_->key().size());
@@ -58,9 +62,13 @@ class RocksPrefixIter : public KVIterator {
     return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
   }
 
-  void next() override { iter_->Next(); }
+  void next() override {
+    iter_->Next();
+  }
 
-  void prev() override { iter_->Prev(); }
+  void prev() override {
+    iter_->Prev();
+  }
 
   folly::StringPiece key() const override {
     return folly::StringPiece(iter_->key().data(), iter_->key().size());
@@ -73,6 +81,36 @@ class RocksPrefixIter : public KVIterator {
  protected:
   std::unique_ptr<rocksdb::Iterator> iter_;
   rocksdb::Slice prefix_;
+};
+
+class RocksCommonIter : public KVIterator {
+ public:
+  explicit RocksCommonIter(rocksdb::Iterator* iter) : iter_(iter) {}
+
+  ~RocksCommonIter() = default;
+
+  bool valid() const override {
+    return !!iter_ && iter_->Valid();
+  }
+
+  void next() override {
+    iter_->Next();
+  }
+
+  void prev() override {
+    iter_->Prev();
+  }
+
+  folly::StringPiece key() const override {
+    return folly::StringPiece(iter_->key().data(), iter_->key().size());
+  }
+
+  folly::StringPiece val() const override {
+    return folly::StringPiece(iter_->value().data(), iter_->value().size());
+  }
+
+ protected:
+  std::unique_ptr<rocksdb::Iterator> iter_;
 };
 
 /**************************************************************************
@@ -92,15 +130,29 @@ class RocksEngine : public KVEngine {
               std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr,
               bool readonly = false);
 
-  ~RocksEngine() { LOG(INFO) << "Release rocksdb on " << dataPath_; }
+  ~RocksEngine() {
+    LOG(INFO) << "Release rocksdb on " << dataPath_;
+  }
 
   void stop() override;
 
-  // return path to a spaceId, e.g. "/DataPath/nebula/spaceId", usally it should
+  // return path to a spaceId, e.g. "/DataPath/nebula/spaceId", usually it should
   // contain two subdir: data and wal.
-  const char* getDataRoot() const override { return dataPath_.c_str(); }
+  const char* getDataRoot() const override {
+    return dataPath_.c_str();
+  }
 
-  const char* getWalRoot() const override { return walPath_.c_str(); }
+  const char* getWalRoot() const override {
+    return walPath_.c_str();
+  }
+
+  const void* GetSnapshot() override {
+    return db_->GetSnapshot();
+  }
+
+  void ReleaseSnapshot(const void* snapshot) override {
+    db_->ReleaseSnapshot(reinterpret_cast<const rocksdb::Snapshot*>(snapshot));
+  }
 
   std::unique_ptr<WriteBatch> startBatchWrite() override;
 
@@ -122,12 +174,22 @@ class RocksEngine : public KVEngine {
                                 std::unique_ptr<KVIterator>* iter) override;
 
   nebula::cpp2::ErrorCode prefix(const std::string& prefix,
-                                 std::unique_ptr<KVIterator>* iter) override;
+                                 std::unique_ptr<KVIterator>* iter,
+                                 const void* snapshot = nullptr) override;
 
   nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
                                           const std::string& prefix,
                                           std::unique_ptr<KVIterator>* iter) override;
 
+  nebula::cpp2::ErrorCode prefixWithExtractor(const std::string& prefix,
+                                              const void* snapshot,
+                                              std::unique_ptr<KVIterator>* storageIter);
+
+  nebula::cpp2::ErrorCode prefixWithoutExtractor(const std::string& prefix,
+                                                 const void* snapshot,
+                                                 std::unique_ptr<KVIterator>* storageIter);
+
+  nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) override;
   /*********************
    * Data modification
    ********************/
@@ -161,6 +223,8 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode setDBOption(const std::string& configKey,
                                       const std::string& configValue) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(const std::string& property) override;
+
   nebula::cpp2::ErrorCode compact() override;
 
   nebula::cpp2::ErrorCode flush() override;
@@ -170,7 +234,7 @@ class RocksEngine : public KVEngine {
   /*********************
    * Checkpoint operation
    ********************/
-  nebula::cpp2::ErrorCode createCheckpoint(const std::string& path) override;
+  nebula::cpp2::ErrorCode createCheckpoint(const std::string& checkpointPath) override;
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
       const std::string& path,
@@ -190,6 +254,7 @@ class RocksEngine : public KVEngine {
   std::string backupPath_;
   std::unique_ptr<rocksdb::BackupEngine> backupDb_{nullptr};
   int32_t partsNum_ = -1;
+  size_t extractorLen_;
 };
 
 }  // namespace kvstore

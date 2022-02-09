@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -67,12 +66,15 @@ void createSchema(meta::SchemaManager* schemaMan,
                   bool isEdge = false) {
   auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-  schema->addField("c1", meta::cpp2::PropertyType::INT64, 0, false);
-  schema->addField(
-      "c2", meta::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+  schema->addField("c1", nebula::cpp2::PropertyType::INT64, 0, false);
+  schema->addField("c2",
+                   nebula::cpp2::PropertyType::INT64,
+                   0,
+                   false,
+                   ConstantExpression::make(pool, 0L)->encode());
   meta::cpp2::SchemaProp prop;
-  prop.set_ttl_col("c2");
-  prop.set_ttl_duration(duration);
+  prop.ttl_col_ref() = "c2";
+  prop.ttl_duration_ref() = duration;
   schema->setProp(prop);
   if (isEdge) {
     sm->addEdgeSchema(1, schemaId, std::move(schema));
@@ -90,7 +92,7 @@ void createIndex(meta::IndexManager* indexMan,
   std::vector<nebula::meta::cpp2::ColumnDef> cols;
   meta::cpp2::ColumnDef col;
   col.name = "c1";
-  col.type.set_type(meta::cpp2::PropertyType::INT64);
+  col.type.type_ref() = nebula::cpp2::PropertyType::INT64;
   cols.emplace_back(std::move(col));
   if (isEdge) {
     im->addEdgeIndex(1, schemaId, indexId, std::move(cols));
@@ -101,20 +103,20 @@ void createIndex(meta::IndexManager* indexMan,
 
 void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
   cpp2::AddVerticesRequest req;
-  req.set_space_id(1);
-  req.set_if_not_exists(true);
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
   for (auto partId = 1; partId <= 6; partId++) {
     nebula::storage::cpp2::NewVertex newVertex;
     nebula::storage::cpp2::NewTag newTag;
-    newTag.set_tag_id(tagId);
+    newTag.tag_id_ref() = tagId;
     std::vector<Value> props;
     props.emplace_back(Value(1L));
     props.emplace_back(Value(time::WallClock::fastNowInSec()));
-    newTag.set_props(std::move(props));
+    newTag.props_ref() = std::move(props);
     std::vector<nebula::storage::cpp2::NewTag> newTags;
     newTags.push_back(std::move(newTag));
-    newVertex.set_id(convertVertexId(vIdLen, partId));
-    newVertex.set_tags(std::move(newTags));
+    newVertex.id_ref() = convertVertexId(vIdLen, partId);
+    newVertex.tags_ref() = std::move(newTags);
     (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
   }
   auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -126,22 +128,22 @@ void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
 
 void insertEdge(storage::StorageEnv* env, size_t vIdLen, EdgeType edgeType) {
   cpp2::AddEdgesRequest req;
-  req.set_space_id(1);
-  req.set_if_not_exists(true);
+  req.space_id_ref() = 1;
+  req.if_not_exists_ref() = true;
   for (auto partId = 1; partId <= 6; partId++) {
     nebula::storage::cpp2::NewEdge newEdge;
     nebula::storage::cpp2::EdgeKey edgeKey;
-    edgeKey.set_src(convertVertexId(vIdLen, partId));
-    edgeKey.set_edge_type(edgeType);
-    edgeKey.set_ranking(0);
-    edgeKey.set_dst(convertVertexId(vIdLen, partId + 6));
-    newEdge.set_key(std::move(edgeKey));
+    edgeKey.src_ref() = convertVertexId(vIdLen, partId);
+    edgeKey.edge_type_ref() = edgeType;
+    edgeKey.ranking_ref() = 0;
+    edgeKey.dst_ref() = convertVertexId(vIdLen, partId + 6);
+    newEdge.key_ref() = std::move(edgeKey);
     std::vector<Value> props;
     props.emplace_back(Value(1L));
     props.emplace_back(Value(time::WallClock::fastNowInSec()));
-    newEdge.set_props(std::move(props));
+    newEdge.props_ref() = std::move(props);
     (*req.parts_ref())[partId].emplace_back(newEdge);
-    (*newEdge.key_ref()).set_edge_type(-edgeType);
+    (*newEdge.key_ref()).edge_type_ref() = -edgeType;
     (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
   }
   auto* processor = AddEdgesProcessor::instance(env, nullptr);
@@ -165,7 +167,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -185,7 +187,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after compaction ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(0, retNum);
   }
@@ -259,7 +261,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -273,26 +275,26 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   for (auto partId = 1; partId <= 6; partId++) {
     cpp2::UpdateVertexRequest req;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     VertexID vertexId = convertVertexId(vIdLen, partId);
-    req.set_part_id(partId);
-    req.set_vertex_id(vertexId);
-    req.set_tag_id(2021001);
+    req.part_id_ref() = partId;
+    req.vertex_id_ref() = vertexId;
+    req.tag_id_ref() = 2021001;
 
     std::vector<cpp2::UpdatedProp> updatedProps;
     cpp2::UpdatedProp uProp1;
-    uProp1.set_name("c1");
+    uProp1.name_ref() = "c1";
     const auto& val1 = *ConstantExpression::make(pool, 2L);
-    uProp1.set_value(Expression::encode(val1));
+    uProp1.value_ref() = Expression::encode(val1);
     updatedProps.emplace_back(uProp1);
 
     cpp2::UpdatedProp uProp2;
-    uProp2.set_name("c2");
+    uProp2.name_ref() = "c2";
     const auto& val2 = *ConstantExpression::make(pool, 5555L);
-    uProp2.set_value(Expression::encode(val2));
+    uProp2.value_ref() = Expression::encode(val2);
     updatedProps.emplace_back(uProp2);
-    req.set_updated_props(std::move(updatedProps));
-    req.set_insertable(false);
+    req.updated_props_ref() = std::move(updatedProps);
+    req.insertable_ref() = false;
 
     auto* processor = UpdateVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
@@ -303,7 +305,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after update ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -344,32 +346,32 @@ TEST(IndexWithTTLTest, UpdateEdgesIndexWithTTL) {
 
   for (auto partId = 1; partId <= 6; partId++) {
     cpp2::UpdateEdgeRequest req;
-    req.set_space_id(1);
-    req.set_part_id(partId);
+    req.space_id_ref() = 1;
+    req.part_id_ref() = partId;
     VertexID srcId = convertVertexId(vIdLen, partId);
     VertexID dstId = convertVertexId(vIdLen, partId + 6);
     EdgeRanking rank = 0;
     storage::cpp2::EdgeKey edgeKey;
-    edgeKey.set_src(srcId);
-    edgeKey.set_edge_type(2021001);
-    edgeKey.set_ranking(rank);
-    edgeKey.set_dst(dstId);
-    req.set_edge_key(edgeKey);
+    edgeKey.src_ref() = srcId;
+    edgeKey.edge_type_ref() = 2021001;
+    edgeKey.ranking_ref() = rank;
+    edgeKey.dst_ref() = dstId;
+    req.edge_key_ref() = edgeKey;
 
     std::vector<cpp2::UpdatedProp> updatedProps;
     cpp2::UpdatedProp uProp1;
-    uProp1.set_name("c1");
+    uProp1.name_ref() = "c1";
     const auto& val1 = *ConstantExpression::make(pool, 2L);
-    uProp1.set_value(Expression::encode(val1));
+    uProp1.value_ref() = Expression::encode(val1);
     updatedProps.emplace_back(uProp1);
 
     cpp2::UpdatedProp uProp2;
-    uProp2.set_name("c2");
+    uProp2.name_ref() = "c2";
     const auto& val2 = *ConstantExpression::make(pool, 5555L);
-    uProp2.set_value(Expression::encode(val2));
+    uProp2.value_ref() = Expression::encode(val2);
     updatedProps.emplace_back(uProp2);
-    req.set_updated_props(std::move(updatedProps));
-    req.set_insertable(false);
+    req.updated_props_ref() = std::move(updatedProps);
+    req.insertable_ref() = false;
 
     auto* processor = UpdateEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
@@ -406,7 +408,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -423,16 +425,16 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   auto manager_ = AdminTaskManager::instance();
   manager_->init();
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(13);
-  request.set_para(std::move(parameter));
+  cpp2::AddTaskRequest request;
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 13;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -449,7 +451,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -492,16 +494,16 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   auto manager_ = AdminTaskManager::instance();
   manager_->init();
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(13);
-  request.set_para(std::move(parameter));
+  cpp2::AddTaskRequest request;
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 13;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -544,7 +546,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -563,16 +565,16 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   auto manager_ = AdminTaskManager::instance();
   manager_->init();
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(13);
-  request.set_para(std::move(parameter));
+  cpp2::AddTaskRequest request;
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 13;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -589,7 +591,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -634,16 +636,16 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   auto manager_ = AdminTaskManager::instance();
   manager_->init();
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"2021002"};
 
-  cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(15);
-  request.set_para(std::move(parameter));
+  cpp2::AddTaskRequest request;
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 15;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -686,29 +688,29 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   nebula::cpp2::SchemaID schemaId;
-  schemaId.set_tag_id(2021001);
-  indices.set_schema_id(schemaId);
+  schemaId.tag_id_ref() = 2021001;
+  indices.schema_id_ref() = schemaId;
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
-  req.set_return_columns(std::move(returnCols));
+  req.return_columns_ref() = std::move(returnCols);
   auto expr = RelationalExpression::makeNE(pool,
                                            TagPropertyExpression::make(pool, "2021001", "c1"),
                                            ConstantExpression::make(pool, Value(34L)));
   cpp2::IndexQueryContext context1;
-  context1.set_filter(expr->encode());
-  context1.set_index_id(2021002);
+  context1.filter_ref() = expr->encode();
+  context1.index_id_ref() = 2021002;
   decltype(indices.contexts) contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
-  req.set_indices(std::move(indices));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
   auto fut = processor->getFuture();
   processor->process(req);
   auto resp = std::move(fut).get();
@@ -730,30 +732,30 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   nebula::cpp2::SchemaID schemaId;
-  schemaId.set_edge_type(2021001);
-  indices.set_schema_id(schemaId);
+  schemaId.edge_type_ref() = 2021001;
+  indices.schema_id_ref() = schemaId;
 
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
-  req.set_return_columns(std::move(returnCols));
+  req.return_columns_ref() = std::move(returnCols);
   auto expr = RelationalExpression::makeNE(pool,
                                            TagPropertyExpression::make(pool, "2021001", "c1"),
                                            ConstantExpression::make(pool, Value(34L)));
   cpp2::IndexQueryContext context1;
-  context1.set_filter(expr->encode());
-  context1.set_index_id(2021002);
+  context1.filter_ref() = expr->encode();
+  context1.index_id_ref() = 2021002;
   decltype(indices.contexts) contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
-  req.set_indices(std::move(indices));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
   auto fut = processor->getFuture();
   processor->process(req);
   auto resp = std::move(fut).get();
@@ -777,29 +779,29 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   nebula::cpp2::SchemaID schemaId;
-  schemaId.set_tag_id(2021001);
-  indices.set_schema_id(schemaId);
+  schemaId.tag_id_ref() = 2021001;
+  indices.schema_id_ref() = schemaId;
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
-  req.set_return_columns(std::move(returnCols));
+  req.return_columns_ref() = std::move(returnCols);
   auto expr = RelationalExpression::makeNE(pool,
                                            TagPropertyExpression::make(pool, "2021001", "c1"),
                                            ConstantExpression::make(pool, Value(34L)));
   cpp2::IndexQueryContext context1;
-  context1.set_filter(expr->encode());
-  context1.set_index_id(2021002);
+  context1.filter_ref() = expr->encode();
+  context1.index_id_ref() = 2021002;
   decltype(indices.contexts) contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
-  req.set_indices(std::move(indices));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
   auto fut = processor->getFuture();
   processor->process(req);
   auto resp = std::move(fut).get();
@@ -823,29 +825,29 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   nebula::cpp2::SchemaID schemaId;
-  schemaId.set_edge_type(2021001);
-  indices.set_schema_id(schemaId);
+  schemaId.edge_type_ref() = 2021001;
+  indices.schema_id_ref() = schemaId;
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
-  req.set_return_columns(std::move(returnCols));
+  req.return_columns_ref() = std::move(returnCols);
   auto expr = RelationalExpression::makeNE(pool,
                                            TagPropertyExpression::make(pool, "2021001", "c1"),
                                            ConstantExpression::make(pool, Value(34L)));
   cpp2::IndexQueryContext context1;
-  context1.set_filter(expr->encode());
-  context1.set_index_id(2021002);
+  context1.filter_ref() = expr->encode();
+  context1.index_id_ref() = 2021002;
   decltype(indices.contexts) contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
-  req.set_indices(std::move(indices));
+  indices.contexts_ref() = std::move(contexts);
+  req.indices_ref() = std::move(indices);
   auto fut = processor->getFuture();
   processor->process(req);
   auto resp = std::move(fut).get();

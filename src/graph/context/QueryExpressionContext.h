@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
@@ -16,7 +15,9 @@ namespace graph {
 
 class QueryExpressionContext final : public ExpressionContext {
  public:
-  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) { ectx_ = ectx; }
+  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) {
+    ectx_ = ectx;
+  }
 
   // Get the latest version value for the given variable name, such as $a, $b
   const Value& getVar(const std::string& var) const override;
@@ -47,14 +48,14 @@ class QueryExpressionContext final : public ExpressionContext {
   Value getColumn(int32_t index) const override;
 
   // Get Vertex
-  Value getVertex() const override;
+  Value getVertex(const std::string& name = "") const override;
 
   // Get Edge
   Value getEdge() const override;
 
   void setVar(const std::string&, Value val) override;
 
-  QueryExpressionContext& operator()(Iterator* iter) {
+  QueryExpressionContext& operator()(Iterator* iter = nullptr) {
     iter_ = iter;
     return *this;
   }

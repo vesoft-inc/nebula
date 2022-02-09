@@ -2,25 +2,29 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import os
+import re
+import json
 import random
 import string
 import time
 import yaml
 from typing import Pattern
 
-from nebula2.Config import Config
-from nebula2.common import ttypes as CommonTtypes
-from nebula2.gclient.net import Session
-from nebula2.gclient.net import ConnectionPool
+from nebula3.Config import Config, SSL_config
+from nebula3.common import ttypes as CommonTtypes
+from nebula3.gclient.net import Session
+from nebula3.gclient.net import ConnectionPool
 
+from tests.common.constants import NB_TMP_PATH, NEBULA_HOME
 from tests.common.csv_import import CSVImporter
 from tests.common.path_value import PathVal
 from tests.common.types import SpaceDesc
 
+# just for cypher parameter test
+params={}
 
 def utf8b(s: str):
     return bytes(s, encoding='utf-8')
@@ -110,10 +114,13 @@ def compare_value(real, expect):
         esrc, edst = eedge.src, eedge.dst
         if eedge.type < 0:
             esrc, edst = edst, esrc
-        # ignore props comparation
-        return rsrc == esrc and rdst == edst \
-            and redge.ranking == eedge.ranking \
+        # ignore props comparison
+        return (
+            rsrc == esrc
+            and rdst == edst
+            and redge.ranking == eedge.ranking
             and redge.name == eedge.name
+        )
 
     return real == expect
 
@@ -250,13 +257,11 @@ def step_to_string(step):
 
 
 def path_to_string(path):
-    return vertex_to_string(path.src) \
-        + ''.join(map(step_to_string, path.steps))
+    return vertex_to_string(path.src) + ''.join(map(step_to_string, path.steps))
 
 
 def dataset_to_string(dataset):
-    column_names = ','.join(
-        map(lambda x: x.decode('utf-8'), dataset.column_names))
+    column_names = ','.join(map(lambda x: x.decode('utf-8'), dataset.column_names))
     rows = '\n'.join(map(row_to_string, dataset.rows))
     return '\n'.join([column_names, rows])
 
@@ -347,8 +352,7 @@ def retry(times: int, predicate=lambda x: x and x.is_succeeded()):
 
 @retry(30)
 def try_execute(sess: Session, stmt: str):
-    return sess.execute(stmt)
-
+    return sess.execute_parameter(stmt, params)
 
 def return_if_not_leader_changed(resp) -> bool:
     if not resp:
@@ -357,13 +361,12 @@ def return_if_not_leader_changed(resp) -> bool:
         return True
 
     err_msg = resp.error_msg()
-    return err_msg.find('Storage Error: The leader has changed') < 0
+    return err_msg.find('Please retry later.') < 0
 
 
 @retry(30, return_if_not_leader_changed)
 def process_leader_changed(sess: Session, stmt: str):
-    return sess.execute(stmt)
-
+    return sess.execute_parameter(stmt, params)
 
 def response(sess: Session, stmt: str, need_try: bool = False):
     try:
@@ -429,18 +432,42 @@ def load_csv_data(
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization
         time.sleep(2)
 
-        for fd in config["files"]:
-            _load_data_from_file(sess, data_dir, fd)
+        if config["files"] is not None:
+            for fd in config["files"]:
+                _load_data_from_file(sess, data_dir, fd)
 
         return space_desc
 
 
-def get_conn_pool(host: str, port: int):
+def get_conn_pool(host: str, port: int, ssl_config: SSL_config):
     config = Config()
     config.max_connection_pool_size = 20
     config.timeout = 180000
     # init connection pool
     pool = ConnectionPool()
-    if not pool.init([(host, port)], config):
+    if not pool.init([(host, port)], config, ssl_config):
         raise Exception("Fail to init connection pool.")
     return pool
+
+def parse_service_index(name: str):
+    name = name.lower()
+    pattern = r"(graphd|storaged|metad)\[(\d+)\]"
+    m = re.match(pattern, name)
+    if m and len(m.groups()) == 2:
+        return int(m.groups()[1])
+    return None
+
+def get_ssl_config(is_graph_ssl: bool, ca_signed: bool):
+    if not is_graph_ssl:
+        return None
+    ssl_config = SSL_config()
+
+    if ca_signed:
+        ssl_config.ca_certs = os.path.join(NEBULA_HOME, 'tests/cert/test.ca.pem')
+        ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
+        ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
+    else:
+        ssl_config.ca_certs = os.path.join(NEBULA_HOME, 'tests/cert/test.ca.pem')
+        ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
+        ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
+    return ssl_config

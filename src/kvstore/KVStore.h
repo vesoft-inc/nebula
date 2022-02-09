@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_KVSTORE_H_
@@ -75,7 +74,29 @@ class KVStore {
   virtual ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                                 PartitionID partID) = 0;
 
-  virtual PartManager* partManager() const { return nullptr; }
+  virtual PartManager* partManager() const {
+    return nullptr;
+  }
+
+  /**
+   * @brief Get the Snapshot object
+   *
+   * @param spaceId Space id
+   * @param partID Partition id
+   * @param canReadFromFollower Flag can read from follower.
+   * @return const void* Snapshot.
+   */
+  virtual const void* GetSnapshot(GraphSpaceID spaceId,
+                                  PartitionID partID,
+                                  bool canReadFromFollower = false) = 0;
+  /**
+   * @brief Release snapshot.
+   *
+   * @param spaceId Space id.
+   * @param partId Partition id.
+   * @param snapshot Snapshot to release.
+   */
+  virtual void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) = 0;
 
   // Read a single key
   virtual nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
@@ -112,19 +133,41 @@ class KVStore {
                                         std::unique_ptr<KVIterator>* iter,
                                         bool canReadFromFollower = false) = delete;
 
-  // Get all results with prefix.
+  /**
+   * @brief Get all results with prefix.
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix
+   * @param iter
+   * @param canReadFromFollower
+   * @param snapshot If set, read from snapshot.
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          const std::string& prefix,
                                          std::unique_ptr<KVIterator>* iter,
-                                         bool canReadFromFollower = false) = 0;
+                                         bool canReadFromFollower = false,
+                                         const void* snapshot = nullptr) = 0;
 
-  // To forbid to pass rvalue via the `prefix' parameter.
+  /**
+   * @brief To forbid to pass rvalue via the `prefix' parameter.
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix
+   * @param iter
+   * @param canReadFromFollower
+   * @param snapshot
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          std::string&& prefix,
                                          std::unique_ptr<KVIterator>* iter,
-                                         bool canReadFromFollower = false) = delete;
+                                         bool canReadFromFollower = false,
+                                         const void* snapshot = nullptr) = delete;
 
   // Get all results with prefix starting from start
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
@@ -215,6 +258,9 @@ class KVStore {
                                                             std::vector<KV> keyValues) = 0;
 
   virtual std::vector<std::string> getDataRoot() const = 0;
+
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
+      GraphSpaceID spaceId, const std::string& property) = 0;
 
  protected:
   KVStore() = default;

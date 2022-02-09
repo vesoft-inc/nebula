@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_CREATEBACKUPPROCESSOR_H_
@@ -15,6 +14,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create backup files in each mtead and storaged services' local.
+ *
+ */
 class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
  public:
   static CreateBackupProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
@@ -24,7 +27,7 @@ class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
   void process(const cpp2::CreateBackupReq& req);
 
  private:
-  explicit CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
+  CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
       : BaseProcessor<cpp2::CreateBackupResp>(kvstore), client_(client) {}
 
   nebula::cpp2::ErrorCode cancelWriteBlocking();

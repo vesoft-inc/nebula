@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/AlterEdgeProcessor.h"
@@ -14,10 +13,10 @@ namespace meta {
 void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto edgeName = req.get_edge_name();
+  const auto& edgeName = req.get_edge_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
   auto ret = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -30,7 +29,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   auto edgeType = nebula::value(ret);
 
   // Check the edge belongs to the space
-  auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+  auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto retPre = doPrefix(edgePrefix);
   if (!nebula::ok(retPre)) {
     auto retCode = nebula::error(retPre);
@@ -49,8 +48,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   }
 
   // Get lasted version of edge
-  auto version = MetaServiceUtils::parseEdgeVersion(iter->key()) + 1;
-  auto schema = MetaServiceUtils::parseSchema(iter->val());
+  auto version = MetaKeyUtils::parseEdgeVersion(iter->key()) + 1;
+  auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
 
@@ -141,14 +140,14 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     return;
   }
 
-  schema.set_schema_prop(std::move(prop));
-  schema.set_columns(std::move(columns));
+  schema.schema_prop_ref() = std::move(prop);
+  schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter edge " << edgeName << ", edgeType " << edgeType;
-  data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
-                    MetaServiceUtils::schemaVal(edgeName, schema));
-  resp_.set_id(to(edgeType, EntryType::EDGE));
+  data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, version),
+                    MetaKeyUtils::schemaVal(edgeName, schema));
+  resp_.id_ref() = to(edgeType, EntryType::EDGE);
   doSyncPutAndUpdate(std::move(data));
 }
 

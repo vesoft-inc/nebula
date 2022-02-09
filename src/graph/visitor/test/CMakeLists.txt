@@ -1,7 +1,17 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
+
+set(EXPR_FLAG_DEPS
+    $<TARGET_OBJECTS:graph_flags_obj>
+)
+
+if(ENABLE_STANDALONE_VERSION)
+set(EXPR_FLAG_DEPS
+    ${EXPR_FLAG_DEPS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
 
 nebula_add_test(
     NAME
@@ -19,9 +29,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:graph_session_obj>
-        $<TARGET_OBJECTS:graph_flags_obj>
+        ${EXPR_FLAG_DEPS}
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
@@ -31,6 +42,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
@@ -46,16 +60,20 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:memory_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

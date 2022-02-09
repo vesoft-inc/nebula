@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -105,7 +104,9 @@ void StorageHttpAdminHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpAdminHandler::requestComplete() noexcept { delete this; }
+void StorageHttpAdminHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpAdminHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web service StorageHttpHandler got error: " << proxygen::getErrorString(error);

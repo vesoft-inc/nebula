@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_RAFTEXSERVICE_H_
@@ -27,7 +26,9 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
       uint16_t port = 0);
   virtual ~RaftexService();
 
-  uint32_t getServerPort() const { return serverPort_; }
+  uint32_t getServerPort() const {
+    return serverPort_;
+  }
 
   std::shared_ptr<folly::IOThreadPoolExecutor> getIOThreadPool() const;
 
@@ -38,6 +39,8 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   void waitUntilStop();
 
   void askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) override;
+
+  void getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) override;
 
   void appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendLogRequest& req) override;
 

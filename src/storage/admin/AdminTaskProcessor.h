@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINTASKPROCESSOR_H_
@@ -17,16 +16,26 @@
 namespace nebula {
 namespace storage {
 
-class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class AdminTaskProcessor {
  public:
-  static AdminTaskProcessor* instance(StorageEnv* env) { return new AdminTaskProcessor(env); }
+  static AdminTaskProcessor* instance(StorageEnv* env) {
+    return new AdminTaskProcessor(env);
+  }
 
-  void process(const cpp2::AddAdminTaskRequest& req);
+  void process(const cpp2::AddTaskRequest& req);
+
+  folly::Future<cpp2::AddTaskResp> getFuture() {
+    return promise_.getFuture();
+  }
 
  private:
-  explicit AdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit AdminTaskProcessor(StorageEnv* env) : env_(env) {}
 
-  void onProcessFinished(nebula::meta::cpp2::StatsItem& result);
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::AddTaskResp> promise_;
+  cpp2::AddTaskResp resp_;
 };
 
 }  // namespace storage

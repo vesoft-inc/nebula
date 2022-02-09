@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -34,7 +33,9 @@ class HttpClientHandler : public proxygen::RequestHandler {
 
   void onUpgrade(proxygen::UpgradeProtocol) noexcept override {}
 
-  void requestComplete() noexcept override { delete this; }
+  void requestComplete() noexcept override {
+    delete this;
+  }
 
   void onError(proxygen::ProxygenError error) noexcept override {
     LOG(ERROR) << "HttpClientHandler Error: " << proxygen::getErrorString(error);

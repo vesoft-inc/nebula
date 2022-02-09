@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 from pytest_bdd import (
     given,
@@ -9,7 +8,7 @@ from pytest_bdd import (
     then,
 )
 
-from nebula2.common.ttypes import Value, NullType
+from nebula3.common.ttypes import Value, NullType
 from tests.tck.utils.nbv import register_function, parse
 
 # You could register functions that can be invoked from the parsing text

@@ -1,17 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushFilterDownGetNbrsRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
 #include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -30,7 +24,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownGetNbrsRule::kInstance =
     std::unique_ptr<PushFilterDownGetNbrsRule>(new PushFilterDownGetNbrsRule());
 
-PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &PushFilterDownGetNbrsRule::pattern() const {
   static Pattern pattern =
@@ -105,7 +101,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   return result;
 }
 
-std::string PushFilterDownGetNbrsRule::toString() const { return "PushFilterDownGetNbrsRule"; }
+std::string PushFilterDownGetNbrsRule::toString() const {
+  return "PushFilterDownGetNbrsRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

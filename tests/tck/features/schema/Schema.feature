@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Insert string vid of vertex and edge
 
   Scenario: insert vertex and edge test
@@ -271,7 +270,7 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE EDGE buy_type_mismatch(id int, time_ string DEFAULT 0)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # existent edge
     When executing query:
       """
@@ -499,7 +498,7 @@ Feature: Insert string vid of vertex and edge
     Then the execution should be successful
     And wait 3 seconds
     # insert
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX t() VALUES "1":()
       """
@@ -510,8 +509,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
-      | VertexID | t.name | t.age | t.description |
-      | "1"      | "N/A"  | -1    | "none"        |
+      | t.name | t.age | t.description |
+      | "N/A"  | -1    | "none"        |
     # alter change
     When executing query:
       """
@@ -531,8 +530,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
-      | VertexID | t.name | t.age | t.description |
-      | "1"      | "N/A"  | -1    | "some one"    |
+      | t.name | t.age | t.description |
+      | "N/A"  | -1    | "some one"    |
     And wait 3 seconds
     # insert without default prop, failed
     When executing query:
@@ -563,8 +562,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
-      | VertexID | t.name | t.age | t.description |
-      | "1"      | "N/A"  | -1    | "some one"    |
+      | t.name | t.age | t.description |
+      | "N/A"  | -1    | "some one"    |
     # alter drop default
     When executing query:
       """
@@ -577,7 +576,7 @@ Feature: Insert string vid of vertex and edge
       """
       INSERT EDGE e() VALUES "1"->"2":()
       """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field doesn't have a default value.
+    Then a SemanticError should be raised at runtime: The property `description' is not nullable and has no default value.
     # test alter edge with timestamp default
     When executing query:
       """
@@ -656,43 +655,43 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG bad_null_default_value(name string DEFAULT "N/A", age int DEFAULT 1%0)
       """
-    Then a ExecutionError should be raised at runtime: / by zero
+    Then a SemanticError should be raised at runtime: Divide by 0
     # test alter tag with wrong type default value of string when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 string DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with wrong type default value of timestamp when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 timestamp DEFAULT -10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with wrong type default value of float when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 float DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with wrong type default value of bool when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 bool DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with wrong type default value of int8 when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 int8 DEFAULT 10000)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with wrong type default value of time when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 time DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter tag with out of rang string default value of fixed_string when add
     When executing query:
       """
@@ -712,44 +711,44 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG tag_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of string when add
     When executing query:
       """
       CREATE EDGE edge_not_null_default1(name string NOT NULL DEFAULT "N/A");
       ALTER EDGE edge_not_null_default1 ADD (col1 string DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of timestamp when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 timestamp DEFAULT -10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of float when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 float DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of bool when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 bool DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of int8 when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 int8 DEFAULT 10000)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of time when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 time DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with out of rang string default value of fixed_string when add
     When executing query:
       """
@@ -769,7 +768,83 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    # chinese tag without quote mark
+    When executing query:
+      """
+      CREATE TAG 队伍withoutQuote( 名字 string);
+      """
+    Then the execution should be successful
+    # chinese tag and chinese prop
+    When executing query:
+      """
+      CREATE TAG `队伍`(`名字` string);
+      """
+    Then the execution should be successful
+    # show chinese tags
+    When executing query:
+      """
+      SHOW TAGS
+      """
+    Then the result should contain:
+      | Name   |
+      | "队伍" |
+    # alter chinese tag
+    When executing query:
+      """
+      ALTER TAG `队伍` ADD (`类别` string);
+      """
+    Then the execution should be successful
+    # desc chinese tag
+    When executing query:
+      """
+      DESCRIBE TAG `队伍`
+      """
+    Then the result should be, in any order:
+      | Field  | Type     | Null  | Default | Comment |
+      | "名字" | "string" | "YES" | EMPTY   | EMPTY   |
+      | "类别" | "string" | "YES" | EMPTY   | EMPTY   |
+    # chinese edge and chinese prop
+    When executing query:
+      """
+      CREATE EDGE `服役`();
+      """
+    Then the execution should be successful
+    # show chinese edge
+    When executing query:
+      """
+      SHOW EDGES;
+      """
+    Then the result should contain:
+      | Name   |
+      | "服役" |
+    # alter chinese edge
+    When executing query:
+      """
+      ALTER EDGE `服役` ADD (`时间` timestamp);
+      """
+    Then the execution should be successful
+    # desc chinese edge
+    When executing query:
+      """
+      DESCRIBE EDGE `服役`
+      """
+    Then the result should be, in any order:
+      | Field  | Type        | Null  | Default | Comment |
+      | "时间" | "timestamp" | "YES" | EMPTY   | EMPTY   |
+    When executing query:
+      """
+      CREATE TAG `队伍 s2；`(`名s字ss1` string);
+      """
+    Then the execution should be successful
+    # desc cn-en mixed tag
+    When executing query:
+      """
+      DESCRIBE TAG `队伍 s2；`
+      """
+    Then the result should be, in any order:
+      | Field      | Type     | Null  | Default | Comment |
+      | "名s字ss1" | "string" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
       DROP SPACE issue2009;

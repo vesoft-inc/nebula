@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/index/CreateTagIndexProcessor.h"
@@ -47,7 +46,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       LOG(ERROR) << "Create Tag Index Failed: " << indexName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     }
-    resp_.set_id(to(nebula::value(ret), EntryType::INDEX));
+    resp_.id_ref() = to(nebula::value(ret), EntryType::INDEX);
     onFinished();
     return;
   } else {
@@ -72,7 +71,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   }
   auto tagID = nebula::value(tagIDRet);
 
-  const auto& prefix = MetaServiceUtils::indexPrefix(space);
+  const auto& prefix = MetaKeyUtils::indexPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -86,7 +85,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
 
   while (checkIter->valid()) {
     auto val = checkIter->val();
-    auto item = MetaServiceUtils::parseIndex(val);
+    auto item = MetaKeyUtils::parseIndex(val);
     if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id ||
         fields.size() > item.get_fields().size() || tagID != item.get_schema_id().get_tag_id()) {
       checkIter->next();
@@ -94,7 +93,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     if (checkIndexExist(fields, item)) {
-      resp_.set_code(nebula::cpp2::ErrorCode::E_EXISTED);
+      resp_.code_ref() = nebula::cpp2::ErrorCode::E_EXISTED;
       onFinished();
       return;
     }
@@ -125,7 +124,14 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       return;
     }
     cpp2::ColumnDef col = *iter;
-    if (col.type.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
+    if (col.type.get_type() == nebula::cpp2::PropertyType::DURATION) {
+      LOG(ERROR) << "Field " << field.get_name() << " in Tag " << tagName << " is duration."
+                 << "It can not be indexed.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
+    if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
         LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
                    << field.get_name();
@@ -133,7 +139,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         onFinished();
         return;
       }
-    } else if (col.type.get_type() == meta::cpp2::PropertyType::STRING) {
+    } else if (col.type.get_type() == nebula::cpp2::PropertyType::STRING) {
       if (!field.type_length_ref().has_value()) {
         LOG(ERROR) << "No type length set : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
@@ -147,11 +153,17 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         onFinished();
         return;
       }
-      col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
-      col.type.set_type_length(*field.get_type_length());
+      col.type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+      col.type.type_length_ref() = *field.get_type_length();
     } else if (field.type_length_ref().has_value()) {
       LOG(ERROR) << "No need to set type length : " << field.get_name();
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    } else if (col.type.get_type() == nebula::cpp2::PropertyType::GEOGRAPHY && fields.size() > 1) {
+      // TODO(jie): Support joint index for geography
+      LOG(ERROR) << "Only support to create index on a single geography column currently";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
       onFinished();
       return;
     }
@@ -169,22 +181,25 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
 
   auto tagIndex = nebula::value(tagIndexRet);
   cpp2::IndexItem item;
-  item.set_index_id(tagIndex);
-  item.set_index_name(indexName);
+  item.index_id_ref() = tagIndex;
+  item.index_name_ref() = indexName;
   nebula::cpp2::SchemaID schemaID;
-  schemaID.set_tag_id(tagID);
-  item.set_schema_id(schemaID);
-  item.set_schema_name(tagName);
-  item.set_fields(std::move(columns));
+  schemaID.tag_id_ref() = tagID;
+  item.schema_id_ref() = schemaID;
+  item.schema_name_ref() = tagName;
+  item.fields_ref() = std::move(columns);
+  if (req.index_params_ref().has_value()) {
+    item.index_params_ref() = *req.index_params_ref();
+  }
   if (req.comment_ref().has_value()) {
-    item.set_comment(*req.comment_ref());
+    item.comment_ref() = *req.comment_ref();
   }
 
-  data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+  data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                     std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
-  data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex), MetaServiceUtils::indexVal(item));
+  data.emplace_back(MetaKeyUtils::indexKey(space, tagIndex), MetaKeyUtils::indexVal(item));
   LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
-  resp_.set_id(to(tagIndex, EntryType::INDEX));
+  resp_.id_ref() = to(tagIndex, EntryType::INDEX);
   doSyncPutAndUpdate(std::move(data));
 }
 

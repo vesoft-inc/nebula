@@ -1,18 +1,16 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/AdminClient.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "kvstore/Part.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
@@ -22,30 +20,31 @@ namespace meta {
 
 folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                PartitionID partId,
-                                               const HostAddr& leader,
+                                               const HostAddr& src,
                                                const HostAddr& dst) {
   storage::cpp2::TransLeaderReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(ret));
-  auto it = std::find(peers.begin(), peers.end(), leader);
+  auto peers = std::move(nebula::value(partHosts));
+  auto it = std::find(peers.begin(), peers.end(), src);
   if (it == peers.end()) {
     return Status::PartNotFound();
   }
-  if (peers.size() == 1 && peers.front() == leader) {
+  if (peers.size() == 1 && peers.front() == src) {
     // if there is only one replica, skip transfer leader phase
     return Status::OK();
   }
   auto target = dst;
   if (dst == kRandomPeer) {
     for (auto& p : peers) {
-      if (p != leader) {
+      if (p != src) {
         auto retCode = ActiveHostsMan::isLived(kv_, p);
         if (nebula::ok(retCode) && nebula::value(retCode)) {
           target = p;
@@ -54,9 +53,9 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
       }
     }
   }
-  req.set_new_leader(std::move(target));
-  return getResponse(
-      Utils::getAdminAddrFromStoreAddr(leader),
+  req.new_leader_ref() = std::move(target);
+  return getResponseFromPart(
+      Utils::getAdminAddrFromStoreAddr(src),
       std::move(req),
       [](auto client, auto request) { return client->future_transLeader(request); },
       [](auto&& resp) -> Status {
@@ -69,7 +68,8 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
             return Status::PartNotFound();
           }
           default:
-            return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
+            return Status::Error("Transfer leader failed: %s",
+                                 apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
         }
       });
 }
@@ -79,17 +79,18 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            const HostAddr& host,
                                            bool asLearner) {
   storage::cpp2::AddPartReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_as_learner(asLearner);
-  auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.as_learner_ref() = asLearner;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  req.set_peers(std::move(nebula::value(ret)));
-  return getResponse(
+  req.peers_ref() = std::move(nebula::value(partHosts));
+  return getResponseFromPart(
       Utils::getAdminAddrFromStoreAddr(host),
       std::move(req),
       [](auto client, auto request) { return client->future_addPart(request); },
@@ -97,7 +98,8 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
         if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
           return Status::OK();
         } else {
-          return Status::Error("Add part failed! code=%d", static_cast<int32_t>(resp.get_code()));
+          return Status::Error("Add part failed: %s",
+                               apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
         }
       });
 }
@@ -106,19 +108,20 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& learner) {
   storage::cpp2::AddLearnerReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_learner(learner);
-  auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.learner_ref() = learner;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(ret));
+  auto peers = std::move(nebula::value(partHosts));
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
-  getResponse(
+  getResponseFromLeader(
       getAdminAddrFromPeers(peers),
       0,
       std::move(req),
@@ -133,26 +136,27 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
                                                          PartitionID partId,
                                                          const HostAddr& target) {
   storage::cpp2::CatchUpDataReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_target(target);
-  auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.target_ref() = target;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(ret));
+  auto peers = std::move(nebula::value(partHosts));
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
-  getResponse(
+  getResponseFromLeader(
       getAdminAddrFromPeers(peers),
       0,
       std::move(req),
       [](auto client, auto request) { return client->future_waitingForCatchUpData(request); },
       0,
       std::move(pro),
-      3);
+      FLAGS_max_retry_times_admin_op);
   return f;
 }
 
@@ -161,20 +165,21 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
                                                 const HostAddr& peer,
                                                 bool added) {
   storage::cpp2::MemberChangeReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_add(added);
-  req.set_peer(peer);
-  auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.add_ref() = added;
+  req.peer_ref() = peer;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(ret));
+  auto peers = std::move(nebula::value(partHosts));
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
-  getResponse(
+  getResponseFromLeader(
       getAdminAddrFromPeers(peers),
       0,
       std::move(req),
@@ -191,12 +196,14 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
                                               const HostAddr& dst) {
   CHECK_NOTNULL(kv_);
   auto ret = getPeers(spaceId, partId);
-  if (!nebula::ok(ret)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(ret));
+  auto peers = std::move(nebula::value(partHosts));
   auto strHosts = [](const std::vector<HostAddr>& hosts) -> std::string {
     std::stringstream peersStr;
     for (auto& h : hosts) {
@@ -224,7 +231,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::partKey(spaceId, partId), MetaServiceUtils::partVal(peers));
+  data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(peers));
   kv_->asyncMultiPut(
       kDefaultSpaceId,
       kDefaultPartId,
@@ -246,9 +253,9 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& host) {
   storage::cpp2::RemovePartReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  return getResponse(
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  return getResponseFromPart(
       Utils::getAdminAddrFromStoreAddr(host),
       std::move(req),
       [](auto client, auto request) { return client->future_removePart(request); },
@@ -256,24 +263,25 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
         if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
           return Status::OK();
         } else {
-          return Status::Error("Remove part failed! code=%d",
-                               static_cast<int32_t>(resp.get_code()));
+          return Status::Error("Remove part failed, code: %s",
+                               apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
         }
       });
 }
 
 folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID partId) {
   storage::cpp2::CheckPeersReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  auto peerRet = getPeers(spaceId, partId);
-  if (!nebula::ok(peerRet)) {
-    LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(peerRet));
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  auto partHosts = getPeers(spaceId, partId);
+  if (!nebula::ok(partHosts)) {
+    LOG(INFO) << "Get peers failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
     return Status::Error("Get peers failed");
   }
 
-  auto peers = std::move(nebula::value(peerRet));
-  req.set_peers(peers);
+  auto peers = std::move(nebula::value(partHosts));
+  req.peers_ref() = peers;
   folly::Promise<Status> pro;
   auto fut = pro.getFuture();
   std::vector<folly::Future<Status>> futures;
@@ -281,8 +289,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
     auto ret = ActiveHostsMan::isLived(kv_, p);
     if (!nebula::ok(ret)) {
       auto retCode = nebula::error(ret);
-      LOG(INFO) << "Get active host failed, error: " << static_cast<int32_t>(retCode);
-      return Status::Error("Get peers failed");
+      LOG(INFO) << "Get active host failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      return Status::Error("Get active host failed");
     } else {
       auto isLive = nebula::value(ret);
       if (!isLive) {
@@ -290,7 +298,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         continue;
       }
     }
-    auto f = getResponse(
+    auto f = getResponseFromPart(
         Utils::getAdminAddrFromStoreAddr(p),
         req,
         [](auto client, auto request) { return client->future_checkPeers(request); },
@@ -298,8 +306,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
           if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
             return Status::OK();
           } else {
-            return Status::Error("Check peers failed! code=%d",
-                                 static_cast<int32_t>(resp.get_code()));
+            return Status::Error("Check peers failed, code: %s",
+                                 apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
           }
         });
     futures.emplace_back(std::move(f));
@@ -313,7 +321,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         } else {
           auto v = std::move(t).value();
           for (auto& resp : v) {
-            // The exception has been catched inside getResponse.
+            // The exception has been catched inside getResponseFromPart.
             CHECK(!resp.hasException());
             auto st = std::move(resp).value();
             if (!st.ok()) {
@@ -328,10 +336,10 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
 }
 
 template <typename Request, typename RemoteFunc, typename RespGenerator>
-folly::Future<Status> AdminClient::getResponse(const HostAddr& host,
-                                               Request req,
-                                               RemoteFunc remoteFunc,
-                                               RespGenerator respGen) {
+folly::Future<Status> AdminClient::getResponseFromPart(const HostAddr& host,
+                                                       Request req,
+                                                       RemoteFunc remoteFunc,
+                                                       RespGenerator respGen) {
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   auto* evb = ioThreadPool_->getEventBase();
@@ -361,8 +369,8 @@ folly::Future<Status> AdminClient::getResponse(const HostAddr& host,
               auto&& result = std::move(t).value().get_result();
               if (result.get_failed_parts().empty()) {
                 storage::cpp2::PartitionResult resultCode;
-                resultCode.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-                resultCode.set_part_id(partId);
+                resultCode.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+                resultCode.part_id_ref() = partId;
                 p.setValue(respGen(resultCode));
               } else {
                 auto resp = result.get_failed_parts().front();
@@ -373,15 +381,58 @@ folly::Future<Status> AdminClient::getResponse(const HostAddr& host,
   return f;
 }
 
+template <typename Request,
+          typename RemoteFunc,
+          typename RespGenerator,
+          typename RpcResponse,
+          typename Response>
+void AdminClient::getResponseFromHost(const HostAddr& host,
+                                      Request req,
+                                      RemoteFunc remoteFunc,
+                                      RespGenerator respGen,
+                                      folly::Promise<StatusOr<Response>> pro) {
+  auto* evb = ioThreadPool_->getEventBase();
+  folly::via(
+      evb,
+      [evb,
+       pro = std::move(pro),
+       host,
+       req = std::move(req),
+       remoteFunc = std::move(remoteFunc),
+       respGen = std::move(respGen),
+       this]() mutable {
+        auto client = clientsMan_->client(host, evb);
+        remoteFunc(client, std::move(req))
+            .via(evb)
+            .then([p = std::move(pro), respGen = std::move(respGen), host](
+                      folly::Try<RpcResponse>&& t) mutable {
+              // exception occurred during RPC
+              if (t.hasException()) {
+                p.setValue(Status::Error(folly::stringPrintf("[%s] RPC failure in AdminClient: %s",
+                                                             host.toString().c_str(),
+                                                             t.exception().what().c_str())));
+                return;
+              }
+              auto&& result = std::move(t).value();
+              if (result.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                p.setValue(
+                    Status::Error("Operattion failed in AdminClient: %s",
+                                  apache::thrift::util::enumNameSafe(result.get_code()).c_str()));
+              } else {
+                p.setValue(respGen(std::move(result)));
+              }
+            });
+      });
+}
+
 template <typename Request, typename RemoteFunc>
-void AdminClient::getResponse(std::vector<HostAddr> hosts,
-                              int32_t index,
-                              Request req,
-                              RemoteFunc remoteFunc,
-                              int32_t retry,
-                              folly::Promise<Status> pro,
-                              int32_t retryLimit,
-                              HandleResultOpt respGen) {
+void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
+                                        int32_t index,
+                                        Request req,
+                                        RemoteFunc remoteFunc,
+                                        int32_t retry,
+                                        folly::Promise<Status> pro,
+                                        int32_t retryLimit) {
   auto* evb = ioThreadPool_->getEventBase();
   CHECK_GE(index, 0);
   CHECK_LT(index, hosts.size());
@@ -391,7 +442,6 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
               index,
               req = std::move(req),
               remoteFunc = std::move(remoteFunc),
-              respGen = std::move(respGen),
               retry,
               pro = std::move(pro),
               retryLimit,
@@ -404,7 +454,6 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                           index,
                           req = std::move(req),
                           remoteFunc = std::move(remoteFunc),
-                          respGen = std::move(respGen),
                           retry,
                           retryLimit,
                           this](folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
@@ -414,14 +463,13 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                          LOG(INFO) << "Rpc failure to " << hosts[index] << ", retry " << retry
                                    << ", limit " << retryLimit << ", error: " << t.exception();
                          index = (index + 1) % hosts.size();
-                         getResponse(std::move(hosts),
-                                     index,
-                                     std::move(req),
-                                     std::move(remoteFunc),
-                                     retry + 1,
-                                     std::move(p),
-                                     retryLimit,
-                                     std::move(respGen));
+                         getResponseFromLeader(std::move(hosts),
+                                               index,
+                                               std::move(req),
+                                               std::move(remoteFunc),
+                                               retry + 1,
+                                               std::move(p),
+                                               retryLimit);
                          return;
                        }
                        p.setValue(Status::Error(folly::stringPrintf(
@@ -431,16 +479,13 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                      auto&& adminResp = std::move(t.value());
                      if (adminResp.result.get_failed_parts().empty()) {
                        // succeeded
-                       if (respGen != folly::none) {
-                         auto val = respGen.value();
-                         val(std::move(adminResp));
-                       }
                        p.setValue(Status::OK());
                        return;
                      }
                      auto resp = adminResp.result.get_failed_parts().front();
                      switch (resp.get_code()) {
                        case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                         // storage will return the address of data service ip:port
                          if (retry < retryLimit) {
                            HostAddr leader("", 0);
                            if (resp.get_leader() != nullptr) {
@@ -451,14 +496,13 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                              LOG(INFO) << "The leader is in election"
                                        << ", retry " << retry << ", limit " << retryLimit;
                              index = (index + 1) % hosts.size();
-                             getResponse(std::move(hosts),
-                                         index,
-                                         std::move(req),
-                                         std::move(remoteFunc),
-                                         retry + 1,
-                                         std::move(p),
-                                         retryLimit,
-                                         std::move(respGen));
+                             getResponseFromLeader(std::move(hosts),
+                                                   index,
+                                                   std::move(req),
+                                                   std::move(remoteFunc),
+                                                   retry + 1,
+                                                   std::move(p),
+                                                   retryLimit);
                              return;
                            }
                            // convert to admin addr
@@ -483,14 +527,13 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                                << "Return leader change from " << hosts[index] << ", new leader is "
                                << leader << ", retry " << retry << ", limit " << retryLimit;
                            CHECK_LT(leaderIndex, hosts.size());
-                           getResponse(std::move(hosts),
-                                       leaderIndex,
-                                       std::move(req),
-                                       std::move(remoteFunc),
-                                       retry + 1,
-                                       std::move(p),
-                                       retryLimit,
-                                       std::move(respGen));
+                           getResponseFromLeader(std::move(hosts),
+                                                 leaderIndex,
+                                                 std::move(req),
+                                                 std::move(remoteFunc),
+                                                 retry + 1,
+                                                 std::move(p),
+                                                 retryLimit);
                            return;
                          }
                          p.setValue(Status::Error("Leader changed!"));
@@ -502,14 +545,13 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                                      << " from " << hosts[index] << ", retry " << retry
                                      << ", limit " << retryLimit;
                            index = (index + 1) % hosts.size();
-                           getResponse(std::move(hosts),
-                                       index,
-                                       std::move(req),
-                                       std::move(remoteFunc),
-                                       retry + 1,
-                                       std::move(p),
-                                       retryLimit,
-                                       std::move(respGen));
+                           getResponseFromLeader(std::move(hosts),
+                                                 index,
+                                                 std::move(req),
+                                                 std::move(remoteFunc),
+                                                 retry + 1,
+                                                 std::move(p),
+                                                 retryLimit);
                            return;
                          }
                          p.setValue(Status::Error("Unknown code %d",
@@ -521,14 +563,15 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
              });        // via
 }
 
+// todo(doodle): add related locks
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId,
                                                                               PartitionID partId) {
   CHECK_NOTNULL(kv_);
-  auto partKey = MetaServiceUtils::partKey(spaceId, partId);
+  auto partKey = MetaKeyUtils::partKey(spaceId, partId);
   std::string value;
   auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return MetaServiceUtils::parsePartVal(value);
+    return MetaKeyUtils::parsePartVal(value);
   }
   return code;
 }
@@ -542,35 +585,22 @@ std::vector<HostAddr> AdminClient::getAdminAddrFromPeers(const std::vector<HostA
   return adminHosts;
 }
 
-void AdminClient::getLeaderDist(const HostAddr& host,
-                                folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>>&& pro,
-                                int32_t retry,
-                                int32_t retryLimit) {
-  auto* evb = ioThreadPool_->getEventBase();
-  folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this]() mutable {
-    storage::cpp2::GetLeaderReq req;
-    auto client = clientsMan_->client(host, evb);
-    client->future_getLeaderParts(std::move(req))
-        .via(evb)
-        .then([pro = std::move(pro), host, retry, retryLimit, this](
-                  folly::Try<storage::cpp2::GetLeaderPartsResp>&& t) mutable {
-          if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
-            if (retry < retryLimit) {
-              usleep(1000 * 50);
-              getLeaderDist(
-                  Utils::getAdminAddrFromStoreAddr(host), std::move(pro), retry + 1, retryLimit);
-            } else {
-              pro.setValue(Status::Error("RPC failure in AdminClient"));
-            }
-            return;
-          }
-          auto&& resp = std::move(t).value();
-          LOG(INFO) << "Get leader for host " << host;
-          pro.setValue(std::move(resp));
-        });
-  });
+folly::Future<StatusOr<std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>>
+AdminClient::getLeaderDist(const HostAddr& host) {
+  folly::Promise<StatusOr<std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>> pro;
+  auto f = pro.getFuture();
+
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
+  storage::cpp2::GetLeaderReq req;
+  getResponseFromHost(
+      adminAddr,
+      std::move(req),
+      [](auto client, auto request) { return client->future_getLeaderParts(request); },
+      [](storage::cpp2::GetLeaderPartsResp&& resp) -> decltype(auto) {
+        return resp.get_leader_parts();
+      },
+      std::move(pro));
+  return f;
 }
 
 folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
@@ -583,33 +613,23 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
   }
 
   auto allHosts = nebula::value(allHostsRet);
-  std::vector<folly::Future<StatusOr<storage::cpp2::GetLeaderPartsResp>>> hostFutures;
+  std::vector<folly::Future<StatusOr<std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>>>
+      hostFutures;
   for (const auto& h : allHosts) {
-    folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>> pro;
-    auto fut = pro.getFuture();
-    getLeaderDist(Utils::getAdminAddrFromStoreAddr(h), std::move(pro), 0, 3);
-    hostFutures.emplace_back(std::move(fut));
+    hostFutures.emplace_back(getLeaderDist(h));
   }
 
   folly::collectAll(std::move(hostFutures))
       .via(ioThreadPool_.get())
       .thenValue([p = std::move(promise), result, allHosts](auto&& tries) mutable {
-        size_t idx = 0;
-        for (auto& t : tries) {
-          if (t.hasException()) {
-            ++idx;
+        for (size_t i = 0; i < allHosts.size(); i++) {
+          CHECK(!tries[i].hasException());
+          auto hostLeader = std::move(tries[i].value());
+          if (!hostLeader.ok()) {
             continue;
           }
-          auto&& status = std::move(t.value());
-          if (!status.ok()) {
-            ++idx;
-            continue;
-          }
-          auto resp = status.value();
-          result->emplace(allHosts[idx], std::move(*resp.leader_parts_ref()));
-          ++idx;
+          result->emplace(allHosts[i], hostLeader.value());
         }
-
         p.setValue(Status::OK());
       })
       .thenError([p = std::move(promise)](auto&& e) mutable {
@@ -619,200 +639,131 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpaceID spaceId,
-                                                                      const std::string& name,
-                                                                      const HostAddr& host) {
-  folly::Promise<StatusOr<cpp2::BackupInfo>> pro;
+folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(
+    const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host) {
+  folly::Promise<StatusOr<cpp2::HostBackupInfo>> pro;
   auto f = pro.getFuture();
 
-  auto* evb = ioThreadPool_->getEventBase();
-  auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, host, pro = std::move(pro), spaceId, name, this]() mutable {
-    auto client = clientsMan_->client(storageHost, evb);
-    storage::cpp2::CreateCPRequest req;
-    req.set_space_id(spaceId);
-    req.set_name(name);
-    client->future_createCheckpoint(std::move(req))
-        .via(evb)
-        .then([p = std::move(pro), storageHost, host](
-                  folly::Try<storage::cpp2::CreateCPResp>&& t) mutable {
-          if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
-            p.setValue(Status::Error("RPC failure in createCheckpoint"));
-            return;
-          }
-          auto&& resp = std::move(t).value();
-          auto&& result = resp.get_result();
-          if (result.get_failed_parts().empty()) {
-            cpp2::BackupInfo backupInfo;
-            backupInfo.set_host(host);
-            backupInfo.set_info(std::move(resp.get_info()));
-            p.setValue(std::move(backupInfo));
-            return;
-          }
-          p.setValue(Status::Error("create checkpoint failed"));
-        });
-  });
-
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
+  storage::cpp2::CreateCPRequest req;
+  std::vector<GraphSpaceID> idList(spaceIds.begin(), spaceIds.end());
+  req.space_ids_ref() = idList;
+  req.name_ref() = name;
+  getResponseFromHost(
+      adminAddr,
+      std::move(req),
+      [](auto client, auto request) { return client->future_createCheckpoint(request); },
+      [host](storage::cpp2::CreateCPResp&& resp) -> StatusOr<cpp2::HostBackupInfo> {
+        if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
+          cpp2::HostBackupInfo hostBackupInfo;
+          hostBackupInfo.host_ref() = host;
+          hostBackupInfo.checkpoints_ref() = std::move(resp.get_info());
+          return hostBackupInfo;
+        } else {
+          return Status::Error("Create snapshot failed: %s",
+                               apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
+        }
+      },
+      std::move(pro));
   return f;
 }
 
-folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
-                                                const std::string& name,
-                                                const HostAddr& host) {
-  storage::cpp2::DropCPRequest req;
-  req.set_space_id(spaceId);
-  req.set_name(name);
-  folly::Promise<Status> pro;
+folly::Future<StatusOr<bool>> AdminClient::dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
+                                                        const std::string& name,
+                                                        const HostAddr& host) {
+  folly::Promise<StatusOr<bool>> pro;
   auto f = pro.getFuture();
-  getResponse(
-      {Utils::getAdminAddrFromStoreAddr(host)},
-      0,
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
+  std::vector<GraphSpaceID> idList(spaceIds.begin(), spaceIds.end());
+  storage::cpp2::DropCPRequest req;
+  req.space_ids_ref() = idList;
+  req.name_ref() = name;
+  getResponseFromHost(
+      adminAddr,
       std::move(req),
       [](auto client, auto request) { return client->future_dropCheckpoint(request); },
-      0,
-      std::move(pro),
-      3 /*The snapshot operation need to retry 3 times*/);
+      [](storage::cpp2::DropCPResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(pro));
   return f;
 }
 
-folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
-                                                  storage::cpp2::EngineSignType sign,
-                                                  const HostAddr& host) {
-  storage::cpp2::BlockingSignRequest req;
-  req.set_space_id(spaceId);
-  req.set_sign(sign);
-  folly::Promise<Status> pro;
+folly::Future<StatusOr<bool>> AdminClient::blockingWrites(const std::set<GraphSpaceID>& spaceIds,
+                                                          storage::cpp2::EngineSignType sign,
+                                                          const HostAddr& host) {
+  folly::Promise<StatusOr<bool>> pro;
   auto f = pro.getFuture();
-  getResponse(
-      {Utils::getAdminAddrFromStoreAddr(host)},
-      0,
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
+  storage::cpp2::BlockingSignRequest req;
+  std::vector<GraphSpaceID> idList(spaceIds.begin(), spaceIds.end());
+  req.space_ids_ref() = idList;
+  req.sign_ref() = sign;
+  getResponseFromHost(
+      adminAddr,
       std::move(req),
       [](auto client, auto request) { return client->future_blockingWrites(request); },
-      0,
-      std::move(pro),
-      32 /*The blocking need to retry 32 times*/);
+      [](storage::cpp2::BlockingSignResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(pro));
   return f;
 }
 
-folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
-                                           int32_t jobId,
-                                           int32_t taskId,
-                                           GraphSpaceID spaceId,
-                                           const std::vector<HostAddr>& targetHost,
-                                           const std::vector<std::string>& taskSpecficParas,
-                                           std::vector<PartitionID> parts,
-                                           int concurrency,
-                                           cpp2::StatsItem* statsResult) {
-  folly::Promise<Status> pro;
+folly::Future<StatusOr<bool>> AdminClient::addTask(
+    cpp2::AdminCmd cmd,
+    int32_t jobId,
+    int32_t taskId,
+    GraphSpaceID spaceId,
+    const HostAddr& host,
+    const std::vector<std::string>& taskSpecificParas,
+    std::vector<PartitionID> parts,
+    int concurrency) {
+  folly::Promise<StatusOr<bool>> pro;
   auto f = pro.getFuture();
-  std::vector<HostAddr> hosts;
-  if (targetHost.empty()) {
-    auto activeHostsRet = ActiveHostsMan::getActiveAdminHosts(kv_);
-    if (!nebula::ok(activeHostsRet)) {
-      pro.setValue(Status::Error("Get actice hosts failed"));
-      return f;
-    } else {
-      hosts = nebula::value(activeHostsRet);
-    }
-  } else {
-    hosts = targetHost;
-  }
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
-  storage::cpp2::AddAdminTaskRequest req;
-  req.set_cmd(cmd);
-  req.set_job_id(jobId);
-  req.set_task_id(taskId);
-  req.set_concurrency(concurrency);
+  storage::cpp2::AddTaskRequest req;
+  req.cmd_ref() = cmd;
+  req.job_id_ref() = jobId;
+  req.task_id_ref() = taskId;
+  req.concurrency_ref() = concurrency;
 
   storage::cpp2::TaskPara para;
-  para.set_space_id(spaceId);
-  para.set_parts(std::move(parts));
-  para.set_task_specfic_paras(taskSpecficParas);
-  req.set_para(std::move(para));
+  para.space_id_ref() = spaceId;
+  para.parts_ref() = std::move(parts);
+  para.task_specific_paras_ref() = taskSpecificParas;
+  req.para_ref() = std::move(para);
 
-  std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
-      [statsResult](storage::cpp2::AdminExecResp&& resp) -> void {
-    if (statsResult && resp.stats_ref().has_value()) {
-      *statsResult = *resp.stats_ref();
-    }
-  };
-
-  getResponse(
-      hosts,
-      0,
+  getResponseFromHost(
+      adminAddr,
       std::move(req),
       [](auto client, auto request) { return client->future_addAdminTask(request); },
-      0,
-      std::move(pro),
-      0,
-      std::move(respGen));
+      [](storage::cpp2::AddTaskResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(pro));
   return f;
 }
 
-folly::Future<Status> AdminClient::stopTask(const std::vector<HostAddr>& target,
-                                            int32_t jobId,
-                                            int32_t taskId) {
-  folly::Promise<Status> pro;
+folly::Future<StatusOr<bool>> AdminClient::stopTask(const HostAddr& host,
+                                                    int32_t jobId,
+                                                    int32_t taskId) {
+  folly::Promise<StatusOr<bool>> pro;
   auto f = pro.getFuture();
-  std::vector<HostAddr> hosts;
-  if (target.empty()) {
-    auto activeHostsRet = ActiveHostsMan::getActiveAdminHosts(kv_);
-    if (!nebula::ok(activeHostsRet)) {
-      pro.setValue(Status::Error("Get actice hosts failed"));
-      return f;
-    } else {
-      hosts = nebula::value(activeHostsRet);
-    }
-  } else {
-    hosts = target;
-  }
 
-  storage::cpp2::StopAdminTaskRequest req;
-  req.set_job_id(jobId);
-  req.set_task_id(taskId);
-
-  getResponse(
-      hosts,
-      0,
+  auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
+  storage::cpp2::StopTaskRequest req;
+  req.job_id_ref() = jobId;
+  req.task_id_ref() = taskId;
+  getResponseFromHost(
+      adminAddr,
       std::move(req),
       [](auto client, auto request) { return client->future_stopAdminTask(request); },
-      0,
-      std::move(pro),
-      1);
-  return f;
-}
-
-folly::Future<StatusOr<nebula::cpp2::DirInfo>> AdminClient::listClusterInfo(const HostAddr& host) {
-  folly::Promise<StatusOr<nebula::cpp2::DirInfo>> pro;
-  auto f = pro.getFuture();
-
-  auto* evb = ioThreadPool_->getEventBase();
-  auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, pro = std::move(pro), this]() mutable {
-    auto client = clientsMan_->client(storageHost, evb);
-    storage::cpp2::ListClusterInfoReq req;
-    client->future_listClusterInfo(std::move(req))
-        .via(evb)
-        .then([p = std::move(pro),
-               storageHost](folly::Try<storage::cpp2::ListClusterInfoResp>&& t) mutable {
-          if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
-            p.setValue(Status::Error("RPC failure in listClusterInfo"));
-            return;
-          }
-          auto&& resp = std::move(t).value();
-          auto&& result = resp.get_result();
-          if (result.get_failed_parts().empty()) {
-            p.setValue(resp.get_dir());
-            return;
-          }
-          p.setValue(Status::Error("list clusterInfo failed"));
-        });
-  });
-
+      [](storage::cpp2::StopTaskResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(pro));
   return f;
 }
 

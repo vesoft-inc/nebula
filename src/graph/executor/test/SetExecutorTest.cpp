@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -22,7 +21,9 @@ namespace graph {
 
 class SetExecutorTest : public ::testing::Test {
  public:
-  void SetUp() override { qctx_ = std::make_unique<QueryContext>(); }
+  void SetUp() override {
+    qctx_ = std::make_unique<QueryContext>();
+  }
 
   static bool diffDataSet(const DataSet& lhs, const DataSet& rhs) {
     if (lhs.colNames != rhs.colNames) return false;
@@ -158,7 +159,7 @@ TEST_F(SetExecutorTest, TestUnionAll) {
   }
 }
 
-TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
+TEST_F(SetExecutorTest, TestGetNeighborsIterator) {
   auto left = StartNode::make(qctx_.get());
   auto right = StartNode::make(qctx_.get());
   auto unionNode = Union::make(qctx_.get(), left, right);

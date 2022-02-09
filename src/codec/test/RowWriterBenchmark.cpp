@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -14,7 +13,7 @@
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
 using nebula::SchemaWriter;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter schemaShort;
 SchemaWriter schemaLong;
@@ -65,17 +64,25 @@ void writeDataV2(SchemaWriter* schema, int32_t iters) {
 }
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
-BENCHMARK(WriteShortRowV1, iters) { writeDataV1(&schemaShort, iters); }
+BENCHMARK(WriteShortRowV1, iters) {
+  writeDataV1(&schemaShort, iters);
+}
 
-BENCHMARK_RELATIVE(WriteShortRowV2, iters) { writeDataV2(&schemaShort, iters); }
+BENCHMARK_RELATIVE(WriteShortRowV2, iters) {
+  writeDataV2(&schemaShort, iters);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(WriteLongRowV1, iters) { writeDataV1(&schemaLong, iters); }
+BENCHMARK(WriteLongRowV1, iters) {
+  writeDataV1(&schemaLong, iters);
+}
 
-BENCHMARK_RELATIVE(WriteLongRowV2, iters) { writeDataV2(&schemaLong, iters); }
+BENCHMARK_RELATIVE(WriteLongRowV2, iters) {
+  writeDataV2(&schemaLong, iters);
+}
 /*************************
  * End of benchmarks
  ************************/

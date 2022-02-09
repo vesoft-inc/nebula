@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef WAL_WAL_H_
@@ -28,6 +27,9 @@ class Wal {
 
   // Return the term to receive the last log
   virtual TermID lastLogTerm() const = 0;
+
+  // Return the term of specified logId, if not exist, return -1
+  virtual TermID getLogTerm(LogID id) = 0;
 
   // Append one log message to the WAL
   virtual bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) = 0;

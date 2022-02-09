@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/service/PermissionManager.h"
@@ -112,6 +111,25 @@ Status PermissionManager::canWriteUser(ClientSession *session) {
   } else {
     return Status::PermissionError("No permission to write user.");
   }
+}
+
+// static
+Status PermissionManager::canReadUser(ClientSession *session, const std::string &targetUser) {
+  if (!FLAGS_enable_authorize) {
+    return Status::OK();
+  }
+  if (FLAGS_auth_type == "cloud") {
+    return Status::PermissionError("Cloud authenticate user can't read user.");
+  }
+  if (session->isGod()) {
+    return Status::OK();
+  }
+
+  if (session->user() == targetUser) {
+    return Status::OK();
+  }
+
+  return Status::PermissionError("No permission to read user `%s'.", targetUser.c_str());
 }
 
 Status PermissionManager::canWriteRole(ClientSession *session,

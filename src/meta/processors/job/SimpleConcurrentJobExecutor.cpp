@@ -1,12 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
@@ -16,7 +15,7 @@ SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(JobID jobId,
                                                          kvstore::KVStore* kvstore,
                                                          AdminClient* adminClient,
                                                          const std::vector<std::string>& paras)
-    : MetaJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : StorageJobExecutor(jobId, kvstore, adminClient, paras) {}
 
 bool SimpleConcurrentJobExecutor::check() {
   auto parasNum = paras_.size();
@@ -27,14 +26,14 @@ nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
   std::string spaceName = paras_.back();
   auto errOrSpaceId = getSpaceIdFromName(spaceName);
   if (!nebula::ok(errOrSpaceId)) {
-    LOG(ERROR) << "Can't find the space: " << spaceName;
+    LOG(INFO) << "Can't find the space: " << spaceName;
     return nebula::error(errOrSpaceId);
   }
 
   space_ = nebula::value(errOrSpaceId);
   ErrOrHosts errOrHost = getTargetHost(space_);
   if (!nebula::ok(errOrHost)) {
-    LOG(ERROR) << "Can't get any host according to space";
+    LOG(INFO) << "Can't get any host according to space";
     return nebula::error(errOrHost);
   }
 

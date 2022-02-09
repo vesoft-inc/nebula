@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _VISITOR_TEST_VISITOR_TEST_BASE_H_
@@ -103,7 +102,9 @@ class VisitorTestBase : public ::testing::Test {
     return TypeCastingExpression::make(pool, type, expr);
   }
 
-  UnaryExpression *notExpr(Expression *expr) { return UnaryExpression::makeNot(pool, expr); }
+  UnaryExpression *notExpr(Expression *expr) {
+    return UnaryExpression::makeNot(pool, expr);
+  }
 
   LogicalExpression *andExpr(Expression *lhs, Expression *rhs) {
     return LogicalExpression::makeAnd(pool, lhs, rhs);
@@ -154,18 +155,20 @@ class VisitorTestBase : public ::testing::Test {
   }
 
   CaseExpression *caseExpr(Expression *cond,
-                           Expression *defaltResult,
+                           Expression *defaultResult,
                            Expression *when,
                            Expression *then) {
     auto caseList = CaseList::make(pool);
     caseList->add(when, then);
     auto expr = CaseExpression::make(pool, caseList);
     expr->setCondition(cond);
-    expr->setDefault(defaltResult);
+    expr->setDefault(defaultResult);
     return expr;
   }
 
-  LabelExpression *labelExpr(const std::string &name) { return LabelExpression::make(pool, name); }
+  LabelExpression *labelExpr(const std::string &name) {
+    return LabelExpression::make(pool, name);
+  }
 
   LabelAttributeExpression *laExpr(const std::string &name, Value value) {
     return LabelAttributeExpression::make(

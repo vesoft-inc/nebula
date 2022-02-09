@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -94,7 +93,9 @@ void go(int32_t iters,
         const std::vector<std::string>& playerProps,
         const std::vector<std::string>& serveProps) {
   nebula::storage::cpp2::GetNeighborsRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildRequest(vertex, playerProps, serveProps); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildRequest(vertex, playerProps, serveProps);
+  }
   auto* env = gCluster->storageEnv_.get();
   for (decltype(iters) i = 0; i < iters; i++) {
     auto* processor = nebula::storage::GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -122,7 +123,7 @@ void goFilter(int32_t iters,
           pool,
           nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "startYear"),
           nebula::ConstantExpression::make(pool, nebula::Value(value)));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     } else {
       // where serve.startYear < value && serve.endYear < value
       // since startYear always equal to endYear, the data of which can pass
@@ -138,7 +139,7 @@ void goFilter(int32_t iters,
               pool,
               nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "endYear"),
               nebula::ConstantExpression::make(pool, nebula::Value(value))));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     }
   }
   auto* env = gCluster->storageEnv_.get();
@@ -201,8 +202,8 @@ void goEdgeNode(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }
@@ -215,7 +216,9 @@ void prefix(int32_t iters,
   std::unique_ptr<nebula::storage::PlanContext> planCtx;
   std::unique_ptr<nebula::storage::RuntimeContext> context;
   nebula::storage::EdgeContext edgeContext;
-  BENCHMARK_SUSPEND { initContext(planCtx, context, edgeContext, serveProps); }
+  BENCHMARK_SUSPEND {
+    initContext(planCtx, context, edgeContext, serveProps);
+  }
   for (decltype(iters) i = 0; i < iters; i++) {
     nebula::storage::cpp2::GetNeighborsResponse resp;
     nebula::DataSet resultDataSet;
@@ -251,7 +254,7 @@ void prefix(int32_t iters,
       {
         // read tags
         std::unique_ptr<nebula::kvstore::KVIterator> iter;
-        auto prefix = nebula::NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
+        auto prefix = nebula::NebulaKeyUtils::tagKey(vIdLen, partId, vId, player);
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
         CHECK(iter->valid());
@@ -293,8 +296,8 @@ void prefix(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }
@@ -319,7 +322,9 @@ void encodeBench(int32_t iters,
   }
 }
 
-BENCHMARK(EncodeOneProperty, iters) { encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
+BENCHMARK(EncodeOneProperty, iters) {
+  encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
 BENCHMARK_RELATIVE(EncodeThreeProperty, iters) {
   encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName", "startYear", "endYear"});
 }
@@ -335,8 +340,12 @@ BENCHMARK_DRAW_LINE();
 // Players may serve more than one team, the total edges = teamCount * maxRank,
 // which would effect the final result, so select some player only serve one
 // team
-BENCHMARK(OneVertexOneProperty, iters) { go(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
-BENCHMARK_RELATIVE(OneVertexOnlyId, iters) { go(iters, {"Tim Duncan"}, {"name"}, {nebula::kDst}); }
+BENCHMARK(OneVertexOneProperty, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
+BENCHMARK_RELATIVE(OneVertexOnlyId, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {nebula::kDst});
+}
 BENCHMARK_RELATIVE(OneVertexThreeProperty, iters) {
   go(iters, {"Tim Duncan"}, {"name"}, {"teamName", "startYear", "endYear"});
 }
@@ -349,13 +358,15 @@ BENCHMARK_RELATIVE(OneVertexFiveProperty, iters) {
 BENCHMARK_RELATIVE(OneVertexOnePropertyOnlyEdgeNode, iters) {
   goEdgeNode(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
 }
-BENCHMARK_RELATIVE(OneVertexOneProperyOnlyKV, iters) {
+BENCHMARK_RELATIVE(OneVertexOnePropertyOnlyKV, iters) {
   prefix(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
 }
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(NoFilter, iters) { go(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
+BENCHMARK(NoFilter, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
 BENCHMARK_RELATIVE(OneFilterNonePass, iters) {
   goFilter(iters, {"Tim Duncan"}, {"name"}, {"teamName"}, FLAGS_max_rank * 0);
 }
@@ -457,7 +468,7 @@ BENCHMARK_RELATIVE(TenVertexOnePropertyOnlyEdgeNode, iters) {
              {"name"},
              {"teamName"});
 }
-BENCHMARK_RELATIVE(TenVertexOneProperyOnlyKV, iters) {
+BENCHMARK_RELATIVE(TenVertexOnePropertyOnlyKV, iters) {
   prefix(iters,
          {"Tim Duncan",
           "Kobe Bryant",
@@ -505,7 +516,7 @@ OneVertexOnlyId                                  119.10%   374.96us    2.67K
 OneVertexThreeProperty                            59.50%   750.53us    1.33K
 OneVertexFiveProperty                             46.25%   965.55us    1.04K
 OneVertexOnePropertyOnlyEdgeNode                 113.92%   392.01us    2.55K
-OneVertexOneProperyOnlyKV                        113.08%   394.93us    2.53K
+OneVertexOnePropertyOnlyKV                       113.08%   394.93us    2.53K
 ----------------------------------------------------------------------------
 NoFilter                                                   444.84us    2.25K
 OneFilterNonePass                                106.16%   419.01us    2.39K
@@ -522,6 +533,6 @@ TenVertexOnlyId                                  119.68%     3.68ms   271.76
 TenVertexThreeProperty                            59.25%     7.43ms   134.53
 TenVertexFiveProperty                             45.67%     9.64ms   103.69
 TenVertexOnePropertyOnlyEdgeNode                 109.45%     4.02ms   248.53
-TenVertexOneProperyOnlyKV                        109.23%     4.03ms   248.03
+TenVertexOnePropertyOnlyKV                       109.23%     4.03ms   248.03
 ============================================================================
 */

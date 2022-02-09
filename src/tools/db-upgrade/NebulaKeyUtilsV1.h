@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef TOOLS_DBUPGRADE_NEBULAKEYUTILSV1_H_
@@ -182,7 +181,7 @@ class NebulaKeyUtilsV1 final {
   }
 
   static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
-    // TODO(heng) We should change the method if varint data version supportted.
+    // TODO(heng) We should change the method if varint data version supported.
     return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
   }
 

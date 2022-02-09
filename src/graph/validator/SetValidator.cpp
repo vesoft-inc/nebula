@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/SetValidator.h"
@@ -71,6 +70,10 @@ Status SetValidator::toPlan() {
   bNode->setLeftVar(lRoot->outputVar());
   bNode->setRightVar(rRoot->outputVar());
 
+  if (!lValidator_->tail()->isSingleInput() && !rValidator_->tail()->isSingleInput()) {
+    tail_ = lValidator_->tail();
+    return Status::OK();
+  }
   tail_ = PassThroughNode::make(qctx_, nullptr);
   NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));
   NG_RETURN_IF_ERROR(rValidator_->appendPlan(tail_));

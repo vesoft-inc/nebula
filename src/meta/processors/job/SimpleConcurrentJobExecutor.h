@@ -1,19 +1,18 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_SIMPLECONCURRENTJOBEXECUTOR_H_
 #define META_SIMPLECONCURRENTJOBEXECUTOR_H_
 
 #include "interface/gen-cpp2/common_types.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 
 namespace nebula {
 namespace meta {
 
-class SimpleConcurrentJobExecutor : public MetaJobExecutor {
+class SimpleConcurrentJobExecutor : public StorageJobExecutor {
  public:
   SimpleConcurrentJobExecutor(JobID jobId,
                               kvstore::KVStore* kvstore,

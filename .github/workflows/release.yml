@@ -5,51 +5,35 @@ on:
     types:
       - published
 
+concurrency:
+  group: release
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
 
 jobs:
   package:
-    name: build package
+    name: package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu1604
-          - ubuntu1804
-          - ubuntu2004
-          # - centos6
-          - centos7
-          - centos8
     container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
-    env:
-      BUILD_DIR: ./pkg-build
-      CPACK_DIR: ./pkg-build/cpack_output
+      image: vesoft/nebula-dev:centos7
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
-      - name: package
-        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }}
-      - name: output some vars
-        run: |
-          tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
-          find ${{ env.CPACK_DIR }} -type f \( -iname \*.deb -o -iname \*.rpm \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
-      - uses: ./.github/actions/upload-to-oss-action
-        with:
-          key-id: ${{ secrets.OSS_ID }}
-          key-secret: ${{ secrets.OSS_SECRET }}
-          endpoint: ${{ secrets.OSS_ENDPOINT }}
-          bucket: nebula-graph
-          asset-path: ${{ env.CPACK_DIR }}
-          target-path: package/${{ steps.tag.outputs.tagnum }}
+      - run: |
+          ossutil64 cp -rf \
+            -i ${{ secrets.OSS_ID }} \
+            -k ${{ secrets.OSS_SECRET }} \
+            -e ${{ secrets.OSS_ENDPOINT }} \
+            oss://nebula-graph/rc/${{ steps.tag.outputs.tagnum }} \
+            oss://nebula-graph/package/${{ steps.tag.outputs.tagnum }}
 
   docker_build:
     name: docker-build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
@@ -59,19 +43,28 @@ jobs:
           - storaged
           - tools
     steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tagname
-      - uses: docker/setup-buildx-action@v1
-      - uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
-          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
-          push: true
-          build-args: |
-            BRANCH=${{ steps.tagname.outputs.tag }}
+      - id: docker
+        run: |
+          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d'.')
+          tag=""
+          if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
+            tag="latest"
+          fi
+          echo "::set-output name=tag::$tag"
+      - name: Sync docker images
+        env:
+          FROM_IMAGE: docker://${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}
+          TO_IMAGE: docker://docker.io/vesoft/nebula-${{ matrix.service }}
+          CMD: docker run --rm -ti quay.io/containers/skopeo:v1.4.1 copy -a --src-creds ${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }} --dest-creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.tag }}
+          ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.majorver }}
+          if [[ ! -z "${{ steps.docker.outputs.tag }}" ]]; then
+            ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.docker.outputs.tag }}
+          fi

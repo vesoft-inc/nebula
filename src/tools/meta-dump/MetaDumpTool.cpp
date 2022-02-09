@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <rocksdb/db.h>
@@ -9,8 +8,8 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 
 DEFINE_string(path, "", "rocksdb instance path");
 
@@ -40,8 +39,8 @@ class MetaDumper {
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto spaceId = MetaServiceUtils::spaceId(key);
-        auto desc = MetaServiceUtils::parseSpace(val);
+        auto spaceId = MetaKeyUtils::spaceId(key);
+        auto desc = MetaKeyUtils::parseSpace(val);
         LOG(INFO) << folly::sformat(
             "space id: {}, space name: {}, partition num: {}, replica_factor: "
             "{}",
@@ -59,9 +58,9 @@ class MetaDumper {
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto spaceId = MetaServiceUtils::parsePartKeySpaceId(key);
-        auto partId = MetaServiceUtils::parsePartKeyPartId(key);
-        auto hosts = MetaServiceUtils::parsePartVal(val);
+        auto spaceId = MetaKeyUtils::parsePartKeySpaceId(key);
+        auto partId = MetaKeyUtils::parsePartKeyPartId(key);
+        auto hosts = MetaKeyUtils::parsePartVal(val);
         std::stringstream ss;
         for (const auto& host : hosts) {
           ss << host << " ";
@@ -78,7 +77,7 @@ class MetaDumper {
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto host = MetaServiceUtils::parseHostKey(key);
+        auto host = MetaKeyUtils::parseHostKey(key);
         auto info = HostInfo::decode(val);
         auto role = apache::thrift::util::enumNameSafe(info.role_);
         auto time = time::TimeConversion::unixSecondsToDateTime(info.lastHBTimeInMilliSec_ / 1000);
@@ -93,9 +92,9 @@ class MetaDumper {
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
-        auto spaceId = MetaServiceUtils::parseTagsKeySpaceID(key);
-        auto tagId = MetaServiceUtils::parseTagId(key);
-        auto ver = MetaServiceUtils::parseTagVersion(key);
+        auto spaceId = MetaKeyUtils::parseTagsKeySpaceID(key);
+        auto tagId = MetaKeyUtils::parseTagId(key);
+        auto ver = MetaKeyUtils::parseTagVersion(key);
         LOG(INFO) << folly::sformat("space id: {}, tag id: {}, ver: {}", spaceId, tagId, ver);
         iter->Next();
       }
@@ -106,9 +105,9 @@ class MetaDumper {
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
-        auto spaceId = MetaServiceUtils::parseEdgesKeySpaceID(key);
-        auto type = MetaServiceUtils::parseEdgeType(key);
-        auto ver = MetaServiceUtils::parseEdgeVersion(key);
+        auto spaceId = MetaKeyUtils::parseEdgesKeySpaceID(key);
+        auto type = MetaKeyUtils::parseEdgeType(key);
+        auto ver = MetaKeyUtils::parseEdgeVersion(key);
         LOG(INFO) << folly::sformat("space id: {}, edge type: {}, ver: {}", spaceId, type, ver);
         iter->Next();
       }
@@ -119,8 +118,8 @@ class MetaDumper {
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
-        auto spaceId = MetaServiceUtils::parseIndexesKeySpaceID(key);
-        auto indexId = MetaServiceUtils::parseIndexesKeyIndexID(key);
+        auto spaceId = MetaKeyUtils::parseIndexesKeySpaceID(key);
+        auto indexId = MetaKeyUtils::parseIndexesKeyIndexID(key);
         LOG(INFO) << folly::sformat("space id: {}, index: {}", spaceId, indexId);
         iter->Next();
       }
@@ -135,9 +134,9 @@ class MetaDumper {
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto spaceIdAndPartId = MetaServiceUtils::parseLeaderKeyV3(key);
+        auto spaceIdAndPartId = MetaKeyUtils::parseLeaderKeyV3(key);
 
-        std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(val);
+        std::tie(host, term, code) = MetaKeyUtils::parseLeaderValV3(val);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << folly::sformat("leader space id: {}, part id: {} illegal.",
                                        spaceIdAndPartId.first,
@@ -153,31 +152,14 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Group info";
-      prefix = "__groups__";
-      iter->Seek(rocksdb::Slice(prefix));
-      while (iter->Valid() && iter->key().starts_with(prefix)) {
-        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
-        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto group = MetaServiceUtils::parseGroupName(key);
-        auto zones = MetaServiceUtils::parseZoneNames(val);
-        std::stringstream ss;
-        for (const auto& zone : zones) {
-          ss << zone << " ";
-        }
-        LOG(INFO) << folly::sformat("group name: {}, contain zones: {}", group, ss.str());
-        iter->Next();
-      }
-    }
-    {
       LOG(INFO) << "Zone info";
       prefix = "__zones__";
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto zone = MetaServiceUtils::parseZoneName(key);
-        auto hosts = MetaServiceUtils::parseZoneHosts(val);
+        auto zone = MetaKeyUtils::parseZoneName(key);
+        auto hosts = MetaKeyUtils::parseZoneHosts(val);
         std::stringstream ss;
         for (const auto& host : hosts) {
           ss << host << " ";

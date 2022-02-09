@@ -1,15 +1,26 @@
+set(UTIL_TEST_FLAG_DEPS
+    $<TARGET_OBJECTS:graph_flags_obj>
+)
+
+if(ENABLE_STANDALONE_VERSION)
+set(UTIL_TEST_FLAG_DEPS
+    ${UTIL_TEST_FLAG_DEPS}
+    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+)
+endif()
+
 nebula_add_test(
     NAME utils_test
     SOURCES
         ExpressionUtilsTest.cpp
         IdGeneratorTest.cpp
-        ScopedTimerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
@@ -28,20 +39,27 @@ nebula_add_test(
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:graph_session_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
-        $<TARGET_OBJECTS:graph_flags_obj>
+        ${UTIL_TEST_FLAG_DEPS}
         $<TARGET_OBJECTS:util_obj>
-        $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
     LIBRARIES
         gtest
         gtest_main

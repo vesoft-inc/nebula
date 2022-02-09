@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/ListEdgesProcessor.h"
@@ -13,8 +12,8 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-  auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  auto prefix = MetaKeyUtils::schemaEdgesPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "List Edges failed, SpaceID: " << spaceId;
@@ -29,19 +28,19 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
     auto key = iter->key();
     auto val = iter->val();
     auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
-    auto version = MetaServiceUtils::parseEdgeVersion(key);
+    auto version = MetaKeyUtils::parseEdgeVersion(key);
     auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
-    auto schema = MetaServiceUtils::parseSchema(val);
+    auto schema = MetaKeyUtils::parseSchema(val);
     cpp2::EdgeItem edge;
-    edge.set_edge_type(edgeType);
-    edge.set_edge_name(std::move(edgeName));
-    edge.set_version(version);
-    edge.set_schema(std::move(schema));
+    edge.edge_type_ref() = edgeType;
+    edge.edge_name_ref() = std::move(edgeName);
+    edge.version_ref() = version;
+    edge.schema_ref() = std::move(schema);
     edges.emplace_back(std::move(edge));
     iter->next();
   }
-  resp_.set_edges(std::move(edges));
+  resp_.edges_ref() = std::move(edges);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

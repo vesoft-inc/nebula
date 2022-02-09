@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_TEST_MOCKHDFSHELPER_H_
@@ -36,7 +35,9 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
     return "";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 class MockHdfsExistHelper : public nebula::hdfs::HdfsHelper {
@@ -63,7 +64,9 @@ class MockHdfsExistHelper : public nebula::hdfs::HdfsHelper {
     return "copyToLocal: `/data/': File exists";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 }  // namespace storage

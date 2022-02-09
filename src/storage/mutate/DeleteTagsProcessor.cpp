@@ -1,15 +1,16 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/DeleteTagsProcessor.h"
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -56,11 +57,12 @@ void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
       for (const auto& entry : delTags) {
         const auto& vId = entry.get_id().getStr();
         for (const auto& tagId : entry.get_tags()) {
-          auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+          auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
           keys.emplace_back(std::move(key));
         }
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumTagsDeleted, keys.size());
     }
   } else {
     for (const auto& part : parts) {
@@ -95,14 +97,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
   for (const auto& entry : delTags) {
     const auto& vId = entry.get_id().getStr();
     for (const auto& tagId : entry.get_tags()) {
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
       auto tup = std::make_tuple(spaceId_, partId, tagId, vId);
       // ignore if there are duplicate delete
       if (std::find(lockedKeys.begin(), lockedKeys.end(), tup) != lockedKeys.end()) {
         continue;
       }
       if (!env_->verticesML_->try_lock(tup)) {
-        LOG(WARNING) << folly::format("The vertex locked : vId {}, tagId {}", vId, tagId);
+        LOG(WARNING) << folly::sformat("The vertex locked : vId {}, tagId {}", vId, tagId);
         return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
       }
 
@@ -123,27 +125,31 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         if (index->get_schema_id().get_tag_id() == tagId) {
           auto indexId = index->get_index_id();
 
-          const auto& cols = index->get_fields();
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             return nebula::cpp2::ErrorCode::E_INVALID_DATA;
           }
-          auto indexKey = IndexKeyUtils::vertexIndexKey(
+          auto indexKeys = IndexKeyUtils::vertexIndexKeys(
               spaceVidLen_, partId, indexId, vId, std::move(valuesRet).value());
 
           // Check the index is building for the specified partition or not
           auto indexState = env_->getIndexState(spaceId_, partId);
           if (env_->checkRebuilding(indexState)) {
             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->put(std::string(deleteOpKey), std::move(indexKey));
+            }
           } else if (env_->checkIndexLocked(indexState)) {
             return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            batchHolder->remove(std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->remove(std::move(indexKey));
+            }
           }
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumTagsDeleted);
     }
   }
   return encodeBatchValue(batchHolder->getBatch());

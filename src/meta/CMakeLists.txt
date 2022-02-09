@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     meta_service_handler OBJECT
@@ -11,10 +10,12 @@ nebula_add_library(
     processors/parts/ListHostsProcessor.cpp
     processors/parts/ListPartsProcessor.cpp
     processors/parts/CreateSpaceProcessor.cpp
+    processors/parts/CreateSpaceAsProcessor.cpp
     processors/parts/GetSpaceProcessor.cpp
     processors/parts/ListSpacesProcessor.cpp
     processors/parts/DropSpaceProcessor.cpp
     processors/parts/GetPartsAllocProcessor.cpp
+    processors/parts/AlterSpaceProcessor.cpp
     processors/schema/CreateTagProcessor.cpp
     processors/schema/AlterTagProcessor.cpp
     processors/schema/GetTagProcessor.cpp
@@ -26,6 +27,7 @@ nebula_add_library(
     processors/schema/ListEdgesProcessor.cpp
     processors/schema/DropEdgeProcessor.cpp
     processors/schema/SchemaUtil.cpp
+    processors/id/GetWorkerIdProcessor.cpp
     processors/index/CreateTagIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
@@ -34,30 +36,23 @@ nebula_add_library(
     processors/index/DropEdgeIndexProcessor.cpp
     processors/index/GetEdgeIndexProcessor.cpp
     processors/index/ListEdgeIndexesProcessor.cpp
-    processors/index/FTServiceProcessor.cpp
+    processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
-    processors/kv/GetProcessor.cpp
-    processors/kv/MultiGetProcessor.cpp
-    processors/kv/MultiPutProcessor.cpp
-    processors/kv/RemoveProcessor.cpp
-    processors/kv/RemoveRangeProcessor.cpp
-    processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/admin/AgentHBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
-    processors/admin/BalanceProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
-    processors/admin/Balancer.cpp
-    processors/admin/BalancePlan.cpp
-    processors/admin/BalanceTask.cpp
+    processors/job/BalancePlan.cpp
+    processors/job/BalanceTask.cpp
     processors/admin/AdminClient.cpp
-    processors/admin/LeaderBalanceProcessor.cpp
     processors/admin/SnapShot.cpp
     processors/admin/CreateBackupProcessor.cpp
     processors/admin/RestoreProcessor.cpp
     processors/admin/ListClusterInfoProcessor.cpp
     processors/admin/GetMetaDirInfoProcessor.cpp
+    processors/admin/VerifyClientVersionProcessor.cpp
     processors/config/RegConfigProcessor.cpp
     processors/config/GetConfigProcessor.cpp
     processors/config/ListConfigsProcessor.cpp
@@ -69,11 +64,16 @@ nebula_add_library(
     processors/job/AdminJobProcessor.cpp
     processors/job/ReportTaskProcessor.cpp
     processors/job/JobUtils.cpp
+    processors/job/StorageJobExecutor.cpp
+    processors/job/JobExecutor.cpp
     processors/job/MetaJobExecutor.cpp
     processors/job/SimpleConcurrentJobExecutor.cpp
     processors/job/CompactJobExecutor.cpp
     processors/job/FlushJobExecutor.cpp
     processors/job/BalanceJobExecutor.cpp
+    processors/job/ZoneBalanceJobExecutor.cpp
+    processors/job/DataBalanceJobExecutor.cpp
+    processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
@@ -82,16 +82,15 @@ nebula_add_library(
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
-    processors/zone/AddZoneProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
     processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/DivideZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
-    processors/zone/UpdateZoneProcessor.cpp
-    processors/zone/AddGroupProcessor.cpp
-    processors/zone/DropGroupProcessor.cpp
-    processors/zone/GetGroupProcessor.cpp
-    processors/zone/ListGroupsProcessor.cpp
-    processors/zone/UpdateGroupProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -108,20 +107,19 @@ nebula_add_library(
 
 add_dependencies(
     meta_version_man_obj
-    meta_v1_thrift_obj
+    meta_v2_thrift_obj
 )
 
 set(meta_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
-    $<TARGET_OBJECTS:meta_v1_thrift_obj>
+    $<TARGET_OBJECTS:meta_v2_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
-    $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_transaction_executor>
-    $<TARGET_OBJECTS:graph_storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
     $<TARGET_OBJECTS:internal_storage_client_obj>
     $<TARGET_OBJECTS:storage_common_obj>
@@ -130,6 +128,8 @@ set(meta_test_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:ws_obj>
@@ -153,13 +153,30 @@ set(meta_test_deps
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
 )
+
+if(ENABLE_STANDALONE_VERSION)
+set(meta_test_deps
+    ${meta_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
 
 nebula_add_subdirectory(http)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)
+nebula_add_subdirectory(stats)

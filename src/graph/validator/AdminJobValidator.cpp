@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/AdminJobValidator.h"
@@ -12,10 +11,14 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
+  if (sentence_->getCmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
+      sentence_->getCmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
+    return Status::SemanticError("Data balance not support");
+  }
   if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
-      const auto &spaceInfo = qctx()->rctx()->session()->space();
+      const auto &spaceInfo = vctx_->whichSpace();
       auto spaceId = spaceInfo.id;
       const auto &spaceName = spaceInfo.name;
       sentence_->addPara(spaceName);
@@ -49,8 +52,9 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
+  } else {
+    sentence_->addPara(qctx()->rctx()->session()->space().name);
   }
-
   return Status::OK();
 }
 

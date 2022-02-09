@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_REBUILDEDGEINDEXTASK_H_
@@ -14,7 +13,7 @@ namespace storage {
 
 class RebuildEdgeIndexTask : public RebuildIndexTask {
  public:
-  explicit RebuildEdgeIndexTask(StorageEnv* env, TaskContext&& ctx)
+  RebuildEdgeIndexTask(StorageEnv* env, TaskContext&& ctx)
       : RebuildIndexTask(env, std::move(ctx)) {}
 
  private:

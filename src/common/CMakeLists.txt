@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_subdirectory(base)
 nebula_add_subdirectory(time)
@@ -25,3 +24,8 @@ nebula_add_subdirectory(function)
 nebula_add_subdirectory(graph)
 nebula_add_subdirectory(plugin)
 nebula_add_subdirectory(utils)
+nebula_add_subdirectory(ssl)
+nebula_add_subdirectory(geo)
+nebula_add_subdirectory(memory)
+nebula_add_subdirectory(id)
+nebula_add_subdirectory(log)

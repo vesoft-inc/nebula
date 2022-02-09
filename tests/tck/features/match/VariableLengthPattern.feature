@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Variable length Pattern match (m to n)
 
   Background:
@@ -126,8 +125,7 @@ Feature: Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order:
       | COUNT(*) |
@@ -196,11 +194,10 @@ Feature: Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(e)
       """
     Then the result should be, in any order:
-      | COUNT(*) |
+      | COUNT(e) |
       | 927      |
 
   Scenario: multiple direction edge without properties
@@ -258,7 +255,7 @@ Feature: Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
       | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquile O'Neal"]]   |
+      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
       | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
       | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
       | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |
@@ -279,7 +276,7 @@ Feature: Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
       | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquile O'Neal"]]   |
+      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
       | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
       | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
       | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |
@@ -353,28 +350,28 @@ Feature: Variable length Pattern match (m to n)
   Scenario: Over expand end
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |
+      | "Yao Ming"    |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name |
+      | v.player.name |
     When executing query:
       """
-      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.name
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name |
+      | v.player.name |

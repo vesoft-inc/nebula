@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_HTTP_METAHTTPDOWNLOADHANDLER_H_
@@ -20,6 +19,14 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief Download sst files from hdfs to every storaged download folder.
+ *        It will send download http request to every storaged, letting them
+ *        download the corressponding sst files.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ */
 class MetaHttpDownloadHandler : public proxygen::RequestHandler {
  public:
   MetaHttpDownloadHandler() = default;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/visitor/RewriteVisitor.h"
@@ -238,6 +237,18 @@ void RewriteVisitor::visit(PathBuildExpression *expr) {
   }
 }
 
+void RewriteVisitor::visit(LabelTagPropertyExpression *expr) {
+  if (!care(expr->kind())) {
+    return;
+  }
+  auto label = expr->label();
+  if (matcher_(label)) {
+    expr->setLabel(rewriter_(label));
+  } else {
+    label->accept(this);
+  }
+}
+
 void RewriteVisitor::visit(AttributeExpression *expr) {
   if (!care(expr->kind())) {
     return;
@@ -325,9 +336,9 @@ Expression *RewriteVisitor::transform(const Expression *expr, Matcher matcher, R
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter));
-    auto exprCopy = expr->clone();
-    exprCopy->accept(&visitor);
-    return exprCopy;
+    auto *e = const_cast<Expression *>(expr);
+    e->accept(&visitor);
+    return e;
   }
 }
 
@@ -340,9 +351,9 @@ Expression *RewriteVisitor::transform(
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter), std::move(needVisitedTypes));
-    auto exprCopy = expr->clone();
-    exprCopy->accept(&visitor);
-    return exprCopy;
+    auto *e = const_cast<Expression *>(expr);
+    e->accept(&visitor);
+    return e;
   }
 }
 }  // namespace graph

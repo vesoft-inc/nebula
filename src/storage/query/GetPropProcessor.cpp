@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/query/GetPropProcessor.h"
@@ -83,10 +82,10 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
       auto partId = partEntry.first;
       for (const auto& row : partEntry.second) {
         cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(row.values[0].getStr());
-        edgeKey.set_edge_type(row.values[1].getInt());
-        edgeKey.set_ranking(row.values[2].getInt());
-        edgeKey.set_dst(row.values[3].getStr());
+        edgeKey.src_ref() = row.values[0].getStr();
+        edgeKey.edge_type_ref() = row.values[1].getInt();
+        edgeKey.ranking_ref() = row.values[2].getInt();
+        edgeKey.dst_ref() = row.values[3].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
@@ -168,10 +167,10 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
       auto plan = buildEdgePlan(context, result);
       for (const auto& row : input) {
         cpp2::EdgeKey edgeKey;
-        edgeKey.set_src(row.values[0].getStr());
-        edgeKey.set_edge_type(row.values[1].getInt());
-        edgeKey.set_ranking(row.values[2].getInt());
-        edgeKey.set_dst(row.values[3].getStr());
+        edgeKey.src_ref() = row.values[0].getStr();
+        edgeKey.edge_type_ref() = row.values[1].getInt();
+        edgeKey.ranking_ref() = row.values[2].getInt();
+        edgeKey.dst_ref() = row.values[3].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
@@ -260,7 +259,7 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {
-  // req.vertex_props_ref().has_value() checked in methon checkRequest
+  // req.vertex_props_ref().has_value() checked in method checkRequest
   auto returnProps =
       (*req.vertex_props_ref()).empty() ? buildAllTagProps() : *req.vertex_props_ref();
   auto ret = handleVertexProps(returnProps);
@@ -273,7 +272,7 @@ nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropReq
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& req) {
-  // req.edge_props_ref().has_value() checked in methon checkRequest
+  // req.edge_props_ref().has_value() checked in method checkRequest
   auto returnProps = (*req.edge_props_ref()).empty() ? buildAllEdgeProps(cpp2::EdgeDirection::BOTH)
                                                      : *req.edge_props_ref();
   auto ret = handleEdgeProps(returnProps);
@@ -306,7 +305,9 @@ void GetPropProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeP
   }
 }
 
-void GetPropProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void GetPropProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

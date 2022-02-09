@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/IndexScanExecutor.h"
@@ -12,17 +11,19 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/service/GraphFlags.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::LookupIndexResp;
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> IndexScanExecutor::execute() { return indexScan(); }
+folly::Future<Status> IndexScanExecutor::execute() {
+  return indexScan();
+}
 
 folly::Future<Status> IndexScanExecutor::indexScan() {
-  GraphStorageClient *storageClient = qctx_->getStorageClient();
+  StorageClient *storageClient = qctx_->getStorageClient();
   auto *lookup = asNode<IndexScan>(node());
   if (lookup->isEmptyResultSet()) {
     DataSet dataSet({"dummy"});
@@ -36,14 +37,18 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     return Status::Error("There is no index to use at runtime");
   }
 
+  StorageClient::CommonRequestParam param(lookup->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->lookupIndex(lookup->space(),
-                    qctx()->rctx()->session()->id(),
-                    qctx()->plan()->id(),
+      ->lookupIndex(param,
                     ictxs,
                     lookup->isEdge(),
                     lookup->schemaId(),
-                    lookup->returnColumns())
+                    lookup->returnColumns(),
+                    lookup->orderBy(),
+                    lookup->limit(qctx_))
       .via(runner())
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
         addStats(rpcResp, otherStats_);
@@ -63,7 +68,7 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
   for (auto &resp : rpcResp.responses()) {
     if (resp.data_ref().has_value()) {
       nebula::DataSet &data = *resp.data_ref();
-      // TODO : convert the column name to alias.
+      // TODO: convert the column name to alias.
       if (v.colNames.empty()) {
         v.colNames = data.colNames;
       }
@@ -76,7 +81,6 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
     DCHECK_EQ(node()->colNames().size(), v.colNames.size());
     v.colNames = node()->colNames();
   }
-  VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
   return finish(
       ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
 }

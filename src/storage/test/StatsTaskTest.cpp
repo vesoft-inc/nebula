@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -66,14 +65,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
 
   {
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(13);
-    request.set_para(std::move(parameter));
+    cpp2::AddTaskRequest request;
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 13;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
@@ -104,7 +103,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
@@ -131,14 +130,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     EXPECT_EQ(0, resp.result.failed_parts.size());
 
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(14);
-    request.set_para(std::move(parameter));
+    cpp2::AddTaskRequest request;
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 14;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
@@ -169,7 +168,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
@@ -202,14 +201,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     EXPECT_EQ(0, resp.result.failed_parts.size());
 
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
-    cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(15);
-    request.set_para(std::move(parameter));
+    cpp2::AddTaskRequest request;
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 15;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
@@ -240,7 +239,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
@@ -300,7 +299,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       VertexID lastDstVertexId = "";
       EdgeRanking lastRank = 0;
 
-      auto prefix = NebulaKeyUtils::vertexPrefix(part);
+      auto prefix = NebulaKeyUtils::tagPrefix(part);
       std::unique_ptr<kvstore::KVIterator> iter;
       auto ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {

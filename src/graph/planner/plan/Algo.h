@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_ALGO_H_
@@ -48,17 +47,29 @@ class ConjunctPath : public BinaryInputNode {
     return qctx->objPool()->add(new ConjunctPath(qctx, left, right, pathKind, steps));
   }
 
-  PathKind pathKind() const { return pathKind_; }
+  PathKind pathKind() const {
+    return pathKind_;
+  }
 
-  size_t steps() const { return steps_; }
+  size_t steps() const {
+    return steps_;
+  }
 
-  void setConditionalVar(std::string varName) { conditionalVar_ = std::move(varName); }
+  void setConditionalVar(std::string varName) {
+    conditionalVar_ = std::move(varName);
+  }
 
-  std::string conditionalVar() const { return conditionalVar_; }
+  std::string conditionalVar() const {
+    return conditionalVar_;
+  }
 
-  bool noLoop() const { return noLoop_; }
+  bool noLoop() const {
+    return noLoop_;
+  }
 
-  void setNoLoop(bool noLoop) { noLoop_ = noLoop; }
+  void setNoLoop(bool noLoop) {
+    noLoop_ = noLoop;
+  }
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
@@ -80,9 +91,13 @@ class ProduceAllPaths final : public SingleInputNode {
     return qctx->objPool()->add(new ProduceAllPaths(qctx, input));
   }
 
-  bool noLoop() const { return noLoop_; }
+  bool noLoop() const {
+    return noLoop_;
+  }
 
-  void setNoLoop(bool noLoop) { noLoop_ = noLoop; }
+  void setNoLoop(bool noLoop) {
+    noLoop_ = noLoop;
+  }
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
@@ -103,7 +118,9 @@ class CartesianProduct final : public SingleDependencyNode {
 
   std::vector<std::string> inputVars() const;
 
-  std::vector<std::vector<std::string>> allColNames() const { return allColNames_; }
+  std::vector<std::vector<std::string>> allColNames() const {
+    return allColNames_;
+  }
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
@@ -124,11 +141,17 @@ class Subgraph final : public SingleInputNode {
         new Subgraph(qctx, input, oneMoreStepOutput, currentStepVar, steps));
   }
 
-  const std::string& oneMoreStepOutput() const { return oneMoreStepOutput_; }
+  const std::string& oneMoreStepOutput() const {
+    return oneMoreStepOutput_;
+  }
 
-  const std::string& currentStepVar() const { return currentStepVar_; }
+  const std::string& currentStepVar() const {
+    return currentStepVar_;
+  }
 
-  uint32_t steps() const { return steps_; }
+  uint32_t steps() const {
+    return steps_;
+  }
 
  private:
   Subgraph(QueryContext* qctx,
@@ -146,6 +169,17 @@ class Subgraph final : public SingleInputNode {
   uint32_t steps_;
 };
 
+class BiCartesianProduct final : public BinaryInputNode {
+ public:
+  static BiCartesianProduct* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->add(new BiCartesianProduct(qctx, left, right));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_ALGO_H_

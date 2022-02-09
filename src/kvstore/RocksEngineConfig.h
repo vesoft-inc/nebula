@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_ROCKSENGINECONFIG_H_
@@ -37,7 +36,7 @@ DECLARE_int64(rocksdb_block_cache);
 
 DECLARE_int32(rocksdb_batch_size);
 
-DECLARE_int32(row_cache_num);
+DECLARE_int32(rocksdb_row_cache_num);
 
 DECLARE_int32(cache_bucket_exp);
 
@@ -48,13 +47,13 @@ DECLARE_string(part_man_type);
 
 DECLARE_string(rocksdb_compression_per_level);
 DECLARE_string(rocksdb_compression);
+DECLARE_string(rocksdb_bottommost_compression);
 
 DECLARE_bool(enable_rocksdb_statistics);
 DECLARE_string(rocksdb_stats_level);
 
 DECLARE_bool(enable_rocksdb_prefix_filtering);
-DECLARE_bool(rocksdb_prefix_bloom_filter_length_flag);
-DECLARE_int32(rocksdb_plain_table_prefix_length);
+DECLARE_bool(enable_rocksdb_whole_key_filtering);
 
 // rocksdb compact RangeOptions
 DECLARE_bool(rocksdb_compact_change_level);
@@ -63,6 +62,10 @@ DECLARE_int32(rocksdb_compact_target_level);
 DECLARE_string(rocksdb_wal_dir);
 DECLARE_string(rocksdb_backup_dir);
 DECLARE_int32(rocksdb_backup_interval_secs);
+
+// rocksdb key value separation options
+DECLARE_bool(rocksdb_enable_kv_separation);
+DECLARE_uint64(rocksdb_kv_separation_threshold);
 
 namespace nebula {
 namespace kvstore {

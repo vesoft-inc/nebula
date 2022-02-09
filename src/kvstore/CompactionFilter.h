@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_COMPACTIONFILTER_H_
@@ -33,7 +32,9 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
                              folly::StringPiece(val.data(), val.size()));
   }
 
-  const char* Name() const override { return "KVCompactionFilter"; }
+  const char* Name() const override {
+    return "KVCompactionFilter";
+  }
 
  private:
   GraphSpaceID spaceId_;
@@ -65,7 +66,9 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
     }
   }
 
-  const char* Name() const override { return "KVCompactionFilterFactory"; }
+  const char* Name() const override {
+    return "KVCompactionFilterFactory";
+  }
 
   virtual std::unique_ptr<KVFilter> createKVFilter() = 0;
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/visitor/ExprVisitorImpl.h"
@@ -20,13 +19,21 @@ void ExprVisitorImpl::visit(TypeCastingExpression *expr) {
 }
 
 // binary expression
-void ExprVisitorImpl::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(SubscriptExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(SubscriptExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(AttributeExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(AttributeExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void ExprVisitorImpl::visit(LogicalExpression *expr) {
   for (auto &operand : expr->operands()) {

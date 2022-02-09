@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/plugins/hbase/HBaseStore.h"
@@ -46,7 +45,7 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
                                                                     SchemaVer version) {
   std::shared_ptr<const meta::SchemaProviderIf> schema;
   folly::StringPiece rawKey = key;
-  if (NebulaKeyUtils::isVertex(key)) {
+  if (NebulaKeyUtils::isTag(key)) {
     TagID tagId = NebulaKeyUtils::getTagId(rawKey);
     if (version == -1) {
       version = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId).value();
@@ -293,9 +292,11 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& prefix,
                               std::unique_ptr<KVIterator>* iter,
-                              bool canReadFromFollower) {
+                              bool canReadFromFollower,
+                              const void* snapshot) {
   UNUSED(partId);
   UNUSED(canReadFromFollower);
+  UNUSED(snapshot);
   return this->prefix(spaceId, prefix, iter);
 }
 
@@ -401,7 +402,9 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
   return cb(removePrefix());
 }
 
-ResultCode HBaseStore::ingest(GraphSpaceID) { LOG(FATAL) << "Unimplement"; }
+ResultCode HBaseStore::ingest(GraphSpaceID) {
+  LOG(FATAL) << "Unimplement";
+}
 
 int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID, std::vector<PartitionID>>&) {
   LOG(FATAL) << "Unimplement";

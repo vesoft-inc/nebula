@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -113,6 +112,26 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
 
   {
     FLAGS_rocksdb_compression = "lz4";
+    FLAGS_rocksdb_compression_per_level = "";
+    FLAGS_rocksdb_bottommost_compression = "zstd";
+    rocksdb::Options options;
+    auto status = initRocksdbOptions(options, 1);
+    ASSERT_TRUE(status.ok()) << status.ToString();
+    ASSERT_EQ(rocksdb::kLZ4Compression, options.compression);
+    ASSERT_EQ(rocksdb::kZSTD, options.bottommost_compression);
+
+    rocksdb::DB* db = nullptr;
+    SCOPE_EXIT {
+      delete db;
+    };
+    options.create_if_missing = true;
+    fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+    status = rocksdb::DB::Open(options, rootPath.path(), &db);
+    ASSERT_TRUE(status.ok()) << status.ToString();
+  }
+
+  {
+    FLAGS_rocksdb_compression = "lz4";
     FLAGS_rocksdb_compression_per_level = "no:no::snappy::zstd";
     rocksdb::Options options;
     auto status = initRocksdbOptions(options, 1);
@@ -127,7 +146,9 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
     ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[6]);
 
     rocksdb::DB* db = nullptr;
-    SCOPE_EXIT { delete db; };
+    SCOPE_EXIT {
+      delete db;
+    };
     options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
     status = rocksdb::DB::Open(options, rootPath.path(), &db);
@@ -150,12 +171,41 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
     ASSERT_EQ(rocksdb::kBZip2Compression, options.compression_per_level[6]);
 
     rocksdb::DB* db = nullptr;
-    SCOPE_EXIT { delete db; };
+    SCOPE_EXIT {
+      delete db;
+    };
     options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
     status = rocksdb::DB::Open(options, rootPath.path(), &db);
     ASSERT_TRUE(status.ok()) << status.ToString();
   }
+}
+
+TEST(RocksEngineConfigTest, KeyValueSeparationTest) {
+  FLAGS_rocksdb_enable_kv_separation = true;
+  FLAGS_rocksdb_kv_separation_threshold = 10;
+  rocksdb::Options options;
+  auto status = initRocksdbOptions(options, 1);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  rocksdb::DB* db = nullptr;
+  SCOPE_EXIT {
+    delete db;
+  };
+  options.create_if_missing = true;
+  fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+  status = rocksdb::DB::Open(options, rootPath.path(), &db);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  std::string key = "test";
+  std::string value = "This is a test value with value size greater than 10";
+  status = db->Put(rocksdb::WriteOptions(), key, value);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  std::string read_value;
+  status = db->Get(rocksdb::ReadOptions(), key, &read_value);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  ASSERT_EQ(value, read_value);
 }
 
 }  // namespace kvstore

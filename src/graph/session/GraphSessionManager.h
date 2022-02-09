@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SESSION_GRAPHSESSIONMANAGER_H_
@@ -15,6 +14,7 @@
 #include "common/thrift/ThriftTypes.h"
 #include "graph/session/ClientSession.h"
 #include "interface/gen-cpp2/GraphService.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 /**
  * GraphSessionManager manages the client sessions, e.g. create new, find
@@ -60,6 +60,9 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
    * Find an existing session
    */
   std::shared_ptr<ClientSession> findSessionFromCache(SessionID id);
+
+  // get all seesions in the local cache
+  std::vector<meta::cpp2::Session> getSessionFromLocalCache() const;
 
  private:
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> findSessionFromMetad(

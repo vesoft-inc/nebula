@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/synchronization/Baton.h>
@@ -9,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/test/TestUtils.h"
 
@@ -21,7 +21,7 @@ namespace meta {
 TEST(ActiveHostsManTest, EncodeDecodeHostInfoV2) {
   auto now = time::WallClock::fastNowInMilliSec();
   auto role = cpp2::HostRole::STORAGE;
-  std::string strGitInfoSHA = gitInfoSha();
+  auto strGitInfoSHA = gitInfoSha();
   {
     HostInfo hostInfo(now, role, strGitInfoSHA);
     auto encodeHostInfo = HostInfo::encodeV2(hostInfo);
@@ -53,6 +53,15 @@ TEST(ActiveHostsManTest, NormalTest) {
   fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
   FLAGS_heartbeat_interval_secs = 1;
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+
+  std::vector<kvstore::KV> data;
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 0), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 1), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 2), "");
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
+  baton.wait();
+
   auto now = time::WallClock::fastNowInMilliSec();
   HostInfo info1(now, cpp2::HostRole::STORAGE, gitInfoSha());
   ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info1);
@@ -69,13 +78,13 @@ TEST(ActiveHostsManTest, NormalTest) {
   ASSERT_EQ(3, nebula::value(hostsRet).size());
 
   {
-    const auto& prefix = MetaServiceUtils::hostPrefix();
+    const auto& prefix = MetaKeyUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     int i = 0;
     while (iter->valid()) {
-      auto host = MetaServiceUtils::parseHostKey(iter->key());
+      auto host = MetaKeyUtils::parseHostKey(iter->key());
       HostInfo info = HostInfo::decode(iter->val());
       ASSERT_EQ(HostAddr("0", i), HostAddr(host.host, host.port));
       if (i != 0) {
@@ -99,8 +108,16 @@ TEST(ActiveHostsManTest, LeaderTest) {
   fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
   FLAGS_heartbeat_interval_secs = 1;
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  auto now = time::WallClock::fastNowInMilliSec();
 
+  std::vector<kvstore::KV> data;
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 0), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 1), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 2), "");
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
+  baton.wait();
+
+  auto now = time::WallClock::fastNowInMilliSec();
   HostInfo hInfo1(now, cpp2::HostRole::STORAGE, gitInfoSha());
   HostInfo hInfo2(now + 2000, cpp2::HostRole::STORAGE, gitInfoSha());
   ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo1);
@@ -112,8 +129,8 @@ TEST(ActiveHostsManTest, LeaderTest) {
 
   auto makePartInfo = [](int partId) {
     cpp2::LeaderInfo part;
-    part.set_part_id(partId);
-    part.set_term(partId * 1024);
+    part.part_id_ref() = partId;
+    part.term_ref() = partId * 1024;
     return part;
   };
 
@@ -148,14 +165,14 @@ TEST(ActiveHostsManTest, LeaderTest) {
   nebula::cpp2::ErrorCode code;
   std::map<SpaceAndPart, HostAndTerm> results;
   {
-    const auto& prefix = MetaServiceUtils::leaderPrefix();
+    const auto& prefix = MetaKeyUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     int i = 0;
     while (iter->valid()) {
-      auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(iter->key());
-      std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
+      auto spaceAndPart = MetaKeyUtils::parseLeaderKeyV3(iter->key());
+      std::tie(host, term, code) = MetaKeyUtils::parseLeaderValV3(iter->val());
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "error: " << apache::thrift::util::enumNameSafe(code);
         continue;
@@ -194,7 +211,7 @@ TEST(LastUpdateTimeManTest, NormalTest) {
 
   LastUpdateTimeMan::update(kv.get(), now - 100);
   {
-    auto key = MetaServiceUtils::lastUpdateTimeKey();
+    auto key = MetaKeyUtils::lastUpdateTimeKey();
     std::string val;
     auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);

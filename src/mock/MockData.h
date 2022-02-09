@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef MOCK_MOCKDATA_H_
@@ -116,7 +115,8 @@ class MockData {
   static std::vector<std::pair<PartitionID, std::string>> mockPlayerIndexKeys(bool upper = false);
 
   // generate serve edge
-  static std::vector<EdgeData> mockEdges(bool upper = false);
+  // param: includeInEdges, if the return set has both out and in edges
+  static std::vector<EdgeData> mockEdges(bool upper = false, bool includeInEdges = true);
 
   static std::vector<std::pair<PartitionID, std::string>> mockServeIndexKeys();
 
@@ -170,7 +170,8 @@ class MockData {
                                                                       int32_t parts = 6);
 
   static nebula::storage::cpp2::AddEdgesRequest mockAddEdgesReq(bool upper = false,
-                                                                int32_t parts = 6);
+                                                                int32_t parts = 6,
+                                                                bool hasInEdges = true);
 
   static nebula::storage::cpp2::DeleteVerticesRequest mockDeleteVerticesReq(int32_t parts = 6);
 

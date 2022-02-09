@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
@@ -45,7 +44,7 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
   bool start(size_t nrThreads, const std::string &name = "");
 
   /**
-   * Asynchronouly to notify the workers to stop handling further new tasks.
+   * Asynchronously to notify the workers to stop handling further new tasks.
    */
   bool stop();
 

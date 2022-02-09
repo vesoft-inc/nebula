@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -42,7 +41,7 @@ TEST(FulltextPluginTest, ESIndexCheckTest) {
   auto ret = ESGraphAdapter().indexExistsCmd(client, "test_index");
   auto expected =
       "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-      "-XGET \"http://127.0.0.1:9200/_cat/indices/test_index?format=json\"";
+      "-XGET -k \"http://127.0.0.1:9200/_cat/indices/test_index?format=json\"";
   ASSERT_EQ(expected, ret);
 }
 
@@ -52,7 +51,7 @@ TEST(FulltextPluginTest, ESCreateIndexTest) {
   auto ret = ESGraphAdapter().createIndexCmd(client, "test_index");
   auto expected =
       "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-      "-XPUT \"http://127.0.0.1:9200/test_index\"";
+      "-XPUT -k \"http://127.0.0.1:9200/test_index\"";
   ASSERT_EQ(expected, ret);
 }
 
@@ -62,7 +61,7 @@ TEST(FulltextPluginTest, ESDropIndexTest) {
   auto ret = ESGraphAdapter().dropIndexCmd(client, "test_index");
   auto expected =
       "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-      "-XDELETE \"http://127.0.0.1:9200/test_index\"";
+      "-XDELETE -k \"http://127.0.0.1:9200/test_index\"";
   ASSERT_EQ(expected, ret);
 }
 
@@ -73,7 +72,7 @@ TEST(FulltextPluginTest, ESPutTest) {
   auto header = ESStorageAdapter().putHeader(hc, item);
   std::string expected =
       "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-      "-XPUT \"http://127.0.0.1:9200/index1/_doc/"
+      "-XPUT -k \"http://127.0.0.1:9200/index1/_doc/"
       "00000000018c43de7b01bca674276c43e09b3ec5baYWFhYQ==\"";
   ASSERT_EQ(expected, header);
 
@@ -98,21 +97,21 @@ TEST(FulltextPluginTest, ESBulkTest) {
   auto header = ESStorageAdapter().bulkHeader(hc);
   std::string expected =
       "/usr/bin/curl -H \"Content-Type: application/x-ndjson; "
-      "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
+      "charset=utf-8\" -XPOST -k \"http://127.0.0.1:9200/_bulk\"";
   ASSERT_EQ(expected, header);
 
-  std::vector<folly::dynamic> bodys;
+  std::vector<folly::dynamic> bodies;
   for (const auto& item : items) {
     folly::dynamic meta =
         folly::dynamic::object("_id", DocIDTraits::docId(item))("_index", item.index);
     folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))(
         "column_id", DocIDTraits::column(item.column));
-    bodys.emplace_back(folly::dynamic::object("index", std::move(meta)));
-    bodys.emplace_back(std::move(data));
+    bodies.emplace_back(folly::dynamic::object("index", std::move(meta)));
+    bodies.emplace_back(std::move(data));
   }
 
   auto body = ESStorageAdapter().bulkBody(items);
-  verifyBodyStr(body, std::move(bodys));
+  verifyBodyStr(body, std::move(bodies));
 }
 
 TEST(FulltextPluginTest, ESPutToTest) {
@@ -217,13 +216,13 @@ TEST(FulltextPluginTest, ESResultTest) {
   //            "root_cause": [
   //            {
   //                "type": "parsing_exception",
-  //                    "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                    "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                    "line": 1,
   //                    "col": 128
   //            }
   //            ],
   //            "type": "parsing_exception",
-  //                "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                "line": 1,
   //                "col": 128
   //        },
@@ -232,9 +231,9 @@ TEST(FulltextPluginTest, ESResultTest) {
   {
     std::string json =
         R"({"error": {"root_cause": [{"type": "parsing_exception","reason":
-                           "Unknown key for a VALUE_STRING in [_soure].","line": 1,"col": 128}],
+                           "Unknown key for a VALUE_STRING in [_source].","line": 1,"col": 128}],
                            "type": "parsing_exception","reason": "Unknown key for a VALUE_STRING
-                           in [_soure].","line": 1,"col": 128},"status": 400})";
+                           in [_source].","line": 1,"col": 128},"status": 400})";
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
     std::vector<std::string> rows;
@@ -252,7 +251,7 @@ TEST(FulltextPluginTest, ESPrefixTest) {
   auto header = ESGraphAdapter().header(client, item, limit);
   std::string expected =
       "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-      "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\"";
+      "-XGET -k \"http://127.0.0.1:9200/index1/_search?timeout=10ms\"";
   ASSERT_EQ(expected, header);
 
   auto body = ESGraphAdapter().prefixBody("aa");

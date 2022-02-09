@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/ContainerExpression.h"
@@ -13,18 +12,21 @@
 
 namespace nebula {
 
+// TODO(jie): toString of list should add `LIST` prefix
 std::string ListExpression::toString() const {
-  // list *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
   buf += '[';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
-  buf.back() = ']';
+  if (items_.empty()) {
+    buf += "]";
+  } else {
+    buf.back() = ']';
+  }
 
   return buf;
 }
@@ -77,20 +79,25 @@ void ListExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void ListExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void ListExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
+// TODO(jie): toString of set should add `SET` prefix
 std::string SetExpression::toString() const {
-  // set *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
   buf += '{';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
-  buf.back() = '}';
+  if (items_.empty()) {
+    buf += "}";
+  } else {
+    buf.back() = '}';
+  }
 
   return buf;
 }
@@ -143,11 +150,12 @@ void SetExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void SetExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void SetExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
+// TODO(jie): toString of map should add `MAP` prefix
 std::string MapExpression::toString() const {
-  // map *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
@@ -155,10 +163,14 @@ std::string MapExpression::toString() const {
   for (auto &kv : items_) {
     buf += kv.first;
     buf += ":";
-    buf += kv.second->toString();
+    buf += kv.second ? kv.second->toString() : "";
     buf += ",";
   }
-  buf.back() = '}';
+  if (items_.empty()) {
+    buf += "}";
+  } else {
+    buf.back() = '}';
+  }
 
   return buf;
 }
@@ -217,6 +229,8 @@ void MapExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void MapExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void MapExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/context/ExecutionContext.h"
@@ -23,7 +22,9 @@ void ExecutionContext::setResult(const std::string& name, Result&& result) {
   hist.emplace_back(std::move(result));
 }
 
-void ExecutionContext::dropResult(const std::string& name) { valueMap_[name].clear(); }
+void ExecutionContext::dropResult(const std::string& name) {
+  valueMap_[name].clear();
+}
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
   auto it = valueMap_.find(name);
@@ -31,7 +32,7 @@ size_t ExecutionContext::numVersions(const std::string& name) const {
   return it->second.size();
 }
 
-// Only keep the last several versoins of the Value
+// Only keep the last several versions of the Value
 void ExecutionContext::truncHistory(const std::string& name, size_t numVersionsToKeep) {
   auto it = valueMap_.find(name);
   if (it != valueMap_.end()) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/context/ExpressionContext.h"
@@ -103,14 +102,19 @@ class ExpressionContextMock final : public ExpressionContext {
     }
   }
 
-  Value getVertex() const override { return Value(); }
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
+    return Value();
+  }
 
-  Value getEdge() const override { return Value(); }
+  Value getEdge() const override {
+    return Value();
+  }
 
   Value getColumn(int32_t index) const override;
 
   void setVar(const std::string& var, Value val) override {
-    // used by tests of list comprehesion, predicate or reduce
+    // used by tests of list comprehension, predicate or reduce
     if (var == "n" || var == "p" || var == "totalNum") {
       vals_.erase(var);
       vals_[var] = val;

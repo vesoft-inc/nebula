@@ -1,21 +1,20 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/GetNeighborsExecutor.h"
 
 #include <sstream>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 
@@ -41,11 +40,14 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   }
 
   time::Duration getNbrTime;
-  GraphStorageClient* storageClient = qctx_->getStorageClient();
+  StorageClient* storageClient = qctx_->getStorageClient();
+  QueryExpressionContext qec(qctx()->ectx());
+  StorageClient::CommonRequestParam param(gn_->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->getNeighbors(gn_->space(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
+      ->getNeighbors(param,
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),
@@ -57,13 +59,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
                      gn_->dedup(),
                      gn_->random(),
                      gn_->orderBy(),
-                     gn_->limit(),
+                     gn_->limit(qec),
                      gn_->filter())
       .via(runner())
       .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time",
-                            folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
         SCOPED_TIMER(&execTime_);
@@ -76,16 +77,11 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
           }
           auto& info = hostLatency[i];
           otherStats_.emplace(
-              folly::stringPrintf("%s exec/total/vertices", std::get<0>(info).toString().c_str()),
-              folly::stringPrintf(
-                  "%d(us)/%d(us)/%lu,", std::get<1>(info), std::get<2>(info), size));
-          if (result.result.latency_detail_us_ref().has_value()) {
-            std::string storageDetail = "{";
-            for (auto iter : (*result.result.latency_detail_us_ref())) {
-              storageDetail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
-            }
-            storageDetail += "}";
-            otherStats_.emplace("storage_detail", storageDetail);
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
+              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
+          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+          if (!detail.empty()) {
+            otherStats_.emplace("storage_detail", detail);
           }
         }
         return handleResponse(resp);
@@ -99,7 +95,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
   builder.state(result.value());
 
   auto& responses = resps.responses();
-  VLOG(2) << node_->toString() << ", Resp size: " << responses.size();
   List list;
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
@@ -108,11 +103,10 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
       continue;
     }
 
-    VLOG(2) << "Resp row size: " << dataset->rows.size() << ", Resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
-  builder.value(Value(std::move(list)));
-  return finish(builder.iter(Iterator::Kind::kGetNeighbors).build());
+  builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
+  return finish(builder.build());
 }
 
 }  // namespace graph

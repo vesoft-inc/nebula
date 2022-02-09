@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/test/TestBase.h"
@@ -143,7 +142,7 @@ TEST_F(ExpressionTest, TestExprClone) {
   auto fnCallExpr = FunctionCallExpression::make(&pool, "count", ArgumentList::make(&pool));
   ASSERT_EQ(*fnCallExpr, *fnCallExpr->clone());
 
-  auto uuidExpr = UUIDExpression::make(&pool, "hello");
+  auto uuidExpr = UUIDExpression::make(&pool);
   ASSERT_EQ(*uuidExpr, *uuidExpr->clone());
 
   auto subExpr = SubscriptExpression::make(

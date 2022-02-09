@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLANNER_H_
@@ -11,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "graph/context/ast/AstContext.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
@@ -23,12 +23,6 @@ extern const char* kRanking;
 extern const char* kVertexID;
 extern const char* kVertices;
 extern const char* kEdges;
-
-struct SubPlan {
-  // root and tail of a subplan.
-  PlanNode* root{nullptr};
-  PlanNode* tail{nullptr};
-};
 
 std::ostream& operator<<(std::ostream& os, const SubPlan& subplan);
 

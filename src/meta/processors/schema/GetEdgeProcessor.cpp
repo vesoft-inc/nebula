@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/GetEdgeProcessor.h"
@@ -12,10 +11,10 @@ namespace meta {
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto edgeName = req.get_edge_name();
+  const auto& edgeName = req.get_edge_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto edgeTypeRet = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(edgeTypeRet)) {
     LOG(ERROR) << "Get edge " << edgeName << " failed.";
@@ -26,9 +25,9 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   auto edgeType = nebula::value(edgeTypeRet);
 
   std::string schemaValue;
-  // Get the lastest version
+  // Get the latest version
   if (ver < 0) {
-    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+    auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(edgePrefix);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
@@ -48,7 +47,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     }
     schemaValue = iter->val().str();
   } else {
-    auto edgeKey = MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, ver);
+    auto edgeKey = MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver);
     auto ret = doGet(edgeKey);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version "
@@ -62,7 +61,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
 
   VLOG(3) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version " << ver;
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
+  resp_.schema_ref() = MetaKeyUtils::parseSchema(schemaValue);
   onFinished();
 }
 

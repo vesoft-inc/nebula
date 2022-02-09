@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Remove Useless Project Rule
 
   Background:
@@ -12,8 +11,8 @@ Feature: Remove Useless Project Rule
       """
       MATCH (v:player)
       WITH
-        v.age+1 AS age,
-        count(v.age) AS count
+        v.player.age+1 AS age,
+        count(v.player.age) AS count
       RETURN age, count
       ORDER BY age, count
       """
@@ -50,17 +49,14 @@ Feature: Remove Useless Project Rule
       | 47  | 1     |
       | 48  | 1     |
     And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 12 | DataCollect | 11           |               |
-      | 11 | Sort        | 14           |               |
-      | 14 | Aggregate   | 8            |               |
-      | 8  | Filter      | 7            |               |
-      | 7  | Project     | 6            |               |
-      | 6  | Project     | 5            |               |
-      | 5  | Filter      | 16           |               |
-      | 16 | GetVertices | 13           |               |
-      | 13 | IndexScan   | 0            |               |
-      | 0  | Start       |              |               |
+      | id | name           | dependencies | operator info |
+      | 7  | DataCollect    | 6            |               |
+      | 6  | Sort           | 8            |               |
+      | 8  | Aggregate      | 3            |               |
+      | 3  | Project        | 2            |               |
+      | 2  | AppendVertices | 1            |               |
+      | 1  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
     When profiling query:
       """
       MATCH p = (n:player{name:"Tony Parker"})
@@ -70,11 +66,8 @@ Feature: Remove Useless Project Rule
       | n                                                     | p                                                       |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | <("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
     And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 11 | Filter      | 7            |               |
-      | 7  | Project     | 6            |               |
-      | 6  | Project     | 5            |               |
-      | 5  | Filter      | 13           |               |
-      | 13 | GetVertices | 10           |               |
-      | 10 | IndexScan   | 0            |               |
-      | 0  | Start       |              |               |
+      | id | name           | dependencies | operator info |
+      | 6  | Project        | 2            |               |
+      | 2  | AppendVertices | 5            |               |
+      | 5  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |

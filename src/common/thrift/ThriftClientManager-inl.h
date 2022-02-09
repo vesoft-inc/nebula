@@ -1,22 +1,24 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
+#define COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
-#include <thrift/lib/cpp2/async/HeaderClientChannel.h>
+#include <thrift/lib/cpp2/async/RocketClientChannel.h>
 
+#include "common/base/Base.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 
 DECLARE_int32(conn_timeout_ms);
 
 namespace nebula {
 namespace thrift {
-
 template <class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAddr& host,
                                                                     folly::EventBase* evb,
@@ -29,7 +31,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   auto it = clientMap_->find(std::make_pair(host, evb));
   if (it != clientMap_->end()) {
     do {
-      auto channel = dynamic_cast<apache::thrift::HeaderClientChannel*>(it->second->getChannel());
+      auto channel = dynamic_cast<apache::thrift::RocketClientChannel*>(it->second->getChannel());
       if (channel == nullptr || !channel->good()) {
         // Remove bad connection to create a new one.
         clientMap_->erase(it);
@@ -70,25 +72,32 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   }
 
   VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
-  std::shared_ptr<folly::AsyncSocket> socket;
-  evb->runImmediatelyOrRunInEventBaseThreadAndWait([&socket, evb, resolved]() {
-    socket =
-        folly::AsyncSocket::newSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
+  folly::AsyncTransport::UniquePtr socket;
+  evb->runImmediatelyOrRunInEventBaseThreadAndWait([this, &socket, evb, resolved]() {
+    if (enableSSL_) {
+      auto sock = folly::AsyncSSLSocket::newSocket(nebula::createSSLContext(), evb);
+      sock->connect(nullptr, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
+      socket = folly::AsyncTransport::UniquePtr(sock.release());
+    } else {
+      socket = folly::AsyncTransport::UniquePtr(
+          new folly::AsyncSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms));
+    }
   });
-  auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);
+  auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
   if (timeout > 0) {
-    headerClientChannel->setTimeout(timeout);
+    clientChannel->setTimeout(timeout);
   }
   if (compatibility) {
-    headerClientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
-    headerClientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);
+    clientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
+    //    clientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);
   }
-  std::shared_ptr<ClientType> client(
-      new ClientType(std::move(headerClientChannel)),
-      [evb](auto* p) { evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; }); });
+  std::shared_ptr<ClientType> client(new ClientType(std::move(clientChannel)), [evb](auto* p) {
+    evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; });
+  });
   clientMap_->emplace(std::make_pair(host, evb), client);
   return client;
 }
 
 }  // namespace thrift
 }  // namespace nebula
+#endif

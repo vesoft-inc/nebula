@@ -6,7 +6,7 @@ message(">>>> Configuring third party for '${PROJECT_NAME}' <<<<")
 #   4. /opt/vesoft/third-party, if exists
 #   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
 
-set(NEBULA_THIRDPARTY_VERSION "2.0")
+set(NEBULA_THIRDPARTY_VERSION "3.0")
 
 if(${DISABLE_CXX11_ABI})
     SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party-98/install)
@@ -106,6 +106,9 @@ find_package(FLEX REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(Fizz REQUIRED)
 find_package(Sodium REQUIRED)
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    find_package(Breakpad REQUIRED)
+endif()
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
@@ -113,7 +116,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROO
 # All thrift libraries
 set(THRIFT_LIBRARIES
     thriftcpp2
-    rocketupgrade
     async
     thriftprotocol
     transport
@@ -148,6 +150,10 @@ if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN OR ENABLE_UBSAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
+endif()
+
+if (Breakpad_FOUND)
+    include_directories(AFTER SYSTEM ${Breakpad_INCLUDE_DIR}/breakpad)
 endif()
 
 message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")

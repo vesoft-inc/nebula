@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_OBJECTPOOL_H_
@@ -20,6 +19,8 @@ namespace nebula {
 
 class Expression;
 
+typedef std::lock_guard<folly::SpinLock> SLGuard;
+
 class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
  public:
   ObjectPool() {}
@@ -27,16 +28,16 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   ~ObjectPool() = default;
 
   void clear() {
-    folly::SpinLockGuard g(lock_);
+    SLGuard g(lock_);
     objects_.clear();
   }
 
   template <typename T>
   T *add(T *obj) {
-    if constexpr (std::is_same_v<T, Expression>) {
+    if constexpr (std::is_base_of<Expression, T>::value) {
       VLOG(3) << "New expression added into pool: " << obj->toString();
     }
-    folly::SpinLockGuard g(lock_);
+    SLGuard g(lock_);
     objects_.emplace_back(obj);
     return obj;
   }
@@ -46,7 +47,9 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
     return add(new T(std::forward<Args>(args)...));
   }
 
-  bool empty() const { return objects_.empty(); }
+  bool empty() const {
+    return objects_.empty();
+  }
 
  private:
   // Holder the ownership of the any object
@@ -56,7 +59,9 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
     explicit OwnershipHolder(T *obj)
         : obj_(obj), deleteFn_([](void *p) { delete reinterpret_cast<T *>(p); }) {}
 
-    ~OwnershipHolder() { deleteFn_(obj_); }
+    ~OwnershipHolder() {
+      deleteFn_(obj_);
+    }
 
    private:
     void *obj_;

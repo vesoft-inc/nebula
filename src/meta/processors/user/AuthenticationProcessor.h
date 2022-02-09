@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_AUTHENTICATIONPROCESSOR_H
@@ -12,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create user with account and password
+ *
+ */
 class CreateUserProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateUserProcessor* instance(kvstore::KVStore* kvstore) {
@@ -25,6 +28,11 @@ class CreateUserProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Update given user's password, return error if user
+ *        not exist. It will override old password without checking.
+ *
+ */
 class AlterUserProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AlterUserProcessor* instance(kvstore::KVStore* kvstore) {
@@ -37,6 +45,10 @@ class AlterUserProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit AlterUserProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Drop user and revoke related roles.
+ *
+ */
 class DropUserProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropUserProcessor* instance(kvstore::KVStore* kvstore) {
@@ -49,9 +61,15 @@ class DropUserProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit DropUserProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Grant user space's given role permission(RoleType:GOD, ADMIN, DBA, USER, GUEST)
+ *
+ */
 class GrantProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
-  static GrantProcessor* instance(kvstore::KVStore* kvstore) { return new GrantProcessor(kvstore); }
+  static GrantProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GrantProcessor(kvstore);
+  }
 
   void process(const cpp2::GrantRoleReq& req);
 
@@ -59,6 +77,10 @@ class GrantProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit GrantProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Revoke user's given role. Return error if user or role not exist.
+ *
+ */
 class RevokeProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RevokeProcessor* instance(kvstore::KVStore* kvstore) {
@@ -71,6 +93,10 @@ class RevokeProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit RevokeProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Change given user's password, but it will check old password first.
+ *
+ */
 class ChangePasswordProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static ChangePasswordProcessor* instance(kvstore::KVStore* kvstore) {
@@ -84,6 +110,10 @@ class ChangePasswordProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Get all user's accounts and passwords.
+ *
+ */
 class ListUsersProcessor : public BaseProcessor<cpp2::ListUsersResp> {
  public:
   static ListUsersProcessor* instance(kvstore::KVStore* kvstore) {
@@ -97,6 +127,10 @@ class ListUsersProcessor : public BaseProcessor<cpp2::ListUsersResp> {
       : BaseProcessor<cpp2::ListUsersResp>(kvstore) {}
 };
 
+/**
+ * @brief List all user roles granted to given space.
+ *
+ */
 class ListRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
  public:
   static ListRolesProcessor* instance(kvstore::KVStore* kvstore) {
@@ -110,6 +144,10 @@ class ListRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
       : BaseProcessor<cpp2::ListRolesResp>(kvstore) {}
 };
 
+/**
+ * @brief Get given user's all roles and relative spaces
+ *
+ */
 class GetUserRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {
  public:
   static GetUserRolesProcessor* instance(kvstore::KVStore* kvstore) {

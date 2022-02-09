@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -18,16 +17,16 @@ class JobTest : public testing::Test {};
 TEST_F(JobTest, JobFinishTime) {
   {
     meta::cpp2::AdminJobResult resp;
-    resp.set_job_id(0);
+    resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.set_id(0);
-    jobDesc.set_start_time(123);
-    jobDesc.set_stop_time(0);
-    resp.set_job_desc({std::move(jobDesc)});
+    jobDesc.id_ref() = 0;
+    jobDesc.start_time_ref() = 123;
+    jobDesc.stop_time_ref() = 0;
+    resp.job_desc_ref() = {std::move(jobDesc)};
     meta::cpp2::TaskDesc taskDesc;
-    taskDesc.set_start_time(456);
-    taskDesc.set_stop_time(0);
-    resp.set_task_desc({std::move(taskDesc)});
+    taskDesc.start_time_ref() = 456;
+    taskDesc.stop_time_ref() = 0;
+    resp.task_desc_ref() = {std::move(taskDesc)};
 
     auto qctx = std::make_unique<QueryContext>();
     auto submitJob = SubmitJob::make(
@@ -45,12 +44,12 @@ TEST_F(JobTest, JobFinishTime) {
   }
   {
     meta::cpp2::AdminJobResult resp;
-    resp.set_job_id(0);
+    resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.set_id(0);
-    jobDesc.set_start_time(123);
-    jobDesc.set_stop_time(0);
-    resp.set_job_desc({std::move(jobDesc)});
+    jobDesc.id_ref() = 0;
+    jobDesc.start_time_ref() = 123;
+    jobDesc.stop_time_ref() = 0;
+    resp.job_desc_ref() = {std::move(jobDesc)};
 
     auto qctx = std::make_unique<QueryContext>();
     auto submitJob = SubmitJob::make(

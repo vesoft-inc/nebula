@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TASKDESCRIPTION_H_
@@ -46,37 +45,50 @@ class TaskDescription {
   TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port);
   TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
-  /*
-   * encoded key going to write to kvstore
+  /**
+   * @brief Encoded key going to write to kvstore
    * kJobKey+jobid+taskid
-   * */
+   *
+   * @return
+   */
   std::string taskKey();
 
-  /*
-   * decode jobid and taskid from kv store
-   * */
+  /**
+   * @brief Decode jobid and taskid from kv store
+   *
+   * @param rawKey
+   * @return
+   */
   static std::pair<JobID, TaskID> parseKey(const folly::StringPiece& rawKey);
 
-  /*
-   * encode task val to write to kvstore
-   * */
+  /**
+   * @brief Encode task val to write to kvstore
+   *
+   * @return
+   */
   std::string taskVal();
 
-  /*
-   * decode task val from kvstore
+  /**
+   * @brief Decode task val from kvstore
    * should be
    * {host, status, start time, stop time}
-   * */
+   *
+   * @param rawVal
+   * @return
+   */
   static std::tuple<HostAddr, cpp2::JobStatus, int64_t, int64_t> parseVal(
       const folly::StringPiece& rawVal);
 
-  /*
-   * encoded key when dba called "backup jobs"
-   * */
+  /**
+   * @brief Encoded key when dba called "backup jobs"
+   *
+   * @return
+   */
   std::string archiveKey();
 
-  /*
-   * write out task details in human readable strings
+  /**
+   * @brief
+   * Write out task details in human readable strings
    * if a task is
    * =====================================================================================
    * | Job Id(TaskId) | Command(Dest) | Status   | Start Time        | Stop Time
@@ -87,22 +99,32 @@ class TaskDescription {
    * -------------------------------------------------------------------------------------
    *  then the vector should be
    * {27-0, 192.168.8.5, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
-   * */
+   *
+   * @return
+   */
   cpp2::TaskDesc toTaskDesc();
 
-  /*
-   * set the internal status
-   * will check if newStatus is later than curr Status
+  /**
+   * @brief
+   * Set the internal status
+   * Will check if newStatus is later than curr Status
    * e.g. set running to a finished job is forbidden
    *
-   * will set start time if newStatus is running
-   * will set stop time if newStatus is finished / failed / stopped
-   * */
+   * Will set start time if newStatus is running
+   * Will set stop time if newStatus is finished / failed / stopped
+   *
+   * @param newStatus
+   * @return
+   */
   bool setStatus(cpp2::JobStatus newStatus);
 
-  JobID getJobId() { return iJob_; }
+  JobID getJobId() {
+    return iJob_;
+  }
 
-  TaskID getTaskId() { return iTask_; }
+  TaskID getTaskId() {
+    return iTask_;
+  }
 
  private:
   JobID iJob_;

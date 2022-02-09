@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace nebula {
@@ -130,18 +129,18 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& re
 }
 
 template <typename REQ, typename RESP>
-nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(const REQ& req) {
-  const auto& traverseSpec = req.get_traverse_spec();
-  if (!traverseSpec.filter_ref().has_value()) {
+nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(
+    const REQ& req, std::function<const std::string*(const REQ& req)>&& getFilter) {
+  const auto* filterStr = getFilter(req);
+  if (filterStr == nullptr) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  const auto& filterStr = *traverseSpec.filter_ref();
 
   auto pool = &this->planContext_->objPool_;
   // auto v = env_;
-  if (!filterStr.empty()) {
+  if (!filterStr->empty()) {
     // the filter expression **must** return a bool
-    filter_ = Expression::decode(pool, filterStr);
+    filter_ = Expression::decode(pool, *filterStr);
     if (filter_ == nullptr) {
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
     }
@@ -177,7 +176,7 @@ void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
     auto ttlInfo = edgeSchema->getTTLInfo();
     if (ttlInfo.ok()) {
       VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
-      edgeContext_.ttlInfo_.emplace(edgeType, std::move(ttlInfo).value());
+      edgeContext_.ttlInfo_.emplace(std::abs(edgeType), std::move(ttlInfo).value());
     }
   }
 }
@@ -187,7 +186,7 @@ std::vector<cpp2::VertexProp> QueryBaseProcessor<REQ, RESP>::buildAllTagProps() 
   std::vector<cpp2::VertexProp> result;
   for (const auto& entry : tagContext_.schemas_) {
     cpp2::VertexProp tagProp;
-    tagProp.set_tag(entry.first);
+    tagProp.tag_ref() = entry.first;
     const auto& schema = entry.second.back();
     auto count = schema->getNumFields();
     for (size_t i = 0; i < count; i++) {
@@ -208,9 +207,9 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
   std::vector<cpp2::EdgeProp> result;
   for (const auto& entry : edgeContext_.schemas_) {
     cpp2::EdgeProp edgeProp;
-    edgeProp.set_type(entry.first);
+    edgeProp.type_ref() = entry.first;
     if (direction == cpp2::EdgeDirection::IN_EDGE) {
-      edgeProp.set_type(-edgeProp.get_type());
+      edgeProp.type_ref() = -edgeProp.get_type();
     }
     const auto& schema = entry.second.back();
     auto count = schema->getNumFields();
@@ -220,7 +219,7 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
     }
     if (direction == cpp2::EdgeDirection::BOTH) {
       cpp2::EdgeProp reverse = edgeProp;
-      reverse.set_type(-edgeProp.get_type());
+      reverse.type_ref() = -edgeProp.get_type();
       result.emplace_back(std::move(reverse));
     }
     result.emplace_back(std::move(edgeProp));
@@ -439,8 +438,9 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
+    case Expression::Kind::kTagProperty:
     case Expression::Kind::kSrcProperty: {
-      auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
+      auto* sourceExp = static_cast<const PropertyExpression*>(exp);
       const auto& tagName = sourceExp->sym();
       const auto& propName = sourceExp->prop();
       auto tagRet = this->env_->schemaMan_->toTagID(spaceId_, tagName);
@@ -459,6 +459,17 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
       const auto& tagSchema = iter->second.back();
 
       if (propName == kVid || propName == kTag) {
+        if (returned || filtered) {
+          addPropContextIfNotExists(tagContext_.propContexts_,
+                                    tagContext_.indexMap_,
+                                    tagContext_.tagNames_,
+                                    tagId,
+                                    tagName,
+                                    propName,
+                                    nullptr,
+                                    returned,
+                                    filtered);
+        }
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
 
@@ -506,6 +517,17 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
       const auto& edgeSchema = iter->second.back();
 
       if (propName == kSrc || propName == kType || propName == kRank || propName == kDst) {
+        if (returned || filtered) {
+          addPropContextIfNotExists(edgeContext_.propContexts_,
+                                    edgeContext_.indexMap_,
+                                    edgeContext_.edgeNames_,
+                                    edgeType,
+                                    edgeName,
+                                    propName,
+                                    nullptr,
+                                    returned,
+                                    filtered);
+        }
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
 
@@ -561,8 +583,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kSubscript:
     case Expression::Kind::kAttribute:
+    case Expression::Kind::kLabelTagProperty:
     case Expression::Kind::kLabelAttribute:
-    case Expression::Kind::kTagProperty:
     case Expression::Kind::kVertex:
     case Expression::Kind::kEdge:
     case Expression::Kind::kLabel:
@@ -598,6 +620,9 @@ void QueryBaseProcessor<REQ, RESP>::addPropContextIfNotExists(
     bool filtered,
     const std::pair<size_t, cpp2::StatType>* statInfo) {
   auto idxIter = indexMap.find(entryId);
+  if (idxIter == indexMap.end()) {  // for edge type
+    idxIter = indexMap.find(-entryId);
+  }
   if (idxIter == indexMap.end()) {
     // if no property of tag/edge has been add to propContexts
     PropContext ctx(propName.c_str(), field, returned, filtered, statInfo);

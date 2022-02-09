@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/JobStatus.h"
@@ -27,7 +26,9 @@ int JobStatus::phaseNumber(Status st) {
   return INT_MIN;
 }
 
-bool JobStatus::laterThan(Status lhs, Status rhs) { return phaseNumber(lhs) > phaseNumber(rhs); }
+bool JobStatus::laterThan(Status lhs, Status rhs) {
+  return phaseNumber(lhs) > phaseNumber(rhs);
+}
 
 std::string JobStatus::toString(Status st) {
   switch (st) {

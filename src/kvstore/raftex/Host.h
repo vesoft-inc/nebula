@@ -1,15 +1,16 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_HOST_H_
 #define RAFTEX_HOST_H_
 
 #include <folly/futures/Future.h>
+#include <folly/futures/SharedPromise.h>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
@@ -29,9 +30,13 @@ class Host final : public std::enable_shared_from_this<Host> {
  public:
   Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
-  ~Host() { LOG(INFO) << idStr_ << " The host has been destroyed!"; }
+  ~Host() {
+    LOG(INFO) << idStr_ << " The host has been destroyed!";
+  }
 
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
 
   // This will be called when the shard lost its leadership
   void pause() {
@@ -64,9 +69,13 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   void waitForStop();
 
-  bool isLearner() const { return isLearner_; }
+  bool isLearner() const {
+    return isLearner_;
+  }
 
-  void setLearner(bool isLearner) { isLearner_ = isLearner; }
+  void setLearner(bool isLearner) {
+    isLearner_ = isLearner;
+  }
 
   folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
                                                      folly::EventBase* eb);
@@ -80,17 +89,15 @@ class Host final : public std::enable_shared_from_this<Host> {
       TermID lastLogTermSent,  // The last log term being sent
       LogID lastLogIdSent);    // The last log id being sent
 
-  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
-                                                       TermID term,
-                                                       LogID latestLogId,
-                                                       LogID commitLogId,
-                                                       TermID lastLogTerm,
-                                                       LogID lastLogId);
+  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(
+      folly::EventBase* eb, TermID term, LogID commitLogId, TermID lastLogTerm, LogID lastLogId);
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
  private:
-  cpp2::ErrorCode checkStatus() const;
+  nebula::cpp2::ErrorCode canAppendLog() const;
 
   folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
@@ -100,11 +107,16 @@ class Host final : public std::enable_shared_from_this<Host> {
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
-  std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
+  ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
+  prepareAppendLogRequest();
+
+  nebula::cpp2::ErrorCode startSendSnapshot();
 
   bool noRequest() const;
 
   void setResponse(const cpp2::AppendLogResponse& r);
+
+  std::shared_ptr<cpp2::AppendLogRequest> getPendingReqIfAny(std::shared_ptr<Host> self);
 
  private:
   // <term, logId, committedLogId>
@@ -120,7 +132,11 @@ class Host final : public std::enable_shared_from_this<Host> {
   bool paused_{false};
   bool stopped_{false};
 
+  // whether there is a batch of logs for target host in on going
   bool requestOnGoing_{false};
+  // whether there is a snapshot for target host in on going
+  bool sendingSnapshot_{false};
+
   std::condition_variable noMoreRequestCV_;
   folly::SharedPromise<cpp2::AppendLogResponse> promise_;
   folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
@@ -136,7 +152,6 @@ class Host final : public std::enable_shared_from_this<Host> {
   TermID lastLogTermSent_{0};
 
   LogID committedLogId_{0};
-  std::atomic_bool sendingSnapshot_{false};
 
   // CommittedLogId of follower
   LogID followerCommittedLogId_{0};

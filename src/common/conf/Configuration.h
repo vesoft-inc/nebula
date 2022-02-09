@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef COMMON_CONF_CONFIGURATION_H_
 #define COMMON_CONF_CONFIGURATION_H_
@@ -27,11 +26,11 @@ class Configuration final {
   /**
    * Parse from a file
    */
-  Status MUST_USE_RESULT parseFromFile(const std::string &filename);
+  Status NG_MUST_USE_RESULT parseFromFile(const std::string &filename);
   /**
    * Parse from a string buffer
    */
-  Status MUST_USE_RESULT parseFromString(const std::string &content);
+  Status NG_MUST_USE_RESULT parseFromString(const std::string &content);
 
   std::string dumpToString() const;
 
@@ -42,19 +41,20 @@ class Configuration final {
    * @key     item key
    * @val     to hold the item value.
    */
-  Status MUST_USE_RESULT fetchAsInt(const char *key, int64_t &val) const;
-  Status MUST_USE_RESULT fetchAsDouble(const char *key, double &val) const;
-  Status MUST_USE_RESULT fetchAsBool(const char *key, bool &val) const;
-  Status MUST_USE_RESULT fetchAsString(const char *key, std::string &val) const;
+  Status NG_MUST_USE_RESULT fetchAsInt(const char *key, int64_t &val) const;
+  Status NG_MUST_USE_RESULT fetchAsDouble(const char *key, double &val) const;
+  Status NG_MUST_USE_RESULT fetchAsBool(const char *key, bool &val) const;
+  Status NG_MUST_USE_RESULT fetchAsString(const char *key, std::string &val) const;
 
-  Status MUST_USE_RESULT fetchAsIntArray(const char *key, std::vector<int64_t> &val) const;
-  Status MUST_USE_RESULT fetchAsDoubleArray(const char *key, std::vector<double> &val) const;
-  Status MUST_USE_RESULT fetchAsBoolArray(const char *key, std::vector<bool> &val) const;
-  Status MUST_USE_RESULT fetchAsStringArray(const char *key, std::vector<std::string> &val) const;
+  Status NG_MUST_USE_RESULT fetchAsIntArray(const char *key, std::vector<int64_t> &val) const;
+  Status NG_MUST_USE_RESULT fetchAsDoubleArray(const char *key, std::vector<double> &val) const;
+  Status NG_MUST_USE_RESULT fetchAsBoolArray(const char *key, std::vector<bool> &val) const;
+  Status NG_MUST_USE_RESULT fetchAsStringArray(const char *key,
+                                               std::vector<std::string> &val) const;
 
-  Status MUST_USE_RESULT fetchAsSubConf(const char *key, Configuration &val) const;
+  Status NG_MUST_USE_RESULT fetchAsSubConf(const char *key, Configuration &val) const;
 
-  Status MUST_USE_RESULT upsertStringField(const char *key, const std::string &val);
+  Status NG_MUST_USE_RESULT upsertStringField(const char *key, const std::string &val);
 
   // Iterate through every key in the configuration
   Status forEachKey(std::function<void(const std::string &)> processor) const;

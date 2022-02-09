@@ -1,17 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_STORAGEITERATOR_H_
 #define STORAGE_EXEC_STORAGEITERATOR_H_
 
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
-
 namespace nebula {
 namespace storage {
 
@@ -53,7 +52,9 @@ class SingleEdgeIterator : public StorageIterator {
     }
   }
 
-  bool valid() const override { return reader_ != nullptr; }
+  bool valid() const override {
+    return reader_ != nullptr;
+  }
 
   void next() override {
     do {
@@ -65,13 +66,21 @@ class SingleEdgeIterator : public StorageIterator {
     } while (!check());
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
-  EdgeType edgeType() const { return edgeType_; }
+  EdgeType edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   // return true when the value iter to a valid edge value
@@ -113,7 +122,9 @@ class MultiEdgeIterator : public StorageIterator {
     moveToNextValidIterator();
   }
 
-  bool valid() const override { return curIter_ < iters_.size(); }
+  bool valid() const override {
+    return curIter_ < iters_.size();
+  }
 
   void next() override {
     iters_[curIter_]->next();
@@ -122,16 +133,26 @@ class MultiEdgeIterator : public StorageIterator {
     }
   }
 
-  folly::StringPiece key() const override { return iters_[curIter_]->key(); }
+  folly::StringPiece key() const override {
+    return iters_[curIter_]->key();
+  }
 
-  folly::StringPiece val() const override { return iters_[curIter_]->val(); }
+  folly::StringPiece val() const override {
+    return iters_[curIter_]->val();
+  }
 
-  RowReader* reader() const override { return iters_[curIter_]->reader(); }
+  RowReader* reader() const override {
+    return iters_[curIter_]->reader();
+  }
 
-  EdgeType edgeType() const { return iters_[curIter_]->edgeType(); }
+  EdgeType edgeType() const {
+    return iters_[curIter_]->edgeType();
+  }
 
   // return the index of multiple iterators
-  size_t getIdx() const { return curIter_; }
+  size_t getIdx() const {
+    return curIter_;
+  }
 
  private:
   void moveToNextValidIterator() {
@@ -154,13 +175,21 @@ class IndexIterator : public StorageIterator {
 
   virtual IndexID indexId() const = 0;
 
-  bool valid() const override { return !!iter_ && iter_->valid(); }
+  bool valid() const override {
+    return !!iter_ && iter_->valid();
+  }
 
-  void next() override { iter_->next(); }
+  void next() override {
+    iter_->next();
+  }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
  protected:
   std::unique_ptr<kvstore::KVIterator> iter_;
@@ -171,13 +200,21 @@ class VertexIndexIterator : public IndexIterator {
   VertexIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
       : IndexIterator(std::move(iter)), vIdLen_(vIdLen) {}
 
-  RowReader* reader() const override { return nullptr; }
+  RowReader* reader() const override {
+    return nullptr;
+  }
 
-  IndexID indexId() const override { return IndexKeyUtils::getIndexId(iter_->key()); }
+  IndexID indexId() const override {
+    return IndexKeyUtils::getIndexId(iter_->key());
+  }
 
-  VertexID vId() const { return IndexKeyUtils::getIndexVertexID(vIdLen_, iter_->key()).str(); }
+  VertexID vId() const {
+    return IndexKeyUtils::getIndexVertexID(vIdLen_, iter_->key()).str();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
  protected:
   size_t vIdLen_;
@@ -188,17 +225,29 @@ class EdgeIndexIterator : public IndexIterator {
   EdgeIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
       : IndexIterator(std::move(iter)), vIdLen_(vIdLen) {}
 
-  RowReader* reader() const override { return nullptr; }
+  RowReader* reader() const override {
+    return nullptr;
+  }
 
-  IndexID indexId() const override { return IndexKeyUtils::getIndexId(iter_->key()); }
+  IndexID indexId() const override {
+    return IndexKeyUtils::getIndexId(iter_->key());
+  }
 
-  VertexID srcId() const { return IndexKeyUtils::getIndexSrcId(vIdLen_, iter_->key()).str(); }
+  VertexID srcId() const {
+    return IndexKeyUtils::getIndexSrcId(vIdLen_, iter_->key()).str();
+  }
 
-  VertexID dstId() const { return IndexKeyUtils::getIndexDstId(vIdLen_, iter_->key()).str(); }
+  VertexID dstId() const {
+    return IndexKeyUtils::getIndexDstId(vIdLen_, iter_->key()).str();
+  }
 
-  EdgeRanking ranking() const { return IndexKeyUtils::getIndexRank(vIdLen_, iter_->key()); }
+  EdgeRanking ranking() const {
+    return IndexKeyUtils::getIndexRank(vIdLen_, iter_->key());
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
  protected:
   size_t vIdLen_;

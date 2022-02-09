@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "common/base/Base.h"
 
@@ -22,7 +21,9 @@ const char* __asan_default_options() {
            "fast_unwind_on_malloc=0 \n"
            "detect_stack_use_after_return=1 \n"
            "alloc_dealloc_mismatch=1 \n"
-           "new_delete_type_mismatch=1 \n"
+           // todo(doodle): Reopen when https://github.com/vesoft-inc/nebula/issues/3690
+           // addressed throughly
+           "new_delete_type_mismatch=0 \n"
            "strict_init_order=1 \n"
            "intercept_tls_get_addr=1 \n"
            "symbolize_inline_frames=1 \n"
@@ -57,7 +58,9 @@ const char* __lsan_default_suppressions() {
 }
 
 SANITIZER_HOOK_ATTRIBUTES
-const char* __ubsan_default_options() { return "print_stacktrace=1 \n"; }
+const char* __ubsan_default_options() {
+  return "print_stacktrace=1 \n";
+}
 
 }  // extern "C"
 

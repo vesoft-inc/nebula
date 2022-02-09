@@ -8,8 +8,16 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -25,8 +33,16 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -39,12 +55,48 @@ nebula_add_test(
         OperationKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:meta_keyutils_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME
+        meta_key_utils_test
+    SOURCES
+        MetaKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:meta_keyutils_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:encryption_obj>
+        $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        gtest
 )

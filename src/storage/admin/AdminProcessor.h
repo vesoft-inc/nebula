@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINPROCESSOR_H_
@@ -12,6 +11,7 @@
 #include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
+#include "kvstore/stats/KVStats.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
 
@@ -20,7 +20,9 @@ namespace storage {
 
 class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static TransLeaderProcessor* instance(StorageEnv* env) { return new TransLeaderProcessor(env); }
+  static TransLeaderProcessor* instance(StorageEnv* env) {
+    return new TransLeaderProcessor(env);
+  }
 
   void process(const cpp2::TransLeaderReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
@@ -67,9 +69,10 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
         onFinished();
         return;
       } else if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        stats::StatsManager::addValue(kTransferLeaderLatencyUs, part->execTime());
         // To avoid dead lock, we use another ioThreadPool to check the
         // leader information.
-        folly::via(folly::getIOExecutor().get(), [this, part, spaceId, partId] {
+        folly::via(folly::getGlobalIOExecutor().get(), [this, part, spaceId, partId] {
           int retry = FLAGS_waiting_new_leader_retry_times;
           while (retry-- > 0) {
             auto leaderRet = env_->kvstore_->partLeader(spaceId, partId);
@@ -88,7 +91,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
               onFinished();
               return;
             } else if (leader != HostAddr("", 0)) {
-              LOG(INFO) << "I am choosen as leader of space " << spaceId << " part " << partId
+              LOG(INFO) << "I am chosen as leader of space " << spaceId << " part " << partId
                         << " again!";
               pushResultCode(nebula::cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
               onFinished();
@@ -117,7 +120,9 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static AddPartProcessor* instance(StorageEnv* env) { return new AddPartProcessor(env); }
+  static AddPartProcessor* instance(StorageEnv* env) {
+    return new AddPartProcessor(env);
+  }
 
   void process(const cpp2::AddPartReq& req) {
     auto spaceId = req.get_space_id();
@@ -149,7 +154,9 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static RemovePartProcessor* instance(StorageEnv* env) { return new RemovePartProcessor(env); }
+  static RemovePartProcessor* instance(StorageEnv* env) {
+    return new RemovePartProcessor(env);
+  }
 
   void process(const cpp2::RemovePartReq& req) {
     auto spaceId = req.get_space_id();
@@ -170,7 +177,9 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static MemberChangeProcessor* instance(StorageEnv* env) { return new MemberChangeProcessor(env); }
+  static MemberChangeProcessor* instance(StorageEnv* env) {
+    return new MemberChangeProcessor(env);
+  }
 
   void process(const cpp2::MemberChangeReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
@@ -207,7 +216,9 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static AddLearnerProcessor* instance(StorageEnv* env) { return new AddLearnerProcessor(env); }
+  static AddLearnerProcessor* instance(StorageEnv* env) {
+    return new AddLearnerProcessor(env);
+  }
 
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
@@ -263,19 +274,19 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
                   << ", part " << partId << ", remaining " << retry << " retry times"
                   << ", result " << static_cast<int32_t>(res);
         switch (res) {
-          case raftex::AppendLogResult::SUCCEEDED:
+          case nebula::cpp2::ErrorCode::SUCCEEDED:
             onFinished();
             return;
-          case raftex::AppendLogResult::E_INVALID_PEER:
+          case nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER:
             this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_PEER, partId);
             onFinished();
             return;
-          case raftex::AppendLogResult::E_NOT_A_LEADER: {
+          case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
             handleLeaderChanged(spaceId, partId);
             onFinished();
             return;
           }
-          case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
+          case nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT:
             LOG(INFO) << "Space " << spaceId << ", partId " << partId
                       << " is still sending snapshot, please wait...";
             break;
@@ -297,7 +308,9 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
 
 class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static CheckPeersProcessor* instance(StorageEnv* env) { return new CheckPeersProcessor(env); }
+  static CheckPeersProcessor* instance(StorageEnv* env) {
+    return new CheckPeersProcessor(env);
+  }
 
   void process(const cpp2::CheckPeersReq& req) {
     auto spaceId = req.get_space_id();
@@ -320,29 +333,6 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
  private:
   explicit CheckPeersProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
-};
-
-class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
- public:
-  static GetLeaderProcessor* instance(StorageEnv* env) { return new GetLeaderProcessor(env); }
-
-  void process(const cpp2::GetLeaderReq&) {
-    CHECK_NOTNULL(env_->kvstore_);
-    std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> allLeaders;
-    env_->kvstore_->allLeader(allLeaders);
-    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-    for (auto& spaceLeaders : allLeaders) {
-      auto& spaceId = spaceLeaders.first;
-      for (auto& partLeader : spaceLeaders.second) {
-        leaderIds[spaceId].emplace_back(partLeader.get_part_id());
-      }
-    }
-    resp_.set_leader_parts(std::move(leaderIds));
-    this->onFinished();
-  }
-
- private:
-  explicit GetLeaderProcessor(StorageEnv* env) : BaseProcessor<cpp2::GetLeaderPartsResp>(env) {}
 };
 
 }  // namespace storage

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_STATUSOR_H_
@@ -26,7 +25,9 @@ class StatusOr final {
   // Tell if `U' is of type `StatusOr<V>'
   template <typename U>
   struct is_status_or {
-    static auto sfinae(...) -> uint8_t { return 0; }
+    static auto sfinae(...) -> uint8_t {
+      return 0;
+    }
     template <typename V>
     static auto sfinae(const StatusOr<V> &) -> uint16_t {
       return 0;
@@ -64,11 +65,15 @@ class StatusOr final {
   // `StatusOr<T>' contains neither a Status nor a value
   // in the default-constructed case.
   // From the semantics aspect, it must have been associated with
-  // a Status or value eventualy before being used.
-  StatusOr() { state_ = kVoid; }
+  // a Status or value eventually before being used.
+  StatusOr() {
+    state_ = kVoid;
+  }
 
   // Destruct the `Status' or value if it's holding one.
-  ~StatusOr() { destruct(); }
+  ~StatusOr() {
+    destruct();
+  }
 
   // Copy/move construct from `Status'
   // Not explicit to allow construct from a `Status', e.g. in the `return'
@@ -173,7 +178,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of `StatusOr<U>'
+  // Move assignment operator from a rvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(StatusOr<U> &&rhs) noexcept {
     reset();
@@ -191,7 +196,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of any compatible type with `T'
+  // Move assignment operator from a rvalue of any compatible type with `T'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(U &&value) noexcept {
     destruct();
@@ -217,10 +222,14 @@ class StatusOr final {
   }
 
   // Tell if `*this' contains a value
-  bool ok() const { return hasValue(); }
+  bool ok() const {
+    return hasValue();
+  }
 
   // Type conversion operator, i.e. alias of `ok()'
-  explicit operator bool() const { return ok(); }
+  explicit operator bool() const {
+    return ok();
+  }
 
   // Return the associated `Status' if and only if it has one,
   //
@@ -237,7 +246,7 @@ class StatusOr final {
   }
 
   // Return the non-const lvalue reference to the associated value
-  // `ok()' is DCHECKed
+  // `ok()' is DCHECK'd
   T &value() & {
     DCHECK(ok());
     return variant_.value_;
@@ -259,15 +268,25 @@ class StatusOr final {
   }
 
  private:
-  bool hasValue() const { return state_ == kValue; }
+  bool hasValue() const {
+    return state_ == kValue;
+  }
 
-  bool hasStatus() const { return state_ == kStatus; }
+  bool hasStatus() const {
+    return state_ == kStatus;
+  }
 
-  bool isVoid() const { return state_ == kVoid; }
+  bool isVoid() const {
+    return state_ == kVoid;
+  }
 
-  void destructValue() { variant_.value_.~T(); }
+  void destructValue() {
+    variant_.value_.~T();
+  }
 
-  void destructStatus() { variant_.status_.~Status(); }
+  void destructStatus() {
+    variant_.status_.~Status();
+  }
 
   void resetValue() {
     destructValue();

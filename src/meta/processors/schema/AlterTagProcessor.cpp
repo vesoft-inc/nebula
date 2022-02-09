@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/AlterTagProcessor.h"
@@ -14,10 +13,10 @@ namespace meta {
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
+  const auto& tagName = req.get_tag_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
   auto ret = getTagId(spaceId, tagName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -30,7 +29,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   auto tagId = nebula::value(ret);
 
   // Check the tag belongs to the space
-  auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
+  auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
   auto retPre = doPrefix(tagPrefix);
   if (!nebula::ok(retPre)) {
     auto retCode = nebula::error(retPre);
@@ -49,8 +48,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   }
 
   // Get the last version of the tag
-  auto version = MetaServiceUtils::parseTagVersion(iter->key()) + 1;
-  auto schema = MetaServiceUtils::parseSchema(iter->val());
+  auto version = MetaKeyUtils::parseTagVersion(iter->key()) + 1;
+  auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
 
@@ -140,14 +139,14 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  schema.set_schema_prop(std::move(prop));
-  schema.set_columns(std::move(columns));
+  schema.schema_prop_ref() = std::move(prop);
+  schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId;
-  data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, version),
-                    MetaServiceUtils::schemaVal(tagName, schema));
-  resp_.set_id(to(tagId, EntryType::TAG));
+  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
+                    MetaKeyUtils::schemaVal(tagName, schema));
+  resp_.id_ref() = to(tagId, EntryType::TAG);
   doSyncPutAndUpdate(std::move(data));
 }
 

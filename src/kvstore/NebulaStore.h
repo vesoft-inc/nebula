@@ -1,16 +1,17 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_NEBULASTORE_H_
 #define KVSTORE_NEBULASTORE_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/DiskManager.h"
@@ -65,7 +66,8 @@ class NebulaStore : public KVStore, public Handler {
         options_(std::move(options)) {
     CHECK_NOTNULL(options_.partMan_);
     clientMan_ =
-        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>();
+        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>(
+            FLAGS_enable_ssl);
   }
 
   ~NebulaStore();
@@ -85,25 +87,61 @@ class NebulaStore : public KVStore, public Handler {
 
   void stop() override;
 
-  uint32_t capability() const override { return 0; }
+  uint32_t capability() const override {
+    return 0;
+  }
 
-  HostAddr address() const { return storeSvcAddr_; }
+  HostAddr address() const {
+    return storeSvcAddr_;
+  }
 
-  std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const { return ioPool_; }
+  std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const {
+    return ioPool_;
+  }
 
-  std::shared_ptr<thread::GenericThreadPool> getBgWorkers() const { return bgWorkers_; }
+  std::shared_ptr<thread::GenericThreadPool> getBgWorkers() const {
+    return bgWorkers_;
+  }
 
-  std::shared_ptr<folly::Executor> getExecutors() const { return workers_; }
+  std::shared_ptr<folly::Executor> getExecutors() const {
+    return workers_;
+  }
 
   // Return the current leader
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                         PartitionID partId) override;
 
-  PartManager* partManager() const override { return options_.partMan_.get(); }
+  PartManager* partManager() const override {
+    return options_.partMan_.get();
+  }
 
-  bool isListener() const { return !options_.listenerPath_.empty(); }
+  bool isListener() const {
+    return !options_.listenerPath_.empty();
+  }
 
-  std::vector<std::string> getDataRoot() const override { return options_.dataPaths_; }
+  std::vector<std::string> getDataRoot() const override {
+    return options_.dataPaths_;
+  }
+
+  /**
+   * @brief Get the Snapshot from engine.
+   *
+   * @param spaceId
+   * @param partID
+   * @param canReadFromFollower
+   * @return const void* Snapshot pointer.
+   */
+  const void* GetSnapshot(GraphSpaceID spaceId,
+                          PartitionID partID,
+                          bool canReadFromFollower = false) override;
+  /**
+   * @brief Release snapshot from engine.
+   *
+   * @param spaceId
+   * @param partId
+   * @param snapshot
+   */
+  void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override;
 
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
@@ -139,14 +177,16 @@ class NebulaStore : public KVStore, public Handler {
                                  PartitionID partId,
                                  const std::string& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 bool canReadFromFollower = false) override;
+                                 bool canReadFromFollower = false,
+                                 const void* snapshot = nullptr) override;
 
   // Delete the overloading with a rvalue `prefix'
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  std::string&& prefix,
                                  std::unique_ptr<KVIterator>* iter,
-                                 bool canReadFromFollower = false) override = delete;
+                                 bool canReadFromFollower = false,
+                                 const void* snapshot = nullptr) override = delete;
 
   // Get all results with prefix starting from start
   nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
@@ -270,8 +310,28 @@ class NebulaStore : public KVStore, public Handler {
                             PartitionID partId,
                             const std::vector<HostAddr>& remoteListeners) override;
 
+  void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
+
   nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                     std::vector<KV> keyValues) override;
+
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
+                                                            const std::string& property) override;
+  void registerOnNewPartAdded(const std::string& funcName,
+                              std::function<void(std::shared_ptr<Part>&)> func,
+                              std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts);
+
+  void unregisterOnNewPartAdded(const std::string& funcName) {
+    onNewPartAdded_.erase(funcName);
+  }
+
+  void registerBeforeRemoveSpace(std::function<void(GraphSpaceID)> func) {
+    beforeRemoveSpace_ = func;
+  }
+
+  void unregisterBeforeRemoveSpace() {
+    beforeRemoveSpace_ = nullptr;
+  }
 
  private:
   void loadPartFromDataPath();
@@ -329,6 +389,9 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<raftex::SnapshotManager> snapshot_;
   std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
   std::shared_ptr<DiskManager> diskMan_;
+  folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
+      onNewPartAdded_;
+  std::function<void(GraphSpaceID)> beforeRemoveSpace_{nullptr};
 };
 
 }  // namespace kvstore

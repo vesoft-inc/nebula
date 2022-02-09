@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/ListPartsProcessor.h"
@@ -24,7 +23,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     showAllParts_ = false;
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     for (const auto& partId : partIds_) {
-      auto partKey = MetaServiceUtils::partKey(spaceId_, partId);
+      auto partKey = MetaKeyUtils::partKey(spaceId_, partId);
       auto ret = doGet(std::move(partKey));
       if (!nebula::ok(ret)) {
         auto retCode = nebula::error(ret);
@@ -34,7 +33,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         return;
       }
       auto hosts = std::move(nebula::value(ret));
-      partHostsMap[partId] = MetaServiceUtils::parsePartVal(hosts);
+      partHostsMap[partId] = MetaKeyUtils::parsePartVal(hosts);
     }
   } else {
     // Show all parts
@@ -59,8 +58,8 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
 
   for (auto& partEntry : partHostsMap) {
     cpp2::PartItem partItem;
-    partItem.set_part_id(partEntry.first);
-    partItem.set_peers(std::move(partEntry.second));
+    partItem.part_id_ref() = partEntry.first;
+    partItem.peers_ref() = std::move(partEntry.second);
     std::vector<HostAddr> losts;
     for (auto& host : partItem.get_peers()) {
       if (std::find(activeHosts.begin(), activeHosts.end(), HostAddr(host.host, host.port)) ==
@@ -68,7 +67,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         losts.emplace_back(host.host, host.port);
       }
     }
-    partItem.set_losts(std::move(losts));
+    partItem.losts_ref() = std::move(losts);
     partItems.emplace_back(std::move(partItem));
   }
   if (partItems.size() != partHostsMap.size()) {
@@ -76,7 +75,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
   }
   auto retCode = getLeaderDist(partItems);
   if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    resp_.set_parts(std::move(partItems));
+    resp_.parts_ref() = std::move(partItems);
   }
   handleErrorCode(retCode);
   onFinished();
@@ -87,7 +86,7 @@ ListPartsProcessor::getAllParts() {
   std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::partPrefix(spaceId_);
+  const auto& prefix = MetaKeyUtils::partPrefix(spaceId_);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -100,7 +99,7 @@ ListPartsProcessor::getAllParts() {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    std::vector<HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
+    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
     partHostsMap.emplace(partId, std::move(partHosts));
     iter->next();
   }
@@ -118,7 +117,7 @@ nebula::cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::Part
 
   std::vector<std::string> leaderKeys;
   for (auto& partItem : partItems) {
-    auto key = MetaServiceUtils::leaderKey(spaceId_, partItem.get_part_id());
+    auto key = MetaKeyUtils::leaderKey(spaceId_, partItem.get_part_id());
     leaderKeys.emplace_back(std::move(key));
   }
 
@@ -137,7 +136,7 @@ nebula::cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::Part
     if (!statuses[i].ok()) {
       continue;
     }
-    std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(values[i]);
+    std::tie(host, std::ignore, code) = MetaKeyUtils::parseLeaderValV3(values[i]);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       continue;
     }
@@ -145,7 +144,7 @@ nebula::cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::Part
       LOG(INFO) << "ignore inactive host: " << host;
       continue;
     }
-    partItems[i].set_leader(host);
+    partItems[i].leader_ref() = host;
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;

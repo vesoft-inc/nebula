@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "mock/MockCluster.h"
 
@@ -13,9 +12,9 @@
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockData.h"
 #include "storage/CompactionFilter.h"
-#include "storage/GeneralStorageServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/transaction/TransactionManager.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -58,14 +57,15 @@ std::unique_ptr<kvstore::MemPartManager> MockCluster::memPartMan(
 }
 
 // static
-std::string MockCluster::localIP() { return "127.0.0.1"; }
+std::string MockCluster::localIP() {
+  return "127.0.0.1";
+}
 
 // static
 std::unique_ptr<kvstore::NebulaStore> MockCluster::initKV(kvstore::KVOptions options,
                                                           HostAddr localHost) {
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-  auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      1, true /*stats*/);
+  auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   workers->setNamePrefix("executor");
   workers->start();
   if (localHost.host == 0) {
@@ -103,8 +103,7 @@ void MockCluster::startMeta(const std::string& rootPath, HostAddr addr) {
 }
 
 std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> MockCluster::getWorkers() {
-  auto worker =
-      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1, true);
+  auto worker = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   worker->setNamePrefix("executor");
   worker->start();
   return worker;
@@ -135,7 +134,7 @@ void MockCluster::initStorageKV(const char* dataPath,
                                 SchemaVer schemaVerCount,
                                 bool hasProp,
                                 bool hasListener,
-                                const std::vector<meta::cpp2::FTClient>& clients,
+                                const std::vector<meta::cpp2::ServiceClient>& clients,
                                 bool needCffBuilder) {
   FLAGS_heartbeat_interval_secs = 1;
   const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
@@ -144,15 +143,15 @@ void MockCluster::initStorageKV(const char* dataPath,
   if (metaClient_ != nullptr) {
     LOG(INFO) << "Pull meta information from meta server";
     nebula::meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("test_space");
-    spaceDesc.set_partition_num(6);
-    spaceDesc.set_replica_factor(1);
-    spaceDesc.set_charset_name("utf8");
-    spaceDesc.set_collate_name("utf8_bin");
+    spaceDesc.space_name_ref() = "test_space";
+    spaceDesc.partition_num_ref() = 6;
+    spaceDesc.replica_factor_ref() = 1;
+    spaceDesc.charset_name_ref() = "utf8";
+    spaceDesc.collate_name_ref() = "utf8_bin";
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
-    type.set_type_length(32);
-    spaceDesc.set_vid_type(std::move(type));
+    type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+    type.type_length_ref() = 32;
+    spaceDesc.vid_type_ref() = std::move(type);
     auto ret = metaClient_->createSpace(spaceDesc).get();
     if (!ret.ok()) {
       LOG(FATAL) << "can't create space";
@@ -170,7 +169,8 @@ void MockCluster::initStorageKV(const char* dataPath,
       if (clients.empty()) {
         LOG(FATAL) << "full text client list is empty";
       }
-      ret = metaClient_->signInFTService(meta::cpp2::FTServiceType::ELASTICSEARCH, clients).get();
+      ret =
+          metaClient_->signInService(meta::cpp2::ExternalServiceType::ELASTICSEARCH, clients).get();
       if (!ret.ok()) {
         LOG(FATAL) << "full text client sign in failed";
       }
@@ -210,11 +210,14 @@ void MockCluster::initStorageKV(const char* dataPath,
   storageEnv_->rebuildIndexGuard_ = std::make_unique<storage::IndexGuard>();
   storageEnv_->verticesML_ = std::make_unique<storage::VerticesMemLock>();
   storageEnv_->edgesML_ = std::make_unique<storage::EdgesMemLock>();
+
+  txnMan_ = std::make_unique<storage::TransactionManager>(storageEnv_.get());
+  storageEnv_->txnMan_ = txnMan_.get();
+  txnMan_->start();
 }
 
 void MockCluster::startStorage(HostAddr addr,
                                const std::string& rootPath,
-                               bool isGeneralService,
                                SchemaVer schemaVerCount) {
   initStorageKV(rootPath.c_str(), addr, schemaVerCount);
 
@@ -224,17 +227,17 @@ void MockCluster::startStorage(HostAddr addr,
   storageAdminServer_->start("admin-storage", addr.port - 1, adminHandler);
   LOG(INFO) << "The admin storage daemon started on port " << storageAdminServer_->port_;
 
-  if (!isGeneralService) {
-    graphStorageServer_ = std::make_unique<RpcServer>();
-    auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
-    graphStorageServer_->start("graph-storage", addr.port, graphHandler);
-    LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
-  } else {
-    generalStorageServer_ = std::make_unique<RpcServer>();
-    auto generalHandler = std::make_shared<storage::GeneralStorageServiceHandler>(env);
-    generalStorageServer_->start("general-storage", addr.port, generalHandler);
-    LOG(INFO) << "The general storage daemon started on port " << generalStorageServer_->port_;
-  }
+#ifndef BUILD_STANDALONE
+  graphStorageServer_ = std::make_unique<RpcServer>();
+  auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+  graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+  LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
+#else
+  graphStorageServer_ = std::make_unique<LocalServer>();
+  auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+  graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+  LOG(INFO) << "The graph storage daemon started on Local server.";
+#endif
 }
 
 std::unique_ptr<meta::SchemaManager> MockCluster::memSchemaMan(SchemaVer schemaVerCount,
@@ -290,16 +293,10 @@ meta::MetaClient* MockCluster::initMetaClient(meta::MetaClientOptions options) {
   return metaClient_.get();
 }
 
-storage::GraphStorageClient* MockCluster::initGraphStorageClient() {
+storage::StorageClient* MockCluster::initGraphStorageClient() {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-  storageClient_ = std::make_unique<storage::GraphStorageClient>(threadPool, metaClient_.get());
+  storageClient_ = std::make_unique<storage::StorageClient>(threadPool, metaClient_.get());
   return storageClient_.get();
-}
-
-storage::GeneralStorageClient* MockCluster::initGeneralStorageClient() {
-  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-  generalClient_ = std::make_unique<storage::GeneralStorageClient>(threadPool, metaClient_.get());
-  return generalClient_.get();
 }
 
 }  // namespace mock

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/TaskDescription.h"
@@ -9,7 +8,7 @@
 #include <folly/String.h>
 
 #include "common/time/WallClock.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/JobUtils.h"
 
@@ -81,7 +80,7 @@ std::string TaskDescription::archiveKey() {
 std::string TaskDescription::taskVal() {
   std::string str;
   str.reserve(128);
-  str.append(MetaServiceUtils::serializeHostAddr(dest_))
+  str.append(MetaKeyUtils::serializeHostAddr(dest_))
       .append(reinterpret_cast<const char*>(&status_), sizeof(Status))
       .append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_))
       .append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
@@ -100,7 +99,7 @@ std::tuple<HostAddr, Status, int64_t, int64_t> TaskDescription::parseVal(
   size_t offset = 0;
 
   folly::StringPiece raw = rawVal;
-  HostAddr host = MetaServiceUtils::deserializeHostAddr(raw);
+  HostAddr host = MetaKeyUtils::deserializeHostAddr(raw);
   offset += sizeof(size_t);
   offset += host.host.size();
   offset += sizeof(uint32_t);
@@ -126,12 +125,12 @@ std::tuple<HostAddr, Status, int64_t, int64_t> TaskDescription::parseVal(
  * */
 cpp2::TaskDesc TaskDescription::toTaskDesc() {
   cpp2::TaskDesc ret;
-  ret.set_job_id(iJob_);
-  ret.set_task_id(iTask_);
-  ret.set_host(dest_);
-  ret.set_status(status_);
-  ret.set_start_time(startTime_);
-  ret.set_stop_time(stopTime_);
+  ret.job_id_ref() = iJob_;
+  ret.task_id_ref() = iTask_;
+  ret.host_ref() = dest_;
+  ret.status_ref() = status_;
+  ret.start_time_ref() = startTime_;
+  ret.stop_time_ref() = stopTime_;
   return ret;
 }
 

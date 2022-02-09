@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GroupByValidator.h"
@@ -50,7 +49,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         needGenProject_ = true;
       }
       if (!aggs.empty()) {
-        auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+        auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
         projCols_->addColumn(new YieldColumn(colRewrited, colOldName));
         continue;
       }
@@ -60,7 +59,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
     if (colExpr->kind() == Expression::Kind::kAggregate) {
       auto* aggExpr = static_cast<AggregateExpression*>(colExpr);
       NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
-    } else if (!ExpressionUtils::isEvaluableExpr(colExpr)) {
+    } else if (!ExpressionUtils::isEvaluableExpr(colExpr, qctx_)) {
       yieldCols_.emplace_back(colExpr);
     }
 
@@ -174,7 +173,7 @@ Status GroupByValidator::groupClauseSemanticCheck() {
       return false;
     };
     for (auto* expr : yieldCols_) {
-      if (evaluableExpr(expr)) {
+      if (ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
         continue;
       }
       FindVisitor visitor(finder);

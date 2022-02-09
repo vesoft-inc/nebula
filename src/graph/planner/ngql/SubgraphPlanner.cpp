@@ -1,14 +1,13 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/validator/Validator.h"
 
@@ -56,7 +55,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
 
   auto* startNode = StartNode::make(qctx);
   bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
-  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space, getVertexProp);
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space.id, getVertexProp);
   NG_RETURN_IF_ERROR(vertexProps);
   auto edgeProps = buildEdgeProps();
   NG_RETURN_IF_ERROR(edgeProps);
@@ -94,7 +93,7 @@ StatusOr<SubPlan> SubgraphPlanner::zeroStep(SubPlan& startVidPlan, const std::st
   const auto& space = subgraphCtx_->space;
   auto* pool = qctx->objPool();
   // get all vertexProp
-  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, space, subgraphCtx_->withProp);
+  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, space.id, subgraphCtx_->withProp);
   NG_RETURN_IF_ERROR(vertexProp);
   auto* getVertex = GetVertices::make(qctx,
                                       startVidPlan.root,
@@ -122,7 +121,7 @@ StatusOr<SubPlan> SubgraphPlanner::transform(AstContext* astCtx) {
   auto qctx = subgraphCtx_->qctx;
   std::string vidsVar;
 
-  SubPlan startPlan = QueryUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
+  SubPlan startPlan = PlannerUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
   if (subgraphCtx_->steps.steps() == 0) {
     return zeroStep(startPlan, vidsVar);
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_QUERYUTILS_H_
@@ -58,7 +57,9 @@ class QueryUtils final {
         VLOG(1) << "Fail to read prop " << propName;
         if (field->hasDefault()) {
           DefaultValueContext expCtx;
-          auto expr = field->defaultValue()->clone();
+          ObjectPool pool;
+          auto& exprStr = field->defaultValue();
+          auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
           return Expression::eval(expr, expCtx);
         } else if (field->nullable()) {
           return NullType::__NULL__;
@@ -71,7 +72,7 @@ class QueryUtils final {
       }
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
-    if (field->type() == meta::cpp2::PropertyType::FIXED_STRING) {
+    if (field->type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       const auto& fixedStr = value.getStr();
       return fixedStr.substr(0, fixedStr.find_first_of('\0'));
     }

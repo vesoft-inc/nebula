@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "webservice/StatusHandler.h"
@@ -56,7 +55,9 @@ void StatusHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StatusHandler::requestComplete() noexcept { delete this; }
+void StatusHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StatusHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web service StorageHttpHandler got error: " << proxygen::getErrorString(error);

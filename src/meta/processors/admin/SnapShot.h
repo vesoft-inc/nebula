@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_ADMIN_SNAPSHOT_H_
@@ -18,6 +17,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create and drop snapshots for given spaces in
+ *        storage hosts(include followers)
+ *        Another feature is providing blocking/unbloking writings.
+ *
+ */
 class Snapshot {
  public:
   static Snapshot* instance(kvstore::KVStore* kv, AdminClient* client) {
@@ -27,13 +32,30 @@ class Snapshot {
 
   ~Snapshot() = default;
 
-  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) { spaces_ = std::move(spaces); }
+  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) {
+    spaces_ = std::move(spaces);
+  }
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>>>
+  ErrorOr<nebula::cpp2::ErrorCode,
+          std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>>>
   createSnapshot(const std::string& name);
 
+  /**
+   * @brief Drop specified snapshot in given storage hosts
+   *
+   * @param name snapshot name
+   * @param hosts storage hosts
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
+  /**
+   * @brief Blocking writings before create snapshot, allow writings after create
+   *        snapshot failed or completely
+   *
+   * @param sign BLOCK_ON and BLOCK_OFF(allow)
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
  private:
@@ -41,7 +63,7 @@ class Snapshot {
     executor_.reset(new folly::CPUThreadPoolExecutor(1));
   }
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
+  ErrorOr<nebula::cpp2::ErrorCode, std::map<HostAddr, std::set<GraphSpaceID>>> getHostSpaces();
 
  private:
   kvstore::KVStore* kv_{nullptr};

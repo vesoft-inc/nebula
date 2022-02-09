@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
@@ -11,6 +10,7 @@
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Date.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Geography.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
@@ -135,6 +135,184 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ(Value::Type::STRING, v.type());
     EXPECT_EQ(std::string("-30.142857142857142Allen Wilson"), v.getStr());
   }
+  {
+    // Duration
+    Value lhs = Duration(-1, -2, -3);
+    Value rhs = Duration(-1, -2, -3);
+    auto result = lhs + rhs;
+    EXPECT_EQ(result, Value(Duration(-2, -4, -6)));
+  }
+  {
+    // Duration
+    Value lhs = Duration(0, 0, 0);
+    Value rhs = Duration(-1, -2, -3);
+    auto result = lhs + rhs;
+    EXPECT_EQ(result, Value(Duration(-1, -2, -3)));
+  }
+  {
+    // Duration
+    Value lhs = Duration(1, 2, 3);
+    Value rhs = Duration(-1, -2, -3);
+    auto result = lhs + rhs;
+    EXPECT_EQ(result, Value(Duration(0, 0, 0)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration();
+    EXPECT_EQ(lhs, lhs + rhs);
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addYears(3);
+    EXPECT_EQ(lhs + rhs, Value(Date(2023, 1, 1)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addMonths(3);
+    EXPECT_EQ(lhs + rhs, Value(Date(2020, 4, 1)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addDays(31);
+    EXPECT_EQ(lhs + rhs, Value(Date(2020, 2, 1)));
+  }
+  {
+    // Date leap year
+    Value lhs = Date(2020, 2, 1);
+    Value rhs = Duration().addDays(28);
+    EXPECT_EQ(lhs + rhs, Value(Date(2020, 2, 29)));
+  }
+  {
+    // Date common year
+    Value lhs = Date(2021, 2, 1);
+    Value rhs = Duration().addDays(28);
+    EXPECT_EQ(lhs + rhs, Value(Date(2021, 3, 1)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addHours(24);
+    EXPECT_EQ(lhs + rhs, Value(Date(2020, 1, 2)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addHours(23);
+    EXPECT_EQ(lhs + rhs, Value(Date(2020, 1, 1)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addHours(23);
+    EXPECT_EQ(lhs + rhs, Value(Time(2, 30, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addHours(3);
+    EXPECT_EQ(lhs + rhs, Value(Time(6, 30, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addHours(3).addMinutes(30);
+    EXPECT_EQ(lhs + rhs, Value(Time(7, 0, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(100);
+    EXPECT_EQ(lhs + rhs, Value(Time(3, 30, 30, 200)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(999900);
+    EXPECT_EQ(lhs + rhs, Value(Time(3, 30, 31, 0)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration();
+    EXPECT_EQ(lhs, lhs + rhs);
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addYears(3);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2023, 1, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMonths(3);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 4, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(31);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 2, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime leap year
+    Value lhs = DateTime(2020, 2, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(28);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 2, 29, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime common year
+    Value lhs = DateTime(2021, 2, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(28);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2021, 3, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(24);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 2, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(20);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 1, 23, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(23);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 2, 2, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(3);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 1, 6, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(3).addMinutes(30);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 1, 7, 0, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(100);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 1, 3, 30, 30, 200)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(999900);
+    EXPECT_EQ(lhs + rhs, Value(DateTime(2020, 1, 1, 3, 30, 31, 0)));
+  }
+
   // -
   {
     Value v = vInt1 - vInt2;
@@ -161,6 +339,201 @@ TEST(Value, Arithmetics) {
     v = vDate1 - vInt2;
     EXPECT_EQ(Value::Type::DATE, v.type());
     EXPECT_EQ(Date(2019, 12, 30), v.getDate());
+  }
+  {
+    // Duration
+    Value lhs = Duration(1, 2, 3);
+    Value rhs = Duration();
+    auto result = lhs - rhs;
+    EXPECT_EQ(result, Value(Duration(1, 2, 3)));
+  }
+  {
+    // Duration
+    Value lhs = Duration(1, 2, 3);
+    Value rhs = Duration(-1, -2, -3);
+    auto result = lhs - rhs;
+    EXPECT_EQ(result, Value(Duration(2, 4, 6)));
+  }
+  {
+    // Duration
+    Value lhs = Duration(-1, -2, -3);
+    Value rhs = Duration(-1, -2, -3);
+    auto result = lhs - rhs;
+    EXPECT_EQ(result, Value(Duration(0, 0, 0)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addYears(3);
+    EXPECT_EQ(lhs - rhs, Value(Date(2017, 1, 1)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addMonths(3);
+    EXPECT_EQ(lhs - rhs, Value(Date(2019, 10, 1)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(Date(2019, 12, 29)));
+  }
+  {
+    // Date leap year
+    Value lhs = Date(2020, 3, 1);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(Date(2020, 2, 27)));
+  }
+  {
+    // Date common year
+    Value lhs = Date(2021, 3, 1);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(Date(2021, 2, 26)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addHours(24);
+    EXPECT_EQ(lhs - rhs, Value(Date(2019, 12, 31)));
+  }
+  {
+    // Date
+    Value lhs = Date(2020, 1, 1);
+    Value rhs = Duration().addHours(23);
+    EXPECT_EQ(lhs - rhs, Value(Date(2020, 1, 1)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addHours(3);
+    EXPECT_EQ(lhs - rhs, Value(Time(0, 30, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addHours(4);
+    EXPECT_EQ(lhs - rhs, Value(Time(23, 30, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMinutes(30);
+    EXPECT_EQ(lhs - rhs, Value(Time(3, 0, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMinutes(40);
+    EXPECT_EQ(lhs - rhs, Value(Time(2, 50, 30, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addSeconds(30);
+    EXPECT_EQ(lhs - rhs, Value(Time(3, 30, 0, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addSeconds(40);
+    EXPECT_EQ(lhs - rhs, Value(Time(3, 29, 50, 100)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(100);
+    EXPECT_EQ(lhs - rhs, Value(Time(3, 30, 30, 0)));
+  }
+  {
+    // Time
+    Value lhs = Time(3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(200);
+    EXPECT_EQ(lhs - rhs, Value(Time(3, 30, 29, 999900)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addYears(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2017, 1, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMonths(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2019, 10, 1, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2019, 12, 29, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime leap year
+    Value lhs = DateTime(2020, 3, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 2, 27, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime common year
+    Value lhs = DateTime(2021, 3, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addDays(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2021, 2, 26, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(24);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2019, 12, 31, 3, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(3);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 0, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addHours(4);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2019, 12, 31, 23, 30, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMinutes(30);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 3, 0, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMinutes(40);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 2, 50, 30, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addSeconds(30);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 3, 30, 0, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addSeconds(40);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 3, 29, 50, 100)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(100);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 3, 30, 30, 0)));
+  }
+  {
+    // DateTime
+    Value lhs = DateTime(2020, 1, 1, 3, 30, 30, 100);
+    Value rhs = Duration().addMicroseconds(200);
+    EXPECT_EQ(lhs - rhs, Value(DateTime(2020, 1, 1, 3, 30, 29, 999900)));
   }
 
   // *
@@ -192,6 +565,13 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ(Value::Type::FLOAT, v.type());
     EXPECT_EQ((vFloat1.getFloat() * vFloat2.getFloat()), v.getFloat());
   }
+  {
+    // Duration
+    Value lhs = Value(Duration(1, 2, 3));
+    Value rhs = Value(Duration());
+    auto result = lhs * rhs;
+    EXPECT_TRUE(result.isNull());
+  }
 
   // /
   {
@@ -220,6 +600,13 @@ TEST(Value, Arithmetics) {
     v = vInt1 / vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
+  {
+    // Duration
+    Value lhs = Value(Duration(1, 2, 3));
+    Value rhs = Value(Duration());
+    auto result = lhs / rhs;
+    EXPECT_TRUE(result.isNull());
+  }
 
   // %
   {
@@ -244,6 +631,13 @@ TEST(Value, Arithmetics) {
     v = vInt1 % vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
+  {
+    // Duration
+    Value lhs = Duration(1, 2, 3);
+    Value rhs = Duration();
+    auto result = lhs % rhs;
+    EXPECT_TRUE(result.isNull());
+  }
 
   // unary -,!
   {
@@ -266,6 +660,16 @@ TEST(Value, Arithmetics) {
     v = !vBool2;
     EXPECT_EQ(Value::Type::BOOL, v.type());
     EXPECT_DOUBLE_EQ(false, v.getBool());
+  }
+  {
+    // Duration
+    Value v = Duration(1, 2, 3);
+    EXPECT_EQ(Duration(-1, -2, -3), -v);
+  }
+  {
+    // Duration
+    Value v = Duration(-1, -2, -3);
+    EXPECT_EQ(Duration(1, 2, 3), -v);
   }
 }
 
@@ -290,6 +694,9 @@ TEST(Value, Comparison) {
   Value vDateTime1(DateTime(1998, 9, 8, 12, 30, 04, 56));
   Value vDateTime2(DateTime(1998, 9, 8, 13, 30, 04, 56));
   Value vDateTime3(DateTime(1998, 9, 8, 13, 30, 04, 56));  // for further tests
+  Value vGeo1 = Geography::fromWKT("POINT(4 7)").value();
+  Value vGeo2 = Geography::fromWKT("POINT(5 7)").value();
+  Value vGeo3 = Geography::fromWKT("POINT(5 7)").value();
 
   // null/empty
   {
@@ -550,6 +957,38 @@ TEST(Value, Comparison) {
     EXPECT_EQ(Value::Type::BOOL, v.type());
     EXPECT_EQ(true, v.getBool());
   }
+  // geography
+  {
+    Value v = vGeo1 == vGeo2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vGeo1 != vGeo2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vGeo2 == vGeo3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vGeo2 != vGeo3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+    // TODO(jie) Add more geo test
+  }
+  // Duration
+  {
+    Value lhs{Duration(1, 2, 4)};
+    Value rhs{Duration(1, 2, 3)};
+    EXPECT_TRUE(lhs.lessThan(rhs).isNull());
+    EXPECT_FALSE(lhs.equal(rhs).getBool());
+  }
+  {
+    Value lhs{Duration(1, 2, 3)};
+    Value rhs{Duration(1, 2, 3)};
+    EXPECT_TRUE(lhs.lessThan(rhs).isNull());
+    EXPECT_TRUE(lhs.equal(rhs).getBool());
+  }
 }
 
 TEST(Value, Logical) {
@@ -605,7 +1044,7 @@ TEST(Value, TypeCast) {
   Value vNull(NullType::__NULL__);
   Value vIntMin(std::numeric_limits<int64_t>::min());
   Value vIntMax(std::numeric_limits<int64_t>::max());
-  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negtive
+  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negative
   Value vFloatMax(std::numeric_limits<double_t>::max());
 
   {
@@ -698,7 +1137,7 @@ TEST(Value, TypeCast) {
     EXPECT_EQ(Value::Type::FLOAT, vf.type());
     EXPECT_EQ(vf.getFloat(), std::numeric_limits<double_t>::max());
 
-    // Invlaid string
+    // Invalid string
     vf = Value("12abc").toFloat();
     EXPECT_EQ(Value::kNullValue, vf);
 
@@ -766,7 +1205,7 @@ TEST(Value, TypeCast) {
     vi = Value("-9223372036854775809").toInt();
     EXPECT_EQ(Value::kNullOverflow, vi);
 
-    // Invlaid string
+    // Invalid string
     vi = Value("12abc").toInt();
     EXPECT_EQ(Value::kNullValue, vi);
 
@@ -873,6 +1312,11 @@ TEST(Value, Bit) {
     v = vNull & vEmpty;
     EXPECT_TRUE(v.isNull());
   }
+  // Duration
+  {
+    Value v = Date() & Duration();
+    EXPECT_TRUE(v.isNull());
+  }
 
   {
     Value v = vInt1 | vInt2;
@@ -926,6 +1370,11 @@ TEST(Value, Bit) {
     EXPECT_TRUE(v.isNull());
 
     v = vNull | vEmpty;
+    EXPECT_TRUE(v.isNull());
+  }
+  // Duration
+  {
+    Value v = Date() | Duration();
     EXPECT_TRUE(v.isNull());
   }
 
@@ -983,6 +1432,11 @@ TEST(Value, Bit) {
     v = vNull ^ vEmpty;
     EXPECT_TRUE(v.isNull());
   }
+  // Duration
+  {
+    Value v = Date() ^ Duration();
+    EXPECT_TRUE(v.isNull());
+  }
 }
 
 TEST(Value, typeName) {
@@ -1000,6 +1454,8 @@ TEST(Value, typeName) {
   EXPECT_EQ("map", Value(Map()).typeName());
   EXPECT_EQ("set", Value(Set()).typeName());
   EXPECT_EQ("dataset", Value(DataSet()).typeName());
+  EXPECT_EQ("geography", Value(Geography()).typeName());
+  EXPECT_EQ("duration", Value(Duration()).typeName());
   EXPECT_EQ("__NULL__", Value::kNullValue.typeName());
   EXPECT_EQ("NaN", Value::kNullNaN.typeName());
   EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
@@ -1048,7 +1504,7 @@ TEST(Value, DecodeEncode) {
       // time
       Value(Time{1, 2, 3, 4}),
 
-      // datatime
+      // datetime
       Value(DateTime{1, 2, 3, 4, 5, 6, 7}),
 
       // vertex
@@ -1090,6 +1546,28 @@ TEST(Value, DecodeEncode) {
 
       // DataSet
       Value(DataSet({"col1", "col2"})),
+
+      // Geography
+      Value(Geography::fromWKT("Point(3 8)").value()),
+      Value(Geography::fromWKT("LineString(3 8, 4 6, 5 7)").value()),
+      Value(Geography::fromWKT(
+                "Polygon((1 2, 3 4, 5 6, 7 8, 1 2), (1.2 3.6, 4.7 5.2, 3.9 8.8, 1.2 3.6))")
+                .value()),
+      Value(Geography(Point(Coordinate(4, 9)))),
+      Value(Geography(LineString(
+          std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)}))),
+      Value(Geography(Polygon(std::vector<std::vector<Coordinate>>{
+          std::vector<Coordinate>{Coordinate(0, 1),
+                                  Coordinate(2, 3),
+                                  Coordinate(4, 5),
+                                  Coordinate(6, 7),
+                                  Coordinate(0, 1)},
+          std::vector<Coordinate>{
+              Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))),
+      // Duration
+      Value(Duration()),
+      Value(Duration(1, 2, 3)),
+      Value(Duration(-1, -2, -3)),
   };
   for (const auto& val : values) {
     std::string buf;
@@ -1128,12 +1606,49 @@ TEST(Value, Ctor) {
   EXPECT_TRUE(vSet.isSet());
   Value vMap(Map({{"a", 9}, {"b", 10}}));
   EXPECT_TRUE(vMap.isMap());
+  // TODO(jie) Add more geography value test
+  Value vGeogPoint{Geography(Point(Coordinate(3, 7)))};
+  EXPECT_TRUE(vGeogPoint.isGeography());
+  Value vGeogLine{
+      Geography(LineString(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 7)}))};
+  EXPECT_TRUE(vGeogLine.isGeography());
+  Value vGeogPolygon{Geography(Polygon(std::vector<std::vector<Coordinate>>{
+      std::vector<Coordinate>{
+          Coordinate(0, 1), Coordinate(2, 3), Coordinate(4, 5), Coordinate(6, 7), Coordinate(0, 1)},
+      std::vector<Coordinate>{
+          Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))};
+  EXPECT_TRUE(vGeogPolygon.isGeography());
+
+  // Duration
+  Value vD{Duration()};
+  Value vD2{Duration(1, 2, 3)};
 
   // Disabled
   // Lead to compile error
   // Value v(nullptr);
   // std::map<std::string, std::string> tmp;
   // Value v2(&tmp);
+}
+
+TEST(Value, ToString) {
+  {
+    Duration d;
+    d.addYears(1);
+    d.addMonths(2);
+    d.addDays(500);
+    d.addSeconds(10);
+    d.addMicroseconds(20);
+    EXPECT_EQ(d.toString(), "P14MT43200010.000020000S");
+  }
+  {
+    Duration d;
+    d.addYears(1);
+    d.addMonths(2);
+    d.addDays(500);
+    d.addSeconds(10);
+    d.addMicroseconds(20000000);
+    EXPECT_EQ(d.toString(), "P14MT43200030.000000000S");
+  }
 }
 
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
@@ -17,8 +16,8 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -44,17 +43,31 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   // Cleanup or reset executor some states after each execution
   virtual Status close();
 
-  QueryContext *qctx() const { return qctx_; }
+  Status checkMemoryWatermark();
 
-  int64_t id() const { return id_; }
+  QueryContext *qctx() const {
+    return qctx_;
+  }
 
-  const std::string &name() const { return name_; }
+  int64_t id() const {
+    return id_;
+  }
 
-  const PlanNode *node() const { return node_; }
+  const std::string &name() const {
+    return name_;
+  }
 
-  const std::set<Executor *> &depends() const { return depends_; }
+  const PlanNode *node() const {
+    return node_;
+  }
 
-  const std::set<Executor *> &successors() const { return successors_; }
+  const std::set<Executor *> &depends() const {
+    return depends_;
+  }
+
+  const std::set<Executor *> &successors() const {
+    return successors_;
+  }
 
   Executor *dependsOn(Executor *dep) {
     depends_.emplace(dep);

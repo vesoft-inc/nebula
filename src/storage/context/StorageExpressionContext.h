@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
@@ -31,11 +30,11 @@ by `setTagProp` and `setEdgeProp`. Be sure about not pass the RowReader by
 */
 class StorageExpressionContext final : public ExpressionContext {
  public:
-  explicit StorageExpressionContext(size_t vIdLen,
-                                    bool isIntId,
-                                    const std::string& name = "",
-                                    const meta::NebulaSchemaProvider* schema = nullptr,
-                                    bool isEdge = false)
+  StorageExpressionContext(size_t vIdLen,
+                           bool isIntId,
+                           const std::string& name = "",
+                           const meta::NebulaSchemaProvider* schema = nullptr,
+                           bool isEdge = false)
       : vIdLen_(vIdLen), isIntId_(isIntId), name_(name), schema_(schema), isEdge_(isEdge) {}
 
   StorageExpressionContext(size_t vIdLen,
@@ -73,10 +72,14 @@ class StorageExpressionContext final : public ExpressionContext {
   }
 
   // Get the specified property from the input, such as $-.prop_name
-  const Value& getInputProp(const std::string&) const override { return Value::kNullValue; }
+  const Value& getInputProp(const std::string&) const override {
+    return Value::kNullValue;
+  }
 
   // Get the value by column index
-  Value getColumn(int32_t) const override { return Value::kNullValue; }
+  Value getColumn(int32_t) const override {
+    return Value::kNullValue;
+  }
 
   // Get the specified property from the tag, such as tag.prop_name
   Value getTagProp(const std::string& tagName, const std::string& prop) const override;
@@ -88,22 +91,35 @@ class StorageExpressionContext final : public ExpressionContext {
   // such as $^.tagName.prop_name
   Value getSrcProp(const std::string& tagName, const std::string& prop) const override;
 
-  size_t vIdLen() const { return vIdLen_; }
+  size_t vIdLen() const {
+    return vIdLen_;
+  }
 
-  bool hasNullableCol() const { return hasNullableCol_; }
+  bool hasNullableCol() const {
+    return hasNullableCol_;
+  }
 
-  const std::vector<meta::cpp2::ColumnDef>& indexCols() const { return fields_; }
+  const std::vector<meta::cpp2::ColumnDef>& indexCols() const {
+    return fields_;
+  }
 
   void setVar(const std::string& name, Value val) override {
     valueMap_[name].emplace_back(std::move(val));
   }
 
-  Value getVertex() const override { LOG(FATAL) << "Unimplemented"; }
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
+    LOG(FATAL) << "Unimplemented";
+  }
 
-  Value getEdge() const override { LOG(FATAL) << "Unimplemented"; }
+  Value getEdge() const override {
+    LOG(FATAL) << "Unimplemented";
+  }
 
   // index key
-  void reset(const std::string& key) { key_ = key; }
+  void reset(const std::string& key) {
+    key_ = key;
+  }
 
   // isEdge_ set in ctor
   void reset(RowReader* reader, const std::string& key) {
@@ -145,7 +161,7 @@ class StorageExpressionContext final : public ExpressionContext {
   size_t vIdLen_;
   bool isIntId_;
 
-  RowReader* reader_;
+  RowReader* reader_{nullptr};
   std::string key_;
   // tag or edge name
   std::string name_;

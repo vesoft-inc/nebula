@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_BASE_H_
@@ -67,7 +66,7 @@
 
 #include "common/base/Logging.h"
 
-#define MUST_USE_RESULT __attribute__((warn_unused_result))
+#define NG_MUST_USE_RESULT __attribute__((warn_unused_result))
 #define DONT_OPTIMIZE __attribute__((optimize("O0")))
 
 #define ALWAYS_INLINE __attribute__((always_inline))

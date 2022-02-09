@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/concurrent/Latch.h"
@@ -45,7 +44,9 @@ void Latch::wait() {
   cond_.wait(unique, [this]() { return counter_ == 0; });
 }
 
-bool Latch::isReady() { return counter_ == 0; }
+bool Latch::isReady() {
+  return counter_ == 0;
+}
 
 }  // namespace concurrent
 }  // namespace nebula

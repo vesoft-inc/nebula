@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_STOPADMINTASKPROCESSOR_H_
@@ -16,16 +15,28 @@
 namespace nebula {
 namespace storage {
 
-class StopAdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class StopAdminTaskProcessor {
  public:
   static StopAdminTaskProcessor* instance(StorageEnv* env) {
     return new StopAdminTaskProcessor(env);
   }
 
-  void process(const cpp2::StopAdminTaskRequest& req);
+  void process(const cpp2::StopTaskRequest& req);
+
+  folly::Future<cpp2::StopTaskResp> getFuture() {
+    return promise_.getFuture();
+  }
 
  private:
-  explicit StopAdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit StopAdminTaskProcessor(StorageEnv* env) : env_(env) {
+    UNUSED(env_);
+  }
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::StopTaskResp> promise_;
+  cpp2::StopTaskResp resp_;
 };
 
 }  // namespace storage

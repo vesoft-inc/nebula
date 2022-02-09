@@ -1,8 +1,7 @@
 /* vim: ft=proto
  * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace cpp nebula.graph
@@ -10,7 +9,7 @@ namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
 namespace js nebula.graph
 namespace csharp nebula.graph
-namespace py nebula2.graph
+namespace py nebula3.graph
 
 include "common.thrift"
 
@@ -39,7 +38,7 @@ struct ProfilingStats {
     // Other profiling stats data map
     4: optional map<binary, binary>
         (cpp.template = "std::unordered_map") other_stats;
-} (cpp.type = "nebula::ProfilingStats")
+} (cpp.type = "nebula::ProfilingStats", cpp.noncopyable)
 
 // The info used for select/loop.
 struct PlanNodeBranchInfo {
@@ -65,7 +64,7 @@ struct PlanNodeDescription {
     5: optional list<ProfilingStats>            profiles;
     6: optional PlanNodeBranchInfo              branch_info;
     7: optional list<i64>                       dependencies;
-} (cpp.type = "nebula::PlanNodeDescription")
+} (cpp.type = "nebula::PlanNodeDescription", cpp.noncopyable)
 
 struct PlanDescription {
     1: required list<PlanNodeDescription>     plan_node_descs;
@@ -76,18 +75,18 @@ struct PlanDescription {
     3: required binary                        format;
     // the time optimizer spent
     4: required i32                           optimize_time_in_us;
-} (cpp.type = "nebula::PlanDescription")
+} (cpp.type = "nebula::PlanDescription", cpp.noncopyable)
 
 
 struct ExecutionResponse {
     1: required common.ErrorCode        error_code;
-    2: required i32                     latency_in_us;  // Execution time on server
+    2: required i64                     latency_in_us;  // Execution time on server
     3: optional common.DataSet          data;
     4: optional binary                  space_name;
     5: optional binary                  error_msg;
     6: optional PlanDescription         plan_desc;
     7: optional binary                  comment;        // Supplementary instruction
-} (cpp.type = "nebula::ExecutionResponse")
+} (cpp.type = "nebula::ExecutionResponse", cpp.noncopyable)
 
 
 struct AuthResponse {
@@ -96,7 +95,18 @@ struct AuthResponse {
     3: optional i64                session_id;
     4: optional i32                time_zone_offset_seconds;
     5: optional binary             time_zone_name;
-} (cpp.type = "nebula::AuthResponse")
+} (cpp.type = "nebula::AuthResponse", cpp.noncopyable)
+
+
+struct VerifyClientVersionResp {
+    1: required common.ErrorCode error_code;
+    2: optional binary           error_msg;
+}
+
+
+struct VerifyClientVersionReq {
+    1: required binary version = common.version;
+}
 
 
 service GraphService {
@@ -105,7 +115,10 @@ service GraphService {
     oneway void signout(1: i64 sessionId)
 
     ExecutionResponse execute(1: i64 sessionId, 2: binary stmt)
-
+    ExecutionResponse executeWithParameter(1: i64 sessionId, 2: binary stmt, 3: map<binary, common.Value>(cpp.template = "std::unordered_map") parameterMap)
     // Same as execute(), but response will be a json string
     binary executeJson(1: i64 sessionId, 2: binary stmt)
+    binary executeJsonWithParameter(1: i64 sessionId, 2: binary stmt, 3: map<binary, common.Value>(cpp.template = "std::unordered_map") parameterMap)
+    
+    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
 }

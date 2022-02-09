@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 if (ENABLE_GDB_SCRIPT_SECTION)
     set(gdb_debug_script GdbDebugScript.cpp)
@@ -16,7 +15,6 @@ nebula_add_library(
     SignalHandler.cpp
     SlowOpTracker.cpp
     StringValue.cpp
-    Memory.cpp
     ${gdb_debug_script}
 )
 

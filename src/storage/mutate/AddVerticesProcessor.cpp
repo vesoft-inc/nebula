@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/AddVerticesProcessor.h"
@@ -9,11 +8,13 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -48,6 +49,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     return;
   }
   indexes_ = std::move(iRet).value();
+  ignoreExistedIndex_ = req.get_ignore_existed_index();
 
   CHECK_NOTNULL(env_->kvstore_);
   if (indexes_.empty()) {
@@ -79,7 +81,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-
+      data.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
       for (auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;
@@ -91,7 +93,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
           break;
         }
 
-        auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
+        auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         if (ifNotExists_) {
           if (!visited.emplace(key).second) {
             continue;
@@ -127,6 +129,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
       handleAsync(spaceId_, partId, code);
     } else {
       doPut(spaceId_, partId, std::move(data));
+      stats::StatsManager::addValue(kNumVerticesInserted, data.size());
     }
   }
 }
@@ -143,9 +146,8 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
     dummyLock.reserve(vertices.size());
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-    // cache vertexKey
-    std::unordered_set<std::string> visited;
-    visited.reserve(vertices.size());
+    // cache tagKey
+    deleteDupVid(const_cast<std::vector<cpp2::NewVertex>&>(vertices));
     for (auto& vertex : vertices) {
       auto vid = vertex.get_id().getStr();
       const auto& newTags = vertex.get_tags();
@@ -156,13 +158,13 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-
+      batchHolder->put(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
       for (auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         auto l = std::make_tuple(spaceId_, partId, tagId, vid);
         if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
           if (!env_->verticesML_->try_lock(l)) {
-            LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}", tagId, vid);
+            LOG(ERROR) << folly::sformat("The vertex locked : tag {}, vid {}", tagId, vid);
             code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
             break;
           }
@@ -177,10 +179,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
           break;
         }
 
-        auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
-        if (ifNotExists_ && !visited.emplace(key).second) {
-          continue;
-        }
+        auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         auto props = newTag.get_props();
         auto iter = propNamesMap.find(tagId);
         std::vector<std::string> propNames;
@@ -190,18 +189,22 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
 
         RowReaderWrapper nReader;
         RowReaderWrapper oReader;
-        auto obsIdx = findOldValue(partId, vid, tagId);
-        if (nebula::ok(obsIdx)) {
-          if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
-            continue;
+        std::string oldVal;
+        if (!ignoreExistedIndex_) {
+          auto obsIdx = findOldValue(partId, vid, tagId);
+          if (nebula::ok(obsIdx)) {
+            if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
+              continue;
+            }
+            if (!nebula::value(obsIdx).empty()) {
+              oldVal = std::move(value(obsIdx));
+              oReader =
+                  RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, oldVal);
+            }
+          } else {
+            code = nebula::error(obsIdx);
+            break;
           }
-          if (!nebula::value(obsIdx).empty()) {
-            oReader = RowReaderWrapper::getTagPropReader(
-                env_->schemaMan_, spaceId_, tagId, nebula::value(obsIdx));
-          }
-        } else {
-          code = nebula::error(obsIdx);
-          break;
         }
 
         WriteResult wRet;
@@ -218,24 +221,28 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         }
         for (auto& index : indexes_) {
           if (tagId == index->get_schema_id().get_tag_id()) {
+            auto indexFields = index->get_fields();
             /*
              * step 1 , Delete old version index if exists.
              */
             if (oReader != nullptr) {
-              auto oi = indexKey(partId, vid, oReader.get(), index);
-              if (!oi.empty()) {
-                // Check the index is building for the specified partition or
-                // not.
+              auto ois = indexKeys(partId, vid, oReader.get(), index, schema.get());
+              if (!ois.empty()) {
+                // Check the index is building for the specified partition or not
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
                   auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                  batchHolder->put(std::move(delOpKey), std::move(oi));
+                  for (auto& oi : ois) {
+                    batchHolder->put(std::string(delOpKey), std::move(oi));
+                  }
                 } else if (env_->checkIndexLocked(indexState)) {
                   LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                   code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                   break;
                 } else {
-                  batchHolder->remove(std::move(oi));
+                  for (auto& oi : ois) {
+                    batchHolder->remove(std::move(oi));
+                  }
                 }
               }
             }
@@ -244,22 +251,26 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
              * step 2 , Insert new vertex index
              */
             if (nReader != nullptr) {
-              auto nik = indexKey(partId, vid, nReader.get(), index);
-              if (!nik.empty()) {
+              auto niks = indexKeys(partId, vid, nReader.get(), index, schema.get());
+              if (!niks.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
                 // Check the index is building for the specified partition or
                 // not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
-                  auto opKey = OperationKeyUtils::modifyOperationKey(partId, nik);
-                  batchHolder->put(std::move(opKey), std::move(niv));
+                  for (auto& nik : niks) {
+                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, nik);
+                    batchHolder->put(std::move(opKey), std::string(niv));
+                  }
                 } else if (env_->checkIndexLocked(indexState)) {
                   LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                   code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                   break;
                 } else {
-                  batchHolder->put(std::move(nik), std::move(niv));
+                  for (auto& nik : niks) {
+                    batchHolder->put(std::move(nik), std::string(niv));
+                  }
                 }
               }
             }
@@ -272,6 +283,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
          * step 3 , Insert new vertex data
          */
         batchHolder->put(std::move(key), std::move(retEnc.value()));
+        stats::StatsManager::addValue(kNumVerticesInserted);
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         break;
@@ -295,11 +307,11 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                                        handleAsync(spaceId_, partId, retCode);
                                      });
   }
-}
+}  // namespace storage
 
 ErrorOr<nebula::cpp2::ErrorCode, std::string> AddVerticesProcessor::findOldValue(
     PartitionID partId, const VertexID& vId, TagID tagId) {
-  auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+  auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
   std::string val;
   auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
   if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -313,17 +325,50 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddVerticesProcessor::findOldValue
   }
 }
 
-std::string AddVerticesProcessor::indexKey(PartitionID partId,
-                                           const VertexID& vId,
-                                           RowReader* reader,
-                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+std::vector<std::string> AddVerticesProcessor::indexKeys(
+    PartitionID partId,
+    const VertexID& vId,
+    RowReader* reader,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
-    return "";
+    return {};
   }
 
-  return IndexKeyUtils::vertexIndexKey(
+  return IndexKeyUtils::vertexIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), vId, std::move(values).value());
+}
+
+/*
+ * Batch insert
+ * ifNotExist_ is true. Only keep the first one when vid is same
+ * ifNotExist_ is false. Only keep the last one when vid is same
+ */
+void AddVerticesProcessor::deleteDupVid(std::vector<cpp2::NewVertex>& vertices) {
+  std::unordered_set<std::string> visited;
+  visited.reserve(vertices.size());
+  if (ifNotExists_) {
+    auto iter = vertices.begin();
+    while (iter != vertices.end()) {
+      const auto& vid = iter->get_id().getStr();
+      if (!visited.emplace(vid).second) {
+        iter = vertices.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  } else {
+    auto iter = vertices.rbegin();
+    while (iter != vertices.rend()) {
+      const auto& vid = iter->get_id().getStr();
+      if (!visited.emplace(vid).second) {
+        iter = decltype(iter)(vertices.erase(std::next(iter).base()));
+      } else {
+        ++iter;
+      }
+    }
+  }
 }
 
 }  // namespace storage

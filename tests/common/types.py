@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 
 class SpaceDesc:
@@ -50,6 +49,14 @@ class SpaceDesc:
 
     def is_int_vid(self) -> bool:
         return self.vid_type == 'int'
+
+    @property
+    def _name(self):
+        return self.name
+
+    @_name.setter
+    def _name(self, _name: str):
+        self.name = _name
 
 
 class Column:

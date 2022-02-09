@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Filter down Aggregate rule
 
   Background:
@@ -14,8 +13,8 @@ Feature: Push Filter down Aggregate rule
       """
       MATCH (v:player)
       WITH
-        v.age+1 AS age,
-        COUNT(v.age) as count
+        v.player.age+1 AS age,
+        COUNT(v.player.age) as count
       WHERE age<30
       RETURN age, count
       ORDER BY age

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_KV_GETPROCESSOR_H_
@@ -15,6 +14,9 @@ namespace storage {
 
 extern ProcessorCounters kGetCounters;
 
+/**
+ * @brief this is a simple get() interface when storage run in KV mode.
+ */
 class GetProcessor : public BaseProcessor<cpp2::KVGetResponse> {
  public:
   static GetProcessor* instance(StorageEnv* env,

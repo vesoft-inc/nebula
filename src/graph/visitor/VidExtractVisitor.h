@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
@@ -45,7 +44,9 @@ class VidExtractVisitor final : public ExprVisitor {
     std::unordered_map<std::string, Vids> nodes;
   };
 
-  VidPattern moveVidPattern() { return std::move(vidPattern_); }
+  VidPattern moveVidPattern() {
+    return std::move(vidPattern_);
+  }
 
   static VidPattern intersect(VidPattern &&left, VidPattern &&right);
 
@@ -76,6 +77,7 @@ class VidExtractVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;

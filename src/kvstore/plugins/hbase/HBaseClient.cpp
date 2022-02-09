@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/plugins/hbase/HBaseClient.h"
@@ -189,7 +188,7 @@ ResultCode HBaseClient::range(const std::string& tableName,
     while (true) {
       std::vector<TResult> tResultList;
       client_->sync_getScannerRows(tResultList, scannerId, kScanRowNum);
-      if (tResultList.size() == 0) break;
+      if (tResultList.empty()) break;
       for (auto& tResult : tResultList) {
         std::vector<TColumnValue> tColumnValueList = tResult.columnValues;
         if (tColumnValueList.size() > 0) {

@@ -2,7 +2,7 @@ import time
 import pytest
 from graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.bench.data_generate import insert_vertexs, insert_edges
+from tests.bench.data_generate import insert_vertices, insert_edges
 
 
 class TestLookupBench(NebulaTestSuite):
@@ -26,7 +26,7 @@ class TestLookupBench(NebulaTestSuite):
             'CREATE TAG index IF NOT EXISTS personAge on person(age)')
         self.check_resp_succeeded(resp)
         time.sleep(4)
-        insert_vertexs(self, "benchlookupspace", 50, 20000)
+        insert_vertices(self, "benchlookupspace", 50, 20000)
         self.execute('CREATE EDGE IF NOT EXISTS like(likeness int)')
         self.check_resp_succeeded(resp)
         time.sleep(4)

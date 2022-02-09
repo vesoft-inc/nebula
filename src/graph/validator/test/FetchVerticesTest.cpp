@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/ObjectPool.h"
@@ -23,9 +22,9 @@ class FetchVerticesValidatorTest : public ValidatorTestBase {
 };
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
-  auto src = VariablePropertyExpression::make(pool_.get(), "_VARNAME_", "VertexID");
+  auto src = ColumnExpression::make(pool_.get(), 0);
   {
-    auto qctx = getQCtx("FETCH PROP ON person \"1\"");
+    auto qctx = getQCtx("FETCH PROP ON person \"1\" YIELD vertex as node");
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
@@ -33,22 +32,21 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
+    prop.tag_ref() = tagId;
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props));
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
   // multi-tags
   {
-    auto qctx = getQCtx("FETCH PROP ON person, book \"1\"");
+    auto qctx = getQCtx("FETCH PROP ON person, book \"1\" YIELD vertex as node");
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
@@ -57,13 +55,13 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
+    personProp.tag_ref() = tagId;
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
+    bookProp.tag_ref() = tagId;
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
@@ -71,9 +69,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age", "book.name"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -87,14 +84,14 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -103,12 +100,10 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "person.name", "person.age"});
+    project->setColNames({"person.name", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -126,24 +121,24 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name", "age"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name", "age"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     storage::cpp2::Expr expr3;
-    expr3.set_expr(TagPropertyExpression::make(pool, "book", "name")->encode());
+    expr3.expr_ref() = TagPropertyExpression::make(pool, "book", "name")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -153,13 +148,11 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "book", "name")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "person.name", "person.age", "book.name"});
+    project->setColNames({"person.name", "person.age", "book.name"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -175,14 +168,14 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -191,14 +184,12 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(RelationalExpression::makeGT(
         pool, ConstantExpression::make(pool, 1), ConstantExpression::make(pool, 1))));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "person.name", "(1>1)", "person.age"});
+    project->setColNames({"person.name", "(1>1)", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -217,25 +208,25 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name", "age"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name", "age"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
 
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "book", "name")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "book", "name")->encode();
     storage::cpp2::Expr expr3;
-    expr3.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr3.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -245,15 +236,13 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(RelationalExpression::makeGT(
         pool, ConstantExpression::make(pool, 1), ConstantExpression::make(pool, 1))));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "book", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "person.name", "(1>1)", "book.name", "person.age"});
+    project->setColNames({"person.name", "(1>1)", "book.name", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -268,16 +257,16 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(
+    expr1.expr_ref() =
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "person", "age"))
-            ->encode());
+            ->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
 
@@ -286,14 +275,12 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project, TODO(shylock) could push down to storage is it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "person", "age"))));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "(person.name+person.age)"});
+    project->setColNames({"(person.name+person.age)"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -309,25 +296,25 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
 
     storage::cpp2::Expr expr1;
-    expr1.set_expr(
+    expr1.expr_ref() =
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "book", "name"))
-            ->encode());
+            ->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
@@ -335,14 +322,12 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     // project, TODO(shylock) could push down to storage is it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "book", "name"))));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "(person.name+book.name)"});
+    project->setColNames({"(person.name+book.name)"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -357,47 +342,40 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
+    gv->setColNames({nebula::kVid, "person.name", "person.age"});
 
-    std::vector<std::string> colNames{"VertexID", "person.name", "person.age"};
-    gv->setColNames(colNames);
-
-    // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames(colNames);
+    project->setColNames({"person.name", "person.age"});
 
-    // dedup
     auto *dedup = Dedup::make(qctx, project);
-    dedup->setColNames(colNames);
 
     // data collect
     auto *dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
     dataCollect->addDep(dedup);
     dataCollect->setInputVars({dedup->outputVar()});
-    dataCollect->setColNames(colNames);
+    dataCollect->setColNames({"person.name", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), dataCollect);
     ASSERT_TRUE(result.ok()) << result;
   }
   // ON *
   {
-    auto qctx = getQCtx("FETCH PROP ON * \"1\"");
+    auto qctx = getQCtx("FETCH PROP ON * \"1\" YIELD vertex as node");
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
@@ -405,14 +383,13 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
   {
-    auto qctx = getQCtx("FETCH PROP ON * \"1\", \"2\"");
+    auto qctx = getQCtx("FETCH PROP ON * \"1\", \"2\" YIELD vertex as node");
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
@@ -420,9 +397,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -432,18 +408,12 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
-    std::vector<std::string> colNames{"VertexID", "person.name"};
-    // Get vertices
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames(colNames);
+    gv->setColNames({nebula::kVid, "person.name"});
 
-    // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames(colNames);
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -453,19 +423,13 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
-    std::vector<std::string> colNames{"VertexID", "person.name", "person.age"};
-    // Get vertices
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames(colNames);
+    gv->setColNames({nebula::kVid, "person.name", "person.age"});
 
-    // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames(colNames);
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -475,20 +439,15 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *pool = qctx->objPool();
     auto *start = StartNode::make(qctx);
 
-    // Get vertices
     auto *gv = GetVertices::make(qctx, start, 1, src);
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
 
-    // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(
-        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(ArithmeticExpression::makeAdd(
         pool, ConstantExpression::make(pool, 1), ConstantExpression::make(pool, 1))));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "(1+1)", "person.name", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -499,8 +458,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   // pipe
   {
     const std::string query =
-        "FETCH PROP ON person \"1\" YIELD person.name AS name"
-        " | FETCH PROP ON person $-.name";
+        "FETCH PROP ON person \"1\" YIELD person.name AS name |"
+        "FETCH PROP ON person $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -513,8 +472,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     // with multi-tags
     const std::string query =
-        "FETCH PROP ON person \"1\" YIELD person.name AS name"
-        " | FETCH PROP ON person, book $-.name";
+        "FETCH PROP ON person \"1\" YIELD person.name AS name |"
+        "FETCH PROP ON person, book $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -528,7 +487,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     const std::string query =
         "$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-        "FETCH PROP ON person $a.name";
+        "FETCH PROP ON person $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -542,7 +501,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
     // with multi-tags
     const std::string query =
         "$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-        "FETCH PROP ON book,person $a.name";
+        "FETCH PROP ON book,person $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -552,9 +511,6 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
                                 PlanNode::Kind::kStart,
                             }));
   }
-
-  // with project
-  // pipe
   {
     const std::string query =
         "FETCH PROP ON person \"1\" YIELD person.name + 1 AS name"
@@ -614,7 +570,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     const std::string query =
         "FETCH PROP ON person \"1\", \"2\" YIELD person.name AS name"
-        "| FETCH PROP ON * $-.name";
+        "| FETCH PROP ON * $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -627,7 +583,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     const std::string query =
         "$a = FETCH PROP ON person \"1\", \"2\" YIELD person.name AS name;"
-        "FETCH PROP ON * $a.name";
+        "FETCH PROP ON * $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -641,7 +597,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     const std::string query =
         "FETCH PROP ON * \"1\", \"2\" YIELD person.name AS name"
-        "| FETCH PROP ON * $-.name";
+        "| FETCH PROP ON * $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -654,7 +610,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputOutput) {
   {
     const std::string query =
         "$a = FETCH PROP ON * \"1\", \"2\" YIELD person.name AS name;"
-        "FETCH PROP ON * $a.name";
+        "FETCH PROP ON * $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -717,29 +673,29 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesInputFailed) {
-  // mismatched varirable
+  // mismatched variable
   ASSERT_FALSE(
       validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-               "FETCH PROP ON person $b.name"));
+               "FETCH PROP ON person $b.name YIELD vertex as node"));
   ASSERT_FALSE(
       validate("$a = FETCH PROP ON * \"1\" YIELD person.name AS name;"
-               "FETCH PROP * person $b.name"));
+               "FETCH PROP * person $b.name YIELD vertex as node"));
 
-  // mismatched varirable property
+  // mismatched variable property
   ASSERT_FALSE(
       validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
-               "FETCH PROP ON person $a.not_exist_property"));
+               "FETCH PROP ON person $a.not_exist_property YIELD vertex as node"));
   ASSERT_FALSE(
       validate("$a = FETCH PROP * person \"1\" YIELD person.name AS name;"
-               "FETCH PROP * person $a.not_exist_property"));
+               "FETCH PROP * person $a.not_exist_property YIELD vertex as node"));
 
   // mismatched input property
   ASSERT_FALSE(
       validate("FETCH PROP ON person \"1\" YIELD person.name AS name | "
-               "FETCH PROP ON person $-.not_exist_property"));
+               "FETCH PROP ON person $-.not_exist_property YIELD vertex as node"));
   ASSERT_FALSE(
       validate("FETCH PROP * person \"1\" YIELD person.name AS name | "
-               "FETCH PROP * person $-.not_exist_property"));
+               "FETCH PROP * person $-.not_exist_property YIELD vertex as node"));
 }
 
 }  // namespace graph

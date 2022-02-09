@@ -1,7 +1,8 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
+# This optimization rule is not neccessary now
+@skip
 Feature: merge get neighbors, dedup and project rule
 
   Background:
@@ -11,7 +12,7 @@ Feature: merge get neighbors, dedup and project rule
     When profiling query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[:like*0..1]->(v2)
-      RETURN v2.name AS Name
+      RETURN v2.player.name AS Name
       """
     Then the result should be, in any order:
       | Name            |

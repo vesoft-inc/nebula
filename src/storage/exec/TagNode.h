@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_TAGNODE_H_
@@ -51,16 +50,22 @@ class TagNode final : public IterateNode<VertexID> {
 
     VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << tagId_ << ", prop size "
             << props_->size();
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &value_);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      resetReader();
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return doExecute(key_, value_);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       // regard key not found as succeed as well, upper node will handle it
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
     return ret;
+  }
+
+  nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
+    key_ = key;
+    value_ = value;
+    resetReader();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   nebula::cpp2::ErrorCode collectTagPropsIfValid(NullHandler nullHandler,
@@ -71,20 +76,41 @@ class TagNode final : public IterateNode<VertexID> {
     return valueHandler(key_, reader_.get(), props_);
   }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
   void next() override {
     // tag only has one valid record, so stop iterate
     valid_ = false;
   }
 
-  folly::StringPiece key() const override { return key_; }
+  folly::StringPiece key() const override {
+    return key_;
+  }
 
-  folly::StringPiece val() const override { return value_; }
+  folly::StringPiece val() const override {
+    return value_;
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
-  const std::string& getTagName() { return tagName_; }
+  const std::string& getTagName() const {
+    return tagName_;
+  }
+
+  TagID tagId() const {
+    return tagId_;
+  }
+
+  void clear() {
+    valid_ = false;
+    key_.clear();
+    value_.clear();
+    reader_.reset();
+  }
 
  private:
   void resetReader() {

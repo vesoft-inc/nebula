@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_HTTP_METAHTTPINGESTHANDLER_H
@@ -19,6 +18,16 @@ namespace meta {
 
 using nebula::HttpCode;
 
+/**
+ * @brief Ingest should be called after download successfully.
+ *        It will instruct relative storaged to ingest sst files
+ *        from local download folder by sending http request.
+ *        It will handle one space each time.
+ *        Functions such as onRequest, onBody... and requestComplete are inherited
+ *        from RequestHandler, we will check request parameters in onRequest and
+ *        call main logic in onEOM.
+ *
+ */
 class MetaHttpIngestHandler : public proxygen::RequestHandler {
  public:
   MetaHttpIngestHandler() = default;

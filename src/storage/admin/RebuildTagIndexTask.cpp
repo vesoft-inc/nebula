@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildTagIndexTask.h"
@@ -28,9 +27,9 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
                                                               PartitionID part,
                                                               const IndexItems& items,
                                                               kvstore::RateLimiter* rateLimiter) {
-  if (canceled_) {
+  if (UNLIKELY(canceled_)) {
     LOG(ERROR) << "Rebuild Tag Index is Canceled";
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   auto vidSizeRet = env_->schemaMan_->getSpaceVidLen(space);
@@ -53,7 +52,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
   auto vidSize = vidSizeRet.value();
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = NebulaKeyUtils::vertexPrefix(part);
+  auto prefix = NebulaKeyUtils::tagPrefix(part);
   auto ret = env_->kvstore_->prefix(space, part, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Processing Part " << part << " Failed";
@@ -65,9 +64,9 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
   RowReaderWrapper reader;
   size_t batchSize = 0;
   while (iter && iter->valid()) {
-    if (canceled_) {
+    if (UNLIKELY(canceled_)) {
       LOG(ERROR) << "Rebuild Tag Index is Canceled";
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
@@ -128,15 +127,17 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_tag_id() == tagID) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get(), schema);
         if (!valuesRet.ok()) {
           LOG(WARNING) << "Collect index value failed";
           continue;
         }
-        auto indexKey = IndexKeyUtils::vertexIndexKey(
+        auto indexKeys = IndexKeyUtils::vertexIndexKeys(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
-        batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), indexVal);
+        for (auto& indexKey : indexKeys) {
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
+        }
       }
     }
     iter->next();

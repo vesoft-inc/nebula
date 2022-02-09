@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_CREATECHECKPOINTPROCESSOR_H_
@@ -15,7 +14,7 @@
 namespace nebula {
 namespace storage {
 
-class CreateCheckpointProcessor : public BaseProcessor<cpp2::CreateCPResp> {
+class CreateCheckpointProcessor {
  public:
   static CreateCheckpointProcessor* instance(StorageEnv* env) {
     return new CreateCheckpointProcessor(env);
@@ -23,8 +22,18 @@ class CreateCheckpointProcessor : public BaseProcessor<cpp2::CreateCPResp> {
 
   void process(const cpp2::CreateCPRequest& req);
 
+  folly::Future<cpp2::CreateCPResp> getFuture() {
+    return promise_.getFuture();
+  }
+
  private:
-  explicit CreateCheckpointProcessor(StorageEnv* env) : BaseProcessor<cpp2::CreateCPResp>(env) {}
+  explicit CreateCheckpointProcessor(StorageEnv* env) : env_(env) {}
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::CreateCPResp> promise_;
+  cpp2::CreateCPResp resp_;
 };
 
 }  // namespace storage

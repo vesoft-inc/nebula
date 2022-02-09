@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_UPDATENODE_H_
@@ -55,7 +54,9 @@ class UpdateNode : public RelNode<T> {
   nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
                                                 const std::string& name) {
     if (field->hasDefault()) {
-      auto expr = field->defaultValue()->clone();
+      ObjectPool pool;
+      auto& exprStr = field->defaultValue();
+      auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
       props_[field->name()] = Expression::eval(expr, *expCtx_);
     } else if (field->nullable()) {
       props_[name] = Value::kNullValue;
@@ -270,7 +271,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       expCtx_->setTagProp(tagName_, p.first, p.second);
     }
 
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -332,7 +333,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        LOG(ERROR) << "Add field faild ";
+        LOG(ERROR) << "Add field failed ";
         return folly::none;
       }
     }
@@ -341,7 +342,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Add field faild ";
+      LOG(ERROR) << "Add field failed ";
       return folly::none;
     }
 
@@ -362,17 +363,21 @@ class UpdateTagNode : public UpdateNode<VertexID> {
               LOG(ERROR) << "Bad format row";
               return folly::none;
             }
-            auto oi = indexKey(partId, vId, reader_, index);
-            if (!oi.empty()) {
+            auto ois = indexKeys(partId, vId, reader_, index);
+            if (!ois.empty()) {
               auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
               if (context_->env()->checkRebuilding(iState)) {
                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                batchHolder->put(std::move(deleteOpKey), std::move(oi));
+                for (auto& oi : ois) {
+                  batchHolder->put(std::string(deleteOpKey), std::move(oi));
+                }
               } else if (context_->env()->checkIndexLocked(iState)) {
                 LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                 return folly::none;
               } else {
-                batchHolder->remove(std::move(oi));
+                for (auto& oi : ois) {
+                  batchHolder->remove(std::move(oi));
+                }
               }
             }
           }
@@ -386,38 +391,43 @@ class UpdateTagNode : public UpdateNode<VertexID> {
             LOG(ERROR) << "Bad format row";
             return folly::none;
           }
-          auto ni = indexKey(partId, vId, nReader.get(), index);
-          if (!ni.empty()) {
+          auto nis = indexKeys(partId, vId, nReader.get(), index);
+          if (!nis.empty()) {
             auto v = CommonUtils::ttlValue(schema_, nReader.get());
             auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
             auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
             if (context_->env()->checkRebuilding(indexState)) {
-              auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(ni));
-              batchHolder->put(std::move(modifyKey), std::move(niv));
+              for (auto& ni : nis) {
+                auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(ni));
+                batchHolder->put(std::move(modifyKey), std::string(niv));
+              }
             } else if (context_->env()->checkIndexLocked(indexState)) {
               LOG(ERROR) << "The index has been locked: " << index->get_index_name();
               return folly::none;
             } else {
-              batchHolder->put(std::move(ni), std::move(niv));
+              for (auto& ni : nis) {
+                batchHolder->put(std::move(ni), std::string(niv));
+              }
             }
           }
         }
       }
     }
     // step 3, insert new vertex data
+    batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
     batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
   }
 
-  std::string indexKey(PartitionID partId,
-                       const VertexID& vId,
-                       RowReader* reader,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     const VertexID& vId,
+                                     RowReader* reader,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
-      return "";
+      return {};
     }
-    return IndexKeyUtils::vertexIndexKey(
+    return IndexKeyUtils::vertexIndexKeys(
         context_->vIdLen(), partId, index->get_index_id(), vId, std::move(values).value());
   }
 
@@ -514,33 +524,20 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       }
     };
 
-    if (context_->env()->txnMan_ && context_->env()->txnMan_->enableToss(context_->spaceId())) {
-      LOG(INFO) << "before update edge atomic" << TransactionUtils::dumpKey(edgeKey);
-      auto f = context_->env()->txnMan_->updateEdgeAtomic(
-          context_->vIdLen(), context_->spaceId(), partId, edgeKey, std::move(op));
-      f.wait();
-
-      if (f.valid()) {
-        ret = f.value();
-      } else {
-        ret = nebula::cpp2::ErrorCode::E_UNKNOWN;
-      }
-    } else {
-      auto batch = op();
-      if (batch == folly::none) {
-        return this->exeResult_;
-      }
-
-      folly::Baton<true, std::atomic> baton;
-      auto callback = [&ret, &baton](nebula::cpp2::ErrorCode code) {
-        ret = code;
-        baton.post();
-      };
-
-      context_->env()->kvstore_->asyncAppendBatch(
-          context_->spaceId(), partId, std::move(batch).value(), callback);
-      baton.wait();
+    auto batch = op();
+    if (batch == folly::none) {
+      return this->exeResult_;
     }
+
+    folly::Baton<true, std::atomic> baton;
+    auto callback = [&ret, &baton](nebula::cpp2::ErrorCode code) {
+      ret = code;
+      baton.post();
+    };
+
+    context_->planContext_->env_->kvstore_->asyncAppendBatch(
+        context_->planContext_->spaceId_, partId, std::move(batch).value(), callback);
+    baton.wait();
     return ret;
   }
 
@@ -661,7 +658,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        VLOG(1) << "Add field faild ";
+        VLOG(1) << "Add field failed ";
         return folly::none;
       }
     }
@@ -670,7 +667,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      VLOG(1) << "Add field faild ";
+      VLOG(1) << "Add field failed ";
       return folly::none;
     }
 
@@ -690,17 +687,21 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
               LOG(ERROR) << "Bad format row";
               return folly::none;
             }
-            auto oi = indexKey(partId, reader_, edgeKey, index);
-            if (!oi.empty()) {
+            auto ois = indexKeys(partId, reader_, edgeKey, index);
+            if (!ois.empty()) {
               auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
               if (context_->env()->checkRebuilding(iState)) {
                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                batchHolder->put(std::move(deleteOpKey), std::move(oi));
+                for (auto& oi : ois) {
+                  batchHolder->put(std::string(deleteOpKey), std::move(oi));
+                }
               } else if (context_->env()->checkIndexLocked(iState)) {
                 LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                 return folly::none;
               } else {
-                batchHolder->remove(std::move(oi));
+                for (auto& oi : ois) {
+                  batchHolder->remove(std::move(oi));
+                }
               }
             }
           }
@@ -714,19 +715,23 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
             LOG(ERROR) << "Bad format row";
             return folly::none;
           }
-          auto nik = indexKey(partId, nReader.get(), edgeKey, index);
-          if (!nik.empty()) {
+          auto niks = indexKeys(partId, nReader.get(), edgeKey, index);
+          if (!niks.empty()) {
             auto v = CommonUtils::ttlValue(schema_, nReader.get());
             auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
             auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
             if (context_->env()->checkRebuilding(indexState)) {
-              auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-              batchHolder->put(std::move(modifyKey), std::move(niv));
+              for (auto& nik : niks) {
+                auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
+                batchHolder->put(std::move(modifyKey), std::string(niv));
+              }
             } else if (context_->env()->checkIndexLocked(indexState)) {
               LOG(ERROR) << "The index has been locked: " << index->get_index_name();
               return folly::none;
             } else {
-              batchHolder->put(std::move(nik), std::move(niv));
+              for (auto& nik : niks) {
+                batchHolder->put(std::move(nik), std::string(niv));
+              }
             }
           }
         }
@@ -734,24 +739,32 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     }
     // step 3, insert new edge data
     batchHolder->put(std::move(key_), std::move(nVal));
+
+    // extra phase: if there are some extra requirement.
+    for (auto& [k, v] : edgeContext_->kvAppend) {
+      batchHolder->put(std::move(k), std::move(v));
+    }
+    for (auto& k : edgeContext_->kvErased) {
+      batchHolder->remove(std::move(k));
+    }
     return encodeBatchValue(batchHolder->getBatch());
   }
 
-  std::string indexKey(PartitionID partId,
-                       RowReader* reader,
-                       const cpp2::EdgeKey& edgeKey,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     RowReader* reader,
+                                     const cpp2::EdgeKey& edgeKey,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
-      return "";
+      return {};
     }
-    return IndexKeyUtils::edgeIndexKey(context_->vIdLen(),
-                                       partId,
-                                       index->get_index_id(),
-                                       edgeKey.get_src().getStr(),
-                                       edgeKey.get_ranking(),
-                                       edgeKey.get_dst().getStr(),
-                                       std::move(values).value());
+    return IndexKeyUtils::edgeIndexKeys(context_->vIdLen(),
+                                        partId,
+                                        index->get_index_id(),
+                                        edgeKey.get_src().getStr(),
+                                        edgeKey.get_ranking(),
+                                        edgeKey.get_dst().getStr(),
+                                        std::move(values).value());
   }
 
  private:

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_REBUILDINDEXTASK_H_
@@ -22,7 +21,9 @@ class RebuildIndexTask : public AdminTask {
  public:
   RebuildIndexTask(StorageEnv* env, TaskContext&& ctx);
 
-  ~RebuildIndexTask() { LOG(INFO) << "Release Rebuild Task"; }
+  ~RebuildIndexTask() {
+    LOG(INFO) << "Release Rebuild Task";
+  }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
@@ -37,7 +38,11 @@ class RebuildIndexTask : public AdminTask {
                                                    const IndexItems& items,
                                                    kvstore::RateLimiter* rateLimiter) = 0;
 
-  void cancel() override { canceled_ = true; }
+  void cancel() override {
+    canceled_ = true;
+    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
+  }
 
   nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space,
                                                  PartitionID part,
@@ -60,7 +65,6 @@ class RebuildIndexTask : public AdminTask {
   nebula::cpp2::ErrorCode invoke(GraphSpaceID space, PartitionID part, const IndexItems& items);
 
  protected:
-  std::atomic<bool> canceled_{false};
   GraphSpaceID space_;
 };
 

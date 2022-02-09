@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_STATS_STATSMANAGER_H_
@@ -22,8 +21,9 @@ namespace stats {
 // A wrapper class of counter index. Each instance can only be writtern once.
 class CounterId final {
  public:
-  CounterId() : index_{0} {}
-  CounterId(int32_t index) : index_{index} {}  // NOLINT
+  CounterId() = default;
+  CounterId(const std::string& index, bool isHisto = false)  // NOLINT
+      : index_{index}, isHisto_(isHisto) {}
   CounterId(const CounterId&) = default;
 
   CounterId& operator=(const CounterId& right) {
@@ -35,11 +35,12 @@ class CounterId final {
       LOG(FATAL) << "CounterId cannot be assigned twice";
     }
     index_ = right.index_;
+    isHisto_ = right.isHisto_;
     return *this;
   }
 
-  CounterId& operator=(int32_t right) {
-    if (right == 0) {
+  CounterId& operator=(const std::string& right) {
+    if (right == "") {
       LOG(FATAL) << "Invalid counter id";
     }
     if (valid()) {
@@ -50,19 +51,28 @@ class CounterId final {
     return *this;
   }
 
-  bool valid() const { return index_ != 0; }
+  bool valid() const {
+    return index_ != "";
+  }
 
-  int32_t index() const { return index_; }
+  bool isHisto() const {
+    return isHisto_;
+  }
+
+  std::string index() const {
+    return index_;
+  }
 
  private:
-  int32_t index_;
+  std::string index_;
+  bool isHisto_{false};
 };
 
 /**
  * This is a utility class to keep track the service's statistic information.
  *
  * It contains a bunch of counters. Each counter has a unique name and three
- * levels of time ranges, which are 1 minute, 10 minues, and 1 hour. Each
+ * levels of time ranges, which are 1 minute, 10 minutes, and 1 hour. Each
  * counter also associates with one or multiple statistic types. The supported
  * statistic types are SUM, COUNT, AVG, RATE, MIN, MAX and percentiles. Among
  * those, MIN, MAX and Percentile are only supported for Histogram counters.
@@ -85,6 +95,7 @@ class StatsManager final {
   using VT = int64_t;
   using StatsType = folly::MultiLevelTimeSeries<VT>;
   using HistogramType = folly::TimeseriesHistogram<VT>;
+  using LabelPair = std::pair<std::string, std::string>;
 
  public:
   enum class StatsMethod { SUM = 1, COUNT, AVG, RATE };
@@ -111,10 +122,24 @@ class StatsManager final {
   // those specified in the parameter **stats**. If **stats** is empty, nothing
   // will return from readAllValue()
   static CounterId registerStats(folly::StringPiece counterName, std::string stats);
+  static CounterId registerStats(folly::StringPiece counterName, std::vector<StatsMethod> methods);
   static CounterId registerHisto(
       folly::StringPiece counterName, VT bucketSize, VT min, VT max, std::string stats);
+  static CounterId registerHisto(folly::StringPiece counterName,
+                                 VT bucketSize,
+                                 VT min,
+                                 VT max,
+                                 std::vector<StatsMethod> methods,
+                                 std::vector<std::pair<std::string, double>> percentiles);
+
+  static CounterId counterWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
+  static CounterId histoWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
+
+  static void removeCounterWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
+  static void removeHistoWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
 
   static void addValue(const CounterId& id, VT value = 1);
+  static void decValue(const CounterId& id, VT value = 1);
 
   // The parameter counter here must be a qualified counter name, which includes
   // all three parts (counter name, method/percentile, and time range). Here are
@@ -153,11 +178,21 @@ class StatsManager final {
     CounterId id_;
     std::vector<StatsMethod> methods_;
     std::vector<std::pair<std::string, double>> percentiles_;
+    VT bucketSize_, min_, max_;
 
-    CounterInfo(int32_t index,
+    CounterInfo(const std::string& index,
                 std::vector<StatsMethod>&& methods,
-                std::vector<std::pair<std::string, double>>&& percentiles)
-        : id_(index), methods_(std::move(methods)), percentiles_(std::move(percentiles)) {}
+                std::vector<std::pair<std::string, double>>&& percentiles,
+                bool isHisto = false,
+                VT bucketSize = VT(),
+                VT min = VT(),
+                VT max = VT())
+        : id_(index, isHisto),
+          methods_(std::move(methods)),
+          percentiles_(std::move(percentiles)),
+          bucketSize_(bucketSize),
+          min_(min),
+          max_(max) {}
   };
 
   std::string domain_;
@@ -171,10 +206,14 @@ class StatsManager final {
   std::unordered_map<std::string, CounterInfo> nameMap_;
 
   // All time series stats
-  std::vector<std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>> stats_;
+  std::unordered_map<std::string,
+                     std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>>
+      stats_;
 
   // All histogram stats
-  std::vector<std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<HistogramType>>> histograms_;
+  std::unordered_map<std::string,
+                     std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<HistogramType>>>
+      histograms_;
 };
 
 }  // namespace stats

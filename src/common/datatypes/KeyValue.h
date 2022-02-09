@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_KEYVALUE_H_
@@ -24,7 +23,21 @@ struct KeyValue {
     value.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
+
+  auto& operator=(const KeyValue& rhs) {
+    this->key = rhs.key;
+    this->value = rhs.value;
+    return *this;
+  }
+
+  auto& operator=(KeyValue&& rhs) {
+    this->key = std::move(rhs.key);
+    this->value = std::move(rhs.value);
+    return *this;
+  }
 
   bool operator==(const KeyValue& rhs) const {
     if (key != rhs.key) {

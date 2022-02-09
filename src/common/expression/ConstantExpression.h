@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_CONSTANTEXPRESSION_H_
@@ -30,15 +29,21 @@ class ConstantExpression : public Expression {
     return val_;
   }
 
-  const Value& value() const { return val_; }
+  const Value& value() const {
+    return val_;
+  }
 
-  void setValue(Value val) { val_ = std::move(val); }
+  void setValue(Value val) {
+    val_ = std::move(val);
+  }
 
   void accept(ExprVisitor* visitor) override;
 
   std::string toString() const override;
 
-  Expression* clone() const override { return ConstantExpression::make(pool_, val_); }
+  Expression* clone() const override {
+    return ConstantExpression::make(pool_, val_);
+  }
 
  private:
   explicit ConstantExpression(ObjectPool* pool, Value v = Value(NullType::__NULL__))

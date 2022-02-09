@@ -1,16 +1,17 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/DeleteEdgesProcessor.h"
 
 #include <algorithm>
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -56,7 +57,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
       auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
       for (auto& edgeKey : part.second) {
         if (!NebulaKeyUtils::isValidVidLen(
-                spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+                spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
           LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                      << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                      << " dstVid: " << *edgeKey.dst_ref();
@@ -66,17 +67,32 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         // todo(doodle): delete lock in toss
         auto edge = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                             partId,
-                                            (*edgeKey.src_ref()).getStr(),
+                                            edgeKey.src_ref()->getStr(),
                                             *edgeKey.edge_type_ref(),
                                             *edgeKey.ranking_ref(),
-                                            (*edgeKey.dst_ref()).getStr());
+                                            edgeKey.dst_ref()->getStr());
         keys.emplace_back(edge.data(), edge.size());
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleAsync(spaceId_, partId, code);
         continue;
       }
-      doRemove(spaceId_, partId, std::move(keys));
+
+      HookFuncPara para;
+      if (tossHookFunc_) {
+        para.keys.emplace(&keys);
+        (*tossHookFunc_)(para);
+      }
+      if (para.result) {
+        env_->kvstore_->asyncAppendBatch(
+            spaceId_,
+            partId,
+            std::move(para.result.value()),
+            [partId, this](nebula::cpp2::ErrorCode rc) { handleAsync(spaceId_, partId, rc); });
+      } else {
+        doRemove(spaceId_, partId, std::move(keys));
+        stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
+      }
     }
   } else {
     for (auto& part : partEdges) {
@@ -89,19 +105,17 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
       for (const auto& edgeKey : part.second) {
         auto l = std::make_tuple(spaceId_,
                                  partId,
-                                 (*edgeKey.src_ref()).getStr(),
+                                 edgeKey.src_ref()->getStr(),
                                  *edgeKey.edge_type_ref(),
                                  *edgeKey.ranking_ref(),
-                                 (*edgeKey.dst_ref()).getStr());
+                                 edgeKey.dst_ref()->getStr());
         if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
           if (!env_->edgesML_->try_lock(l)) {
-            LOG(ERROR) << folly::format(
-                "The edge locked : src {}, "
-                "type {}, tank {}, dst {}",
-                (*edgeKey.src_ref()).getStr(),
-                *edgeKey.edge_type_ref(),
-                *edgeKey.ranking_ref(),
-                (*edgeKey.dst_ref()).getStr());
+            LOG(ERROR) << folly::sformat("The edge locked : src {}, type {}, tank {}, dst {}",
+                                         edgeKey.src_ref()->getStr(),
+                                         *edgeKey.edge_type_ref(),
+                                         *edgeKey.ranking_ref(),
+                                         edgeKey.dst_ref()->getStr());
             err = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
             break;
           }
@@ -145,6 +159,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     auto key = NebulaKeyUtils::edgeKey(spaceVidLen_, partId, srcId, type, rank, dstId);
     std::string val;
     auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
+    auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(type));
 
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
       /**
@@ -162,26 +177,32 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index->get_fields());
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValues(reader.get(), index.get(), schema.get());
           if (!valuesRet.ok()) {
             continue;
           }
-          auto indexKey = IndexKeyUtils::edgeIndexKey(
+          auto indexKeys = IndexKeyUtils::edgeIndexKeys(
               spaceVidLen_, partId, indexId, srcId, rank, dstId, std::move(valuesRet).value());
 
           auto indexState = env_->getIndexState(spaceId_, partId);
           if (env_->checkRebuilding(indexState)) {
             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->put(std::string(deleteOpKey), std::move(indexKey));
+            }
           } else if (env_->checkIndexLocked(indexState)) {
             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
             return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            batchHolder->remove(std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->remove(std::move(indexKey));
+            }
           }
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumEdgesDeleted);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       continue;
     } else {
@@ -191,6 +212,11 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
     }
   }
 
+  if (tossHookFunc_) {
+    HookFuncPara para;
+    para.batch.emplace(batchHolder.get());
+    (*tossHookFunc_)(para);
+  }
   return encodeBatchValue(batchHolder->getBatch());
 }
 

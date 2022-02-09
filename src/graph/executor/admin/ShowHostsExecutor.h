@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_ADMIN_SHOW_HOSTS_EXECUTOR_H_
@@ -26,4 +25,4 @@ class ShowHostsExecutor final : public Executor {
 }  // namespace graph
 }  // namespace nebula
 
-#endif
+#endif  // GRAPH_EXECUTOR_ADMIN_SHOW_HOSTS_EXECUTOR_H_

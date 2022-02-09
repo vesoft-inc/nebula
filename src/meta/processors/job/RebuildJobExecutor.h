@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_REBUILDJOBEXECUTOR_H_
@@ -9,18 +8,18 @@
 
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 
 namespace nebula {
 namespace meta {
 
-class RebuildJobExecutor : public MetaJobExecutor {
+class RebuildJobExecutor : public StorageJobExecutor {
  public:
   RebuildJobExecutor(JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& paras)
-      : MetaJobExecutor(jobId, kvstore, adminClient, paras) {
+      : StorageJobExecutor(jobId, kvstore, adminClient, paras) {
     toHost_ = TargetHosts::LEADER;
   }
 

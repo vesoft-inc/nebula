@@ -17,9 +17,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -46,10 +48,12 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef PARSER_EDGEKEY_H_
@@ -28,11 +27,17 @@ class EdgeKey final {
     rank_ = rank;
   }
 
-  Expression *srcid() const { return srcid_; }
+  Expression *srcid() const {
+    return srcid_;
+  }
 
-  Expression *dstid() const { return dstid_; }
+  Expression *dstid() const {
+    return dstid_;
+  }
 
-  int64_t rank() { return rank_; }
+  int64_t rank() {
+    return rank_;
+  }
 
   std::string toString() const;
 
@@ -46,7 +51,9 @@ class EdgeKeys final {
  public:
   EdgeKeys() = default;
 
-  void addEdgeKey(EdgeKey *key) { keys_.emplace_back(key); }
+  void addEdgeKey(EdgeKey *key) {
+    keys_.emplace_back(key);
+  }
 
   std::vector<EdgeKey *> keys() const {
     std::vector<EdgeKey *> result;
@@ -71,17 +78,29 @@ class EdgeKeyRef final {
     isInputExpr_ = isInputExpr;
   }
 
-  Expression *srcid() const { return srcid_; }
+  Expression *srcid() const {
+    return srcid_;
+  }
 
-  Expression *dstid() const { return dstid_; }
+  Expression *dstid() const {
+    return dstid_;
+  }
 
-  Expression *rank() const { return rank_; }
+  Expression *rank() const {
+    return rank_;
+  }
 
-  Expression *type() const { return type_; }
+  Expression *type() const {
+    return type_;
+  }
 
-  void setType(Expression *type) { type_ = type; }
+  void setType(Expression *type) {
+    type_ = type;
+  }
 
-  bool isInputExpr() const { return isInputExpr_; }
+  bool isInputExpr() const {
+    return isInputExpr_;
+  }
 
   std::string toString() const;
 

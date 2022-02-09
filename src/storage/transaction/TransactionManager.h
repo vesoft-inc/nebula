@@ -1,131 +1,153 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef STORAGE_TRANSACTION_TRANSACTIONMGR_H_
-#define STORAGE_TRANSACTION_TRANSACTIONMGR_H_
+#ifndef STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
+#define STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
 
-#include <folly/Function.h>
-#include <folly/Synchronized.h>
-#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/executors/Async.h>
+#include <storage/transaction/ChainBaseProcessor.h>
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
 #include "clients/storage/InternalStorageClient.h"
 #include "common/meta/SchemaManager.h"
 #include "common/thrift/ThriftTypes.h"
-#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/MemoryLockCore.h"
+#include "common/utils/MemoryLockWrapper.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
-#include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/transaction/TransactionUtils.h"
+#include "kvstore/Part.h"
+#include "storage/CommonUtils.h"
+#include "storage/transaction/ConsistUtil.h"
 
 namespace nebula {
 namespace storage {
-
-using KV = std::pair<std::string, std::string>;
-using RawKeys = std::vector<std::string>;
-using MemEdgeLocks = folly::ConcurrentHashMap<std::string, int64_t>;
-using ResumedResult = std::shared_ptr<folly::Synchronized<KV>>;
-using GetBatchFunc = std::function<folly::Optional<std::string>()>;
-
 class TransactionManager {
+ public:
+  FRIEND_TEST(ChainUpdateEdgeTest, updateTest1);
+  friend class FakeInternalStorageClient;
+  friend class TransactionManagerTester;
+  using LockGuard = MemoryLockGuard<std::string>;
+  using LockCore = MemoryLockCore<std::string>;
+  using UPtrLock = std::unique_ptr<LockCore>;
+  using SPtrLock = std::shared_ptr<LockCore>;
+
  public:
   explicit TransactionManager(storage::StorageEnv* env);
 
-  ~TransactionManager() = default;
-
-  /**
-   * @brief edges have same localPart and remotePart will share
-   *        one signle RPC request
-   * @param localEdges
-   *        <K, encodedValue>.
-   * @param processor
-   *        will set this if edge have index
-   * @param optBatchGetter
-   *        get a batch of raft operations.
-   *        used by updateNode, need to run this func after edge locked
-   * */
-  folly::Future<nebula::cpp2::ErrorCode> addSamePartEdges(
-      size_t vIdLen,
-      GraphSpaceID spaceId,
-      PartitionID localPart,
-      PartitionID remotePart,
-      std::vector<KV>& localEdges,
-      AddEdgesProcessor* processor = nullptr,
-      folly::Optional<GetBatchFunc> optBatchGetter = folly::none);
-
-  /**
-   * @brief update out-edge first, then in-edge
-   * @param batchGetter
-   *        need to update index & edge together, and exactly the same verion
-   *        which means we need a lock before doing anything.
-   *        as this method will call addSamePartEdges(),
-   *        and addSamePartEdges() will set a lock to edge,
-   *        I would like to forward this function to addSamePartEdges()
-   * */
-  folly::Future<nebula::cpp2::ErrorCode> updateEdgeAtomic(size_t vIdLen,
-                                                          GraphSpaceID spaceId,
-                                                          PartitionID partId,
-                                                          const cpp2::EdgeKey& edgeKey,
-                                                          GetBatchFunc batchGetter);
-
-  /*
-   * resume an unfinished add/update/upsert request
-   * 1. if in-edge commited, will commit out-edge
-   *       else, will remove lock
-   * 2. if mvcc enabled, will commit the value of lock
-   *       else, get props from in-edge, then re-check index and commit
-   * */
-  folly::Future<nebula::cpp2::ErrorCode> resumeTransaction(size_t vIdLen,
-                                                           GraphSpaceID spaceId,
-                                                           std::string lockKey,
-                                                           ResumedResult result = nullptr);
-
-  folly::SemiFuture<nebula::cpp2::ErrorCode> commitBatch(GraphSpaceID spaceId,
-                                                         PartitionID partId,
-                                                         std::string&& batch);
-
-  bool enableToss(GraphSpaceID spaceId) {
-    return nebula::meta::cpp2::IsolationLevel::TOSS == getSpaceIsolationLvel(spaceId);
+  ~TransactionManager() {
+    stop();
+    join();
   }
 
-  folly::Executor* getExecutor() { return exec_.get(); }
+  bool start();
 
-  // used for perf trace, will remove finally
-  std::unordered_map<std::string, std::list<int64_t>> timer_;
+  void stop();
+
+  /**
+   * @brief wait until stop
+   */
+  void join();
+
+  /**
+   * @brief add a new processor to do "chain" work,
+   *        using the internal executor of transaction manager.
+   *
+   * @param proc
+   */
+  void addChainTask(ChainBaseProcessor* proc);
+
+  /**
+   * @brief Get the Lock Core object to set a memory lock for a key.
+   *
+   * @param spaceId
+   * @param partId
+   * @param termId
+   * @param checkWhiteList caller outside TransactionManager have to set this true.
+   * @return nullptr if failed.
+   */
+  SPtrLock getLockCore(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       TermID termId,
+                       bool checkWhiteList = true);
+
+  // get term of part from kvstore, may fail if this part is not exist
+  std::pair<TermID, nebula::cpp2::ErrorCode> getTermFromKVStore(GraphSpaceID spaceId,
+                                                                PartitionID partId);
+
+  // check get term from local term cache
+  // this is used by Chain...RemoteProcessor,
+  // to avoid an old leader request overrider a newer leader's
+  bool checkTermFromCache(GraphSpaceID spaceId, PartitionID partId, TermID termId);
+
+  // leave a record for (double)prime edge, to let resume processor there is one dangling edge
+  void addPrime(GraphSpaceID spaceId,
+                PartitionID partId,
+                TermID termId,
+                const std::string& edgeKey,
+                ResumeType type);
+
+  // delete a prime record when recover succeeded.
+  void delPrime(GraphSpaceID spaceId,
+                PartitionID partId,
+                TermID termId,
+                const std::string& edgeKey);
+
+  /**
+   * @brief need to do a scan to let all prime(double prime) set a memory lock,
+   *        before a partition start to serve.
+   *        otherwise, if a new request comes, it will overwrite the existing lock.
+   * @param spaceId
+   * @param partId
+   */
+  void scanPrimes(GraphSpaceID spaceId, PartitionID partId, TermID termId);
+
+  /**
+   * @brief Get the an Event Base object from its internal executor
+   *
+   * @return folly::EventBase*
+   */
+  folly::EventBase* getEventBase();
+
+  /**
+   * @brief stat thread, used for debug
+   */
+  void monitorPoolStat(folly::ThreadPoolExecutor* pool, const std::string& msg);
+  void bgPrintPoolStat();
+  std::string dumpPoolStat(folly::ThreadPoolExecutor* pool, const std::string& msg);
+
+  bool stop_{false};
+  std::vector<std::pair<folly::ThreadPoolExecutor*, std::string>> monPoolStats_;
 
  protected:
-  folly::SemiFuture<nebula::cpp2::ErrorCode> commitEdgeOut(GraphSpaceID spaceId,
-                                                           PartitionID partId,
-                                                           std::string&& key,
-                                                           std::string&& props);
+  // this is a callback register to NebulaStore on new part added.
+  void onNewPartAdded(std::shared_ptr<kvstore::Part>& part);
 
-  folly::SemiFuture<nebula::cpp2::ErrorCode> commitEdge(GraphSpaceID spaceId,
-                                                        PartitionID partId,
-                                                        std::string& key,
-                                                        std::string& encodedProp);
+  // this is a callback register to Part::onElected
+  void onLeaderElectedWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
 
-  folly::SemiFuture<nebula::cpp2::ErrorCode> eraseKey(GraphSpaceID spaceId,
-                                                      PartitionID partId,
-                                                      const std::string& key);
-
-  void eraseMemoryLock(const std::string& rawKey, int64_t ver);
-
-  nebula::meta::cpp2::IsolationLevel getSpaceIsolationLvel(GraphSpaceID spaceId);
-
-  std::string encodeBatch(std::vector<KV>&& data);
+  // this is a callback register to Part::onLostLeadership
+  void onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
 
  protected:
+  using SpacePart = std::pair<GraphSpaceID, PartitionID>;
+
   StorageEnv* env_{nullptr};
   std::shared_ptr<folly::IOThreadPoolExecutor> exec_;
-  std::unique_ptr<storage::InternalStorageClient> interClient_;
-  MemEdgeLocks memLock_;
+
+  folly::ConcurrentHashMap<SpacePart, TermID> cachedTerms_;
+
+  using MemLockKey = std::tuple<GraphSpaceID, PartitionID, TermID>;
+  folly::ConcurrentHashMap<MemLockKey, SPtrLock> memLocks_;
+
+  /**
+   * @brief every raft part need to do a scan,
+   *        only scanned part allowed to insert edges
+   */
+  folly::ConcurrentHashMap<std::pair<GraphSpaceID, PartitionID>, TermID> currTerm_;
 };
 
 }  // namespace storage
 }  // namespace nebula
-
-#endif  // STORAGE_TRANSACTION_TRANSACTIONMGR_H_
+#endif

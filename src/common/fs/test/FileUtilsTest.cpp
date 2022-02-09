@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -162,7 +161,7 @@ TEST(FileUtils, removeDirRecursively) {
   fd = mkstemp(fileTemp);
   ASSERT_EQ(close(fd), 0);
 
-  // Recursively removal shold succeed
+  // Recursively removal should succeed
   EXPECT_TRUE(FileUtils::remove(dirTemp, true));
 
   // Verify the directory is gone

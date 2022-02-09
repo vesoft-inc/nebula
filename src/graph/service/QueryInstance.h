@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SERVICE_QUERYINSTANCE_H_
@@ -30,7 +29,9 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 
   void execute();
 
-  QueryContext* qctx() const { return qctx_.get(); }
+  QueryContext* qctx() const {
+    return qctx_.get();
+  }
 
  private:
   /**
@@ -50,7 +51,7 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
   Status validateAndOptimize();
   // return true if continue to execute
   bool explainOrContinue();
-  void addSlowQueryStats(uint64_t latency) const;
+  void addSlowQueryStats(uint64_t latency, const std::string& spaceName) const;
   void fillRespData(ExecutionResponse* resp);
   Status findBestPlan();
 

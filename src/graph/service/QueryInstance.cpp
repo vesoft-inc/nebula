@@ -1,12 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/service/QueryInstance.h"
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/executor/ExecutionError.h"
 #include "graph/executor/Executor.h"
 #include "graph/optimizer/OptRule.h"
@@ -14,11 +15,12 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 #include "graph/scheduler/Scheduler.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "graph/util/AstUtils.h"
-#include "graph/util/ScopedTimer.h"
 #include "graph/validator/Validator.h"
 #include "parser/ExplainSentence.h"
+#include "parser/Sentence.h"
+#include "parser/SequentialSentences.h"
 
 using nebula::opt::Optimizer;
 using nebula::opt::OptRule;
@@ -62,13 +64,33 @@ void QueryInstance::execute() {
 
 Status QueryInstance::validateAndOptimize() {
   auto *rctx = qctx()->rctx();
+  auto &spaceName = rctx->session()->space().name;
   VLOG(1) << "Parsing query: " << rctx->query();
   auto result = GQLParser(qctx()).parse(rctx->query());
   NG_RETURN_IF_ERROR(result);
   sentence_ = std::move(result).value();
+  if (sentence_->kind() == Sentence::Kind::kSequential) {
+    size_t num = static_cast<const SequentialSentences *>(sentence_.get())->numSentences();
+    stats::StatsManager::addValue(kNumSentences, num);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSentences, {{"space", spaceName}}), num);
+    }
+  } else {
+    stats::StatsManager::addValue(kNumSentences);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSentences, {{"space", spaceName}}));
+    }
+  }
 
   NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
   NG_RETURN_IF_ERROR(findBestPlan());
+  stats::StatsManager::addValue(kOptimizerLatencyUs, *(qctx_->plan()->optimizeTimeInUs()));
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::histoWithLabels(kOptimizerLatencyUs, {{"space", spaceName}}));
+  }
 
   return Status::OK();
 }
@@ -93,7 +115,7 @@ void QueryInstance::onFinish() {
 
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;
-  addSlowQueryStats(latency);
+  addSlowQueryStats(latency, spaceName);
   rctx->finish();
 
   rctx->session()->deleteQuery(qctx_.get());
@@ -108,6 +130,7 @@ void QueryInstance::onFinish() {
 void QueryInstance::onError(Status status) {
   LOG(ERROR) << status;
   auto *rctx = qctx()->rctx();
+  auto &spaceName = rctx->session()->space().name;
   switch (status.code()) {
     case Status::Code::kOk:
       rctx->resp().errorCode = ErrorCode::SUCCEEDED;
@@ -124,6 +147,13 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kPermissionError:
       rctx->resp().errorCode = ErrorCode::E_BAD_PERMISSION;
       break;
+    case Status::Code::kLeaderChanged:
+      stats::StatsManager::addValue(kNumQueryErrorsLeaderChanges);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
+            kNumQueryErrorsLeaderChanges, {{"space", spaceName}}));
+      }
+      [[fallthrough]];
     case Status::Code::kBalanced:
     case Status::Code::kEdgeNotFound:
     case Status::Code::kError:
@@ -132,7 +162,6 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kInserted:
     case Status::Code::kKeyNotFound:
     case Status::Code::kPartialSuccess:
-    case Status::Code::kLeaderChanged:
     case Status::Code::kNoSuchFile:
     case Status::Code::kNotSupported:
     case Status::Code::kPartNotFound:
@@ -146,23 +175,37 @@ void QueryInstance::onError(Status status) {
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }
-  auto &spaceName = rctx->session()->space().name;
   rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
   rctx->resp().errorMsg = std::make_unique<std::string>(status.toString());
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;
   stats::StatsManager::addValue(kNumQueryErrors);
-  addSlowQueryStats(latency);
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumQueryErrors, {{"space", spaceName}}));
+  }
+  addSlowQueryStats(latency, spaceName);
   rctx->session()->deleteQuery(qctx_.get());
   rctx->finish();
   delete this;
 }
 
-void QueryInstance::addSlowQueryStats(uint64_t latency) const {
+void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string &spaceName) const {
   stats::StatsManager::addValue(kQueryLatencyUs, latency);
+  if (FLAGS_enable_space_level_metrics && spaceName != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::histoWithLabels(kQueryLatencyUs, {{"space", spaceName}}), latency);
+  }
   if (latency > static_cast<uint64_t>(FLAGS_slow_query_threshold_us)) {
     stats::StatsManager::addValue(kNumSlowQueries);
     stats::StatsManager::addValue(kSlowQueryLatencyUs, latency);
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSlowQueries, {{"space", spaceName}}));
+      stats::StatsManager::addValue(
+          stats::StatsManager::histoWithLabels(kSlowQueryLatencyUs, {{"space", spaceName}}),
+          latency);
+    }
   }
 }
 

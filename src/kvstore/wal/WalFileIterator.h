@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef WAL_WALFILEITERATOR_H_
@@ -46,6 +45,8 @@ class WalFileIterator final : public LogIterator {
   LogID currId_;
   TermID currTerm_;
 
+  // When there are more wals, nextFirstId_ is the firstLogId in next wal.
+  // When there are not more wals, nextFirstId_ is the current wal's lastLogId + 1
   LogID nextFirstId_;
 
   // [firstId, lastId]
@@ -53,6 +54,8 @@ class WalFileIterator final : public LogIterator {
   std::list<int> fds_;
   int64_t currPos_{0};
   int32_t currMsgLen_{0};
+  // Whether we have encounter end of wal file during building iterator or iterating
+  bool eof_{false};
   mutable std::string currLog_;
 };
 

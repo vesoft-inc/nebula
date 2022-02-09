@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/time/detail/TscHelper.h"
@@ -41,7 +40,9 @@ TscHelper& TscHelper::get() {
   return tscHelper;
 }
 
-uint64_t TscHelper::readTsc() { return get().readTscImpl(); }
+uint64_t TscHelper::readTsc() {
+  return get().readTscImpl();
+}
 
 uint64_t TscHelper::readTscImpl() {
 #ifdef DURATION_USE_RDTSCP

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Filter down LeftJoin rule
 
   Background:
@@ -10,8 +9,8 @@ Feature: Push Filter down LeftJoin rule
   Scenario: push filter down LeftJoin
     When profiling query:
       """
-      LOOKUP ON player WHERE player.name=='Tim Duncan'
-      | YIELD $-.VertexID AS vid
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
+      | YIELD $-.id AS vid
       |  GO FROM $-.vid OVER like BIDIRECT
       WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')
       YIELD $$.player.name, like._dst AS vid

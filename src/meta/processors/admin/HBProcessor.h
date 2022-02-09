@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_HBPROCESSOR_H_
@@ -32,6 +31,11 @@ struct HBCounters final {
 };
 extern HBCounters kHBCounters;
 
+/**
+ * @brief storaged/graphd/listener report info to metad periodically,
+ *        and update host alive info.
+ *
+ */
 class HBProcessor : public BaseProcessor<cpp2::HBResp> {
   FRIEND_TEST(HBProcessorTest, HBTest);
   FRIEND_TEST(MetaClientTest, HeartbeatTest);
@@ -51,7 +55,7 @@ class HBProcessor : public BaseProcessor<cpp2::HBResp> {
   void onFinished() override;
 
  private:
-  explicit HBProcessor(kvstore::KVStore* kvstore, const HBCounters* counters, ClusterID clusterId)
+  HBProcessor(kvstore::KVStore* kvstore, const HBCounters* counters, ClusterID clusterId)
       : BaseProcessor<cpp2::HBResp>(kvstore), clusterId_(clusterId), counters_(counters) {}
 
   ClusterID clusterId_{0};

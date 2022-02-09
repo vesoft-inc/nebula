@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/process/ProcessUtils.h"
@@ -27,7 +26,7 @@ Status ProcessUtils::isPidAvailable(pid_t pid) {
     return Status::Error("Process `%d' already existed but denied to access", pid);
   }
   if (errno != ESRCH) {
-    return Status::Error("Uknown error: `%s'", ::strerror(errno));
+    return Status::Error("Unknown error: `%s'", ::strerror(errno));
   }
   return Status::OK();
 }
@@ -154,7 +153,7 @@ StatusOr<std::string> ProcessUtils::runCommand(const char *command) {
 
   if (ferror(f)) {
     // Something is wrong
-    fclose(f);
+    pclose(f);
     return Status::Error("Failed to read the output of the command");
   }
 

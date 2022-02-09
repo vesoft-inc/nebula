@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef EXPRESSION_EXPRVISITOR_H_
@@ -63,6 +62,7 @@ class ExprVisitor {
   virtual void visit(MapExpression *expr) = 0;
   // property Expression
   virtual void visit(TagPropertyExpression *expr) = 0;
+  virtual void visit(LabelTagPropertyExpression *expr) = 0;
   virtual void visit(EdgePropertyExpression *expr) = 0;
   virtual void visit(InputPropertyExpression *expr) = 0;
   virtual void visit(VariablePropertyExpression *expr) = 0;

@@ -1,21 +1,23 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
 #define COMMON_UTILS_INDEXKEYUTILS_H_
 
+#include <cmath>
+#include <cstdint>
+
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
-
 namespace nebula {
 
-using PropertyType = nebula::meta::cpp2::PropertyType;
+using PropertyType = nebula::cpp2::PropertyType;
 
 /**
  * This class supply some utils for index in kvstore.
@@ -48,6 +50,10 @@ class IndexKeyUtils final {
         return Value::Type::TIME;
       case PropertyType::DATETIME:
         return Value::Type::DATETIME;
+      case PropertyType::GEOGRAPHY:
+        return Value::Type::GEOGRAPHY;
+      case PropertyType::DURATION:
+        return Value::Type::DURATION;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -83,6 +89,10 @@ class IndexKeyUtils final {
       }
       case Value::Type::DATETIME: {
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        len = sizeof(uint64_t);  // S2CellId
         break;
       }
       default:
@@ -131,8 +141,12 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         return encodeDateTime(v.getDateTime());
       }
+      case Value::Type::GEOGRAPHY: {
+        LOG(FATAL) << "Should call encodeGeography separately";
+        return "";
+      }
       default:
-        LOG(ERROR) << "Unsupported default value type";
+        LOG(FATAL) << "Unsupported default value type";
     }
     return "";
   }
@@ -164,7 +178,23 @@ class IndexKeyUtils final {
     return val;
   }
 
-  static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
+  static std::string encodeUint64(uint64_t v) {
+    auto val = folly::Endian::big(v);
+    std::string raw;
+    raw.reserve(sizeof(uint64_t));
+    raw.append(reinterpret_cast<const char*>(&val), sizeof(uint64_t));
+    return raw;
+  }
+
+  static uint64_t decodeUint64(const folly::StringPiece& raw) {
+    auto val = *reinterpret_cast<const uint64_t*>(raw.data());
+    val = folly::Endian::big(val);
+    return val;
+  }
+
+  static std::string encodeRank(EdgeRanking rank) {
+    return IndexKeyUtils::encodeInt64(rank);
+  }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
     return IndexKeyUtils::decodeInt64(raw);
@@ -179,35 +209,39 @@ class IndexKeyUtils final {
    */
 
   static std::string encodeDouble(double v) {
-    if (v < 0) {
-      /**
-       *   TODO : now, the -(std::numeric_limits<double>::min())
-       *   have a problem of precision overflow. current return value is -nan.
-       */
-      auto i = *reinterpret_cast<const int64_t*>(&v);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      v = *reinterpret_cast<const double*>(&i);
+    if (std::isnan(v)) {
+      return std::string(sizeof(double), '\xFF');
+    } else if (v >= 0) {
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      c[0] |= 0x80;
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
+    } else {
+      int64_t* x = reinterpret_cast<int64_t*>(&v);
+      *x = ~(*x);
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
     }
-    auto val = folly::Endian::big(v);
-    auto* c = reinterpret_cast<char*>(&val);
-    c[0] ^= 0x80;
-    std::string raw;
-    raw.reserve(sizeof(double));
-    raw.append(c, sizeof(double));
-    return raw;
   }
 
   static double decodeDouble(const folly::StringPiece& raw) {
-    char* v = const_cast<char*>(raw.data());
-    v[0] ^= 0x80;
-    auto val = *reinterpret_cast<const double*>(v);
+    int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto i = *reinterpret_cast<const int64_t*>(&val);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      val = *reinterpret_cast<const double*>(&i);
+      val &= 0x7fffffffffffffff;
+    } else {
+      val = ~val;
     }
-    return val;
+    double ret;
+    ::memcpy(&ret, &val, 8);
+    return ret;
   }
 
   static std::string encodeTime(const nebula::Time& t) {
@@ -277,6 +311,25 @@ class IndexKeyUtils final {
     return buf;
   }
 
+  static std::vector<std::string> encodeGeography(const nebula::Geography& gg,
+                                                  const geo::RegionCoverParams& rc) {
+    geo::GeoIndex geoIndex(rc);
+    auto cellIds = geoIndex.indexCells(gg);
+    std::vector<std::string> bufs;
+    bufs.reserve(cellIds.size());
+    for (auto cellId : cellIds) {
+      bufs.emplace_back(encodeUint64(cellId));
+    }
+    return bufs;
+  }
+
+  // NOTE(jie): The decoded data is not the original Geography data, but the uint64 type S2CellID.
+  // decodeValue() should not call this function, it should turn for the data table instead.
+  // It's only used for tests.
+  static uint64_t decodeGeography(const folly::StringPiece& raw) {
+    return decodeUint64(raw);
+  }
+
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
     int8_t month = *reinterpret_cast<const int8_t*>(raw.data() + sizeof(int16_t));
@@ -331,6 +384,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         v.setDateTime(decodeDateTime(raw));
         break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        // unable to get geography value from index key
+        return Value::kNullBadData;
       }
       default:
         return Value(NullType::BAD_DATA);
@@ -396,6 +453,11 @@ class IndexKeyUtils final {
           len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
           break;
         }
+        case Value::Type::GEOGRAPHY: {
+          // NOTE: The data read from index key is S2CellId which type is uint64, not wkb
+          len = sizeof(uint64_t);
+          break;
+        }
         default:
           len = 0;
       }
@@ -412,7 +474,7 @@ class IndexKeyUtils final {
   }
 
   static VertexIDSlice getIndexVertexID(size_t vIdLen, const folly::StringPiece& rawKey) {
-    CHECK_GE(rawKey.size(), kVertexIndexLen + vIdLen);
+    CHECK_GE(rawKey.size(), kTagIndexLen + vIdLen);
     auto offset = rawKey.size() - vIdLen;
     return rawKey.subpiece(offset, vIdLen);
   }
@@ -449,30 +511,30 @@ class IndexKeyUtils final {
   /**
    * Generate vertex|edge index key for kv store
    **/
-  static std::string encodeValues(std::vector<Value>&& values,
-                                  const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static std::vector<std::string> encodeValues(std::vector<Value>&& values,
+                                               const meta::cpp2::IndexItem* indexItem);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string vertexIndexKey(size_t vIdLen,
-                                    PartitionID partId,
-                                    IndexID indexId,
-                                    const VertexID& vId,
-                                    std::string&& values);
+  static std::vector<std::string> vertexIndexKeys(size_t vIdLen,
+                                                  PartitionID partId,
+                                                  IndexID indexId,
+                                                  const VertexID& vId,
+                                                  std::vector<std::string>&& values);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string edgeIndexKey(size_t vIdLen,
-                                  PartitionID partId,
-                                  IndexID indexId,
-                                  const VertexID& srcId,
-                                  EdgeRanking rank,
-                                  const VertexID& dstId,
-                                  std::string&& values);
+  static std::vector<std::string> edgeIndexKeys(size_t vIdLen,
+                                                PartitionID partId,
+                                                IndexID indexId,
+                                                const VertexID& srcId,
+                                                EdgeRanking rank,
+                                                const VertexID& dstId,
+                                                std::vector<std::string>&& values);
 
   static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
@@ -482,11 +544,17 @@ class IndexKeyUtils final {
 
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
-  static StatusOr<std::string> collectIndexValues(
-      RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static StatusOr<std::vector<std::string>> collectIndexValues(
+      RowReader* reader,
+      const meta::cpp2::IndexItem* indexItem,
+      const meta::SchemaProviderIf* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
+
+  static StatusOr<Value> readValueWithLatestSche(RowReader* reader,
+                                                 const std::string propName,
+                                                 const meta::SchemaProviderIf* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };

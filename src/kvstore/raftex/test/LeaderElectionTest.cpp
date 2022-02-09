@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -111,7 +110,7 @@ TEST(LeaderElection, LeaderCrash) {
   services[idx]->addPartition(copies.back());
   copies.back()->start(getPeers(allHosts, allHosts[idx]));
 
-  // Wait untill all copies agree on the same leader
+  // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader);
 
   // Check all hosts agree on the same leader

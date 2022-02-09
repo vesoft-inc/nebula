@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "tools/db-upgrade/DbUpgrader.h"
@@ -10,8 +9,10 @@
 #include "common/fs/FileUtils.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "rocksdb/sst_file_writer.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV1.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
+#include "tools/db-upgrade/NebulaKeyUtilsV3.h"
 
 DEFINE_string(src_db_path,
               "",
@@ -23,10 +24,11 @@ DEFINE_string(dst_db_path,
               "multi paths should be split by comma");
 DEFINE_string(upgrade_meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_uint32(write_batch_num, 100, "The size of the batch written to rocksdb");
-DEFINE_uint32(upgrade_version,
-              0,
-              "When the value is 1, upgrade the data from 1.x to 2.0 GA. "
-              "When the value is 2, upgrade the data from 2.0 RC to 2.0 GA.");
+DEFINE_string(upgrade_version,
+              "",
+              "When the value is 1:2, upgrade the data from 1.x to 2.0 GA. "
+              "When the value is 2RC:2, upgrade the data from 2.0 RC to 2.0 GA."
+              "When the value is 2:3, upgrade the data from 2.0 GA to 3.0 .");
 DEFINE_bool(compactions,
             true,
             "When the upgrade of the space is completed, "
@@ -36,6 +38,8 @@ DEFINE_uint32(max_concurrent_spaces, 5, "The spaces could be processed simultane
 
 namespace nebula {
 namespace storage {
+
+using nebula::cpp2::PropertyType;
 
 Status UpgraderSpace::init(meta::MetaClient* mclient,
                            meta::ServerBasedSchemaManager* sMan,
@@ -82,7 +86,7 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
 
   // Use readonly rocksdb
   readEngine_.reset(new nebula::kvstore::RocksEngine(
-      spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, true));
+      spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, false));
   writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
 
   parts_.clear();
@@ -268,7 +272,7 @@ void UpgraderSpace::runPartV1() {
         auto strVid = std::string(reinterpret_cast<const char*>(&vId), sizeof(vId));
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, strVid, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, strVid, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {
@@ -371,7 +375,7 @@ void UpgraderSpace::doProcessV1() {
 
   // Parallel process part
   auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
-  LOG(INFO) << "Max concurrenct parts: " << partConcurrency;
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
 
   unFinishedPart_ = parts_.size();
 
@@ -481,7 +485,7 @@ void UpgraderSpace::runPartV2() {
 
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {
@@ -580,7 +584,7 @@ void UpgraderSpace::doProcessV2() {
 
   // Parallel process part
   auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
-  LOG(INFO) << "Max concurrenct parts: " << partConcurrency;
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
   unFinishedPart_ = parts_.size();
 
   LOG(INFO) << "Start to handle vertex/edge/index of parts data in space id " << spaceId_;
@@ -656,8 +660,8 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKey = indexVertexKey(partId, strVid, nReader.get(), index);
-      if (!newIndexKey.empty()) {
+      auto newIndexKeys = indexVertexKeys(partId, strVid, nReader.get(), index, schema);
+      for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
     }
@@ -686,12 +690,12 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
       return WriteResult::SUCCEEDED;
     case Value::Type::BOOL: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::INT8:
-        case meta::cpp2::PropertyType::INT16:
-        case meta::cpp2::PropertyType::INT32:
-        case meta::cpp2::PropertyType::INT64:
-        case meta::cpp2::PropertyType::TIMESTAMP:
-        case meta::cpp2::PropertyType::VID: {
+        case PropertyType::INT8:
+        case PropertyType::INT16:
+        case PropertyType::INT32:
+        case PropertyType::INT64:
+        case PropertyType::TIMESTAMP:
+        case PropertyType::VID: {
           bval = val.getBool();
           if (bval) {
             val.setInt(1);
@@ -700,8 +704,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
           }
           return WriteResult::SUCCEEDED;
         }
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             bval = val.getBool();
             sval = folly::to<std::string>(bval);
@@ -711,8 +715,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::FLOAT:
-        case meta::cpp2::PropertyType::DOUBLE: {
+        case PropertyType::FLOAT:
+        case PropertyType::DOUBLE: {
           try {
             bval = val.getBool();
             fval = folly::to<double>(bval);
@@ -729,8 +733,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::INT: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             ival = val.getInt();
             sval = folly::to<std::string>(ival);
@@ -747,8 +751,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::FLOAT: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             fval = val.getFloat();
             sval = folly::to<std::string>(fval);
@@ -758,7 +762,7 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::BOOL: {
+        case PropertyType::BOOL: {
           try {
             fval = val.getFloat();
             bval = folly::to<bool>(fval);
@@ -775,12 +779,12 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::STRING: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::INT8:
-        case meta::cpp2::PropertyType::INT16:
-        case meta::cpp2::PropertyType::INT32:
-        case meta::cpp2::PropertyType::INT64:
-        case meta::cpp2::PropertyType::TIMESTAMP:
-        case meta::cpp2::PropertyType::VID: {
+        case PropertyType::INT8:
+        case PropertyType::INT16:
+        case PropertyType::INT32:
+        case PropertyType::INT64:
+        case PropertyType::TIMESTAMP:
+        case PropertyType::VID: {
           try {
             sval = val.getStr();
             ival = folly::to<int64_t>(sval);
@@ -790,7 +794,7 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::BOOL: {
+        case PropertyType::BOOL: {
           try {
             sval = val.getStr();
             bval = folly::to<bool>(sval);
@@ -800,8 +804,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::FLOAT:
-        case meta::cpp2::PropertyType::DOUBLE: {
+        case PropertyType::FLOAT:
+        case PropertyType::DOUBLE: {
           try {
             sval = val.getStr();
             fval = folly::to<double>(sval);
@@ -881,15 +885,129 @@ std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
   return std::move(rowWrite).moveEncodedStr();
 }
 
-std::string UpgraderSpace::indexVertexKey(PartitionID partId,
-                                          VertexID& vId,
-                                          RowReader* reader,
-                                          std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
-  if (!values.ok()) {
-    return "";
+void UpgraderSpace::runPartV3() {
+  std::chrono::milliseconds take_dura{10};
+  if (auto pId = partQueue_.try_take_for(take_dura)) {
+    PartitionID partId = *pId;
+    // Handle vertex and edge, if there is an index, generate index data
+    LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_ << " part id "
+              << partId;
+    auto prefix = NebulaKeyUtilsV3::partTagPrefix(partId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = readEngine_->prefix(prefix, &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
+      LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
+                 << partId << " failed";
+
+      auto unFinishedPart = --unFinishedPart_;
+      if (unFinishedPart == 0) {
+        // all parts has finished
+        LOG(INFO) << "Handle last part: " << partId << " vertex/edge/index data in space id "
+                  << spaceId_ << " finished";
+      } else {
+        pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+      }
+      return;
+    }
+    int64_t ingestFileCount = 0;
+    auto write_sst = [&, this](const std::vector<kvstore::KV>& data) {
+      ::rocksdb::Options option;
+      option.create_if_missing = true;
+      option.compression = ::rocksdb::CompressionType::kNoCompression;
+      ::rocksdb::SstFileWriter sst_file_writer(::rocksdb::EnvOptions(), option);
+      std::string file = ::fmt::format(".nebula_upgrade.space-{}.part-{}-{}-{}.sst",
+                                       spaceId_,
+                                       partId,
+                                       ingestFileCount++,
+                                       std::time(nullptr));
+      ::rocksdb::Status s = sst_file_writer.Open(file);
+      if (!s.ok()) {
+        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                   << s.code();
+      }
+      for (auto item : data) {
+        s = sst_file_writer.Put(item.first, item.second);
+        if (!s.ok()) {
+          LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                     << s.code();
+        }
+      }
+      s = sst_file_writer.Finish();
+      if (!s.ok()) {
+        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                   << s.code();
+      }
+      std::lock_guard<std::mutex> lck(this->ingest_sst_file_mut_);
+      ingest_sst_file_.push_back(file);
+    };
+    std::vector<kvstore::KV> data;
+    std::string lastVertexKey = "";
+    while (iter && iter->valid()) {
+      auto vertex = NebulaKeyUtilsV3::getVertexKey(iter->key());
+      if (vertex == lastVertexKey) {
+        iter->next();
+        continue;
+      }
+      data.emplace_back(vertex, "");
+      lastVertexKey = vertex;
+      if (data.size() >= 100000) {
+        write_sst(data);
+        data.clear();
+      }
+      iter->next();
+    }
+    if (!data.empty()) {
+      write_sst(data);
+      data.clear();
+    }
+    LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
+              << " succeed";
+
+    auto unFinishedPart = --unFinishedPart_;
+    if (unFinishedPart == 0) {
+      // all parts has finished
+      LOG(INFO) << "Handle last part: " << partId << " vertex/edge/index data in space id "
+                << spaceId_ << " finished.";
+    } else {
+      pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+    }
+  } else {
+    LOG(INFO) << "Handle vertex/edge/index of parts data in space id " << spaceId_ << " finished";
   }
-  return IndexKeyUtils::vertexIndexKey(
+}
+void UpgraderSpace::doProcessV3() {
+  LOG(INFO) << "Start to handle data in space id " << spaceId_;
+  // Parallel process part
+  auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
+  unFinishedPart_ = parts_.size();
+
+  LOG(INFO) << "Start to handle vertex/edge/index of parts data in space id " << spaceId_;
+  for (size_t i = 0; i < partConcurrency; ++i) {
+    pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+  }
+
+  while (unFinishedPart_ != 0) {
+    sleep(10);
+  }
+  auto code = readEngine_->ingest(ingest_sst_file_, true);
+  if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
+  }
+  readEngine_->put(NebulaKeyUtils::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());
+}
+std::vector<std::string> UpgraderSpace::indexVertexKeys(
+    PartitionID partId,
+    VertexID& vId,
+    RowReader* reader,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
+  if (!values.ok()) {
+    return {};
+  }
+  return IndexKeyUtils::vertexIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), vId, std::move(values).value());
 }
 
@@ -926,25 +1044,27 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKey = indexEdgeKey(partId, nReader.get(), svId, rank, dstId, index);
-      if (!newIndexKey.empty()) {
+      auto newIndexKeys = indexEdgeKeys(partId, nReader.get(), svId, rank, dstId, index, schema);
+      for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
     }
   }
 }
 
-std::string UpgraderSpace::indexEdgeKey(PartitionID partId,
-                                        RowReader* reader,
-                                        VertexID& svId,
-                                        EdgeRanking rank,
-                                        VertexID& dstId,
-                                        std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+std::vector<std::string> UpgraderSpace::indexEdgeKeys(
+    PartitionID partId,
+    RowReader* reader,
+    VertexID& svId,
+    EdgeRanking rank,
+    VertexID& dstId,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+    const meta::SchemaProviderIf* latestSchema) {
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
-    return "";
+    return {};
   }
-  return IndexKeyUtils::edgeIndexKey(
+  return IndexKeyUtils::edgeIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), svId, rank, dstId, std::move(values).value());
 }
 
@@ -1070,7 +1190,7 @@ void DbUpgrader::run() {
   // Parallel process space
   auto spaceConcurrency =
       std::min(static_cast<size_t>(FLAGS_max_concurrent_spaces), upgraderSpaces.size());
-  LOG(INFO) << "Max concurrenct spaces: " << spaceConcurrency;
+  LOG(INFO) << "Max concurrent spaces: " << spaceConcurrency;
 
   for (size_t i = 0; i < spaceConcurrency; ++i) {
     pool_->add(std::bind(&DbUpgrader::doSpace, this));
@@ -1091,10 +1211,14 @@ void DbUpgrader::doSpace() {
     LOG(INFO) << "Upgrade from path " << upgraderSpaceIter->srcPath_ << " space id "
               << upgraderSpaceIter->entry_ << " to path " << upgraderSpaceIter->dstPath_
               << " begin";
-    if (FLAGS_upgrade_version == 1) {
+    if (FLAGS_upgrade_version == "1:2") {
       upgraderSpaceIter->doProcessV1();
-    } else {
+    } else if (FLAGS_upgrade_version == "2RC:2") {
       upgraderSpaceIter->doProcessV2();
+    } else if (FLAGS_upgrade_version == "2:3") {
+      upgraderSpaceIter->doProcessV3();
+    } else {
+      LOG(FATAL) << "error upgrade version " << FLAGS_upgrade_version;
     }
 
     auto ret = upgraderSpaceIter->copyWal();

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/match/LabelIndexSeek.h"
@@ -18,7 +17,7 @@ bool LabelIndexSeek::matchNode(NodeContext* nodeCtx) {
   // only require the tag
   if (node.tids.size() != 1) {
     // TODO multiple tag index seek need the IndexScan support
-    VLOG(2) << "Multple tag index seek is not supported now.";
+    VLOG(2) << "Multiple tag index seek is not supported now.";
     return false;
   }
 
@@ -70,7 +69,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   DCHECK_EQ(nodeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple tag index seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_index_id(nodeCtx->scanInfo.indexIds.back());
+  iqctx.index_id_ref() = nodeCtx->scanInfo.indexIds.back();
   auto scan = IndexScan::make(matchClauseCtx->qctx,
                               nullptr,
                               matchClauseCtx->space.id,
@@ -82,7 +81,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   plan.tail = scan;
   plan.root = scan;
 
-  // This if-block is a patch for or-filter-embeding to avoid OOM,
+  // This if-block is a patch for or-filter-embedding to avoid OOM,
   // and it should be converted to an `optRule` after the match validator is
   // refactored
   auto& whereCtx = matchClauseCtx->where;
@@ -90,39 +89,39 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   if (whereCtx && whereCtx->filter) {
     auto* filter = whereCtx->filter;
     const auto& nodeAlias = nodeCtx->info->alias;
+    const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
 
     if (filter->kind() == Expression::Kind::kLogicalOr) {
-      auto labelExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
-      bool labelMatched = true;
-      for (auto* labelExpr : labelExprs) {
-        DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
-        if (static_cast<const LabelExpression*>(labelExpr)->name() != nodeAlias) {
-          labelMatched = false;
+      auto exprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
+      bool matched = true;
+      for (auto* expr : exprs) {
+        auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
+        if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias ||
+            tagPropExpr->sym() != schemaName) {
+          matched = false;
           break;
         }
       }
-      if (labelMatched) {
+      if (matched) {
         auto flattenFilter = ExpressionUtils::flattenInnerLogicalExpr(filter);
         DCHECK_EQ(flattenFilter->kind(), Expression::Kind::kLogicalOr);
         auto& filterItems = static_cast<LogicalExpression*>(flattenFilter)->operands();
-        auto canBeEmbeded = [](Expression::Kind k) -> bool {
+        auto canBeEmbedded = [](Expression::Kind k) -> bool {
           return k == Expression::Kind::kRelEQ || k == Expression::Kind::kRelLT ||
                  k == Expression::Kind::kRelLE || k == Expression::Kind::kRelGT ||
                  k == Expression::Kind::kRelGE;
         };
-        bool canBeEmbeded2IndexScan = true;
+        bool canBeEmbedded2IndexScan = true;
         for (auto& f : filterItems) {
-          if (!canBeEmbeded(f->kind())) {
-            canBeEmbeded2IndexScan = false;
+          if (!canBeEmbedded(f->kind())) {
+            canBeEmbedded2IndexScan = false;
             break;
           }
         }
-        if (canBeEmbeded2IndexScan) {
-          auto* srcFilter = ExpressionUtils::rewriteLabelAttr2TagProp(flattenFilter);
+        if (canBeEmbedded2IndexScan) {
           storage::cpp2::IndexQueryContext ctx;
-          ctx.set_filter(Expression::encode(*srcFilter));
+          ctx.filter_ref() = Expression::encode(*flattenFilter);
           scan->setIndexQueryContext({ctx});
-          whereCtx.reset();
         }
       }
     }
@@ -138,7 +137,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
   DCHECK_EQ(edgeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple edge indices seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_index_id(edgeCtx->scanInfo.indexIds.back());
+  iqctx.index_id_ref() = edgeCtx->scanInfo.indexIds.back();
   std::vector<std::string> columns, columnsName;
   switch (edgeCtx->scanInfo.direction) {
     case MatchEdge::Direction::OUT_EDGE:
@@ -171,20 +170,28 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 
   auto* pool = qctx->objPool();
   if (edgeCtx->scanInfo.direction == MatchEdge::Direction::BOTH) {
-    // merge the src,dst to one column
-    auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
-    auto* exprList = ExpressionList::make(pool);
-    exprList->add(ColumnExpression::make(pool, 0));  // src
-    exprList->add(ColumnExpression::make(pool, 1));  // dst
-    yieldColumns->addColumn(new YieldColumn(ListExpression::make(pool, exprList)));
-    auto* project = Project::make(qctx, scan, yieldColumns);
-    project->setColNames({kVid});
+    PlanNode* left = nullptr;
+    {
+      auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(InputPropertyExpression::make(pool, kSrc)));
+      left = Project::make(qctx, scan, yieldColumns);
+      left->setColNames({kVid});
+    }
+    PlanNode* right = nullptr;
+    {
+      auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(InputPropertyExpression::make(pool, kDst)));
+      right = Project::make(qctx, scan, yieldColumns);
+      right->setColNames({kVid});
+    }
 
-    auto* unwindExpr = ColumnExpression::make(pool, 0);
-    auto* unwind = Unwind::make(matchClauseCtx->qctx, project, unwindExpr, kVid);
-    unwind->setColNames({"vidList", kVid});
-    plan.root = unwind;
+    plan.root = Union::make(qctx, left, right);
+    plan.root->setColNames({kVid});
   }
+
+  auto* dedup = Dedup::make(qctx, plan.root);
+  dedup->setColNames(plan.root->colNames());
+  plan.root = dedup;
 
   // initialize start expression in project node
   edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
@@ -212,7 +219,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     }
     if (candidateIndex == nullptr) {
       return Status::SemanticError("No valid index for label `%s'.",
-                                   nodeCtx->scanInfo.schemaNames[i]->c_str());
+                                   nodeCtx->scanInfo.schemaNames[i].c_str());
     }
     indexIds.emplace_back(candidateIndex->get_index_id());
   }
@@ -241,7 +248,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     }
     if (candidateIndex == nullptr) {
       return Status::SemanticError("No valid index for label `%s'.",
-                                   edgeCtx->scanInfo.schemaNames[i]->c_str());
+                                   edgeCtx->scanInfo.schemaNames[i].c_str());
     }
     indexIds.emplace_back(candidateIndex->get_index_id());
   }

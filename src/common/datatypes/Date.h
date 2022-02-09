@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_DATE_H_
@@ -11,13 +10,30 @@
 
 #include <string>
 
+#include "common/datatypes/Duration.h"
+
 namespace nebula {
 
-// In nebula only store UTC time, and the interpretion of time value based on
+// In nebula only store UTC time, and the interpretation of time value based on
 // the timezone configuration in current system.
 
 extern const int64_t kDaysSoFar[];
 extern const int64_t kLeapDaysSoFar[];
+
+// https://en.wikipedia.org/wiki/Leap_year#Leap_day
+static inline bool isLeapYear(int16_t year) {
+  if (year % 4 != 0) {
+    return false;
+  } else if (year % 100 != 0) {
+    return true;
+  } else if (year % 400 != 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+int8_t dayOfMonth(int16_t year, int8_t month);
 
 struct Date {
   int16_t year;  // Any integer
@@ -35,7 +51,9 @@ struct Date {
     day = 1;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   void reset(int16_t y, int8_t m, int8_t d) {
     year = y;
@@ -63,14 +81,31 @@ struct Date {
   Date operator+(int64_t days) const;
   Date operator-(int64_t days) const;
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
-  folly::dynamic toJson() const { return toString(); }
+  folly::dynamic toJson() const {
+    return toString();
+  }
 
   // Return the number of days since -32768/1/1
   int64_t toInt() const;
   // Convert the number of days since -32768/1/1 to the real date
   void fromInt(int64_t days);
 };
+
+inline Date operator+(const Date& l, const Duration& r) {
+  Date d = l;
+  d.addDuration(r);
+  return d;
+}
+
+inline Date operator-(const Date& l, const Duration& r) {
+  Date d = l;
+  d.subDuration(r);
+  return d;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const Date& d) {
   os << d.toString();
@@ -93,7 +128,9 @@ struct Time {
     microsec = 0;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   bool operator==(const Time& rhs) const {
     return hour == rhs.hour && minute == rhs.minute && sec == rhs.sec && microsec == rhs.microsec;
@@ -115,14 +152,31 @@ struct Time {
     return false;
   }
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
   // 'Z' representing UTC timezone
-  folly::dynamic toJson() const { return toString() + "Z"; }
+  folly::dynamic toJson() const {
+    return toString() + "Z";
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
   os << d.toString();
   return os;
+}
+
+inline Time operator+(const Time& l, const Duration& r) {
+  Time t = l;
+  t.addDuration(r);
+  return t;
+}
+
+inline Time operator-(const Time& l, const Duration& r) {
+  Time t = l;
+  t.subDuration(r);
+  return t;
 }
 
 struct DateTime {
@@ -165,6 +219,23 @@ struct DateTime {
     sec = 0;
     microsec = 0;
   }
+  explicit DateTime(const Date& date, const Time& time) {
+    year = date.year;
+    month = date.month;
+    day = date.day;
+    hour = time.hour;
+    minute = time.minute;
+    sec = time.sec;
+    microsec = time.microsec;
+  }
+
+  Date date() const {
+    return Date(year, month, day);
+  }
+
+  Time time() const {
+    return Time(hour, minute, sec, microsec);
+  }
 
   void clear() {
     year = 0;
@@ -176,7 +247,9 @@ struct DateTime {
     microsec = 0;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   bool operator==(const DateTime& rhs) const {
     return year == rhs.year && month == rhs.month && day == rhs.day && hour == rhs.hour &&
@@ -207,14 +280,31 @@ struct DateTime {
     return false;
   }
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
   // 'Z' representing UTC timezone
-  folly::dynamic toJson() const { return toString() + "Z"; }
+  folly::dynamic toJson() const {
+    return toString() + "Z";
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {
   os << d.toString();
   return os;
+}
+
+inline DateTime operator+(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.addDuration(r);
+  return dt;
+}
+
+inline DateTime operator-(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.subDuration(r);
+  return dt;
 }
 
 }  // namespace nebula

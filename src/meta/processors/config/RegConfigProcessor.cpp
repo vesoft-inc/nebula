@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/RegConfigProcessor.h"
@@ -21,7 +20,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
       VLOG(1) << "Config name: " << name << ", mode: " << apache::thrift::util::enumNameSafe(mode)
               << ", module: " << apache::thrift::util::enumNameSafe(module) << ", value: " << value;
 
-      std::string configKey = MetaServiceUtils::configKey(module, name);
+      std::string configKey = MetaKeyUtils::configKey(module, name);
       // ignore config which has been registered before
       auto configRet = doGet(configKey);
       if (nebula::ok(configRet)) {
@@ -29,14 +28,14 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
       } else {
         auto retCode = nebula::error(configRet);
         if (retCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-          LOG(ERROR) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+          LOG(INFO) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
           handleErrorCode(retCode);
           onFinished();
           return;
         }
       }
 
-      std::string configValue = MetaServiceUtils::configValue(mode, value);
+      std::string configValue = MetaKeyUtils::configValue(mode, value);
       data.emplace_back(std::move(configKey), std::move(configValue));
     }
 

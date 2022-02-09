@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -24,7 +23,7 @@ void checkVertexData(RocksEngine* engine,
                      PartitionID partId,
                      int expectNum,
                      bool checkVal = false) {
-  std::string vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
+  std::string vertexPrefix = NebulaKeyUtils::tagPrefix(partId);
   std::unique_ptr<KVIterator> iter;
   auto code = engine->prefix(vertexPrefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
@@ -106,16 +105,16 @@ TEST(PartTest, KeyOrderTest) {
 
   // build vertex data in part 1, 2
   while (partId < 3) {
-    auto key1 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", 0);
+    auto key1 = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, "", 0);
     data.emplace_back(key1, folly::stringPrintf("val%d", 1));
 
-    auto key2 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", INT_MAX);
+    auto key2 = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, "", INT_MAX);
     data.emplace_back(key2, folly::stringPrintf("val%d", 2));
 
-    auto key3 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "ffffff", INT_MAX, '\377');
+    auto key3 = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, "ffffff", INT_MAX, '\377');
     data.emplace_back(key3, folly::stringPrintf("val%d", 3));
 
-    auto key4 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", INT_MAX, '\377');
+    auto key4 = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, "", INT_MAX, '\377');
     data.emplace_back(key4, folly::stringPrintf("val%d", 4));
 
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(data));
@@ -142,12 +141,12 @@ TEST(PartTest, PartCleanTest) {
   while (partId < 3) {
     TagID tagId = 1;
     for (int i = 0; i < 10; i++) {
-      auto key = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, std::to_string(i), tagId);
+      auto key = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, std::to_string(i), tagId);
       data.emplace_back(key, folly::stringPrintf("val%d", i));
     }
     tagId = 2;
     for (int i = 0; i < 10; i++) {
-      auto key = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, std::to_string(i), tagId);
+      auto key = NebulaKeyUtils::tagKey(kDefaultVIdLen, partId, std::to_string(i), tagId);
       data.emplace_back(key, folly::stringPrintf("val%d", i));
     }
 
@@ -159,9 +158,11 @@ TEST(PartTest, PartCleanTest) {
     }
     IndexID indexId = 5;
     for (int i = 0; i < 10; i++) {
-      auto key =
-          IndexKeyUtils::vertexIndexKey(kDefaultVIdLen, partId, indexId, std::to_string(i), "123");
-      data.emplace_back(key, folly::stringPrintf("val%d", i));
+      auto keys = IndexKeyUtils::vertexIndexKeys(
+          kDefaultVIdLen, partId, indexId, std::to_string(i), {"123"});
+      for (auto& key : keys) {
+        data.emplace_back(key, folly::stringPrintf("val%d", i));
+      }
     }
 
     data.emplace_back(NebulaKeyUtils::systemCommitKey(partId), "123");
@@ -195,7 +196,7 @@ TEST(PartTest, PartCleanTest) {
       // remove range part::clean data
       partId = 1;
 
-      const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId);
+      const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId);
       auto ret = engine->removeRange(NebulaKeyUtils::firstKey(vertexPre, kDefaultVIdLen),
                                      NebulaKeyUtils::lastKey(vertexPre, kDefaultVIdLen));
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/match/WhereClausePlanner.h"
@@ -20,7 +19,7 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
   auto* wctx = static_cast<WhereClauseContext*>(ctx);
   if (wctx->filter) {
     SubPlan wherePlan;
-    auto* newFilter = MatchSolver::doRewrite(wctx->qctx, *wctx->aliasesUsed, wctx->filter);
+    auto* newFilter = MatchSolver::doRewrite(wctx->qctx, wctx->aliasesAvailable, wctx->filter);
     wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
     wherePlan.tail = wherePlan.root;
 

@@ -20,7 +20,7 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 9669 19669 19670
 
-ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false"]
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as metad
 
@@ -35,7 +35,7 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 9559 9560 19559 19560
 
-ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/etc/nebula-metad.conf", "--daemonize=false"]
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/etc/nebula-metad.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as storaged
 
@@ -50,7 +50,7 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 9777 9778 9779 9780 19779 19780
 
-ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebula/etc/nebula-storaged.conf", "--daemonize=false"]
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebula/etc/nebula-storaged.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as tools
 

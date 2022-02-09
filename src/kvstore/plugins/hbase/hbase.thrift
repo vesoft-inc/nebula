@@ -398,7 +398,7 @@ service THBaseService {
     4: binary qualifier,
 
     /** the expected value, if not provided the
-        check is for the non-existence of the
+        check is for the nonexistence of the
         column in question */
     5: binary value,
 
@@ -466,7 +466,7 @@ service THBaseService {
     4: binary qualifier,
 
     /** the expected value, if not provided the
-        check is for the non-existence of the
+        check is for the nonexistence of the
         column in question */
     5: binary value,
 
@@ -613,7 +613,7 @@ service THBaseService {
     5: TCompareOp compareOp,
 
     /** the expected value to be compared against, if not provided the
-        check is for the non-existence of the column in question */
+        check is for the nonexistence of the column in question */
     6: binary value,
 
     /** row mutations to execute if the value matches */

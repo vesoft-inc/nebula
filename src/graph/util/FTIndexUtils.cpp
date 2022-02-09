@@ -1,12 +1,12 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/FTIndexUtils.h"
 
 #include "common/expression/Expression.h"
+#include "graph/util/ExpressionUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
 
@@ -28,7 +28,7 @@ bool FTIndexUtils::needTextSearch(const Expression* expr) {
 
 StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
     meta::MetaClient* client) {
-  auto tcs = client->getFTClientsFromCache();
+  auto tcs = client->getServiceClientsFromCache(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!tcs.ok()) {
     return tcs.status();
   }
@@ -43,6 +43,7 @@ StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
       hc.user = *c.user_ref();
       hc.password = *c.pwd_ref();
     }
+    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
     tsClients.emplace_back(std::move(hc));
   }
   return tsClients;

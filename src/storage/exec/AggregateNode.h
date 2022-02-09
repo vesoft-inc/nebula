@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_AGGREGATENODE_H_
@@ -31,7 +30,7 @@ struct PropStat {
 // some stat of all valid edges of a vertex. It could be used in ScanVertex or
 // ScanEdge later. The stat is collected during we iterate over edges via
 // `next`, so if you want to get the final result, be sure to call
-// `calculateStat` and then retrieve the reuslt
+// `calculateStat` and then retrieve the result
 template <typename T>
 class AggregateNode : public IterateNode<T> {
  public:
@@ -87,13 +86,21 @@ class AggregateNode : public IterateNode<T> {
   }
 
  private:
-  VertexIDSlice srcId() const { return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key()); }
+  VertexIDSlice srcId() const {
+    return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key());
+  }
 
-  EdgeType edgeType() const { return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key()); }
+  EdgeType edgeType() const {
+    return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key());
+  }
 
-  EdgeRanking edgeRank() const { return NebulaKeyUtils::getRank(context_->vIdLen(), this->key()); }
+  EdgeRanking edgeRank() const {
+    return NebulaKeyUtils::getRank(context_->vIdLen(), this->key());
+  }
 
-  VertexIDSlice dstId() const { return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key()); }
+  VertexIDSlice dstId() const {
+    return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key());
+  }
 
   void initStatValue(EdgeContext* edgeContext) {
     stats_.clear();

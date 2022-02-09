@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -39,11 +38,11 @@ TEST(HBaseStoreTest, SimpleTest) {
   EdgeVerPlaceHolder edgeVersion = 1;
   std::vector<std::string> edgeKeys;
   std::vector<KV> edgeData;
-  auto edgeScheam = sm->getEdgeSchema(spaceId, edgeType, edgeVersion);
+  auto edgeSchema = sm->getEdgeSchema(spaceId, edgeType, edgeVersion);
   for (auto vertexId = srcId; vertexId < dstId; vertexId++) {
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, edgeType, rank, vertexId);
     edgeKeys.emplace_back(edgeKey);
-    RowWriter edgeWriter(edgeScheam);
+    RowWriter edgeWriter(edgeSchema);
     for (int32_t iInt = 0; iInt < 10; iInt++) {
       edgeWriter << iInt;
     }
@@ -54,11 +53,11 @@ TEST(HBaseStoreTest, SimpleTest) {
     edgeData.emplace_back(edgeKey, edgeValue);
   }
 
-  edgeScheam = sm->getEdgeSchema(spaceId, edgeType + 1, edgeVersion);
+  edgeSchema = sm->getEdgeSchema(spaceId, edgeType + 1, edgeVersion);
   for (; edgeVersion < 10L; edgeVersion++) {
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, edgeType + 1, rank, dstId);
     edgeKeys.emplace_back(edgeKey);
-    RowWriter edgeWriter(edgeScheam);
+    RowWriter edgeWriter(edgeSchema);
     for (int32_t iInt = 0; iInt < 5; iInt++) {
       edgeWriter << iInt;
     }
@@ -94,7 +93,7 @@ TEST(HBaseStoreTest, SimpleTest) {
     }
     EXPECT_EQ(expectedTotal, num);
   };
-  std::string prefix1 = NebulaKeyUtils::vertexPrefix(partId, srcId);
+  std::string prefix1 = NebulaKeyUtils::tagPrefix(partId, srcId);
   checkPrefix(prefix1, 0, 20);
   std::string prefix2 = NebulaKeyUtils::edgePrefix(partId, srcId, edgeType);
   checkPrefix(prefix2, 0, 10);

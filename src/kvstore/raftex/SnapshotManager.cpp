@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/SnapshotManager.h"
@@ -19,13 +18,17 @@ namespace nebula {
 namespace raftex {
 
 SnapshotManager::SnapshotManager() {
-  executor_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_worker_threads));
-  ioThreadPool_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_io_threads));
+  executor_.reset(new folly::IOThreadPoolExecutor(
+      FLAGS_snapshot_worker_threads,
+      std::make_shared<folly::NamedThreadFactory>("snapshot-worker")));
+  ioThreadPool_.reset(new folly::IOThreadPoolExecutor(
+      FLAGS_snapshot_io_threads,
+      std::make_shared<folly::NamedThreadFactory>("snapshot-ioexecutor")));
 }
 
-folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,
-                                                    const HostAddr& dst) {
-  folly::Promise<Status> p;
+folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
+    std::shared_ptr<RaftPart> part, const HostAddr& dst) {
+  folly::Promise<StatusOr<std::pair<LogID, TermID>>> p;
   auto fut = p.getFuture();
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
@@ -37,7 +40,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
     auto commitLogIdAndTerm = part->lastCommittedLogId();
     const auto& localhost = part->address();
     std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-    LOG(INFO) << part->idStr_ << "Begin to send the snapshot"
+    LOG(INFO) << part->idStr_ << "Begin to send the snapshot to the host " << dst
               << ", commitLogId = " << commitLogIdAndTerm.first
               << ", commitLogTerm = " << commitLogIdAndTerm.second;
     accessAllRowsInSnapshot(
@@ -69,12 +72,12 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
             // occupied.
             try {
               auto resp = std::move(f).get();
-              if (resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
+              if (resp.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 VLOG(1) << part->idStr_ << "has sended count " << totalCount;
                 if (status == SnapshotStatus::DONE) {
                   LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                             << ", totalSize " << totalSize;
-                  p.setValue(Status::OK());
+                  p.setValue(commitLogIdAndTerm);
                 }
                 return true;
               } else {
@@ -87,6 +90,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
             } catch (const std::exception& e) {
               LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what()
                          << ", retry " << retry << " times";
+              sleep(1);
               continue;
             }
           }
@@ -112,17 +116,17 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     bool finished) {
   VLOG(2) << "Send snapshot request to " << addr;
   raftex::cpp2::SendSnapshotRequest req;
-  req.set_space(spaceId);
-  req.set_part(partId);
-  req.set_term(termId);
-  req.set_committed_log_id(committedLogId);
-  req.set_committed_log_term(committedLogTerm);
-  req.set_leader_addr(localhost.host);
-  req.set_leader_port(localhost.port);
-  req.set_rows(data);
-  req.set_total_size(totalSize);
-  req.set_total_count(totalCount);
-  req.set_done(finished);
+  req.space_ref() = spaceId;
+  req.part_ref() = partId;
+  req.term_ref() = termId;
+  req.committed_log_id_ref() = committedLogId;
+  req.committed_log_term_ref() = committedLogTerm;
+  req.leader_addr_ref() = localhost.host;
+  req.leader_port_ref() = localhost.port;
+  req.rows_ref() = data;
+  req.total_size_ref() = totalSize;
+  req.total_count_ref() = totalCount;
+  req.done_ref() = finished;
   auto* evb = ioThreadPool_->getEventBase();
   return folly::via(evb, [this, addr, evb, req = std::move(req)]() mutable {
     auto client = connManager_.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);

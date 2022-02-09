@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_IDGENERATOR_H_
@@ -19,7 +18,9 @@ class IdGenerator {
   // The valid id starts from 0.
   static constexpr int64_t INVALID_ID = -1;
 
-  int64_t id() { return counter_++; }
+  int64_t id() {
+    return counter_++;
+  }
 
  private:
   std::atomic<int64_t> counter_{0};
@@ -30,7 +31,9 @@ class EPIdGenerator final : public IdGenerator {
   EPIdGenerator(EPIdGenerator&) = delete;
   EPIdGenerator& operator=(const EPIdGenerator) = delete;
 
-  static EPIdGenerator& instance() { return instance_; }
+  static EPIdGenerator& instance() {
+    return instance_;
+  }
 
  private:
   EPIdGenerator() = default;

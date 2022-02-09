@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_ALGO_PRODUCESEMISHORTESTPATHEXECUTOR_H_
@@ -22,13 +21,19 @@ class ProduceSemiShortestPathExecutor final : public Executor {
     double cost_;
     std::vector<Path> paths_;
     CostPaths() = default;
-    CostPaths(double cost, std::vector<Path>& paths) : cost_(cost) { paths_.swap(paths); }
-    CostPaths(double cost, std::vector<Path>&& paths) : cost_(cost) { paths_.swap(paths); }
+    CostPaths(double cost, std::vector<Path>& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
+    CostPaths(double cost, std::vector<Path>&& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
   };
 
   struct CostPathsPtr {
     CostPathsPtr() = default;
-    CostPathsPtr(double cost, std::vector<const Path*>& paths) : cost_(cost) { paths_.swap(paths); }
+    CostPathsPtr(double cost, std::vector<const Path*>& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
     double cost_;
     std::vector<const Path*> paths_;
   };

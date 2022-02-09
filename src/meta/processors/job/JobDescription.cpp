@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/JobDescription.h"
@@ -11,8 +10,8 @@
 #include <boost/stacktrace.hpp>
 #include <stdexcept>
 
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVIterator.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/job/JobUtils.h"
 
@@ -47,7 +46,7 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
     auto key = parseKey(rawkey);
 
     if (!isSupportedValue(rawval)) {
-      LOG(ERROR) << "not supported data ver of job " << key;
+      LOG(INFO) << "not supported data ver of job " << key;
       return nebula::cpp2::ErrorCode::E_INVALID_JOB;
     }
     auto tup = parseVal(rawval);
@@ -62,12 +61,14 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
     auto stopTime = std::get<4>(tup);
     return JobDescription(key, cmd, paras, status, startTime, stopTime);
   } catch (std::exception& ex) {
-    LOG(ERROR) << ex.what();
+    LOG(INFO) << ex.what();
   }
   return nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
 
-std::string JobDescription::jobKey() const { return makeJobKey(id_); }
+std::string JobDescription::jobKey() const {
+  return makeJobKey(id_);
+}
 
 std::string JobDescription::makeJobKey(JobID iJob) {
   std::string str;
@@ -132,12 +133,12 @@ JobDescription::decodeValV1(const folly::StringPiece& rawVal) {
 
 cpp2::JobDesc JobDescription::toJobDesc() {
   cpp2::JobDesc ret;
-  ret.set_id(id_);
-  ret.set_cmd(cmd_);
-  ret.set_paras(paras_);
-  ret.set_status(status_);
-  ret.set_start_time(startTime_);
-  ret.set_stop_time(stopTime_);
+  ret.id_ref() = id_;
+  ret.cmd_ref() = cmd_;
+  ret.paras_ref() = paras_;
+  ret.status_ref() = status_;
+  ret.start_time_ref() = startTime_;
+  ret.stop_time_ref() = stopTime_;
   return ret;
 }
 
@@ -150,8 +151,8 @@ std::string JobDescription::archiveKey() {
   return str;
 }
 
-bool JobDescription::setStatus(Status newStatus) {
-  if (JobStatus::laterThan(status_, newStatus)) {
+bool JobDescription::setStatus(Status newStatus, bool force) {
+  if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }
   status_ = newStatus;
@@ -177,7 +178,7 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::loadJobDescript
   std::string val;
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Loading Job Description Failed" << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Loading Job Description Failed" << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return makeJobDescription(key, val);

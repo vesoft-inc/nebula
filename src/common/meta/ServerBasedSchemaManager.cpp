@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/meta/ServerBasedSchemaManager.h"
@@ -27,7 +26,7 @@ StatusOr<int32_t> ServerBasedSchemaManager::getSpaceVidLen(GraphSpaceID space) {
   return metaClient_->getSpaceVidLen(space);
 }
 
-StatusOr<cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
+StatusOr<nebula::cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
   CHECK(metaClient_);
   return metaClient_->getSpaceVidType(space);
 }
@@ -148,13 +147,14 @@ StatusOr<EdgeSchema> ServerBasedSchemaManager::getAllLatestVerEdgeSchema(GraphSp
   return metaClient_->getAllLatestVerEdgeSchemaFromCache(space);
 }
 
-StatusOr<std::vector<nebula::meta::cpp2::FTClient>> ServerBasedSchemaManager::getFTClients() {
-  auto ret = metaClient_->getFTClientsFromCache();
+StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>>
+ServerBasedSchemaManager::getServiceClients(meta::cpp2::ExternalServiceType type) {
+  auto ret = metaClient_->getServiceClientsFromCache(type);
   if (!ret.ok()) {
     return ret.status();
   }
   if (ret.value().empty()) {
-    return Status::Error("fulltext client list is empty");
+    return Status::Error("Service list is empty");
   }
   return std::move(ret).value();
 }

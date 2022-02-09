@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Not In Expression
 
   Scenario: yield NOT IN list
@@ -69,6 +68,7 @@ Feature: Not In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst NOT IN ['Danny Green']
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -113,6 +113,7 @@ Feature: Not In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst NOT IN {'Danny Green'}
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |

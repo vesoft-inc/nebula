@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/http/StorageHttpDownloadHandler.h"
@@ -95,7 +94,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
   if (helper_->checkHadoopPath()) {
     std::vector<std::string> parts;
     folly::split(",", partitions_, parts, true);
-    if (parts.size() == 0) {
+    if (parts.empty()) {
       ResponseBuilder(downstream_)
           .status(400, "SSTFile download failed")
           .body("Partitions should be not empty")
@@ -128,7 +127,9 @@ void StorageHttpDownloadHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpDownloadHandler::requestComplete() noexcept { delete this; }
+void StorageHttpDownloadHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service StorageHttpDownloadHandler got error: "

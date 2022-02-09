@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_DISKMANAGER_H_
@@ -16,11 +15,14 @@
 #include "common/base/StatusOr.h"
 #include "common/thread/GenericWorker.h"
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace kvstore {
 
 using PartDiskMap = std::unordered_map<std::string, std::set<PartitionID>>;
+using SpaceDiskPartsMap =
+    std::unordered_map<GraphSpaceID, std::unordered_map<std::string, meta::cpp2::PartitionList>>;
 
 class DiskManager {
   FRIEND_TEST(DiskManagerTest, AvailableTest);
@@ -36,8 +38,8 @@ class DiskManager {
 
   // Canonical path which contains the specified space and part, e.g.
   // "/DataPath/nebula/spaceId". As for one storage instance, at most one path
-  // should contain a parition. Note that there isn't a separate dir for a
-  // parititon (except wal), so we return space dir
+  // should contain a partition. Note that there isn't a separate dir for a
+  // partition (except wal), so we return space dir
   StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId);
 
   // pre-condition: path is the space path, so it must end with /nebula/spaceId
@@ -52,6 +54,9 @@ class DiskManager {
 
   // Given a space, return data path and all partition in the path
   StatusOr<PartDiskMap> partDist(GraphSpaceID spaceId);
+
+  // Get all space data path and all partition in the path
+  void getDiskParts(SpaceDiskPartsMap& diskParts);
 
  private:
   // refresh free bytes of data path periodically

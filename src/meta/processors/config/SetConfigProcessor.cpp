@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/SetConfigProcessor.h"
@@ -53,24 +52,24 @@ nebula::cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& 
                                                       const std::string& name,
                                                       const Value& value,
                                                       std::vector<kvstore::KV>& data) {
-  std::string configKey = MetaServiceUtils::configKey(module, name);
+  std::string configKey = MetaKeyUtils::configKey(module, name);
   auto ret = doGet(std::move(configKey));
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error((ret));
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_CONFIG_NOT_FOUND;
     }
-    LOG(ERROR) << "Set config " << name << " failed, error "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Set config " << name << " failed, error "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
-  cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(nebula::value(ret));
+  cpp2::ConfigItem item = MetaKeyUtils::parseConfigValue(nebula::value(ret));
   cpp2::ConfigMode curMode = item.get_mode();
   if (curMode == cpp2::ConfigMode::IMMUTABLE) {
     return nebula::cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
   }
-  std::string configValue = MetaServiceUtils::configValue(curMode, value);
+  std::string configValue = MetaKeyUtils::configValue(curMode, value);
   data.emplace_back(std::move(configKey), std::move(configValue));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

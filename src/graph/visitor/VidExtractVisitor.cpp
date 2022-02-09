@@ -1,10 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/visitor/VidExtractVisitor.h"
+
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -84,7 +85,6 @@ void VidExtractVisitor::visit(ConstantExpression *expr) {
 
 void VidExtractVisitor::visit(UnaryExpression *expr) {
   if (expr->kind() == Expression::Kind::kUnaryNot) {
-    //        const auto *expr = static_cast<const UnaryExpression *>(expr);
     expr->operand()->accept(this);
     auto operandResult = moveVidPattern();
     if (operandResult.spec == VidPattern::Special::kInUsed) {
@@ -118,14 +118,15 @@ void VidExtractVisitor::visit(LabelExpression *expr) {
 }
 
 void VidExtractVisitor::visit(LabelAttributeExpression *expr) {
-  if (expr->kind() == Expression::Kind::kLabelAttribute) {
-    const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr);
-    vidPattern_ =
-        VidPattern{VidPattern::Special::kInUsed,
-                   {{labelExpr->left()->toString(), {VidPattern::Vids::Kind::kOtherSource, {}}}}};
-  } else {
-    vidPattern_ = VidPattern{};
-  }
+  const auto &label = expr->left()->toString();
+  vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                           {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+}
+
+void VidExtractVisitor::visit(LabelTagPropertyExpression *expr) {
+  const auto &label = static_cast<const PropertyExpression *>(expr->label())->prop();
+  vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                           {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
 }
 
 void VidExtractVisitor::visit(ArithmeticExpression *expr) {
@@ -135,7 +136,7 @@ void VidExtractVisitor::visit(ArithmeticExpression *expr) {
 
 void VidExtractVisitor::visit(RelationalExpression *expr) {
   if (expr->kind() == Expression::Kind::kRelIn) {
-    //    const auto *inExpr = static_cast<const RelationalExpression *>(expr);
+    // id(V) IN [List]
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
       const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr->left());
       const auto &label = labelExpr->left()->toString();
@@ -143,32 +144,45 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
     }
+    if (expr->left()->kind() == Expression::Kind::kLabelTagProperty) {
+      const auto *tagPropExpr = static_cast<const LabelTagPropertyExpression *>(expr->left());
+      const auto &label = static_cast<const PropertyExpression *>(tagPropExpr->label())->prop();
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+      return;
+    }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        expr->right()->kind() != Expression::Kind::kConstant) {
+        expr->right()->kind() != Expression::Kind::kList ||
+        !ExpressionUtils::isEvaluableExpr(expr->right())) {
       vidPattern_ = VidPattern{};
       return;
     }
+
     const auto *fCallExpr = static_cast<const FunctionCallExpression *>(expr->left());
     if (fCallExpr->name() != "id" && fCallExpr->args()->numArgs() != 1 &&
         fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
       vidPattern_ = VidPattern{};
       return;
     }
-    const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
-    if (constExpr->value().type() != Value::Type::LIST) {
-      vidPattern_ = VidPattern{};
-      return;
-    }
-    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
-                             {{fCallExpr->args()->args().front()->toString(),
-                               {VidPattern::Vids::Kind::kIn, constExpr->value().getList()}}}};
-    return;
+
+    auto *listExpr = static_cast<ListExpression *>(expr->right());
+    QueryExpressionContext ctx;
+    vidPattern_ =
+        VidPattern{VidPattern::Special::kInUsed,
+                   {{fCallExpr->args()->args().front()->toString(),
+                     {VidPattern::Vids::Kind::kIn, listExpr->eval(ctx(nullptr)).getList()}}}};
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
-    //        const auto *eqExpr = static_cast<const RelationalExpression
-    //        *>(expr);
+    // id(V) == vid
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
       const auto *labelExpr = static_cast<const LabelAttributeExpression *>(expr->left());
       const auto &label = labelExpr->left()->toString();
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+      return;
+    }
+    if (expr->left()->kind() == Expression::Kind::kLabelTagProperty) {
+      const auto *tagPropExpr = static_cast<const LabelTagPropertyExpression *>(expr->left());
+      const auto &label = static_cast<const PropertyExpression *>(tagPropExpr->label())->prop();
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
@@ -192,10 +206,13 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
     vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                              {{fCallExpr->args()->args().front()->toString(),
                                {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
-    return;
   } else {
-    vidPattern_ = VidPattern{};
-    return;
+    if (ExpressionUtils::isPropertyExpr(expr->left())) {
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{"", {VidPattern::Vids::Kind::kOtherSource, {}}}}};
+    } else {
+      vidPattern_ = VidPattern{};
+    }
   }
 }
 
@@ -211,11 +228,9 @@ void VidExtractVisitor::visit(AttributeExpression *expr) {
 
 void VidExtractVisitor::visit(LogicalExpression *expr) {
   if (expr->kind() == Expression::Kind::kLogicalAnd) {
-    //        const auto *expr = static_cast<const LogicalExpression *>(expr);
     std::vector<VidPattern> operandsResult;
     operandsResult.reserve(expr->operands().size());
     for (const auto &operand : expr->operands()) {
-      //            operandsResult.emplace_back(reverseEvalVids(operand.get()));
       operand->accept(this);
       operandsResult.emplace_back(moveVidPattern());
     }
@@ -271,8 +286,6 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
     vidPattern_ = std::move(inResult);
     return;
   } else if (expr->kind() == Expression::Kind::kLogicalOr) {
-    //        const auto *andExpr = static_cast<const LogicalExpression
-    //        *>(expr);
     std::vector<VidPattern> operandsResult;
     operandsResult.reserve(expr->operands().size());
     for (const auto &operand : expr->operands()) {

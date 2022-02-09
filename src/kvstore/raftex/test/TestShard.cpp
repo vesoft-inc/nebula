@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/test/TestShard.h"
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -118,7 +118,7 @@ HostAddr decodeRemovePeer(const folly::StringPiece& log) {
 
 std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> getClientMan() {
   static std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan(
-      new thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>());
+      new thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>(FLAGS_enable_ssl));
   return clientMan;
 }
 
@@ -161,15 +161,18 @@ void TestShard::onElected(TermID term) {
   }
 }
 
-nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
-  LogID firstId = -1;
-  LogID lastId = -1;
+void TestShard::onLeaderReady(TermID term) {
+  UNUSED(term);
+}
+
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool) {
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
   while (iter->valid()) {
-    if (firstId < 0) {
-      firstId = iter->logId();
-    }
     lastId = iter->logId();
+    lastTerm = iter->logTerm();
     auto log = iter->logMsg();
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
@@ -200,14 +203,15 @@ nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter,
     }
     ++(*iter);
   }
-  VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
+  VLOG(2) << "TestShard: " << idStr_ << "Committed log "
+          << " up to " << lastId;
   if (lastId > -1) {
     lastCommittedLogId_ = lastId;
   }
   if (commitLogsNum > 0) {
     commitTimes_++;
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  return {nebula::cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
 }
 
 std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::string>& data,
@@ -232,13 +236,16 @@ std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::str
   return std::make_pair(count, size);
 }
 
-void TestShard::cleanup() {
+nebula::cpp2::ErrorCode TestShard::cleanup() {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   data_.clear();
   lastCommittedLogId_ = 0;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-size_t TestShard::getNumLogs() const { return data_.size(); }
+size_t TestShard::getNumLogs() const {
+  return data_.size();
+}
 
 bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
   folly::RWSpinLock::ReadHolder rh(&lock_);

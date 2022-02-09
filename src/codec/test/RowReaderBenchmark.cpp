@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -18,7 +17,7 @@ using nebula::RowReaderWrapper;
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
 using nebula::SchemaWriter;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter schemaShort;
 SchemaWriter schemaLong;
@@ -153,29 +152,45 @@ void randomTest(SchemaWriter* schema,
 }
 
 /*************************
- * Begining of Tests
+ * Beginning of Tests
  ************************/
-TEST(RowReader, SequentialShort) { sequentialTest(&schemaShort, dataShortV1, dataShortV2); }
+TEST(RowReader, SequentialShort) {
+  sequentialTest(&schemaShort, dataShortV1, dataShortV2);
+}
 
-TEST(RowReader, SequentialLong) { sequentialTest(&schemaLong, dataLongV1, dataLongV2); }
+TEST(RowReader, SequentialLong) {
+  sequentialTest(&schemaLong, dataLongV1, dataLongV2);
+}
 
-TEST(RowReader, RandomShort) { randomTest(&schemaShort, dataShortV1, dataShortV2, shortRandom); }
+TEST(RowReader, RandomShort) {
+  randomTest(&schemaShort, dataShortV1, dataShortV2, shortRandom);
+}
 
-TEST(RowReader, RandomLong) { randomTest(&schemaLong, dataLongV1, dataLongV2, longRandom); }
+TEST(RowReader, RandomLong) {
+  randomTest(&schemaLong, dataLongV1, dataLongV2, longRandom);
+}
 /*************************
  * End of Tests
  ************************/
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
-BENCHMARK(seq_read_short_v1, iters) { sequentialRead(&schemaShort, dataShortV1, iters); }
-BENCHMARK_RELATIVE(seq_read_short_v2, iters) { sequentialRead(&schemaShort, dataShortV2, iters); }
+BENCHMARK(seq_read_short_v1, iters) {
+  sequentialRead(&schemaShort, dataShortV1, iters);
+}
+BENCHMARK_RELATIVE(seq_read_short_v2, iters) {
+  sequentialRead(&schemaShort, dataShortV2, iters);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(seq_read_long_v1, iters) { sequentialRead(&schemaLong, dataLongV1, iters); }
-BENCHMARK_RELATIVE(seq_read_long_v2, iters) { sequentialRead(&schemaLong, dataLongV2, iters); }
+BENCHMARK(seq_read_long_v1, iters) {
+  sequentialRead(&schemaLong, dataLongV1, iters);
+}
+BENCHMARK_RELATIVE(seq_read_long_v2, iters) {
+  sequentialRead(&schemaLong, dataLongV2, iters);
+}
 
 BENCHMARK_DRAW_LINE();
 
@@ -188,7 +203,9 @@ BENCHMARK_RELATIVE(random_read_short_v2, iters) {
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(random_read_long_v1, iters) { randomRead(&schemaLong, dataLongV1, longRandom, iters); }
+BENCHMARK(random_read_long_v1, iters) {
+  randomRead(&schemaLong, dataLongV1, longRandom, iters);
+}
 BENCHMARK_RELATIVE(random_read_long_v2, iters) {
   randomRead(&schemaLong, dataLongV2, longRandom, iters);
 }

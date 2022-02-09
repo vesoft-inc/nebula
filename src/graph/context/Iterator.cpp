@@ -1,19 +1,40 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/context/Iterator.h"
 
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
+#include "common/memory/MemoryUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "interface/gen-cpp2/common_types.h"
+
+DECLARE_int32(num_rows_to_check_memory);
+DECLARE_double(system_memory_high_watermark_ratio);
+
 namespace nebula {
 namespace graph {
-GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
-    : Iterator(value, Kind::kGetNeighbors) {
+
+bool Iterator::hitsSysMemoryHighWatermark() const {
+  if (checkMemory_) {
+    if (numRowsModN_ >= FLAGS_num_rows_to_check_memory) {
+      numRowsModN_ -= FLAGS_num_rows_to_check_memory;
+    }
+    if (UNLIKELY(numRowsModN_ == 0)) {
+      if (MemoryUtils::kHitMemoryHighWatermark.load()) {
+        throw std::runtime_error(
+            folly::sformat("Used memory hits the high watermark({}) of total system memory.",
+                           FLAGS_system_memory_high_watermark_ratio));
+      }
+    }
+  }
+  return false;
+}
+
+GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value, bool checkMemory)
+    : Iterator(value, Kind::kGetNeighbors, checkMemory) {
   if (value == nullptr) {
     return;
   }
@@ -177,14 +198,16 @@ Status GetNeighborsIter::buildPropIndex(const std::string& props,
 }
 
 bool GetNeighborsIter::valid() const {
-  return valid_ && currentDs_ < dsIndices_.end() && currentRow_ < rowsUpperBound_ &&
-         colIdx_ < currentDs_->colUpperBound;
+  return Iterator::valid() && valid_ && currentDs_ < dsIndices_.end() &&
+         currentRow_ < rowsUpperBound_ && colIdx_ < currentDs_->colUpperBound;
 }
 
 void GetNeighborsIter::next() {
   if (!valid()) {
     return;
   }
+
+  numRowsModN_++;
 
   if (noEdge_) {
     if (++currentRow_ < rowsUpperBound_) {
@@ -259,6 +282,25 @@ void GetNeighborsIter::erase() {
   next();
 }
 
+void GetNeighborsIter::sample(const int64_t count) {
+  algorithm::ReservoirSampling<std::tuple<List*, List>> sampler_(count);
+  doReset(0);
+  for (; valid(); next()) {
+    // <current List of Edge, value of Edge>
+    std::tuple<List*, List> t =
+        std::make_tuple(const_cast<List*>(currentCol_), std::move(*currentEdge_));
+    sampler_.sampling(std::move(t));
+  }
+  doReset(0);
+  clearEdges();
+  auto samples = std::move(sampler_).samples();
+  for (auto& sample : samples) {
+    auto* col = std::get<0>(sample);
+    col->emplace_back(std::move(std::get<1>(sample)));
+  }
+  doReset(0);
+}
+
 const Value& GetNeighborsIter::getColumn(const std::string& col) const {
   if (!valid()) {
     return Value::kNullValue;
@@ -282,26 +324,54 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
     return Value::kNullValue;
   }
 
-  auto& tagPropIndices = currentDs_->tagPropsMap;
-  auto index = tagPropIndices.find(tag);
-  if (index == tagPropIndices.end()) {
-    return Value::kEmpty;
-  }
-  auto propIndex = index->second.propIndices.find(prop);
-  if (propIndex == index->second.propIndices.end()) {
-    return Value::kEmpty;
-  }
-  auto colId = index->second.colIdx;
+  size_t colId = 0;
+  size_t propId = 0;
   auto& row = *currentRow_;
-  DCHECK_GT(row.size(), colId);
-  if (row[colId].empty()) {
+  if (tag == "*") {
+    for (auto& index : currentDs_->tagPropsMap) {
+      auto propIndex = index.second.propIndices.find(prop);
+      if (propIndex != index.second.propIndices.end()) {
+        colId = index.second.colIdx;
+        propId = propIndex->second;
+        DCHECK_GT(row.size(), colId);
+        if (row[colId].empty()) {
+          continue;
+        }
+        if (!row[colId].isList()) {
+          return Value::kNullBadType;
+        }
+        auto& list = row[colId].getList();
+        auto& val = list.values[propId];
+        if (val.empty()) {
+          continue;
+        } else {
+          return val;
+        }
+      }
+    }
     return Value::kEmpty;
+  } else {
+    auto& tagPropIndices = currentDs_->tagPropsMap;
+    auto index = tagPropIndices.find(tag);
+    if (index == tagPropIndices.end()) {
+      return Value::kEmpty;
+    }
+    auto propIndex = index->second.propIndices.find(prop);
+    if (propIndex == index->second.propIndices.end()) {
+      return Value::kEmpty;
+    }
+    colId = index->second.colIdx;
+    propId = propIndex->second;
+    DCHECK_GT(row.size(), colId);
+    if (row[colId].empty()) {
+      return Value::kEmpty;
+    }
+    if (!row[colId].isList()) {
+      return Value::kNullBadType;
+    }
+    auto& list = row[colId].getList();
+    return list.values[propId];
   }
-  if (!row[colId].isList()) {
-    return Value::kNullBadType;
-  }
-  auto& list = row[colId].getList();
-  return list.values[propIndex->second];
 }
 
 const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::string& prop) const {
@@ -332,7 +402,8 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
   return currentEdge_->values[propIndex->second];
 }
 
-Value GetNeighborsIter::getVertex() const {
+Value GetNeighborsIter::getVertex(const std::string& name) const {
+  UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
   }
@@ -370,7 +441,6 @@ Value GetNeighborsIter::getVertex() const {
 
 List GetNeighborsIter::getVertices() {
   List vertices;
-  vertices.values.reserve(size());
   valid_ = true;
   colIdx_ = -2;
   for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
@@ -442,7 +512,6 @@ Value GetNeighborsIter::getEdge() const {
 
 List GetNeighborsIter::getEdges() {
   List edges;
-  edges.values.reserve(size());
   for (; valid(); next()) {
     auto edge = getEdge();
     if (edge.isEdge()) {
@@ -454,7 +523,53 @@ List GetNeighborsIter::getEdges() {
   return edges;
 }
 
-SequentialIter::SequentialIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kSequential) {
+void GetNeighborsIter::nextCol() {
+  if (!valid()) {
+    return;
+  }
+  DCHECK(!noEdge_);
+
+  // go to next column
+  while (++colIdx_) {
+    if (colIdx_ < currentDs_->colUpperBound) {
+      const auto& currentCol = currentRow_->operator[](colIdx_);
+      if (!currentCol.isList() || currentCol.getList().empty()) {
+        continue;
+      }
+
+      currentCol_ = &currentCol.getList();
+      // edgeIdxUpperBound_ = currentCol_->size();
+      // edgeIdx_ = -1;
+      break;
+    }
+    // go to next row
+    if (++currentRow_ < rowsUpperBound_) {
+      colIdx_ = currentDs_->colLowerBound;
+      continue;
+    }
+
+    // go to next dataset
+    if (++currentDs_ < dsIndices_.end()) {
+      colIdx_ = currentDs_->colLowerBound;
+      currentRow_ = currentDs_->ds->begin();
+      rowsUpperBound_ = currentDs_->ds->end();
+      continue;
+    }
+    break;
+  }
+  if (currentDs_ == dsIndices_.end()) {
+    return;
+  }
+}
+
+void GetNeighborsIter::clearEdges() {
+  for (; colValid(); nextCol()) {
+    const_cast<List*>(currentCol_)->clear();
+  }
+}
+
+SequentialIter::SequentialIter(std::shared_ptr<Value> value, bool checkMemory)
+    : Iterator(value, Kind::kSequential, checkMemory) {
   DCHECK(value->isDataSet());
   auto& ds = value->mutableDataSet();
   iter_ = ds.rows.begin();
@@ -473,7 +588,7 @@ SequentialIter::SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<I
 }
 
 SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList)
-    : Iterator(inputList.front()->valuePtr(), Kind::kSequential) {
+    : Iterator(inputList.front()->valuePtr(), Kind::kSequential, inputList.front()->checkMemory()) {
   init(std::move(inputList));
 }
 
@@ -495,15 +610,20 @@ void SequentialIter::init(std::vector<std::unique_ptr<Iterator>>&& iterators) {
   iter_ = rows_->begin();
 }
 
-bool SequentialIter::valid() const { return iter_ < rows_->end(); }
+bool SequentialIter::valid() const {
+  return Iterator::valid() && iter_ < rows_->end();
+}
 
 void SequentialIter::next() {
   if (valid()) {
+    ++numRowsModN_;
     ++iter_;
   }
 }
 
-void SequentialIter::erase() { iter_ = rows_->erase(iter_); }
+void SequentialIter::erase() {
+  iter_ = rows_->erase(iter_);
+}
 
 void SequentialIter::unstableErase() {
   std::swap(rows_->back(), *iter_);
@@ -527,11 +647,34 @@ void SequentialIter::doReset(size_t pos) {
   iter_ = rows_->begin() + pos;
 }
 
+const Value& SequentialIter::getColumn(const std::string& col) const {
+  if (!valid()) {
+    return Value::kNullValue;
+  }
+  auto& row = *iter_;
+  auto index = colIndices_.find(col);
+  if (index == colIndices_.end()) {
+    return Value::kNullValue;
+  }
+
+  DCHECK_LT(index->second, row.values.size()) << "index: " << index->second << " row" << row;
+  return row.values[index->second];
+}
+
 const Value& SequentialIter::getColumn(int32_t index) const {
   return getColumnByIndex(index, iter_);
 }
 
-PropIter::PropIter(std::shared_ptr<Value> value) : SequentialIter(value) {
+Value SequentialIter::getVertex(const std::string& name) const {
+  return getColumn(name);
+}
+
+Value SequentialIter::getEdge() const {
+  return getColumn("EDGE");
+}
+
+PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
+    : SequentialIter(value, checkMemory) {
   DCHECK(value->isDataSet());
   auto& ds = value->getDataSet();
   auto status = makeDataSetIndex(ds);
@@ -593,23 +736,41 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
     return Value::kNullValue;
   }
   auto& propsMap = dsIndex_.propsMap;
-  auto index = propsMap.find(name);
-  if (index == propsMap.end()) {
-    return Value::kEmpty;
-  }
-
-  auto propIndex = index->second.find(prop);
-  if (propIndex == index->second.end()) {
-    VLOG(1) << "No prop found : " << prop;
-    return Value::kNullValue;
-  }
-  auto colId = propIndex->second;
+  size_t colId = 0;
   auto& row = *iter_;
-  DCHECK_GT(row.size(), colId);
-  return row[colId];
+  if (name == "*") {
+    for (auto& index : propsMap) {
+      auto propIndex = index.second.find(prop);
+      if (propIndex == index.second.end()) {
+        continue;
+      }
+      colId = propIndex->second;
+      DCHECK_GT(row.size(), colId);
+      auto& val = row[colId];
+      if (val.empty()) {
+        continue;
+      } else {
+        return val;
+      }
+    }
+    return Value::kNullValue;
+  } else {
+    auto index = propsMap.find(name);
+    if (index == propsMap.end()) {
+      return Value::kEmpty;
+    }
+    auto propIndex = index->second.find(prop);
+    if (propIndex == index->second.end()) {
+      return Value::kNullValue;
+    }
+    colId = propIndex->second;
+    DCHECK_GT(row.size(), colId);
+    return row[colId];
+  }
 }
 
-Value PropIter::getVertex() const {
+Value PropIter::getVertex(const std::string& name) const {
+  UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
   }
@@ -713,7 +874,6 @@ Value PropIter::getEdge() const {
 List PropIter::getVertices() {
   DCHECK(iter_ == rows_->begin());
   List vertices;
-  vertices.values.reserve(size());
   for (; valid(); next()) {
     vertices.values.emplace_back(getVertex());
   }
@@ -736,7 +896,9 @@ List PropIter::getEdges() {
   return edges;
 }
 
-const Value& PropIter::getColumn(int32_t index) const { return getColumnByIndex(index, iter_); }
+const Value& PropIter::getColumn(int32_t index) const {
+  return getColumnByIndex(index, iter_);
+}
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
   switch (kind) {
@@ -756,5 +918,6 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
   os << " iterator";
   return os;
 }
+
 }  // namespace graph
 }  // namespace nebula

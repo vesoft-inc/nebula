@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_PART_H_
@@ -37,9 +36,13 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<DiskManager> diskMan,
        int32_t vIdLen);
 
-  virtual ~Part() { LOG(INFO) << idStr_ << "~Part()"; }
+  virtual ~Part() {
+    LOG(INFO) << idStr_ << "~Part()";
+  }
 
-  KVEngine* engine() { return engine_; }
+  KVEngine* engine() {
+    return engine_;
+  }
 
   void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
   void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
@@ -65,9 +68,13 @@ class Part : public raftex::RaftPart {
   // Sync the information committed on follower.
   void sync(KVCallback cb);
 
-  void registerNewLeaderCb(NewLeaderCallback cb) { newLeaderCb_ = std::move(cb); }
+  void registerNewLeaderCb(NewLeaderCallback cb) {
+    newLeaderCb_ = std::move(cb);
+  }
 
-  void unRegisterNewLeaderCb() { newLeaderCb_ = nullptr; }
+  void unRegisterNewLeaderCb() {
+    newLeaderCb_ = nullptr;
+  }
 
   // clean up all data about this part.
   void resetPart() {
@@ -85,9 +92,12 @@ class Part : public raftex::RaftPart {
 
   void onElected(TermID term) override;
 
+  void onLeaderReady(TermID term) override;
+
   void onDiscoverNewLeader(HostAddr nLeader) override;
 
-  cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
+  std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
+                                                                bool wait) override;
 
   bool preProcessLog(LogID logId,
                      TermID termId,
@@ -103,9 +113,7 @@ class Part : public raftex::RaftPart {
                                        LogID committedLogId,
                                        TermID committedLogTerm);
 
-  void cleanup() override;
-
-  nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
+  nebula::cpp2::ErrorCode cleanup() override;
 
  public:
   struct CallbackOptions {
@@ -114,15 +122,18 @@ class Part : public raftex::RaftPart {
     TermID term;
   };
 
-  using OnElectedCallBack = std::function<void(const CallbackOptions& opt)>;
-  void registerOnElected(OnElectedCallBack cb);
+  using LeaderChangeCB = std::function<void(const CallbackOptions& opt)>;
+  void registerOnLeaderReady(LeaderChangeCB cb);
+
+  void registerOnLeaderLost(LeaderChangeCB cb);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
-  std::vector<OnElectedCallBack> onElectedCallBacks_;
+  std::vector<LeaderChangeCB> leaderReadyCB_;
+  std::vector<LeaderChangeCB> leaderLostCB_;
 
  private:
   KVEngine* engine_ = nullptr;

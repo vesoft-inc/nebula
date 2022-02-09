@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
@@ -19,7 +18,8 @@ class GetPropExecutor : public StorageAccessExecutor {
   GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
       : StorageAccessExecutor(name, node, qctx) {}
 
-  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
+  template <typename Response>
+  Status handleResp(storage::StorageRpcResponse<Response> &&rpcResp,
                     const std::vector<std::string> &colNames) {
     auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
     NG_RETURN_IF_ERROR(result);
@@ -41,7 +41,6 @@ class GetPropExecutor : public StorageAccessExecutor {
       DCHECK_EQ(colNames.size(), v.colSize());
       v.colNames = colNames;
     }
-    VLOG(2) << "Dataset in get props: \n" << v << "\n";
     return finish(
         ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef GRAPH_UTIL_TOJSON_H_
 #define GRAPH_UTIL_TOJSON_H_
@@ -9,9 +8,7 @@
 #include <folly/dynamic.h>
 
 #include <iterator>
-#include <string>
 #include <utility>
-#include <vector>
 
 namespace nebula {
 
@@ -28,6 +25,7 @@ class AlterSchemaItem;
 class ColumnDef;
 class Schema;
 class SchemaProp;
+class IndexParams;
 }  // namespace cpp2
 }  // namespace meta
 
@@ -71,6 +69,7 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column);
 folly::dynamic toJson(const meta::cpp2::Schema &schema);
 folly::dynamic toJson(const meta::cpp2::SchemaProp &prop);
+folly::dynamic toJson(const meta::cpp2::IndexParams &indexParams);
 folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item);
 folly::dynamic toJson(const storage::cpp2::EdgeKey &edgeKey);
 folly::dynamic toJson(const storage::cpp2::NewTag &tag);
