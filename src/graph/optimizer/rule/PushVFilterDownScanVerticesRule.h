@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 
 #include <memory>
 
@@ -29,3 +30,4 @@ class PushVFilterDownScanVerticesRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

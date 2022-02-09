@@ -125,7 +125,7 @@ bool ESListener::writeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLo
   auto raw = encodeAppliedId(lastId, lastTerm, lastApplyLogId);
   ssize_t written = write(fd, raw.c_str(), raw.size());
   if (written != (ssize_t)raw.size()) {
-    VLOG(3) << idStr_ << "bytesWritten:" << written << ", expected:" << raw.size()
+    VLOG(4) << idStr_ << "bytesWritten:" << written << ", expected:" << raw.size()
             << ", error:" << strerror(errno);
     close(fd);
     return false;
@@ -212,7 +212,7 @@ bool ESListener::writeData(const std::vector<nebula::plugin::DocItem>& items) co
   if (isNeedWriteOneByOne) {
     return writeDatum(items);
   }
-  LOG(ERROR) << "A fatal error . Full-text engine is not working.";
+  LOG(WARNING) << idStr_ << "Failed to bulk into es.";
   return false;
 }
 
@@ -237,7 +237,7 @@ bool ESListener::writeDatum(const std::vector<nebula::plugin::DocItem>& items) c
     }
     if (!done) {
       // means CURL fails, and no need to take the next step
-      LOG(ERROR) << "A fatal error . Full-text engine is not working.";
+      LOG(INFO) << idStr_ << "Failed to put into es.";
       return false;
     }
   }

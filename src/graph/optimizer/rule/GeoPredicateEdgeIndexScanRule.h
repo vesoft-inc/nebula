@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_GEOPREDICATEEDGEINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_GEOPREDICATEEDGEINDEXSCANRULE_H
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
@@ -23,3 +24,4 @@ class GeoPredicateEdgeIndexScanRule final : public GeoPredicateIndexScanBaseRule
 
 }  // namespace opt
 }  // namespace nebula
+#endif
