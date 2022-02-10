@@ -5,7 +5,6 @@
 SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
