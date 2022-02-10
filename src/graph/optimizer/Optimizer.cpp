@@ -35,11 +35,6 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto root = qctx->plan()->root();
   auto spaceID = qctx->rctx()->session()->space().id;
 
-  // auto status = preprocess(root, qctx, spaceID);
-  // if (!status.ok()) {
-  //   LOG(ERROR) << "Failed to preprocess plan: " << status;
-  // }
-
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
   auto rootGroup = std::move(ret).value();
@@ -53,11 +48,6 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   }
   return newRoot;
 }
-
-// Status Optimizer::preprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
-//   ColumnTracker colsUsed;
-//   return root->pruneCulumns(colsUsed, qctx, spaceID);
-// }
 
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
   if (FLAGS_enable_optimizer_property_pruner_rule) {

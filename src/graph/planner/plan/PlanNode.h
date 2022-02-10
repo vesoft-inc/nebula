@@ -193,6 +193,10 @@ class PlanNode {
 
   virtual void accept(PlanNodeVisitor* visitor);
 
+  void markDeleted() {
+    deleted_ = true;
+  }
+
   virtual PlanNode* clone() const = 0;
 
   virtual void calcCost();
@@ -315,6 +319,7 @@ class PlanNode {
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
+  bool deleted_{false};
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);

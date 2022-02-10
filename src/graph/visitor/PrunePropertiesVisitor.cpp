@@ -193,6 +193,7 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
+// AppendVertices should be deleted when no properties it pulls are used by the parent node.
 void PrunePropertiesVisitor::visit(AppendVertices *node) {
   auto &colNames = node->colNames();
   DCHECK(!colNames.empty());
@@ -215,8 +216,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
     if (it2 != propsUsed_.vertexPropsMap.end()) {
       auto &usedVertexProps = it2->second;
       if (usedVertexProps.empty()) {
-        // markAsToBeDeleted();
-        // return depsPruneProperties(propsUsed_, qctx_, spaceID_);
+        node->markDeleted();
+        status_ = depsPruneProperties(node->dependencies());
+        return;
       }
       prunedVertexProps->reserve(usedVertexProps.size());
       for (auto &vertexProp : *vertexProps) {
@@ -238,9 +240,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
         }
       }
     } else {
-      // AppendVertices should be deleted when no props are used by the parent node
-      // markAsToBeDeleted();
-      // It could be done by ColumnPruner
+      node->markDeleted();
+      status_ = depsPruneProperties(node->dependencies());
+      return;
     }
     node->setVertexProps(std::move(prunedVertexProps));
   }
