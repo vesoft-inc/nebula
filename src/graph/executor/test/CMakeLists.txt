@@ -21,7 +21,6 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:memory_obj>
-    $<TARGET_OBJECTS:concurrent_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:conf_obj>
@@ -30,7 +29,6 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>

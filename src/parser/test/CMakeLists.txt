@@ -5,7 +5,6 @@
 set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
