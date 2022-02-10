@@ -5,8 +5,6 @@
 
 #include "graph/visitor/PrunePropertiesVisitor.h"
 
-#include "graph/visitor/PropertyTrackerVisitor.h"
-
 namespace nebula {
 namespace graph {
 

@@ -224,17 +224,6 @@ class Expression {
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind);
 
-struct PropertyTracker {
-  std::unordered_map<std::string, std::unordered_map<TagID, std::unordered_set<std::string>>>
-      vertexPropsMap;
-  std::unordered_map<std::string, std::unordered_map<EdgeType, std::unordered_set<std::string>>>
-      edgePropsMap;
-  std::unordered_set<std::string> colsSet;
-
-  Status update(const std::string& oldName, const std::string& newName);
-  bool hasAlias(const std::string& name) const;
-};
-
 }  // namespace nebula
 
 #endif  // COMMON_EXPRESSION_EXPRESSION_H_

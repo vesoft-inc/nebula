@@ -170,12 +170,6 @@ class ExpressionUtils {
 
   static bool checkExprDepth(const Expression* expr);
 
-  static Status extractPropsFromExpr(const Expression* expr,
-                                     PropertyTracker& propsUsed,
-                                     const graph::QueryContext* qctx,
-                                     GraphSpaceID spaceID,
-                                     const std::string& entityAlias = "");
-
   static constexpr int32_t kMaxDepth = 512;
 };
 

@@ -9,6 +9,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
 
 namespace nebula {
 namespace graph {

@@ -61,7 +61,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
   if (FLAGS_enable_optimizer_property_pruner_rule) {
-    PropertyTracker propsUsed;
+    graph::PropertyTracker propsUsed;
     graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
     root->accept(&visitor);
     if (!visitor.ok()) {

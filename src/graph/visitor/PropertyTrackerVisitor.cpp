@@ -14,6 +14,41 @@
 namespace nebula {
 namespace graph {
 
+Status PropertyTracker::update(const std::string &oldName, const std::string &newName) {
+  if (oldName == newName) {
+    return Status::OK();
+  }
+
+  auto it1 = vertexPropsMap.find(oldName);
+  bool hasNodeAlias = it1 != vertexPropsMap.end();
+  auto it2 = edgePropsMap.find(oldName);
+  bool hasEdgeAlias = it2 != edgePropsMap.end();
+  if (hasNodeAlias && hasEdgeAlias) {
+    return Status::Error("Duplicated property name: %s", oldName.c_str());
+  }
+  if (hasNodeAlias) {
+    vertexPropsMap[newName] = std::move(it1->second);
+    vertexPropsMap.erase(it1);
+  }
+  if (hasEdgeAlias) {
+    edgePropsMap[newName] = std::move(it2->second);
+    edgePropsMap.erase(it2);
+  }
+
+  auto it3 = colsSet.find(oldName);
+  if (it3 != colsSet.end()) {
+    colsSet.erase(it3);
+    colsSet.insert(newName);
+  }
+
+  return Status::OK();
+}
+
+bool PropertyTracker::hasAlias(const std::string &name) const {
+  return vertexPropsMap.find(name) != vertexPropsMap.end() ||
+         edgePropsMap.find(name) != edgePropsMap.end() || colsSet.find(name) != colsSet.end();
+}
+
 PropertyTrackerVisitor::PropertyTrackerVisitor(const QueryContext *qctx,
                                                GraphSpaceID space,
                                                PropertyTracker &propsUsed,

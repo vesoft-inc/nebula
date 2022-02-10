@@ -7,9 +7,6 @@
 #define GRAPH_VISITOR_PROPERTYTRACKERVISITOR_H
 
 #include "common/base/Status.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/ListComprehensionExpression.h"
-#include "common/expression/SubscriptExpression.h"
 #include "common/thrift/ThriftTypes.h"
 #include "graph/visitor/ExprVisitorImpl.h"
 
@@ -20,6 +17,17 @@ class Expression;
 namespace graph {
 
 class QueryContext;
+
+struct PropertyTracker {
+  std::unordered_map<std::string, std::unordered_map<TagID, std::unordered_set<std::string>>>
+      vertexPropsMap;
+  std::unordered_map<std::string, std::unordered_map<EdgeType, std::unordered_set<std::string>>>
+      edgePropsMap;
+  std::unordered_set<std::string> colsSet;
+
+  Status update(const std::string& oldName, const std::string& newName);
+  bool hasAlias(const std::string& name) const;
+};
 
 class PropertyTrackerVisitor : public ExprVisitorImpl {
  public:

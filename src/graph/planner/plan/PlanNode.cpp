@@ -384,22 +384,6 @@ void PlanNode::updateSymbols() {
   }
 }
 
-Status PlanNode::pruneProperties(PropertyTracker& propsUsed,
-                                 graph::QueryContext* qctx,
-                                 GraphSpaceID spaceID) {
-  NG_RETURN_IF_ERROR(depsPruneProperties(propsUsed, qctx, spaceID));
-  return Status::OK();
-}
-
-Status PlanNode::depsPruneProperties(PropertyTracker& propsUsed,
-                                     graph::QueryContext* qctx,
-                                     GraphSpaceID spaceID) {
-  for (const auto* dep : dependencies_) {
-    NG_RETURN_IF_ERROR(const_cast<PlanNode*>(dep)->pruneProperties(propsUsed, qctx, spaceID));
-  }
-  return Status::OK();
-}
-
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
   os << PlanNode::toString(kind);
   return os;

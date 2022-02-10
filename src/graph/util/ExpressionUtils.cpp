@@ -1059,20 +1059,6 @@ bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
   return false;
 }
 
-Status ExpressionUtils::extractPropsFromExpr(const Expression *expr,
-                                             PropertyTracker &propsUsed,
-                                             const graph::QueryContext *qctx,
-                                             GraphSpaceID spaceID,
-                                             const std::string &entityAlias) {
-  PropertyTrackerVisitor visitor(qctx, spaceID, propsUsed, entityAlias);
-  const_cast<Expression *>(expr)->accept(&visitor);
-  if (!visitor.ok()) {
-    return visitor.status();
-  }
-
-  return Status::OK();
-}
-
 bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   std::queue<const Expression *> exprQueue;
   exprQueue.emplace(expr);

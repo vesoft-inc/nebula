@@ -287,16 +287,6 @@ void Filter::cloneMembers(const Filter& f) {
   needStableFilter_ = f.needStableFilter();
 }
 
-Status Filter::pruneProperties(PropertyTracker& propsUsed,
-                               graph::QueryContext* qctx,
-                               GraphSpaceID spaceID) {
-  if (condition_ != nullptr) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(condition_, propsUsed, qctx, spaceID));
-  }
-
-  return depsPruneProperties(propsUsed, qctx, spaceID);
-}
-
 void SetOp::cloneMembers(const SetOp& s) {
   BinaryInputNode::cloneMembers(s);
 }
@@ -368,45 +358,6 @@ void Project::cloneMembers(const Project& p) {
   for (const auto& col : p.columns()->columns()) {
     cols_->addColumn(col->clone().release());
   }
-}
-
-Status Project::pruneProperties(PropertyTracker& propsUsed,
-                                graph::QueryContext* qctx,
-                                GraphSpaceID spaceID) {
-  if (cols_) {
-    const auto& columns = cols_->columns();
-    auto& colNames = this->colNames();
-    std::vector<bool> aliasExists(colNames.size(), false);
-    for (size_t i = 0; i < columns.size(); ++i) {
-      aliasExists[i] = propsUsed.hasAlias(colNames[i]);
-    }
-    for (size_t i = 0; i < columns.size(); ++i) {
-      auto* col = DCHECK_NOTNULL(columns[i]);
-      auto* expr = col->expr();
-      auto& alias = colNames[i];
-      // If the alias exists, try to rename alias
-      if (aliasExists[i]) {
-        if (expr->kind() == Expression::Kind::kInputProperty) {
-          auto* inputPropExpr = static_cast<InputPropertyExpression*>(expr);
-          auto& newAlias = inputPropExpr->prop();
-          NG_RETURN_IF_ERROR(propsUsed.update(alias, newAlias));
-        } else if (expr->kind() == Expression::Kind::kVarProperty) {
-          auto* varPropExpr = static_cast<VariablePropertyExpression*>(expr);
-          auto& newAlias = varPropExpr->prop();
-          NG_RETURN_IF_ERROR(propsUsed.update(alias, newAlias));
-        } else {  // eg. "PathBuild[$-.x,$-.__VAR_0,$-.y] AS p"
-          // How to handle this case?
-          propsUsed.colsSet.erase(alias);
-          NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(expr, propsUsed, qctx, spaceID));
-        }
-      } else {
-        // Otherwise, extract properties from the column expression
-        NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(expr, propsUsed, qctx, spaceID));
-      }
-    }
-  }
-
-  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
@@ -556,18 +507,6 @@ PlanNode* Aggregate::clone() const {
   auto* newAggregate = Aggregate::make(qctx_, nullptr);
   newAggregate->cloneMembers(*this);
   return newAggregate;
-}
-
-Status Aggregate::pruneProperties(PropertyTracker& propsUsed,
-                                  graph::QueryContext* qctx,
-                                  GraphSpaceID spaceID) {
-  for (auto* groupKey : groupKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(groupKey, propsUsed, qctx, spaceID));
-  }
-  for (auto* groupItem : groupItems_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(groupItem, propsUsed, qctx, spaceID));
-  }
-  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 void Aggregate::cloneMembers(const Aggregate& agg) {
@@ -812,101 +751,6 @@ void Traverse::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-Status Traverse::pruneProperties(PropertyTracker& propsUsed,
-                                 graph::QueryContext* qctx,
-                                 GraphSpaceID spaceID) {
-  auto& colNames = this->colNames();
-  DCHECK_GE(colNames.size(), 2);
-  auto& nodeAlias = colNames[colNames.size() - 2];
-  auto& edgeAlias = colNames.back();
-
-  if (vFilter_ != nullptr) {
-    NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExpr(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
-  }
-
-  if (eFilter_ != nullptr) {
-    NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExpr(eFilter_, propsUsed, qctx, spaceID, edgeAlias));
-  }
-
-  auto* vertexProps = this->vertexProps();
-  if (propsUsed.colsSet.find(nodeAlias) == propsUsed.colsSet.end() && vertexProps != nullptr) {
-    auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
-    if (it2 == propsUsed.vertexPropsMap.end()) {  // nodeAlias is not used
-      setVertexProps(nullptr);
-    } else {
-      auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
-      auto& usedVertexProps = it2->second;
-      if (usedVertexProps.empty()) {
-        setVertexProps(nullptr);
-        return depsPruneProperties(propsUsed, qctx, spaceID);
-      }
-      prunedVertexProps->reserve(usedVertexProps.size());
-      for (auto& vertexProp : *vertexProps) {
-        auto tagId = vertexProp.tag_ref().value();
-        auto& props = vertexProp.props_ref().value();
-        auto it3 = usedVertexProps.find(tagId);
-        if (it3 != usedVertexProps.end()) {
-          auto& usedProps = it3->second;
-          VertexProp newVProp;
-          newVProp.tag_ref() = tagId;
-          std::vector<std::string> newProps;
-          for (auto& prop : props) {
-            if (usedProps.find(prop) != usedProps.end()) {
-              newProps.emplace_back(prop);
-            }
-          }
-          newVProp.props_ref() = std::move(newProps);
-          prunedVertexProps->emplace_back(std::move(newVProp));
-        }
-      }
-      setVertexProps(std::move(prunedVertexProps));
-    }
-  }
-
-  static const std::unordered_set<std::string> reservedEdgeProps = {
-      nebula::kSrc, nebula::kType, nebula::kRank, nebula::kDst};
-  auto* edgeProps = this->edgeProps();
-  if (propsUsed.colsSet.find(edgeAlias) == propsUsed.colsSet.end() && edgeProps != nullptr) {
-    auto prunedEdgeProps = std::make_unique<std::vector<EdgeProp>>();
-    prunedEdgeProps->reserve(edgeProps->size());
-    auto it2 = propsUsed.edgePropsMap.find(edgeAlias);
-
-    for (auto& edgeProp : *edgeProps) {
-      auto edgeType = edgeProp.type_ref().value();
-      auto& props = edgeProp.props_ref().value();
-      EdgeProp newEProp;
-      newEProp.type_ref() = edgeType;
-      std::vector<std::string> newProps{reservedEdgeProps.begin(), reservedEdgeProps.end()};
-      std::unordered_set<std::string> usedProps;
-      if (it2 != propsUsed.edgePropsMap.end()) {
-        auto& usedEdgeProps = it2->second;
-        auto it3 = usedEdgeProps.find(std::abs(edgeType));
-        if (it3 != usedEdgeProps.end()) {
-          usedProps = {it3->second.begin(), it3->second.end()};
-        }
-        static const int kUnknownEdgeType = 0;
-        auto it4 = usedEdgeProps.find(kUnknownEdgeType);
-        if (it4 != usedEdgeProps.end()) {
-          usedProps.insert(it4->second.begin(), it4->second.end());
-        }
-      }
-      for (auto& prop : props) {
-        if (reservedEdgeProps.find(prop) == reservedEdgeProps.end() &&
-            usedProps.find(prop) != usedProps.end()) {
-          newProps.emplace_back(prop);
-        }
-      }
-      newEProp.props_ref() = std::move(newProps);
-      prunedEdgeProps->emplace_back(std::move(newEProp));
-    }
-    setEdgeProps(std::move(prunedEdgeProps));
-  }
-
-  return depsPruneProperties(propsUsed, qctx, spaceID);
-}
-
 AppendVertices* AppendVertices::clone() const {
   auto newAV = AppendVertices::make(qctx_, nullptr, space_);
   newAV->cloneMembers(*this);
@@ -937,62 +781,6 @@ void AppendVertices::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
-                                       graph::QueryContext* qctx,
-                                       GraphSpaceID spaceID) {
-  auto& colNames = this->colNames();
-  DCHECK(!colNames.empty());
-  auto& nodeAlias = colNames.back();
-  auto it = propsUsed.colsSet.find(nodeAlias);
-  if (it != propsUsed.colsSet.end()) {  // All properties are used
-    // propsUsed.colsSet.erase(it);
-    return depsPruneProperties(propsUsed, qctx, spaceID);
-  }
-
-  if (vFilter_ != nullptr) {
-    NG_RETURN_IF_ERROR(
-        ExpressionUtils::extractPropsFromExpr(vFilter_, propsUsed, qctx, spaceID, nodeAlias));
-  }
-  auto* vertexProps = props();
-  if (vertexProps != nullptr) {
-    auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
-    auto it2 = propsUsed.vertexPropsMap.find(nodeAlias);
-    if (it2 != propsUsed.vertexPropsMap.end()) {
-      auto& usedVertexProps = it2->second;
-      if (usedVertexProps.empty()) {
-        // markAsToBeDeleted();
-        // return depsPruneProperties(propsUsed, qctx, spaceID);
-      }
-      prunedVertexProps->reserve(usedVertexProps.size());
-      for (auto& vertexProp : *vertexProps) {
-        auto tagId = vertexProp.tag_ref().value();
-        auto& props = vertexProp.props_ref().value();
-        auto it3 = usedVertexProps.find(tagId);
-        if (it3 != usedVertexProps.end()) {
-          auto& usedProps = it3->second;
-          VertexProp newVProp;
-          newVProp.tag_ref() = tagId;
-          std::vector<std::string> newProps;
-          for (auto& prop : props) {
-            if (usedProps.find(prop) != usedProps.end()) {
-              newProps.emplace_back(prop);
-            }
-          }
-          newVProp.props_ref() = std::move(newProps);
-          prunedVertexProps->emplace_back(std::move(newVProp));
-        }
-      }
-    } else {
-      // AppendVertices should be deleted when no props are used by the parent node
-      // markAsToBeDeleted();
-      // It could be done by ColumnPruner
-    }
-    setVertexProps(std::move(prunedVertexProps));
-  }
-
-  return depsPruneProperties(propsUsed, qctx, spaceID);
-}
-
 std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
@@ -1002,18 +790,6 @@ std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
 
 void BiJoin::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
-}
-
-Status BiJoin::pruneProperties(PropertyTracker& propsUsed,
-                               graph::QueryContext* qctx,
-                               GraphSpaceID spaceID) {
-  for (auto* hashKey : hashKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(hashKey, propsUsed, qctx, spaceID));
-  }
-  for (auto* probeKey : probeKeys_) {
-    NG_RETURN_IF_ERROR(ExpressionUtils::extractPropsFromExpr(probeKey, propsUsed, qctx, spaceID));
-  }
-  return depsPruneProperties(propsUsed, qctx, spaceID);
 }
 
 void BiJoin::cloneMembers(const BiJoin& j) {

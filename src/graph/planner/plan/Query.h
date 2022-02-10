@@ -732,10 +732,6 @@ class Filter final : public SingleInputNode {
 
   void accept(PlanNodeVisitor* visitor) override;
 
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
-
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
@@ -833,10 +829,6 @@ class Project final : public SingleInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   void accept(PlanNodeVisitor* visitor) override;
-
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
 
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
@@ -1127,10 +1119,6 @@ class Aggregate final : public SingleInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   void accept(PlanNodeVisitor* visitor) override;
-
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
 
  private:
   Aggregate(QueryContext* qctx,
@@ -1523,10 +1511,6 @@ class Traverse final : public GetNeighbors {
     trackPrevPath_ = track;
   }
 
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
-
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : GetNeighbors(qctx, Kind::kTraverse, input, space) {
@@ -1570,10 +1554,6 @@ class AppendVertices final : public GetVertices {
     trackPrevPath_ = track;
   }
 
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
-
  private:
   AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : GetVertices(qctx,
@@ -1616,10 +1596,6 @@ class BiJoin : public BinaryInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   void accept(PlanNodeVisitor* visitor) override;
-
-  Status pruneProperties(PropertyTracker& propsUsed,
-                         graph::QueryContext* qctx,
-                         GraphSpaceID spaceID) override;
 
  protected:
   BiJoin(QueryContext* qctx,
