@@ -142,7 +142,7 @@ void DiskManager::refresh() {
     boost::system::error_code ec;
     auto info = boost::filesystem::space(dataPaths_[i], ec);
     if (!ec) {
-      VLOG(1) << "Refresh filesystem info of " << dataPaths_[i];
+      VLOG(2) << "Refresh filesystem info of " << dataPaths_[i];
       freeBytes_[i] = info.available;
     } else {
       LOG(WARNING) << "Get filesystem info of " << dataPaths_[i] << " failed";

@@ -24,40 +24,67 @@ namespace raftex {
 
 class RaftPart;
 
+/**
+ * @brief Host is a class to monitor how many log has been sent to a raft peer. It will send logs or
+ * start elelction to the remote peer by rpc
+ */
 class Host final : public std::enable_shared_from_this<Host> {
   friend class RaftPart;
 
  public:
+  /**
+   * @brief Construct a new Host
+   *
+   * @param addr Target peer address
+   * @param part Related RaftPart
+   * @param isLearner Whether target is a learner
+   */
   Host(const HostAddr& addr,
        const std::string& path,
        std::shared_ptr<RaftPart> part,
        bool isLearner = false);
 
+  /**
+   * @brief Destroy the Host
+   */
   ~Host() {
-    LOG(INFO) << idStr_ << " The host has been destroyed!";
+    VLOG(1) << idStr_ << " The host has been destroyed!";
   }
 
+  /**
+   * @brief The str of the Host, used in logging
+   */
   const char* idStr() const {
     return idStr_.c_str();
   }
 
-  // This will be called when the shard lost its leadership
+  /**
+   * @brief This will be called when the RaftPart lost its leadership
+   */
   void pause() {
     std::lock_guard<std::mutex> g(lock_);
     paused_ = true;
   }
 
-  // This will be called when the shard becomes the leader
+  /**
+   * @brief This will be called when the RaftPart becomes the leader
+   */
   void resume() {
     std::lock_guard<std::mutex> g(lock_);
     paused_ = false;
   }
 
+  /**
+   * @brief This will be called when the RaftPart is stopped
+   */
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
     stopped_ = true;
   }
 
+  /**
+   * @brief Reset all state, should be called when the RaftPart becomes the leader
+   */
   void reset() {
     std::unique_lock<std::mutex> g(lock_);
     noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
@@ -70,31 +97,70 @@ class Host final : public std::enable_shared_from_this<Host> {
     followerCommittedLogId_ = 0;
   }
 
+  /**
+   * @brief Wait for all requests in flight finish or timeout
+   */
   void waitForStop();
 
+  /**
+   * @brief Return whether the target peer is a raft learner
+   */
   bool isLearner() const {
     return isLearner_;
   }
 
+  /**
+   * @brief Set the state in Host of a raft peer as learner
+   */
   void setLearner(bool isLearner) {
     isLearner_ = isLearner;
   }
 
+  /**
+   * @brief Send the leader election rpc to the peer
+   *
+   * @param req The RPC request
+   * @param eb The eventbase to send rpc
+   * @return folly::Future<cpp2::AskForVoteResponse>
+   */
   folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
                                                      folly::EventBase* eb);
 
-  // When logId == lastLogIdSent, it is a heartbeat
-  folly::Future<cpp2::AppendLogResponse> appendLogs(
-      folly::EventBase* eb,
-      TermID term,             // Current term
-      LogID logId,             // The last log to be sent
-      LogID committedLogId,    // The last committed log id
-      TermID lastLogTermSent,  // The last log term being sent
-      LogID lastLogIdSent);    // The last log id being sent
+  /**
+   * @brief Send the append log to the peer
+   *
+   * @param eb The eventbase to send rpc
+   * @param term The term of RaftPart
+   * @param logId The last log to be sent
+   * @param committedLogId The last committed log id
+   * @param lastLogTermSent The last log term being sent
+   * @param lastLogIdSent The last log id being sent
+   * @return folly::Future<cpp2::AppendLogResponse>
+   */
+  folly::Future<cpp2::AppendLogResponse> appendLogs(folly::EventBase* eb,
+                                                    TermID term,
+                                                    LogID logId,
+                                                    LogID committedLogId,
+                                                    TermID lastLogTermSent,
+                                                    LogID lastLogIdSent);
 
+  /**
+   * @brief Send the heartbeat to the peer
+   *
+   * @param eb The eventbase to send rpc
+   * @param term The term of RaftPart
+   * @param logId The last log to be sent
+   * @param committedLogId The last committed log id
+   * @param lastLogTermSent The last log term being sent
+   * @param lastLogIdSent The last log id being sent
+   * @return folly::Future<cpp2::AppendLogResponse>
+   */
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(
       folly::EventBase* eb, TermID term, LogID commitLogId, TermID lastLogTerm, LogID lastLogId);
 
+  /**
+   * @brief Return the peer address
+   */
   const HostAddr& address() const {
     return addr_;
   }
@@ -104,25 +170,66 @@ class Host final : public std::enable_shared_from_this<Host> {
   }
 
  private:
+  /**
+   * @brief Whether Host can send rpc to the peer
+   */
   nebula::cpp2::ErrorCode canAppendLog() const;
 
+  /**
+   * @brief Send append log rpc
+   *
+   * @param eb The eventbase to send rpc
+   * @param req The rpc request
+   * @return folly::Future<cpp2::AppendLogResponse>
+   */
   folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
+  /**
+   * @brief Send the append log rpc and handle the response
+   *
+   * @param eb The eventbase to send rpc
+   * @param req The rpc request
+   */
   void appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
+  /**
+   * @brief Build the append log request based on the log id
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
   prepareAppendLogRequest();
 
+  /**
+   * @brief Begin to start snapshot when we don't have the log in wal file
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode startSendSnapshot();
 
+  /**
+   * @brief Return true if there isn't a request in flight
+   */
   bool noRequest() const;
 
-  void setResponse(const cpp2::AppendLogResponse& r);
+  /**
+   * @brief Notify the RaftPart the result of sending logs to peers
+   *
+   * @param resp RPC response
+   */
+  void setResponse(const cpp2::AppendLogResponse& resp);
 
+  /**
+   * @brief If there are more logs to send, build the append log request
+   *
+   * @param self Shared ptr of Host itself
+   * @return std::shared_ptr<cpp2::AppendLogRequest> The request if there are logs to send, return
+   * nullptr there are none
+   */
   std::shared_ptr<cpp2::AppendLogRequest> getPendingReqIfAny(std::shared_ptr<Host> self);
 
  private:

@@ -25,42 +25,87 @@ using PartDiskMap = std::unordered_map<std::string, std::set<PartitionID>>;
 using SpaceDiskPartsMap =
     std::unordered_map<GraphSpaceID, std::unordered_map<std::string, meta::cpp2::PartitionList>>;
 
+/**
+ * @brief Monitor remaining spaces of each disk
+ */
 class DiskManager {
   FRIEND_TEST(DiskManagerTest, AvailableTest);
   FRIEND_TEST(DiskManagerTest, WalNoSpaceTest);
 
  public:
+  /**
+   * @brief Construct a new Disk Manager object
+   *
+   * @param dataPaths `data_path` in configuration
+   * @param bgThread Backgournd thread to refresh remaining spaces of each data path
+   */
   DiskManager(const std::vector<std::string>& dataPaths,
               std::shared_ptr<thread::GenericWorker> bgThread = nullptr);
 
-  // Canonical path of all which contains the specified space,
-  // e.g. {"/DataPath1/nebula/spaceId", "/DataPath2/nebula/spaceId" ... }
+  /**
+   * @brief return canonical data path of given space
+   *
+   * @param spaceId
+   * @return StatusOr<std::vector<std::string>> Canonical path of all which contains the specified
+   * space, e.g. {"/DataPath1/nebula/spaceId", "/DataPath2/nebula/spaceId" ... }
+   */
   StatusOr<std::vector<std::string>> path(GraphSpaceID spaceId);
 
-  // Canonical path which contains the specified space and part, e.g.
-  // "/DataPath/nebula/spaceId". As for one storage instance, at most one path
-  // should contain a partition. Note that there isn't a separate dir for a
-  // partition (except wal), so we return space dir
+  /**
+   * @brief Canonical path which contains the specified space and part, e.g.
+   * "/DataPath/nebula/spaceId". As for one storage instance, at most one path should contain a
+   * partition. Note that there isn't a separate dir for a partition (except wal), so we return
+   * space dir
+   *
+   * @param spaceId
+   * @param partId
+   * @return StatusOr<std::string> data path of given partId if found, else return error status
+   */
   StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId);
 
-  // pre-condition: path is the space path, so it must end with /nebula/spaceId
-  // and path exists
+  /**
+   * @brief Add a partition to a given path, called when add a partiton in NebulaStore
+   * @pre Path is the space path, so it must end with /nebula/spaceId and path must exists
+   *
+   * @param spaceId
+   * @param partId
+   * @param path
+   */
   void addPartToPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path);
 
-  // pre-condition: path is the space path, so it must end with /nebula/spaceId
-  // and path exists
+  /**
+   * @brief Remove a partition form a given path, called when remove a partiton in NebulaStore
+   * @pre Path is the space path, so it must end with /nebula/spaceId and path must exists
+   *
+   * @param spaceId
+   * @param partId
+   * @param path
+   */
   void removePartFromPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path);
 
+  /**
+   * @brief Check if the data path of given partition has enough spaces
+   *
+   * @param spaceId
+   * @param partId
+   * @return true Data path remains enough space
+   * @return false Data path does not remain enough space
+   */
   bool hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId);
 
-  // Given a space, return data path and all partition in the path
-  StatusOr<PartDiskMap> partDist(GraphSpaceID spaceId);
-
-  // Get all space data path and all partition in the path
+  /**
+   * @brief Get all partitions grouped by data path and spaceId
+   *
+   * @param diskParts Get all space data path and all partition in the path
+   */
   void getDiskParts(SpaceDiskPartsMap& diskParts);
 
+  StatusOr<PartDiskMap> partDist(GraphSpaceID spaceId);
+
  private:
-  // refresh free bytes of data path periodically
+  /**
+   * @brief Refresh free bytes of data path periodically
+   */
   void refresh();
 
  private:

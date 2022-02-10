@@ -35,6 +35,14 @@ class FileBasedWal;
 
 namespace raftex {
 
+/**
+ * @brief Log type of raft log
+ * NORMAL:    Normal log could be in any position of a batch
+ * ATOMIC_OP: Atomic op should be the first log in a batch (a batch with only one atomic op log is
+              legal as well), there won't be more than one atomic op log in the same batch
+ * COMMAND:   Command should only be the last log in a batch (a batch with only one command log is
+              legal as well), there won't be more than one atomic op log in the same batch
+ */
 enum class LogType {
   NORMAL = 0x00,
   ATOMIC_OP = 0x01,
@@ -70,43 +78,70 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
  public:
   virtual ~RaftPart();
 
+  /**
+   * @brief Return whether RaftPart is running
+   */
   bool isRunning() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING;
   }
 
+  /**
+   * @brief Return whether RaftPart is stopped
+   */
   bool isStopped() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::STOPPED;
   }
 
+  /**
+   * @brief Return whether RaftPart is leader
+   */
   bool isLeader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::LEADER;
   }
 
+  /**
+   * @brief Return whether RaftPart is follower
+   */
   bool isFollower() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::FOLLOWER;
   }
 
+  /**
+   * @brief Return whether RaftPart is learner
+   */
   bool isLearner() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::LEARNER;
   }
 
+  /**
+   * @brief Return the cluster id of RaftPart
+   */
   ClusterID clusterId() const {
     return clusterId_;
   }
 
+  /**
+   * @brief Return the space id of RaftPart
+   */
   GraphSpaceID spaceId() const {
     return spaceId_;
   }
 
+  /**
+   * @brief Return the part id of RaftPart
+   */
   PartitionID partitionId() const {
     return partId_;
   }
 
+  /**
+   * @brief Return the address of RaftPart
+   */
   const HostAddr& address() const {
     return addr_;
   }
@@ -115,43 +150,101 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return path_;
   }
 
+  /**
+   * @brief Return the leader address of RaftPart
+   */
   HostAddr leader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return leader_;
   }
 
+  /**
+   * @brief Return the term of RaftPart
+   */
   TermID termId() const {
     return term_;
   }
 
+  /**
+   * @brief Return the wal
+   */
   std::shared_ptr<wal::FileBasedWal> wal() const {
     return wal_;
   }
 
+  /**
+   * @brief Add a raft learner to its peers
+   *
+   * @param learner Learner address
+   */
   void addLearner(const HostAddr& learner, const std::string& path);
 
+  /**
+   * @brief When commit to state machine, old leader will step down as follower
+   *
+   * @param target Target new leader
+   */
   void commitTransLeader(const HostAddr& target);
 
+  /**
+   * @brief Pre-process of transfer leader, target new leader will start election task to background
+   * worker
+   *
+   * @param target Target new leader
+   */
   void preProcessTransLeader(const HostAddr& target);
 
+  /**
+   * @brief Pre-process of remove a host from peers, follower will remove the peer in
+   * preProcessRemovePeer, leader will remove in commitRemovePeer
+   *
+   * @param peer Target peer to remove
+   */
   void preProcessRemovePeer(const HostAddr& peer, const std::string& path);
 
+  /**
+   * @brief Commit of remove a host from peers, follower will remove the peer in
+   * preProcessRemovePeer, leader will remove in commitRemovePeer
+   *
+   * @param peer Target peer to remove
+   */
   void commitRemovePeer(const HostAddr& peer, const std::string& path);
 
+  // All learner and listener are raft learner. The difference between listener and learner is that
+  // learner could be promoted to follower, but listener could not. (learner are added to hosts_,
+  // but listener are added to listeners_)
+  // todo(doodle): separate learner and listener into different raft role
+  /**
+   * @brief Add listener peer.
+   *
+   * @param peer Listener address
+   */
   void addListenerPeer(const HostAddr& peer, const std::string& path);
 
+  /**
+   * @brief Remove listener peer
+   *
+   * @param peer Listener address
+   */
   void removeListenerPeer(const HostAddr& peer, const std::string& path);
 
-  // Change the partition status to RUNNING. This is called
-  // by the inherited class, when it's ready to serve
+  /**
+   * @brief Change the partition status to RUNNING. This is called by the inherited class, when it's
+   * ready to serve
+   *
+   * @param peers All raft peers to add
+   * @param asLearner Whether start as raft learner
+   */
   virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
-  // Change the partition status to STOPPED. This is called
-  // by the inherited class, when it's about to stop
+  /**
+   * @brief Change the partition status to STOPPED. This is called by the inherited class, when it's
+   * about to stop
+   */
   virtual void stop();
 
-  /*****************************************************************
-   * Asynchronously append a log
+  /**
+   * @brief Asynchronously append a log
    *
    * This is the **PUBLIC** Log Append API, used by storage
    * service
@@ -163,34 +256,58 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * be fulfilled
    *
    * If the source == -1, the current clusterId will be used
-   ****************************************************************/
+   *
+   * @param source Cluster id
+   * @param log Log message to append
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
   folly::Future<nebula::cpp2::ErrorCode> appendAsync(ClusterID source, std::string log);
 
-  /****************************************************************
-   * Run the op atomically.
-   ***************************************************************/
+  /**
+   * @brief Trigger the op atomically. If the atomic operation succeed, and append the output log
+   * message of ATOMIC_OP type
+   *
+   * @param op Atomic operation, will output a log if succeed
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
   folly::Future<nebula::cpp2::ErrorCode> atomicOpAsync(AtomicOp op);
 
   /**
-   * Asynchronously send one command.
-   * */
+   * @brief Send a log of COMMAND type
+   *
+   * @param log Command log
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
   folly::Future<nebula::cpp2::ErrorCode> sendCommandAsync(std::string log);
 
   /**
-   * Check if the peer has catched up data from leader. If leader is sending the
+   * @brief Check if the peer has catched up data from leader. If leader is sending the
    * snapshot, the method will return false.
-   * */
+   *
+   * @param peer The peer to check if it has catched up
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer, const std::string& path);
 
+  /**
+   * @brief Hard link the wal files to a new path
+   *
+   * @param newPath New wal path
+   * @return Whether link succeed
+   */
   bool linkCurrentWAL(const char* newPath);
 
   /**
-   * Reset my peers if not equals the argument
+   * @brief Reset my peers if not equals the argument
+   *
+   * @param peers Expect peers
    */
   void checkAndResetPeers(const std::vector<HostAndPath>& peers);
 
   /**
-   * Add listener into peers or remove from peers
+   * @brief Check my remote listeners is equal to the expected one, add/remove if necessary
+   *
+   * @param listeners Expect remote listeners
    */
   void checkRemoteListeners(const std::set<HostAddr>& listeners);
 
@@ -199,42 +316,110 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Methods to process incoming raft requests
    *
    ****************************************************/
+
+  /**
+   * @brief Check my remote listeners is equal to the expected one, add/remove if necessary
+   *
+   * @param listeners Expect remote listeners
+   */
   void getState(cpp2::GetStateResponse& resp);
 
-  // Process the incoming leader election request
+  /**
+   * @brief Process the incoming leader election request
+   *
+   * @param req
+   * @param resp
+   */
   void processAskForVoteRequest(const cpp2::AskForVoteRequest& req, cpp2::AskForVoteResponse& resp);
 
-  // Process appendLog request
+  /**
+   * @brief Process append log request
+   *
+   * @param req
+   * @param resp
+   */
   void processAppendLogRequest(const cpp2::AppendLogRequest& req, cpp2::AppendLogResponse& resp);
 
-  // Process sendSnapshot request
+  /**
+   * @brief Process send snapshot request
+   *
+   * @param req
+   * @param resp
+   */
   void processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
                                   cpp2::SendSnapshotResponse& resp);
 
+  /**
+   * @brief Process heartbeat request
+   *
+   * @param req
+   * @param resp
+   */
   void processHeartbeatRequest(const cpp2::HeartbeatRequest& req, cpp2::HeartbeatResponse& resp);
 
+  /**
+   * @brief Return whether leader lease is still valid
+   */
   bool leaseValid();
 
+  /**
+   * @brief Return whether we need to clean expired wal
+   */
   bool needToCleanWal();
 
-  // leader + followers
+  /**
+   * @brief Get the address of node which has the partition, local address and all peers address
+   *
+   * @return std::vector<HostAddr> local address and all peers address
+   */
   std::vector<HostAddr> peers() const;
 
   std::vector<HostAndPath> followersHostAndPaths() const;
 
+  /**
+   * @brief All listeners address
+   *
+   * @return std::set<HostAddr>
+   */
   std::set<HostAddr> listeners() const;
 
+  /**
+   * @brief Return last log id and last log term in wal
+   *
+   * @return std::pair<LogID, TermID> Pair of last log id and last log term in wal
+   */
   std::pair<LogID, TermID> lastLogInfo() const;
 
-  // Reset the part, clean up all data and WALs.
+  /**
+   * @brief Reset the part, clean up all data and WALs.
+   */
   void reset();
 
+  /**
+   * @brief Execution time of some operation, for statistics
+   *
+   * @return uint64_t Time in us
+   */
   uint64_t execTime() const {
     return execTime_;
   }
 
  protected:
-  // Protected constructor to prevent from instantiating directly
+  /**
+   * @brief Construct a new RaftPart
+   *
+   * @param clusterId
+   * @param spaceId
+   * @param partId
+   * @param localAddr Listener ip/addr
+   * @param walPath Listener's wal path
+   * @param ioPool IOThreadPool for listener
+   * @param workers Background thread for listener
+   * @param executor Worker thread for listener
+   * @param snapshotMan Snapshot manager
+   * @param clientMan Client manager
+   * @param diskMan Disk manager
+   */
   RaftPart(ClusterID clusterId,
            GraphSpaceID spaceId,
            PartitionID partId,
@@ -252,58 +437,121 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   using Status = cpp2::Status;
   using Role = cpp2::Role;
 
+  /**
+   * @brief The str of the RaftPart, used in logging
+   */
   const char* idStr() const {
     return idStr_.c_str();
   }
 
-  // The method will be invoked by start()
-  //
-  // Inherited classes should implement this method to provide the last
-  // committed log id
+  /**
+   * @brief Inherited classes should implement this method to provide the last commit log id and
+   * last commit log term. The method will be invoked by start()
+   *
+   * @return std::pair<LogID, TermID> Last commit log id and last commit log term
+   */
   virtual std::pair<LogID, TermID> lastCommittedLogId() = 0;
 
-  // This method is called when this partition's leader term
-  // is finished, either by receiving a new leader election
-  // request, or a new leader heartbeat
+  /**
+   * @brief This method is called when this partition's leader term is finished, either by receiving
+   * a new leader election request, or a new leader heartbeat
+   *
+   * @param term New term from peers
+   */
   virtual void onLostLeadership(TermID term) = 0;
 
-  // This method is called when this partition is elected as
-  // a new leader
+  /**
+   * @brief This method is called when this partition is elected as a new leader
+   *
+   * @param term Term when elected as leader
+   */
   virtual void onElected(TermID term) = 0;
 
-  // called after leader committed first log
-  // (a little bit later onElected)
-  // leader need to set some internal status after elected.
+  /**
+   * @brief This method is called after leader committed first log (a little bit later onElected),
+   * leader need to set some internal status after elected.
+   *
+   * @param term
+   */
   virtual void onLeaderReady(TermID term) = 0;
 
+  /**
+   * @brief Callback when a raft node discover new leader
+   *
+   * @param nLeader New leader's address
+   */
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
-  // Check if we can accept candidate's message
+  /**
+   * @brief Check if we can accept candidate's message
+   *
+   * @param candidate The sender of the message
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate, const std::string& path);
 
-  // The inherited classes need to implement this method to commit a batch of log messages.
-  // Return {error code, last commit log id, last commit log term}.
-  // When no logs applied to state machine or error occurs when calling commitLogs,
-  // kNoCommitLogId and kNoCommitLogTerm are returned.
+  /**
+   * @brief The inherited classes need to implement this method to commit a batch of log messages.
+   *
+   * @param iter Log iterator of all logs to commit
+   * @param wait Whether wait until all logs has been applied to state machine
+   * @return std::tuple<nebula::cpp2::ErrorCode, LogID, TermID>
+   * Return {error code, last commit log id, last commit log term}. When no logs applied to state
+   * machine or error occurs when calling commitLogs, kNoCommitLogId and kNoCommitLogTerm are
+   * returned.
+   */
   virtual std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(
       std::unique_ptr<LogIterator> iter, bool wait) = 0;
 
+  /**
+   * @brief A interface to pre-process wal, mainly for membership change
+   *
+   * @param logId Log id to pre-process
+   * @param termId Log term to pre-process
+   * @param clusterId Cluster id in wal
+   * @param log Log message in wal
+   * @return True if succeed. False if failed.
+   */
   virtual bool preProcessLog(LogID logId,
                              TermID termId,
                              ClusterID clusterId,
                              const std::string& log) = 0;
 
-  // Return <size, count> committed;
+  /**
+   * @brief If raft node falls behind way to much than leader, the leader will send all its data in
+   * snapshot by batch, derived class need to implement this method to apply the batch to state
+   * machine.
+   *
+   * @param data Data to apply
+   * @param committedLogId Commit log id of snapshot
+   * @param committedLogTerm Commit log term of snapshot
+   * @param finished Whether spapshot is finished
+   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   */
   virtual std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
                                                      LogID committedLogId,
                                                      TermID committedLogTerm,
                                                      bool finished) = 0;
 
-  // Clean up extra data about the part, usually related to state machine
+  /**
+   * @brief Clean up extra data about the partition, usually related to state machine
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   virtual nebula::cpp2::ErrorCode cleanup() = 0;
 
+  /**
+   * @brief Add a host to my peers
+   *
+   * @param peer Address to add
+   */
   void addPeer(const HostAddr& peer, const std::string& path);
 
+  /**
+   * @brief Remove a host from my peers
+   *
+   * @param peer Address to remove
+   */
   void removePeer(const HostAddr& peer, const std::string& path);
 
  private:
@@ -322,71 +570,168 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Private methods
    *
    ***************************************************/
+
+  /**
+   * @brief Return the role in string
+   *
+   * @param role Raft role
+   * @return const char*
+   */
   const char* roleStr(Role role) const;
 
+  /**
+   * @brief Verify if the request can be accepted when receiving a AppendLog or Heartbeat request
+   *
+   * @tparam REQ AppendLogRequest or HeartbeatRequest
+   * @param req RPC requeset
+   * @return nebula::cpp2::ErrorCode
+   */
   template <typename REQ>
   nebula::cpp2::ErrorCode verifyLeader(const REQ& req);
-
-  /*****************************************************************
-   *
-   * Asynchronously send a heartbeat
-   *
-   ****************************************************************/
-  void sendHeartbeat();
 
   /****************************************************
    *
    * Methods used by the status polling logic
    *
    ***************************************************/
-  bool needToSendHeartbeat();
 
-  bool needToStartElection();
-
+  /**
+   * @brief Polling to check some status
+   *
+   * @param startTime Start time of the RaftPart, only used in test case
+   */
   void statusPolling(int64_t startTime);
 
+  /**
+   * @brief Return whether need to send heartbeat
+   */
+  bool needToSendHeartbeat();
+
+  /**
+   * @brief Asynchronously send a heartbeat
+   */
+  void sendHeartbeat();
+
+  /**
+   * @brief Return whether need to trigger leader election
+   */
+  bool needToStartElection();
+
+  /**
+   * @brief Return whether need to clean snapshot when a node has not received the snapshot for a
+   * period of time
+   */
   bool needToCleanupSnapshot();
 
+  /**
+   * @brief Clean up the outdated snapshot
+   */
   void cleanupSnapshot();
 
-  // The method sends out AskForVote request
-  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  /**
+   * @brief The method sends out AskForVote request. Return true if I have been granted majority
+   * votes on proposedTerm, no matter isPreVote or not
+   *
+   * @param isPreVote Whether this is a pre-vote
+   * @return folly::Future<bool> Whether get majority votes
+   */
   folly::Future<bool> leaderElection(bool isPreVote);
 
-  // The method will fill up the request object and return TRUE
-  // if the election should continue. Otherwise the method will
-  // return FALSE
+  /**
+   * @brief The method will fill up the request object and return TRUE if the election should
+   * continue. Otherwise the method will return FALSE
+   *
+   * @param req The request to send
+   * @param hosts Raft peers
+   * @param isPreVote Whether this is a pre-vote
+   * @return Whether we have a valid request
+   */
   bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
                               std::vector<std::shared_ptr<Host>>& hosts,
                               bool isPreVote);
 
-  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  /**
+   * @brief Handle the leader election responses
+   *
+   * @param resps Leader election response
+   * @param hosts Raft peers
+   * @param proposedTerm Which term I proposed to be leader
+   * @param isPreVote Whether this is a pre-vote
+   * @return Return true if I have been granted majority votes on proposedTerm, no matter isPreVote
+   * or not
+   *
+   */
   bool handleElectionResponses(const ElectionResponses& resps,
                                const std::vector<std::shared_ptr<Host>>& hosts,
                                TermID proposedTerm,
                                bool isPreVote);
 
-  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  /**
+   * @brief Check if have been granted from majority peers, no matter isPreVote or not. Convert to
+   * leader if it is a formal election, and I have received majority votes.
+   *
+   * @param results Leader election response
+   * @param hosts Raft peers
+   * @param proposedTerm Which term I proposed to be leader
+   * @param isPreVote Whether this is a pre-vote
+   * @return Return true if I have been granted majority votes on proposedTerm, no matter isPreVote
+   * or not
+   */
   bool processElectionResponses(const ElectionResponses& results,
                                 std::vector<std::shared_ptr<Host>> hosts,
                                 TermID proposedTerm,
                                 bool isPreVote);
 
-  // Check whether new logs can be appended
-  // Pre-condition: The caller needs to hold the raftLock_
+  /**
+   * @brief Check whether new logs can be appended
+   * @pre The caller needs to hold the raftLock_
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode canAppendLogs();
 
-  // Also check if term has changed
-  // Pre-condition: The caller needs to hold the raftLock_
+  /**
+   * @brief Check if term has changed, and check if new logs can be appended
+   * @pre The caller needs to hold the raftLock_
+   *
+   * @param currTerm Current term
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode canAppendLogs(TermID currTerm);
 
+  /**
+   * @brief The main interfaces to append log
+   *
+   * @param source Log cluster id
+   * @param logType Log type
+   * @param log Log message
+   * @param cb Callback when log is replicated
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
   folly::Future<nebula::cpp2::ErrorCode> appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp cb = nullptr);
 
+  /**
+   * @brief Append the logs in iterator
+   *
+   * @param iter Log iterator to replicate
+   * @param termId The term when building the iterator
+   */
   void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
+  /**
+   * @brief Replicate the logs to peers by sending RPC
+   *
+   * @param eb The eventbase to send request
+   * @param iter Log iterator to send
+   * @param currTerm The term when building the iterator
+   * @param lastLogId The last log id in iterator
+   * @param committedId The commit log id
+   * @param prevLogTerm The last log term which has been sent
+   * @param prevLogId The last log id which has been sent
+   */
   void replicateLogs(folly::EventBase* eb,
                      AppendLogsIterator iter,
                      TermID currTerm,
@@ -395,6 +740,19 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
                      TermID prevLogTerm,
                      LogID prevLogId);
 
+  /**
+   * @brief Handle the log append response, apply to state machine if necessary
+   *
+   * @param resps Responses of peers
+   * @param eb The eventbase when sent request, used for retry and continue as well
+   * @param iter Log iterator, also used for continue to replicate remaing logs
+   * @param currTerm The term when building the iterator
+   * @param lastLogId The last log id in iterator
+   * @param committedId The commit log id
+   * @param prevLogTerm The last log term which has been sent
+   * @param prevLogId The last log id which has been sent
+   * @param hosts The Host of raft peers
+   */
   void processAppendLogResponses(const AppendLogResponses& resps,
                                  folly::EventBase* eb,
                                  AppendLogsIterator iter,
@@ -405,12 +763,24 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
                                  LogID prevLogId,
                                  std::vector<std::shared_ptr<Host>> hosts);
 
-  // followers return Host of which could vote, in other words, learner is not
-  // counted in
+  /**
+   * @brief Return Host of which could vote, in other words, learner is not counted in
+   *
+   * @return std::vector<std::shared_ptr<Host>>
+   */
   std::vector<std::shared_ptr<Host>> followers() const;
 
+  /**
+   * @brief Check if we succeed in append log.
+   *
+   * @param res Errorcode to check
+   * @return Return true directly if res is succeed, otherwise set the failed status.
+   */
   bool checkAppendLogResult(nebula::cpp2::ErrorCode res);
 
+  /**
+   * @brief Update raft quorum when membership changes
+   */
   void updateQuorum();
 
  protected:
@@ -426,12 +796,20 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     PromiseSet& operator=(const PromiseSet&) = delete;
     PromiseSet& operator=(PromiseSet&& right) = default;
 
+    /**
+     * @brief Clean all promises
+     */
     void reset() {
       sharedPromises_.clear();
       singlePromises_.clear();
       rollSharedPromise_ = true;
     }
 
+    /**
+     * @brief Used for NORMAL raft log
+     *
+     * @return folly::Future<ValueType>
+     */
     folly::Future<ValueType> getSharedFuture() {
       if (rollSharedPromise_) {
         sharedPromises_.emplace_back();
@@ -441,6 +819,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       return sharedPromises_.back().getFuture();
     }
 
+    /**
+     * @brief Used for ATOMIC_OP raft log
+     *
+     * @return folly::Future<ValueType>
+     */
     folly::Future<ValueType> getSingleFuture() {
       singlePromises_.emplace_back();
       rollSharedPromise_ = true;
@@ -448,6 +831,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       return singlePromises_.back().getFuture();
     }
 
+    /**
+     * @brief Used for COMMAND raft log
+     *
+     * @return folly::Future<ValueType>
+     */
     folly::Future<ValueType> getAndRollSharedFuture() {
       if (rollSharedPromise_) {
         sharedPromises_.emplace_back();
@@ -456,6 +844,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       return sharedPromises_.back().getFuture();
     }
 
+    /**
+     * @brief Set shared promise
+     *
+     * @tparam VT
+     * @param val
+     */
     template <class VT>
     void setOneSharedValue(VT&& val) {
       CHECK(!sharedPromises_.empty());
@@ -463,6 +857,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       sharedPromises_.pop_front();
     }
 
+    /**
+     * @brief Set single promise
+     *
+     * @tparam VT
+     * @param val
+     */
     template <class VT>
     void setOneSingleValue(VT&& val) {
       CHECK(!singlePromises_.empty());
@@ -470,6 +870,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       singlePromises_.pop_front();
     }
 
+    /**
+     * @brief Set all promises to result, usually a failed result
+     *
+     * @param val
+     */
     void setValue(ValueType val) {
       for (auto& p : sharedPromises_) {
         p.setValue(val);

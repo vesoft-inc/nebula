@@ -251,7 +251,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
           folly::RWSpinLock::WriteHolder wh(&lock_);
           currLogId_ = iter->logId();
           data_.emplace_back(currLogId_, log.toString());
-          VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
+          VLOG(2) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
                   << " state machine log size: " << data_.size();
           break;
         }
@@ -282,7 +282,7 @@ std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::str
     count++;
     size += row.size();
     auto idData = decodeSnapshotRow(row);
-    VLOG(1) << idStr_ << "Commit row logId " << idData.first << ", log " << idData.second;
+    VLOG(2) << idStr_ << "Commit row logId " << idData.first << ", log " << idData.second;
     data_.emplace_back(idData.first, std::move(idData.second));
   }
   if (finished) {

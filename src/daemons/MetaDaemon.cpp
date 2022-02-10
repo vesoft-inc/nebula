@@ -48,8 +48,6 @@ DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DECLARE_string(data_path);
 DECLARE_string(meta_server_addrs);
 
-// DEFINE_string(local_ip, "", "Local ip specified for
-// NetworkUtils::getLocalIP");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");

@@ -28,8 +28,15 @@ class RateLimiter {
     bucket_.reset(new folly::DynamicTokenBucket(static_cast<double>(now + waitInSec)));
   }
 
-  // Caller must make sure the **the partition has been add, and won't be removed during consume.**
-  // Snapshot and rebuild index follow this principle by design.
+  /**
+   * @brief Consume some budget from rate limiter. Caller must make sure the **the partition has
+   * been add, and won't be removed during consume.** Snapshot and rebuild index follow this
+   * principle by design.
+   *
+   * @param toConsume Amount to consume
+   * @param rate Generate speed
+   * @param burstSize Maximum consume speed to consume
+   */
   void consume(double toConsume, double rate, double burstSize) {
     if (toConsume > burstSize) {
       // consumeWithBorrowAndWait do nothing when toConsume > burstSize_, we sleep 1s instead
