@@ -8,6 +8,15 @@ set(UTIL_TEST_FLAG_DEPS
     $<TARGET_OBJECTS:sa_test_graph_flags_obj>
 )
 endif()
+find_library(Boost_Thread_LIBRARY NAMES libboost_thread.a)
+
+if(Boost_Thread_LIBRARY)
+    mark_as_advanced(
+        Boost_Thread_LIBRARY
+    )
+else()
+    message(FATAL_ERROR "boost_thread doesn't exist")
+endif()
 
 nebula_add_test(
     NAME utils_test
@@ -16,7 +25,6 @@ nebula_add_test(
         IdGeneratorTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
@@ -62,6 +70,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         gtest_main
+        ${Boost_Thread_LIBRARY}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
 )
