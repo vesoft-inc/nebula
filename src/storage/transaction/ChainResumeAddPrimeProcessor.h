@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINRESUMEADDPRIMEPROCESSOR_H
+#define STORAGE_TRANSACTION_CHAINRESUMEADDPRIMEPROCESSOR_H
 
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 
@@ -30,3 +31,4 @@ class ChainResumeAddPrimeProcessor : public ChainAddEdgesLocalProcessor {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

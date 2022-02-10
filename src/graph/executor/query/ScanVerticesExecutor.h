@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
+#define GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
 
 #include "graph/executor/query/GetPropExecutor.h"
 #include "graph/planner/plan/Query.h"
@@ -24,3 +25,4 @@ class ScanVerticesExecutor final : public GetPropExecutor {
 
 }  // namespace graph
 }  // namespace nebula
+#endif

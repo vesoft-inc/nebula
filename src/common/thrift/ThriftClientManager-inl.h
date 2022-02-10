@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
+#define COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
 
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
@@ -99,3 +100,4 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
 
 }  // namespace thrift
 }  // namespace nebula
+#endif
