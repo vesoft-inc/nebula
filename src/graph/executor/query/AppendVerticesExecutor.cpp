@@ -66,39 +66,53 @@ Status AppendVerticesExecutor::handleResp(
   auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   auto state = std::move(result).value();
-  std::unordered_map<Value, Value> map;
   auto *av = asNode<AppendVertices>(node());
   auto *vFilter = av->vFilter();
   QueryExpressionContext ctx(qctx()->ectx());
 
-  auto inputIter = qctx()->ectx()->getResult(av->inputVar()).iter();
-  DataSet ds;
-  ds.colNames = av->colNames();
-  ds.rows.reserve(inputIter->size());
-
+  // Ok, merge DataSets to one
+  nebula::DataSet v;
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
-      auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
-      for (; iter.valid(); iter.next()) {
-        if (vFilter != nullptr) {
-          auto &vFilterVal = vFilter->eval(ctx(&iter));
-          if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
-            continue;
-          }
-        }
-        if (!av->trackPrevPath()) {  // eg. MATCH (v:Person) RETURN v
-          Row row;
-          row.values.emplace_back(iter.getVertex());
-          ds.rows.emplace_back(std::move(row));
-        } else {
-          map.emplace(iter.getColumn(kVid), iter.getVertex());
-        }
+      if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
+        // it's impossible according to the interface
+        LOG(WARNING) << "Heterogeneous props dataset";
+        state = Result::State::kPartialSuccess;
       }
+    } else {
+      state = Result::State::kPartialSuccess;
     }
   }
+  auto iter = PropIter(std::make_shared<Value>(std::move(v)));
 
-  if (!av->trackPrevPath()) {
-    return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
+  auto inputIter = qctx()->ectx()->getResult(av->inputVar()).iter();
+  DataSet ret;
+  ret.colNames = av->colNames();
+  ret.rows.reserve(inputIter->size());
+  if (!av->trackPrevPath()) {  // eg. MATCH (v:Person) RETURN v
+    for (; iter.valid(); iter.next()) {
+      if (vFilter != nullptr) {
+        auto &vFilterVal = vFilter->eval(ctx(&iter));
+        if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+          continue;
+        }
+      }
+      Row row;
+      row.values.emplace_back(iter.getVertex());
+      ret.rows.emplace_back(std::move(row));
+    }
+    return finish(ResultBuilder().value(Value(std::move(ret))).state(state).build());
+  }
+
+  std::unordered_map<Value, Value> map;
+  for (; iter.valid(); iter.next()) {
+    if (vFilter != nullptr) {
+      auto &vFilterVal = vFilter->eval(ctx(&iter));
+      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+        continue;
+      }
+    }
+    map.emplace(iter.getColumn(kVid), iter.getVertex());
   }
 
   auto *src = av->src();
@@ -109,9 +123,9 @@ Status AppendVerticesExecutor::handleResp(
     }
     Row row = *inputIter->row();
     row.values.emplace_back(dstFound->second);
-    ds.rows.emplace_back(std::move(row));
+    ret.rows.emplace_back(std::move(row));
   }
-  return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
+  return finish(ResultBuilder().value(Value(std::move(ret))).state(state).build());
 }
 
 }  // namespace graph
