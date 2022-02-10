@@ -79,8 +79,8 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
   std::unique_ptr<KVIterator> iter;
   auto ret = store_->prefix(spaceId, partId, prefix, &iter, false, snapshot);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
-              << ", error code:" << static_cast<int32_t>(ret);
+    VLOG(2) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
+            << ", error code:" << static_cast<int32_t>(ret);
     cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
     return false;
   }
@@ -95,7 +95,7 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
         data.clear();
         batchSize = 0;
       } else {
-        LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] send snapshot failed";
+        VLOG(2) << "[spaceId:" << spaceId << ", partId:" << partId << "] send snapshot failed";
         return false;
       }
     }

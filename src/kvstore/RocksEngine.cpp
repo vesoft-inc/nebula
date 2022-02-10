@@ -171,7 +171,7 @@ nebula::cpp2::ErrorCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch
   } else if (!wait && status.IsIncomplete()) {
     return nebula::cpp2::ErrorCode::E_WRITE_STALLED;
   }
-  LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
+  VLOG(3) << "Write into rocksdb failed because of " << status.ToString();
   return nebula::cpp2::ErrorCode::E_UNKNOWN;
 }
 
@@ -181,10 +181,10 @@ nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key, std::string* va
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else if (status.IsNotFound()) {
-    VLOG(3) << "Get: " << key << " Not Found";
+    VLOG(4) << "Get: " << key << " Not Found";
     return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   } else {
-    VLOG(3) << "Get Failed: " << key << " " << status.ToString();
+    VLOG(4) << "Get Failed: " << key << " " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -298,7 +298,7 @@ nebula::cpp2::ErrorCode RocksEngine::put(std::string key, std::string value) {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    VLOG(3) << "Put Failed: " << key << status.ToString();
+    VLOG(4) << "Put Failed: " << key << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -314,7 +314,7 @@ nebula::cpp2::ErrorCode RocksEngine::multiPut(std::vector<KV> keyValues) {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    VLOG(3) << "MultiPut Failed: " << status.ToString();
+    VLOG(4) << "MultiPut Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -326,7 +326,7 @@ nebula::cpp2::ErrorCode RocksEngine::remove(const std::string& key) {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    VLOG(3) << "Remove Failed: " << key << status.ToString();
+    VLOG(4) << "Remove Failed: " << key << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -342,7 +342,7 @@ nebula::cpp2::ErrorCode RocksEngine::multiRemove(std::vector<std::string> keys) 
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    VLOG(3) << "MultiRemove Failed: " << status.ToString();
+    VLOG(4) << "MultiRemove Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -354,7 +354,7 @@ nebula::cpp2::ErrorCode RocksEngine::removeRange(const std::string& start, const
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    VLOG(3) << "RemoveRange Failed: " << status.ToString();
+    VLOG(4) << "RemoveRange Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -423,7 +423,7 @@ nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& file
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "Ingest Failed: " << status.ToString();
+    LOG(WARNING) << "Ingest Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -437,7 +437,7 @@ nebula::cpp2::ErrorCode RocksEngine::setOption(const std::string& configKey,
     LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "SetOption Failed: " << configKey << ":" << configValue;
+    LOG(WARNING) << "SetOption Failed: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::E_INVALID_PARM;
   }
 }
@@ -451,7 +451,7 @@ nebula::cpp2::ErrorCode RocksEngine::setDBOption(const std::string& configKey,
     LOG(INFO) << "SetDBOption Succeeded: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
+    LOG(WARNING) << "SetDBOption Failed: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::E_INVALID_PARM;
   }
 }
@@ -474,7 +474,7 @@ nebula::cpp2::ErrorCode RocksEngine::compact() {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "CompactAll Failed: " << status.ToString();
+    LOG(WARNING) << "CompactAll Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -485,7 +485,7 @@ nebula::cpp2::ErrorCode RocksEngine::flush() {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "Flush Failed: " << status.ToString();
+    LOG(WARNING) << "Flush Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
 }
@@ -500,7 +500,7 @@ nebula::cpp2::ErrorCode RocksEngine::backup() {
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   } else {
-    LOG(ERROR) << "backup failed: " << status.ToString();
+    LOG(WARNING) << "backup failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_FAILED;
   }
 }
@@ -528,7 +528,8 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
     if (!FLAGS_rocksdb_wal_dir.empty()) {
       walDir = folly::stringPrintf("%s/rocksdb_wal/%d", FLAGS_rocksdb_wal_dir.c_str(), spaceId);
     } else {
-      LOG(WARNING) << "rocksdb wal is stored with data";
+      LOG(WARNING) << "rocksdb wal is stored with data. If data_path is on tmpfs, the wal is "
+                      "volatile as well";
     }
 
     rocksdb::RestoreOptions restoreOptions;
@@ -550,21 +551,21 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
 nebula::cpp2::ErrorCode RocksEngine::createCheckpoint(const std::string& checkpointPath) {
   LOG(INFO) << "Target checkpoint data path : " << checkpointPath;
   if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Remove exist checkpoint data dir failed: " << checkpointPath;
+    LOG(WARNING) << "Remove exist checkpoint data dir failed: " << checkpointPath;
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
   }
 
   rocksdb::Checkpoint* checkpoint;
   rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
   if (!status.ok()) {
-    LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
+    LOG(WARNING) << "Init checkpoint Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
   }
 
   std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
   status = cp->CreateCheckpoint(checkpointPath, 0);
   if (!status.ok()) {
-    LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
+    LOG(WARNING) << "Create checkpoint Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -582,7 +583,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
   auto parent = backupPath.substr(0, backupPath.rfind('/'));
   if (!FileUtils::exist(parent)) {
     if (!FileUtils::makeDir(parent)) {
-      LOG(ERROR) << "Make dir " << parent << " failed";
+      LOG(WARNING) << "Make dir " << parent << " failed";
       return nebula::cpp2::ErrorCode::E_BACKUP_FAILED;
     }
   }
@@ -601,7 +602,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
   rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
   auto s = sstFileWriter.Open(backupPath);
   if (!s.ok()) {
-    LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+    LOG(WARNING) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
   }
 
@@ -612,7 +613,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
 
     s = sstFileWriter.Put(iter->key().toString(), iter->val().toString());
     if (!s.ok()) {
-      LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+      LOG(WARNING) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
       sstFileWriter.Finish();
       return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
     }

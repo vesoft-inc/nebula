@@ -30,7 +30,6 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>

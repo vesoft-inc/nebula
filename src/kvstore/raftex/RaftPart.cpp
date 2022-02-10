@@ -210,7 +210,7 @@ RaftPart::RaftPart(
     PartitionID partId,
     HostAddr localAddr,
     const folly::StringPiece walRoot,
-    std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
     std::shared_ptr<thread::GenericThreadPool> workers,
     std::shared_ptr<folly::Executor> executor,
     std::shared_ptr<SnapshotManager> snapshotMan,
@@ -225,7 +225,7 @@ RaftPart::RaftPart(
       status_{Status::STARTING},
       role_{Role::FOLLOWER},
       leader_{"", 0},
-      ioThreadPool_{pool},
+      ioThreadPool_{ioPool},
       bgWorkers_{workers},
       executor_(executor),
       snapshot_(snapshotMan),
@@ -256,7 +256,7 @@ RaftPart::~RaftPart() {
 
   // Make sure the partition has stopped
   CHECK(status_ == Status::STOPPED);
-  LOG(INFO) << idStr_ << " The part has been destroyed...";
+  VLOG(1) << idStr_ << " The part has been destroyed...";
 }
 
 const char* RaftPart::roleStr(Role role) const {
@@ -290,21 +290,20 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
   committedLogTerm_ = logIdAndTerm.second;
 
   if (lastLogId_ < committedLogId_) {
-    LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
-              << committedLogId_;
+    VLOG(1) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
+            << committedLogId_;
     lastLogId_ = committedLogId_;
     lastLogTerm_ = committedLogTerm_;
     wal_->reset();
   }
-  LOG(INFO) << idStr_ << "There are " << peers.size() << " peer hosts, and total "
-            << peers.size() + 1 << " copies. The quorum is " << quorum_ + 1 << ", as learner "
-            << asLearner << ", lastLogId " << lastLogId_ << ", lastLogTerm " << lastLogTerm_
-            << ", committedLogId " << committedLogId_ << ", committedLogTerm " << committedLogTerm_
-            << ", term " << term_;
+  VLOG(1) << idStr_ << "There are " << peers.size() << " peer hosts, and total " << peers.size() + 1
+          << " copies. The quorum is " << quorum_ + 1 << ", as learner " << asLearner
+          << ", lastLogId " << lastLogId_ << ", lastLogTerm " << lastLogTerm_ << ", committedLogId "
+          << committedLogId_ << ", committedLogTerm " << committedLogTerm_ << ", term " << term_;
 
   // Start all peer hosts
   for (auto& addr : peers) {
-    LOG(INFO) << idStr_ << "Add peer " << addr;
+    VLOG(1) << idStr_ << "Add peer " << addr;
     auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
     hosts_.emplace_back(hostPtr);
   }
@@ -324,7 +323,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 }
 
 void RaftPart::stop() {
-  VLOG(2) << idStr_ << "Stopping the partition";
+  VLOG(1) << idStr_ << "Stopping the partition";
 
   decltype(hosts_) hosts;
   {
@@ -340,25 +339,25 @@ void RaftPart::stop() {
     h->stop();
   }
 
-  VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
+  VLOG(1) << idStr_ << "Invoked stop() on all peer hosts";
 
   for (auto& h : hosts) {
-    VLOG(2) << idStr_ << "Waiting " << h->idStr() << " to stop";
+    VLOG(1) << idStr_ << "Waiting " << h->idStr() << " to stop";
     h->waitForStop();
-    VLOG(2) << idStr_ << h->idStr() << "has stopped";
+    VLOG(1) << idStr_ << h->idStr() << "has stopped";
   }
   hosts.clear();
-  LOG(INFO) << idStr_ << "Partition has been stopped";
+  VLOG(1) << idStr_ << "Partition has been stopped";
 }
 
 nebula::cpp2::ErrorCode RaftPart::canAppendLogs() {
   DCHECK(!raftLock_.try_lock());
   if (UNLIKELY(status_ != Status::RUNNING)) {
-    LOG(ERROR) << idStr_ << "The partition is not running";
+    VLOG(3) << idStr_ << "The partition is not running";
     return nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
   }
   if (UNLIKELY(role_ != Role::LEADER)) {
-    LOG_EVERY_N(WARNING, 1000) << idStr_ << "The partition is not a leader";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "The partition is not a leader";
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -371,7 +370,7 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
     return rc;
   }
   if (UNLIKELY(term_ != termId)) {
-    VLOG(2) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
+    VLOG(3) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
     return nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -380,29 +379,29 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
 void RaftPart::addLearner(const HostAddr& addr) {
   CHECK(!raftLock_.try_lock());
   if (addr == addr_) {
-    LOG(INFO) << idStr_ << "I am learner!";
+    VLOG(1) << idStr_ << "I am learner!";
     return;
   }
   auto it = std::find_if(
       hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
   if (it == hosts_.end()) {
     hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
-    LOG(INFO) << idStr_ << "Add learner " << addr;
+    VLOG(1) << idStr_ << "Add learner " << addr;
   } else {
-    LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
-              << ((*it)->isLearner() ? " learner " : " group member");
+    VLOG(1) << idStr_ << "The host " << addr << " has been existed as "
+            << ((*it)->isLearner() ? " learner " : " group member");
   }
 }
 
 void RaftPart::preProcessTransLeader(const HostAddr& target) {
   CHECK(!raftLock_.try_lock());
-  LOG(INFO) << idStr_ << "Pre process transfer leader to " << target;
+  VLOG(1) << idStr_ << "Pre process transfer leader to " << target;
   switch (role_) {
     case Role::FOLLOWER: {
       if (target != addr_ && target != HostAddr("", 0)) {
-        LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
+        VLOG(1) << idStr_ << "I am follower, just wait for the new leader.";
       } else {
-        LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
+        VLOG(1) << idStr_ << "I will be the new leader, trigger leader election now!";
         bgWorkers_->addTask([self = shared_from_this()] {
           {
             std::lock_guard<std::mutex> lck(self->raftLock_);
@@ -416,8 +415,8 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
       break;
     }
     default: {
-      LOG(INFO) << idStr_ << "My role is " << roleStr(role_)
-                << ", so do nothing when pre process transfer leader";
+      VLOG(1) << idStr_ << "My role is " << roleStr(role_)
+              << ", so do nothing when pre process transfer leader";
       break;
     }
   }
@@ -425,7 +424,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
 
 void RaftPart::commitTransLeader(const HostAddr& target) {
   bool needToUnlock = raftLock_.try_lock();
-  LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+  VLOG(1) << idStr_ << "Commit transfer leader to " << target;
   switch (role_) {
     case Role::LEADER: {
       if (target != addr_ && !hosts_.empty()) {
@@ -438,20 +437,20 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
           for (auto& host : hosts_) {
             host->pause();
           }
-          LOG(INFO) << idStr_ << "Give up my leadership!";
+          VLOG(1) << idStr_ << "Give up my leadership!";
         }
       } else {
-        LOG(INFO) << idStr_ << "I am already the leader!";
+        VLOG(1) << idStr_ << "I am already the leader!";
       }
       break;
     }
     case Role::FOLLOWER:
     case Role::CANDIDATE: {
-      LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
+      VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
       break;
     }
     case Role::LEARNER: {
-      LOG(INFO) << idStr_ << "I am learner, not in the raft group, skip the log";
+      VLOG(1) << idStr_ << "I am learner, not in the raft group, skip the log";
       break;
     }
   }
@@ -475,11 +474,11 @@ void RaftPart::addPeer(const HostAddr& peer) {
   CHECK(!raftLock_.try_lock());
   if (peer == addr_) {
     if (role_ == Role::LEARNER) {
-      LOG(INFO) << idStr_ << "I am learner, promote myself to be follower";
+      VLOG(1) << idStr_ << "I am learner, promote myself to be follower";
       role_ = Role::FOLLOWER;
       updateQuorum();
     } else {
-      LOG(INFO) << idStr_ << "I am already in the raft group!";
+      VLOG(1) << idStr_ << "I am already in the raft group!";
     }
     return;
   }
@@ -488,14 +487,14 @@ void RaftPart::addPeer(const HostAddr& peer) {
   if (it == hosts_.end()) {
     hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
     updateQuorum();
-    LOG(INFO) << idStr_ << "Add peer " << peer;
+    VLOG(1) << idStr_ << "Add peer " << peer;
   } else {
     if ((*it)->isLearner()) {
-      LOG(INFO) << idStr_ << "The host " << peer << " has been existed as learner, promote it!";
+      VLOG(1) << idStr_ << "The host " << peer << " has been existed as learner, promote it!";
       (*it)->setLearner(false);
       updateQuorum();
     } else {
-      LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+      VLOG(1) << idStr_ << "The host " << peer << " has been existed as follower!";
     }
   }
 }
@@ -504,22 +503,22 @@ void RaftPart::removePeer(const HostAddr& peer) {
   CHECK(!raftLock_.try_lock());
   if (peer == addr_) {
     // The part will be removed in REMOVE_PART_ON_SRC phase
-    LOG(INFO) << idStr_ << "Remove myself from the raft group.";
+    VLOG(1) << idStr_ << "Remove myself from the raft group.";
     return;
   }
   auto it = std::find_if(
       hosts_.begin(), hosts_.end(), [&peer](const auto& h) { return h->address() == peer; });
   if (it == hosts_.end()) {
-    LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
+    VLOG(1) << idStr_ << "The peer " << peer << " not exist!";
   } else {
     if ((*it)->isLearner()) {
-      LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
+      VLOG(1) << idStr_ << "The peer is learner, remove it directly!";
       hosts_.erase(it);
       return;
     }
     hosts_.erase(it);
     updateQuorum();
-    LOG(INFO) << idStr_ << "Remove peer " << peer;
+    VLOG(1) << idStr_ << "Remove peer " << peer;
   }
 }
 
@@ -530,7 +529,7 @@ nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate) {
     return h->address() == candidate;
   });
   if (it == hosts.end()) {
-    LOG(INFO) << idStr_ << "The candidate " << candidate << " is not in my peers";
+    VLOG(2) << idStr_ << "The candidate " << candidate << " is not in my peers";
     return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -539,7 +538,7 @@ nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate) {
 void RaftPart::addListenerPeer(const HostAddr& listener) {
   std::lock_guard<std::mutex> guard(raftLock_);
   if (listener == addr_) {
-    LOG(INFO) << idStr_ << "I am already in the raft group";
+    VLOG(1) << idStr_ << "I am already in the raft group";
     return;
   }
   auto it = std::find_if(hosts_.begin(), hosts_.end(), [&listener](const auto& h) {
@@ -549,34 +548,34 @@ void RaftPart::addListenerPeer(const HostAddr& listener) {
     // Add listener as a raft learner
     hosts_.emplace_back(std::make_shared<Host>(listener, shared_from_this(), true));
     listeners_.emplace(listener);
-    LOG(INFO) << idStr_ << "Add listener " << listener;
+    VLOG(1) << idStr_ << "Add listener " << listener;
   } else {
-    LOG(INFO) << idStr_ << "The listener " << listener << " has joined raft group before";
+    VLOG(1) << idStr_ << "The listener " << listener << " has joined raft group before";
   }
 }
 
 void RaftPart::removeListenerPeer(const HostAddr& listener) {
   std::lock_guard<std::mutex> guard(raftLock_);
   if (listener == addr_) {
-    LOG(INFO) << idStr_ << "Remove myself from the raft group";
+    VLOG(1) << idStr_ << "Remove myself from the raft group";
     return;
   }
   auto it = std::find_if(hosts_.begin(), hosts_.end(), [&listener](const auto& h) {
     return h->address() == listener;
   });
   if (it == hosts_.end()) {
-    LOG(INFO) << idStr_ << "The listener " << listener << " not found";
+    VLOG(1) << idStr_ << "The listener " << listener << " not found";
   } else {
     hosts_.erase(it);
     listeners_.erase(listener);
-    LOG(INFO) << idStr_ << "Remove listener " << listener;
+    VLOG(1) << idStr_ << "Remove listener " << listener;
   }
 }
 
 void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
   CHECK(!raftLock_.try_lock());
   if (role_ == Role::LEADER) {
-    LOG(INFO) << idStr_ << "I am leader, skip remove peer in preProcessLog";
+    VLOG(1) << idStr_ << "I am leader, skip remove peer in preProcessLog";
     return;
   }
   removePeer(peer);
@@ -590,7 +589,7 @@ void RaftPart::commitRemovePeer(const HostAddr& peer) {
     }
   };
   if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-    LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", skip remove peer in commit";
+    VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", skip remove peer in commit";
     return;
   }
   CHECK(Role::LEADER == role_);
@@ -627,28 +626,25 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   auto retFuture = folly::Future<nebula::cpp2::ErrorCode>::makeEmpty();
 
   if (bufferOverFlow_) {
-    LOG_EVERY_N(WARNING, 100) << idStr_
-                              << "The appendLog buffer is full."
-                                 " Please slow down the log appending rate."
-                              << "replicatingLogs_ :" << replicatingLogs_;
+    VLOG_EVERY_N(2, 1000)
+        << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
+        << "replicatingLogs_ :" << replicatingLogs_;
     return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
   }
   {
     std::lock_guard<std::mutex> lck(logsLock_);
 
-    VLOG(2) << idStr_ << "Checking whether buffer overflow";
+    VLOG(4) << idStr_ << "Checking whether buffer overflow";
 
     if (logs_.size() >= FLAGS_max_batch_size) {
       // Buffer is full
-      LOG(WARNING) << idStr_
-                   << "The appendLog buffer is full."
-                      " Please slow down the log appending rate."
-                   << "replicatingLogs_ :" << replicatingLogs_;
+      VLOG(2) << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
+              << "replicatingLogs_ :" << replicatingLogs_;
       bufferOverFlow_ = true;
       return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
     }
 
-    VLOG(2) << idStr_ << "Appending logs to the buffer";
+    VLOG(4) << idStr_ << "Appending logs to the buffer";
 
     // Append new logs to the buffer
     DCHECK_GE(source, 0);
@@ -668,13 +664,13 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
     bool expected = false;
     if (replicatingLogs_.compare_exchange_strong(expected, true)) {
       // We need to send logs to all followers
-      VLOG(2) << idStr_ << "Preparing to send AppendLog request";
+      VLOG(4) << idStr_ << "Preparing to send AppendLog request";
       sendingPromise_ = std::move(cachingPromise_);
       cachingPromise_.reset();
       std::swap(swappedOutLogs, logs_);
       bufferOverFlow_ = false;
     } else {
-      VLOG(2) << idStr_ << "Another AppendLogs request is ongoing, just return";
+      VLOG(4) << idStr_ << "Another AppendLogs request is ongoing, just return";
       return retFuture;
     }
   }
@@ -693,14 +689,14 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
 
   if (!checkAppendLogResult(res)) {
     // Mosy likely failed because the partition is not leader
-    LOG_EVERY_N(WARNING, 1000) << idStr_ << "Cannot append logs, clean the buffer";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "Cannot append logs, clean the buffer";
     return res;
   }
   // Replicate buffered logs to all followers
   // Replication will happen on a separate thread and will block
   // until majority accept the logs, the leadership changes, or
   // the partition stops
-  VLOG(2) << idStr_ << "Calling appendLogsInternal()";
+  VLOG(4) << idStr_ << "Calling appendLogsInternal()";
   AppendLogsIterator it(
       firstId,
       termId,
@@ -726,10 +722,10 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
   LogID committed = 0;
   LogID lastId = 0;
   if (iter.valid()) {
-    VLOG(2) << idStr_ << "Ready to append logs from id " << iter.logId() << " (Current term is "
+    VLOG(4) << idStr_ << "Ready to append logs from id " << iter.logId() << " (Current term is "
             << currTerm << ")";
   } else {
-    LOG(ERROR) << idStr_ << "Only happened when Atomic op failed";
+    VLOG(4) << idStr_ << "Only happened when Atomic op failed";
     replicatingLogs_ = false;
     return;
   }
@@ -747,7 +743,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     // Step 1: Write WAL
     SlowOpTracker tracker;
     if (!wal_->appendLogs(iter)) {
-      LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write into WAL";
+      VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to write into WAL";
       res = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
@@ -757,12 +753,11 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     if (tracker.slow()) {
       tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId + 1));
     }
-    VLOG(2) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
+    VLOG(4) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
             << "] to WAL";
   } while (false);
 
   if (!checkAppendLogResult(res)) {
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write wal";
     return;
   }
   // Step 2: Replicate to followers
@@ -794,12 +789,12 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
   } while (false);
 
   if (!checkAppendLogResult(res)) {
-    LOG(WARNING) << idStr_ << "replicateLogs failed because of not leader or term changed";
+    VLOG(3) << idStr_ << "replicateLogs failed because of not leader or term changed";
     return;
   }
 
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "About to replicate logs in range ["
-                                 << iter.firstLogId() << ", " << lastLogId << "] to all peer hosts";
+  VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "About to replicate logs in range ["
+                               << iter.firstLogId() << ", " << lastLogId << "] to all peer hosts";
 
   lastMsgSentDur_.reset();
   SlowOpTracker tracker;
@@ -811,7 +806,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                                   prevLogId,
                                   prevLogTerm,
                                   committedId](std::shared_ptr<Host> hostPtr) {
-                          VLOG(2) << self->idStr_ << "Appending logs to " << hostPtr->idStr();
+                          VLOG(4) << self->idStr_ << "Appending logs to " << hostPtr->idStr();
                           return via(eb, [=]() -> Future<cpp2::AppendLogResponse> {
                             return hostPtr->appendLogs(
                                 eb, currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
@@ -836,7 +831,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
              prevLogTerm,
              pHosts = std::move(hosts),
              tracker](folly::Try<AppendLogResponses>&& result) mutable {
-        VLOG(2) << self->idStr_ << "Received enough response";
+        VLOG(4) << self->idStr_ << "Received enough response";
         CHECK(!result.hasException());
         if (tracker.slow()) {
           tracker.output(self->idStr_,
@@ -894,7 +889,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
 
   if (numSucceeded >= quorum_) {
     // Majority have succeeded
-    VLOG(2) << idStr_ << numSucceeded << " hosts have accepted the logs";
+    VLOG(4) << idStr_ << numSucceeded << " hosts have accepted the logs";
 
     LogID firstLogId = 0;
     do {
@@ -910,9 +905,9 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     } while (false);
 
     if (!checkAppendLogResult(res)) {
-      LOG(WARNING) << idStr_
-                   << "processAppendLogResponses failed because of not leader "
-                      "or term changed";
+      VLOG(3) << idStr_
+              << "processAppendLogResponses failed because of not leader "
+                 "or term changed";
       return;
     }
 
@@ -942,7 +937,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         tracker.output(idStr_,
                        folly::stringPrintf("Total commit: %ld", committedLogId_ - committedId));
       }
-      VLOG(2) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
+      VLOG(4) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
               << lastLogId;
     }
 
@@ -963,7 +958,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       // If no more valid logs to be replicated in iter, create a new one if we
       // have new log
       if (iter.empty()) {
-        VLOG(2) << idStr_ << "logs size " << logs_.size();
+        VLOG(4) << idStr_ << "logs size " << logs_.size();
         if (logs_.size() > 0) {
           // continue to replicate the logs
           sendingPromise_ = std::move(cachingPromise_);
@@ -990,7 +985,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         //    and all of them failed, which would make iter is empty again
         if (iter.empty()) {
           replicatingLogs_ = false;
-          VLOG(2) << idStr_ << "No more log to be replicated";
+          VLOG(4) << idStr_ << "No more log to be replicated";
           return;
         }
       }
@@ -998,8 +993,8 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     this->appendLogsInternal(std::move(iter), currTerm);
   } else {
     // Not enough hosts accepted the log, re-try
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
-                              << " hosts succeeded, Need to try again";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "Only " << numSucceeded
+                          << " hosts succeeded, Need to try again";
     usleep(1000);
     replicateLogs(eb, std::move(iter), currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
   }
@@ -1015,8 +1010,8 @@ bool RaftPart::needToStartElection() {
   if (status_ == Status::RUNNING && role_ == Role::FOLLOWER &&
       (lastMsgRecvDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 ||
        isBlindFollower_)) {
-    LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
-              << lastMsgRecvDur_.elapsedInMSec() << ", term " << term_;
+    VLOG(1) << idStr_ << "Start leader election, reason: lastMsgDur "
+            << lastMsgRecvDur_.elapsedInMSec() << ", term " << term_;
     role_ = Role::CANDIDATE;
     leader_ = HostAddr("", 0);
   }
@@ -1031,13 +1026,13 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
 
   // Make sure the partition is running
   if (status_ != Status::RUNNING) {
-    VLOG(2) << idStr_ << "The partition is not running";
+    VLOG(3) << idStr_ << "The partition is not running";
     return false;
   }
 
   // Make sure the role is still CANDIDATE
   if (role_ != Role::CANDIDATE) {
-    VLOG(2) << idStr_ << "A leader has been elected";
+    VLOG(3) << idStr_ << "A leader has been elected";
     return false;
   }
 
@@ -1083,23 +1078,23 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
   std::lock_guard<std::mutex> g(raftLock_);
 
   if (UNLIKELY(status_ == Status::STOPPED)) {
-    LOG(INFO) << idStr_ << "The part has been stopped, skip the request";
+    VLOG(3) << idStr_ << "The part has been stopped, skip the request";
     return false;
   }
 
   if (UNLIKELY(status_ == Status::STARTING)) {
-    LOG(INFO) << idStr_ << "The partition is still starting";
+    VLOG(3) << idStr_ << "The partition is still starting";
     return false;
   }
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
+    VLOG(3) << idStr_ << "The partition is still waiting snapshot";
     return false;
   }
 
   if (role_ != Role::CANDIDATE) {
-    LOG(INFO) << idStr_ << "Partition's role has changed to " << roleStr(role_)
-              << " during the election, so discard the results";
+    VLOG(3) << idStr_ << "Partition's role has changed to " << roleStr(role_)
+            << " during the election, so discard the results";
     return false;
   }
 
@@ -1107,9 +1102,9 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
 
   // term changed during actual leader election
   if (!isPreVote && proposedTerm != term_) {
-    LOG(INFO) << idStr_ << "Partition's term has changed during election, "
-              << "so just ignore the respsonses, "
-              << "expected " << proposedTerm << ", actual " << term_;
+    VLOG(2) << idStr_ << "Partition's term has changed during election, "
+            << "so just ignore the respsonses, "
+            << "expected " << proposedTerm << ", actual " << term_;
     return false;
   }
 
@@ -1119,10 +1114,9 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
     if (r.second.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
       ++numSucceeded;
     } else {
-      LOG(WARNING) << idStr_ << "Receive response about askForVote from "
-                   << hosts[r.first]->address() << ", error code is "
-                   << apache::thrift::util::enumNameSafe(r.second.get_error_code())
-                   << ", isPreVote = " << isPreVote;
+      VLOG(2) << idStr_ << "Receive response about askForVote from " << hosts[r.first]->address()
+              << ", error code is " << apache::thrift::util::enumNameSafe(r.second.get_error_code())
+              << ", isPreVote = " << isPreVote;
     }
     highestTerm = std::max(highestTerm, r.second.get_current_term());
   }
@@ -1136,9 +1130,9 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
 
   if (numSucceeded >= quorum_) {
     if (isPreVote) {
-      LOG(INFO) << idStr_ << "Partition win prevote of term " << proposedTerm;
+      VLOG(1) << idStr_ << "Partition win prevote of term " << proposedTerm;
     } else {
-      LOG(INFO) << idStr_ << "Partition is elected as the new leader for term " << proposedTerm;
+      VLOG(1) << idStr_ << "Partition is elected as the new leader for term " << proposedTerm;
       term_ = proposedTerm;
       role_ = Role::LEADER;
       leader_ = addr_;
@@ -1147,13 +1141,13 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
     return true;
   }
 
-  LOG(INFO) << idStr_ << "Did not get enough votes from election of term " << proposedTerm
-            << ", isPreVote = " << isPreVote;
+  VLOG(1) << idStr_ << "Did not get enough votes from election of term " << proposedTerm
+          << ", isPreVote = " << isPreVote;
   return false;
 }
 
 folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
-  VLOG(2) << idStr_ << "Start leader election...";
+  VLOG(1) << idStr_ << "Start leader election...";
   using namespace folly;  // NOLINT since the fancy overload of | operator
 
   bool expected = false;
@@ -1181,13 +1175,13 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
   }
 
   // Send out the AskForVoteRequest
-  LOG(INFO) << idStr_ << "Sending out an election request "
-            << "(space = " << voteReq.get_space() << ", part = " << voteReq.get_part()
-            << ", term = " << voteReq.get_term() << ", lastLogId = " << voteReq.get_last_log_id()
-            << ", lastLogTerm = " << voteReq.get_last_log_term()
-            << ", candidateIP = " << voteReq.get_candidate_addr()
-            << ", candidatePort = " << voteReq.get_candidate_port() << ")"
-            << ", isPreVote = " << isPreVote;
+  VLOG(1) << idStr_ << "Sending out an election request "
+          << "(space = " << voteReq.get_space() << ", part = " << voteReq.get_part()
+          << ", term = " << voteReq.get_term() << ", lastLogId = " << voteReq.get_last_log_id()
+          << ", lastLogTerm = " << voteReq.get_last_log_term()
+          << ", candidateIP = " << voteReq.get_candidate_addr()
+          << ", candidatePort = " << voteReq.get_candidate_port() << ")"
+          << ", isPreVote = " << isPreVote;
 
   auto proposedTerm = voteReq.get_term();
   auto resps = ElectionResponses();
@@ -1202,7 +1196,7 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
     collectNSucceeded(
         gen::from(hosts) |
             gen::map([eb, self = shared_from_this(), voteReq](std::shared_ptr<Host> host) {
-              VLOG(2) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
+              VLOG(4) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
               return via(eb, [voteReq, host, eb]() -> Future<cpp2::AskForVoteResponse> {
                 return host->askForVote(voteReq, eb);
               });
@@ -1218,7 +1212,7 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
         .via(executor_.get())
         .then([self = shared_from_this(), pro = std::move(promise), hosts, proposedTerm, isPreVote](
                   auto&& t) mutable {
-          VLOG(2) << self->idStr_
+          VLOG(4) << self->idStr_
                   << "AskForVoteRequest has been sent to all peers, waiting for responses";
           CHECK(!t.hasException());
           pro.setValue(
@@ -1275,11 +1269,11 @@ void RaftPart::statusPolling(int64_t startTime) {
     } else {
       // No leader has been elected, need to continue
       // (After sleeping a random period between [500ms, 2s])
-      VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
+      VLOG(4) << idStr_ << "Wait for a while and continue the leader election";
       delay = (folly::Random::rand32(1500) + 500);
     }
   } else if (needToSendHeartbeat()) {
-    VLOG(2) << idStr_ << "Need to send heartbeat";
+    VLOG(4) << idStr_ << "Need to send heartbeat";
     sendHeartbeat();
   }
   if (needToCleanupSnapshot()) {
@@ -1288,7 +1282,7 @@ void RaftPart::statusPolling(int64_t startTime) {
   {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
-      VLOG(3) << idStr_ << "Schedule new task";
+      VLOG(4) << idStr_ << "Schedule new task";
       bgWorkers_->addDelayTask(
           delay, [self = shared_from_this(), startTime] { self->statusPolling(startTime); });
     }
@@ -1302,7 +1296,7 @@ bool RaftPart::needToCleanupSnapshot() {
 }
 
 void RaftPart::cleanupSnapshot() {
-  LOG(INFO) << idStr_ << "Clean up the snapshot";
+  VLOG(1) << idStr_ << "Snapshot has not been received for a long time, clean up the snapshot";
   std::lock_guard<std::mutex> g(raftLock_);
   reset();
   status_ = Status::RUNNING;
@@ -1323,38 +1317,38 @@ bool RaftPart::needToCleanWal() {
 
 void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
                                         cpp2::AskForVoteResponse& resp) {
-  LOG(INFO) << idStr_ << "Received a VOTING request"
-            << ": space = " << req.get_space() << ", partition = " << req.get_part()
-            << ", candidateAddr = " << req.get_candidate_addr() << ":" << req.get_candidate_port()
-            << ", term = " << req.get_term() << ", lastLogId = " << req.get_last_log_id()
-            << ", lastLogTerm = " << req.get_last_log_term()
-            << ", isPreVote = " << req.get_is_pre_vote();
+  VLOG(1) << idStr_ << "Received a VOTING request"
+          << ": space = " << req.get_space() << ", partition = " << req.get_part()
+          << ", candidateAddr = " << req.get_candidate_addr() << ":" << req.get_candidate_port()
+          << ", term = " << req.get_term() << ", lastLogId = " << req.get_last_log_id()
+          << ", lastLogTerm = " << req.get_last_log_term()
+          << ", isPreVote = " << req.get_is_pre_vote();
 
   std::lock_guard<std::mutex> g(raftLock_);
   resp.current_term_ref() = term_;
 
   // Make sure the partition is running
   if (UNLIKELY(status_ == Status::STOPPED)) {
-    LOG(INFO) << idStr_ << "The part has been stopped, skip the request";
+    VLOG(3) << idStr_ << "The part has been stopped, skip the request";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
 
   if (UNLIKELY(status_ == Status::STARTING)) {
-    LOG(INFO) << idStr_ << "The partition is still starting";
+    VLOG(3) << idStr_ << "The partition is still starting";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
+    VLOG(3) << idStr_ << "The partition is still waiting snapshot";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
     return;
   }
 
-  LOG(INFO) << idStr_ << "The partition currently is a " << roleStr(role_) << ", lastLogId "
-            << lastLogId_ << ", lastLogTerm " << lastLogTerm_ << ", committedLogId "
-            << committedLogId_ << ", term " << term_;
+  VLOG(1) << idStr_ << "The partition currently is a " << roleStr(role_) << ", lastLogId "
+          << lastLogId_ << ", lastLogTerm " << lastLogTerm_ << ", committedLogId "
+          << committedLogId_ << ", term " << term_;
   if (role_ == Role::LEARNER) {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_BAD_ROLE;
     return;
@@ -1369,9 +1363,9 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   // Check term id
   if (req.get_term() < term_) {
-    LOG(INFO) << idStr_ << "The partition currently is on term " << term_
-              << ", the term proposed by the candidate is " << req.get_term()
-              << ", so it will be rejected";
+    VLOG(1) << idStr_ << "The partition currently is on term " << term_
+            << ", the term proposed by the candidate is " << req.get_term()
+            << ", so it will be rejected";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
     return;
   }
@@ -1395,9 +1389,9 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   // Check the last term to receive a log
   if (req.get_last_log_term() < lastLogTerm_) {
-    LOG(INFO) << idStr_ << "The partition's last term to receive a log is " << lastLogTerm_
-              << ", which is newer than the candidate's log " << req.get_last_log_term()
-              << ". So the candidate will be rejected";
+    VLOG(1) << idStr_ << "The partition's last term to receive a log is " << lastLogTerm_
+            << ", which is newer than the candidate's log " << req.get_last_log_term()
+            << ". So the candidate will be rejected";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
     return;
   }
@@ -1405,9 +1399,9 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   if (req.get_last_log_term() == lastLogTerm_) {
     // Check last log id
     if (req.get_last_log_id() < lastLogId_) {
-      LOG(INFO) << idStr_ << "The partition's last log id is " << lastLogId_
-                << ". The candidate's last log id " << req.get_last_log_id()
-                << " is smaller, so it will be rejected, candidate is " << candidate;
+      VLOG(1) << idStr_ << "The partition's last log id is " << lastLogId_
+              << ". The candidate's last log id " << req.get_last_log_id()
+              << " is smaller, so it will be rejected, candidate is " << candidate;
       resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_LOG_STALE;
       return;
     }
@@ -1423,16 +1417,16 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     * majority votes: the candidate will be leader
   */
   if (votedTerm_ == req.get_term() && votedAddr_ != candidate) {
-    LOG(INFO) << idStr_ << "We have voted " << votedAddr_ << " on term " << votedTerm_
-              << ", so we should reject the candidate " << candidate << " request on term "
-              << req.get_term();
+    VLOG(1) << idStr_ << "We have voted " << votedAddr_ << " on term " << votedTerm_
+            << ", so we should reject the candidate " << candidate << " request on term "
+            << req.get_term();
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
     return;
   }
 
   // Ok, no reason to refuse, we will vote for the candidate
-  LOG(INFO) << idStr_ << "The partition will vote for the candidate " << candidate
-            << ", isPreVote = " << req.get_is_pre_vote();
+  VLOG(1) << idStr_ << "The partition will vote for the candidate " << candidate
+          << ", isPreVote = " << req.get_is_pre_vote();
 
   if (req.get_is_pre_vote()) {
     // return succeed if it is prevote, do not change any state
@@ -1444,8 +1438,8 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // role_ and term_ has been set above
   if (oldRole == Role::LEADER) {
     if (wal_->lastLogId() > lastLogId_) {
-      LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
-                << " update lastLogId_ " << lastLogId_ << " to wal's";
+      VLOG(2) << idStr_ << "There are some logs up to " << wal_->lastLogId()
+              << " update lastLogId_ " << lastLogId_ << " to wal's";
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
     }
@@ -1474,21 +1468,21 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
 void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                                        cpp2::AppendLogResponse& resp) {
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Received logAppend"
-                                 << ": GraphSpaceId = " << req.get_space()
-                                 << ", partition = " << req.get_part()
-                                 << ", leaderIp = " << req.get_leader_addr()
-                                 << ", leaderPort = " << req.get_leader_port()
-                                 << ", current_term = " << req.get_current_term()
-                                 << ", committedLogId = " << req.get_committed_log_id()
-                                 << ", lastLogIdSent = " << req.get_last_log_id_sent()
-                                 << ", lastLogTermSent = " << req.get_last_log_term_sent()
-                                 << ", num_logs = " << req.get_log_str_list().size()
-                                 << ", local lastLogId = " << lastLogId_
-                                 << ", local lastLogTerm = " << lastLogTerm_
-                                 << ", local committedLogId = " << committedLogId_
-                                 << ", local current term = " << term_
-                                 << ", wal lastLogId = " << wal_->lastLogId();
+  VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "Received logAppend"
+                               << ": GraphSpaceId = " << req.get_space()
+                               << ", partition = " << req.get_part()
+                               << ", leaderIp = " << req.get_leader_addr()
+                               << ", leaderPort = " << req.get_leader_port()
+                               << ", current_term = " << req.get_current_term()
+                               << ", committedLogId = " << req.get_committed_log_id()
+                               << ", lastLogIdSent = " << req.get_last_log_id_sent()
+                               << ", lastLogTermSent = " << req.get_last_log_term_sent()
+                               << ", num_logs = " << req.get_log_str_list().size()
+                               << ", local lastLogId = " << lastLogId_
+                               << ", local lastLogTerm = " << lastLogTerm_
+                               << ", local committedLogId = " << committedLogId_
+                               << ", local current term = " << term_
+                               << ", wal lastLogId = " << wal_->lastLogId();
   std::lock_guard<std::mutex> g(raftLock_);
 
   resp.current_term_ref() = term_;
@@ -1501,17 +1495,17 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
-    VLOG(2) << idStr_ << "The part has been stopped, skip the request";
+    VLOG(3) << idStr_ << "The part has been stopped, skip the request";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
-    VLOG(2) << idStr_ << "The partition is still starting";
+    VLOG(3) << idStr_ << "The partition is still starting";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    VLOG(2) << idStr_ << "The partition is waiting for snapshot";
+    VLOG(3) << idStr_ << "The partition is waiting for snapshot";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
     return;
   }
@@ -1521,7 +1515,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   resp.current_term_ref() = term_;
   if (err != nebula::cpp2::ErrorCode::SUCCEEDED) {
     // Wrong leadership
-    VLOG(2) << idStr_ << "Will not follow the leader";
+    VLOG(3) << idStr_ << "Will not follow the leader";
     resp.error_code_ref() = err;
     return;
   }
@@ -1613,7 +1607,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
       stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
-      VLOG(1) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
+      VLOG(4) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       CHECK_EQ(lastLogIdCanCommit, lastCommitId);
       committedLogId_ = lastCommitId;
@@ -1621,7 +1615,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       resp.committed_log_id_ref() = lastLogIdCanCommit;
       resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
-      VLOG(1) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
+      VLOG(4) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       // Even if log is not applied to state machine, still regard as succeeded:
       // 1. As a follower, upcoming request will try to commit them
@@ -1629,8 +1623,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       resp.committed_log_id_ref() = committedLogId_;
       resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     } else {
-      LOG(ERROR) << idStr_ << "Failed to commit log " << committedLogId_ + 1 << " to "
-                 << req.get_committed_log_id();
+      VLOG(3) << idStr_ << "Failed to commit log " << committedLogId_ + 1 << " to "
+              << req.get_committed_log_id();
       resp.committed_log_id_ref() = committedLogId_;
       resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
     }
@@ -1652,11 +1646,11 @@ nebula::cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
     return code;
   }
 
-  VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
+  VLOG(4) << idStr_ << "The current role is " << roleStr(role_);
   // Make sure the remote term is greater than local's
   if (req.get_current_term() < term_) {
-    LOG_EVERY_N(INFO, 100) << idStr_ << "The current role is " << roleStr(role_)
-                           << ". The local term is " << term_ << ". The remote term is not newer";
+    VLOG(3) << idStr_ << "The current role is " << roleStr(role_) << ". The local term is " << term_
+            << ". The remote term is not newer";
     return nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
   } else if (req.get_current_term() > term_) {
     // found new leader with higher term
@@ -1680,8 +1674,8 @@ nebula::cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
   Role oldRole = role_;
   TermID oldTerm = term_;
   // Ok, no reason to refuse, just follow the leader
-  LOG(INFO) << idStr_ << "The current role is " << roleStr(role_) << ". Will follow the new leader "
-            << peer << " on term " << req.get_current_term();
+  VLOG(1) << idStr_ << "The current role is " << roleStr(role_) << ". Will follow the new leader "
+          << peer << " on term " << req.get_current_term();
 
   if (role_ != Role::LEARNER) {
     role_ = Role::FOLLOWER;
@@ -1692,8 +1686,8 @@ nebula::cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
   // Before accept the logs from the new leader, check the logs locally.
   if (oldRole == Role::LEADER) {
     if (wal_->lastLogId() > lastLogId_) {
-      LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
-                << " update lastLogId_ " << lastLogId_ << " to wal's";
+      VLOG(2) << idStr_ << "There are some logs up to " << wal_->lastLogId()
+              << " update lastLogId_ " << lastLogId_ << " to wal's";
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
     }
@@ -1711,19 +1705,19 @@ nebula::cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
 
 void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                        cpp2::HeartbeatResponse& resp) {
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Received heartbeat"
-                                 << ": GraphSpaceId = " << req.get_space()
-                                 << ", partition = " << req.get_part()
-                                 << ", leaderIp = " << req.get_leader_addr()
-                                 << ", leaderPort = " << req.get_leader_port()
-                                 << ", current_term = " << req.get_current_term()
-                                 << ", committedLogId = " << req.get_committed_log_id()
-                                 << ", lastLogIdSent = " << req.get_last_log_id_sent()
-                                 << ", lastLogTermSent = " << req.get_last_log_term_sent()
-                                 << ", local lastLogId = " << lastLogId_
-                                 << ", local lastLogTerm = " << lastLogTerm_
-                                 << ", local committedLogId = " << committedLogId_
-                                 << ", local current term = " << term_;
+  VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "Received heartbeat"
+                               << ": GraphSpaceId = " << req.get_space()
+                               << ", partition = " << req.get_part()
+                               << ", leaderIp = " << req.get_leader_addr()
+                               << ", leaderPort = " << req.get_leader_port()
+                               << ", current_term = " << req.get_current_term()
+                               << ", committedLogId = " << req.get_committed_log_id()
+                               << ", lastLogIdSent = " << req.get_last_log_id_sent()
+                               << ", lastLogTermSent = " << req.get_last_log_term_sent()
+                               << ", local lastLogId = " << lastLogId_
+                               << ", local lastLogTerm = " << lastLogTerm_
+                               << ", local committedLogId = " << committedLogId_
+                               << ", local current term = " << term_;
   std::lock_guard<std::mutex> g(raftLock_);
 
   // As for heartbeat, last_log_id and last_log_term is not checked by leader, follower only verify
@@ -1740,12 +1734,12 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
-    VLOG(2) << idStr_ << "The part has been stopped, skip the request";
+    VLOG(3) << idStr_ << "The part has been stopped, skip the request";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
-    VLOG(2) << idStr_ << "The partition is still starting";
+    VLOG(3) << idStr_ << "The partition is still starting";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
@@ -1755,7 +1749,7 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
   resp.current_term_ref() = term_;
   if (err != nebula::cpp2::ErrorCode::SUCCEEDED) {
     // Wrong leadership
-    VLOG(2) << idStr_ << "Will not follow the leader";
+    VLOG(3) << idStr_ << "Will not follow the leader";
     resp.error_code_ref() = err;
     return;
   }
@@ -1770,35 +1764,35 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
 
 void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
                                           cpp2::SendSnapshotResponse& resp) {
-  VLOG(1) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
+  VLOG(2) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
           << ", total count received " << req.get_total_count() << ", total size received "
           << req.get_total_size() << ", finished " << req.get_done();
   std::lock_guard<std::mutex> g(raftLock_);
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
-    LOG(ERROR) << idStr_ << "The part has been stopped, skip the request";
+    VLOG(3) << idStr_ << "The part has been stopped, skip the request";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
-    LOG(ERROR) << idStr_ << "The partition is still starting";
+    VLOG(3) << idStr_ << "The partition is still starting";
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
   if (UNLIKELY(role_ != Role::FOLLOWER && role_ != Role::LEARNER)) {
-    LOG(ERROR) << idStr_ << "Bad role " << roleStr(role_);
+    VLOG(3) << idStr_ << "Bad role " << roleStr(role_);
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
     return;
   }
   if (UNLIKELY(leader_ != HostAddr(req.get_leader_addr(), req.get_leader_port()) ||
                term_ != req.get_term())) {
-    LOG(ERROR) << idStr_ << "Term out of date, current term " << term_ << ", received term "
-               << req.get_term();
+    VLOG(2) << idStr_ << "Term out of date, current term " << term_ << ", received term "
+            << req.get_term();
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
     return;
   }
   if (status_ != Status::WAITING_SNAPSHOT) {
-    LOG(INFO) << idStr_ << "Begin to receive the snapshot";
+    VLOG(2) << idStr_ << "Begin to receive the snapshot";
     reset();
     status_ = Status::WAITING_SNAPSHOT;
   }
@@ -1810,9 +1804,9 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   lastTotalCount_ += ret.first;
   lastTotalSize_ += ret.second;
   if (lastTotalCount_ != req.get_total_count() || lastTotalSize_ != req.get_total_size()) {
-    LOG(ERROR) << idStr_ << "Bad snapshot, total rows received " << lastTotalCount_
-               << ", total rows sended " << req.get_total_count() << ", total size received "
-               << lastTotalSize_ << ", total size sended " << req.get_total_size();
+    VLOG(2) << idStr_ << "Bad snapshot, total rows received " << lastTotalCount_
+            << ", total rows sended " << req.get_total_count() << ", total size received "
+            << lastTotalSize_ << ", total size sended " << req.get_total_size();
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED;
     return;
   }
@@ -1826,9 +1820,9 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     DCHECK_EQ(wal_->firstLogId(), 0);
     DCHECK_EQ(wal_->lastLogId(), 0);
     status_ = Status::RUNNING;
-    LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
-              << ", committedLogTerm_ " << committedLogTerm_ << ", lastLodId " << lastLogId_
-              << ", lastLogTermId " << lastLogTerm_;
+    VLOG(1) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
+            << ", committedLogTerm_ " << committedLogTerm_ << ", lastLodId " << lastLogId_
+            << ", lastLogTermId " << lastLogTerm_;
   }
   resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   return;
@@ -1867,7 +1861,7 @@ void RaftPart::sendHeartbeat() {
       gen::from(hosts) |
           gen::map([self = shared_from_this(), eb, currTerm, commitLogId, prevLogId, prevLogTerm](
                        std::shared_ptr<Host> hostPtr) {
-            VLOG(2) << self->idStr_ << "Send heartbeat to " << hostPtr->idStr();
+            VLOG(4) << self->idStr_ << "Send heartbeat to " << hostPtr->idStr();
             return via(eb, [=]() -> Future<cpp2::HeartbeatResponse> {
               return hostPtr->sendHeartbeat(eb, currTerm, commitLogId, prevLogTerm, prevLogId);
             });
@@ -1902,7 +1896,7 @@ void RaftPart::sendHeartbeat() {
           }
         }
         if (numSucceeded >= replica) {
-          VLOG(2) << idStr_ << "Heartbeat is accepted by quorum";
+          VLOG(4) << idStr_ << "Heartbeat is accepted by quorum";
           std::lock_guard<std::mutex> g(raftLock_);
           auto now = time::WallClock::fastNowInMilliSec();
           lastMsgAcceptedCostMs_ = now - startMs;
@@ -1968,21 +1962,21 @@ void RaftPart::reset() {
 
 nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {
   std::lock_guard<std::mutex> lck(raftLock_);
-  LOG(INFO) << idStr_ << "Check whether I catch up";
+  VLOG(2) << idStr_ << "Check whether I catch up";
   if (role_ != Role::LEADER) {
-    LOG(INFO) << idStr_ << "I am not the leader";
+    VLOG(2) << idStr_ << "I am not the leader";
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   if (peer == addr_) {
-    LOG(INFO) << idStr_ << "I am the leader";
+    VLOG(2) << idStr_ << "I am the leader";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   for (auto& host : hosts_) {
     if (host->addr_ == peer) {
       if (host->followerCommittedLogId_ == 0 ||
           host->followerCommittedLogId_ < wal_->firstLogId()) {
-        LOG(INFO) << idStr_ << "The committed log id of peer is " << host->followerCommittedLogId_
-                  << ", which is invalid or less than my first wal log id";
+        VLOG(2) << idStr_ << "The committed log id of peer is " << host->followerCommittedLogId_
+                << ", which is invalid or less than my first wal log id";
         return nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT;
       }
       return host->sendingSnapshot_ ? nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT
@@ -2003,15 +1997,15 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
   // To avoid the iterator invalid, we use another container for it.
   decltype(hosts_) hosts = hosts_;
   for (auto& h : hosts) {
-    LOG(INFO) << idStr_ << "Check host " << h->addr_;
+    VLOG(1) << idStr_ << "Check host " << h->addr_;
     auto it = std::find(peers.begin(), peers.end(), h->addr_);
     if (it == peers.end()) {
-      LOG(INFO) << idStr_ << "The peer " << h->addr_ << " should not exist in my peers";
+      VLOG(1) << idStr_ << "The peer " << h->addr_ << " should not exist in my peers";
       removePeer(h->addr_);
     }
   }
   for (auto& p : peers) {
-    LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
+    VLOG(1) << idStr_ << "Add peer " << p << " if not exist!";
     addPeer(p);
   }
 }
@@ -2021,18 +2015,19 @@ void RaftPart::checkRemoteListeners(const std::set<HostAddr>& expected) {
   for (const auto& host : actual) {
     auto it = std::find(expected.begin(), expected.end(), host);
     if (it == expected.end()) {
-      LOG(INFO) << idStr_ << "The listener " << host << " should not exist in my peers";
+      VLOG(1) << idStr_ << "The listener " << host << " should not exist in my peers";
       removeListenerPeer(host);
     }
   }
   for (const auto& host : expected) {
     auto it = std::find(actual.begin(), actual.end(), host);
     if (it == actual.end()) {
-      LOG(INFO) << idStr_ << "Add listener " << host << " to my peers";
+      VLOG(1) << idStr_ << "Add listener " << host << " to my peers";
       addListenerPeer(host);
     }
   }
 }
+
 bool RaftPart::leaseValid() {
   std::lock_guard<std::mutex> g(raftLock_);
   if (hosts_.empty()) {
