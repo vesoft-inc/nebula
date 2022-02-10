@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHSTEPSAMPLEDOWNGETNEIGHBORSRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHSTEPSAMPLEDOWNGETNEIGHBORSRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -27,3 +28,4 @@ class PushStepSampleDownGetNeighborsRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

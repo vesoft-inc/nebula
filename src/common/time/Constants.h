@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_TIME_CONSTANTS_H
+#define COMMON_TIME_CONSTANTS_H
 
 namespace nebula {
 namespace time {
@@ -17,3 +18,4 @@ static constexpr int64_t kSecondsOfDay = 24 * kSecondsOfHour;
 
 }  // namespace time
 }  // namespace nebula
+#endif

@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef KVSTORE_NEBULASNAPSHOTMANAGER_H
+#define KVSTORE_NEBULASNAPSHOTMANAGER_H
 
 #include <folly/TokenBucket.h>
 
@@ -19,11 +20,31 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
  public:
   explicit NebulaSnapshotManager(NebulaStore* kv);
 
+  /**
+   * @brief Scan all data and trigger callback to send to peer
+   *
+   * @param spaceId
+   * @param partId
+   * @param cb Callback when scan some amount of data
+   */
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,
                                raftex::SnapshotCallback cb) override;
 
  private:
+  /**
+   * @brief Collect some data by prefix, and trigger callback when scan some amount of data
+   *
+   * @param spaceId
+   * @param partId
+   * @param prefix Prefix to scan
+   * @param cb Callback when scan some amount of data
+   * @param data Data container
+   * @param totalCount Data count
+   * @param totalSize Data size in bytes
+   * @param rateLimiter Rate limiter to restrict sending speed
+   * @return True if succeed. False if failed.
+   */
   bool accessTable(GraphSpaceID spaceId,
                    PartitionID partId,
                    const void* snapshot,
@@ -39,3 +60,4 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
 
 }  // namespace kvstore
 }  // namespace nebula
+#endif

@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXNODE_H
+#define STORAGE_EXEC_INDEXNODE_H
 #include "common/base/ErrorOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/time/Duration.h"
@@ -211,3 +212,4 @@ inline const time::Duration& IndexNode::duration() {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

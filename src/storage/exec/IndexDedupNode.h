@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXDEDUPNODE_H
+#define STORAGE_EXEC_INDEXDEDUPNODE_H
 #include "common/datatypes/DataSet.h"
 #include "folly/container/F14Set.h"
 #include "storage/exec/IndexNode.h"
@@ -79,3 +80,4 @@ inline bool IndexDedupNode::dedup(const Row& row) {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

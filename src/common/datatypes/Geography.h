@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_DATATYPES_GEOGRAPHY_H
+#define COMMON_DATATYPES_GEOGRAPHY_H
 
 #include <s2/s2point.h>
 #include <s2/s2point_region.h>
@@ -239,3 +240,4 @@ struct hash<nebula::Geography> {
 };
 
 }  // namespace std
+#endif

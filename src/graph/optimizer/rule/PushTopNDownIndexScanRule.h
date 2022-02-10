@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
 
 #include <initializer_list>
 
@@ -30,3 +31,4 @@ class PushTopNDownIndexScanRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif
