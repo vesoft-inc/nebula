@@ -730,6 +730,8 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   Status pruneProperties(PropertyTracker& propsUsed,
                          graph::QueryContext* qctx,
                          GraphSpaceID spaceID) override;
@@ -829,6 +831,8 @@ class Project final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   Status pruneProperties(PropertyTracker& propsUsed,
                          graph::QueryContext* qctx,
@@ -1121,6 +1125,8 @@ class Aggregate final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   Status pruneProperties(PropertyTracker& propsUsed,
                          graph::QueryContext* qctx,
@@ -1481,6 +1487,8 @@ class Traverse final : public GetNeighbors {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   Traverse* clone() const override;
 
   MatchStepRange* stepRange() const {
@@ -1541,6 +1549,8 @@ class AppendVertices final : public GetVertices {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   AppendVertices* clone() const override;
 
@@ -1604,6 +1614,8 @@ class BiJoin : public BinaryInputNode {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   Status pruneProperties(PropertyTracker& propsUsed,
                          graph::QueryContext* qctx,

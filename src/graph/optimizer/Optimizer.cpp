@@ -12,6 +12,7 @@
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/PlanNode.h"
+#include "graph/visitor/PrunePropertiesVisitor.h"
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;
@@ -61,7 +62,11 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
   if (FLAGS_enable_optimizer_property_pruner_rule) {
     PropertyTracker propsUsed;
-    return root->pruneProperties(propsUsed, qctx, spaceID);
+    graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
+    root->accept(&visitor);
+    if (!visitor.ok()) {
+      return visitor.status();
+    }
   }
   return Status::OK();
 }

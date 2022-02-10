@@ -18,4 +18,9 @@ nebula_add_library(
     EvaluableExprVisitor.cpp
 )
 
+nebula_add_library(
+    plan_node_visitor_obj OBJECT
+    PrunePropertiesVisitor.cpp
+)
+
 nebula_add_subdirectory(test)

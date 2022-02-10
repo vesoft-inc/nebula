@@ -13,6 +13,7 @@
 
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
+#include "graph/planner/plan/PlanNodeVisitor.h"
 #include "graph/util/ToJson.h"
 
 namespace nebula {
@@ -358,6 +359,10 @@ std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
   desc->name = toString(kind_);
   desc->outputVar = folly::toJson(util::toJson(outputVars_));
   return desc;
+}
+
+void PlanNode::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 void PlanNode::releaseSymbols() {

@@ -10,6 +10,7 @@
 #include <folly/json.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "graph/planner/plan/PlanNodeVisitor.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ToJson.h"
 
@@ -269,6 +270,10 @@ std::unique_ptr<PlanNodeDescription> Filter::explain() const {
   return desc;
 }
 
+void Filter::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 PlanNode* Filter::clone() const {
   auto* newFilter = Filter::make(qctx_, nullptr);
   newFilter->cloneMembers(*this);
@@ -344,6 +349,10 @@ std::unique_ptr<PlanNodeDescription> Project::explain() const {
   }
   addDescription("columns", folly::toJson(columns), desc.get());
   return desc;
+}
+
+void Project::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 PlanNode* Project::clone() const {
@@ -537,6 +546,10 @@ std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
   }
   addDescription("groupItems", folly::toJson(itemArr), desc.get());
   return desc;
+}
+
+void Aggregate::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 PlanNode* Aggregate::clone() const {
@@ -795,6 +808,10 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   return desc;
 }
 
+void Traverse::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 Status Traverse::pruneProperties(PropertyTracker& propsUsed,
                                  graph::QueryContext* qctx,
                                  GraphSpaceID spaceID) {
@@ -916,6 +933,10 @@ std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   return desc;
 }
 
+void AppendVertices::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 Status AppendVertices::pruneProperties(PropertyTracker& propsUsed,
                                        graph::QueryContext* qctx,
                                        GraphSpaceID spaceID) {
@@ -977,6 +998,10 @@ std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
   return desc;
+}
+
+void BiJoin::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 Status BiJoin::pruneProperties(PropertyTracker& propsUsed,

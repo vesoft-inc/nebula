@@ -14,6 +14,8 @@
 namespace nebula {
 namespace graph {
 
+class PlanNodeVisitor;
+
 /**
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
@@ -188,6 +190,8 @@ class PlanNode {
 
   // Describe plan node
   virtual std::unique_ptr<PlanNodeDescription> explain() const;
+
+  virtual void accept(PlanNodeVisitor* visitor);
 
   virtual PlanNode* clone() const = 0;
 
