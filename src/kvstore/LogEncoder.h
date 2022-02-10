@@ -55,6 +55,9 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
 int64_t getTimestamp(const folly::StringPiece& command);
 
+/**
+ * @brief A wrapper class of batchs of log, support put/remove/removeRange
+ */
 class BatchHolder : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   BatchHolder() = default;
