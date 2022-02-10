@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
+#define STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
 
 #include <boost/stacktrace.hpp>
 
@@ -93,3 +94,4 @@ class ChainUpdateEdgeLocalProcessor
 
 }  // namespace storage
 }  // namespace nebula
+#endif

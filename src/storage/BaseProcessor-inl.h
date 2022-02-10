@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_BASEPROCESSOR_INL_H
+#define STORAGE_BASEPROCESSOR_INL_H
 
 #include "storage/BaseProcessor.h"
 
@@ -215,3 +216,4 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
 
 }  // namespace storage
 }  // namespace nebula
+#endif

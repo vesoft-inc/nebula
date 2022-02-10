@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_UTILS_MEMORYLOCKWRAPPER_H
+#define COMMON_UTILS_MEMORYLOCKWRAPPER_H
 
 #include <algorithm>
 
@@ -84,3 +85,4 @@ class MemoryLockGuard {
 };
 
 }  // namespace nebula
+#endif
