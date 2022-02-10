@@ -27,6 +27,7 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
       }
       auto canonical = boost::filesystem::canonical(path);
       auto info = boost::filesystem::space(canonical);
+      LOG(INFO) << "data path canonical " << canonical;
       dataPaths_.emplace_back(std::move(canonical));
       freeBytes[index++] = info.available;
     }

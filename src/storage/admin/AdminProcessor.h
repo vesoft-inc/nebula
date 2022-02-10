@@ -324,9 +324,12 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     LOG(INFO) << "Check peers for space " << spaceId << ", part " << partId;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      this->pushResultCode(error(ret), partId);
-      onFinished();
-      return;
+      ret = env_->kvstore_->learners(spaceId, partId);
+      if (!ok(ret)) {
+        this->pushResultCode(error(ret), partId);
+        onFinished();
+        return;
+      }
     }
     auto part = nebula::value(ret);
     std::vector<HostAndPath> peers;

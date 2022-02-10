@@ -5,6 +5,7 @@
 
 #ifndef KVSTORE_LOGENCODER_H_
 #define KVSTORE_LOGENCODER_H_
+#include <boost/core/noncopyable.hpp>
 
 #include "common/cpp/helpers.h"
 #include "kvstore/Common.h"
@@ -133,8 +134,8 @@ std::string encodeHost(LogType type, const HostAddr& learner);
  */
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
-// std::string encodeHostAndPath(LogType type, const HostAddr& host, const std::string& path);
-// HostAndPath decodeHostAndPath(LogType type, const folly::StringPiece& encoded);
+std::string encodeHostAndPath(LogType type, const HostAddr& host, const std::string& path);
+HostAndPath decodeHostAndPath(LogType type, const folly::StringPiece& encoded);
 
 /**
  * @brief Get the timestamp from wal
@@ -147,7 +148,7 @@ int64_t getTimestamp(const folly::StringPiece& log);
 /**
  * @brief A wrapper class of batchs of log, support put/remove/removeRange
  */
-class BatchHolder : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class BatchHolder : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   BatchHolder() = default;
   ~BatchHolder() = default;

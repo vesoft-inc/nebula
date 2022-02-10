@@ -17,6 +17,7 @@ namespace meta {
 struct PartHosts {
   GraphSpaceID spaceId_;
   PartitionID partId_;
+  std::string path_;
   std::vector<HostAndPath> hosts_;
 
   bool operator==(const PartHosts& rhs) const {

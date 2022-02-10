@@ -968,7 +968,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
       listener_->onSpaceAdded(spaceId);
       for (const auto& newPart : newParts) {
         auto& partHosts = newPart.second;
-        listener_->onPartAdded(partHosts.spaceId_, partHosts.partId_, "");
+        listener_->onPartAdded(partHosts);
       }
     } else {
       const auto& oldParts = oldIt->second;
@@ -977,13 +977,13 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         if (oldPartIt == oldParts.end()) {
           VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was added!";
           auto& partHosts = newPart.second;
-          listener_->onPartAdded(partHosts.spaceId_, partHosts.partId_, "");
+          listener_->onPartAdded(partHosts);
         } else {
           const auto& oldPartHosts = oldPartIt->second;
           const auto& newPartHosts = newPart.second;
           if (oldPartHosts != newPartHosts) {
             VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was updated!";
-            listener_->onPartUpdated(newPartHosts.spaceId_, newPartHosts.partId_, "");
+            listener_->onPartUpdated(newPartHosts);
           }
         }
       }

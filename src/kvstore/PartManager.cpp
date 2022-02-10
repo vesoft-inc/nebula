@@ -193,7 +193,7 @@ void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId,
   }
 }
 
-void MetaServerBasedPartManager::onPartUpdated(GraphSpaceID, PartitionID, const std::string&) {}
+void MetaServerBasedPartManager::onPartUpdated(const meta::PartHosts&) {}
 
 void MetaServerBasedPartManager::fetchLeaderInfo(
     std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) {

@@ -155,6 +155,7 @@ using MetaConfigMap =
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
 using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
+
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -166,11 +167,11 @@ class MetaChangedListener {
   virtual void onSpaceOptionUpdated(
       GraphSpaceID spaceId, const std::unordered_map<std::string, std::string>& options) = 0;
 
-  virtual void onPartAdded(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
+  virtual void onPartAdded(const meta::PartHosts& partMeta) = 0;
 
   virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
 
-  virtual void onPartUpdated(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
+  virtual void onPartUpdated(const meta::PartHosts& partMeta) = 0;
 
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;

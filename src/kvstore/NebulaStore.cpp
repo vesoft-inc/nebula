@@ -378,7 +378,15 @@ void NebulaStore::addPart(GraphSpaceID spaceId,
     auto np = folly::join("/", parts);
     LOG(INFO) << "Using npath: " << np;
     auto e = newEngine(spaceId, np, options_.walPath_);
-    targetEngine = e.get();
+
+    // try to replace part
+    spaceIt->second->engines_.emplace_back(std::move(e));
+    targetEngine = spaceIt->second->engines_.back().get();
+
+    // spaceIt->second->parts_.erase(partId);
+    // spaceIt->second->parts_.emplace(partId,
+    //                                 newPart(spaceId, partId, targetEngine, asLearner, peers));
+
     auto spaceLearnerIt = this->learners_.find(spaceId);
     auto& learners = spaceLearnerIt->second->learners_;
     auto partLearnerIt = learners.find(partId);
