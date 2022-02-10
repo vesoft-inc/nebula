@@ -1,7 +1,7 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+
+// This source code is licensed under Apache 2.0 License.
+
 #ifndef GRAPH_SESSION_CLIENTSESSION_H_
 #define GRAPH_SESSION_CLIENTSESSION_H_
 
@@ -23,6 +23,9 @@ struct SpaceInfo {
   meta::cpp2::SpaceDesc spaceDesc;
 };
 
+// A ClientSession is equivalent to a connection between a client and a server.
+// ClientSession saves these information, including who created it, executed queries,
+// space role, etc.
 class ClientSession final {
  public:
   static std::shared_ptr<ClientSession> create(meta::cpp2::Session&& session,
@@ -70,6 +73,7 @@ class ClientSession final {
     return ret->second;
   }
 
+  // As long as a user has the GOD role in any space, the user must be a GOD user.
   bool isGod() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     // Cloud may have multiple God accounts
@@ -88,6 +92,7 @@ class ClientSession final {
 
   uint64_t idleSeconds();
 
+  // Reset the idle time of the session.
   void charge();
 
   int32_t getTimezone() const {
@@ -145,17 +150,20 @@ class ClientSession final {
   explicit ClientSession(meta::cpp2::Session&& session, meta::MetaClient* metaClient);
 
  private:
-  SpaceInfo space_;
+  SpaceInfo space_;  // The space that the session is using.
+  // When the idle time exceeds FLAGS_session_idle_timeout_secs,
+  // the session will expire and then be reclaimed.
   time::Duration idleDuration_;
-  meta::cpp2::Session session_;
+  meta::cpp2::Session session_;  // The session object used in RPC.
   meta::MetaClient* metaClient_{nullptr};
   mutable folly::RWSpinLock rwSpinLock_;
-  /*
-   * map<spaceId, role>
-   * One user can have roles in multiple spaces
-   * But a user has only one role in one space
-   */
+
+  // map<spaceId, role>
+  // One user can have roles in multiple spaces
+  // But a user has only one role in one space
   std::unordered_map<GraphSpaceID, meta::cpp2::RoleType> roles_;
+  // An ExecutionPlanID represents a query.
+  // A QueryContext also represents a query.
   std::unordered_map<ExecutionPlanID, QueryContext*> contexts_;
 };
 
