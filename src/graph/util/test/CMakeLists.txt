@@ -35,7 +35,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:charset_obj>
-        $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
