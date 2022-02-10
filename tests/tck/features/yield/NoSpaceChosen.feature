@@ -1,4 +1,3 @@
-@wang
 Feature: Yield
 
   Background:
