@@ -80,7 +80,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
     return future;
   }
 
-  if (!sessionManager_->isOutOfConnections()) {
+  if (!sessionManager_->isWithinConnections()) {
     ctx->resp().errorCode = ErrorCode::E_TOO_MANY_CONNECTIONS;
     ctx->resp().errorMsg.reset(new std::string("Too many connections in the cluster"));
     ctx->finish();

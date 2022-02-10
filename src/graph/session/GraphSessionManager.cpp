@@ -1,7 +1,6 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2018 vesoft inc. All rights reserved.
+
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/session/GraphSessionManager.h"
 
@@ -14,6 +13,8 @@
 namespace nebula {
 namespace graph {
 
+// During construction, GraphSessionManager will start a background thread to periodically
+// reclaim expired sessions and update session information to the meta server.
 GraphSessionManager::GraphSessionManager(meta::MetaClient* metaClient, const HostAddr& hostAddr)
     : SessionManager<ClientSession>(metaClient, hostAddr) {
   scavenger_->addDelayTask(
@@ -143,7 +144,8 @@ void GraphSessionManager::removeSession(SessionID id) {
     return;
   }
 
-  iter->second->markAllQueryKilled();
+  iter->second->markAllQueryKilled();  // Before removing the session, all queries on the session
+                                       // need to be marked as killed.
   auto resp = metaClient_->removeSession(id).get();
   if (!resp.ok()) {
     // it will delete by reclaim
@@ -217,7 +219,8 @@ void GraphSessionManager::updateSessionsToMeta() {
     }
   }
 
-  auto handleKilledQueries = [this](auto&& resp) {
+  auto handleKilledQueries = [this](auto&& resp) {  // There may be expired queries, and the
+                                                    // expired queries will be killed here.
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();
       return Status::Error("Update sessions failed: %s", resp.status().toString().c_str());
