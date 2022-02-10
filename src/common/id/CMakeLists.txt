@@ -8,4 +8,9 @@ nebula_add_library(
     Snowflake.cpp
 )
 
+nebula_add_library(
+    uuid_obj OBJECT
+    UUID.cpp
+)
+
 nebula_add_subdirectory(test)

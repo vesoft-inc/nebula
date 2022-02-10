@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXEXPRCONTEXT_H
+#define STORAGE_EXEC_INDEXEXPRCONTEXT_H
 
 #include "common/expression/Expression.h"
 #include "storage/exec/IndexNode.h"
@@ -87,3 +88,4 @@ class IndexExprContext : public ExpressionContext {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

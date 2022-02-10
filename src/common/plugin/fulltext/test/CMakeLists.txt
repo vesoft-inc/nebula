@@ -11,7 +11,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>

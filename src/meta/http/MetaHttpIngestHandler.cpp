@@ -20,8 +20,6 @@
 DECLARE_int32(ws_storage_http_port);
 DECLARE_int32(ws_storage_h2_port);
 
-DEFINE_int32(meta_ingest_thread_num, 3, "Meta daemon's ingest thread number");
-
 namespace nebula {
 namespace meta {
 

@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_GEO_GEOUTILS_H
+#define COMMON_GEO_GEOUTILS_H
 
 #include <s2/s2latlng.h>
 #include <s2/s2loop.h>
@@ -96,3 +97,4 @@ class GeoUtils final {
 
 }  // namespace geo
 }  // namespace nebula
+#endif

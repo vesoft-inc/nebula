@@ -65,14 +65,14 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
 
   std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
   if (!fs::FileUtils::exist(path) && !fs::FileUtils::makeDir(path)) {
-    LOG(ERROR) << "Make checkpoint dir: " << path << " failed";
+    LOG(INFO) << "Make checkpoint dir: " << path << " failed";
     return Status::Error("Create snapshot file failed");
   }
 
   std::string dataPath = folly::sformat("{}/data", path);
   auto code = engine->createCheckpoint(dataPath);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Create snapshot failed: " << snapshot;
+    LOG(INFO) << "Create snapshot failed: " << snapshot;
     return Status::Error("Create snapshot failed");
   }
 
@@ -85,7 +85,7 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   // delete snapshot file
   auto checkpointPath = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
   if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
+    LOG(INFO) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
   }
   return Status::OK();
 }
@@ -100,8 +100,8 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> zoneIter;
     auto code = engine->prefix(zonePrefix, &zoneIter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zones failed";
-      return Status::Error("Get zones failed");
+      LOG(INFO) << "Get active hosts failed";
+      return Status::Error("Get hosts failed");
     }
 
     while (zoneIter->valid()) {
@@ -116,7 +116,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> iter;
     code = engine->prefix(prefix, &iter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get active hosts failed";
+      LOG(INFO) << "Get active hosts failed";
       return Status::Error("Get hosts failed");
     }
 
@@ -143,7 +143,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     }
     auto status = upgrader.saveMachineAndZone(std::move(data));
     if (!status.ok()) {
-      LOG(ERROR) << status;
+      LOG(INFO) << status;
       return status;
     }
   }
@@ -154,7 +154,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = engine->prefix(prefix, &iter);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get spaces failed";
+      LOG(INFO) << "Get spaces failed";
       return Status::Error("Get spaces failed");
     }
 
@@ -164,7 +164,7 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
       }
       auto status = upgrader.rewriteSpacesV2ToV3(iter->key(), iter->val());
       if (!status.ok()) {
-        LOG(ERROR) << status;
+        LOG(INFO) << status;
         return status;
       }
       iter->next();
