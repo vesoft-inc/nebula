@@ -119,6 +119,7 @@ Feature: Test Authentication
     When login "graphd[0]" with "user1" and "nebula1"
     Then the execution should be successful
 
+  @distonly
   Scenario: God can't be granted
     When executing query:
       """
