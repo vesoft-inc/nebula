@@ -86,17 +86,18 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
     return;
   }
   auto &propName = constVal.getStr();
+  static const int kUnknownEdgeType = 0;
   switch (lhs->kind()) {
     case Expression::Kind::kVarProperty: {  // $e.name
       auto *varPropExpr = static_cast<VariablePropertyExpression *>(lhs);
       auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+      propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
       break;
     }
     case Expression::Kind::kInputProperty: {
       auto *inputPropExpr = static_cast<InputPropertyExpression *>(lhs);
       auto &edgeAlias = inputPropExpr->prop();
-      propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+      propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
       break;
     }
     case Expression::Kind::kSubscript: {  // $-.e[0].name
@@ -105,7 +106,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       if (subLeftExpr->kind() == Expression::Kind::kInputProperty) {
         auto *inputPropExpr = static_cast<InputPropertyExpression *>(subLeftExpr);
         auto &edgeAlias = inputPropExpr->prop();
-        propsUsed_.edgePropsMap[edgeAlias][0].emplace(propName);
+        propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
       }
     }
     default:

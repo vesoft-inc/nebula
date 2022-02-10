@@ -869,7 +869,8 @@ Status Traverse::pruneProperties(PropertyTracker& propsUsed,
         if (it3 != usedEdgeProps.end()) {
           usedProps = {it3->second.begin(), it3->second.end()};
         }
-        auto it4 = usedEdgeProps.find(0);
+        static const int kUnknownEdgeType = 0;
+        auto it4 = usedEdgeProps.find(kUnknownEdgeType);
         if (it4 != usedEdgeProps.end()) {
           usedProps.insert(it4->second.begin(), it4->second.end());
         }
