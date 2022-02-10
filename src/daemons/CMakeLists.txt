@@ -122,7 +122,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client_stats_obj>
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:service_obj>
-        $<TARGET_OBJECTS:segment_id_obj>
         $<TARGET_OBJECTS:graph_session_obj>
         $<TARGET_OBJECTS:query_engine_obj>
         $<TARGET_OBJECTS:parser_obj>

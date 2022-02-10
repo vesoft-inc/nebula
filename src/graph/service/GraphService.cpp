@@ -11,7 +11,6 @@
 
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
-#include "common/encryption/MD5Utils.h"
 #include "common/id/SegmentId.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
