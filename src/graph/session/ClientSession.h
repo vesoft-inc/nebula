@@ -24,10 +24,14 @@ struct SpaceInfo {
 };
 
 // A ClientSession is equivalent to a connection between a client and a server.
-// ClientSession saves these information, including who created it, executed queries,
+// ClientSession saves those information, including who created it, executed queries,
 // space role, etc.
+// One user corresponds to one ClientSession.
 class ClientSession final {
  public:
+  // Creates a new ClientSession.
+  // session: session obj used in RPC.
+  // metaClient: used to communicate with meta server.
   static std::shared_ptr<ClientSession> create(meta::cpp2::Session&& session,
                                                meta::MetaClient* metaClient);
 
@@ -64,6 +68,7 @@ class ClientSession final {
     return roles_;
   }
 
+  // Gets the role information of the user on a specific space.
   StatusOr<meta::cpp2::RoleType> roleWithSpace(GraphSpaceID space) const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     auto ret = roles_.find(space);
@@ -73,6 +78,7 @@ class ClientSession final {
     return ret->second;
   }
 
+  // Whether the user corresponding to the session is a GOD user.
   // As long as a user has the GOD role in any space, the user must be a GOD user.
   bool isGod() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
@@ -90,9 +96,10 @@ class ClientSession final {
     roles_.emplace(space, role);
   }
 
+  // The idle time of the session. Unit: second.
   uint64_t idleSeconds();
 
-  // Reset the idle time of the session.
+  // Resets the idle time of the session.
   void charge();
 
   int32_t getTimezone() const {
@@ -134,14 +141,23 @@ class ClientSession final {
     session_.space_name_ref() = spaceName;
   }
 
+  // Binds a query to the session.
+  // qctx: represents a query.
   void addQuery(QueryContext* qctx);
 
+  // Deletes a query from the session.
+  // qctx: represents a query.
   void deleteQuery(QueryContext* qctx);
 
+  // Finds a query within the session.
+  // epId: represents a query.
   bool findQuery(nebula::ExecutionPlanID epId) const;
 
+  // Marks a query as killed.
+  // epId: represents a query.
   void markQueryKilled(nebula::ExecutionPlanID epId);
 
+  // Marks all queries as killed.
   void markAllQueryKilled();
 
  private:
@@ -154,8 +170,8 @@ class ClientSession final {
   // When the idle time exceeds FLAGS_session_idle_timeout_secs,
   // the session will expire and then be reclaimed.
   time::Duration idleDuration_;
-  meta::cpp2::Session session_;  // The session object used in RPC.
-  meta::MetaClient* metaClient_{nullptr};
+  meta::cpp2::Session session_;            // The session object used in RPC.
+  meta::MetaClient* metaClient_{nullptr};  // The client of the meta server.
   mutable folly::RWSpinLock rwSpinLock_;
 
   // map<spaceId, role>

@@ -30,16 +30,24 @@ namespace graph {
 // sessions from the meta server and choose its own sessions for management.
 class GraphSessionManager final : public SessionManager<ClientSession> {
  public:
-  // hostAddr: The address of the current graph server
+  // Periodically reclaims expired sessions and updates information to the meta server.
+  // in the background.
+  // metaClient: The client of the meta server.
+  // hostAddr: The address of the current graph server.
   GraphSessionManager(meta::MetaClient* metaClient, const HostAddr& hostAddr);
   ~GraphSessionManager() {}
 
+  // Pulls sessions from the meta server and chooses its own sessions for management.
   Status init();
 
-  // Create a new session
+  // Creates a new session.
+  // userName: The name of the user who requesting to create the session.
+  // clientIp: The address of the client which sends the request.
+  // runner: Ensure that the corresponding callback function is executed on the runner.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> createSession(
       const std::string userName, const std::string clientIp, folly::Executor* runner) override;
 
+  // Whether not exceeds the max allowed connections.
   bool isWithinConnections() {
     if (activeSessions_.size() >= static_cast<uint64_t>(FLAGS_max_allowed_connections)) {
       LOG(INFO) << "The sessions of the cluster has more than "
@@ -50,31 +58,42 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
     return true;
   }
 
-  // Remove a session from both local and meta server.
+  // Removes a session from both local and meta server.
+  // id: The id of the session which will be removed.
   void removeSession(SessionID id) override;
 
-  // Find an existing session. If it is not found locally, it will be searched from the meta server.
+  // Finds an existing session. If it is not found locally, it will be searched from the meta
+  // server. id: The id of the session which will be found. runner: Ensure that the corresponding
+  // callback function is executed on the runner.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> findSession(
       SessionID id, folly::Executor* runner) override;
 
-  // Find an existing session only from local cache.
+  // Finds an existing session only from local cache.
+  // id: The id of the session which will be found.
   std::shared_ptr<ClientSession> findSessionFromCache(SessionID id);
 
-  // Get all seesions from the local cache.
+  // Gets all seesions from the local cache.
   std::vector<meta::cpp2::Session> getSessionFromLocalCache() const;
 
  private:
-  // Find an existing session only from the meta server.
+  // Finds an existing session only from the meta server.
+  // id: The id of the session which will be found.
+  // runner: Ensure that the corresponding callback function is executed on the runner.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> findSessionFromMetad(
       SessionID id, folly::Executor* runner);
 
   // Entry function of the background thread.
+  // It will reclaim expired sessions and update sessions info to meta.
   void threadFunc();
 
+  // Reclaims expired sessions.
+  // All queries within the expired session will be marked as killed.
   void reclaimExpiredSessions();
 
+  // Updates sessions into to meta server.
   void updateSessionsToMeta();
 
+  // Updates session info locally.
   void updateSessionInfo(ClientSession* session);
 };
 
