@@ -454,3 +454,39 @@ Feature: Variable length Pattern match (0 step)
       | []                                                             | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
       | [[:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]] | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
       | []                                                             | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
+
+  Scenario: Multiple variable length with edge filter
+    When executing query:
+      """
+      MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..100]->(v2)
+      RETURN v2 AS Friends;
+      """
+    Then the result should be, in any order:
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
