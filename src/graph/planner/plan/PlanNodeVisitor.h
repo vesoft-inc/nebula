@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef PLAN_PLANVISITOR_H_
-#define PLAN_PLANVISITOR_H_
+#ifndef PLAN_PLANNODEVISITOR_H_
+#define PLAN_PLANNODEVISITOR_H_
 
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
@@ -28,4 +28,4 @@ class PlanNodeVisitor {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // PLAN_PLANVISITOR_H_
+#endif  // PLAN_PLANNODEVISITOR_H_
