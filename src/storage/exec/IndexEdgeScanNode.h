@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXEDGESCANNODE_H
+#define STORAGE_EXEC_INDEXEDGESCANNODE_H
 #include "common/base/Base.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/IndexScanNode.h"
@@ -47,3 +48,4 @@ class IndexEdgeScanNode : public IndexScanNode {
 };
 }  // namespace storage
 }  // namespace nebula
+#endif

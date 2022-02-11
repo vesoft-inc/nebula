@@ -65,10 +65,14 @@ class NebulaKeyUtils final {
                              EdgeRanking rank,
                              const VertexID& dstId,
                              EdgeVerPlaceHolder ev = 1);
+
   static std::string vertexKey(size_t vIdLen,
                                PartitionID partId,
                                const VertexID& vId,
                                char pad = '\0');
+
+  static std::string vertexPrefix(PartitionID partId);
+
   static std::string systemCommitKey(PartitionID partId);
 
   static std::string systemPartKey(PartitionID partId);

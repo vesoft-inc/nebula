@@ -40,18 +40,18 @@ void Host::waitForStop() {
 
   CHECK(stopped_);
   noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
-  LOG(INFO) << idStr_ << "The host has been stopped!";
+  VLOG(1) << idStr_ << "The host has been stopped!";
 }
 
 nebula::cpp2::ErrorCode Host::canAppendLog() const {
   CHECK(!lock_.try_lock());
   if (stopped_) {
-    VLOG(2) << idStr_ << "The host is stopped, just return";
+    VLOG(3) << idStr_ << "The host is stopped, just return";
     return nebula::cpp2::ErrorCode::E_RAFT_HOST_STOPPED;
   }
 
   if (paused_) {
-    VLOG(2) << idStr_ << "The host is paused, due to losing leadership";
+    VLOG(3) << idStr_ << "The host is paused, due to losing leadership";
     return nebula::cpp2::ErrorCode::E_RAFT_HOST_PAUSED;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -62,7 +62,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
   {
     std::lock_guard<std::mutex> g(lock_);
     if (stopped_) {
-      VLOG(2) << idStr_ << "The Host is not in a proper status, do not send";
+      VLOG(3) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AskForVoteResponse resp;
       resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_HOST_STOPPED;
       return resp;
@@ -78,7 +78,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
                                                         LogID committedLogId,
                                                         TermID prevLogTerm,
                                                         LogID prevLogId) {
-  VLOG(3) << idStr_ << "Entering Host::appendLogs()";
+  VLOG(4) << idStr_ << "Entering Host::appendLogs()";
 
   auto ret = folly::Future<cpp2::AppendLogResponse>::makeEmpty();
   std::shared_ptr<cpp2::AppendLogRequest> req;
@@ -88,7 +88,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
     auto res = canAppendLog();
 
     if (UNLIKELY(sendingSnapshot_)) {
-      LOG_EVERY_N(INFO, 500) << idStr_ << "The target host is waiting for a snapshot";
+      VLOG_EVERY_N(2, 1000) << idStr_ << "The target host is waiting for a snapshot";
       res = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
     } else if (requestOnGoing_) {
       // buffer incoming request to pendingReq_
@@ -96,27 +96,27 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
         pendingReq_ = std::make_tuple(term, logId, committedLogId);
         return cachingPromise_.getFuture();
       } else {
-        LOG_EVERY_N(INFO, 200) << idStr_ << "Too many requests are waiting, return error";
+        VLOG_EVERY_N(2, 1000) << idStr_ << "Too many requests are waiting, return error";
         res = nebula::cpp2::ErrorCode::E_RAFT_TOO_MANY_REQUESTS;
       }
     }
 
     if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      VLOG(2) << idStr_ << "The host is not in a proper status, just return";
+      VLOG(3) << idStr_ << "The host is not in a proper status, just return";
       cpp2::AppendLogResponse r;
       r.error_code_ref() = res;
       return r;
     }
 
-    VLOG(2) << idStr_ << "About to send the AppendLog request";
+    VLOG(4) << idStr_ << "About to send the AppendLog request";
 
     // No request is ongoing, let's send a new request
     if (UNLIKELY(lastLogIdSent_ == 0 && lastLogTermSent_ == 0)) {
       lastLogIdSent_ = prevLogId;
       lastLogTermSent_ = prevLogTerm;
-      LOG(INFO) << idStr_ << "This is the first time to send the logs to this host"
-                << ", lastLogIdSent = " << lastLogIdSent_
-                << ", lastLogTermSent = " << lastLogTermSent_;
+      VLOG(2) << idStr_ << "This is the first time to send the logs to this host"
+              << ", lastLogIdSent = " << lastLogIdSent_
+              << ", lastLogTermSent = " << lastLogTermSent_;
     }
     logTermToSend_ = term;
     logIdToSend_ = logId;
@@ -124,8 +124,8 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
 
     auto result = prepareAppendLogRequest();
     if (ok(result)) {
-      LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending the pending request in the queue"
-                                     << ", from " << lastLogIdSent_ + 1 << " to " << logIdToSend_;
+      VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "Sending the pending request in the queue"
+                                   << ", from " << lastLogIdSent_ + 1 << " to " << logIdToSend_;
       req = std::move(value(result));
       pendingReq_ = std::make_tuple(0, 0, 0);
       promise_ = std::move(cachingPromise_);
@@ -161,7 +161,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
   sendAppendLogRequest(eb, req)
       .via(eb)
       .thenValue([eb, self = shared_from_this()](cpp2::AppendLogResponse&& resp) {
-        LOG_IF(INFO, FLAGS_trace_raft)
+        VLOG_IF(1, FLAGS_trace_raft)
             << self->idStr_ << "AppendLogResponse "
             << "code " << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ", currTerm "
             << resp.get_current_term() << ", lastLogTerm " << resp.get_last_matched_log_term()
@@ -171,7 +171,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
           case nebula::cpp2::ErrorCode::SUCCEEDED:
           case nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP:
           case nebula::cpp2::ErrorCode::E_RAFT_LOG_STALE: {
-            VLOG(2) << self->idStr_ << "AppendLog request sent successfully";
+            VLOG(3) << self->idStr_ << "AppendLog request sent successfully";
 
             std::shared_ptr<cpp2::AppendLogRequest> newReq;
             {
@@ -189,7 +189,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
               self->followerCommittedLogId_ = resp.get_committed_log_id();
               if (self->lastLogIdSent_ < self->logIdToSend_) {
                 // More to send
-                VLOG(2) << self->idStr_ << "There are more logs to send";
+                VLOG(3) << self->idStr_ << "There are more logs to send";
                 auto result = self->prepareAppendLogRequest();
                 if (ok(result)) {
                   newReq = std::move(value(result));
@@ -217,9 +217,9 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
           // E_RAFT_UNKNOWN_PART/E_RAFT_STOPPED/E_RAFT_NOT_READY/E_RAFT_WAITING_SNAPSHOT
           // In this case, nothing changed, just return the error
           default: {
-            LOG_EVERY_N(ERROR, 100)
-                << self->idStr_ << "Failed to append logs to the host (Err: "
-                << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ")";
+            VLOG_EVERY_N(2, 1000) << self->idStr_ << "Failed to append logs to the host (Err: "
+                                  << apache::thrift::util::enumNameSafe(resp.get_error_code())
+                                  << ")";
             {
               std::lock_guard<std::mutex> g(self->lock_);
               self->setResponse(resp);
@@ -230,13 +230,13 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
       })
       .thenError(folly::tag_t<TransportException>{},
                  [self = shared_from_this(), req](TransportException&& ex) {
-                   VLOG(2) << self->idStr_ << ex.what();
+                   VLOG(4) << self->idStr_ << ex.what();
                    cpp2::AppendLogResponse r;
                    r.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
                    {
                      std::lock_guard<std::mutex> g(self->lock_);
                      if (ex.getType() == TransportException::TIMED_OUT) {
-                       LOG_IF(INFO, FLAGS_trace_raft)
+                       VLOG_IF(1, FLAGS_trace_raft)
                            << self->idStr_ << "append log time out"
                            << ", space " << req->get_space() << ", part " << req->get_part()
                            << ", current term " << req->get_current_term() << ", committed_id "
@@ -252,7 +252,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                    return;
                  })
       .thenError(folly::tag_t<std::exception>{}, [self = shared_from_this()](std::exception&& ex) {
-        VLOG(2) << self->idStr_ << ex.what();
+        VLOG(4) << self->idStr_ << ex.what();
         cpp2::AppendLogResponse r;
         r.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
         {
@@ -267,7 +267,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
 ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
 Host::prepareAppendLogRequest() {
   CHECK(!lock_.try_lock());
-  VLOG(2) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
+  VLOG(3) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
 
   auto makeReq = [this]() -> std::shared_ptr<cpp2::AppendLogRequest> {
@@ -294,10 +294,9 @@ Host::prepareAppendLogRequest() {
   }
 
   if (lastLogIdSent_ + 1 > part_->wal()->lastLogId()) {
-    LOG_IF(INFO, FLAGS_trace_raft)
-        << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
-        << ", but you are seeking " << lastLogIdSent_ + 1
-        << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
+    VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
+                                 << ", but you are seeking " << lastLogIdSent_ + 1
+                                 << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
     return nebula::cpp2::ErrorCode::E_RAFT_NO_WAL_FOUND;
   }
 
@@ -315,7 +314,7 @@ Host::prepareAppendLogRequest() {
     // the last log entry's id is (lastLogIdSent_ + cnt), when iterator is invalid and last log
     // entry's id is not logIdToSend_, which means the log has been rollbacked
     if (!it->valid() && (lastLogIdSent_ + static_cast<int64_t>(logs.size()) != logIdToSend_)) {
-      LOG_IF(INFO, FLAGS_trace_raft)
+      VLOG_IF(1, FLAGS_trace_raft)
           << idStr_ << "Can't find log in wal, logIdToSend_ = " << logIdToSend_;
       return nebula::cpp2::ErrorCode::E_RAFT_NO_WAL_FOUND;
     }
@@ -329,10 +328,10 @@ Host::prepareAppendLogRequest() {
 nebula::cpp2::ErrorCode Host::startSendSnapshot() {
   CHECK(!lock_.try_lock());
   if (!sendingSnapshot_) {
-    LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
-              << ", logIdToSend = " << logIdToSend_
-              << ", firstLogId in wal = " << part_->wal()->firstLogId()
-              << ", lastLogId in wal = " << part_->wal()->lastLogId();
+    VLOG(1) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
+            << ", logIdToSend = " << logIdToSend_
+            << ", firstLogId in wal = " << part_->wal()->firstLogId()
+            << ", lastLogId in wal = " << part_->wal()->lastLogId();
     sendingSnapshot_ = true;
     part_->snapshot_->sendSnapshot(part_, addr_)
         .thenValue([self = shared_from_this()](auto&& status) {
@@ -342,44 +341,44 @@ nebula::cpp2::ErrorCode Host::startSendSnapshot() {
             self->lastLogIdSent_ = commitLogIdAndTerm.first;
             self->lastLogTermSent_ = commitLogIdAndTerm.second;
             self->followerCommittedLogId_ = commitLogIdAndTerm.first;
-            LOG(INFO) << self->idStr_ << "Send snapshot succeeded!"
-                      << " commitLogId = " << commitLogIdAndTerm.first
-                      << " commitLogTerm = " << commitLogIdAndTerm.second;
+            VLOG(1) << self->idStr_ << "Send snapshot succeeded!"
+                    << " commitLogId = " << commitLogIdAndTerm.first
+                    << " commitLogTerm = " << commitLogIdAndTerm.second;
           } else {
-            LOG(INFO) << self->idStr_ << "Send snapshot failed!";
+            VLOG(1) << self->idStr_ << "Send snapshot failed!";
             // TODO(heng): we should tell the follower i am failed.
           }
           self->sendingSnapshot_ = false;
           self->noMoreRequestCV_.notify_all();
         });
   } else {
-    LOG_EVERY_N(INFO, 100) << idStr_ << "The snapshot req is in queue, please wait for a moment";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "The snapshot req is in queue, please wait for a moment";
   }
   return nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
 }
 
 folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req) {
-  VLOG(2) << idStr_ << "Entering Host::sendAppendLogRequest()";
+  VLOG(4) << idStr_ << "Entering Host::sendAppendLogRequest()";
 
   {
     std::lock_guard<std::mutex> g(lock_);
     auto res = canAppendLog();
     if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
+      VLOG(3) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AppendLogResponse resp;
       resp.error_code_ref() = res;
       return resp;
     }
   }
 
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space " << req->get_space()
-                                 << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent "
-                                 << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent() << ", logs in request "
-                                 << req->get_log_str_list().size();
+  VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space " << req->get_space()
+                               << ", part " << req->get_part() << ", current term "
+                               << req->get_current_term() << ", committed_id "
+                               << req->get_committed_log_id() << ", last_log_term_sent "
+                               << req->get_last_log_term_sent() << ", last_log_id_sent "
+                               << req->get_last_log_id_sent() << ", logs in request "
+                               << req->get_log_str_list().size();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_appendLog(*req);
@@ -402,7 +401,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(
       .via(eb)
       .then([self = shared_from_this(),
              pro = std::move(promise)](folly::Try<cpp2::HeartbeatResponse>&& t) mutable {
-        VLOG(3) << self->idStr_ << "heartbeat call got response";
+        VLOG(4) << self->idStr_ << "heartbeat call got response";
         if (t.hasException()) {
           cpp2::HeartbeatResponse resp;
           resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_RPC_EXCEPTION;
@@ -417,25 +416,25 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(
 
 folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
     folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req) {
-  VLOG(2) << idStr_ << "Entering Host::sendHeartbeatRequest()";
+  VLOG(4) << idStr_ << "Entering Host::sendHeartbeatRequest()";
 
   {
     std::lock_guard<std::mutex> g(lock_);
     auto res = canAppendLog();
     if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
+      VLOG(3) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::HeartbeatResponse resp;
       resp.error_code_ref() = res;
       return resp;
     }
   }
 
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending heartbeat: space " << req->get_space()
-                                 << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent "
-                                 << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent();
+  VLOG_IF(1, FLAGS_trace_raft) << idStr_ << "Sending heartbeat: space " << req->get_space()
+                               << ", part " << req->get_part() << ", current term "
+                               << req->get_current_term() << ", committed_id "
+                               << req->get_committed_log_id() << ", last_log_term_sent "
+                               << req->get_last_log_term_sent() << ", last_log_id_sent "
+                               << req->get_last_log_id_sent();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_heartbeat(*req);
@@ -464,9 +463,9 @@ std::shared_ptr<cpp2::AppendLogRequest> Host::getPendingReqIfAny(std::shared_ptr
   self->logIdToSend_ = std::get<1>(tup);
   self->committedLogId_ = std::get<2>(tup);
 
-  LOG_IF(INFO, FLAGS_trace_raft) << self->idStr_ << "Sending the pending request in the queue"
-                                 << ", from " << self->lastLogIdSent_ + 1 << " to "
-                                 << self->logIdToSend_;
+  VLOG_IF(1, FLAGS_trace_raft) << self->idStr_ << "Sending the pending request in the queue"
+                               << ", from " << self->lastLogIdSent_ + 1 << " to "
+                               << self->logIdToSend_;
   self->pendingReq_ = std::make_tuple(0, 0, 0);
   self->promise_ = std::move(self->cachingPromise_);
   self->cachingPromise_ = folly::SharedPromise<cpp2::AppendLogResponse>();

@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_INDEX_LOOKUPPROCESSOR_H
+#define STORAGE_INDEX_LOOKUPPROCESSOR_H
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -53,3 +54,4 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
 };
 }  // namespace storage
 }  // namespace nebula
+#endif

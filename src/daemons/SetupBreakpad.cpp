@@ -6,7 +6,6 @@
 #if defined(__x86_64__)
 #include <breakpad/client/linux/handler/exception_handler.h>
 
-#include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/fs/FileUtils.h"
 

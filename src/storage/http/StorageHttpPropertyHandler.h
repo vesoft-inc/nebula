@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_HTTP_STORAGEHTTPPROPERTYHANDLER_H
+#define STORAGE_HTTP_STORAGEHTTPPROPERTYHANDLER_H
 
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -42,3 +43,4 @@ class StorageHttpPropertyHandler : public proxygen::RequestHandler {
 
 }  // namespace storage
 }  // namespace nebula
+#endif
