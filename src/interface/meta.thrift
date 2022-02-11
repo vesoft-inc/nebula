@@ -533,58 +533,6 @@ struct GetSegmentIdResp {
     3: i64              segment_id,
 }
 
-struct MultiPutReq {
-    // segment is used to avoid conflict with system data.
-    // it should be comprised of numbers and letters.
-    1: binary                   segment,
-    2: list<common.KeyValue>    pairs,
-}
-
-struct GetReq {
-    1: binary segment,
-    2: binary key,
-}
-
-struct GetResp {
-    1: common.ErrorCode code,
-    2: common.HostAddr  leader,
-    3: binary           value,
-}
-
-struct MultiGetReq {
-    1: binary       segment,
-    2: list<binary> keys,
-}
-
-struct MultiGetResp {
-    1: common.ErrorCode code,
-    2: common.HostAddr  leader,
-    3: list<binary>     values,
-}
-
-struct RemoveReq {
-    1: binary segment,
-    2: binary key,
-}
-
-struct RemoveRangeReq {
-    1: binary segment,
-    2: binary start,
-    3: binary end,
-}
-
-struct ScanReq {
-    1: binary segment,
-    2: binary start,
-    3: binary end,
-}
-
-struct ScanResp {
-    1: common.ErrorCode code,
-    2: common.HostAddr  leader,
-    3: list<binary>     values,
-}
-
 struct HBResp {
     1: common.ErrorCode code,
     2: common.HostAddr  leader,
