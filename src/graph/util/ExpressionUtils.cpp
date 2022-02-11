@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/ExpressionUtils.h"
 
@@ -398,10 +397,10 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   // Match relational expressions following these rules:
   // 1. the right operand of rel expr should be evaluable
   // 2. the left operand of rel expr should be:
-  // 2.a an arithmetic expr that does not contains string and has at least one operand that is
+  // - 2.a an arithmetic expr that does not contains string and has at least one operand that is
   // evaluable
   // OR
-  // 2.b an relational expr so that it might could be simplified:
+  // - 2.b an relational expr so that it might could be simplified:
   // ((v.age > 40 == true)  => (v.age > 40))
   auto matcher = [&checkArithmExpr](const Expression *e) -> bool {
     if (!e->isRelExpr()) {

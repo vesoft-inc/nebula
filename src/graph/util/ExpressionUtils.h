@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef _UTIL_EXPRESSION_UTILS_H_
 #define _UTIL_EXPRESSION_UTILS_H_
@@ -100,6 +99,7 @@ class ExpressionUtils {
   static std::vector<Expression*> getContainerExprOperands(const Expression* expr);
 
   // Clones and folds constant expression
+  // Returns an error status if an overflow occurs
   // Examples:
   // v.age > 40 + 1  =>  v.age > 41
   static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
@@ -187,15 +187,13 @@ class ExpressionUtils {
   static bool findInnerRandFunction(const Expression* expr);
 
   // ** Loop node condition **
+  // Generates an expression that is used as the condition of loop node:
   // ++loopSteps <= steps
   static Expression* stepCondition(ObjectPool* pool, const std::string& loopStep, uint32_t steps);
-
   // size(var) == 0
   static Expression* zeroCondition(ObjectPool* pool, const std::string& var);
-
   // size(var) != 0
   static Expression* neZeroCondition(ObjectPool* pool, const std::string& var);
-
   // var == value
   static Expression* equalCondition(ObjectPool* pool, const std::string& var, const Value& value);
 
