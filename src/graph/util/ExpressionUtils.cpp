@@ -17,6 +17,7 @@
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
 
 DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
 
