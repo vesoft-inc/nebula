@@ -106,8 +106,8 @@
 ############## Key-Value separation ##############
 # Whether or not to enable BlobDB (RocksDB key-value separation support)
 --rocksdb_enable_kv_separation=false
-# RocksDB key value separation threshold. Values at or above this threshold will be written to blob files during flush or compaction.
---rocksdb_kv_separation_threshold=0
+# RocksDB key value separation threshold in bytes. Values at or above this threshold will be written to blob files during flush or compaction.
+--rocksdb_kv_separation_threshold=100
 # Compression algorithm for blobs, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
 --rocksdb_blob_compression=lz4
 # Whether to garbage collect blobs during compaction

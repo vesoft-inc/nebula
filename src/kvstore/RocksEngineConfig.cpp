@@ -123,8 +123,8 @@ DEFINE_bool(rocksdb_enable_kv_separation,
             "Whether or not to enable BlobDB (RocksDB key-value separation support)");
 
 DEFINE_uint64(rocksdb_kv_separation_threshold,
-              0,
-              "RocksDB key value separation threshold. Values at or above this threshold will be "
+              100,
+              "RocksDB key value separation threshold in bytes. Values at or above this threshold will be "
               "written to blob files during flush or compaction."
               "This value is only effective when enable_kv_separation is true.");
 
