@@ -8,6 +8,7 @@
 
 #include <folly/SpinLock.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <functional>
 #include <list>
 #include <type_traits>
@@ -21,7 +22,7 @@ class Expression;
 
 typedef std::lock_guard<folly::SpinLock> SLGuard;
 
-class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
+class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
  public:
   ObjectPool() {}
 

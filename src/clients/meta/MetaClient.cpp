@@ -18,7 +18,6 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
