@@ -50,6 +50,10 @@ DEFINE_int64(rocksdb_block_cache,
              1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
+DEFINE_bool(disable_page_cache,
+            false,
+            "Disable page cache to better control memory used by rocksdb.");
+
 DEFINE_int32(rocksdb_row_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 
 DEFINE_int32(cache_bucket_exp, 8, "Total buckets number is 1 << cache_bucket_exp");
@@ -271,6 +275,11 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
   s = initRocksdbKVSeparation(baseOpts);
   if (!s.ok()) {
     return s;
+  }
+
+  if (FLAGS_disable_page_cache) {
+    baseOpts.use_direct_reads = true;
+    baseOpts.use_direct_io_for_flush_and_compaction = true;
   }
 
   if (FLAGS_num_compaction_threads > 0) {
