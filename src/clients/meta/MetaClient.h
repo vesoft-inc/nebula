@@ -19,7 +19,6 @@
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
-#include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
 #include "common/meta/GflagsManager.h"
