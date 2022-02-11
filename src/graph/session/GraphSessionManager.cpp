@@ -144,8 +144,9 @@ void GraphSessionManager::removeSession(SessionID id) {
     return;
   }
 
-  iter->second->markAllQueryKilled();  // Before removing the session, all queries on the session
-                                       // need to be marked as killed.
+  // Before removing the session, all queries on the session
+  // need to be marked as killed.
+  iter->second->markAllQueryKilled();
   auto resp = metaClient_->removeSession(id).get();
   if (!resp.ok()) {
     // it will delete by reclaim
@@ -219,8 +220,9 @@ void GraphSessionManager::updateSessionsToMeta() {
     }
   }
 
-  auto handleKilledQueries = [this](auto&& resp) {  // There may be expired queries, and the
-                                                    // expired queries will be killed here.
+  // There may be expired queries, and the
+  // expired queries will be killed here.
+  auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();
       return Status::Error("Update sessions failed: %s", resp.status().toString().c_str());

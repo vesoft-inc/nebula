@@ -23,9 +23,8 @@ struct SpaceInfo {
   meta::cpp2::SpaceDesc spaceDesc;
 };
 
-// A ClientSession is equivalent to a connection between a client and a server.
 // ClientSession saves those information, including who created it, executed queries,
-// space role, etc.
+// space role, etc. The information of session will be persisted in meta server.
 // One user corresponds to one ClientSession.
 class ClientSession final {
  public:
