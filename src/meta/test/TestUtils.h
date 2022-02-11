@@ -123,10 +123,11 @@ class TestUtils {
     }
 
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -163,10 +164,11 @@ class TestUtils {
 
     bool ret = false;
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
     return ret;
   }
@@ -211,10 +213,11 @@ class TestUtils {
       data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts));
     }
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -294,10 +297,11 @@ class TestUtils {
       data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts));
     }
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -333,10 +337,11 @@ class TestUtils {
                         MetaKeyUtils::schemaVal(tagName, srcsch));
     }
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(tags), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(tags), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -361,10 +366,11 @@ class TestUtils {
                       std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
     data.emplace_back(MetaKeyUtils::indexKey(space, indexID), MetaKeyUtils::indexVal(item));
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -389,10 +395,11 @@ class TestUtils {
                       std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
     data.emplace_back(MetaKeyUtils::indexKey(space, indexID), MetaKeyUtils::indexVal(item));
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 
@@ -429,10 +436,11 @@ class TestUtils {
     }
 
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(edges), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(edges), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
     baton.wait();
   }
 

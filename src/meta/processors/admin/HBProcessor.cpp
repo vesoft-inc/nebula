@@ -32,7 +32,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   auto role = req.get_role();
   LOG(INFO) << "Receive heartbeat from " << host
             << ", role = " << apache::thrift::util::enumNameSafe(role);
-
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   if (role == cpp2::HostRole::STORAGE) {
     if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
       LOG(INFO) << "Machine " << host << " is not registed";

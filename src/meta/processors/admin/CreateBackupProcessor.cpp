@@ -15,7 +15,6 @@ namespace meta {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::unordered_set<GraphSpaceID>>
 CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpaces) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   std::unordered_set<GraphSpaceID> spaces;
 
   bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
@@ -98,8 +97,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
-
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
@@ -239,11 +237,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   backup.backup_name_ref() = std::move(backupName);
   backup.full_ref() = true;
   bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
-  if (allSpaces) {
-    backup.all_spaces_ref() = true;
-  } else {
-    backup.all_spaces_ref() = false;
-  }
+  backup.all_spaces_ref() = allSpaces;
   backup.create_time_ref() = time::WallClock::fastNowInMilliSec();
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

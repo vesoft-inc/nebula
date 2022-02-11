@@ -14,8 +14,7 @@ namespace nebula {
 namespace meta {
 
 void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto hosts = req.get_hosts();
   // Confirm that there are no duplicates in the parameters.
   if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {

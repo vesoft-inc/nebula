@@ -14,7 +14,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   const auto& tagName = req.get_tag_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto tagIdRet = getTagId(spaceId, tagName);
   if (!nebula::ok(tagIdRet)) {
     LOG(ERROR) << "Get tag " << tagName << " failed.";

@@ -12,7 +12,7 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::indexPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {

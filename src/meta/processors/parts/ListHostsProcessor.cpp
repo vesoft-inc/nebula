@@ -37,7 +37,7 @@ static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
   nebula::cpp2::ErrorCode retCode;
   {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    folly::SharedMutex::ReadHolder holder(LockUtils::lock());
     retCode = getSpaceIdNameMap();
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(retCode);

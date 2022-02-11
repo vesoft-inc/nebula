@@ -22,7 +22,7 @@ namespace meta {
 nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::getAllSpaces(
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces) {
   // Get all spaces
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -45,7 +45,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
                                                                               bool dependentOnZone,
                                                                               HostParts& hostParts,
                                                                               int32_t& totalParts) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -307,7 +307,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   HostParts leaderHostParts;
   size_t leaderParts = 0;
   // store peers of all paritions in peerMap
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);

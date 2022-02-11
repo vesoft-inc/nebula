@@ -12,7 +12,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   auto spaceID = req.get_space_id();
   const auto& indexName = req.get_index_name();
   CHECK_SPACE_ID_AND_RETURN(spaceID);
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
 
   auto edgeIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(edgeIndexIDRet)) {

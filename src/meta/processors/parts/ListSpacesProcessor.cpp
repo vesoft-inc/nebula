@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::spacePrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {

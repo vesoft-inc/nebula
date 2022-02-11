@@ -11,6 +11,7 @@ namespace nebula {
 namespace meta {
 
 void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::snapshotPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
@@ -20,8 +21,8 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
     onFinished();
     return;
   }
-  auto iter = nebula::value(iterRet).get();
 
+  auto iter = nebula::value(iterRet).get();
   std::vector<nebula::meta::cpp2::Snapshot> snapshots;
   while (iter->valid()) {
     auto val = iter->val();

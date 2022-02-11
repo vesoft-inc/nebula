@@ -49,6 +49,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         break;
       }
 
+      folly::SharedMutex::WriteHolder holder(LockUtils::lock());
       auto jobId = autoIncrementId();
       // check if Job not exists
       if (!nebula::ok(jobId)) {

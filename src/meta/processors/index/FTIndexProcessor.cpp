@@ -11,11 +11,10 @@ namespace nebula {
 namespace meta {
 
 void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextIndexLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& index = req.get_index();
   const std::string& name = req.get_fulltext_index_name();
   CHECK_SPACE_ID_AND_RETURN(index.get_space_id());
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto isEdge = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type;
   auto schemaPrefix = isEdge ? MetaKeyUtils::schemaEdgePrefix(
                                    index.get_space_id(), index.get_depend_schema().get_edge_type())
@@ -117,7 +116,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
 
 void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
   CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextIndexLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto indexKey = MetaKeyUtils::fulltextIndexKey(req.get_fulltext_index_name());
   auto ret = doGet(indexKey);
   if (!nebula::ok(ret)) {
@@ -138,7 +137,7 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
 }
 
 void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::fulltextIndexLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::fulltextIndexPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {

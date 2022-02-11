@@ -14,7 +14,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   const auto& edgeName = req.get_edge_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto edgeTypeRet = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(edgeTypeRet)) {
     LOG(ERROR) << "Get edge " << edgeName << " failed.";

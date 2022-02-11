@@ -14,32 +14,11 @@ namespace meta {
 class LockUtils {
  public:
   LockUtils() = delete;
-#define GENERATE_LOCK(Entry)                 \
-  static folly::SharedMutex& Entry##Lock() { \
-    static folly::SharedMutex l;             \
-    return l;                                \
+
+  static folly::SharedMutex& lock() {
+    static folly::SharedMutex lock;
+    return lock;
   }
-
-  GENERATE_LOCK(lastUpdateTime);
-  GENERATE_LOCK(space);
-  GENERATE_LOCK(id);
-  GENERATE_LOCK(workerId);
-  GENERATE_LOCK(localId);
-  GENERATE_LOCK(tagAndEdge);
-  GENERATE_LOCK(tagIndex);
-  GENERATE_LOCK(edgeIndex);
-  GENERATE_LOCK(service);
-  GENERATE_LOCK(fulltextIndex);
-  GENERATE_LOCK(user);
-  GENERATE_LOCK(config);
-  GENERATE_LOCK(snapshot);
-  GENERATE_LOCK(group);
-  GENERATE_LOCK(zone);
-  GENERATE_LOCK(listener);
-  GENERATE_LOCK(session);
-  GENERATE_LOCK(machine);
-
-#undef GENERATE_LOCK
 };
 
 }  // namespace meta
