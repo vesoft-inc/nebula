@@ -279,7 +279,6 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
 
   if (FLAGS_disable_page_cache) {
     baseOpts.use_direct_reads = true;
-    baseOpts.use_direct_io_for_flush_and_compaction = true;
   }
 
   if (FLAGS_num_compaction_threads > 0) {
