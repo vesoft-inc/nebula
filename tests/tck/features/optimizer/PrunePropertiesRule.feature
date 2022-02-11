@@ -9,34 +9,38 @@ Feature: Prune Properties rule
   Scenario: Single Match
     When profiling query:
       """
-      MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
+      MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN v2.player.age
       """
     Then the result should be, in order:
       | v2.player.age |
-      | 29            |
+      | 42            |
+      | 33            |
       | 41            |
-      | 36            |
-      | 33            |
-      | 33            |
-      | 42            |
-      | 42            |
-      | 32            |
+    # And the execution plan should be:
+    # | id | name           | dependencies | operator info                                                                                                                                                                      |
+    # | 8  | Project        | 4            |                                                                                                                                                                                    |
+    # | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"age\"],\"tagId\":2}]" }                                                                                                                                |
+    # | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":2}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\", \"_src\"],\"type\":5}]" } |
+    # | 7  | IndexScan      | 2            |                                                                                                                                                                                    |
+    # | 2  | Start          |              |                                                                                                                                                                                    |
     When profiling query:
       """
-      MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
-      RETURN v.player.age
+      MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
+      RETURN v.player.name
       """
     Then the result should be, in order:
-      | v.player.age |
-      | 36           |
-      | 36           |
-      | 36           |
-      | 36           |
-      | 36           |
-      | 36           |
-      | 36           |
-      | 36           |
+      | v.player.name |
+      | "Tony Parker" |
+      | "Tony Parker" |
+      | "Tony Parker" |
+    # And the execution plan should be:
+    # | id | name           | dependencies | operator info                                                                                                                                                                      |
+    # | 8  | Project        | 4            |                                                                                                                                                                                    |
+    # | 4  | AppendVertices | 3            | {  "props": }                                                                                                                                |
+    # | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\", \"age\"],\"tagId\":2}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\", \"_src\"],\"type\":5}]" } |
+    # | 7  | IndexScan      | 2            |                                                                                                                                                                                    |
+    # | 2  | Start          |              |                                                                                                                                                                                    |
     When profiling query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
@@ -52,23 +56,32 @@ Feature: Prune Properties rule
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
+    # And the execution plan should be:
+    # | id | name           | dependencies | operator info                                                                                                                                                                      |
+    # | 8  | Project        | 4            |                                                                                                                                                                                    |
+    # | 4  | AppendVertices | 3            | {  "props": }                                                                                                                                |
+    # | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\", \"age\"],\"tagId\":2}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\", \"_src\"],\"type\":5}]" } |
+    # | 7  | IndexScan      | 2            |                                                                                                                                                                                    |
+    # | 2  | Start          |              |                                                                                                                                                                                    |
     When profiling query:
       """
-      MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
+      MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN v2
       """
     Then the result should be, in order:
       | v2                                                                                                          |
-      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
-      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         |
-      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
-      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
-      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               |
-    # The rule will not take affect in this case
-    When profiling query:
+    # And the execution plan should be:
+    # | id | name           | dependencies | operator info                                                                                                                                                                      |
+    # | 8  | Project        | 4            |                                                                                                                                                                                    |
+    # | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"name\", \"_tag\"],\"tagId\":3}, {\"props\":[\"name\", \"name\", \"age\", \"_tag\"],\"tagId\":2}, {\"props\":[\"name\", \"speciality\", \"_tag\"], \"tagId\":4}]" }                                                                                                                                |
+    # | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":2}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\", \"_src\"],\"type\":5}]" } |
+    # | 7  | IndexScan      | 2            |                                                                                                                                                                                    |
+    # | 2  | Start          |              |                                                                                                                                                                                    |
+    # The rule will not take affect in this case because it returns the whole path
+    When executing query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
       RETURN p
@@ -85,7 +98,7 @@ Feature: Prune Properties rule
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:like@0 {likeness: 50}]-("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})>                                               |
     When profiling query:
       """
-      MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
+      MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN type(e)
       """
     Then the result should be, in order:
@@ -93,12 +106,14 @@ Feature: Prune Properties rule
       | "like"  |
       | "like"  |
       | "like"  |
-      | "like"  |
-      | "like"  |
-      | "like"  |
-      | "like"  |
-      | "like"  |
-    When profiling query:
+    # And the execution plan should be:
+    # | id | name           | dependencies | operator info                                                                                                                                                                      |
+    # | 8  | Project        | 4            |                                                                                                                                                                                    |
+    # | 4  | AppendVertices | 3            | {  "props": }                                                                                                                                |
+    # | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":2}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\", \"_src\"],\"type\":5}]" } |
+    # | 7  | IndexScan      | 2            |                                                                                                                                                                                    |
+    # | 2  | Start          |              |                                                                                                                                                                                    |
+    When executing query:
       """
       MATCH (v:player{name: "Tony Parker"})-[:like]-(v2)--(v3)
       WITH v3, v3.player.age AS age
