@@ -9,19 +9,6 @@
 namespace nebula {
 namespace graph {
 
-Status IndexUtil::validateColumns(const std::vector<std::string> &fields) {
-  std::unordered_set<std::string> fieldSet(fields.begin(), fields.end());
-  if (fieldSet.size() != fields.size()) {
-    return Status::Error("Found duplicate column field");
-  }
-
-  if (fields.empty()) {
-    return Status::Error("Column is empty");
-  }
-
-  return Status::OK();
-}
-
 // static
 Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &params,
                                       meta::cpp2::IndexParams &indexParams) {

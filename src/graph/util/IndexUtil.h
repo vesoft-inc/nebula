@@ -16,8 +16,6 @@ class IndexUtil final {
  public:
   IndexUtil() = delete;
 
-  static Status validateColumns(const std::vector<std::string> &fields);
-
   static Status validateIndexParams(const std::vector<IndexParamItem *> &params,
                                     meta::cpp2::IndexParams &indexParams);
 
@@ -27,6 +25,7 @@ class IndexUtil final {
                                              const std::string &indexName,
                                              const meta::cpp2::IndexItem &indexItem);
 
+  // TODO(Aiee) Replace with ExpressionUtils::getNegatedRelExprKind()
   static Expression::Kind reverseRelationalExprKind(Expression::Kind kind);
 };
 

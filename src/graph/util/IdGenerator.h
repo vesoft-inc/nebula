@@ -10,6 +10,7 @@
 namespace nebula {
 namespace graph {
 
+// TODO(Aiee) Remove class and use snowflake id generater
 class IdGenerator {
  public:
   explicit IdGenerator(int64_t init = 0) : counter_(init) {}

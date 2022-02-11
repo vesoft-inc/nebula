@@ -194,7 +194,7 @@ Status LookupValidator::validateWhere() {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
-    // Make sure the type of the rewritted filter expr is right
+    // Make sure the type of the rewritten filter expr is right
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
   if (lookupCtx_->isEdge) {
