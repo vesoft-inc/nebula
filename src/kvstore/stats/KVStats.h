@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef KVSTORE_STATS_KVSTATS_H
+#define KVSTORE_STATS_KVSTATS_H
 
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
@@ -18,3 +19,4 @@ extern stats::CounterId kNumRaftVotes;
 void initKVStats();
 
 }  // namespace nebula
+#endif

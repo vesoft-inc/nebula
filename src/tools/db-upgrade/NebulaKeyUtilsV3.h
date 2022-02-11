@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef TOOLS_DB_UPGRADE_NEBULAKEYUTILSV3_H
+#define TOOLS_DB_UPGRADE_NEBULAKEYUTILSV3_H
 #include "common/utils/Types.h"
 namespace nebula {
 class NebulaKeyUtilsV3 {
@@ -16,3 +17,4 @@ class NebulaKeyUtilsV3 {
 };
 
 }  // namespace nebula
+#endif

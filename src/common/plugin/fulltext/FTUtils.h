@@ -6,14 +6,14 @@
 #ifndef COMMON_PLUGIN_FULLTEXT_UTILS_H_
 #define COMMON_PLUGIN_FULLTEXT_UTILS_H_
 
+#include <proxygen/lib/utils/CryptUtil.h>
+
 #include <boost/algorithm/string/replace.hpp>
 #include <iomanip>
 
 #include "common/base/Base.h"
 #include "common/base/CommonMacro.h"
 #include "common/datatypes/HostAddr.h"
-#include "common/encryption/Base64.h"
-#include "common/encryption/MD5Utils.h"
 
 #define CURL "/usr/bin/curl"
 #define XPUT " -XPUT"
@@ -141,7 +141,7 @@ struct DocIDTraits {
 
   static std::string column(const std::string& col) {
     // normalized column name is 32 bytes
-    return encryption::MD5Utils::md5Encode(col);
+    return proxygen::md5Encode(folly::StringPiece(col));
   }
 
   static std::string val(const std::string& v) {
@@ -158,9 +158,9 @@ struct DocIDTraits {
     // docId structure : partId(10bytes) + schemaId(10Bytes) +
     //                   columnName(32bytes) + encoded_val(max 344bytes)
     // the max length of docId is 512 bytes, still have about 100 bytes reserved
-    auto encoded = encryption::Base64::encode((item.val.size() > MAX_INDEX_TYPE_LENGTH)
-                                                  ? item.val.substr(0, MAX_INDEX_TYPE_LENGTH)
-                                                  : item.val);
+    auto encoded = proxygen::base64Encode(folly::StringPiece(
+        (item.val.size() > MAX_INDEX_TYPE_LENGTH) ? item.val.substr(0, MAX_INDEX_TYPE_LENGTH)
+                                                  : item.val));
     std::replace(encoded.begin(), encoded.end(), '/', '_');
     std::stringstream ss;
     ss << id(item.part) << column(item.column) << encoded;
