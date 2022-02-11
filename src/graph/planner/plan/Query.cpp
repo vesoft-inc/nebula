@@ -714,8 +714,12 @@ void Traverse::cloneMembers(const Traverse& g) {
   GetNeighbors::cloneMembers(g);
 
   setStepRange(g.range_);
-  setVertexFilter(g.vFilter_->clone());
-  setEdgeFilter(g.eFilter_->clone());
+  if (g.vFilter_ != nullptr) {
+    setVertexFilter(g.vFilter_->clone());
+  }
+  if (g.eFilter_ != nullptr) {
+    setEdgeFilter(g.eFilter_->clone());
+  }
   setTrackPrevPath(g.trackPrevPath_);
 }
 
