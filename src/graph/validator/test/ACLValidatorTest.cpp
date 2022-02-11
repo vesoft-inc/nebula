@@ -142,24 +142,6 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_EQ(*changePassword->newPassword(), newPassword);
   }
 
-  // grant role
-  {
-    auto root =
-        getPlanRoot(folly::stringPrintf("GRANT ROLE %s ON %s TO %s", roleTypeName, space, user));
-
-    std::vector<PlanNode::Kind> expectedTop{
-        PlanNode::Kind::kGrantRole,
-        PlanNode::Kind::kStart,
-    };
-    ASSERT_TRUE(verifyPlan(root, expectedTop));
-
-    ASSERT_EQ(root->kind(), PlanNode::Kind::kGrantRole);
-    auto grantRole = static_cast<const GrantRole *>(root);
-    ASSERT_EQ(*grantRole->username(), user);
-    ASSERT_EQ(*grantRole->spaceName(), space);
-    ASSERT_EQ(grantRole->role(), meta::cpp2::RoleType::ADMIN);
-  }
-
   // revoke role
   {
     auto root =
