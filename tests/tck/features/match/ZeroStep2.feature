@@ -2,10 +2,10 @@
 #
 # This source code is licensed under Apache 2.0 License.
 Feature: test zero steps pattern
-  Examples:
-    | space_name  |
-    | nba         |
-    | nba_int_vid |
+    Examples:
+      | space_name  |
+      | nba         |
+      | nba_int_vid |
 
   Background:
     Given a graph with space named "<space_name>"
@@ -27,12 +27,6 @@ Feature: test zero steps pattern
     Then the result should be, in any order, with relax comparison:
       | e  |
       | [] |
-    When executing query:
-      """
-      MATCH (v:player{name: 'Tim Duncan'})-[e:like*]-()
-      RETURN e
-      """
-    Then a SemanticError should be raised at runtime: Cannot set maximum hop for variable length relationships
     When executing query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..0]-()-[e2:like*0..0]-()

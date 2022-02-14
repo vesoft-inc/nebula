@@ -462,6 +462,7 @@ Feature: Variable length Pattern match (0 step)
       RETURN v2 AS Friends;
       """
     Then the result should be, in any order:
+      | Friends                                                                                                     |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
