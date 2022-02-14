@@ -9,6 +9,7 @@
 #include <folly/fibers/Semaphore.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <memory>
 
 #include "common/base/Base.h"
@@ -16,8 +17,7 @@
 #include "folly/fibers/Semaphore.h"
 #include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
 namespace nebula::storage {
-class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
-                                      public nebula::cpp::NonMovable {
+class GraphStorageLocalServer final : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   static std::shared_ptr<GraphStorageLocalServer> getInstance() {
     static std::shared_ptr<GraphStorageLocalServer> instance{new GraphStorageLocalServer()};

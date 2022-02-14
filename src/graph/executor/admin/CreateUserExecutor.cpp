@@ -5,7 +5,8 @@
 
 #include "graph/executor/admin/CreateUserExecutor.h"
 
-#include "common/encryption/MD5Utils.h"
+#include <proxygen/lib/utils/CryptUtil.h>
+
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
@@ -22,7 +23,7 @@ folly::Future<Status> CreateUserExecutor::createUser() {
   return qctx()
       ->getMetaClient()
       ->createUser(*cuNode->username(),
-                   encryption::MD5Utils::md5Encode(*cuNode->password()),
+                   proxygen::md5Encode(folly::StringPiece(*cuNode->password())),
                    cuNode->ifNotExist())
       .via(runner())
       .thenValue([this](StatusOr<bool> resp) {
