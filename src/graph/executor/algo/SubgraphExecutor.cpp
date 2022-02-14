@@ -21,21 +21,21 @@ folly::Future<Status> SubgraphExecutor::execute() {
   DCHECK(currentStepVal.isInt());
   auto currentStep = currentStepVal.getInt();
   VLOG(1) << "Current Step is: " << currentStep << " Total Steps is: " << steps;
-
-  if (currentStep == steps) {
-    oneMoreStep();
-    return finish(ResultBuilder().value(Value(std::move(ds))).build());
-  }
+  auto resultVar = subgraph->resultVar();
 
   VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
-  std::unordered_set<Value> currentVids;
+
+  ResultBuilder builder;
+  builder.value(iter->valuePtr());
+
+  std::unordered_map<Value, int64_t> currentVids;
   currentVids.reserve(iter->size());
   historyVids_.reserve(historyVids_.size() + iter->size());
   if (currentStep == 1) {
     for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(nebula::kVid);
-      currentVids.emplace(src);
+      currentVids.emplace(src, 0);
     }
     iter->reset();
   }
@@ -46,15 +46,28 @@ folly::Future<Status> SubgraphExecutor::execute() {
       if (biDirectEdgeTypes.empty()) {
         iter->next();
       } else {
-        const auto& type = iter->getEdgeProp("*", nebula::kType);
-        if (type.isInt() && biDirectEdgeTypes.find(type.getInt()) != biDirectEdgeTypes.end()) {
+        const auto& typeVal = iter->getEdgeProp("*", nebula::kType);
+        if (UNLIKELY(!typeVal.isInt())) {
           iter->erase();
+          continue;
+        }
+        auto type = typeVal.getInt();
+        if (biDirectEdgeTypes.find(type) != biDirectEdgeTypes.end()) {
+          if (type < 0 || historyVids_[dst] + 2 == currentStep) {
+            iter->erase();
+          } else {
+            iter->next();
+          }
         } else {
           iter->next();
         }
       }
     } else {
-      if (currentVids.emplace(dst).second) {
+      if (currentStep == steps) {
+        iter->erase();
+        continue;
+      }
+      if (currentVids.emplace(dst, currentStep).second) {
         Row row;
         row.values.emplace_back(std::move(dst));
         ds.rows.emplace_back(std::move(row));
@@ -63,43 +76,13 @@ folly::Future<Status> SubgraphExecutor::execute() {
     }
   }
   iter->reset();
+  builder.iter(std::move(iter));
+  ectx_->setResult(resultVar, builder.build());
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
   VLOG(1) << "Next step vid is : " << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
-}
-
-void SubgraphExecutor::oneMoreStep() {
-  auto* subgraph = asNode<Subgraph>(node());
-  auto output = subgraph->oneMoreStepOutput();
-  VLOG(1) << "OneMoreStep Input: " << subgraph->inputVar() << " Output: " << output;
-  auto iter = ectx_->getResult(subgraph->inputVar()).iter();
-  DCHECK(iter && iter->isGetNeighborsIter());
-  auto& biDirectEdgeTypes = subgraph->biDirectEdgeTypes();
-
-  ResultBuilder builder;
-  builder.value(iter->valuePtr());
-  while (iter->valid()) {
-    const auto& dst = iter->getEdgeProp("*", nebula::kDst);
-    if (historyVids_.find(dst) != historyVids_.end()) {
-      if (biDirectEdgeTypes.empty()) {
-        iter->next();
-      } else {
-        const auto& type = iter->getEdgeProp("*", nebula::kType);
-        if (type.isInt() && biDirectEdgeTypes.find(type.getInt()) != biDirectEdgeTypes.end()) {
-          iter->erase();
-        } else {
-          iter->next();
-        }
-      }
-    } else {
-      iter->erase();
-    }
-  }
-  iter->reset();
-  builder.iter(std::move(iter));
-  ectx_->setResult(output, builder.build());
 }
 
 }  // namespace graph

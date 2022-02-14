@@ -68,10 +68,10 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   gn->setEdgeProps(std::move(edgeProps).value());
   gn->setInputVar(input);
 
-  auto oneMoreStepOutput = qctx->vctx()->anonVarGen()->getVar();
+  auto resultVar = qctx->vctx()->anonVarGen()->getVar();
   auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
   subgraphCtx_->loopSteps = loopSteps;
-  auto* subgraph = Subgraph::make(qctx, gn, oneMoreStepOutput, loopSteps, steps.steps() + 1);
+  auto* subgraph = Subgraph::make(qctx, gn, resultVar, loopSteps, steps.steps() + 1);
   subgraph->setOutputVar(input);
   subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
   subgraph->setColNames({nebula::kVid});
@@ -81,7 +81,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(loop);
-  dc->setInputVars({gn->outputVar(), oneMoreStepOutput});
+  dc->setInputVars({resultVar});
   dc->setColNames({"VERTICES", "EDGES"});
 
   auto* project = Project::make(qctx, dc, subgraphCtx_->yieldExpr);

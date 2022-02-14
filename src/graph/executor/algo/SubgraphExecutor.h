@@ -18,10 +18,7 @@ class SubgraphExecutor : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  void oneMoreStep();
-
- private:
-  std::unordered_set<Value> historyVids_;
+  std::unordered_map<Value, int64_t> historyVids_;
 };
 
 }  // namespace graph

@@ -134,15 +134,14 @@ class Subgraph final : public SingleInputNode {
  public:
   static Subgraph* make(QueryContext* qctx,
                         PlanNode* input,
-                        const std::string& oneMoreStepOutput,
+                        const std::string& resultVar,
                         const std::string& currentStepVar,
                         uint32_t steps) {
-    return qctx->objPool()->add(
-        new Subgraph(qctx, input, oneMoreStepOutput, currentStepVar, steps));
+    return qctx->objPool()->add(new Subgraph(qctx, input, resultVar, currentStepVar, steps));
   }
 
-  const std::string& oneMoreStepOutput() const {
-    return oneMoreStepOutput_;
+  const std::string& resultVar() const {
+    return resultVar_;
   }
 
   const std::string& currentStepVar() const {
@@ -164,15 +163,15 @@ class Subgraph final : public SingleInputNode {
  private:
   Subgraph(QueryContext* qctx,
            PlanNode* input,
-           const std::string& oneMoreStepOutput,
+           const std::string& resultVar,
            const std::string& currentStepVar,
            uint32_t steps)
       : SingleInputNode(qctx, Kind::kSubgraph, input),
-        oneMoreStepOutput_(oneMoreStepOutput),
+        resultVar_(resultVar),
         currentStepVar_(currentStepVar),
         steps_(steps) {}
 
-  std::string oneMoreStepOutput_;
+  std::string resultVar_;
   std::string currentStepVar_;
   uint32_t steps_;
   std::unordered_set<EdgeType> biDirectEdgeTypes_;
