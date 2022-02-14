@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
     LOG(INFO) << "Starting Graph HTTP Service";
     auto webSvc = std::make_unique<nebula::WebService>();
-    status = webSvc->start(FLAGS_ws_http_port, FLAGS_ws_h2_port);
+    status = webSvc->start(FLAGS_ws_http_port);
     if (!status.ok()) {
       LOG(WARNING) << "Failed to start graph HTTP service";
       return;

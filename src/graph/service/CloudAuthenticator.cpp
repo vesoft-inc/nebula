@@ -5,8 +5,9 @@
 
 #include "graph/service/CloudAuthenticator.h"
 
+#include <proxygen/lib/utils/CryptUtil.h>
+
 #include "common/base/Status.h"
-#include "common/encryption/Base64.h"
 #include "common/http/HttpClient.h"
 #include "graph/service/GraphFlags.h"
 
@@ -28,7 +29,7 @@ Status CloudAuthenticator::auth(const std::string& user, const std::string& pass
 
   // Second, use user + password authentication methods
   std::string userAndPasswd = user + ":" + password;
-  std::string base64Str = encryption::Base64::encode(userAndPasswd);
+  std::string base64Str = proxygen::base64Encode(folly::StringPiece(userAndPasswd));
 
   std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
   header = header + base64Str + "\"";

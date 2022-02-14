@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef COMMON_THRIFT_THRIFTLOCALCLIENTMANAGER_H
+#define COMMON_THRIFT_THRIFTLOCALCLIENTMANAGER_H
 
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBaseManager.h>
@@ -37,3 +38,4 @@ class LocalClientManager final {
 };
 }  // namespace thrift
 }  // namespace nebula
+#endif

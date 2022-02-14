@@ -18,7 +18,6 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -30,7 +29,6 @@
 #include "webservice/Common.h"
 
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
@@ -94,15 +92,19 @@ MetaClient::~MetaClient() {
 }
 
 bool MetaClient::isMetadReady() {
-  auto ret = heartbeat().get();
-  if (!ret.ok()) {
-    LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-    return ready_;
-  } else if (options_.role_ == cpp2::HostRole::STORAGE &&
-             metaServerVersion_ != EXPECT_META_VERSION) {
-    LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
-               << metaServerVersion_;
-    return ready_;
+  // UNKNOWN is reserved for tools such as upgrader, in that case the ip/port is not set. We do
+  // not send heartbeat to meta to avoid writing error host info (e.g. Host("", 0))
+  if (options_.role_ != cpp2::HostRole::UNKNOWN) {
+    auto ret = heartbeat().get();
+    if (!ret.ok()) {
+      LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+      return ready_;
+    } else if (options_.role_ == cpp2::HostRole::STORAGE &&
+               metaServerVersion_ != EXPECT_META_VERSION) {
+      LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
+                 << metaServerVersion_;
+      return ready_;
+    }
   }
 
   // ready_ will be set in loadData

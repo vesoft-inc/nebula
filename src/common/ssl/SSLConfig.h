@@ -4,7 +4,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_SSL_SSLCONFIG_H
+#define COMMON_SSL_SSLCONFIG_H
 
 #include <folly/io/async/SSLContext.h>
 #include <gflags/gflags.h>
@@ -23,3 +24,4 @@ extern std::shared_ptr<wangle::SSLContextConfig> sslContextConfig();
 extern std::shared_ptr<folly::SSLContext> createSSLContext();
 
 }  // namespace nebula
+#endif

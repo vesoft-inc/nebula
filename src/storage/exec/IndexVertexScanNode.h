@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXVERTEXSCANNODE_H
+#define STORAGE_EXEC_INDEXVERTEXSCANNODE_H
 
 #include <gtest/gtest_prod.h>
 
@@ -57,3 +58,4 @@ class IndexVertexScanNode final : public IndexScanNode {
 };
 }  // namespace storage
 }  // namespace nebula
+#endif

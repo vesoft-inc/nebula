@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_INDEXTESTUTIL_H
+#define STORAGE_TEST_INDEXTESTUTIL_H
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -655,3 +656,4 @@ IndexParser operator"" _index(const char* str, std::size_t) {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

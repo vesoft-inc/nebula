@@ -14,7 +14,6 @@ nebula_add_library(
     SanitizerOptions.cpp
     SignalHandler.cpp
     SlowOpTracker.cpp
-    StringValue.cpp
     ${gdb_debug_script}
 )
 

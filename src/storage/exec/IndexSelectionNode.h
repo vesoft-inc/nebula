@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXSELECTIONNODE_H
+#define STORAGE_EXEC_INDEXSELECTIONNODE_H
 
 #include "common/context/ExpressionContext.h"
 #include "common/expression/Expression.h"
@@ -103,3 +104,4 @@ class SelectionExprVisitor : public ExprVisitorBase {
 }  // namespace storage
 
 }  // namespace nebula
+#endif

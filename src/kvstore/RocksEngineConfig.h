@@ -70,12 +70,30 @@ DECLARE_uint64(rocksdb_kv_separation_threshold);
 namespace nebula {
 namespace kvstore {
 
+/**
+ * @brief Build rocksdb options form gflags
+ *
+ * @param baseOpts Rocksdb options
+ * @param spaceId
+ * @param vidLen
+ * @return rocksdb::Status
+ */
 rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts,
                                    GraphSpaceID spaceId,
                                    int32_t vidLen = 8);
 
+/**
+ * @brief Load a gflag into map
+ *
+ * @param map
+ * @param gflags
+ * @return Return succeeded or not
+ */
 bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string &gflags);
 
+/**
+ * @brief Retrieve rocksdb statistics, return nullptr if not enabled
+ */
 std::shared_ptr<rocksdb::Statistics> getDBStatistics();
 
 }  // namespace kvstore
