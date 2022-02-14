@@ -67,12 +67,6 @@ Feature: test zero steps pattern
       """
     Then the result should be, in any order, with relax comparison:
       | v |
-    When executing query:
-      """
-      MATCH (v:player{name: "abc"}) -[:serve*1..]-> ()
-      RETURN *
-      """
-    Then a SemanticError should be raised at runtime: Cannot set maximum hop for variable length relationships
 
   Scenario Outline: Single edge with properties in both directions
     When executing query:
