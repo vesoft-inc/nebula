@@ -48,15 +48,15 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> createSession(
       const std::string userName, const std::string clientIp, folly::Executor* runner) override;
 
-  // Whether not exceeds the max allowed connections.
+  // Whether exceeds the max allowed connections.
   bool isOutOfConnections() {
     if (activeSessions_.size() >= static_cast<uint64_t>(FLAGS_max_allowed_connections)) {
       LOG(INFO) << "The sessions of the cluster has more than "
                    "max_allowed_connections: "
                 << FLAGS_max_allowed_connections;
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   // Removes a session from both local and meta server.
