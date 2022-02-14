@@ -2,10 +2,10 @@
 #
 # This source code is licensed under Apache 2.0 License.
 Feature: test zero steps pattern
-    Examples:
-      | space_name  |
-      | nba         |
-      | nba_int_vid |
+  Examples:
+    | space_name  |
+    | nba         |
+    | nba_int_vid |
 
   Background:
     Given a graph with space named "<space_name>"
