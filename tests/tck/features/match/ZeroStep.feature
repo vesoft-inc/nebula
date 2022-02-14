@@ -455,7 +455,7 @@ Feature: Variable length Pattern match (0 step)
       | [[:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]] | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
       | []                                                             | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
 
-  Scenario: Multiple variable length with edge filter
+  Scenario: Multiple variable length with edge filter without max hop number
     When executing query:
       """
       MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..]->(v2)
