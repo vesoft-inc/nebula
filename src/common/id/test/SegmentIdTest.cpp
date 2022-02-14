@@ -7,107 +7,81 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include "common/id/SegmentId.h"
+#include "MockMetaClient.h"
 
 namespace nebula {
-class MockMetaClient : public meta::BaseMetaClient {
- public:
-  folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) override {
-    std::lock_guard<std::mutex> guard(mutex_);
-    auto future = folly::makeFuture(cur_.load());
-    cur_.fetch_add(length);
-    return future;
+class TestSegmentId : public testing::Test {
+ protected:
+  void SetUp() override {
+    threads_.reserve(threadNum_);
+
+    threadManager_->setNamePrefix("executor");
+    threadManager_->start();
+
+    nebula::SegmentId::initClient(&metaClient_);
+    nebula::SegmentId::initRunner(threadManager_.get());
   }
 
- private:
-  std::mutex mutex_;
-  std::atomic_int64_t cur_{0};
+  int threadNum_{32};
+  int times_{100000};
+
+  std::vector<std::thread> threads_;
+  folly::ConcurrentHashMap<int64_t, int> map_;
+
+  nebula::MockMetaClient metaClient_;
+  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager_{
+      PriorityThreadManager::newPriorityThreadManager(32)};
 };
 
-// In this case, small step cause that id run out before asyncFetchSegment() finish.
-// So one segment replace another one. (one is from asyncFetchSegment(), another if from
-// fetchSegment())
-TEST(SegmentIdTest, TestConcurrencySmallStep) {
-  MockMetaClient metaClient = MockMetaClient();
-
-  int threadNum = 32;
-  int times = 100000;
-
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(32));
-  threadManager->setNamePrefix("executor");
-  threadManager->start();
-
-  SegmentId::initClient(&metaClient);
-  SegmentId::initRunner(threadManager.get());
+TEST_F(TestSegmentId, TestConcurrencySmallStep) {
   SegmentId& generator = SegmentId::getInstance();
-  generator.step_ = 1000;
-
-  folly::ConcurrentHashMap<int64_t, int> map;
-  std::vector<std::thread> threads;
-  threads.reserve(threadNum);
+  Status status = generator.init(1000);
 
   auto proc = [&]() {
-    for (int i = 0; i < times; i++) {
+    for (int i = 0; i < times_; i++) {
       StatusOr<int64_t> id = generator.getId();
       ASSERT_TRUE(id.ok());
       // check duplicated id
-      ASSERT_TRUE(map.find(id.value()) == map.end()) << "id: " << id.value();
-      map.insert(id.value(), 0);
+      ASSERT_TRUE(map_.find(id.value()) == map_.end()) << "id: " << id.value();
+      map_.insert(id.value(), 0);
     }
   };
 
-  for (int i = 0; i < threadNum; i++) {
-    threads.emplace_back(std::thread(proc));
+  for (int i = 0; i < threadNum_; i++) {
+    threads_.emplace_back(std::thread(proc));
   }
 
-  for (int i = 0; i < threadNum; i++) {
-    threads[i].join();
+  for (int i = 0; i < threadNum_; i++) {
+    threads_[i].join();
   }
 }
 
 // check the result (in the case of no fetchSegment() by useing big step)
-TEST(SegmentIdTest, TestConcurrencyBigStep) {
-  MockMetaClient metaClient = MockMetaClient();
-
-  int threadNum = 32;
-  int times = 100000;
-
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(32));
-  threadManager->setNamePrefix("executor");
-  threadManager->start();
-
-  SegmentId::initClient(&metaClient);
-  SegmentId::initRunner(threadManager.get());
+TEST_F(TestSegmentId, TestConcurrencyBigStep) {
   SegmentId& generator = SegmentId::getInstance();
   Status status = generator.init(120000000);
 
-  folly::ConcurrentHashMap<int64_t, int> map;
-  std::vector<std::thread> threads;
-  threads.reserve(threadNum);
-
   auto proc = [&]() {
-    for (int i = 0; i < times; i++) {
+    for (int i = 0; i < times_; i++) {
       StatusOr<int64_t> id = generator.getId();
       ASSERT_TRUE(id.ok());
       // check duplicated id
-      ASSERT_TRUE(map.find(id.value()) == map.end()) << "id: " << id.value();
-      map.insert(id.value(), 0);
+      ASSERT_TRUE(map_.find(id.value()) == map_.end()) << "id: " << id.value();
+      map_.insert(id.value(), 0);
     }
   };
 
-  for (int i = 0; i < threadNum; i++) {
-    threads.emplace_back(std::thread(proc));
+  for (int i = 0; i < threadNum_; i++) {
+    threads_.emplace_back(std::thread(proc));
   }
 
-  for (int i = 0; i < threadNum; i++) {
-    threads[i].join();
+  for (int i = 0; i < threadNum_; i++) {
+    threads_[i].join();
   }
 
   // check the result
-  for (int i = 0; i < (times * threadNum); i++) {
-    ASSERT_TRUE(map.find(i) != map.end()) << "id: " << i;
+  for (int i = 0; i < (times_ * threadNum_); i++) {
+    ASSERT_TRUE(map_.find(i) != map_.end()) << "id: " << i;
   }
 }
 

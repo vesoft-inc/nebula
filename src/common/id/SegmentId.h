@@ -7,13 +7,10 @@
 #define COMMON_ID_SEGMENTINCR_H_
 
 #include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
 
 namespace nebula {
 // Segment auto-increase id
 class SegmentId {
-  FRIEND_TEST(SegmentIdTest, TestConcurrencySmallStep);
-
  public:
   static SegmentId& getInstance() {
     ASSERT(client_ != nullptr);

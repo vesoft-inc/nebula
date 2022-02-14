@@ -12,7 +12,7 @@ namespace meta {
 
 void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& req) {
   int64_t length = req.get_length();
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::segmentIdLock());
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::idLock());
 
   auto curIdResult = doGet(kIdKey);
   if (!nebula::ok(curIdResult)) {
@@ -20,27 +20,17 @@ void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& re
     handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
     resp_.segment_id_ref() = -1;
     onFinished();
+    return;
   }
 
   int64_t curId = std::stoi(std::move(nebula::value(curIdResult)));
 
-  doPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(curId + length)}});
+  auto code = doSyncPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(curId + length)}});
 
-  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+  handleErrorCode(code);
   resp_.segment_id_ref() = curId;
   onFinished();
-}
-
-void GetSegmentIdProcessor::doPut(std::vector<kvstore::KV> data) {
-  folly::Baton<true, std::atomic> baton;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [this, &baton](nebula::cpp2::ErrorCode code) {
-                            this->handleErrorCode(code);
-                            baton.post();
-                          });
-  baton.wait();
+  return;
 }
 
 }  // namespace meta

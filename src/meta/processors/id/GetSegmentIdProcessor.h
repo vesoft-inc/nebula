@@ -24,14 +24,12 @@ class GetSegmentIdProcessor : public BaseProcessor<cpp2::GetSegmentIdResp> {
       : BaseProcessor<cpp2::GetSegmentIdResp>(kvstore) {
     // initialize segment id in kvstore just once
     static bool once = [this]() {
-      std::vector<kvstore::KV> kv = {{kIdKey, std::to_string(0)}};
-      doPut(kv);
+      std::vector<kvstore::KV> kv = {{kIdKey, "0"}};
+      doSyncPut(kv);
       return true;
     }();
     UNUSED(once);
   }
-
-  void doPut(std::vector<kvstore::KV> data);
 
   inline static const string kIdKey = "segment_id";
 };

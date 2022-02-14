@@ -5,8 +5,7 @@
 
 #include <folly/Benchmark.h>
 
-#include "common/base/Base.h"
-#include "common/id/SegmentId.h"
+#include "MockMetaClient.h"
 
 class MockMetaClient : public nebula::meta::BaseMetaClient {
  public:
