@@ -101,6 +101,8 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   folly::Executor *runner() const;
 
   void drop();
+  void drop(const PlanNode *node);
+  void dropBody(const PlanNode *body);
 
   // Store the result of this executor to execution context
   Status finish(Result &&result);
