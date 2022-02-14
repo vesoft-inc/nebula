@@ -458,7 +458,7 @@ Feature: Variable length Pattern match (0 step)
   Scenario: Multiple variable length with edge filter
     When executing query:
       """
-      MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..100]->(v2)
+      MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..]->(v2)
       RETURN v2 AS Friends;
       """
     Then the result should be, in any order:
