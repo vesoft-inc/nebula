@@ -31,6 +31,7 @@ class ClientSession final {
   // Creates a new ClientSession.
   // session: session obj used in RPC.
   // metaClient: used to communicate with meta server.
+  // return: ClientSession which will be created.
   static std::shared_ptr<ClientSession> create(meta::cpp2::Session&& session,
                                                meta::MetaClient* metaClient);
 

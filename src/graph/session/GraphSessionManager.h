@@ -44,11 +44,12 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   // userName: The name of the user who requesting to create the session.
   // clientIp: The address of the client which sends the request.
   // runner: Ensure that the corresponding callback function is executed on the runner.
+  // return: ClientSession which will be created.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> createSession(
       const std::string userName, const std::string clientIp, folly::Executor* runner) override;
 
   // Whether not exceeds the max allowed connections.
-  bool isWithinConnections() {
+  bool isOutOfConnections() {
     if (activeSessions_.size() >= static_cast<uint64_t>(FLAGS_max_allowed_connections)) {
       LOG(INFO) << "The sessions of the cluster has more than "
                    "max_allowed_connections: "
@@ -63,22 +64,26 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   void removeSession(SessionID id) override;
 
   // Finds an existing session. If it is not found locally, it will be searched from the meta
-  // server. id: The id of the session which will be found. runner: Ensure that the corresponding
-  // callback function is executed on the runner.
+  // server. id: The id of the session which will be found.
+  // runner: Ensure that the corresponding callback function is executed on the runner.
+  // return: ClientSession which will be found.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> findSession(
       SessionID id, folly::Executor* runner) override;
 
   // Finds an existing session only from local cache.
   // id: The id of the session which will be found.
+  // return: ClientSession which will be found.
   std::shared_ptr<ClientSession> findSessionFromCache(SessionID id);
 
   // Gets all seesions from the local cache.
+  // return: All sessions of the local cache.
   std::vector<meta::cpp2::Session> getSessionFromLocalCache() const;
 
  private:
   // Finds an existing session only from the meta server.
   // id: The id of the session which will be found.
   // runner: Ensure that the corresponding callback function is executed on the runner.
+  // return: ClientSession which will be found.
   folly::Future<StatusOr<std::shared_ptr<ClientSession>>> findSessionFromMetad(
       SessionID id, folly::Executor* runner);
 
@@ -94,6 +99,7 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   void updateSessionsToMeta();
 
   // Updates session info locally.
+  // session: ClientSession which will be updated.
   void updateSessionInfo(ClientSession* session);
 };
 
