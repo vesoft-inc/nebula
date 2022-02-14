@@ -33,9 +33,16 @@ class SelectExecutor final : public Executor {
     return else_;
   }
 
+  bool condition() const {
+    return condition_;
+  }
+
  private:
   Executor* then_;
   Executor* else_;
+
+  // mark condition value
+  bool condition_{false};
 };
 
 }  // namespace graph
