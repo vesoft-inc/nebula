@@ -16,10 +16,8 @@ namespace graph {
 
 class PlanNodeVisitor;
 
-/**
- * PlanNode is an abstraction of nodes in an execution plan which
- * is a kind of directed cyclic graph.
- */
+// PlanNode is an abstraction of nodes in an execution plan which
+// is a kind of directed cyclic graph.
 class PlanNode {
  public:
   enum class Kind : uint8_t {
@@ -361,6 +359,7 @@ class SingleDependencyNode : public PlanNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 };
 
+// SingleInputNode has one dependency and it sinks data from the dependency.
 class SingleInputNode : public SingleDependencyNode {
  public:
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -384,6 +383,7 @@ class SingleInputNode : public SingleDependencyNode {
   SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep);
 };
 
+// BinaryInputNode has two dependencies and it sinks data from them.
 class BinaryInputNode : public PlanNode {
  public:
   void setLeftDep(const PlanNode* left) {
