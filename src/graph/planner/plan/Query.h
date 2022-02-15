@@ -1226,6 +1226,11 @@ class DataCollect final : public VariableDependencyNode {
     return distinct_;
   }
 
+  void setSubgraphCol(bool getVertices, bool getEdges) {
+    getVertices_ = getVertices;
+    getEdges_ = getEdges;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1240,6 +1245,8 @@ class DataCollect final : public VariableDependencyNode {
   DCKind kind_;
   // using for m to n steps
   StepClause step_;
+  bool getVertices_{false};
+  bool getEdges_{false};
   bool distinct_{false};
 };
 

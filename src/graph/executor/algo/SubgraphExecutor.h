@@ -8,6 +8,17 @@
 
 #include "graph/executor/Executor.h"
 
+// Subgraph receive result from GetNeightbors
+//
+//
+//
+//
+// Member:
+// historyVids_ : is hash table
+// KEY   : the ID of the visited destination Vertex
+// VALUE : the number of steps to visit the KEY (starting vertex is 0)
+//
+
 namespace nebula {
 namespace graph {
 class SubgraphExecutor : public Executor {

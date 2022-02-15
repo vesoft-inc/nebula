@@ -82,12 +82,10 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(loop);
   dc->setInputVars({resultVar});
-  dc->setColNames({"VERTICES", "EDGES"});
-
-  auto* project = Project::make(qctx, dc, subgraphCtx_->yieldExpr);
+  dc->setColNames(subgraphCtx_->colNames);
 
   SubPlan subPlan;
-  subPlan.root = project;
+  subPlan.root = dc;
   subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : loop;
   return subPlan;
 }

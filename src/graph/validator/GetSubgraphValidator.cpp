@@ -102,28 +102,21 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   }
   auto size = yield->columns().size();
   outputs_.reserve(size);
-  auto pool = qctx_->objPool();
-  YieldColumns* newCols = pool->add(new YieldColumns());
 
   for (const auto& col : yield->columns()) {
     const std::string& colStr = col->expr()->toString();
     if (colStr == "VERTICES") {
       subgraphCtx_->getVertexProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTICES"), col->name());
-      newCols->addColumn(newCol);
     } else if (colStr == "EDGES") {
       if (subgraphCtx_->steps.steps() == 0) {
         return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
       }
       subgraphCtx_->getEdgeProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGES"), col->name());
-      newCols->addColumn(newCol);
     } else {
       return Status::SemanticError("Get Subgraph only support YIELD vertices OR edges");
     }
     outputs_.emplace_back(col->name(), Value::Type::LIST);
   }
-  subgraphCtx_->yieldExpr = newCols;
   subgraphCtx_->colNames = getOutColNames();
   return Status::OK();
 }

@@ -25,13 +25,14 @@ folly::Future<Status> SubgraphExecutor::execute() {
 
   VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
+  auto gnSize = iter->size();
 
   ResultBuilder builder;
   builder.value(iter->valuePtr());
 
   std::unordered_map<Value, int64_t> currentVids;
-  currentVids.reserve(iter->size());
-  historyVids_.reserve(historyVids_.size() + iter->size());
+  currentVids.reserve(gnSize);
+  historyVids_.reserve(historyVids_.size() + gnSize);
   if (currentStep == 1) {
     for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(nebula::kVid);
