@@ -973,3 +973,68 @@ Feature: Match By Id
       | ("Warriors" :team{name: "Warriors"})                                                                        |
       | ("Hornets" :team{name: "Hornets"})                                                                          |
       | ("Spurs" :team{name: "Spurs"})                                                                              |
+
+  Scenario: match by multiple id
+    When executing query:
+      """
+      MATCH (a)-[e:like]->(b)
+      WHERE id(a) == 'Tim Duncan' OR id(b) == 'Tony Parker'
+      RETURN id(a) as src, e, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src                 | e                                                            | dst             |
+      | "Tim Duncan"        | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | "Manu Ginobili" |
+      | "Tim Duncan"        | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        | "Tony Parker"   |
+      | "Boris Diaw"        | [:like "Boris Diaw"->"Tony Parker" @0 {likeness: 80}]        | "Tony Parker"   |
+      | "LaMarcus Aldridge" | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] | "Tony Parker"   |
+      | "Dejounte Murray"   | [:like "Dejounte Murray"->"Tony Parker" @0 {likeness: 99}]   | "Tony Parker"   |
+      | "Marco Belinelli"   | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}]   | "Tony Parker"   |
+    When executing query:
+      """
+      MATCH (a)-[e:like]->(b)
+      WHERE id(a) == 'Tim Duncan' AND id(b) == 'Tony Parker'
+      RETURN id(a) as src, e, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src          | e                                                     | dst           |
+      | "Tim Duncan" | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}] | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (a)--(b)
+      WHERE id(a) == 'Tim Duncan' AND id(b) == 'Tony Parker'
+      RETURN id(a) as src, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src          | dst           |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v3) == 'Spurs' AND id(v1) == 'Tony Parker'
+      RETURN v1, v2, v3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v1                                                    | v2                                                                                                          | v3                             |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"}) |
+    When executing query:
+      """
+      MATCH (a)--(b) WHERE id(b) == 'Tony Parker' RETURN DISTINCT id(a)
+      UNION
+      MATCH (a)--(b) WHERE id(b) == 'Tony Parker' RETURN DISTINCT id(a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id(a)               |
+      | "Hornets"           |
+      | "Marco Belinelli"   |
+      | "Spurs"             |
+      | "Dejounte Murray"   |
+      | "Tim Duncan"        |
+      | "Boris Diaw"        |
+      | "Manu Ginobili"     |
+      | "Kyle Anderson"     |
+      | "LaMarcus Aldridge" |
