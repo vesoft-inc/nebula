@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CONSISTTYPES_H
+#define STORAGE_TRANSACTION_CONSISTTYPES_H
 
 #include <optional>
 
@@ -39,3 +40,4 @@ struct HookFuncPara {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

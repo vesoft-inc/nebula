@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef DAEMONS_METADAEMONINIT_H
+#define DAEMONS_METADAEMONINIT_H
 
 #include <memory>
 
@@ -20,3 +21,4 @@ nebula::Status initWebService(nebula::WebService* svc,
                               nebula::kvstore::KVStore* kvstore,
                               nebula::hdfs::HdfsCommandHelper* helper,
                               nebula::thread::GenericThreadPool* pool);
+#endif

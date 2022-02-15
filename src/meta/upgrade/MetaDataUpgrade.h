@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
-
+#ifndef META_UPGRADE_METADATAUPGRADE_H
+#define META_UPGRADE_METADATAUPGRADE_H
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/utils/MetaKeyUtils.h"
@@ -66,3 +66,4 @@ class MetaDataUpgrade final {
 
 }  // namespace meta
 }  // namespace nebula
+#endif

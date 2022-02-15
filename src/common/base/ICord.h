@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_BASE_ICORD_H
+#define COMMON_BASE_ICORD_H
 
 #include "common/base/Base.h"
 
@@ -244,3 +245,4 @@ class ICord {
 };
 
 }  // namespace nebula
+#endif

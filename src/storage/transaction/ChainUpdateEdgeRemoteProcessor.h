@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORREMOTE_H
+#define STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORREMOTE_H
 
 #include "common/utils/MemoryLockWrapper.h"
 #include "storage/BaseProcessor.h"
@@ -34,3 +35,4 @@ class ChainUpdateEdgeRemoteProcessor : public BaseProcessor<cpp2::UpdateResponse
 
 }  // namespace storage
 }  // namespace nebula
+#endif

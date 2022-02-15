@@ -18,7 +18,6 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -30,7 +29,6 @@
 #include "webservice/Common.h"
 
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");

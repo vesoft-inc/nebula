@@ -26,7 +26,7 @@ namespace nebula {
 namespace meta {
 extern stats::CounterId kNumRunningJobs;
 
-class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
   friend class GetStatsTest;
   FRIEND_TEST(JobManagerTest, reserveJobId);
