@@ -15,3 +15,17 @@ install(
     COMPONENT
         common
 )
+
+install(
+    FILES
+        nebula-console
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        bin
+    COMPONENT
+        console
+    OPTIONAL
+)

@@ -37,8 +37,11 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
       - uses: ./.github/actions/tagname-action
         id: tag
+      - name: compile nebula-console
+        run: ./package/compile-console.sh
       - name: package
         run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE
       - name: output some vars
