@@ -15,6 +15,27 @@ class StartVidFinder;
 
 using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFinder>()>;
 
+// A StartVidFinder find a generally good solution for traversing from the vids.
+// Currently we have five StartVidFinders:
+// 1. VertexIdSeek find if a plan could traverse from a given vid.
+// MATCH(n) WHERE id(n) = value RETURN n
+//
+// 2. ArgumentFinder find if a plan could traverse from some vids that already
+// beed traversed.
+// MATCH (n)-[]-(l), (l)-[]-(m) return n,l,m
+// MATCH (n)-[]-(l) MATCH (l)-[]-(m) return n,l,m
+//
+// 3. PropIndexSeek find if a plan could traverse from some vids that could be
+// read from the property indices.
+// MATCH(n:Tag{prop:value}) RETURN n
+// MATCH(n:Tag) WHERE n.prop = value RETURN n
+//
+// 4. LabelIndexSeek find if a plan could traverse from some vids that could be
+// read from the label indices.
+// MATCH(n: tag) RETURN n
+// MATCH(s)-[:edge]->(e) RETURN e
+//
+// 5. ScanSeek find if a plan could traverse from some vids by scanning.
 class StartVidFinder {
  public:
   virtual ~StartVidFinder() = default;
@@ -26,8 +47,12 @@ class StartVidFinder {
 
   bool match(PatternContext* patternCtx);
 
+  // The derived class should implement matchNode if the finder has
+  // ability to find vids from node pattern.
   virtual bool matchNode(NodeContext* nodeCtx) = 0;
 
+  // The derived class should implement matchEdge if the finder has
+  // ability to find vids from edge pattern.
   virtual bool matchEdge(EdgeContext* nodeCtx) = 0;
 
   StatusOr<SubPlan> transform(PatternContext* patternCtx);

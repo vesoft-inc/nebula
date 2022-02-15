@@ -90,11 +90,9 @@ Expression* GoPlanner::loopCondition(uint32_t steps, const std::string& var) {
   return LogicalExpression::makeAnd(pool, step, earlyEnd);
 }
 
-/*
- * extract vid and edge's prop from GN
- * for joinDst & joinInput
- * output colNames {srcProps, edgeProps, kVid, "JOIN_DST_VID"}
- */
+// extract vid and edge's prop from GN
+// for joinDst & joinInput
+// output colNames {srcProps, edgeProps, kVid, "JOIN_DST_VID"}
 PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input) {
   auto& srcEdgePropsExpr = goCtx_->srcEdgePropsExpr;
   auto* pool = goCtx_->qctx->objPool();
@@ -116,11 +114,9 @@ PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string&
   return project;
 }
 
-/*
- * extract vid and dst from GN
- * for trackStartVid
- * output ColNames {srcVidColName, "TRACK_DST_VID"}
- */
+// extract vid and dst from GN
+// for trackStartVid
+// output ColNames {srcVidColName, "TRACK_DST_VID"}
 PlanNode* GoPlanner::extractSrcDstFromGN(PlanNode* dep, const std::string& input) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
@@ -138,11 +134,9 @@ PlanNode* GoPlanner::extractSrcDstFromGN(PlanNode* dep, const std::string& input
   return dedup;
 }
 
-/*
- * extract vid from runTime input
- * for joinInput
- * output ColNames {runtimeVidName, dstVidColName}
- */
+// extract vid from runTime input
+// for joinInput
+// output ColNames {runtimeVidName, dstVidColName}
 PlanNode* GoPlanner::extractVidFromRuntimeInput(PlanNode* dep) {
   if (dep == nullptr) {
     return dep;
@@ -166,13 +160,11 @@ PlanNode* GoPlanner::extractVidFromRuntimeInput(PlanNode* dep) {
   return dedup;
 }
 
-/*
- * establish a mapping between the original vId and the expanded destination vId
- * during each step of the expansion in the n-step and mton-step scenario
- * left: n-1 steps
- * right: step n
- * output ColNames {runtimeVidName, dstVidColName}
- */
+// establish a mapping between the original vId and the expanded destination vId
+// during each step of the expansion in the n-step and mton-step scenario
+// left: n-1 steps
+// right: step n
+// output ColNames {runtimeVidName, dstVidColName}
 PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
@@ -207,10 +199,8 @@ PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
   return dedup;
 }
 
-/*
- * output ColNames {srcProps, edgeProps, kVid, "JOIN_DST_VID", "DST_VID",
- * dstProps}
- */
+// output ColNames {srcProps, edgeProps, kVid, "JOIN_DST_VID", "DST_VID",
+// dstProps}
 PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
@@ -279,11 +269,9 @@ PlanNode* GoPlanner::buildJoinInputPlan(PlanNode* dep) {
   return join;
 }
 
-/*
- * left's colName dstVidColName join right's colName kVid
- * left  : n-1 steps
- * right : last step
- */
+// left's colName dstVidColName join right's colName kVid
+// left  : n-1 steps
+// right : last step
 PlanNode* GoPlanner::lastStepJoinInput(PlanNode* left, PlanNode* right) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();

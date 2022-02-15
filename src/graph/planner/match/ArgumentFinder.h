@@ -10,6 +10,8 @@
 
 namespace nebula {
 namespace graph {
+// ArgumentFinder find if a pattern use a named alias that already declared
+// in former patterns.
 class ArgumentFinder final : public StartVidFinder {
  public:
   static std::unique_ptr<ArgumentFinder> make() {
