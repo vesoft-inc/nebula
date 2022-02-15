@@ -105,7 +105,9 @@ test: sess
 
 slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
-	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
+	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_same_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_different_service.py
 
 standalone-tck: jobs
 	$(test_j_sa) tck/steps/test_tck.py
