@@ -86,6 +86,9 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
         }
         edges.emplace_back(std::move(edge));
       }
+      if (vertices.empty() && edges.empty()) {
+        break;
+      }
       ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
     }
   }

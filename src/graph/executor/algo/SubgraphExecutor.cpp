@@ -42,7 +42,8 @@ folly::Future<Status> SubgraphExecutor::execute() {
   auto& biDirectEdgeTypes = subgraph->biDirectEdgeTypes();
   while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);
-    if (historyVids_.find(dst) != historyVids_.end()) {
+    auto findIter = historyVids_.find(dst);
+    if (findIter != historyVids_.end()) {
       if (biDirectEdgeTypes.empty()) {
         iter->next();
       } else {
@@ -53,7 +54,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
         }
         auto type = typeVal.getInt();
         if (biDirectEdgeTypes.find(type) != biDirectEdgeTypes.end()) {
-          if (type < 0 || historyVids_[dst] + 2 == currentStep) {
+          if (type < 0 || findIter->second + 2 == currentStep) {
             iter->erase();
           } else {
             iter->next();
