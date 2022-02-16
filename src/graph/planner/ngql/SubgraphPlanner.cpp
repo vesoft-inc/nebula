@@ -82,6 +82,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(loop);
   dc->setInputVars({resultVar});
+  dc->setSubgraphCol(subgraphCtx_->getVertexProp, subgraphCtx_->getEdgeProp);
   dc->setColNames(subgraphCtx_->colNames);
 
   SubPlan subPlan;

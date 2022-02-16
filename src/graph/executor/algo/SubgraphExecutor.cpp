@@ -83,7 +83,6 @@ folly::Future<Status> SubgraphExecutor::execute() {
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
-  VLOG(1) << "Next step vid is : " << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

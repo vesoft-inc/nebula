@@ -61,6 +61,8 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
+  auto* dc = asNode<DataCollect>(node());
+  std::pair<bool, bool> outCol = dc->subgraphCol();
   DataSet ds;
   ds.colNames = std::move(colNames_);
   for (auto i = vars.begin(); i != vars.end(); ++i) {
@@ -70,21 +72,25 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
       auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
       List vertices;
       List edges;
-      auto originVertices = gnIter->getVertices();
-      vertices.reserve(originVertices.size());
-      for (auto& v : originVertices.values) {
-        if (UNLIKELY(!v.isVertex())) {
-          continue;
+      if (outCol.first) {
+        auto originVertices = gnIter->getVertices();
+        vertices.reserve(originVertices.size());
+        for (auto& v : originVertices.values) {
+          if (UNLIKELY(!v.isVertex())) {
+            continue;
+          }
+          vertices.emplace_back(std::move(v));
         }
-        vertices.emplace_back(std::move(v));
       }
-      auto originEdges = gnIter->getEdges();
-      edges.reserve(originEdges.size());
-      for (auto& edge : originEdges.values) {
-        if (UNLIKELY(!edge.isEdge())) {
-          continue;
+      if (outCol.second) {
+        auto originEdges = gnIter->getEdges();
+        edges.reserve(originEdges.size());
+        for (auto& edge : originEdges.values) {
+          if (UNLIKELY(!edge.isEdge())) {
+            continue;
+          }
+          edges.emplace_back(std::move(edge));
         }
-        edges.emplace_back(std::move(edge));
       }
       if (vertices.empty() && edges.empty()) {
         break;
