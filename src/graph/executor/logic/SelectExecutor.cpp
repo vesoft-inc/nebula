@@ -24,6 +24,7 @@ folly::Future<Status> SelectExecutor::execute() {
   QueryExpressionContext ctx(ectx_);
   auto value = expr->eval(ctx);
   DCHECK(value.isBool());
+  condition_ = (value.isBool() && value.getBool());
   return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
