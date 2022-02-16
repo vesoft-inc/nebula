@@ -61,18 +61,20 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
-  auto* dc = asNode<DataCollect>(node());
-  std::pair<bool, bool> outCol = dc->subgraphCol();
+  const auto* dc = asNode<DataCollect>(node());
+  const auto& colType = dc->colType();
   DataSet ds;
   ds.colNames = std::move(colNames_);
-  for (auto i = vars.begin(); i != vars.end(); ++i) {
-    const auto& hist = ectx_->getHistory(*i);
-    for (auto j = hist.begin(); j != hist.end(); ++j) {
-      auto iter = (*j).iter();
-      auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-      List vertices;
-      List edges;
-      if (outCol.first) {
+  const auto& hist = ectx_->getHistory(vars[0]);
+  for (const auto& result : hist) {
+    auto iter = result.iter();
+    auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
+    List vertices;
+    List edges;
+    Row row;
+    bool notEmpty = false;
+    for (const auto& type : colType) {
+      if (type == Value::Type::VERTEX) {
         auto originVertices = gnIter->getVertices();
         vertices.reserve(originVertices.size());
         for (auto& v : originVertices.values) {
@@ -81,8 +83,11 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
           }
           vertices.emplace_back(std::move(v));
         }
-      }
-      if (outCol.second) {
+        if (!vertices.empty()) {
+          notEmpty = true;
+          row.emplace_back(std::move(vertices));
+        }
+      } else {
         auto originEdges = gnIter->getEdges();
         edges.reserve(originEdges.size());
         for (auto& edge : originEdges.values) {
@@ -91,11 +96,14 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
           }
           edges.emplace_back(std::move(edge));
         }
+        if (!edges.empty()) {
+          notEmpty = true;
+        }
+        row.emplace_back(std::move(edges));
       }
-      if (vertices.empty() && edges.empty()) {
-        break;
-      }
-      ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
+    }
+    if (notEmpty) {
+      ds.rows.emplace_back(std::move(row));
     }
   }
   result_.setDataSet(std::move(ds));

@@ -1226,13 +1226,12 @@ class DataCollect final : public VariableDependencyNode {
     return distinct_;
   }
 
-  void setSubgraphCol(bool getVertices, bool getEdges) {
-    subgraphCol_.first = getVertices;
-    subgraphCol_.second = getEdges;
+  void setColType(std::vector<Value::Type>&& colType) {
+    colType_ = std::move(colType);
   }
 
-  const std::pair<bool, bool>& subgraphCol() {
-    return subgraphCol_;
+  const std::vector<Value::Type>& colType() const {
+    return colType_;
   }
 
   PlanNode* clone() const override;
@@ -1249,7 +1248,7 @@ class DataCollect final : public VariableDependencyNode {
   DCKind kind_;
   // using for m to n steps
   StepClause step_;
-  std::pair<bool, bool> subgraphCol_;
+  std::vector<Value::Type> colType_;
   bool distinct_{false};
 };
 

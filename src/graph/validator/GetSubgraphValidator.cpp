@@ -102,22 +102,25 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   }
   auto size = yield->columns().size();
   outputs_.reserve(size);
-
+  std::vector<Value::Type> colType;
   for (const auto& col : yield->columns()) {
     const std::string& colStr = col->expr()->toString();
     if (colStr == "VERTICES") {
       subgraphCtx_->getVertexProp = true;
+      colType.emplace_back(Value::Type::VERTEX);
     } else if (colStr == "EDGES") {
       if (subgraphCtx_->steps.steps() == 0) {
         return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
       }
       subgraphCtx_->getEdgeProp = true;
+      colType.emplace_back(Value::Type::EDGE);
     } else {
       return Status::SemanticError("Get Subgraph only support YIELD vertices OR edges");
     }
     outputs_.emplace_back(col->name(), Value::Type::LIST);
   }
   subgraphCtx_->colNames = getOutColNames();
+  subgraphCtx_->colType = std::move(colType);
   return Status::OK();
 }
 

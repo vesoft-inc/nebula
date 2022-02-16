@@ -8,7 +8,7 @@
 
 #include "graph/executor/Executor.h"
 
-// Subgraph receive result from GetNeightbors
+// Subgraph receive result from GetNeighbors
 // There are two Main functions
 // First : Extract the deduplicated destination VID from GetNeighbors
 // Second: Delete previously visited edges and save the result(iter) to the variable `resultVar`
