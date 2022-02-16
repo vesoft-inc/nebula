@@ -1012,6 +1012,13 @@ Feature: Match By Id
       | "Tim Duncan" | "Tony Parker" |
     When executing query:
       """
+      MATCH (a)--(b)
+      WHERE id(a) == 'Tim Duncan' OR id(b) == 'Tony Parker'
+      RETURN id(a) as src, id(b) as dst
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v3) == 'Spurs' AND id(v1) == 'Tony Parker'
       RETURN v1, v2, v3
@@ -1021,6 +1028,49 @@ Feature: Match By Id
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"}) |
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v3) == 'Spurs' OR id(v1) == 'Tony Parker'
+      RETURN v1, v2, v3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v1                                                                                                          | v2                                                                                                          | v3                                             |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Trail Blazers" :team{name: "Trail Blazers"}) |
+      | ("Rudy Gay" :player{age: 32, name: "Rudy Gay"})                                                             | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Damian Lillard" :player{age: 28, name: "Damian Lillard"})                                                 | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Kyle Anderson" :player{age: 25, name: "Kyle Anderson"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})                                                         | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Rudy Gay" :player{age: 32, name: "Rudy Gay"})                                                             | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
     When executing query:
       """
       MATCH (a)--(b) WHERE id(b) == 'Tony Parker' RETURN DISTINCT id(a)
