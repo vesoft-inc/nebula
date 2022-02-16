@@ -38,6 +38,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  // check if the space already exist index has the same index name
   auto ret = getIndexID(space, indexName);
   if (nebula::ok(ret)) {
     if (req.get_if_not_exists()) {
@@ -83,6 +84,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   }
   auto checkIter = nebula::value(iterRet).get();
 
+  // check if the index having same fields exist
   while (checkIter->valid()) {
     auto val = checkIter->val();
     auto item = MetaKeyUtils::parseIndex(val);
@@ -111,6 +113,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     return;
   }
 
+  // check if all given fields valid to create index on
   auto latestEdgeSchema = std::move(nebula::value(schemaRet));
   const auto& schemaCols = latestEdgeSchema.get_columns();
   std::vector<cpp2::ColumnDef> columns;
@@ -135,8 +138,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(INFO) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                  << field.get_name();
+        LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                  << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -149,8 +152,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
       }
       if (*field.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(INFO) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                  << field.get_name();
+        LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                  << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -172,6 +175,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     columns.emplace_back(col);
   }
 
+  // add index item
   std::vector<kvstore::KV> data;
   auto edgeIndexRet = autoIncrementIdInSpace(space);
   if (!nebula::ok(edgeIndexRet)) {

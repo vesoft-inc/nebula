@@ -11,6 +11,18 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create edge index on given space with:
+ *        1. given index name
+ *        2. given edge name
+ *        3. fields in the given edge
+ *
+ *        It will first check if all the parameters valid, then create index item
+ *        to save these meta without building the index on existing data actually.
+ *        But when new data inserted, it will generated index data according to the index
+ *        created before.
+ *
+ */
 class CreateEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateEdgeIndexProcessor* instance(kvstore::KVStore* kvstore) {

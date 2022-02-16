@@ -99,15 +99,10 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       onFinished();
       return;
     }
-<<<<<<< HEAD
     // Because tagId/edgeType is the space range, judge the spaceId and schemaId
     if (index.get_space_id() == indexItem.get_space_id() &&
         index.get_depend_schema() == indexItem.get_depend_schema()) {
-      LOG(ERROR) << "Depends on the same schema , index : " << indexName;
-=======
-    if (index.get_depend_schema() == indexItem.get_depend_schema()) {
       LOG(INFO) << "Depends on the same schema , index : " << indexName;
->>>>>>> meta/processor/index change log level
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
       onFinished();
       return;

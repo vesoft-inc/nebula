@@ -38,6 +38,8 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+
+  // check if the space has the index with the same name
   auto ret = getIndexID(space, indexName);
   if (nebula::ok(ret)) {
     if (req.get_if_not_exists()) {
@@ -83,6 +85,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   }
   auto checkIter = nebula::value(iterRet).get();
 
+  // check if the tag index with the same fields exist
   while (checkIter->valid()) {
     auto val = checkIter->val();
     auto item = MetaKeyUtils::parseIndex(val);
@@ -110,6 +113,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     return;
   }
 
+  // check if all the given fields valid for building index in latest tag schema
   auto latestTagSchema = std::move(nebula::value(schemaRet));
   const auto& schemaCols = latestTagSchema.get_columns();
   std::vector<cpp2::ColumnDef> columns;
@@ -133,8 +137,8 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(INFO) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                  << field.get_name();
+        LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                  << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -147,8 +151,8 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         return;
       }
       if (*field.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(INFO) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                  << field.get_name();
+        LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                  << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
