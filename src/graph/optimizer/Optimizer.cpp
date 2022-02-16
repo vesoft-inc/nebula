@@ -5,13 +5,21 @@
 
 #include "graph/optimizer/Optimizer.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/planner/plan/ExecutionPlan.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/PlanNode.h"
+#include <stddef.h>  // for size_t
+
+#include <cstdint>      // for int64_t, int8_t
+#include <memory>       // for make_unique, unique_ptr
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, pair
+
+#include "common/base/Logging.h"               // for COMPACT_GOOGLE_LOG_FATAL
+#include "graph/context/QueryContext.h"        // for QueryContext
+#include "graph/optimizer/OptContext.h"        // for OptContext
+#include "graph/optimizer/OptGroup.h"          // for OptGroup, OptGroupNode
+#include "graph/optimizer/OptRule.h"           // for RuleSet
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
+#include "graph/planner/plan/Logic.h"          // for Select, Loop
+#include "graph/planner/plan/PlanNode.h"       // for PlanNode, PlanNode::Kind
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;

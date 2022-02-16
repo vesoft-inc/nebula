@@ -3,23 +3,65 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
+#include <double-conversion/utils.h>                 // for ASSERT
+#include <folly/Range.h>                             // for StringPiece
+#include <folly/ScopeGuard.h>                        // for operator+, SCO...
+#include <folly/String.h>                            // for stringPrintf
+#include <folly/executors/IOThreadPoolExecutor.h>    // for IOThreadPoolEx...
+#include <folly/init/Init.h>                         // for init
+#include <folly/synchronization/Baton.h>             // for Baton
+#include <gflags/gflags_declare.h>                   // for clstring, DECL...
+#include <glog/logging.h>                            // for INFO
+#include <gtest/gtest.h>                             // for Message
+#include <gtest/gtest.h>                             // for TestPartResult
+#include <gtest/gtest.h>                             // for Message
+#include <gtest/gtest.h>                             // for TestPartResult
+#include <stdint.h>                                  // for int32_t, uint32_t
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>  // for PriorityThread...
+#include <unistd.h>                                  // for sleep, usleep
 
-#include <iostream>
+#include <algorithm>                        // for sort
+#include <atomic>                           // for atomic
+#include <boost/filesystem/operations.hpp>  // for exists
+#include <iostream>                         // for operator<<
+#include <memory>                           // for unique_ptr
+#include <string>                           // for string, basic_...
+#include <unordered_map>                    // for unordered_map<...
+#include <utility>                          // for move, pair
+#include <vector>                           // for vector
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/meta/Common.h"
-#include "common/network/NetworkUtils.h"
-#include "kvstore/LogEncoder.h"
-#include "kvstore/NebulaStore.h"
-#include "kvstore/PartManager.h"
-#include "kvstore/RocksEngine.h"
-#include "kvstore/RocksEngineConfig.h"
-#include "meta/ActiveHostsMan.h"
+#include "common/base/EitherOr.h"             // for EitherOr
+#include "common/base/ErrorOr.h"              // for ok, value
+#include "common/base/Logging.h"              // for LogMessage, LOG
+#include "common/datatypes/HostAddr.h"        // for HostAddr, oper...
+#include "common/fs/FileUtils.h"              // for FileUtils
+#include "common/fs/TempDir.h"                // for TempDir
+#include "common/meta/Common.h"               // for PartHosts, Par...
+#include "common/network/NetworkUtils.h"      // for NetworkUtils
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, Err...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVEngine.h"                 // for KVEngine
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVOptions
+#include "kvstore/LogEncoder.h"               // for BatchHolder
+#include "kvstore/NebulaStore.h"              // for NebulaStore
+#include "kvstore/Part.h"                     // for Part
+#include "kvstore/PartManager.h"              // for MemPartManager
+#include "kvstore/RocksEngine.h"              // for RocksEngine
+#include "kvstore/RocksEngineConfig.h"        // for FLAGS_rocksdb_...
+#include "meta/ActiveHostsMan.h"              // for ActiveHostsMan
+
+namespace nebula {
+namespace meta {
+namespace cpp2 {
+class LeaderInfo;
+
+class LeaderInfo;
+}  // namespace cpp2
+}  // namespace meta
+}  // namespace nebula
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_bool(auto_remove_invalid_space);

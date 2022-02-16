@@ -5,10 +5,24 @@
 
 #include "graph/optimizer/rule/TopNRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <stddef.h>  // for size_t
+
+#include <utility>  // for pair, move
+#include <vector>   // for vector
+
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for TopN, Limit, Sort
+#include "parser/TraverseSentences.h"     // for OrderFactor::OrderType
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;

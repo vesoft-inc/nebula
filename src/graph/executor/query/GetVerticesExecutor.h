@@ -6,11 +6,28 @@
 #ifndef GRAPH_EXECUTOR_QUERY_GETVERTICESEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_GETVERTICESEXECUTOR_H_
 
-#include "graph/executor/query/GetPropExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "common/datatypes/DataSet.h"              // for DataSet
+#include "graph/executor/query/GetPropExecutor.h"  // for GetPropExecutor
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
+class Status;
 namespace graph {
+class GetVertices;
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class GetVertices;
+class PlanNode;
+class QueryContext;
 
 class GetVerticesExecutor final : public GetPropExecutor {
  public:

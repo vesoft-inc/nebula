@@ -5,6 +5,26 @@
 
 #include "storage/transaction/ChainResumeAddPrimeProcessor.h"
 
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <memory>         // for allocator_traits...
+#include <ostream>        // for operator<<, basi...
+#include <unordered_map>  // for _Node_const_iter...
+#include <utility>        // for pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value
+#include "interface/gen-cpp2/storage_types.h"        // for AddEdgesRequest
+#include "kvstore/Common.h"                          // for KV
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
+
 namespace nebula {
 namespace storage {
 

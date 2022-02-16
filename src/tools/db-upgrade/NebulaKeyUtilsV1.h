@@ -6,7 +6,18 @@
 #ifndef TOOLS_DBUPGRADE_NEBULAKEYUTILSV1_H_
 #define TOOLS_DBUPGRADE_NEBULAKEYUTILSV1_H_
 
-#include "common/utils/Types.h"
+#include <folly/Range.h>   // for StringPiece
+#include <folly/String.h>  // for hexDump
+#include <stdint.h>        // for int32_t, uint32_t, int64_t
+
+#include <algorithm>    // for min
+#include <ostream>      // for operator<<, basic_ostream
+#include <string>       // for string, operator<<, char_traits
+#include <type_traits>  // for enable_if, is_integral
+
+#include "common/base/Logging.h"        // for Check_EQImpl, Check_GEImpl
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, EdgeRanking, Edg...
+#include "common/utils/Types.h"         // for IndexID, NebulaSystemKeyType
 
 namespace nebula {
 

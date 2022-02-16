@@ -3,16 +3,42 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/lang/Bits.h>
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
-#include <rocksdb/table.h>
+#include <folly/Conv.h>               // for to
+#include <folly/Range.h>              // for StringPiece
+#include <folly/String.h>             // for stringPrintf
+#include <folly/init/Init.h>          // for init
+#include <gflags/gflags_declare.h>    // for clstring
+#include <glog/logging.h>             // for INFO
+#include <gtest/gtest-param-test.h>   // for ParameterizedTestSuiteInfo
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
+#include <rocksdb/env.h>              // for EnvOptions
+#include <rocksdb/options.h>          // for Options
+#include <rocksdb/sst_file_writer.h>  // for SstFileWriter
+#include <rocksdb/statistics.h>       // for Statistics, Tickers
+#include <rocksdb/status.h>           // for Status
+#include <stdint.h>                   // for int32_t
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/RocksEngine.h"
-#include "kvstore/RocksEngineConfig.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<, basic_ostre...
+#include <string>   // for string, basic_string
+#include <tuple>    // for make_tuple, get, tuple
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/ErrorOr.h"              // for ok, value
+#include "common/base/Logging.h"              // for LogMessage, LOG, _LOG_INFO
+#include "common/fs/FileUtils.h"              // for FileUtils
+#include "common/fs/TempDir.h"                // for TempDir
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, VertexID
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/RocksEngine.h"              // for RocksEngine
+#include "kvstore/RocksEngineConfig.h"        // for FLAGS_enable_rocksdb_pr...
 
 namespace nebula {
 namespace kvstore {

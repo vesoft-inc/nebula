@@ -6,13 +6,34 @@
 #ifndef CODEC_ROWREADERWRAPPER_H_
 #define CODEC_ROWREADERWRAPPER_H_
 
-#include <gtest/gtest_prod.h>
+#include <folly/Range.h>       // for StringPiece
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int32_t, int64_t
 
-#include "codec/RowReaderV1.h"
-#include "codec/RowReaderV2.h"
+#include <cstddef>  // for nullptr_t, size_t
+#include <memory>   // for shared_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "codec/RowReader.h"    // for RowReader, RowReader::Ite...
+#include "codec/RowReaderV1.h"  // for RowReaderV1
+#include "codec/RowReaderV2.h"  // for RowReaderV2
 #include "common/base/Base.h"
+#include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/datatypes/Value.h"     // for Value
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID, SchemaVer
 
 namespace nebula {
+namespace meta {
+class NebulaSchemaProvider;
+class SchemaManager;
+class SchemaProviderIf;
+
+class NebulaSchemaProvider;
+class SchemaManager;
+class SchemaProviderIf;
+}  // namespace meta
 
 /**
  * @brief A wrapper class to hide details of RowReaderV1 and RowReaderV2

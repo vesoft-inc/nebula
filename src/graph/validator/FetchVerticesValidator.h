@@ -6,12 +6,38 @@
 #ifndef _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 #define _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/validator/Validator.h"
+#include <map>     // for map
+#include <memory>  // for shared_ptr, unique_ptr
+#include <vector>  // for vector
+
+#include "common/base/Status.h"                 // for Status
+#include "common/thrift/ThriftTypes.h"          // for TagID
+#include "graph/context/ast/QueryAstContext.h"  // for FetchVerticesContext
+#include "graph/validator/Validator.h"          // for Validator
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
+class NameLabelList;
+class Sentence;
+class YieldClause;
 namespace graph {
+class QueryContext;
+struct AstContext;
+}  // namespace graph
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class NameLabelList;
+class Sentence;
+class YieldClause;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+namespace graph {
+class QueryContext;
+struct AstContext;
 
 class FetchVerticesValidator final : public Validator {
  public:

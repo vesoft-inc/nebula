@@ -5,10 +5,18 @@
 
 #include "graph/validator/FindPathValidator.h"
 
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/ValidateUtil.h"
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string, basic_string, cha...
+#include <vector>   // for vector
+
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "common/datatypes/Value.h"        // for Value, Value::Type, opera...
+#include "common/expression/Expression.h"  // for Expression::Kind, Expression
+#include "graph/context/Symbols.h"         // for ColsDef
+#include "graph/util/ExpressionUtils.h"    // for ExpressionUtils
+#include "graph/util/ValidateUtil.h"       // for ValidateUtil
+#include "parser/Clauses.h"                // for YieldColumn, WhereClause
+#include "parser/TraverseSentences.h"      // for FindPathSentence
 
 namespace nebula {
 namespace graph {

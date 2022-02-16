@@ -5,7 +5,27 @@
 
 #include "meta/processors/index/CreateEdgeIndexProcessor.h"
 
-#include "common/base/CommonMacro.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
+
+#include <algorithm>  // for max, find_if
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<, basic_ost...
+#include <set>        // for set
+#include <string>     // for basic_string, string
+#include <vector>     // for vector
+
+#include "common/base/CommonMacro.h"          // for MAX_INDEX_TYPE_LENGTH
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, EntryType
+#include "common/utils/Types.h"               // for IndexID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, PropertyType
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::autoIn...
+#include "meta/processors/Common.h"           // for LockUtils
 
 namespace nebula {
 namespace meta {

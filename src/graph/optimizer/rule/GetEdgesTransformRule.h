@@ -6,18 +6,33 @@
 #ifndef GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
 #define GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
 
-#include "graph/optimizer/OptRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only)
 
 namespace nebula {
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 namespace graph {
 class ScanEdges;
 class Project;
 class Traverse;
 class PlanNode;
+class QueryContext;
 }  // namespace graph
 
 namespace opt {
+class OptContext;
 
 // e.g. match ()-[e]->(?) return e
 // Optimize to get edges directly

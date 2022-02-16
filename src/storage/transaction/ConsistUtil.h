@@ -6,13 +6,23 @@
 #ifndef STORAGE_TRANSACTION_CONSISTUTIL_H
 #define STORAGE_TRANSACTION_CONSISTUTIL_H
 
+#include <folly/Range.h>  // for StringPiece
+#include <stddef.h>       // for size_t
+#include <stdint.h>       // for int64_t
+
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "common/datatypes/Value.h"     // for Value
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, VertexID
 #include "common/time/WallClock.h"
 #include "common/utils/MemoryLockWrapper.h"
 #include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for AddEdgesRequest, Delet...
 #include "kvstore/KVStore.h"
 #include "storage/CommonUtils.h"
-#include "storage/transaction/ConsistTypes.h"
+#include "storage/transaction/ConsistTypes.h"  // for RequestType
 
 namespace nebula {
 namespace storage {

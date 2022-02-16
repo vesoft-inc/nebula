@@ -3,11 +3,21 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "graph/util/AstUtils.h"
-#include "parser/GQLParser.h"
+#include <memory>   // for allocator, unique_ptr
+#include <string>   // for string, operator+, char_...
+#include <utility>  // for move
+
+#include "Sentence.h"                        // for Sentence
+#include "common/base/Status.h"              // for operator<<, Status, NG_R...
+#include "common/base/StatusOr.h"            // for StatusOr
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/QueryContext.h"      // for QueryContext
+#include "graph/util/AstUtils.h"             // for AstUtils
+#include "parser/GQLParser.h"                // for GQLParser
 
 namespace nebula {
 

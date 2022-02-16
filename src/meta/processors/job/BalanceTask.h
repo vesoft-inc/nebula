@@ -6,17 +6,30 @@
 #ifndef META_ADMIN_BALANCETASK_H_
 #define META_ADMIN_BALANCETASK_H_
 
+#include <folly/String.h>
 #include <gtest/gtest_prod.h>
+#include <stdint.h>
 
+#include <functional>
+#include <string>
+
+#include "common/datatypes/HostAddr.h"
 #include "common/network/NetworkUtils.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/time/WallClock.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
+class AdminClient;
 
 /**
  * @brief A balance task mainly include jobID, spaceId, partId, srcHost, dstHost, status, result

@@ -3,10 +3,28 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_string
+#include <stdint.h>                 // for uint16_t
+
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for char_traits, string
+
+#include "common/base/Base.h"     // for NG_MUST_USE_RESULT
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
 #ifndef WEBSERVICE_WEBSERVICE_H_
 #define WEBSERVICE_WEBSERVICE_H_
 
-#include "common/base/Status.h"
+#include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_string
+#include <stdint.h>                 // for uint16_t
+
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for char_traits, string
+
+#include "common/base/Base.h"     // for NG_MUST_USE_RESULT
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"   // for Status
 
 DECLARE_int32(ws_http_port);
 DECLARE_int32(ws_h2_port);
@@ -14,6 +32,7 @@ DECLARE_string(ws_ip);
 DECLARE_int32(ws_threads);
 
 #ifdef BUILD_STANDALONE
+
 DECLARE_int32(ws_storage_http_port);
 DECLARE_int32(ws_storage_h2_port);
 DECLARE_int32(ws_storage_threads);

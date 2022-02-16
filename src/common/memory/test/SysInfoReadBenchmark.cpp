@@ -3,12 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <sys/sysinfo.h>
+#include <errno.h>                // for errno
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK, runBenchmarks
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <gflags/gflags.h>        // for ParseCommandLineFlags
+#include <linux/sysinfo.h>        // for sysinfo
+#include <stdint.h>               // for uint64_t
+#include <string.h>               // for strerror
+#include <sys/sysinfo.h>          // for sysinfo
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
+#include <cstdio>    // for fscanf, pclose, popen
+#include <fstream>   // for operator<<, cerr, ostream, ifstream
+#include <iostream>  // for operator<<, cerr, ostream, ifstream
 
 BENCHMARK(Popen) {
   auto pipe = popen("cat /sys/fs/cgroup/memory/memory.limit_in_bytes", "r");

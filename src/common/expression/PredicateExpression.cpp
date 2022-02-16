@@ -5,7 +5,18 @@
 
 #include "common/expression/PredicateExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <stddef.h>  // for size_t
+
+#include <utility>  // for pair
+
+#include "common/base/Logging.h"                 // for COMPACT_GOOGLE_LOG_F...
+#include "common/context/ExpressionContext.h"    // for ExpressionContext
+#include "common/datatypes/Edge.h"               // for Edge
+#include "common/datatypes/List.h"               // for List
+#include "common/datatypes/Map.h"                // for Map
+#include "common/datatypes/Vertex.h"             // for Vertex
+#include "common/expression/BinaryExpression.h"  // for BinaryExpression
+#include "common/expression/ExprVisitor.h"       // for ExprVisitor
 
 namespace nebula {
 

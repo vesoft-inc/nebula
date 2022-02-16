@@ -5,10 +5,23 @@
 
 #include "graph/planner/match/SegmentsConnector.h"
 
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"                       // for COMPACT_GOOGLE...
+#include "common/expression/FunctionCallExpression.h"  // for ArgumentList
+#include "common/expression/PropertyExpression.h"      // for InputPropertyE...
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/planner/plan/Algo.h"                   // for BiCartesianPro...
+#include "graph/planner/plan/PlanNode.h"               // for SingleInputNode
+#include "graph/planner/plan/Query.h"                  // for BiInnerJoin
 
 namespace nebula {
+class Expression;
+
+class Expression;
+
 namespace graph {
 
 SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,

@@ -6,16 +6,43 @@
 #ifndef META_METAJOBEXECUTOR_H_
 #define META_METAJOBEXECUTOR_H_
 
+#include <folly/futures/Future.h>  // for Future
+#include <limits.h>                // for INT_MAX, INT_MIN
+#include <stdint.h>                // for int32_t
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <algorithm>           // for max
+#include <condition_variable>  // for condition_variable
+#include <functional>          // for function
+#include <mutex>               // for mutex
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
+
 #include "common/base/ErrorOr.h"
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, JobID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for JobStatus, ReportTaskRe...
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/JobDescription.h"
-#include "meta/processors/job/JobExecutor.h"
+#include "meta/processors/job/JobExecutor.h"  // for JobExecutor
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 class MetaJobExecutor : public JobExecutor {
  public:

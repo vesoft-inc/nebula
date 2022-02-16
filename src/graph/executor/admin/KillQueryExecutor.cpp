@@ -5,8 +5,37 @@
 
 #include "graph/executor/admin/KillQueryExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Future-pre.h>  // for valueCallableResul...
+#include <folly/futures/Future.h>      // for makeFuture, Future...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+
+#include <algorithm>    // for find_if
+#include <memory>       // for unique_ptr, shared...
+#include <ostream>      // for operator<<, basic_...
+#include <string>       // for char_traits, opera...
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move, pair
+
+#include "clients/meta/MetaClient.h"               // for MetaClient
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for Value, operator<<
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for Result
+#include "graph/planner/plan/Admin.h"              // for KillQuery
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for ClientSession
+#include "graph/session/GraphSessionManager.h"     // for GraphSessionManager
+#include "interface/gen-cpp2/meta_types.h"         // for Session, ExecResp
 
 namespace nebula {
 namespace graph {

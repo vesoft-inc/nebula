@@ -6,10 +6,23 @@
 #ifndef COMMON_EXPRESSION_TEXTSEARCHEXPRESSION_H_
 #define COMMON_EXPRESSION_TEXTSEARCHEXPRESSION_H_
 
+#include <stdint.h>  // for int32_t
+
+#include <ostream>  // for operator<<
+#include <string>   // for string, operator<<
+
 #include "common/base/Base.h"
-#include "common/expression/Expression.h"
+#include "common/base/Logging.h"           // for LOG, LogMessageFatal, _LOG...
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value, Value::kNullBadData
+#include "common/expression/Expression.h"  // for Expression::Kind, Expression
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class TextSearchArgument final {
  public:

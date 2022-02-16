@@ -5,7 +5,14 @@
 
 #include "graph/service/PermissionManager.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <ostream>  // for basic_ostream::operator<<
+
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "graph/context/ValidateContext.h"  // for ValidateContext
+#include "graph/service/GraphFlags.h"       // for FLAGS_enable_authorize
+#include "graph/session/ClientSession.h"    // for ClientSession, SpaceInfo
 
 namespace nebula {
 namespace graph {

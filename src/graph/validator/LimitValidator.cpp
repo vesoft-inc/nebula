@@ -5,8 +5,15 @@
 
 #include "graph/validator/LimitValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "parser/TraverseSentences.h"
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "graph/context/QueryContext.h"        // for QueryContext
+#include "graph/context/Symbols.h"             // for ColsDef, ColDef
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
+#include "graph/planner/plan/Query.h"          // for Limit
+#include "parser/TraverseSentences.h"          // for LimitSentence
 
 namespace nebula {
 namespace graph {

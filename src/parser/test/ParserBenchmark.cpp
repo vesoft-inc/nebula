@@ -2,11 +2,20 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_RELA...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <gflags/gflags.h>        // for ParseCommandLineFlags
+#include <stddef.h>               // for size_t
 
-#include "common/base/Base.h"
-#include "common/expression/Expression.h"
-#include "parser/GQLParser.h"
+#include <memory>  // for make_unique, allocator, uniq...
+#include <thread>  // for thread
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"         // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"          // for operator<<
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "graph/context/QueryContext.h"  // for QueryContext
+#include "parser/GQLParser.h"            // for GQLParser
 
 using nebula::GQLParser;
 

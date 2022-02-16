@@ -6,12 +6,21 @@
 #ifndef COMMON_GEO_GEOINDEX_H
 #define COMMON_GEO_GEOINDEX_H
 
-#include <s2/s2region_coverer.h>
+#include <s2/s2region_coverer.h>  // for S2RegionCoverer::Options
+#include <stdint.h>               // for uint64_t
 
 #include <algorithm>
-#include <vector>
+#include <cstddef>    // for size_t
+#include <typeindex>  // for hash
+#include <vector>     // for vector
 
-#include "common/datatypes/Geography.h"
+#include "common/datatypes/Geography.h"  // for Geography
+
+class S2CellId;
+class S2Region;
+
+class S2CellId;
+class S2Region;
 
 namespace nebula {
 

@@ -5,7 +5,27 @@
 
 #include "meta/processors/user/AuthenticationProcessor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Range.h>                    // for Range
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<, basic_ost...
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                 // for UNUSED
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LogMessage, LOG, _LOG...
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::userExist
+#include "meta/processors/Common.h"           // for LockUtils
 
 namespace nebula {
 namespace meta {

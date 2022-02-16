@@ -6,10 +6,30 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_SUBMIT_JOB_EXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_SUBMIT_JOB_EXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <gtest/gtest_prod.h>      // for FRIEND_TEST
+#include <stdint.h>                // for int64_t
+
+#include <vector>  // for allocator, vector
+
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for DataSet
+#include "common/datatypes/Value.h"         // for Value
+#include "graph/executor/Executor.h"        // for Executor
+#include "interface/gen-cpp2/meta_types.h"  // for AdminJobOp, AdminJobResul...
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class SubmitJobExecutor final : public Executor {
  public:

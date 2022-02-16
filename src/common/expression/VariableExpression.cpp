@@ -5,8 +5,11 @@
 
 #include "common/expression/VariableExpression.h"
 
-#include "common/datatypes/List.h"
-#include "common/expression/ExprVisitor.h"
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/datatypes/Value.h"            // for Value, Value::kNullBad...
+#include "common/expression/ExprVisitor.h"     // for ExprVisitor
 
 namespace nebula {
 const Value& VariableExpression::eval(ExpressionContext& ctx) {

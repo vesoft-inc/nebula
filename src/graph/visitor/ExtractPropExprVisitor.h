@@ -5,11 +5,70 @@
 #ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
 #define GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
 
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+
+#include "common/base/Status.h"  // for Status
 #include "graph/context/ValidateContext.h"
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"  // for ExprVisitorImpl
 #include "parser/Clauses.h"
 
 namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class Expression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class PropertyExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+class YieldColumn;
+class YieldColumns;
+
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class Expression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class PropertyExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+class YieldColumn;
+class YieldColumns;
+
 namespace graph {
 
 class ValidateContext;

@@ -3,8 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/planner/plan/Admin.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <folly/String.h>  // for stringPrintf
+#include <gtest/gtest.h>   // for Message
+#include <gtest/gtest.h>   // for TestPartResult
+#include <gtest/gtest.h>   // for Message
+#include <gtest/gtest.h>   // for TestPartResult
+
+#include <string>       // for allocator, string
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Status.h"                      // for operator<<
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/planner/plan/Admin.h"                // for CreateUser, Drop...
+#include "graph/planner/plan/ExecutionPlan.h"        // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
+#include "interface/gen-cpp2/meta_types.h"           // for RoleType, RoleTy...
 
 namespace nebula {
 namespace graph {

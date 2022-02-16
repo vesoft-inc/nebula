@@ -6,11 +6,23 @@
 #ifndef COMMON_NETWORK_NETWORKUTILS_H_
 #define COMMON_NETWORK_NETWORKUTILS_H_
 
+#include <stdint.h>  // for uint16_t, int32_t, uint32_t
+
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/datatypes/HostAddr.h"
 
 namespace nebula {
+struct HostAddr;
+
+struct HostAddr;
+
 namespace network {
 
 class NetworkUtils final {

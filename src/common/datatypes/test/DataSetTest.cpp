@@ -3,10 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/datatypes/DataSet.h"
+#include <string>  // for string, basic_string, allocator
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"       // for SetStderrLogging
+#include "common/datatypes/DataSet.h"  // for Row, DataSet
+#include "common/datatypes/Value.h"    // for Value
 
 TEST(DataSetTest, Basic) {
   nebula::DataSet data({"col1", "col2", "col3"});

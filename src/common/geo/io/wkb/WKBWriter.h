@@ -6,10 +6,13 @@
 #ifndef COMMON_GEO_IO_WKB_WKBWRITER_H
 #define COMMON_GEO_IO_WKB_WKBWRITER_H
 
+#include <string>  // for string
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
-#include "common/datatypes/Geography.h"
-#include "common/geo/io/wkb/ByteOrder.h"
-#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
+#include "common/datatypes/Geography.h"               // for Coordinate (ptr...
+#include "common/geo/io/wkb/ByteOrder.h"              // for ByteOrder, Byte...
+#include "common/geo/io/wkb/ByteOrderDataIOStream.h"  // for ByteOrderDataOu...
 
 namespace nebula {
 namespace geo {

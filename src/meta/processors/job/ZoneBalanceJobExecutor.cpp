@@ -5,11 +5,29 @@
 
 #include "meta/processors/job/ZoneBalanceJobExecutor.h"
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for int32_t, uint32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
 
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
+#include <algorithm>   // for for_each, sort, find_if
+#include <atomic>      // for atomic
+#include <functional>  // for function
+#include <memory>      // for unique_ptr, operator==
+#include <ostream>     // for operator<<, basic_ostre...
+#include <set>         // for set
+#include <utility>     // for pair, swap, move
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...
+#include "interface/gen-cpp2/meta_types.h"    // for JobStatus, SpaceDesc
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/ActiveHostsMan.h"              // for LastUpdateTimeMan
+#include "meta/processors/job/BalancePlan.h"  // for BalancePlan
+#include "meta/processors/job/BalanceTask.h"  // for BalanceTask
 
 namespace nebula {
 namespace meta {

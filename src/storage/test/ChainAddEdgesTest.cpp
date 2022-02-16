@@ -3,23 +3,22 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <folly/Format.h>
-#include <folly/String.h>
-#include <folly/container/Enumerate.h>
+#include <folly/Optional.h>        // for Optional
+#include <folly/futures/Future.h>  // for Future::get
 #include <folly/init/Init.h>
-#include <gtest/gtest.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <glog/logging.h>  // for INFO
+#include <gtest/gtest.h>   // for Message
+#include <stdint.h>        // for int32_t
 
-#include "common/fs/TempDir.h"
+#include "common/base/Logging.h"               // for LOG, LogMessage, _LOG_...
+#include "common/fs/TempDir.h"                 // for TempDir
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode, ErrorCode::...
+#include "interface/gen-cpp2/storage_types.h"  // for AddEdgesRequest, ExecR...
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "storage/CommonUtils.h"
-#include "storage/test/ChainTestUtils.h"
-#include "storage/test/TestUtils.h"
-#include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
+#include "storage/StorageFlags.h"         // for FLAGS_trace_toss
+#include "storage/test/ChainTestUtils.h"  // for numOfKey, FakeChainAdd...
+#include "storage/test/TestUtils.h"       // for checkAddEdgesData
 
 namespace nebula {
 namespace storage {

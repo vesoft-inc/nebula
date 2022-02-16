@@ -7,6 +7,7 @@
 #define STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
 
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/futures/Future.h>
 
 #include "common/base/Base.h"
 #include "interface/gen-cpp2/InternalStorageService.h"
@@ -17,6 +18,13 @@ namespace nebula {
 namespace storage {
 
 class StorageEnv;
+namespace cpp2 {
+class ChainAddEdgesRequest;
+class ChainDeleteEdgesRequest;
+class ChainUpdateEdgeRequest;
+class ExecResponse;
+class UpdateResponse;
+}  // namespace cpp2
 
 class InternalStorageServiceHandler final : public cpp2::InternalStorageServiceSvIf {
  public:

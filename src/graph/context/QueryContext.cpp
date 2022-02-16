@@ -5,7 +5,31 @@
 
 #include "graph/context/QueryContext.h"
 
+#include <unordered_map>  // for _Node_const_iterator, opera...
+
+#include "graph/util/AnonVarGenerator.h"  // for AnonVarGenerator
+
 namespace nebula {
+class CharsetInfo;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class SchemaManager;
+}  // namespace meta
+namespace storage {
+class StorageClient;
+}  // namespace storage
+
+class CharsetInfo;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class SchemaManager;
+}  // namespace meta
+namespace storage {
+class StorageClient;
+}  // namespace storage
+
 namespace graph {
 
 QueryContext::QueryContext(RequestContextPtr rctx,

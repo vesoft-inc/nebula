@@ -5,7 +5,7 @@
 
 #include "common/thread/GenericThreadPool.h"
 
-#include "common/base/Base.h"
+#include <algorithm>  // for max
 
 namespace nebula {
 namespace thread {

@@ -3,10 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/IPAddress.h>
-#include <gtest/gtest.h>
+#include <folly/IPAddress.h>  // for IPAddress
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stddef.h>           // for size_t
 
-#include "common/base/Base.h"
+#include <string>  // for string, basic_string, allocator
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"  // for SetStderrLogging
 
 namespace nebula {
 namespace storage {

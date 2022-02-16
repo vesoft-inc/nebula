@@ -5,11 +5,25 @@
 
 #include "graph/validator/GroupByValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/util/AnonColGenerator.h"
-#include "graph/util/AnonVarGenerator.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/FindVisitor.h"
+#include <set>            // for set, _Rb_tree_con...
+#include <type_traits>    // for remove_reference<...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+
+#include "common/base/Logging.h"                    // for Check_EQImpl, Get...
+#include "common/base/ObjectPool.h"                 // for ObjectPool
+#include "common/base/StatusOr.h"                   // for StatusOr
+#include "common/expression/AggregateExpression.h"  // for AggregateExpression
+#include "common/expression/Expression.h"           // for Expression, Expre...
+#include "common/expression/PropertyExpression.h"   // for VariablePropertyE...
+#include "graph/context/QueryContext.h"             // for QueryContext
+#include "graph/context/Symbols.h"                  // for ColsDef
+#include "graph/planner/plan/Query.h"               // for Aggregate, Project
+#include "graph/util/ExpressionUtils.h"             // for ExpressionUtils
+#include "graph/visitor/DeducePropsVisitor.h"       // for ExpressionProps
+#include "graph/visitor/FindVisitor.h"              // for FindVisitor, Find...
+#include "parser/Clauses.h"                         // for YieldColumn, Yiel...
+#include "parser/TraverseSentences.h"               // for GroupBySentence
 
 namespace nebula {
 namespace graph {

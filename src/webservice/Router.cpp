@@ -5,12 +5,16 @@
 
 #include "webservice/Router.h"
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <folly/Optional.h>                 // for Optional
+#include <proxygen/lib/http/HTTPMessage.h>  // for HTTPMessage
 
-#include <sstream>
+#include <cstddef>  // for size_t
+#include <map>      // for map
+#include <sstream>  // for operator<<, char_traits
+#include <utility>  // for move
 
-#include "webservice/NotFoundHandler.h"
-#include "webservice/WebService.h"
+#include "webservice/NotFoundHandler.h"  // for NotFoundHandler
+#include "webservice/WebService.h"       // for WebService
 
 namespace nebula {
 namespace web {

@@ -5,13 +5,30 @@
 
 #include "graph/executor/query/AggregateExecutor.h"
 
-#include "common/datatypes/List.h"
-#include "common/expression/AggregateExpression.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/context/Result.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>  // for UNLIKELY
+#include <stddef.h>        // for size_t
+
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, make_pair
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                    // for Check_EQImpl, COM...
+#include "common/base/Status.h"                     // for Status
+#include "common/datatypes/DataSet.h"               // for Row, DataSet
+#include "common/datatypes/List.h"                  // for List, hash
+#include "common/datatypes/Value.h"                 // for Value, Value::kNu...
+#include "common/expression/AggregateExpression.h"  // for AggregateExpression
+#include "common/expression/Expression.h"           // for Expression, Expre...
+#include "common/function/AggFunctionManager.h"     // for AggData
+#include "common/time/ScopedTimer.h"                // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"         // for ExecutionContext
+#include "graph/context/Iterator.h"                 // for Iterator
+#include "graph/context/QueryExpressionContext.h"   // for QueryExpressionCo...
+#include "graph/context/Result.h"                   // for ResultBuilder
+#include "graph/planner/plan/Query.h"               // for Aggregate
 
 namespace nebula {
 namespace graph {

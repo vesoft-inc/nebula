@@ -3,13 +3,46 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/expression/VariableExpression.h"
-#include "parser/GQLParser.h"
+#include <memory>       // for allocator
+#include <string>       // for string, basi...
+#include <type_traits>  // for remove_refer...
+#include <utility>      // for move, pair
+#include <vector>       // for vector
+
+#include "Clauses.h"                                     // for WhereClause
+#include "Sentence.h"                                    // for Sentence
+#include "SequentialSentences.h"                         // for SequentialSe...
+#include "TraverseSentences.h"                           // for GoSentence
+#include "common/base/Logging.h"                         // for CHECK, COMPA...
+#include "common/base/Status.h"                          // for operator<<
+#include "common/base/StatusOr.h"                        // for StatusOr
+#include "common/datatypes/Value.h"                      // for Value, Value...
+#include "common/expression/ArithmeticExpression.h"      // for ArithmeticEx...
+#include "common/expression/AttributeExpression.h"       // for AttributeExp...
+#include "common/expression/CaseExpression.h"            // for CaseExpression
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/ContainerExpression.h"       // for ExpressionList
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/LogicalExpression.h"         // for LogicalExpre...
+#include "common/expression/PropertyExpression.h"        // for InputPropert...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/SubscriptExpression.h"       // for SubscriptExp...
+#include "common/expression/TypeCastingExpression.h"     // for TypeCastingE...
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "common/expression/VariableExpression.h"        // for VariableExpr...
+#include "graph/context/QueryContext.h"                  // for QueryContext
+#include "parser/GQLParser.h"                            // for GQLParser
 
 namespace nebula {
+class ObjectPool;
+
+class ObjectPool;
 
 using graph::QueryContext;
 

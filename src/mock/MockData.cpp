@@ -5,10 +5,28 @@
 
 #include "mock/MockData.h"
 
-#include "common/expression/ConstantExpression.h"
-#include "common/time/WallClock.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <ctype.h>                     // for toupper
+#include <folly/String.h>              // for stringPrintf
+#include <gflags/gflags.h>             // for DEFINE_bool, DEFIN...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, require...
+
+#include <algorithm>    // for transform
+#include <type_traits>  // for remove_reference<>...
+
+#include "common/datatypes/Date.h"                 // for Date
+#include "common/datatypes/KeyValue.h"             // for KeyValue
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/meta/NebulaSchemaProvider.h"      // for NebulaSchemaProvider
+#include "common/time/WallClock.h"                 // for WallClock
+#include "common/utils/IndexKeyUtils.h"            // for IndexKeyUtils
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType, Prop...
+#include "interface/gen-cpp2/meta_types.h"         // for ColumnDef, ColumnT...
+
+namespace nebula {
+class ObjectPool;
+
+class ObjectPool;
+}  // namespace nebula
 
 DEFINE_bool(mock_ttl_col, false, "Will use a column as ttl_col if set to true");
 DEFINE_int32(mock_ttl_duration, 10, "Ttl duration for ttl col");

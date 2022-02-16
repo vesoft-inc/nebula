@@ -5,12 +5,35 @@
 
 #include "graph/executor/admin/ShowQueriesExecutor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Try.h>                      // for Try::~Try<T>
+#include <folly/futures/Future.h>           // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "common/time/ScopedTimer.h"
-#include "common/time/TimeUtils.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string, all...
+#include <unordered_map>  // for _Node_const_iterator, ope...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/Date.h"          // for DateTime, DateTime::(anon...
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/datatypes/Value.h"         // for Value
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "common/time/TimeConversion.h"     // for TimeConversion
+#include "graph/context/Iterator.h"         // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Result.h"           // for ResultBuilder
+#include "graph/planner/plan/Admin.h"       // for ShowQueries
+#include "graph/service/RequestContext.h"   // for RequestContext
+#include "graph/session/ClientSession.h"    // for ClientSession
+#include "interface/gen-cpp2/meta_types.h"  // for QueryDesc, ListSessionsResp
 
 namespace nebula {
 namespace graph {

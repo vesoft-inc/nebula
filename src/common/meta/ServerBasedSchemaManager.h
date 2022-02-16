@@ -7,13 +7,29 @@
 #define COMMON_META_SERVERBASEDSCHEMAMANAGER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int32_t
+
+#include <memory>   // for shared_ptr, unique_ptr
+#include <string>   // for string
+#include <utility>  // for pair
+#include <vector>   // for vector
 
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
-#include "common/meta/SchemaManager.h"
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/meta/SchemaManager.h"        // for EdgeSchema, EdgeSchemas
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, EdgeType
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for ExternalServiceType
 
 namespace nebula {
 namespace meta {
+class MetaClient;
+class NebulaSchemaProvider;
+
+class MetaClient;
+class NebulaSchemaProvider;
 
 class ServerBasedSchemaManager : public SchemaManager {
  public:

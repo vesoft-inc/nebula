@@ -3,13 +3,31 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/IPAddressV4.h>
-#include <gtest/gtest.h>
+#include <folly/Format.h>              // for sformat
+#include <folly/IPAddressV4.h>         // for IPAddressV4
+#include <folly/String.h>              // for stringPrintf
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, required_fie...
 
-#include "common/base/Base.h"
-#include "common/fs/TempFile.h"
-#include "common/network/NetworkUtils.h"
-#include "common/utils/MetaKeyUtils.h"
+#include <cstdint>             // for uint32_t, int32_t, int64_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value...
+#include <memory>              // for allocator, allocator_tr...
+#include <string>              // for basic_string, string
+#include <tuple>               // for get
+#include <utility>             // for move, pair
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"              // for SetStderrLogging, LOG
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/thrift/ThriftTypes.h"        // for Port, GraphSpaceID, Par...
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
+#include "interface/gen-cpp2/meta_types.h"    // for ColumnDef, SpaceDesc
 
 namespace nebula {
 

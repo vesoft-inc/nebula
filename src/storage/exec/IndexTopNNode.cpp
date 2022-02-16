@@ -3,8 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexTopNNode.h"
+
+#include <fmt/format.h>                        // for format
+#include <folly/Likely.h>                      // for UNLIKELY
+#include <folly/container/F14Map.h>            // for F14BasicMap
+#include <folly/container/detail/F14Policy.h>  // for operator!=, VectorCont...
+
+#include <algorithm>    // for copy
+#include <ostream>      // for operator<<, stringstream
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, swap, pair
+
+#include "common/base/Logging.h"               // for Check_EQImpl, DCHECK_EQ
+#include "common/datatypes/DataSet.h"          // for Row
+#include "common/datatypes/List.h"             // for List
+#include "common/datatypes/Value.h"            // for Value, operator<, oper...
+#include "interface/gen-cpp2/storage_types.h"  // for OrderBy, OrderDirection
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 IndexTopNNode::IndexTopNNode(const IndexTopNNode& node)
     : IndexLimitNode(node), orderBy_(node.orderBy_) {
   name_ = "IndexTopNNode";

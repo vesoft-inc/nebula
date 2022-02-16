@@ -3,19 +3,67 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/Conv.h>                                // for to
+#include <folly/String.h>                              // for stringPrintf
+#include <folly/executors/IOThreadPoolExecutor.h>      // for IOThreadPoolEx...
+#include <folly/futures/Future.h>                      // for Future::get
+#include <folly/init/Init.h>                           // for init
+#include <folly/synchronization/Baton.h>               // for Baton
+#include <glog/logging.h>                              // for INFO
+#include <gtest/gtest.h>                               // for Message
+#include <gtest/gtest.h>                               // for TestPartResult
+#include <gtest/gtest.h>                               // for Message
+#include <gtest/gtest.h>                               // for TestPartResult
+#include <stddef.h>                                    // for size_t
+#include <stdint.h>                                    // for int64_t, uint32_t
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>  // for PriorityThread...
+#include <thrift/lib/cpp2/FieldRef.h>                  // for field_ref, opt...
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>    // for PriorityThread...
 
-#include "codec/RowReader.h"
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "mock/AdHocIndexManager.h"
-#include "mock/AdHocSchemaManager.h"
-#include "mock/MockCluster.h"
-#include "storage/index/LookupProcessor.h"
-#include "storage/query/GetNeighborsProcessor.h"
-#include "storage/test/TestUtils.h"
+#include <algorithm>      // for max
+#include <atomic>         // for atomic
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_...
+#include <type_traits>    // for remove_referen...
+#include <unordered_map>  // for unordered_map<...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "codec/RowWriterV2.h"                       // for RowWriterV2
+#include "common/base/Base.h"                        // for kSrc, kVid
+#include "common/base/Logging.h"                     // for SetStderrLogging
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/DataSet.h"                // for DataSet
+#include "common/datatypes/HostAddr.h"               // for HostAddr
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/ConstantExpression.h"    // for ConstantExpres...
+#include "common/expression/PropertyExpression.h"    // for EdgePropertyEx...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpr...
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/meta/Common.h"                      // for PartHosts
+#include "common/meta/IndexManager.h"                // for IndexManager
+#include "common/meta/NebulaSchemaProvider.h"        // for NebulaSchemaPr...
+#include "common/meta/SchemaManager.h"               // for SchemaManager
+#include "common/network/NetworkUtils.h"             // for NetworkUtils
+#include "common/thrift/ThriftTypes.h"               // for PartitionID
+#include "common/utils/IndexKeyUtils.h"              // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"             // for NebulaKeyUtils
+#include "common/utils/Types.h"                      // for IndexID
+#include "interface/gen-cpp2/common_types.h"         // for SchemaID, Prop...
+#include "interface/gen-cpp2/meta_types.h"           // for ColumnDef, Ind...
+#include "interface/gen-cpp2/storage_types.h"        // for IndexColumnHint
+#include "kvstore/Common.h"                          // for KV
+#include "kvstore/KVStore.h"                         // for KVOptions
+#include "kvstore/NebulaStore.h"                     // for NebulaStore
+#include "kvstore/PartManager.h"                     // for MemPartManager
+#include "mock/AdHocIndexManager.h"                  // for AdHocIndexManager
+#include "mock/AdHocSchemaManager.h"                 // for AdHocSchemaMan...
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "storage/CommonUtils.h"                     // for IndexGuard
+#include "storage/index/LookupProcessor.h"           // for LookupProcessor
 
 namespace nebula {
 namespace storage {

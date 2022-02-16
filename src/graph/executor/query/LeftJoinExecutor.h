@@ -6,10 +6,35 @@
 #ifndef GRAPH_EXECUTOR_QUERY_LEFTJOINEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_LEFTJOINEXECUTOR_H_
 
-#include "graph/executor/query/JoinExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <stddef.h>                // for size_t
+
+#include <string>         // for allocator, string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"                 // for Status
+#include "common/datatypes/DataSet.h"           // for Row, DataSet
+#include "graph/executor/query/JoinExecutor.h"  // for JoinExecutor
 
 namespace nebula {
+class Expression;
 namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct List;
+struct Value;
+
+class Expression;
+struct List;
+struct Value;
+
+namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
 
 class LeftJoinExecutor : public JoinExecutor {
  public:

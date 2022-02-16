@@ -3,11 +3,38 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>            // for to
+#include <folly/futures/Future.h>  // for Future::get
+#include <folly/hash/Hash.h>       // for hash
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/DataCollectExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include <cstdint>        // for int64_t
+#include <memory>         // for allocator, uni...
+#include <string>         // for string, basic_...
+#include <tuple>          // for tuple, make_tuple
+#include <type_traits>    // for remove_referen...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                          // for kVid
+#include "common/base/Status.h"                        // for Status
+#include "common/datatypes/DataSet.h"                  // for Row, DataSet
+#include "common/datatypes/Edge.h"                     // for Edge
+#include "common/datatypes/List.h"                     // for List
+#include "common/datatypes/Path.h"                     // for Step, Path
+#include "common/datatypes/Value.h"                    // for Value, hash
+#include "common/datatypes/Vertex.h"                   // for Tag, Vertex
+#include "graph/context/ExecutionContext.h"            // for ExecutionContext
+#include "graph/context/Iterator.h"                    // for Iterator, Iter...
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/context/Result.h"                      // for ResultBuilder
+#include "graph/context/Symbols.h"                     // for SymbolTable
+#include "graph/executor/query/DataCollectExecutor.h"  // for DataCollectExe...
+#include "graph/planner/plan/Query.h"                  // for DataCollect
 
 namespace nebula {
 namespace graph {

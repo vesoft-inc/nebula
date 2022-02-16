@@ -3,18 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
-#include <rocksdb/cache.h>
-#include <rocksdb/convenience.h>
-#include <rocksdb/db.h>
-#include <rocksdb/slice_transform.h>
-#include <rocksdb/table.h>
+#include <folly/Benchmark.h>          // for addBenchmark, BenchmarkSu...
+#include <folly/container/Foreach.h>  // for notThereYet, FOR_EACH_RANGE
+#include <folly/init/Init.h>          // for init
+#include <gflags/gflags.h>            // for DEFINE_int64
+#include <rocksdb/db.h>               // for DB
+#include <rocksdb/iterator.h>         // for Iterator
+#include <rocksdb/options.h>          // for Options, FlushOptions
+#include <rocksdb/slice.h>            // for Slice
+#include <rocksdb/status.h>           // for Status
 #include <rocksdb/utilities/options_util.h>
+#include <rocksdb/write_batch.h>  // for WriteBatch
+#include <stdint.h>               // for uint64_t, int32_t, int64_t
+#include <stdlib.h>               // for system
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/Part.h"
+#include <memory>   // for shared_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for string, basic_string
+#include <thread>   // for thread
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG...
+#include "common/fs/TempDir.h"    // for TempDir
 
 DEFINE_int64(part_performance_test_partnum, 10, "Total partitions");
 DEFINE_int64(part_performance_test_rownum, 100000, "Total rows");

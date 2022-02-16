@@ -5,9 +5,13 @@
 
 #include "graph/planner/match/WhereClausePlanner.h"
 
+#include <utility>  // for move
+
+#include "common/base/Status.h"                  // for Status
+#include "graph/context/ast/CypherAstContext.h"  // for WhereClauseContext
 #include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include "graph/planner/plan/ExecutionPlan.h"  // for SubPlan
+#include "graph/planner/plan/Query.h"          // for Filter
 
 namespace nebula {
 namespace graph {

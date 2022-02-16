@@ -6,12 +6,23 @@
 #ifndef STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORREMOTE_H
 #define STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORREMOTE_H
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException...
+
+#include <memory>   // for unique_ptr
+#include <utility>  // for move
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "common/utils/MemoryLockWrapper.h"
-#include "storage/BaseProcessor.h"
-#include "storage/transaction/TransactionManager.h"
+#include "interface/gen-cpp2/storage_types.h"        // for UpdateResponse
+#include "storage/BaseProcessor.h"                   // for BaseProcessor
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainUpdateEdgeRemoteProcessor : public BaseProcessor<cpp2::UpdateResponse> {
  public:

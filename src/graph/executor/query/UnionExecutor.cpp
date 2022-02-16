@@ -5,9 +5,19 @@
 
 #include "graph/executor/query/UnionExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/ExecutionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <iterator>   // for move_iterator, make_move_...
+#include <string>     // for string, basic_string
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"       // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"        // for Status, NG_RETURN_IF_ERROR
+#include "common/datatypes/DataSet.h"  // for Row, DataSet
+#include "common/datatypes/Value.h"    // for Value
+#include "common/time/ScopedTimer.h"   // for SCOPED_TIMER
+#include "graph/context/Iterator.h"    // for SequentialIter, Iterator
+#include "graph/context/Result.h"      // for ResultBuilder
 
 namespace nebula {
 namespace graph {

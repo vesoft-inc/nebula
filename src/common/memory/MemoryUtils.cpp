@@ -5,15 +5,17 @@
 
 #include "common/memory/MemoryUtils.h"
 
-#include <folly/String.h>
-#include <gflags/gflags.h>
+#include <algorithm>    // for sort
+#include <cstdio>       // for NULL
+#include <fstream>      // for operator<<, ifstream, basic_ostream
+#include <regex>        // for match_results, regex, sub_match
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
 
-#include <algorithm>
-#include <cstdio>
-#include <fstream>
-#include <regex>
-
-#include "common/fs/FileUtils.h"
+#include "common/base/Logging.h"  // for LOG_IF_EVERY_N, LogMessage, _MINLOG...
+#include "common/base/Status.h"   // for Status, NG_RETURN_IF_ERROR
+#include "common/fs/FileUtils.h"  // for FileUtils::FileLineIterator, FileUtils
 
 DEFINE_bool(containerized, false, "Whether run this process inside the docker container");
 DEFINE_double(system_memory_high_watermark_ratio, 0.8, "high watermark ratio of system memory");

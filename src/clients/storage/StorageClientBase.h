@@ -8,13 +8,36 @@
 
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/futures/Future.h>
+#include <gflags/gflags_declare.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <unordered_map>
+#include <vector>
 
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
+#include "common/base/Logging.h"
 #include "common/base/StatusOr.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/meta/Common.h"
 #include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/storage_types.h"
+
+namespace folly {
+class EventBase;
+class IOThreadPoolExecutor;
+template <class>
+class Promise;
+}  // namespace folly
 
 DECLARE_int32(storage_client_timeout_ms);
 DECLARE_uint32(storage_client_retry_interval_ms);
@@ -67,13 +90,13 @@ class StorageRpcResponse final {
     return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
   }
 
-  void emplaceFailedPart(PartitionID partId, nebula::cpp2::ErrorCode errorCode) {
+  void emplaceFailedPart(PartitionID partId, ::nebula::cpp2::ErrorCode errorCode) {
     std::lock_guard<std::mutex> g(*lock_);
     failedParts_.emplace(partId, errorCode);
   }
 
   void appendFailedParts(const std::vector<PartitionID>& partsId,
-                         nebula::cpp2::ErrorCode errorCode) {
+                         ::nebula::cpp2::ErrorCode errorCode) {
     std::lock_guard<std::mutex> g(*lock_);
     failedParts_.reserve(failedParts_.size() + partsId.size());
     for (const auto& partId : partsId) {
@@ -87,7 +110,7 @@ class StorageRpcResponse final {
   }
 
   // Not thread-safe.
-  const std::unordered_map<PartitionID, nebula::cpp2::ErrorCode>& failedParts() const {
+  const std::unordered_map<PartitionID, ::nebula::cpp2::ErrorCode>& failedParts() const {
     return failedParts_;
   }
 
@@ -107,7 +130,7 @@ class StorageRpcResponse final {
   size_t failedReqs_{0};
 
   Result result_{Result::ALL_SUCCEEDED};
-  std::unordered_map<PartitionID, nebula::cpp2::ErrorCode> failedParts_;
+  std::unordered_map<PartitionID, ::nebula::cpp2::ErrorCode> failedParts_;
   int32_t maxLatency_{0};
   std::vector<Response> responses_;
   std::vector<std::tuple<HostAddr, int32_t, int32_t>> hostLatency_;

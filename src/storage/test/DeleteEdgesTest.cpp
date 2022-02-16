@@ -3,19 +3,32 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/futures/Future.h>      // for Future::get
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for required_field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/mutate/DeleteEdgesProcessor.h"
-#include "storage/test/TestUtils.h"
+#include <memory>       // for allocator, unique_ptr
+#include <ostream>      // for operator<<
+#include <type_traits>  // for remove_reference<>:...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                  // for LOG, LogMessage
+#include "common/base/StatusOr.h"                 // for StatusOr
+#include "common/fs/TempDir.h"                    // for TempDir
+#include "common/meta/SchemaManager.h"            // for SchemaManager
+#include "common/thrift/ThriftTypes.h"            // for PartitionID
+#include "interface/gen-cpp2/storage_types.h"     // for EdgeKey, DeleteEdge...
+#include "mock/MockCluster.h"                     // for MockCluster
+#include "mock/MockData.h"                        // for MockData
+#include "storage/CommonUtils.h"                  // for StorageEnv
+#include "storage/mutate/AddEdgesProcessor.h"     // for AddEdgesProcessor
+#include "storage/mutate/DeleteEdgesProcessor.h"  // for DeleteEdgesProcessor
+#include "storage/test/TestUtils.h"               // for checkAddEdgesData
 
 namespace nebula {
 namespace storage {

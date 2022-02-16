@@ -6,13 +6,23 @@
 #ifndef STORAGE_ADMIN_COMPACTTASK_H_
 #define STORAGE_ADMIN_COMPACTTASK_H_
 
+#include <utility>
+#include <vector>
+
+#include "common/base/ErrorOr.h"
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
 namespace nebula {
+namespace kvstore {
+class KVEngine;
+}  // namespace kvstore
+
 namespace storage {
+class StorageEnv;
 
 class CompactTask : public AdminTask {
  public:

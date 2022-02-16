@@ -3,8 +3,11 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "clients/meta/stats/MetaClientStats.h"
-#include "kvstore/stats/KVStats.h"
+#include <memory>  // for allocator
+
+#include "clients/meta/stats/MetaClientStats.h"  // for initMetaClientStats
+#include "common/stats/StatsManager.h"           // for CounterId, StatsManager
+#include "kvstore/stats/KVStats.h"               // for initKVStats
 
 namespace nebula {
 

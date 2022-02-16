@@ -6,24 +6,40 @@
 #ifndef COMMON_TIME_TIME_H_
 #define COMMON_TIME_TIME_H_
 
-#include <boost/algorithm/string/case_conv.hpp>
+#include <errno.h>   // for errno
+#include <stdint.h>  // for int64_t
+
+#include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
+#include <boost/iterator/iterator_facade.hpp>    // for operator!=
+#include <cstring>                               // for strerror, NULL
+#include <ctime>                                 // for time, time_t
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <string>       // for string, operator==
+#include <type_traits>  // for is_same, enable_if_t
+#include <utility>      // for move
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
-#include "common/base/Status.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Date.h"
+#include "common/base/Status.h"     // for Status
+#include "common/base/StatusOr.h"   // for StatusOr
+#include "common/datatypes/Date.h"  // for Date, DateTime, Time
 #include "common/datatypes/Duration.h"
 #include "common/datatypes/Map.h"
+#include "common/datatypes/Value.h"  // for Value, Value::kNullU...
 #include "common/fs/FileUtils.h"
-#include "common/time/TimeConversion.h"
-#include "common/time/TimezoneInfo.h"
-#include "common/time/WallClock.h"
+#include "common/time/TimeConversion.h"  // for TimeConversion
+#include "common/time/TimezoneInfo.h"    // for Timezone
+#include "common/time/WallClock.h"       // for WallClock
 
 namespace nebula {
+struct Duration;
+struct Map;
+
+struct Duration;
+struct Map;
+
 namespace time {
 
 // In nebula only store UTC time, and the interpretation of time value based on

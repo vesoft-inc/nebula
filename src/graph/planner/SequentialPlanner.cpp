@@ -5,13 +5,28 @@
 
 #include "graph/planner/SequentialPlanner.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/validator/SequentialValidator.h"
-#include "parser/Sentence.h"
+#include <algorithm>           // for max
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::v...
+#include <string>              // for string, basic_string
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                  // for COMPACT_GOOGLE_LOG_...
+#include "common/base/Status.h"                   // for NG_RETURN_IF_ERROR
+#include "graph/context/ast/AstContext.h"         // for AstContext
+#include "graph/planner/plan/ExecutionPlan.h"     // for SubPlan
+#include "graph/planner/plan/PlanNode.h"          // for PlanNode, PlanNode:...
+#include "graph/planner/plan/Query.h"             // for DataCollect, DataCo...
+#include "graph/validator/SequentialValidator.h"  // for SequentialAstContext
+#include "graph/validator/Validator.h"            // for Validator
+#include "parser/Sentence.h"                      // for Sentence, Sentence:...
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+
+class QueryContext;
+
 bool SequentialPlanner::match(AstContext* astCtx) {
   return astCtx->sentence->kind() == Sentence::Kind::kSequential;
 }

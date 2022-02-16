@@ -5,12 +5,13 @@
 
 #include "graph/planner/match/UnwindClausePlanner.h"
 
+#include <string>
+#include <utility>
+
+#include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/match/OrderByClausePlanner.h"
-#include "graph/planner/match/PaginationPlanner.h"
-#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {

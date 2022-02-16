@@ -6,12 +6,19 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
 #define GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
 
-#include <initializer_list>
+#include <initializer_list>  // for initializer_list
+#include <memory>            // for unique_ptr
+#include <string>            // for string
 
-#include "graph/optimizer/OptRule.h"
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "graph/optimizer/OptRule.h"      // for OptRule, MatchedResult (p...
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class PushTopNDownIndexScanRule final : public OptRule {
  public:

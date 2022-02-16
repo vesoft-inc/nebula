@@ -5,11 +5,19 @@
 
 #include "graph/executor/query/IntersectExecutor.h"
 
-#include <unordered_set>
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_set>  // for unordered_set, operator==
+#include <utility>        // for move
+#include <vector>         // for vector
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include "common/base/Status.h"        // for Status, NG_RETURN_IF_ERROR
+#include "common/datatypes/DataSet.h"  // for DataSet, Row
+#include "common/datatypes/Value.h"    // for Value
+#include "common/time/ScopedTimer.h"   // for SCOPED_TIMER
+#include "graph/context/Iterator.h"    // for Iterator, equal_to, hash
+#include "graph/context/Result.h"      // for ResultBuilder, Result
 
 namespace nebula {
 namespace graph {

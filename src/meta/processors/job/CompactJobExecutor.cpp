@@ -5,7 +5,29 @@
 
 #include "meta/processors/job/CompactJobExecutor.h"
 
+#include <folly/Try.h>              // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcep...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcep...
+
+#include <utility>  // for move
+
+#include "common/base/Logging.h"                // for CHECK, COMPACT_GOOGLE...
+#include "common/base/Status.h"                 // for Status
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/HostAddr.h"          // for HostAddr
+#include "interface/gen-cpp2/meta_types.h"      // for AdminCmd, AdminCmd::C...
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
+
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 CompactJobExecutor::CompactJobExecutor(JobID jobId,

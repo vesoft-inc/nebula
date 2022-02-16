@@ -6,13 +6,33 @@
 #ifndef GRAPH_EXECUTOR_QUERY_INDEXSCANEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_INDEXSCANEXECUTOR_H_
 
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
 #include "clients/storage/StorageClient.h"
-#include "graph/executor/StorageAccessExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include "common/base/Status.h"                    // for Status
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
+#include "graph/planner/plan/Query.h"              // for IndexScan
 #include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+namespace storage {
+template <class Response>
+class StorageRpcResponse;
+
+template <class Response>
+class StorageRpcResponse;
+}  // namespace storage
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class IndexScanExecutor final : public StorageAccessExecutor {
  public:

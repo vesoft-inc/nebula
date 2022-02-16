@@ -7,7 +7,7 @@
 
 #include <folly/hash/Hash.h>
 
-#include "common/base/Base.h"
+#include <cstdint>
 
 namespace nebula {
 

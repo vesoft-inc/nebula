@@ -8,13 +8,27 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+
+#include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
+#include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/JobDescription.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
+class AdminClient;
+class JobDescription;
 
 class JobExecutor {
  public:

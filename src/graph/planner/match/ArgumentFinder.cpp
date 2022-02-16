@@ -5,7 +5,19 @@
 
 #include "graph/planner/match/ArgumentFinder.h"
 
-#include "graph/planner/plan/Logic.h"
+#include <string>         // for string, basic_...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+
+#include "common/base/Base.h"                          // for UNUSED
+#include "common/base/Status.h"                        // for Status, NG_RET...
+#include "common/expression/FunctionCallExpression.h"  // for ArgumentList
+#include "common/expression/PropertyExpression.h"      // for InputPropertyE...
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/context/Symbols.h"                     // for SymbolTable
+#include "graph/context/ast/CypherAstContext.h"        // for NodeContext
+#include "graph/planner/plan/ExecutionPlan.h"          // for SubPlan
+#include "graph/planner/plan/Logic.h"                  // for Argument
 
 namespace nebula {
 namespace graph {

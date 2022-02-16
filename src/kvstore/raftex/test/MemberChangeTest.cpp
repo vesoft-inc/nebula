@@ -3,17 +3,41 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Future.h>   // for Future::wait
+#include <folly/futures/Future.h>   // for Future
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_uint32
+#include <glog/logging.h>           // for INFO
+#include <unistd.h>                 // for sleep, size_t
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::va...
+#include <memory>              // for shared_ptr, __shared...
+#include <ostream>             // for operator<<, basic_os...
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                 // for Check_EQImpl, CHECK_EQ
+#include "common/datatypes/HostAddr.h"           // for HostAddr, operator<<
+#include "common/fs/TempDir.h"                   // for TempDir
+#include "common/thrift/ThriftTypes.h"           // for LogID
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for checkLeadership, app...
+#include "kvstore/raftex/test/TestShard.h"       // for TestShard, encodeAdd...
+
+namespace nebula {
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
+namespace raftex {
+class RaftexService;
+
+class RaftexService;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

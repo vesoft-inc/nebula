@@ -6,10 +6,20 @@
 #ifndef GRAPH_PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include "common/base/Status.h"                       // for Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
 namespace graph {
+struct CypherClauseContextBase;
+struct ReturnClauseContext;
+struct SubPlan;
+
+struct CypherClauseContextBase;
+struct ReturnClauseContext;
+struct SubPlan;
+
 /*
  * The ReturnClausePlanner was designed to generated plan for return clause.
  */

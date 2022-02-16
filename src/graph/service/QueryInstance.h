@@ -6,7 +6,11 @@
 #ifndef GRAPH_SERVICE_QUERYINSTANCE_H_
 #define GRAPH_SERVICE_QUERYINSTANCE_H_
 
+#include <stdint.h>
+
 #include <boost/core/noncopyable.hpp>
+#include <memory>
+#include <string>
 
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
@@ -14,6 +18,7 @@
 #include "graph/optimizer/Optimizer.h"
 #include "graph/scheduler/Scheduler.h"
 #include "parser/GQLParser.h"
+#include "parser/Sentence.h"
 
 /**
  * QueryInstance coordinates the execution process,
@@ -22,6 +27,11 @@
  */
 
 namespace nebula {
+namespace opt {
+class Optimizer;
+}  // namespace opt
+struct ExecutionResponse;
+
 namespace graph {
 
 class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {

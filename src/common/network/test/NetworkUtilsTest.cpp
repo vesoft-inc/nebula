@@ -3,10 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdint.h>           // for uint16_t
+#include <stdio.h>            // for fgets, pclose, popen, FILE
 
-#include "common/base/Base.h"
-#include "common/network/NetworkUtils.h"
+#include <memory>         // for allocator, allocator_traits...
+#include <string>         // for string, operator==, basic_s...
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Base.h"             // for UNUSED
+#include "common/base/Logging.h"          // for SetStderrLogging
+#include "common/base/Status.h"           // for Status, operator<<
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/network/NetworkUtils.h"  // for NetworkUtils
 
 namespace nebula {
 namespace network {

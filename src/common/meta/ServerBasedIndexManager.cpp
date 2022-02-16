@@ -5,7 +5,11 @@
 
 #include "common/meta/ServerBasedIndexManager.h"
 
-#include "common/base/Base.h"
+#include <utility>  // for move
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for CheckNotNull, CHECK_NOTNULL
+#include "interface/gen-cpp2/meta_types.h"  // for IndexItem
 
 namespace nebula {
 namespace meta {

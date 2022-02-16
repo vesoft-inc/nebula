@@ -6,13 +6,29 @@
 #ifndef META_DROPSNAPSHOTPROCESSOR_H_
 #define META_DROPSNAPSHOTPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
 #include <gtest/gtest_prod.h>
 
-#include "meta/processors/BaseProcessor.h"
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for ExecResp, DropSnapshotReq...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief Drop snapshot for all spaces. It could drop snapshots

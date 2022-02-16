@@ -5,14 +5,36 @@
 
 #include "storage/mutate/UpdateVertexProcessor.h"
 
-#include "common/base/Base.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "storage/exec/FilterNode.h"
-#include "storage/exec/TagNode.h"
-#include "storage/exec/UpdateNode.h"
-#include "storage/exec/UpdateResultNode.h"
+#include <folly/Executor.h>            // for Executor
+#include <folly/String.h>              // for stringPrintf
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <ostream>             // for operator<<, basic_...
+#include <type_traits>         // for remove_reference<>...
+#include <unordered_map>       // for unordered_map, _No...
+
+#include "common/base/Logging.h"                   // for LogMessage, COMPAC...
+#include "common/base/Status.h"                    // for operator<<
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for operator<<, Value
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for SourcePropertyExpr...
+#include "common/meta/IndexManager.h"              // for IndexManager
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "common/utils/NebulaKeyUtils.h"           // for NebulaKeyUtils
+#include "storage/BaseProcessor.h"                 // for BaseProcessor::pus...
+#include "storage/exec/FilterNode.h"               // for FilterNode
+#include "storage/exec/TagNode.h"                  // for TagNode
+#include "storage/exec/UpdateNode.h"               // for UpdateTagNode
+#include "storage/exec/UpdateResultNode.h"         // for UpdateResNode
+#include "storage/query/QueryBaseProcessor.h"      // for QueryBaseProcessor...
 
 namespace nebula {
+struct DataSet;
+
+struct DataSet;
+
 namespace storage {
 
 ProcessorCounters kUpdateVertexCounters;

@@ -5,8 +5,14 @@
 
 #include "graph/planner/ngql/MaintainPlanner.h"
 
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/plan/Maintain.h"
+#include <utility>  // for move
+
+#include "graph/context/ast/QueryAstContext.h"  // for AlterSchemaContext
+#include "graph/planner/plan/ExecutionPlan.h"   // for SubPlan
+#include "graph/planner/plan/Maintain.h"        // for AlterEdge, AlterTag
+#include "graph/session/ClientSession.h"        // for SpaceInfo
+#include "interface/gen-cpp2/meta_types.h"      // for AlterSchemaItem
+#include "parser/MaintainSentences.h"           // for AlterEdgeSentence
 
 namespace nebula {
 namespace graph {

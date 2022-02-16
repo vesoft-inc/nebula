@@ -5,11 +5,21 @@
 
 #include "storage/transaction/ConsistUtil.h"
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include <folly/small_vector.h>                   // for small_vector
+#include <s2/base/integral_types.h>               // for int64
+#include <thrift/lib/cpp2/FieldRef.h>             // for field_ref
+#include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
-#include "common/utils/NebulaKeyUtils.h"
+#include <boost/uuid/random_generator.hpp>  // for random_generator
+#include <boost/uuid/uuid_io.hpp>
+#include <ostream>        // for operator<<, basic_o...
+#include <unordered_map>  // for unordered_map, _Nod...
+#include <utility>        // for swap, pair
+
+#include "common/base/Logging.h"          // for LOG, LogMessageFatal
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "common/utils/Types.h"           // for NebulaKeyType, kPar...
+
 namespace nebula {
 namespace storage {
 std::string ConsistUtil::primeTable(PartitionID partId) {

@@ -5,15 +5,46 @@
 
 #include "graph/executor/query/TraverseExecutor.h"
 
-#include <sstream>
+#include <folly/Format.h>              // for sformat
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Future.h>      // for makeFuture, Future...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optiona...
 
-#include "clients/storage/StorageClient.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Vertex.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/util/SchemaUtil.h"
+#include <algorithm>      // for move
+#include <iterator>       // for back_insert_iterator
+#include <memory>         // for make_shared, make_...
+#include <sstream>        // for operator<<, basic_...
+#include <string>         // for string, basic_string
+#include <tuple>          // for get
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair, __tupl...
+
+#include "clients/storage/StorageClient.h"         // for StorageClient, Sto...
+#include "common/base/Base.h"                      // for kVid, kDst
+#include "common/base/Logging.h"                   // for LogMessage, LOG
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Vertex.h"               // for Vertex
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/Duration.h"                  // for Duration
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for GetNeighborsIter
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/executor/Executor.h"               // for Executor
+#include "graph/planner/plan/ExecutionPlan.h"      // for ExecutionPlan
+#include "graph/service/GraphFlags.h"              // for FLAGS_accept_parti...
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for ClientSession, Spa...
+#include "graph/util/SchemaUtil.h"                 // for SchemaUtil
+#include "interface/gen-cpp2/meta_types.h"         // for SpaceDesc
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;

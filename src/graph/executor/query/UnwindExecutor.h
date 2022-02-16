@@ -6,10 +6,25 @@
 #ifndef GRAPH_EXECUTOR_QUERY_UNWINDEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_UNWINDEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <vector>  // for allocator, vector
+
+#include "common/datatypes/Value.h"   // for Value
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class UnwindExecutor final : public Executor {
  public:

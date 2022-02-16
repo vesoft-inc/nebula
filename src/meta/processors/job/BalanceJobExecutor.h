@@ -6,13 +6,42 @@
 #ifndef META_BALANCEJOBEXECUTOR_H_
 #define META_BALANCEJOBEXECUTOR_H_
 
-#include "meta/processors/job/BalancePlan.h"
+#include <folly/Executor.h>  // for Executor
+#include <stdint.h>          // for int32_t
+
+#include <map>            // for map, operator!=
+#include <memory>         // for unique_ptr
+#include <set>            // for set
+#include <string>         // for string
+#include <tuple>          // for tuple
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"               // for Status
+#include "common/datatypes/HostAddr.h"        // for HostAddr, hash
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, GraphS...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "meta/processors/job/BalancePlan.h"  // for BalancePlan
 #include "meta/processors/job/BalanceTask.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/MetaJobExecutor.h"  // for MetaJobExecutor
 #include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+class BalanceTask;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
+class BalanceTask;
+
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
 

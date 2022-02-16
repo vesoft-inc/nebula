@@ -6,14 +6,28 @@
 #ifndef STORAGE_ADMIN_STOPADMINTASKPROCESSOR_H_
 #define STORAGE_ADMIN_STOPADMINTASKPROCESSOR_H_
 
-#include "common/base/Base.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for SemiFuture::releaseDef...
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Future.h>   // for SemiFuture::releaseDef...
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcept...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcept...
+
+#include "common/base/Base.h"  // for UNUSED
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/storage_types.h"  // for StopTaskResp, StopTask...
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class StopAdminTaskProcessor {
  public:

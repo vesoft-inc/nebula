@@ -6,10 +6,33 @@
 #ifndef META_REBUILDEDGEJOBEXECUTOR_H_
 #define META_REBUILDEDGEJOBEXECUTOR_H_
 
-#include "meta/processors/job/RebuildJobExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/thrift/ThriftTypes.h"               // for JobID, PartitionID
+#include "meta/processors/job/RebuildJobExecutor.h"  // for RebuildJobExecutor
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
 namespace meta {
+class AdminClient;
+}  // namespace meta
+struct HostAddr;
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
+namespace meta {
+class AdminClient;
 
 class RebuildEdgeJobExecutor : public RebuildJobExecutor {
  public:

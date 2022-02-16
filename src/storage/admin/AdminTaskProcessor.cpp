@@ -5,10 +5,16 @@
 
 #include "storage/admin/AdminTaskProcessor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "interface/gen-cpp2/common_types.h"
-#include "storage/admin/AdminTaskManager.h"
+#include <memory>       // for shared_ptr
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::E...
+#include "interface/gen-cpp2/meta_types.h"    // for StatsItem, JobStatus
+#include "storage/admin/AdminTask.h"          // for TaskContext, AdminTaskF...
+#include "storage/admin/AdminTaskManager.h"   // for AdminTaskManager
 
 namespace nebula {
 namespace storage {

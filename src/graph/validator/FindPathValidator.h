@@ -6,11 +6,28 @@
 #ifndef GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 #define GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/validator/Validator.h"
+#include <memory>  // for unique_ptr
+
+#include "common/base/Status.h"                 // for Status
+#include "graph/context/ast/QueryAstContext.h"  // for PathContext
+#include "graph/validator/Validator.h"          // for Validator
 
 namespace nebula {
+class Sentence;
+class WhereClause;
+class YieldClause;
 namespace graph {
+class QueryContext;
+struct AstContext;
+}  // namespace graph
+
+class Sentence;
+class WhereClause;
+class YieldClause;
+
+namespace graph {
+class QueryContext;
+struct AstContext;
 
 class FindPathValidator final : public Validator {
  public:

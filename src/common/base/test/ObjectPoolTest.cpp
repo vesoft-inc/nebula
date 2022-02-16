@@ -3,9 +3,13 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/ObjectPool.h"
+#include <memory>  // for allocator
+
+#include "common/base/ObjectPool.h"  // for ObjectPool
 
 namespace nebula {
 

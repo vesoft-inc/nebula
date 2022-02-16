@@ -3,12 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Random.h>     // for Random
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <unistd.h>           // for usleep, size_t
 
-#include <utility>
+#include <atomic>   // for atomic, memory_order_acquire
+#include <cstdint>  // for int32_t
+#include <memory>   // for shared_ptr, __shared_ptr_ac...
+#include <ostream>  // for operator<<, basic_ostream::...
+#include <string>   // for string, basic_string
+#include <thread>   // for thread
+#include <utility>  // for move
+#include <vector>   // for vector
 
-#include "common/base/Base.h"
-#include "kvstore/wal/AtomicLogBuffer.h"
+#include "common/base/Logging.h"          // for CHECK, COMPACT_GOOGLE_LOG_F...
+#include "common/thrift/ThriftTypes.h"    // for LogID, ClusterID, TermID
+#include "kvstore/wal/AtomicLogBuffer.h"  // for AtomicLogBuffer, AtomicLogB...
 
 namespace nebula {
 namespace wal {

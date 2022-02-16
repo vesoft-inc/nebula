@@ -5,19 +5,37 @@
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
 
-#include <string>
+#include <algorithm>                            // for transform
+#include <boost/cstdint.hpp>                    // for int64_t
+#include <boost/variant/detail/variant_io.hpp>  // for operator<<
+#include <boost/variant/get.hpp>                // for get
+#include <boost/variant/variant.hpp>            // for variant
+#include <cstdint>                              // for int64_t, int16_t, uin...
+#include <memory>                               // for unique_ptr, make_unique
+#include <ostream>                              // for operator<<, basic_ost...
+#include <string>                               // for string, basic_string
+#include <type_traits>                          // for remove_reference<>::type
+#include <utility>                              // for move
+#include <variant>                              // for get, holds_alternative
+#include <vector>                               // for vector, vector<>::con...
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Logging.h"     // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"      // for Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/datatypes/Value.h"  // for Value
 #include "graph/context/QueryExpressionContext.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "parser/Clauses.h"
-#include "parser/Sentence.h"
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for IndexFieldDef, GeoShape
+#include "parser/Clauses.h"                   // for NameLabelList
+#include "parser/Sentence.h"                  // for Sentence::Kind, Sentence
 
 namespace nebula {
+class Expression;
 
-std::ostream &operator<<(std::ostream &os, nebula::cpp2::PropertyType type);
+class Expression;
+
+std::ostream &operator<<(std::ostream &os, ::nebula::cpp2::PropertyType type);
 
 class ColumnProperty final {
  public:
@@ -91,7 +109,7 @@ class ColumnProperties final {
 class ColumnSpecification final {
  public:
   ColumnSpecification(std::string *name,
-                      nebula::cpp2::PropertyType type,
+                      ::nebula::cpp2::PropertyType type,
                       ColumnProperties *properties = nullptr,
                       int16_t typeLen = 0,
                       meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
@@ -101,7 +119,7 @@ class ColumnSpecification final {
         typeLen_(typeLen),
         geoShape_(geoShape) {}
 
-  nebula::cpp2::PropertyType type() const {
+  ::nebula::cpp2::PropertyType type() const {
     return type_;
   }
 
@@ -125,7 +143,7 @@ class ColumnSpecification final {
 
  private:
   std::unique_ptr<std::string> name_;
-  nebula::cpp2::PropertyType type_;
+  ::nebula::cpp2::PropertyType type_;
   std::unique_ptr<ColumnProperties> properties_;
   int16_t typeLen_;
   meta::cpp2::GeoShape geoShape_;
@@ -391,7 +409,7 @@ class AlterSchemaOptItem final {
     return optType_;
   }
 
-  nebula::meta::cpp2::AlterSchemaOp toType();
+  ::nebula::meta::cpp2::AlterSchemaOp toType();
 
   std::string toString() const;
 

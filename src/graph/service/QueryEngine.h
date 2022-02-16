@@ -6,22 +6,37 @@
 #ifndef GRAPH_SERVICE_QUERYENGINE_H_
 #define GRAPH_SERVICE_QUERYENGINE_H_
 
+#include <folly/Try.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/futures/Promise.h>
 
 #include <boost/core/noncopyable.hpp>
+#include <memory>
 
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClient.h"
+#include "common/base/Status.h"
 #include "common/charset/Charset.h"
 #include "common/cpp/helpers.h"
+#include "common/graph/Response.h"
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/thread/GenericWorker.h"
 #include "graph/optimizer/Optimizer.h"
 #include "graph/service/RequestContext.h"
 #include "interface/gen-cpp2/GraphService.h"
 
+namespace folly {
+class IOThreadPoolExecutor;
+}  // namespace folly
+
 namespace nebula {
+class CharsetInfo;
+namespace meta {
+class MetaClient;
+}  // namespace meta
+
 namespace graph {
 
 /**

@@ -6,11 +6,32 @@
 #ifndef GRAPH_PLANNER_MATCH_VERTEXIDSEEK_H_
 #define GRAPH_PLANNER_MATCH_VERTEXIDSEEK_H_
 
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/match/StartVidFinder.h"  // for StartVidFinder
 
 namespace nebula {
+class Expression;
 namespace graph {
+class QueryContext;
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+}  // namespace graph
+struct List;
+
+class Expression;
+struct List;
+
+namespace graph {
+class QueryContext;
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
 /*
  * The VertexIdSeek was designed to find if could get the starting vids in
  * filter.

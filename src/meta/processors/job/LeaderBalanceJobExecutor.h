@@ -6,12 +6,41 @@
 #ifndef META_LEADERBALANCEJOBEXECUTOR_H_
 #define META_LEADERBALANCEJOBEXECUTOR_H_
 
+#include <folly/Executor.h>        // for Executor
+#include <folly/futures/Future.h>  // for Future
+#include <gtest/gtest_prod.h>      // for FRIEND_TEST
+
+#include <atomic>         // for atomic_bool
+#include <cstdint>        // for int32_t
+#include <memory>         // for unique_ptr
+#include <string>         // for string, basic_string
+#include <tuple>          // for tuple
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for pair
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"                // for ErrorOr
+#include "common/datatypes/HostAddr.h"          // for HostAddr, hash
+#include "common/thrift/ThriftTypes.h"          // for PartitionID, GraphS...
+#include "interface/gen-cpp2/common_types.h"    // for ErrorCode
+#include "meta/processors/admin/AdminClient.h"  // for HostLeaderMap, Admi...
 #include "meta/processors/job/BalancePlan.h"
 #include "meta/processors/job/BalanceTask.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/MetaJobExecutor.h"  // for MetaJobExecutor
 #include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using PartAllocation = std::unordered_map<PartitionID, std::vector<HostAddr>>;

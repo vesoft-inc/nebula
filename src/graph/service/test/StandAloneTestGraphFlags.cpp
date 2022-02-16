@@ -3,8 +3,11 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/service/GraphFlags.h"
-#include "version/Version.h"
+#include <gflags/gflags.h>  // for DEFINE_bool, DEFINE_string, DEFINE_uint32
+
+#include <string>  // for operator+
+
+#include "version/Version.h"  // for getOriginVersion
 
 DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");

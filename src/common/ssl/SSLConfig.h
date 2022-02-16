@@ -8,10 +8,23 @@
 #define COMMON_SSL_SSLCONFIG_H
 
 #include <folly/io/async/SSLContext.h>
-#include <gflags/gflags.h>
+#include <gflags/gflags.h>  // for DECLARE_bool
 #include <wangle/ssl/SSLContextConfig.h>
 
-#include <memory>
+#include <memory>  // for shared_ptr
+
+namespace wangle {
+struct SSLContextConfig;
+}  // namespace wangle
+
+namespace folly {
+class SSLContext;
+
+class SSLContext;
+}  // namespace folly
+namespace wangle {
+struct SSLContextConfig;
+}  // namespace wangle
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(enable_graph_ssl);

@@ -3,20 +3,37 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdint.h>           // for int32_t
+#include <unistd.h>           // for sleep
 
-#include "codec/RowWriterV2.h"
-#include "common/base/Base.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for operator==, basic_string
+
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_INFO
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/datatypes/HostAddr.h"  // for HostAddr
 #include "common/fs/TempDir.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
+#include "common/meta/IndexManager.h"         // for IndexManager
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, VertexID
+#include "common/utils/IndexKeyUtils.h"       // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "common/utils/Types.h"               // for VertexIDSlice, IndexID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for ServiceClient
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "kvstore/NebulaStore.h"              // for NebulaStore
 #include "mock/AdHocIndexManager.h"
 #include "mock/AdHocSchemaManager.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/CommonUtils.h"
-#include "storage/test/QueryTestUtils.h"
-#include "storage/test/TestUtils.h"
+#include "mock/AdHocSchemaManager.h"      // for AdHocSchemaManager
+#include "mock/MockCluster.h"             // for MockCluster
+#include "storage/CommonUtils.h"          // for StorageEnv
+#include "storage/test/QueryTestUtils.h"  // for FLAGS_mock_ttl_col, FLA...
 
 namespace nebula {
 namespace storage {

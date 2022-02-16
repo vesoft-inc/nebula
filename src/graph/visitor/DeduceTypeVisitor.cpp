@@ -5,23 +5,83 @@
 
 #include "graph/visitor/DeduceTypeVisitor.h"
 
-#include <sstream>
-#include <unordered_map>
+#include <stdint.h>                    // for uint8_t
+#include <string.h>                    // for strcmp
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Path.h"
-#include "common/datatypes/Set.h"
-#include "common/function/FunctionManager.h"
-#include "graph/context/QueryContext.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/context/ValidateContext.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/visitor/EvaluableExprVisitor.h"
+#include <algorithm>      // for find_if
+#include <memory>         // for shared_ptr
+#include <sstream>        // for operator<<
+#include <string>         // for operator<<
+#include <unordered_map>  // for operator==
+#include <unordered_set>  // for unordered...
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                               // for UNUSED
+#include "common/base/Logging.h"                            // for LogMessag...
+#include "common/base/StatusOr.h"                           // for StatusOr
+#include "common/datatypes/DataSet.h"                       // for DataSet
+#include "common/datatypes/Date.h"                          // for Date, Dat...
+#include "common/datatypes/Duration.h"                      // for Duration
+#include "common/datatypes/Edge.h"                          // for Edge
+#include "common/datatypes/List.h"                          // for List
+#include "common/datatypes/Map.h"                           // for Map
+#include "common/datatypes/Path.h"                          // for Path
+#include "common/datatypes/Set.h"                           // for Set
+#include "common/datatypes/Vertex.h"                        // for Vertex
+#include "common/expression/AggregateExpression.h"          // for Aggregate...
+#include "common/expression/ArithmeticExpression.h"         // for Arithmeti...
+#include "common/expression/AttributeExpression.h"          // for Attribute...
+#include "common/expression/CaseExpression.h"               // for CaseExpre...
+#include "common/expression/ConstantExpression.h"           // for ConstantE...
+#include "common/expression/Expression.h"                   // for Expression
+#include "common/expression/FunctionCallExpression.h"       // for FunctionC...
+#include "common/expression/LabelAttributeExpression.h"     // for LabelAttr...
+#include "common/expression/LabelExpression.h"              // for LabelExpr...
+#include "common/expression/ListComprehensionExpression.h"  // for ListCompr...
+#include "common/expression/LogicalExpression.h"            // for LogicalEx...
+#include "common/expression/PredicateExpression.h"          // for Predicate...
+#include "common/expression/PropertyExpression.h"           // for EdgePrope...
+#include "common/expression/ReduceExpression.h"             // for ReduceExp...
+#include "common/expression/RelationalExpression.h"         // for Relationa...
+#include "common/expression/SubscriptExpression.h"          // for Subscript...
+#include "common/expression/TypeCastingExpression.h"        // for TypeCasti...
+#include "common/expression/UnaryExpression.h"              // for UnaryExpr...
+#include "common/function/FunctionManager.h"                // for FunctionM...
+#include "common/meta/NebulaSchemaProvider.h"               // for NebulaSch...
+#include "common/meta/SchemaManager.h"                      // for SchemaMan...
+#include "common/meta/SchemaProviderIf.h"                   // for SchemaPro...
+#include "graph/context/QueryContext.h"                     // for QueryContext
+#include "graph/context/QueryExpressionContext.h"           // for QueryExpr...
+#include "graph/context/ValidateContext.h"                  // for ValidateC...
+#include "graph/session/ClientSession.h"                    // for SpaceInfo
+#include "graph/util/SchemaUtil.h"                          // for SchemaUtil
+#include "graph/visitor/EvaluableExprVisitor.h"             // for Evaluable...
+#include "interface/gen-cpp2/meta_types.h"                  // for ColumnTyp...
 
 namespace nebula {
+class ColumnExpression;
+class EdgeExpression;
+class ListExpression;
+class MapExpression;
+class PathBuildExpression;
+class SetExpression;
+class UUIDExpression;
+class VariableExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class ColumnExpression;
+class EdgeExpression;
+class ListExpression;
+class MapExpression;
+class PathBuildExpression;
+class SetExpression;
+class UUIDExpression;
+class VariableExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 static const std::unordered_map<Value::Type, Value> kConstantValues = {

@@ -5,8 +5,19 @@
 
 #include "meta/MetaServiceUtils.h"
 
-#include "common/utils/MetaKeyUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <algorithm>      // for find_if
+#include <iterator>       // for move_iterator, make_move_...
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ostream
+#include <unordered_map>  // for _Node_iterator, operator!=
+#include <utility>        // for pair, move
+
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_INFO
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, kDefaultSpa...
+#include "interface/gen-cpp2/meta_types.h"  // for ColumnDef, SchemaProp
+#include "kvstore/KVStore.h"                // for KVStore
 
 namespace nebula {
 namespace meta {

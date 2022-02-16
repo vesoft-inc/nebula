@@ -5,6 +5,20 @@
 
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
 
+#include <folly/Try.h>              // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcep...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for Promise, PromiseExcep...
+
+#include "common/base/Logging.h"                // for CHECK, COMPACT_GOOGLE...
+#include "common/base/Status.h"                 // for Status
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/HostAddr.h"          // for HostAddr
+#include "interface/gen-cpp2/meta_types.h"      // for AdminCmd, AdminCmd::R...
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
+
 namespace nebula {
 namespace meta {
 

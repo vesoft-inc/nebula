@@ -23,12 +23,12 @@ enum Status {
 } (cpp.enum_strict)
 
 
-typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
-typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
-typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
-typedef i64 (cpp.type = "nebula::TermID") TermID
-typedef i64 (cpp.type = "nebula::LogID") LogID
-typedef i32 (cpp.type = "nebula::Port") Port
+typedef i64 (cpp.type = "::nebula::ClusterID") ClusterID
+typedef i32 (cpp.type = "::nebula::GraphSpaceID") GraphSpaceID
+typedef i32 (cpp.type = "::nebula::PartitionID") PartitionID
+typedef i64 (cpp.type = "::nebula::TermID") TermID
+typedef i64 (cpp.type = "::nebula::LogID") LogID
+typedef i32 (cpp.type = "::nebula::Port") Port
 
 
 // A request to ask for vote

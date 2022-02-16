@@ -5,6 +5,20 @@
 
 #include "meta/processors/id/GetWorkerIdProcessor.h"
 
+#include <folly/SharedMutex.h>            // for SharedMutex
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <stdint.h>                       // for int64_t, uint32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
+
+#include <atomic>  // for atomic
+
+#include "common/base/ErrorOr.h"              // for ok, value
+#include "common/utils/MetaKeyUtils.h"        // for kDefaultPartId, kDefa...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doGet
+#include "meta/processors/Common.h"           // for LockUtils
+
 namespace nebula {
 namespace meta {
 

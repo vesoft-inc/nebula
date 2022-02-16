@@ -3,15 +3,45 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>            // for to
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <stddef.h>                // for size_t
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/InnerJoinExecutor.h"
-#include "graph/executor/query/LeftJoinExecutor.h"
-#include "graph/executor/test/QueryTestBase.h"
-#include "graph/planner/plan/Query.h"
+#include <cstdint>             // for int64_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>...
+#include <memory>              // for allocator, uniqu...
+#include <string>              // for string, basic_st...
+#include <type_traits>         // for remove_reference...
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/base/Base.h"                        // for kDst, kVid
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/DataSet.h"                // for Row, DataSet
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value, Value::kN...
+#include "common/expression/PropertyExpression.h"    // for VariableProperty...
+#include "graph/context/ExecutionContext.h"          // for ExecutionContext
+#include "graph/context/Iterator.h"                  // for Iterator
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/Result.h"                    // for Result, ResultBu...
+#include "graph/context/Symbols.h"                   // for SymbolTable
+#include "graph/executor/query/InnerJoinExecutor.h"  // for InnerJoinExecutor
+#include "graph/executor/query/LeftJoinExecutor.h"   // for LeftJoinExecutor
+#include "graph/executor/test/QueryTestBase.h"       // for QueryTestBase
+#include "graph/planner/plan/Query.h"                // for InnerJoin, LeftJoin
 
 namespace nebula {
+class Expression;
+class ObjectPool;
+
+class Expression;
+class ObjectPool;
+
 namespace graph {
 class JoinTest : public QueryTestBase {
  protected:

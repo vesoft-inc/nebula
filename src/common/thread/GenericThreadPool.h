@@ -5,10 +5,20 @@
 #ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
 
-#include <boost/core/noncopyable.hpp>
+#include <folly/futures/Future.h>  // for SemiFuture, FutureException...
+#include <stddef.h>                // for size_t
+#include <stdint.h>                // for uint64_t
 
-#include "common/cpp/helpers.h"
-#include "common/thread/GenericWorker.h"
+#include <atomic>                      // for atomic, __atomic_base
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <memory>                      // for unique_ptr, allocator
+#include <string>                      // for string
+#include <type_traits>                 // for enable_if, is_void, result_of
+#include <utility>                     // for forward
+#include <vector>                      // for vector
+
+#include "common/cpp/helpers.h"           // for NonMovable
+#include "common/thread/GenericWorker.h"  // for GenericWorker, GenericWorke...
 
 /**
  * Based on GenericWorker, GenericThreadPool implements a thread pool that

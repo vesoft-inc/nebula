@@ -3,14 +3,20 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <s2/s2cell_id.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include <cstdint>
-#include <unordered_set>
+#include <utility>  // for move
+#include <vector>   // for vector, allocator
 
-#include "common/base/Base.h"
-#include "common/geo/GeoIndex.h"
+#include "common/base/Logging.h"         // for SetStderrLogging
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "common/datatypes/Geography.h"  // for Geography
+#include "common/geo/GeoIndex.h"         // for GeoIndex, RegionCoverParams
 
 namespace nebula {
 namespace geo {

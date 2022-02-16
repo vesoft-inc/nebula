@@ -5,6 +5,8 @@
 
 #include "common/expression/BinaryExpression.h"
 
+#include "common/base/Logging.h"  // for COMPACT_GOOGLE_LOG_FATAL, LogMessag...
+
 namespace nebula {
 
 bool BinaryExpression::operator==(const Expression& rhs) const {

@@ -6,10 +6,21 @@
 #ifndef COMMON_FS_FILEUTILS_H_
 #define COMMON_FS_FILEUTILS_H_
 
-#include <dirent.h>
+#include <dirent.h>       // for dirent, DT_UNKNOWN, DIR
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for uint64_t, uint32_t
+#include <time.h>         // for size_t, time_t
+
+#include <iosfwd>  // for ifstream
+#include <memory>  // for unique_ptr
+#include <regex>   // for smatch, regex
+#include <string>  // for string
+#include <vector>  // for vector
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Logging.h"   // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 
 namespace nebula {
 namespace fs {
@@ -167,6 +178,7 @@ class FileUtils final {
    * situations.
    */
   class Iterator;
+
   using DirEntryIterator = Iterator;
   using FileLineIterator = Iterator;
   class Iterator final {

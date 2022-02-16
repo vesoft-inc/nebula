@@ -5,41 +5,56 @@
 
 #include "graph/validator/Validator.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, requi...
 
-#include "common/function/FunctionManager.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/ACLValidator.h"
-#include "graph/validator/AdminJobValidator.h"
-#include "graph/validator/AdminValidator.h"
-#include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/DownloadValidator.h"
-#include "graph/validator/ExplainValidator.h"
-#include "graph/validator/FetchEdgesValidator.h"
-#include "graph/validator/FetchVerticesValidator.h"
-#include "graph/validator/FindPathValidator.h"
-#include "graph/validator/GetSubgraphValidator.h"
-#include "graph/validator/GoValidator.h"
-#include "graph/validator/GroupByValidator.h"
-#include "graph/validator/IngestValidator.h"
-#include "graph/validator/LimitValidator.h"
-#include "graph/validator/LookupValidator.h"
-#include "graph/validator/MaintainValidator.h"
-#include "graph/validator/MatchValidator.h"
-#include "graph/validator/MutateValidator.h"
-#include "graph/validator/OrderByValidator.h"
-#include "graph/validator/PipeValidator.h"
-#include "graph/validator/ReportError.h"
-#include "graph/validator/SequentialValidator.h"
-#include "graph/validator/SetValidator.h"
-#include "graph/validator/UseValidator.h"
-#include "graph/validator/YieldValidator.h"
-#include "graph/visitor/DeduceTypeVisitor.h"
-#include "graph/visitor/EvaluableExprVisitor.h"
-#include "parser/Sentence.h"
+#include <ostream>        // for operator<<, basi...
+#include <type_traits>    // for remove_reference...
+#include <unordered_set>  // for unordered_set
+
+#include "common/base/Logging.h"                     // for CheckNotNull
+#include "common/expression/Expression.h"            // for Expression, Expr...
+#include "common/expression/PropertyExpression.h"    // for PropertyExpression
+#include "graph/context/QueryExpressionContext.h"    // for QueryExpressionC...
+#include "graph/context/ValidateContext.h"           // for ValidateContext
+#include "graph/context/ast/AstContext.h"            // for AstContext
+#include "graph/context/ast/QueryAstContext.h"       // for Starts, kVariable
+#include "graph/planner/Planner.h"                   // for Planner
+#include "graph/planner/plan/ExecutionPlan.h"        // for SubPlan, Executi...
+#include "graph/planner/plan/PlanNode.h"             // for operator<<, Plan...
+#include "graph/service/GraphFlags.h"                // for FLAGS_enable_aut...
+#include "graph/util/ExpressionUtils.h"              // for ExpressionUtils
+#include "graph/util/SchemaUtil.h"                   // for SchemaUtil
+#include "graph/validator/ACLValidator.h"            // for ChangePasswordVa...
+#include "graph/validator/AdminJobValidator.h"       // for AdminJobValidator
+#include "graph/validator/AdminValidator.h"          // for AddHostsValidator
+#include "graph/validator/AssignmentValidator.h"     // for AssignmentValidator
+#include "graph/validator/DownloadValidator.h"       // for DownloadValidator
+#include "graph/validator/ExplainValidator.h"        // for ExplainValidator
+#include "graph/validator/FetchEdgesValidator.h"     // for FetchEdgesValidator
+#include "graph/validator/FetchVerticesValidator.h"  // for FetchVerticesVal...
+#include "graph/validator/FindPathValidator.h"       // for FindPathValidator
+#include "graph/validator/GetSubgraphValidator.h"    // for GetSubgraphValid...
+#include "graph/validator/GoValidator.h"             // for GoValidator
+#include "graph/validator/GroupByValidator.h"        // for GroupByValidator
+#include "graph/validator/IngestValidator.h"         // for IngestValidator
+#include "graph/validator/LimitValidator.h"          // for LimitValidator
+#include "graph/validator/LookupValidator.h"         // for LookupValidator
+#include "graph/validator/MaintainValidator.h"       // for AddHostsIntoZone...
+#include "graph/validator/MatchValidator.h"          // for MatchValidator
+#include "graph/validator/MutateValidator.h"         // for DeleteEdgesValid...
+#include "graph/validator/OrderByValidator.h"        // for OrderByValidator
+#include "graph/validator/PipeValidator.h"           // for PipeValidator
+#include "graph/validator/ReportError.h"             // for ReportError
+#include "graph/validator/SequentialValidator.h"     // for SequentialValidator
+#include "graph/validator/SetValidator.h"            // for SetValidator
+#include "graph/validator/UseValidator.h"            // for UseValidator
+#include "graph/validator/YieldValidator.h"          // for DeleteEdgesValid...
+#include "graph/visitor/DeduceTypeVisitor.h"         // for DeduceTypeVisitor
+#include "interface/gen-cpp2/common_types.h"         // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"           // for SpaceDesc, Colum...
+#include "parser/Clauses.h"                          // for VerticesClause
+#include "parser/Sentence.h"                         // for Sentence, Senten...
 
 namespace nebula {
 namespace graph {

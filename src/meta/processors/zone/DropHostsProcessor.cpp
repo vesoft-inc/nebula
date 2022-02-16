@@ -5,7 +5,25 @@
 
 #include "meta/processors/zone/DropHostsProcessor.h"
 
-#include "kvstore/LogEncoder.h"
+#include <folly/Range.h>                    // for StringPiece
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <stddef.h>                         // for size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for find, all_of, unique
+#include <memory>     // for unique_ptr, allocator
+#include <ostream>    // for operator<<, basic_ost...
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"            // for value, error, ok
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"      // for HostAddr, operator<<
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/LogEncoder.h"             // for BatchHolder, encodeBa...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"         // for LockUtils
 
 namespace nebula {
 namespace meta {

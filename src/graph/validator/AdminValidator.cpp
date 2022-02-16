@@ -5,13 +5,37 @@
 
 #include "graph/validator/AdminValidator.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/String.h>                   // for toLowerAscii
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optiona...
 
-#include "common/charset/Charset.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/service/GraphFlags.h"
-#include "parser/MaintainSentences.h"
+#include <algorithm>      // for max, unique, find
+#include <ostream>        // for operator<<, string...
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+
+#include "clients/meta/MetaClient.h"               // for MetaClient
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/charset/Charset.h"                // for CharsetInfo
+#include "common/datatypes/HostAddr.h"             // for HostAddr
+#include "common/datatypes/Map.h"                  // for Map
+#include "common/expression/Expression.h"          // for Expression
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Symbols.h"                 // for ColsDef
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/planner/plan/Admin.h"              // for AddHosts, AddListener
+#include "graph/service/GraphFlags.h"              // for FLAGS_default_charset
+#include "graph/service/PermissionManager.h"       // for PermissionManager
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType, Prop...
+#include "parser/AdminSentences.h"                 // for ConfigRowItem, Spa...
+#include "parser/MaintainSentences.h"              // for AddHostsSentence
+#include "parser/MutateSentences.h"                // for UpdateItem, Update...
+#include "parser/Sentence.h"                       // for HostList
 
 namespace nebula {
 namespace graph {
@@ -49,8 +73,8 @@ Status CreateSpaceValidator::validateImpl() {
       }
       case SpaceOptItem::VID_TYPE: {
         auto typeDef = item->getVidType();
-        if (typeDef.type != nebula::cpp2::PropertyType::INT64 &&
-            typeDef.type != nebula::cpp2::PropertyType::FIXED_STRING) {
+        if (typeDef.type != ::nebula::cpp2::PropertyType::INT64 &&
+            typeDef.type != ::nebula::cpp2::PropertyType::FIXED_STRING) {
           std::stringstream ss;
           ss << "Only support FIXED_STRING or INT64 vid type, but was given "
              << apache::thrift::util::enumNameSafe(typeDef.type);
@@ -58,7 +82,7 @@ Status CreateSpaceValidator::validateImpl() {
         }
         spaceDesc_.vid_type_ref().value().type_ref() = typeDef.type;
 
-        if (typeDef.type == nebula::cpp2::PropertyType::INT64) {
+        if (typeDef.type == ::nebula::cpp2::PropertyType::INT64) {
           spaceDesc_.vid_type_ref().value().type_length_ref() = 8;
         } else {
           if (!typeDef.type_length_ref().has_value()) {

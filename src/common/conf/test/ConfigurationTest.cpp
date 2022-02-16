@@ -3,11 +3,20 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/dynamic.h>  // for dynamic
+#include <gtest/gtest.h>    // for TestPartResult
+#include <gtest/gtest.h>    // for Message
+#include <gtest/gtest.h>    // for TestPartResult
+#include <stdint.h>         // for int64_t, int32_t
+#include <stdio.h>          // for fprintf, fclose, fflush, fopen
 
-#include "common/base/Base.h"
-#include "common/conf/Configuration.h"
-#include "common/fs/TempFile.h"
+#include <string>         // for string, allocator, operator==
+#include <unordered_set>  // for unordered_set, operator!=
+#include <vector>         // for vector
+
+#include "common/base/Status.h"         // for Status
+#include "common/conf/Configuration.h"  // for Configuration
+#include "common/fs/TempFile.h"         // for TempFile
 
 using nebula::fs::TempFile;
 

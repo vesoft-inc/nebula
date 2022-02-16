@@ -7,10 +7,17 @@
 #define COMMON_FUNCTION_FUNCTIONMANAGER_H_
 
 #include <folly/futures/Future.h>
+#include <stddef.h>  // for size_t
 
-#include "common/base/Status.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
+#include <functional>     // for function, reference_wrapper
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Status.h"      // for Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/datatypes/Value.h"  // for Value::Type, Value
 
 /**
  * FunctionManager is for managing builtin and dynamic-loaded functions,

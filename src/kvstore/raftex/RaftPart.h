@@ -6,33 +6,95 @@
 #ifndef RAFTEX_RAFTPART_H_
 #define RAFTEX_RAFTPART_H_
 
-#include <folly/Function.h>
-#include <folly/futures/SharedPromise.h>
-#include <gtest/gtest_prod.h>
+#include <folly/Function.h>               // for Function
+#include <folly/Optional.h>               // for Optional
+#include <folly/Range.h>                  // for StringPiece
+#include <folly/Try.h>                    // for Try::~Try<T>, Try::Try<T>
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Promise.h>        // for Promise::~Promise<T>
+#include <folly/futures/Promise.h>        // for PromiseException::Promi...
+#include <folly/futures/Promise.h>        // for Promise::~Promise<T>
+#include <folly/futures/Promise.h>        // for PromiseException::Promi...
+#include <folly/futures/SharedPromise.h>  // for SharedPromise
+#include <folly/futures/SharedPromise.h>  // for SharedPromise::getFuture
+#include <gtest/gtest_prod.h>             // for FRIEND_TEST
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for int64_t, uint64_t
+
+#include <atomic>   // for atomic_bool, atomic
+#include <list>     // for list
+#include <memory>   // for shared_ptr, enable_shar...
+#include <mutex>    // for mutex, lock_guard
+#include <set>      // for set
+#include <string>   // for string, basic_string
+#include <tuple>    // for tuple
+#include <utility>  // for pair, forward
+#include <vector>   // for vector
 
 #include "common/base/Base.h"
+#include "common/base/Logging.h"        // for CHECK, COMPACT_GOOGLE_L...
+#include "common/datatypes/HostAddr.h"  // for HostAddr
 #include "common/thread/GenericThreadPool.h"
-#include "common/time/Duration.h"
+#include "common/thrift/ThriftTypes.h"  // for ClusterID, TermID, LogID
+#include "common/time/Duration.h"       // for Duration
 #include "common/utils/LogIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/raftex_types.h"  // for AppendLogResponse, AskF...
 #include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
 #include "kvstore/raftex/SnapshotManager.h"
+namespace nebula {
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+namespace thrift {
+template <class ClientType>
+class ThriftClientManager;
+}  // namespace thrift
+}  // namespace nebula
 
 namespace folly {
+class Executor;
+
 class IOThreadPoolExecutor;
 class EventBase;
+class Executor;
 }  // namespace folly
 
 namespace nebula {
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+namespace thrift {
+
+template <class ClientType>
+class ThriftClientManager;
+}  // namespace thrift
 
 namespace wal {
 class FileBasedWal;
 }  // namespace wal
 
 namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
 
 /**
  * @brief Log type of raft log

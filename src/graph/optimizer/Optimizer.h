@@ -6,8 +6,14 @@
 #ifndef GRAPH_OPTIMIZER_OPTIMIZER_H_
 #define GRAPH_OPTIMIZER_OPTIMIZER_H_
 
+#include <stdint.h>  // for int64_t, int8_t
+
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 
 namespace nebula {
 namespace graph {

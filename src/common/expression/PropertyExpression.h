@@ -6,9 +6,19 @@
 #ifndef COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
 #define COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <string>  // for allocator, string, operator<<
+
+#include "common/base/Base.h"              // for kDst, kRank, kSrc, kType
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression::Kind, Expression
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 constexpr char const kInputRef[] = "$-";
 constexpr char const kVarRef[] = "$";

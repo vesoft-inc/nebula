@@ -5,7 +5,26 @@
 
 #include "meta/processors/parts/CreateSpaceAsProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
+#include <folly/Range.h>                    // for Range
+#include <folly/ScopeGuard.h>               // for operator+, SCOPE_EXIT
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <stdint.h>                         // for int32_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <new>        // for operator new
+#include <ostream>    // for operator<<, basic_ost...
+
+#include "common/base/EitherOr.h"           // for EitherOr
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/time/WallClock.h"          // for WallClock
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, EntryType
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "meta/ActiveHostsMan.h"            // for LastUpdateTimeMan
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"         // for LockUtils
 
 namespace nebula {
 namespace meta {

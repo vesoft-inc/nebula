@@ -6,8 +6,11 @@
 #ifndef COMMON_FS_TEMPDIR_H_
 #define COMMON_FS_TEMPDIR_H_
 
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
 #include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
+#include "common/fs/FileUtils.h"  // for FileUtils
 
 namespace nebula {
 namespace fs {

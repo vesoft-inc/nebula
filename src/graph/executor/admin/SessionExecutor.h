@@ -6,12 +6,42 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
 
+#include <folly/futures/Future.h>  // for Future
+#include <stdint.h>                // for int64_t
+
+#include <memory>  // for allocator
+
+#include "common/datatypes/Date.h"       // for DateTime, DateTime::(anonymo...
+#include "common/thrift/ThriftTypes.h"   // for SessionID
+#include "common/time/TimeConversion.h"  // for TimeConversion
 #include "common/time/TimeUtils.h"
-#include "graph/executor/Executor.h"
+#include "graph/executor/Executor.h"  // for Executor
 #include "graph/service/RequestContext.h"
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+namespace meta {
+namespace cpp2 {
+class Session;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
+class Status;
+namespace meta {
+namespace cpp2 {
+class Session;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class ShowSessionsExecutor final : public Executor {
  public:

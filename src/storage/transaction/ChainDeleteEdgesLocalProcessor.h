@@ -6,15 +6,31 @@
 #ifndef STORAGE_TRANSACTION_CHAINDELETEEDGESLOCALPROCESSOR_H
 #define STORAGE_TRANSACTION_CHAINDELETEEDGESLOCALPROCESSOR_H
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for SemiFuture
+#include <folly/futures/Promise.h>  // for PromiseException...
+
+#include <memory>   // for unique_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, Gra...
 #include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse
+#include "kvstore/Common.h"                    // for KV
 #include "kvstore/LogEncoder.h"
-#include "storage/BaseProcessor.h"
+#include "storage/BaseProcessor.h"                   // for BaseProcessor
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code, ChainBaseP...
+#include "storage/transaction/ConsistTypes.h"        // for HookFuncPara (pt...
 #include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainDeleteEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
                                        public ChainBaseProcessor {

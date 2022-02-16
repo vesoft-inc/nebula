@@ -3,9 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <stddef.h>       // for size_t
 
-#include "common/algorithm/ReservoirSampling.h"
+#include <cstdint>  // for int64_t
+#include <utility>  // for move
+#include <vector>   // for vector, allocator
+
+#include "common/algorithm/ReservoirSampling.h"  // for ReservoirSampling
 
 namespace nebula {
 namespace algorithm {

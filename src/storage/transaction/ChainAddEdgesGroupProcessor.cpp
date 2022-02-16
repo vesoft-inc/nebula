@@ -5,11 +5,17 @@
 
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
 
-#include "storage/StorageFlags.h"
-#include "storage/mutate/AddEdgesProcessor.h"
+#include <folly/futures/Future.h>
+#include <folly/futures/Promise.h>
+
+#include <algorithm>
+
+#include "clients/meta/MetaClient.h"
+#include "common/base/StatusOr.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "storage/BaseProcessor.h"
+#include "storage/CommonUtils.h"
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace storage {

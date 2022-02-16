@@ -6,18 +6,39 @@
 #ifndef STORAGE_ADMIN_ADMINTASK_H_
 #define STORAGE_ADMIN_ADMINTASK_H_
 
-#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Optional.h>                                     // for Optional
+#include <folly/executors/task_queue/UnboundedBlockingQueue.h>  // for Unbou...
+#include <limits.h>                                             // for INT_MAX
+#include <stddef.h>                                             // for size_t
+#include <stdint.h>                                             // for uint32_t
+#include <thrift/lib/cpp/util/EnumUtils.h>                      // for enumN...
 
-#include "common/thrift/ThriftTypes.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include <algorithm>      // for copy
+#include <atomic>         // for atomic
+#include <functional>     // for function
+#include <memory>         // for share...
+#include <string>         // for string
+#include <unordered_map>  // for unord...
+#include <unordered_set>  // for unord...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                  // for FLOG_...
+#include "common/base/ErrorOr.h"               // for ErrorOr
+#include "common/base/Logging.h"               // for LogMe...
+#include "common/thrift/ThriftTypes.h"         // for Graph...
+#include "interface/gen-cpp2/common_types.h"   // for Error...
+#include "interface/gen-cpp2/meta_types.h"     // for AdminCmd
+#include "interface/gen-cpp2/storage_types.h"  // for AddTa...
 #include "kvstore/Common.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class AdminSubTask {
  public:

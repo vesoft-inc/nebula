@@ -5,7 +5,13 @@
 
 #include "graph/planner/Planner.h"
 
-#include "graph/validator/Validator.h"
+#include <string>  // for operator<<, string
+
+#include "common/base/Logging.h"               // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"                // for Status
+#include "graph/context/ast/AstContext.h"      // for AstContext
+#include "graph/planner/plan/ExecutionPlan.h"  // for SubPlan
+#include "graph/planner/plan/PlanNode.h"       // for PlanNode
 
 namespace nebula {
 namespace graph {

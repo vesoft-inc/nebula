@@ -5,7 +5,9 @@
 
 #include "common/utils/NebulaKeyUtils.h"
 
-#include "common/utils/IndexKeyUtils.h"
+#include <stdint.h>  // for uint32_t, int32_t, int8_t
+
+#include "common/utils/IndexKeyUtils.h"  // for IndexKeyUtils
 
 namespace nebula {
 

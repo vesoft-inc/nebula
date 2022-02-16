@@ -5,11 +5,6 @@
 
 #include "common/datatypes/Duration.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
-
-#include <sstream>
-
 namespace nebula {}  // namespace nebula
 
 namespace std {}  // namespace std

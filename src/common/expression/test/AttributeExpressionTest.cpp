@@ -2,7 +2,25 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "common/expression/test/TestBase.h"
+#include <gtest/gtest.h>  // for Message
+
+#include <memory>         // for allocator
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                              // for kDst, kRank
+#include "common/datatypes/Date.h"                         // for Date, Date...
+#include "common/datatypes/Edge.h"                         // for Edge
+#include "common/datatypes/Value.h"                        // for Value, Val...
+#include "common/datatypes/Vertex.h"                       // for Tag, Vertex
+#include "common/expression/AttributeExpression.h"         // for AttributeE...
+#include "common/expression/ConstantExpression.h"          // for ConstantEx...
+#include "common/expression/ContainerExpression.h"         // for MapItemList
+#include "common/expression/Expression.h"                  // for Expression
+#include "common/expression/LabelExpression.h"             // for LabelExpre...
+#include "common/expression/test/ExpressionContextMock.h"  // for Expression...
+#include "common/expression/test/TestBase.h"               // for pool, gExp...
 
 namespace nebula {
 

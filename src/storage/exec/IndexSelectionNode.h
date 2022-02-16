@@ -5,14 +5,28 @@
 #ifndef STORAGE_EXEC_INDEXSELECTIONNODE_H
 #define STORAGE_EXEC_INDEXSELECTIONNODE_H
 
+#include <stddef.h>  // for size_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
 #include "common/context/ExpressionContext.h"
-#include "common/expression/Expression.h"
+#include "common/datatypes/DataSet.h"              // for Row
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for EdgeDstIdExpression
 #include "folly/container/F14Map.h"
-#include "storage/ExprVisitorBase.h"
-#include "storage/exec/IndexExprContext.h"
-#include "storage/exec/IndexNode.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "storage/ExprVisitorBase.h"          // for ExprVisitorBase
+#include "storage/exec/IndexExprContext.h"    // for IndexExprContext
+#include "storage/exec/IndexNode.h"           // for Set, IndexNode
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 /**
  *
  * IndexSelectionNode

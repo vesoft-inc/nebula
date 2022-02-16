@@ -4,9 +4,19 @@
  */
 #include "common/expression/AggregateExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <functional>     // for function
+#include <ostream>        // for operator<<, basic_...
+#include <unordered_set>  // for unordered_set
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/datatypes/Set.h"                  // for Set
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/ExprVisitor.h"         // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 bool AggregateExpression::operator==(const Expression& rhs) const {
   if (kind_ != rhs.kind()) {

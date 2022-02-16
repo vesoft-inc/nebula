@@ -5,15 +5,36 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/IndexUtil.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include <fmt/format.h>                // for format
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>           // for find_if, sort
+#include <cstdint>             // for int32_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <iterator>            // for reverse_iterator
+#include <map>                 // for map, operator==
+#include <ostream>             // for operator<<
+#include <unordered_set>       // for unordered_set
+#include <utility>             // for pair, move, make_pair
+
+#include "clients/meta/MetaClient.h"               // for MetaClient
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/LogicalExpression.h"   // for LogicalExpression
+#include "common/expression/PropertyExpression.h"  // for EdgePropertyExpres...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/optimizer/OptContext.h"            // for OptContext
+#include "graph/optimizer/OptGroup.h"              // for OptGroupNode
+#include "graph/optimizer/OptRule.h"               // for OptRule::Transform...
+#include "graph/optimizer/OptimizerUtils.h"        // for OptimizerUtils
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for IndexScan::IndexQu...
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/util/IndexUtil.h"                  // for IndexUtil
+#include "graph/util/SchemaUtil.h"                 // for SchemaUtil
+#include "interface/gen-cpp2/common_types.h"       // for SchemaID, Property...
+#include "interface/gen-cpp2/meta_types.h"         // for IndexItem, ColumnDef
+#include "interface/gen-cpp2/storage_types.h"      // for IndexColumnHint
 
 using nebula::graph::ExpressionUtils;
 using nebula::graph::IndexScan;

@@ -5,11 +5,35 @@
 
 #include "UpdateExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Mutate.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/util/SchemaUtil.h"
+#include <folly/Try.h>                 // for Try::~Try<T>, Try::Try<T>
+#include <folly/futures/Future.h>      // for Future::Future<T>, Fut...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Prom...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Prom...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optional_fi...
+
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "clients/storage/StorageClient.h"     // for StorageClient, Storage...
+#include "common/base/Logging.h"               // for LogMessage, LOG, _LOG_...
+#include "common/base/Status.h"                // for Status, operator<<
+#include "common/datatypes/DataSet.h"          // for DataSet, Row
+#include "common/datatypes/List.h"             // for List
+#include "common/datatypes/Value.h"            // for Value
+#include "common/time/Duration.h"              // for Duration
+#include "common/time/ScopedTimer.h"           // for SCOPED_TIMER
+#include "graph/context/Iterator.h"            // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"        // for QueryContext
+#include "graph/context/Result.h"              // for ResultBuilder
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
+#include "graph/planner/plan/Mutate.h"         // for UpdateEdge, UpdateVertex
+#include "graph/service/GraphFlags.h"          // for FLAGS_enable_experimen...
+#include "graph/service/RequestContext.h"      // for RequestContext
+#include "graph/session/ClientSession.h"       // for ClientSession
+#include "interface/gen-cpp2/storage_types.h"  // for UpdatedProp, UpdateRes...
 
 using nebula::storage::StorageClient;
 

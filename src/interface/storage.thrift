@@ -846,7 +846,7 @@ service StorageAdminService {
     AdminExecResp memberChange(1: MemberChangeReq req);
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
 
-    // Interfaces for nebula cluster checkpoint
+    // Interfaces for ::nebula cluster checkpoint
     CreateCPResp  createCheckpoint(1: CreateCPRequest req);
     DropCPResp    dropCheckpoint(1: DropCPRequest req);
     BlockingSignResp blockingWrites(1: BlockingSignRequest req);

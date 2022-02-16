@@ -3,19 +3,38 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/ssl/Init.h>
-#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <folly/Range.h>      // for StringPiece
+#include <folly/String.h>     // for split, trimWhitespace
+#include <folly/init/Init.h>  // for init
+#include <folly/ssl/Init.h>   // for init
+#include <gflags/gflags.h>    // for DEFINE_string, ParseComma...
+#include <glog/logging.h>     // for FATAL, INFO
+#include <signal.h>           // for SIGINT, SIGTERM
+#include <stdlib.h>           // for EXIT_FAILURE, EXIT_SUCCESS
+#include <string.h>           // for strsignal
 
-#include "common/base/Base.h"
-#include "common/base/SignalHandler.h"
-#include "common/fs/FileUtils.h"
-#include "common/network/NetworkUtils.h"
-#include "common/process/ProcessUtils.h"
-#include "common/time/TimezoneInfo.h"
-#include "daemons/SetupLogging.h"
-#include "storage/StorageServer.h"
-#include "storage/stats/StorageStats.h"
-#include "version/Version.h"
+#include <algorithm>                        // for transform
+#include <boost/filesystem/operations.hpp>  // for absolute
+#include <boost/filesystem/path.hpp>        // for path
+#include <memory>                           // for unique_ptr, allocator
+#include <ostream>                          // for operator<<, basic_ostream
+#include <string>                           // for string, operator<<, basic...
+#include <vector>                           // for vector
+
+#include "common/base/Base.h"             // for FLOG_ERROR, FLOG_INFO
+#include "common/base/Logging.h"          // for LogMessage, LOG, _LOG_ERROR
+#include "common/base/SignalHandler.h"    // for SignalHandler, SignalHand...
+#include "common/base/Status.h"           // for operator<<, Status
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/datatypes/HostAddr.h"    // for operator<<, HostAddr
+#include "common/network/NetworkUtils.h"  // for NetworkUtils
+#include "common/process/ProcessUtils.h"  // for ProcessUtils
+#include "common/ssl/SSLConfig.h"         // for FLAGS_enable_meta_ssl
+#include "common/time/TimezoneInfo.h"     // for Timezone
+#include "daemons/SetupLogging.h"         // for setupLogging
+#include "storage/StorageServer.h"        // for StorageServer
+#include "storage/stats/StorageStats.h"   // for initStorageStats
+#include "version/Version.h"              // for versionString
 
 DEFINE_string(local_ip, "", "IP address which is used to identify this server");
 DEFINE_string(data_path,

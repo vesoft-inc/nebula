@@ -5,8 +5,11 @@
 
 #include "graph/optimizer/rule/TagIndexFullScanRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/planner/plan/Scan.h"
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptRule.h"      // for OptRule, Pattern, RuleSet
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for IndexScan
+#include "graph/planner/plan/Scan.h"      // for TagIndexFullScan
 
 using Kind = nebula::graph::PlanNode::Kind;
 

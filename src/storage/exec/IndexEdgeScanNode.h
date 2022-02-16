@@ -4,13 +4,53 @@
  */
 #ifndef STORAGE_EXEC_INDEXEDGESCANNODE_H
 #define STORAGE_EXEC_INDEXEDGESCANNODE_H
+#include <folly/Range.h>       // for StringPiece
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+
+#include <functional>  // for function
+#include <memory>      // for shared_ptr, unique_ptr
+#include <string>      // for string
+#include <utility>     // for pair
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
+#include "common/datatypes/DataSet.h"  // for Row
 #include "common/utils/NebulaKeyUtils.h"
-#include "storage/exec/IndexScanNode.h"
+#include "common/utils/Types.h"               // for IndexID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for IndexItem
+#include "storage/exec/IndexNode.h"           // for Map, IndexNode (ptr only)
+#include "storage/exec/IndexScanNode.h"       // for IndexScanNode
 #include "storage/exec/QueryUtils.h"
 #include "storage/exec/StorageIterator.h"
+
 namespace nebula {
+namespace meta {
+class NebulaSchemaProvider;
+}  // namespace meta
 namespace storage {
+namespace cpp2 {
+class IndexColumnHint;
+}  // namespace cpp2
+struct RuntimeContext;
+}  // namespace storage
+struct Value;
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+namespace meta {
+class NebulaSchemaProvider;
+}  // namespace meta
+struct Value;
+
+namespace storage {
+namespace cpp2 {
+class IndexColumnHint;
+}  // namespace cpp2
+struct RuntimeContext;
 
 /**
  * IndexEdgeScanNode

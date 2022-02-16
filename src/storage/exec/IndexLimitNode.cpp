@@ -3,8 +3,20 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexLimitNode.h"
+
+#include <fmt/format.h>    // for format
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"  // for Check_EQImpl, DCHECK_EQ
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 IndexLimitNode::IndexLimitNode(const IndexLimitNode& node)
     : IndexNode(node), offset_(node.offset_), limit_(node.limit_) {}
 

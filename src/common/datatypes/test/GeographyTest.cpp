@@ -3,11 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <s2/util/coding/coder.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/datatypes/Geography.h"
+#include <string>  // for string, allocator
+
+#include "common/base/Logging.h"         // for SetStderrLogging
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "common/datatypes/Geography.h"  // for Geography, GeoShape, GeoS...
 
 namespace nebula {
 

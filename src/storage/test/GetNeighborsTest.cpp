@@ -3,12 +3,45 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>                            // for to
+#include <folly/String.h>                          // for stringPrintf
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExec...
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/init/Init.h>                       // for init
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>              // for optional_field_ref
+#include <unistd.h>                                // for size_t, sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "storage/query/GetNeighborsProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <memory>         // for allocator, share...
+#include <ostream>        // for operator<<, basi...
+#include <string>         // for string, basic_st...
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair, move, make...
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                        // for kVid, kDst, kSrc
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/DataSet.h"                // for DataSet, Row
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value, Value::Type
+#include "common/expression/ArithmeticExpression.h"  // for ArithmeticExpres...
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for EdgePropertyExpr...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/thrift/ThriftTypes.h"               // for EdgeType, VertexID
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "interface/gen-cpp2/storage_types.h"        // for GetNeighborsResp...
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "storage/StorageFlags.h"                    // for FLAGS_max_edge_r...
+#include "storage/query/GetNeighborsProcessor.h"     // for GetNeighborsProc...
+#include "storage/test/QueryTestUtils.h"             // for QueryTestUtils
 
 namespace nebula {
 namespace storage {

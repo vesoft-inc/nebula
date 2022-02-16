@@ -5,6 +5,8 @@
 #ifndef COMMON_FS_TEMPFILE_H_
 #define COMMON_FS_TEMPFILE_H_
 
+#include <memory>  // for unique_ptr
+
 #include "common/base/Base.h"
 
 /**

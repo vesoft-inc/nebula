@@ -6,12 +6,41 @@
 #ifndef GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
 #define GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
 
+#include <folly/futures/Future.h>  // for Future
+
+#include <vector>  // for vector
+
+#include "common/base/Status.h"  // for Status
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/SelectExecutor.h"
-#include "graph/scheduler/Scheduler.h"
+#include "graph/scheduler/Scheduler.h"  // for Scheduler
 
 namespace nebula {
 namespace graph {
+class Executor;
+class LoopExecutor;
+class QueryContext;
+class SelectExecutor;
+}  // namespace graph
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+template <class>
+class Promise;
+
+class Executor;
+template <class>
+class Promise;
+}  // namespace folly
+
+namespace nebula {
+namespace graph {
+class Executor;
+class LoopExecutor;
+class QueryContext;
+class SelectExecutor;
+
 /**
  * This is an scheduler implementation based on asynchronous message
  * notification and bread first search. Each node in execution plan would be

@@ -6,7 +6,20 @@
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
 #define COMMON_UTILS_NEBULAKEYUTILS_H_
 
-#include "common/utils/Types.h"
+#include <folly/Conv.h>       // for to
+#include <folly/Range.h>      // for StringPiece
+#include <folly/String.h>     // for hexDump
+#include <folly/lang/Bits.h>  // for Endian
+#include <stddef.h>           // for size_t
+
+#include <cstdint>  // for int64_t, uint32_t, int32_t
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string, operator<<, allocator
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"        // for LOG, LogMessageFatal, _LOG_FATAL
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, EdgeRanking, Ver...
+#include "common/utils/Types.h"         // for readInt, NebulaKeyType, kEdgeLen
 
 namespace nebula {
 

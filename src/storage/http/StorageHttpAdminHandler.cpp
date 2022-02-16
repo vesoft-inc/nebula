@@ -5,12 +5,28 @@
 
 #include "storage/http/StorageHttpAdminHandler.h"
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <folly/Optional.h>  // for Optional
+#include <folly/String.h>    // for stringPrintf
 #include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
+#include <stdint.h>                               // for int32_t
 
-#include "common/process/ProcessUtils.h"
-#include "webservice/Common.h"
+#include <ostream>  // for operator<<, basic_o...
+
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCod...
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "webservice/Common.h"                // for HttpCode, HttpCode:...
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

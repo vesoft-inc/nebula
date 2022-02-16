@@ -5,7 +5,10 @@
 
 #include "common/expression/ColumnExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <ostream>  // for operator<<, basic_ostr...
+
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/expression/ExprVisitor.h"     // for ExprVisitor
 
 namespace nebula {
 

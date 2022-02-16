@@ -6,14 +6,97 @@
 #ifndef GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
 #define GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
 
+#include <iosfwd>  // for ostream
 #include <memory>
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
 
-#include "common/expression/ExprVisitor.h"
+#include "common/datatypes/List.h"          // for List
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 #include "graph/util/SchemaUtil.h"
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
 
 class Expression;
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
 
 namespace graph {
 

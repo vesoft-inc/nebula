@@ -6,9 +6,12 @@
 #ifndef COMMON_EXPRESSION_BINARYEXPRESSION_H_
 #define COMMON_EXPRESSION_BINARYEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ObjectPool;
+
+class ObjectPool;
 
 /**
  *  Base class for all binary expressions

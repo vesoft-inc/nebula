@@ -3,12 +3,26 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Range.h>      // for StringPiece
+#include <folly/String.h>     // for stringPrintf
+#include <folly/Varint.h>     // for encodeVarint
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdint.h>           // for int64_t, int32_t, uint8_t
+#include <string.h>           // for strlen, memcpy, size_t
 
-#include "codec/RowReaderWrapper.h"
-#include "codec/test/SchemaWriter.h"
-#include "common/base/Base.h"
-#include "common/datatypes/Value.h"
+#include <memory>  // for allocator, allocator_tr...
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "codec/RowReader.h"                  // for RowReader::Iterator
+#include "codec/RowReaderV1.h"                // for RowReaderV1
+#include "codec/RowReaderWrapper.h"           // for RowReaderWrapper
+#include "codec/test/SchemaWriter.h"          // for SchemaWriter
+#include "common/base/Logging.h"              // for SetStderrLogging
+#include "common/datatypes/Value.h"           // for Value, Value::Type, Val...
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
 
 namespace nebula {
 

@@ -5,7 +5,14 @@
 
 #include "storage/kv/RemoveProcessor.h"
 
-#include "common/utils/NebulaKeyUtils.h"
+#include <algorithm>      // for for_each
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"          // for CheckNotNull, CHECK_NOTNULL
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "storage/BaseProcessor.h"        // for BaseProcessor::doRemove
 
 namespace nebula {
 namespace storage {

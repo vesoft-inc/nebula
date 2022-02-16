@@ -5,9 +5,19 @@
 
 #include "graph/executor/query/JoinExecutor.h"
 
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_...
+#include <utility>    // for pair, move
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/datatypes/List.h"                 // for List, hash
+#include "common/datatypes/Value.h"                // for Value, hash, opera...
+#include "common/expression/Expression.h"          // for Expression
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator, operator<<
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for Result
+#include "graph/planner/plan/Query.h"              // for BiJoin, Join
 
 namespace nebula {
 namespace graph {

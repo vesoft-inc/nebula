@@ -5,9 +5,16 @@
 
 #include "kvstore/wal/WalFileIterator.h"
 
-#include "common/base/Base.h"
-#include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/WalFileInfo.h"
+#include <errno.h>   // for errno
+#include <fcntl.h>   // for open, O_RDONLY
+#include <string.h>  // for strerror
+#include <unistd.h>  // for pread, ssize_t, close
+
+#include <ostream>  // for operator<<, basic_ostream
+
+#include "common/base/Logging.h"       // for Check_EQImpl, LogMessage
+#include "kvstore/wal/FileBasedWal.h"  // for FileBasedWal
+#include "kvstore/wal/WalFileInfo.h"   // for WalFileInfoPtr, WalFileInfo
 
 namespace nebula {
 namespace wal {

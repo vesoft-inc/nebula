@@ -6,10 +6,23 @@
 #ifndef META_KEY_UTILS_H_
 #define META_KEY_UTILS_H_
 
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int64_t, uint8_t, int8_t
+
+#include <functional>     // for function
+#include <string>         // for string, basic_string
+#include <tuple>          // for tuple
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
-#include "common/datatypes/HostAddr.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/datatypes/Value.h"           // for Value
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/common_types.h"  // for DirInfo, ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ConfigModule, ListenerType
 
 namespace nebula {
 

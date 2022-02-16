@@ -3,10 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Random.h>  // for Random
+#include <gtest/gtest.h>   // for Message
+#include <gtest/gtest.h>   // for TestPartResult
+#include <stddef.h>        // for size_t
+#include <stdint.h>        // for int16_t, int32_t, int64_t
 
-#include "common/base/Base.h"
-#include "common/base/MurmurHash2.h"
+#include <memory>  // for make_shared, make_unique, share...
+#include <string>  // for string, basic_string, hash
+#include <thread>  // for get_id, hash, thread
+
+#include "common/base/MurmurHash2.h"  // for MurmurHash2
 
 namespace nebula {
 

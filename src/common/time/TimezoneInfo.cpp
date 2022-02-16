@@ -5,7 +5,8 @@
 
 #include "common/time/TimezoneInfo.h"
 
-#include <gflags/gflags.h>
+#include <gflags/gflags.h>  // for DEFINE_string
+#include <stdlib.h>         // for getenv
 
 DEFINE_string(timezone_file,
               "share/resources/date_time_zonespec.csv",

@@ -5,26 +5,39 @@
 
 #include "meta/processors/job/JobManager.h"
 
+#include <folly/Format.h>
+#include <folly/small_vector.h>
 #include <folly/synchronization/Baton.h>
-#include <gtest/gtest.h>
+#include <gflags/gflags.h>
+#include <limits.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
+#include <thrift/lib/cpp2/FieldRef.h>
+#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <unistd.h>
 
-#include <boost/stacktrace.hpp>
+#include <cstdint>
+#include <ctime>
+#include <ext/alloc_traits.h>
+#include <ostream>
 
-#include "common/http/HttpClient.h"
+#include "common/base/Logging.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "meta/processors/Common.h"
-#include "meta/processors/admin/AdminClient.h"
+#include "kvstore/KVStore.h"
 #include "meta/processors/job/BalancePlan.h"
-#include "meta/processors/job/JobStatus.h"
+#include "meta/processors/job/JobExecutor.h"
 #include "meta/processors/job/JobUtils.h"
 #include "meta/processors/job/TaskDescription.h"
-#include "webservice/Common.h"
+
+namespace nebula {
+namespace meta {
+class AdminClient;
+}  // namespace meta
+}  // namespace nebula
 
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
 DEFINE_double(job_expired_secs, 7 * 24 * 60 * 60, "job expired intervals in sec");

@@ -5,7 +5,14 @@
 
 #include "parser/TraverseSentences.h"
 
-#include "common/base/Base.h"
+#include <folly/String.h>  // for stringPrintf
+
+#include <ostream>  // for operator<<, basic_ostream
+
+#include "Clauses.h"                       // for YieldClause, WhereClause
+#include "EdgeKey.h"                       // for EdgeKeyRef, EdgeKeys
+#include "Sentence.h"                      // for Sentence, Sentence::Kind
+#include "common/expression/Expression.h"  // for Expression
 
 namespace nebula {
 

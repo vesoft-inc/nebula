@@ -5,17 +5,40 @@
 
 #include "webservice/WebService.h"
 
-#include <proxygen/httpserver/HTTPServer.h>
-#include <proxygen/httpserver/HTTPServerOptions.h>
-#include <proxygen/httpserver/RequestHandlerFactory.h>
+#include <folly/SocketAddress.h>                        // for SocketAddress
+#include <gflags/gflags.h>                              // for DEFINE_int32
+#include <proxygen/httpserver/HTTPServer.h>             // for HTTPServer::I...
+#include <proxygen/httpserver/HTTPServerOptions.h>      // for HTTPServerOpt...
+#include <proxygen/httpserver/RequestHandler.h>         // for RequestHandler
+#include <proxygen/httpserver/RequestHandlerFactory.h>  // for RequestHandle...
+#include <stddef.h>                                     // for size_t
 
-#include "common/thread/NamedThread.h"
-#include "webservice/GetFlagsHandler.h"
-#include "webservice/GetStatsHandler.h"
-#include "webservice/NotFoundHandler.h"
-#include "webservice/Router.h"
-#include "webservice/SetFlagsHandler.h"
-#include "webservice/StatusHandler.h"
+#include <chrono>              // for milliseconds
+#include <condition_variable>  // for condition_var...
+#include <exception>           // for exception
+#include <mutex>               // for mutex, lock_g...
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/thread/NamedThread.h"   // for NamedThread
+#include "webservice/GetFlagsHandler.h"  // for GetFlagsHandler
+#include "webservice/GetStatsHandler.h"  // for GetStatsHandler
+#include "webservice/Router.h"           // for PathParams
+#include "webservice/SetFlagsHandler.h"  // for SetFlagsHandler
+#include "webservice/StatusHandler.h"    // for StatusHandler
+
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class EventBase;
+
+class EventBase;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");

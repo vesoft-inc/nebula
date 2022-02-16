@@ -6,9 +6,19 @@
 #ifndef COMMON_EXPRESSION_ARITHMETICEXPRESSION_H_
 #define COMMON_EXPRESSION_ARITHMETICEXPRESSION_H_
 
-#include "common/expression/BinaryExpression.h"
+#include <string>  // for operator<<, string
+
+#include "common/base/ObjectPool.h"              // for ObjectPool
+#include "common/datatypes/Value.h"              // for Value
+#include "common/expression/BinaryExpression.h"  // for BinaryExpression
+#include "common/expression/Expression.h"        // for Expression, Expressi...
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class ArithmeticExpression final : public BinaryExpression {
  public:

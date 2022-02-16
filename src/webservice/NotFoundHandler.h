@@ -6,9 +6,26 @@
 #ifndef WEBSERVICE_NOTFOUNDHANDLER_H_
 #define WEBSERVICE_NOTFOUNDHANDLER_H_
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+
+#include <memory>  // for unique_ptr
 
 #include "common/base/Base.h"
+
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
 
 namespace nebula {
 

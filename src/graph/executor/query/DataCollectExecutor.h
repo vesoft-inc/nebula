@@ -6,10 +6,28 @@
 #ifndef GRAPH_EXECUTOR_QUERY_DATACOLLECTEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_DATACOLLECTEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>  // for string, allocator, basic_...
+#include <vector>  // for vector
+
+#include "common/base/Status.h"       // for Status
+#include "common/datatypes/Value.h"   // for Value
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class StepClause;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class StepClause;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class DataCollectExecutor final : public Executor {
  public:
   DataCollectExecutor(const PlanNode* node, QueryContext* qctx)

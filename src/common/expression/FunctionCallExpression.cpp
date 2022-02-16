@@ -5,9 +5,19 @@
 
 #include "common/expression/FunctionCallExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <folly/String.h>  // for join
+
+#include <functional>   // for reference_wrapper
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 bool ArgumentList::operator==(const ArgumentList& rhs) const {
   if (args_.size() != rhs.args_.size()) {

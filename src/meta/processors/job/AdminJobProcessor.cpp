@@ -5,10 +5,24 @@
 
 #include "meta/processors/job/AdminJobProcessor.h"
 
-#include "common/base/StatusOr.h"
-#include "common/stats/StatsManager.h"
-#include "meta/processors/job/JobDescription.h"
-#include "meta/processors/job/JobManager.h"
+#include <stdlib.h>                         // for atoi, size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
+
+#include <algorithm>  // for max
+#include <cstdint>    // for int32_t
+#include <memory>     // for allocator_traits<>::...
+#include <ostream>    // for operator<<, basic_os...
+#include <string>     // for string, operator<<
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"                 // for value, error, ok
+#include "common/base/Logging.h"                 // for LOG, LogMessage, _LO...
+#include "common/thrift/ThriftTypes.h"           // for JobID
+#include "interface/gen-cpp2/common_types.h"     // for ErrorCode, ErrorCode...
+#include "meta/processors/BaseProcessor.h"       // for BaseProcessor::autoI...
+#include "meta/processors/job/JobDescription.h"  // for JobDescription
+#include "meta/processors/job/JobManager.h"      // for JobManager
 
 namespace nebula {
 namespace meta {

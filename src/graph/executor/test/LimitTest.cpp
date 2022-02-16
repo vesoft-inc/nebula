@@ -3,18 +3,45 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Try.h>              // for Try::throwUnlessValue
+#include <folly/futures/Future.h>   // for Future::get, Future::...
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Future.h>   // for Future::get, Future::...
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/LimitExecutor.h"
-#include "graph/executor/query/ProjectExecutor.h"
-#include "graph/executor/test/QueryTestBase.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <memory>  // for allocator, unique_ptr
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"                 // for Status
+#include "common/datatypes/DataSet.h"           // for DataSet, Row
+#include "common/datatypes/Value.h"             // for Value
+#include "graph/context/ExecutionContext.h"     // for ExecutionContext
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/context/Result.h"               // for Result, Result::State
+#include "graph/context/Symbols.h"              // for SymbolTable
+#include "graph/executor/Executor.h"            // for Executor
+#include "graph/executor/test/QueryTestBase.h"  // for QueryTestBase
+#include "graph/planner/plan/Logic.h"           // for StartNode
+#include "graph/planner/plan/Query.h"           // for Limit, Project
+#include "parser/TraverseSentences.h"           // for YieldSentence
 
 namespace nebula {
 namespace graph {
+class LimitTest_SequentialInRange1_Test;
+class LimitTest_SequentialInRange2_Test;
+class LimitTest_SequentialOutRange1_Test;
+class LimitTest_getNeighborOutRange2_Test;
+
+class LimitTest_SequentialInRange1_Test;
+class LimitTest_SequentialInRange2_Test;
+class LimitTest_SequentialOutRange1_Test;
+class LimitTest_getNeighborOutRange2_Test;
+
 class LimitTest : public QueryTestBase {};
 
 #define LIMIT_RESULT_CHECK(outputName, offset, count, expected)                             \

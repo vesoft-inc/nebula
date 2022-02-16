@@ -3,8 +3,21 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexDedupNode.h"
+
+#include <fmt/format.h>              // for format
+#include <folly/String.h>            // for join
+#include <folly/container/F14Map.h>  // for F14BasicMap
+#include <folly/container/F14Set.h>  // for F14FastSet
+#include <string.h>                  // for size_t, memcpy
+
+#include "common/datatypes/Value.h"  // for Value
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 IndexDedupNode::IndexDedupNode(const IndexDedupNode& node)
     : IndexNode(node), dedupColumns_(node.dedupColumns_), dedupPos_(node.dedupPos_) {}
 

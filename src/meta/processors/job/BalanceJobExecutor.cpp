@@ -5,14 +5,36 @@
 
 #include "meta/processors/job/BalanceJobExecutor.h"
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/Range.h>                    // for Range
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <string.h>                         // for memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
+#include <atomic>      // for atomic
+#include <functional>  // for function
+#include <ostream>     // for operator<<, basic_os...
+#include <utility>     // for make_pair, move, pair
+
+#include "common/base/Base.h"                    // for UNUSED
+#include "common/base/ErrorOr.h"                 // for value
+#include "common/base/Logging.h"                 // for LOG, LogMessage, _LO...
+#include "common/time/WallClock.h"               // for WallClock
+#include "common/utils/MetaKeyUtils.h"           // for MetaKeyUtils, kDefau...
+#include "interface/gen-cpp2/meta_types.h"       // for SpaceDesc, JobStatus
+#include "kvstore/Common.h"                      // for KV
+#include "kvstore/KVIterator.h"                  // for KVIterator
+#include "kvstore/KVStore.h"                     // for KVStore
+#include "kvstore/NebulaStore.h"                 // for NebulaStore
+#include "meta/ActiveHostsMan.h"                 // for LastUpdateTimeMan
+#include "meta/processors/job/BalanceTask.h"     // for BalanceTask
+#include "meta/processors/job/JobDescription.h"  // for JobDescription
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+
+class AdminClient;
+
 BalanceJobExecutor::BalanceJobExecutor(JobID jobId,
                                        kvstore::KVStore* kvstore,
                                        AdminClient* adminClient,

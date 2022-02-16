@@ -6,10 +6,32 @@
 #ifndef META_FLUSHJOBEXECUTOR_H_
 #define META_FLUSHJOBEXECUTOR_H_
 
-#include "meta/processors/job/SimpleConcurrentJobExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/thrift/ThriftTypes.h"                        // for JobID
+#include "meta/processors/job/SimpleConcurrentJobExecutor.h"  // for SimpleC...
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
 namespace meta {
+class AdminClient;
+}  // namespace meta
+struct HostAddr;
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief Executor for flush job, always called by job manager

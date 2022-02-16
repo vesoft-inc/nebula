@@ -6,11 +6,22 @@
 #ifndef CODEC_TEST_ROWWRITERV1_H_
 #define CODEC_TEST_ROWWRITERV1_H_
 
+#include <folly/Range.h>
+#include <folly/Varint.h>
+#include <stdint.h>
+
+#include <string>
+#include <type_traits>
+#include <vector>
+
 #include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 #include "common/base/ICord.h"
 
 namespace nebula {
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
 
 /**
  * It's a write-only data streamer, used to encode one row of data

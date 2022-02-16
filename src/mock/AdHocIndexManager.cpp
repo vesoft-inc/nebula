@@ -5,6 +5,14 @@
 
 #include "mock/AdHocIndexManager.h"
 
+#include <folly/String.h>              // for stringPrintf
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, union_field_ref
+
+#include <algorithm>  // for max
+#include <utility>    // for move, pair
+
+#include "interface/gen-cpp2/common_types.h"  // for SchemaID
+
 namespace nebula {
 namespace mock {
 

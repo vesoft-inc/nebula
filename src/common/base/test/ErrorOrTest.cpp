@@ -3,10 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/base/ErrorOr.h"
+#include <string>       // for allocator, string
+#include <type_traits>  // for integral_constant<>::value, is_const
+#include <utility>      // for move
+
+#include "common/base/ErrorOr.h"  // for hasValue, ok, value, ErrorOr, error
 
 namespace nebula {
 

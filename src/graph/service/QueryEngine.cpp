@@ -5,16 +5,38 @@
 
 #include "graph/service/QueryEngine.h"
 
-#include "common/base/Base.h"
-#include "common/memory/MemoryUtils.h"
-#include "common/meta/ServerBasedIndexManager.h"
-#include "common/meta/ServerBasedSchemaManager.h"
-#include "graph/context/QueryContext.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/planner/PlannersRegister.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/service/QueryInstance.h"
-#include "version/Version.h"
+#include <gflags/gflags.h>  // for DECLARE_bool, DECL...
+
+#include <atomic>       // for atomic_bool
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/charset/Charset.h"                // for CharsetInfo
+#include "common/memory/MemoryUtils.h"             // for MemoryUtils, Memor...
+#include "common/meta/ServerBasedIndexManager.h"   // for ServerBasedSchemaM...
+#include "common/meta/ServerBasedSchemaManager.h"  // for ServerBasedSchemaM...
+#include "graph/optimizer/OptRule.h"               // for RuleSet
+#include "graph/planner/PlannersRegister.h"        // for PlannersRegister
+#include "graph/service/QueryInstance.h"           // for QueryInstance
+
+namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
+}  // namespace nebula
+
+namespace folly {
+class IOThreadPoolExecutor;
+
+class IOThreadPoolExecutor;
+}  // namespace folly
+namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
+}  // namespace nebula
 
 DECLARE_bool(local_config);
 DECLARE_bool(enable_optimizer);

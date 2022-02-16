@@ -6,8 +6,13 @@
 #ifndef STORAGE_HTTP_STORAGEHTTPSTATSHANDLER_H_
 #define STORAGE_HTTP_STORAGEHTTPSTATSHANDLER_H_
 
+#include <folly/dynamic.h>                        // for dynamic
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+
+#include <string>  // for string
+
 #include "common/base/Base.h"
-#include "webservice/GetStatsHandler.h"
+#include "webservice/GetStatsHandler.h"  // for GetStatsHandler
 
 namespace nebula {
 namespace storage {

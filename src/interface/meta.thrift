@@ -19,9 +19,9 @@ include "common.thrift"
  *
  */
 
-typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
+typedef i64 (cpp.type = "::nebula::SchemaVer") SchemaVer
 
-typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
+typedef i64 (cpp.type = "::nebula::ClusterID") ClusterID
 
 enum AlterSchemaOp {
     ADD    = 0x01,
@@ -458,7 +458,7 @@ struct DropHostsReq {
 }
 
 enum ListHostType {
-    // nebula 1.0 show hosts, show leader, partition info
+    // ::nebula 1.0 show hosts, show leader, partition info
     ALLOC       = 0x00,
     GRAPH       = 0x01,
     META        = 0x02,

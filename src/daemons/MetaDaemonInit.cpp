@@ -5,31 +5,41 @@
 
 #include "MetaDaemonInit.h"
 
-#include <folly/ssl/Init.h>
-#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <folly/executors/IOThreadPoolExecutor.h>      // for IOThreadPoolEx...
+#include <gflags/gflags.h>                             // for DEFINE_int32
+#include <stdint.h>                                    // for int32_t
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>  // for ThreadManager
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>    // for PriorityThread...
+#include <unistd.h>                                    // for sleep
 
-#include "common/base/Base.h"
-#include "common/base/SignalHandler.h"
-#include "common/fs/FileUtils.h"
-#include "common/hdfs/HdfsCommandHelper.h"
-#include "common/hdfs/HdfsHelper.h"
-#include "common/network/NetworkUtils.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/thread/GenericThreadPool.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "kvstore/PartManager.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/MetaServiceHandler.h"
-#include "meta/MetaVersionMan.h"
-#include "meta/http/MetaHttpDownloadHandler.h"
-#include "meta/http/MetaHttpIngestHandler.h"
-#include "meta/http/MetaHttpReplaceHostHandler.h"
-#include "meta/processors/job/JobManager.h"
-#include "meta/stats/MetaStats.h"
+#include <boost/filesystem/operations.hpp>  // for absolute
+#include <boost/filesystem/path.hpp>        // for path
+#include <ostream>                          // for operator<<
+#include <string>                           // for string, basic_...
+#include <utility>                          // for move
+
+#include "common/base/ErrorOr.h"                   // for ok, value
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/datatypes/HostAddr.h"             // for HostAddr
+#include "common/hdfs/HdfsCommandHelper.h"         // for HdfsCommandHelper
+#include "kvstore/KVStore.h"                       // for KVStore (ptr o...
+#include "kvstore/NebulaStore.h"                   // for NebulaStore
+#include "kvstore/Part.h"                          // for Part
+#include "meta/KVBasedClusterIdMan.h"              // for ClusterIdMan
+#include "meta/MetaVersionMan.h"                   // for MetaVersion
+#include "meta/http/MetaHttpDownloadHandler.h"     // for MetaHttpDownlo...
+#include "meta/http/MetaHttpIngestHandler.h"       // for MetaHttpIngest...
+#include "meta/http/MetaHttpReplaceHostHandler.h"  // for MetaHttpIngest...
 #include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include "webservice/WebService.h"  // for WebService
+
+namespace nebula {
+namespace thread {
+class GenericThreadPool;
+
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 #ifndef BUILD_STANDALONE
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");

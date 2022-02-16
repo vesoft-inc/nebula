@@ -7,10 +7,22 @@
 #define COMMON_META_NEBULASCHEMAPROVIDER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/Range.h>  // for StringPiece
+
+#include <cstddef>        // for size_t
+#include <cstdint>        // for int64_t
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/base/Logging.h"              // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/meta/SchemaProviderIf.h"     // for SchemaProviderIf, Schem...
+#include "common/thrift/ThriftTypes.h"        // for SchemaVer
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for GeoShape, GeoShape::ANY
 
 namespace nebula {
 namespace meta {
@@ -22,7 +34,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   class SchemaField final : public SchemaProviderIf::Field {
    public:
     SchemaField(std::string name,
-                nebula::cpp2::PropertyType type,
+                ::nebula::cpp2::PropertyType type,
                 bool nullable,
                 bool hasDefault,
                 std::string defaultValue,
@@ -44,7 +56,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
       return name_.c_str();
     }
 
-    nebula::cpp2::PropertyType type() const override {
+    ::nebula::cpp2::PropertyType type() const override {
       return type_;
     }
 
@@ -79,7 +91,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 
    private:
     std::string name_;
-    nebula::cpp2::PropertyType type_;
+    ::nebula::cpp2::PropertyType type_;
     bool nullable_;
     bool hasDefault_;
     std::string defaultValue_;
@@ -103,20 +115,20 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   int64_t getFieldIndex(const std::string& name) const override;
   const char* getFieldName(int64_t index) const override;
 
-  nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
-  nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
+  ::nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
+  ::nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
 
   const SchemaProviderIf::Field* field(int64_t index) const override;
   const SchemaProviderIf::Field* field(const std::string& name) const override;
 
   void addField(folly::StringPiece name,
-                nebula::cpp2::PropertyType type,
+                ::nebula::cpp2::PropertyType type,
                 size_t fixedStrLen = 0,
                 bool nullable = false,
                 std::string defaultValue = "",
                 cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
-  static std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
+  static std::size_t fieldSize(::nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
 
   void setProp(cpp2::SchemaProp schemaProp);
 

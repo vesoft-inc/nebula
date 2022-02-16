@@ -6,14 +6,40 @@
 #ifndef TOOLS_DBDUMP_DBDUMPER_H_
 #define TOOLS_DBDUMP_DBDUMPER_H_
 
-#include <rocksdb/db.h>
+#include <folly/Range.h>            // for StringPiece
+#include <gflags/gflags_declare.h>  // for DECLARE_string
+#include <rocksdb/db.h>             // for DB
+#include <rocksdb/options.h>        // for Options
 
-#include "clients/meta/MetaClient.h"
+#include <cstdint>        // for uint32_t, int64_t
+#include <functional>     // for function
+#include <memory>         // for unique_ptr
+#include <string>         // for string, hash, basi...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"  // for MetaClient
 #include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/meta/ServerBasedSchemaManager.h"
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/Value.h"                // for Value
+#include "common/meta/ServerBasedSchemaManager.h"  // for ServerBasedSchemaM...
+#include "common/thrift/ThriftTypes.h"             // for VertexID, EdgeType
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType
 #include "kvstore/RocksEngine.h"
+
+namespace nebula {
+class RowReader;
+namespace kvstore {
+class RocksPrefixIter;
+}  // namespace kvstore
+
+class RowReader;
+namespace kvstore {
+class RocksPrefixIter;
+}  // namespace kvstore
+}  // namespace nebula
 
 DECLARE_string(space_name);
 DECLARE_string(db_path);

@@ -6,18 +6,33 @@
 #ifndef KVSTORE_DISKMANAGER_H_
 #define KVSTORE_DISKMANAGER_H_
 
-#include <gtest/gtest_prod.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stddef.h>            // for size_t
 
+#include <atomic>  // for atomic_uint64_t
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>  // for path
 #include <boost/system/error_code.hpp>
+#include <memory>         // for shared_ptr
+#include <mutex>          // for mutex
+#include <set>            // for set
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/thread/GenericWorker.h"
-#include "common/thrift/ThriftTypes.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/meta_types.h"  // for PartitionList
 
 namespace nebula {
+namespace thread {
+class GenericWorker;
+
+class GenericWorker;
+}  // namespace thread
+
 namespace kvstore {
 
 using PartDiskMap = std::unordered_map<std::string, std::set<PartitionID>>;

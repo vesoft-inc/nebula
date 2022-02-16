@@ -6,22 +6,45 @@
 #ifndef _VALIDATOR_TEST_VALIDATOR_TEST_BASE_H_
 #define _VALIDATOR_TEST_VALIDATOR_TEST_BASE_H_
 
+#include <folly/String.h>           // for join
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException...
 #include <gtest/gtest.h>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <memory>       // for allocator, uniqu...
+#include <ostream>      // for operator<<, ostream
+#include <string>       // for string, basic_st...
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector, operator==
 
 #include "common/base/Base.h"
-#include "common/base/ObjectPool.h"
-#include "graph/context/QueryContext.h"
+#include "common/base/Logging.h"         // for CheckNotNull
+#include "common/base/ObjectPool.h"      // for ObjectPool
+#include "common/base/Status.h"          // for Status, NG_RETUR...
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "common/charset/Charset.h"      // for CharsetInfo
+#include "common/graph/Response.h"       // for ExecutionResponse
+#include "graph/context/QueryContext.h"  // for QueryContext
 #include "graph/context/ValidateContext.h"
-#include "graph/planner/PlannersRegister.h"
-#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/PlannersRegister.h"    // for PlannersRegister
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
 #include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode::Kind
 #include "graph/planner/plan/Query.h"
-#include "graph/util/AstUtils.h"
-#include "graph/validator/Validator.h"
-#include "graph/validator/test/MockIndexManager.h"
-#include "graph/validator/test/MockSchemaManager.h"
-#include "parser/GQLParser.h"
+#include "graph/service/RequestContext.h"            // for RequestContext
+#include "graph/session/ClientSession.h"             // for SpaceInfo, Clien...
+#include "graph/util/AstUtils.h"                     // for AstUtils
+#include "graph/validator/Validator.h"               // for Validator
+#include "graph/validator/test/MockIndexManager.h"   // for MockIndexManager
+#include "graph/validator/test/MockSchemaManager.h"  // for MockSchemaManager
+#include "interface/gen-cpp2/meta_types.h"           // for Session, SpaceDesc
+#include "parser/GQLParser.h"                        // for GQLParser
+#include "parser/Sentence.h"                         // for Sentence
 
 namespace nebula {
 namespace graph {

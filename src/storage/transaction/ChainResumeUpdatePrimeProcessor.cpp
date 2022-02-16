@@ -5,9 +5,21 @@
 
 #include "storage/transaction/ChainResumeUpdatePrimeProcessor.h"
 
-#include <storage/StorageFlags.h>
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include <boost/stacktrace.hpp>
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basi...
+#include <tuple>      // for tie, tuple
+#include <utility>    // for move, pair
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "interface/gen-cpp2/storage_types.h"        // for UpdateEdgeRequest
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
 
 namespace nebula {
 namespace storage {

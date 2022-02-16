@@ -6,16 +6,35 @@
 #ifndef STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
 #define STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
 
-#include <boost/stacktrace.hpp>
+#include <folly/Optional.h>         // for Optional, none
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for SemiFuture
+#include <folly/futures/Promise.h>  // for PromiseException...
+#include <stdint.h>                 // for int64_t
 
+#include <algorithm>  // for copy
+#include <boost/stacktrace.hpp>
+#include <memory>   // for unique_ptr
+#include <string>   // for string, basic_st...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, TermID
 #include "common/utils/MemoryLockWrapper.h"
-#include "storage/query/QueryBaseProcessor.h"
-#include "storage/transaction/ChainBaseProcessor.h"
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"        // for UpdateResponse
+#include "kvstore/Common.h"                          // for KV
+#include "storage/query/QueryBaseProcessor.h"        // for QueryBaseProcessor
+#include "storage/transaction/ChainBaseProcessor.h"  // for ChainBaseProcessor
+#include "storage/transaction/ConsistTypes.h"        // for ResumeType
 #include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainUpdateEdgeLocalProcessor
     : public QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse>,

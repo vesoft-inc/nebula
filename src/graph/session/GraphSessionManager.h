@@ -6,15 +6,64 @@
 #ifndef GRAPH_SESSION_GRAPHSESSIONMANAGER_H_
 #define GRAPH_SESSION_GRAPHSESSIONMANAGER_H_
 
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <folly/futures/Future.h>                 // for Future
+#include <gflags/gflags_declare.h>                // for DECLARE_int64
+#include <stdint.h>                               // for uint64_t
+
+#include <memory>         // for shared_ptr
+#include <ostream>        // for operator<<, basic_o...
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
+#include "common/base/Logging.h"  // for LOG, LogMessage
+#include "common/base/Status.h"   // for Status
 #include "common/base/StatusOr.h"
-#include "common/session/SessionManager.h"
+#include "common/session/SessionManager.h"  // for SessionManager
 #include "common/thread/GenericWorker.h"
-#include "common/thrift/ThriftTypes.h"
+#include "common/thrift/ThriftTypes.h"  // for SessionID
 #include "graph/session/ClientSession.h"
 #include "interface/gen-cpp2/GraphService.h"
 #include "interface/gen-cpp2/meta_types.h"
+
+namespace nebula {
+namespace graph {
+class ClientSession;
+}  // namespace graph
+namespace meta {
+class MetaClient;
+namespace cpp2 {
+class Session;
+}  // namespace cpp2
+}  // namespace meta
+struct HostAddr;
+template <typename T>
+class StatusOr;
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+namespace nebula {
+namespace graph {
+class ClientSession;
+}  // namespace graph
+namespace meta {
+class MetaClient;
+namespace cpp2 {
+class Session;
+}  // namespace cpp2
+}  // namespace meta
+struct HostAddr;
+template <typename T>
+class StatusOr;
+}  // namespace nebula
 
 /**
  * GraphSessionManager manages the client sessions, e.g. create new, find

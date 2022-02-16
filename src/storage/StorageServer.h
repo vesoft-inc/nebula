@@ -6,10 +6,20 @@
 #ifndef STORAGE_STORAGESERVER_H_
 #define STORAGE_STORAGESERVER_H_
 
+#include <stdint.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/log/LogMonitor.h"
 #include "common/meta/IndexManager.h"
@@ -20,11 +30,42 @@
 #include "storage/admin/AdminTaskManager.h"
 #include "storage/transaction/TransactionManager.h"
 
+namespace apache {
+namespace thrift {
+class ThriftServer;
+namespace concurrency {
+class ThreadManager;
+}  // namespace concurrency
+}  // namespace thrift
+}  // namespace apache
+namespace folly {
+class IOThreadPoolExecutor;
+}  // namespace folly
+
 namespace nebula {
 
 class WebService;
+class LogMonitor;
+namespace hdfs {
+class HdfsHelper;
+}  // namespace hdfs
+namespace kvstore {
+class KVEngine;
+class KVStore;
+}  // namespace kvstore
+namespace meta {
+class IndexManager;
+class MetaClient;
+class SchemaManager;
+}  // namespace meta
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
 
 namespace storage {
+class AdminTaskManager;
+class InternalStorageClient;
+class StorageEnv;
 
 class StorageServer final {
  public:

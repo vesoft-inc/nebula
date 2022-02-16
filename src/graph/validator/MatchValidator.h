@@ -6,16 +6,48 @@
 #ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 #define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
-#include "graph/context/ast/CypherAstContext.h"
+#include <memory>         // for unique_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"                  // for Status
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "graph/context/QueryContext.h"          // for QueryContext
+#include "graph/context/ast/CypherAstContext.h"  // for AliasType, QueryPart...
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"
-#include "graph/validator/Validator.h"
+#include "graph/validator/Validator.h"  // for Validator
 
 namespace nebula {
+class Expression;
+class MapExpression;
+class MatchPath;
+class MatchReturn;
+class OrderFactors;
+class Sentence;
+class UnwindClause;
+class WithClause;
+class YieldColumns;
+namespace graph {
+struct AstContext;
+}  // namespace graph
 
 class MatchStepRange;
 class ObjectPool;
+class Expression;
+class MapExpression;
+class MatchPath;
+class MatchReturn;
+class OrderFactors;
+class Sentence;
+class UnwindClause;
+class WithClause;
+class YieldColumns;
+
 namespace graph {
+struct AstContext;
+
 class MatchValidator final : public Validator {
  public:
   MatchValidator(Sentence *sentence, QueryContext *context);

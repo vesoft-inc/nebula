@@ -7,6 +7,8 @@
 #include <rocksdb/db.h>
 #include <rocksdb/utilities/options_util.h>
 
+#include <boost/variant.hpp>
+
 #include "common/base/Base.h"
 #include "common/conf/Configuration.h"
 #include "common/fs/TempDir.h"
@@ -243,7 +245,6 @@ TEST(ConfigManTest, ConfigProcessorTest) {
 }
 
 ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
-  VariantType value;
   switch (item.get_type()) {
     case cpp2::ConfigType::INT64:
       value = *reinterpret_cast<const int64_t*>(item.get_value().data());

@@ -5,9 +5,53 @@
 
 #include "ExtractFilterExprVisitor.h"
 
-#include "graph/util/ExpressionUtils.h"
+#include <utility>  // for move
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/LogicalExpression.h"   // for LogicalExpression
+#include "common/expression/VariableExpression.h"  // for VariableExpression
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
 
 namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariablePropertyExpression;
+class VertexExpression;
+
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariablePropertyExpression;
+class VertexExpression;
+
 namespace graph {
 
 void ExtractFilterExprVisitor::visit(ConstantExpression *) {

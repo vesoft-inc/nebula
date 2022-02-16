@@ -6,18 +6,40 @@
 #ifndef GRAPH_PLANNER_NGQL_GOPLANNER_H_
 #define GRAPH_PLANNER_NGQL_GOPLANNER_H_
 
+#include <stdint.h>  // for int16_t, uint32_t
+
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <string>   // for string
+#include <vector>   // for vector
+
 #include "common/base/Base.h"
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "graph/context/ast/AstContext.h"       // for AstContext
+#include "graph/context/ast/QueryAstContext.h"  // for GoContext
+#include "graph/planner/Planner.h"              // for Planner
+#include "graph/planner/plan/ExecutionPlan.h"   // for SubPlan
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/visitor/DeducePropsVisitor.h"  // for ExpressionProps, Expr...
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeProp, VertexProp
+#include "parser/Sentence.h"                   // for Sentence, Sentence::Kind
 
 namespace nebula {
+class Expression;
 namespace graph {
+class PlanNode;
+}  // namespace graph
+
+class Expression;
+
+namespace graph {
+class PlanNode;
+
 class GoPlanner final : public Planner {
  public:
-  using EdgeProp = nebula::storage::cpp2::EdgeProp;
-  using VertexProp = nebula::storage::cpp2::VertexProp;
+  using EdgeProp = storage::cpp2::EdgeProp;
+  using VertexProp = storage::cpp2::VertexProp;
   using EdgeProps = std::vector<EdgeProp>;
   using VertexProps = std::vector<VertexProp>;
 

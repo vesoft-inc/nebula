@@ -5,7 +5,17 @@
 
 #include "codec/test/SchemaWriter.h"
 
-#include "common/base/Base.h"
+#include <folly/hash/SpookyHashV2.h>  // for SpookyHashV2
+#include <stddef.h>                   // for size_t
+
+#include <cstdint>        // for uint64_t, int64_t, int32_t
+#include <ostream>        // for operator<<
+#include <unordered_map>  // for operator==, unordered_map
+#include <utility>        // for make_pair
+#include <vector>         // for vector, allocator
+
+#include "common/base/Logging.h"           // for LogMessageFatal, CHECK_GT
+#include "common/expression/Expression.h"  // for Expression
 
 namespace nebula {
 

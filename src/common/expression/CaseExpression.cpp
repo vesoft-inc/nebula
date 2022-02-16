@@ -5,13 +5,10 @@
 
 #include "common/expression/CaseExpression.h"
 
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Set.h"
-#include "common/expression/ConstantExpression.h"
 #include "common/expression/ExprVisitor.h"
 
 namespace nebula {
+class ExpressionContext;
 
 bool CaseExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {

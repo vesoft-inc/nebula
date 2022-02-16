@@ -6,15 +6,27 @@
 #ifndef GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 
-#include <memory>
+#include <memory>  // for unique_ptr
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
 
-#include "graph/executor/Executor.h"
+#include "common/base/Status.h"       // for Status
+#include "graph/context/Result.h"     // for Result
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
+}  // namespace graph
 
 class Iterator;
 
 namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
 
 class SetExecutor : public Executor {
  public:

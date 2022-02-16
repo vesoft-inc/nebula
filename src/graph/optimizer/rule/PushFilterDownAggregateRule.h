@@ -6,10 +6,17 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNAGGREGATERULE_H_
 #define GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNAGGREGATERULE_H_
 
-#include "graph/optimizer/OptRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for OptRule, MatchedResult (p...
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class PushFilterDownAggregateRule final : public OptRule {
  public:

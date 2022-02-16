@@ -6,8 +6,19 @@
 #ifndef STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
 #define STORAGE_TRANSACTION_TRANSACTIONMANAGER_H
 
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/executors/Async.h>
+#include <gtest/gtest_prod.h>
 #include <storage/transaction/ChainBaseProcessor.h>
+
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/InternalStorageClient.h"
@@ -15,14 +26,25 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/utils/MemoryLockCore.h"
 #include "common/utils/MemoryLockWrapper.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/Part.h"
 #include "storage/CommonUtils.h"
+#include "storage/transaction/ConsistTypes.h"
 #include "storage/transaction/ConsistUtil.h"
+
+namespace folly {
+class EventBase;
+class IOThreadPoolExecutor;
+class ThreadPoolExecutor;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {
+class ChainBaseProcessor;
+class StorageEnv;
+
 class TransactionManager {
  public:
   FRIEND_TEST(ChainUpdateEdgeTest, updateTest1);

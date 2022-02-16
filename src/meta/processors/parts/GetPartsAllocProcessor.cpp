@@ -5,6 +5,30 @@
 
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
 
+#include <folly/Format.h>                   // for sformat
+#include <folly/Range.h>                    // for Range
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <string.h>                         // for memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_f...
+
+#include <algorithm>  // for max
+#include <memory>     // for allocator_traits<>::v...
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for string, basic_string
+#include <tuple>      // for tie, ignore, tuple
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doGet
+#include "meta/processors/Common.h"           // for LockUtils
+
 namespace nebula {
 namespace meta {
 

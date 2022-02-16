@@ -6,9 +6,16 @@
 #ifndef COMMON_META_INDEXMANAGER_H_
 #define COMMON_META_INDEXMANAGER_H_
 
+#include <memory>  // for shared_ptr
+#include <string>  // for string
+#include <vector>  // for vector
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, IndexID
+#include "interface/gen-cpp2/meta_types.h"  // for IndexItem
 
 namespace nebula {
 namespace meta {

@@ -6,13 +6,30 @@
 #ifndef META_CREATESNAPSHOTPROCESSOR_H_
 #define META_CREATESNAPSHOTPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
 #include <gtest/gtest_prod.h>
 
-#include "meta/processors/BaseProcessor.h"
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ExecResp, CreateSnapsho...
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief Create snapshot for all spaces, will deprecated when backup ready

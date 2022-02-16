@@ -3,14 +3,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>              // for stringPrintf
+#include <folly/futures/Future.h>      // for Future::get
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/admin/CreateCheckpointProcessor.h"
-#include "storage/mutate/AddVerticesProcessor.h"
+#include <memory>       // for allocator, uniq...
+#include <ostream>      // for operator<<
+#include <string>       // for basic_string
+#include <type_traits>  // for remove_referenc...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                      // for SetStderrLogging
+#include "common/fs/FileUtils.h"                      // for FileUtils
+#include "common/fs/TempDir.h"                        // for TempDir
+#include "common/thrift/ThriftTypes.h"                // for GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"          // for ErrorCode, Erro...
+#include "interface/gen-cpp2/storage_types.h"         // for CreateCPRequest
+#include "mock/MockCluster.h"                         // for MockCluster
+#include "mock/MockData.h"                            // for MockData
+#include "storage/admin/CreateCheckpointProcessor.h"  // for CreateCheckpoin...
+#include "storage/mutate/AddVerticesProcessor.h"      // for AddVerticesProc...
 
 namespace nebula {
 namespace storage {

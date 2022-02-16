@@ -5,7 +5,13 @@
 
 #include "parser/ExplainSentence.h"
 
-#include "parser/SequentialSentences.h"
+#include <folly/String.h>  // for stringPrintf
+
+#include <vector>  // for vector
+
+#include "Sentence.h"                    // for Sentence, Sentence::Kind
+#include "common/base/Logging.h"         // for CheckNotNull, DCHECK_NOTNULL
+#include "parser/SequentialSentences.h"  // for SequentialSentences
 
 namespace nebula {
 

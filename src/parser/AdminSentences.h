@@ -5,14 +5,36 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
+#include <thrift/lib/cpp2/FieldRef.h>  // for required_field_ref
+
+#include <algorithm>                  // for transform
+#include <boost/cstdint.hpp>          // for int64_t
+#include <boost/variant/get.hpp>      // for get
+#include <boost/variant/variant.hpp>  // for variant
+#include <cstdint>                    // for int64_t, int32_t, uint8_t
+#include <memory>                     // for unique_ptr, allocator
+#include <ostream>                    // for operator<<
+#include <string>                     // for string, basic_string
+#include <type_traits>                // for remove_reference<>::type
+#include <utility>                    // for move
+#include <vector>                     // for vector, vector<>::const...
+
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_E...
 #include "common/network/NetworkUtils.h"
+#include "common/thrift/ThriftTypes.h"        // for SessionID
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
+#include "interface/gen-cpp2/meta_types.h"    // for ServiceClient, External...
 #include "parser/Clauses.h"
-#include "parser/MutateSentences.h"
-#include "parser/Sentence.h"
+#include "parser/MutateSentences.h"  // for UpdateList
+#include "parser/Sentence.h"         // for Sentence::Kind, Sentence
 
 namespace nebula {
+class Expression;
+class NameLabelList;
 
 class ConfigRowItem;
+class Expression;
+class NameLabelList;
 
 class ShowHostsSentence : public Sentence {
  public:
@@ -236,7 +258,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.type_ref() = nebula::cpp2::PropertyType::UNKNOWN;
+      unknownTypeDef.type_ref() = ::nebula::cpp2::PropertyType::UNKNOWN;
       return unknownTypeDef;
     }
   }
@@ -666,14 +688,14 @@ class ShowStatsSentence final : public Sentence {
 
 class ServiceClientList final {
  public:
-  void addClient(nebula::meta::cpp2::ServiceClient* client) {
+  void addClient(::nebula::meta::cpp2::ServiceClient* client) {
     clients_.emplace_back(client);
   }
 
   std::string toString() const;
 
-  std::vector<nebula::meta::cpp2::ServiceClient> clients() const {
-    std::vector<nebula::meta::cpp2::ServiceClient> result;
+  std::vector<::nebula::meta::cpp2::ServiceClient> clients() const {
+    std::vector<::nebula::meta::cpp2::ServiceClient> result;
     result.reserve(clients_.size());
     for (auto& client : clients_) {
       result.emplace_back(*client);
@@ -682,7 +704,7 @@ class ServiceClientList final {
   }
 
  private:
-  std::vector<std::unique_ptr<nebula::meta::cpp2::ServiceClient>> clients_;
+  std::vector<std::unique_ptr<::nebula::meta::cpp2::ServiceClient>> clients_;
 };
 
 class ShowServiceClientsSentence final : public Sentence {

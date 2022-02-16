@@ -5,10 +5,17 @@
 
 #include "graph/validator/SequentialValidator.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/service/PermissionCheck.h"
+#include <gflags/gflags_declare.h>  // for DECLARE_uint32
+#include <stddef.h>                 // for size_t
+#include <stdint.h>                 // for int64_t
+
+#include <utility>  // for move
+
+#include "common/base/Logging.h"         // for COMPACT_GOOGLE_LOG_FATAL
+#include "graph/planner/plan/Logic.h"    // for StartNode
+#include "parser/Sentence.h"             // for Sentence, Sentence::Kind
+#include "parser/SequentialSentences.h"  // for SequentialSentences
+#include "parser/TraverseSentences.h"    // for PipedSentence
 
 DECLARE_uint32(max_allowed_statements);
 

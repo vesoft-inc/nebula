@@ -3,19 +3,80 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
+#include <double-conversion/utils.h>                 // for ASSERT
+#include <folly/Conv.h>                              // for to
+#include <folly/String.h>                            // for stringPrintf
+#include <folly/executors/IOThreadPoolExecutor.h>    // for IOThreadPoolEx...
+#include <folly/init/Init.h>                         // for init
+#include <folly/synchronization/Baton.h>             // for Baton
+#include <gflags/gflags_declare.h>                   // for DECLARE_int32
+#include <glog/logging.h>                            // for INFO
+#include <gtest/gtest-param-test.h>                  // for Values, ParamI...
+#include <gtest/gtest.h>                             // for Message
+#include <gtest/gtest.h>                             // for TestPartResult
+#include <gtest/gtest.h>                             // for Message
+#include <gtest/gtest.h>                             // for TestPartResult
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>  // for PriorityThread...
+#include <unistd.h>                                  // for sleep, usleep
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/meta/Common.h"
-#include "common/network/NetworkUtils.h"
-#include "kvstore/LogEncoder.h"
-#include "kvstore/NebulaStore.h"
-#include "kvstore/PartManager.h"
-#include "kvstore/wal/AtomicLogBuffer.h"
-#include "meta/ActiveHostsMan.h"
+#include <algorithm>      // for transform
+#include <atomic>         // for atomic
+#include <cstdint>        // for int32_t, int64_t
+#include <iterator>       // for back_insert_it...
+#include <memory>         // for shared_ptr
+#include <mutex>          // for mutex
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_...
+#include <tuple>          // for make_tuple, get
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector, vector...
+
+#include "common/base/ErrorOr.h"              // for ok, value
+#include "common/base/Logging.h"              // for Check_EQImpl
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/fs/TempDir.h"                // for TempDir
+#include "common/meta/Common.h"               // for PartHosts, Lis...
+#include "common/network/NetworkUtils.h"      // for NetworkUtils
+#include "common/thrift/ThriftTypes.h"        // for PartitionID
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, Err...
+#include "interface/gen-cpp2/meta_types.h"    // for ListenerType
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVStore.h"                  // for KVOptions
+#include "kvstore/Listener.h"                 // for Listener
+#include "kvstore/LogEncoder.h"               // for encodeKV
+#include "kvstore/NebulaStore.h"              // for NebulaStore
+#include "kvstore/Part.h"                     // for Part
+#include "kvstore/PartManager.h"              // for MemPartManager
+#include "kvstore/raftex/RaftexService.h"     // for RaftexService
+#include "kvstore/wal/AtomicLogBuffer.h"      // for AtomicLogBuffer
+#include "kvstore/wal/FileBasedWal.h"         // for FileBasedWal
+#include "meta/ActiveHostsMan.h"              // for ActiveHostsMan
+
+namespace nebula {
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+namespace nebula {
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_int32(wal_ttl);

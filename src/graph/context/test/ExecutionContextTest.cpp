@@ -3,10 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "graph/context/ExecutionContext.h"
+#include <memory>   // for allocator, __shared_ptr_...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/datatypes/DataSet.h"        // for DataSet
+#include "common/datatypes/Value.h"          // for Value
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, Iterator::Kind
+#include "graph/context/Result.h"            // for Result, ResultBuilder
 
 namespace nebula {
 namespace graph {

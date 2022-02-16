@@ -6,9 +6,24 @@
 #ifndef META_GETCONFIGPROCESSOR_H
 #define META_GETCONFIGPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for GetConfigResp, ConfigIt...
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

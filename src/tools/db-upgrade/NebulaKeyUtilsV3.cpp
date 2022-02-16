@@ -5,6 +5,8 @@
 
 #include "tools/db-upgrade/NebulaKeyUtilsV3.h"
 
+#include "common/utils/Types.h"  // for kPartitionOffset
+
 namespace nebula {
 std::string NebulaKeyUtilsV3::partTagPrefix(PartitionID partId) {
   PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(kTag_);

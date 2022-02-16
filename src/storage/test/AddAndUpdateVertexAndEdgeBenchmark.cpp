@@ -3,22 +3,56 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <bits/std_abs.h>                 // for abs
+#include <folly/Benchmark.h>              // for addBenchmark, Benc...
+#include <folly/futures/Future.h>         // for Future::get
+#include <folly/init/Init.h>              // for init
+#include <folly/lang/Bits.h>              // for Endian
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stdint.h>                       // for int32_t, uint32_t
+#include <stdlib.h>                       // for size_t, abs
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref, require...
 
-#include "codec/test/RowWriterV1.h"
-#include "common/base/Base.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "storage/mutate/UpdateEdgeProcessor.h"
-#include "storage/mutate/UpdateVertexProcessor.h"
+#include <atomic>         // for atomic
+#include <limits>         // for numeric_limits
+#include <memory>         // for allocator, shared_ptr
+#include <ostream>        // for operator<<, basic_...
+#include <string>         // for basic_string, string
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for _Map_base<>::mappe...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "codec/RowWriterV2.h"                     // for RowWriterV2, Write...
+#include "codec/test/RowWriterV1-inl.h"            // for RowWriterV1::opera...
+#include "codec/test/RowWriterV1.h"                // for RowWriterV1
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for EdgePropertyExpres...
+#include "common/fs/TempDir.h"                     // for TempDir
+#include "common/meta/NebulaSchemaProvider.h"      // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "common/thrift/ThriftTypes.h"             // for VertexID, EdgeRanking
+#include "common/utils/NebulaKeyUtils.h"           // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"       // for ErrorCode, ErrorCo...
+#include "interface/gen-cpp2/storage_types.h"      // for UpdatedProp, NewTag
+#include "kvstore/Common.h"                        // for KV
+#include "kvstore/KVStore.h"                       // for KVStore
+#include "mock/MockCluster.h"                      // for MockCluster
+#include "mock/MockData.h"                         // for EdgeData, VertexData
+#include "storage/CommonUtils.h"                   // for StorageEnv
+#include "storage/mutate/AddEdgesProcessor.h"      // for AddEdgesProcessor
+#include "storage/mutate/AddVerticesProcessor.h"   // for AddVerticesProcessor
+#include "storage/mutate/UpdateEdgeProcessor.h"    // for UpdateEdgeProcessor
+#include "storage/mutate/UpdateVertexProcessor.h"  // for UpdateVertexProcessor
 
 namespace nebula {
 namespace storage {

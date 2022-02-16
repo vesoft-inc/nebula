@@ -6,18 +6,63 @@
 #ifndef TOOLS_DBUPGRADE_DBUPGRADER_H_
 #define TOOLS_DBUPGRADE_DBUPGRADER_H_
 
+#include <folly/Optional.h>  // for Optional
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
+#include <folly/executors/IOThreadPoolExecutor.h>               // for IOThr...
+#include <folly/executors/task_queue/UnboundedBlockingQueue.h>  // for Unbou...
+#include <gflags/gflags_declare.h>                              // for DECLA...
 #include <rocksdb/db.h>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint32_t
+
+#include <algorithm>      // for copy
+#include <atomic>         // for atomic
+#include <memory>         // for share...
+#include <mutex>          // for mutex
+#include <string>         // for string
+#include <unordered_map>  // for unord...
+#include <unordered_set>  // for unord...
+#include <utility>        // for move
+#include <vector>         // for vector
 
 #include "clients/meta/MetaClient.h"
 #include "codec/RowReaderWrapper.h"
-#include "codec/RowWriterV2.h"
+#include "codec/RowWriterV2.h"  // for Write...
 #include "common/base/Base.h"
-#include "common/base/Status.h"
+#include "common/base/Status.h"  // for Status
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
-#include "kvstore/RocksEngine.h"
+#include "common/thrift/ThriftTypes.h"  // for Parti...
+#include "kvstore/Common.h"             // for KV
+#include "kvstore/RocksEngine.h"        // for Rocks...
+
+namespace nebula {
+class RowReader;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class NebulaSchemaProvider;
+class SchemaProviderIf;
+class ServerBasedSchemaManager;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+struct Value;
+
+class RowReader;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class NebulaSchemaProvider;
+class SchemaProviderIf;
+class ServerBasedSchemaManager;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+struct Value;
+}  // namespace nebula
 
 DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);

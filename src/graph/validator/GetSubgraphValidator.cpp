@@ -5,10 +5,22 @@
 
 #include "graph/validator/GetSubgraphValidator.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ValidateUtil.h"
-#include "parser/TraverseSentences.h"
+#include <string>         // for string, basic_string
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for InputPropertyExpre...
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Symbols.h"                 // for ColsDef
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/ValidateUtil.h"               // for ValidateUtil
+#include "parser/TraverseSentences.h"              // for GetSubgraphSentence
 
 namespace nebula {
 namespace graph {

@@ -5,12 +5,27 @@
 
 #include "common/expression/SubscriptExpression.h"
 
-#include "common/base/CheckPointer.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/expression/ExprVisitor.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t
+
+#include <memory>         // for allocator
+#include <unordered_map>  // for _Node_const_iterator, uno...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"               // for kDst, kRank, kSrc, kType
+#include "common/base/CheckPointer.h"       // for checkPointer
+#include "common/datatypes/DataSet.h"       // for DataSet
+#include "common/datatypes/Edge.h"          // for Edge
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Map.h"           // for Map
+#include "common/datatypes/Vertex.h"        // for Tag, Vertex
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
   auto& lvalue = left()->eval(ctx);

@@ -5,9 +5,11 @@
 
 #include "graph/validator/PipeValidator.h"
 
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "parser/TraverseSentences.h"
+#include <string>   // for string
+#include <utility>  // for move
+
+#include "graph/context/Symbols.h"        // for ColsDef
+#include "graph/planner/plan/PlanNode.h"  // for SingleInputNode, PlanNode
 
 namespace nebula {
 namespace graph {

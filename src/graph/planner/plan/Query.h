@@ -6,18 +6,43 @@
 #ifndef GRAPH_PLANNER_PLAN_QUERY_H_
 #define GRAPH_PLANNER_PLAN_QUERY_H_
 
+#include <stddef.h>  // for size_t
+
+#include <algorithm>    // for transform
+#include <cstdint>      // for int64_t, int32_t
+#include <limits>       // for numeric_limits
+#include <memory>       // for unique_ptr, allocator
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move, pair, make_pair
+#include <vector>       // for vector, vector<>::...
+
+#include "common/base/Logging.h"     // for Check_GEImpl, Chec...
+#include "common/base/ObjectPool.h"  // for ObjectPool
+#include "common/datatypes/Value.h"  // for Value
 #include "common/expression/AggregateExpression.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "parser/Clauses.h"
-#include "parser/TraverseSentences.h"
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/Expression.h"          // for Expression
+#include "common/thrift/ThriftTypes.h"             // for EdgeType, GraphSpa...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Symbols.h"                 // for SymbolTable
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode (ptr only)
+#include "interface/gen-cpp2/storage_types.h"      // for OrderBy, EdgeProp
+#include "parser/Clauses.h"                        // for YieldColumns (ptr ...
+#include "parser/TraverseSentences.h"              // for OrderFactor::Order...
 
 /**
  * All query-related nodes would be put in this file,
  * and they are derived from PlanNode.
  */
 namespace nebula {
+class MatchStepRange;
+struct PlanNodeDescription;
+
+class MatchStepRange;
+struct PlanNodeDescription;
+
 namespace graph {
 /**
  * Now we have four kind of exploration nodes:
@@ -132,11 +157,11 @@ class Explore : public SingleInputNode {
   std::vector<storage::cpp2::OrderBy> orderBy_;
 };
 
-using VertexProp = nebula::storage::cpp2::VertexProp;
-using EdgeProp = nebula::storage::cpp2::EdgeProp;
-using StatProp = nebula::storage::cpp2::StatProp;
-using Expr = nebula::storage::cpp2::Expr;
-using Direction = nebula::storage::cpp2::EdgeDirection;
+using VertexProp = storage::cpp2::VertexProp;
+using EdgeProp = storage::cpp2::EdgeProp;
+using StatProp = storage::cpp2::StatProp;
+using Expr = storage::cpp2::Expr;
+using Direction = storage::cpp2::EdgeDirection;
 /**
  * Get neighbors' property
  */
@@ -152,10 +177,10 @@ class GetNeighbors : public Explore {
                             Expression* src,
                             std::vector<EdgeType> edgeTypes,
                             Direction edgeDirection,
-                            std::unique_ptr<std::vector<VertexProp>>&& vertexProps,
-                            std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
-                            std::unique_ptr<std::vector<StatProp>>&& statProps,
-                            std::unique_ptr<std::vector<Expr>>&& exprs,
+                            std::unique_ptr<std::vector<storage::cpp2::VertexProp>>&& vertexProps,
+                            std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>&& edgeProps,
+                            std::unique_ptr<std::vector<storage::cpp2::StatProp>>&& statProps,
+                            std::unique_ptr<std::vector<storage::cpp2::Expr>>&& exprs,
                             bool dedup = false,
                             bool random = false,
                             std::vector<storage::cpp2::OrderBy> orderBy = {},

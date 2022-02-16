@@ -3,17 +3,24 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
 #include <rocksdb/db.h>
 #include <rocksdb/env.h>
+#include <rocksdb/options.h>  // for Options, ReadOptions, Writ...
+#include <rocksdb/status.h>   // for Status
 #include <rocksdb/utilities/checkpoint.h>
+#include <stdint.h>  // for int64_t
 
-#include <fstream>
+#include <fstream>  // for fstream, operator|, ios
+#include <string>   // for allocator, string, basic_s...
+#include <vector>   // for vector
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
+#include "common/base/Logging.h"  // for SetStderrLogging
+#include "common/fs/FileUtils.h"  // for FileUtils
+#include "common/fs/TempDir.h"    // for TempDir
 
 namespace nebula {
 namespace kvstore {

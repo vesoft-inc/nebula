@@ -6,16 +6,28 @@
 #ifndef GRAPH_PLANNER_PLANNER_H_
 #define GRAPH_PLANNER_PLANNER_H_
 
-#include <ostream>
+#include <functional>     // for function
+#include <memory>         // for unique_ptr
+#include <ostream>        // for ostream
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
 
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/ast/AstContext.h"
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
+#include "parser/Sentence.h"  // for Sentence::Kind, Sentence
 
 namespace nebula {
 namespace graph {
+struct AstContext;
+struct SubPlan;
+
 class Planner;
+struct AstContext;
+struct SubPlan;
 
 extern const char* kSrcVID;
 extern const char* kDstVID;

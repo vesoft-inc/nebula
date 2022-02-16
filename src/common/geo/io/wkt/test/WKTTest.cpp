@@ -3,11 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/geo/io/wkt/WKTReader.h"
-#include "common/geo/io/wkt/WKTWriter.h"
+#include <string>   // for string, allocator, basic_...
+#include <utility>  // for move
+
+#include "common/base/Status.h"           // for operator<<, Status, NG_RE...
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/datatypes/Geography.h"   // for Geography
+#include "common/geo/io/wkt/WKTReader.h"  // for WKTReader
+#include "common/geo/io/wkt/WKTWriter.h"  // for WKTWriter
 
 namespace nebula {
 namespace geo {

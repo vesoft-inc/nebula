@@ -2,12 +2,20 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+
+#include <vector>  // for allocator, vector
+
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
 
 namespace nebula {
 namespace graph {
 
-using PK = nebula::graph::PlanNode::Kind;
+using PK = ::nebula::graph::PlanNode::Kind;
 class MaintainValidatorTest : public ValidatorTestBase {};
 
 TEST_F(MaintainValidatorTest, SpaceTest) {

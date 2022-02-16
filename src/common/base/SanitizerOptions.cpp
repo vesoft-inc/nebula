@@ -2,7 +2,6 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "common/base/Base.h"
 
 #ifdef BUILT_WITH_SANITIZER
 

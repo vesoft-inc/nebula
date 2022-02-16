@@ -6,7 +6,18 @@
 #ifndef _UTIL_EXPRESSION_UTILS_H_
 #define _UTIL_EXPRESSION_UTILS_H_
 
+#include <gflags/gflags_declare.h>
+#include <stdint.h>
+
+#include <functional>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 #include "common/base/Status.h"
+#include "common/base/StatusOr.h"
+#include "common/datatypes/Value.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/Expression.h"
@@ -20,10 +31,20 @@
 #include "graph/visitor/FindVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 
+namespace nebula {
+class AggregateExpression;
+class LogicalExpression;
+class RelationalExpression;
+namespace graph {
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
+
 DECLARE_int32(max_expression_depth);
 
 namespace nebula {
 class ObjectPool;
+
 namespace graph {
 class ExpressionUtils {
  public:

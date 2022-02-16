@@ -3,10 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>  // for addBenchmark, BENCHMARK, runB...
+#include <folly/init/Init.h>  // for init
+#include <stdint.h>           // for uint32_t
 
-#include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
+#include <thread>  // for thread
+#include <vector>  // for vector, allocator
+
+#include "common/stats/StatsManager.h"  // for CounterId, StatsManager
 
 using nebula::stats::CounterId;
 using nebula::stats::StatsManager;

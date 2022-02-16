@@ -2,7 +2,22 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "common/expression/test/TestBase.h"
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartRe...
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartRe...
+
+#include <vector>  // for allocator
+
+#include "common/datatypes/Date.h"                         // for DateTime
+#include "common/datatypes/List.h"                         // for List
+#include "common/datatypes/Map.h"                          // for Map
+#include "common/datatypes/Set.h"                          // for Set
+#include "common/datatypes/Value.h"                        // for Value, Val...
+#include "common/expression/ConstantExpression.h"          // for ConstantEx...
+#include "common/expression/Expression.h"                  // for Expression
+#include "common/expression/test/ExpressionContextMock.h"  // for Expression...
+#include "common/expression/test/TestBase.h"               // for gExpCtxt
 
 namespace nebula {
 

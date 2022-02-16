@@ -5,10 +5,23 @@
 #ifndef STORAGE_EXEC_INDEXPROJECTIONNODE_H
 #define STORAGE_EXEC_INDEXPROJECTIONNODE_H
 
+#include <stddef.h>  // for size_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
+
+#include "common/datatypes/DataSet.h"  // for Row
 #include "folly/Likely.h"
-#include "storage/exec/IndexNode.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "storage/exec/IndexNode.h"           // for IndexNode, IndexNode::R...
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 /**
  *
  * IndexProjectionNode

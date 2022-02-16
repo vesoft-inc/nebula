@@ -5,10 +5,16 @@
 
 #include "graph/planner/plan/Logic.h"
 
-#include "interface/gen-cpp2/graph_types.h"
+#include <vector>  // for vector
+
+#include "common/expression/Expression.h"  // for Expression
+#include "common/graph/Response.h"         // for PlanNodeDescription
 
 namespace nebula {
 namespace graph {
+struct Variable;
+
+struct Variable;
 
 PlanNode* StartNode::clone() const {
   auto* newStart = StartNode::make(qctx_);

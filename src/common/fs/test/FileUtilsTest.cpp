@@ -3,10 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <errno.h>            // for ENOENT, errno
+#include <folly/Range.h>      // for StringPiece
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdio.h>            // for snprintf, fclose, fopen, fwrite
+#include <stdlib.h>           // for mkdtemp, atof, mkstemp, atoi
+#include <sys/stat.h>         // for lstat, stat
+#include <unistd.h>           // for close, symlink, chdir, usleep
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
+#include <algorithm>  // for find
+#include <regex>      // for match_results, sub_match, regex
+#include <string>     // for string, allocator, operator==
+#include <thread>     // for thread
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"   // for SetStderrLogging
+#include "common/base/Status.h"    // for operator<<
+#include "common/base/StatusOr.h"  // for StatusOr
+#include "common/fs/FileUtils.h"   // for FileUtils, FileType, FileUtils::D...
 
 namespace nebula {
 namespace fs {

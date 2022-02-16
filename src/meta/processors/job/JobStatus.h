@@ -6,10 +6,10 @@
 #ifndef META_JOBSTATUS_H_
 #define META_JOBSTATUS_H_
 
-#include <string>
+#include <string>  // for string
 #include <vector>
 
-#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"  // for JobStatus
 
 namespace nebula {
 namespace meta {

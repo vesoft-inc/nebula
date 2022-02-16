@@ -6,9 +6,95 @@
 #ifndef GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 #define GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 
-#include "common/expression/ExprVisitor.h"
+#include <utility>  // for move
+
+#include "common/base/Status.h"             // for Status
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
+#include "common/expression/Expression.h"   // for Expression, Expression::Kind
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class ObjectPool;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class ObjectPool;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 class FoldConstantExprVisitor final : public ExprVisitor {

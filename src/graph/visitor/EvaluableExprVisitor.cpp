@@ -5,9 +5,29 @@
 
 #include "graph/visitor/EvaluableExprVisitor.h"
 
-#include "graph/context/QueryContext.h"
+#include "common/expression/BinaryExpression.h"    // for BinaryExpression
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for DestPropertyExpres...
+#include "common/expression/VariableExpression.h"  // for VariableExpression
+#include "graph/context/QueryContext.h"            // for QueryContext
 
 namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class EdgeExpression;
+class LabelExpression;
+class SubscriptRangeExpression;
+class UUIDExpression;
+class VertexExpression;
+
+class ColumnExpression;
+class ConstantExpression;
+class EdgeExpression;
+class LabelExpression;
+class SubscriptRangeExpression;
+class UUIDExpression;
+class VertexExpression;
+
 namespace graph {
 
 EvaluableExprVisitor::EvaluableExprVisitor(const QueryContext *qctx) : qctx_(qctx) {}

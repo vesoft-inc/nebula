@@ -6,10 +6,29 @@
 #ifndef GRAPH_EXECUTOR_QUERY_TOPNEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_TOPNEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <stdint.h>                // for int64_t
+
+#include <functional>  // for function
+#include <memory>      // for allocator
+
+#include "common/datatypes/DataSet.h"  // for Row
+#include "graph/executor/Executor.h"   // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
 
 class TopNExecutor final : public Executor {
  public:

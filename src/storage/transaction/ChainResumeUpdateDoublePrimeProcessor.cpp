@@ -5,7 +5,28 @@
 
 #include "storage/transaction/ChainResumeUpdateDoublePrimeProcessor.h"
 
-#include <storage/StorageFlags.h>
+#include <folly/Try.h>                      // for Try::~Try<T>
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <folly/futures/Promise.h>          // for Promise::setValue
+#include <folly/futures/Promise.h>          // for Promise
+#include <folly/futures/Promise.h>          // for Promise::setValue
+#include <folly/futures/Promise.h>          // for Promise
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basi...
+#include <tuple>      // for tie, tuple
+#include <utility>    // for move, pair
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "interface/gen-cpp2/storage_types.h"        // for UpdateEdgeRequest
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::p...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code
+#include "storage/transaction/ConsistTypes.h"        // for ResumeType, Resu...
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
 
 namespace nebula {
 namespace storage {

@@ -6,10 +6,41 @@
 #ifndef GRAPH_PLANNER_MATCH_MATCHCLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_MATCHCLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include <stddef.h>  // for size_t
+
+#include <string>         // for string
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "common/base/Status.h"                       // for Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
+class Expression;
+class YieldColumn;
 namespace graph {
+class PlanNode;
+class QueryContext;
+struct CypherClauseContextBase;
+struct EdgeInfo;
+struct MatchClauseContext;
+struct NodeInfo;
+struct SubPlan;
+}  // namespace graph
+
+class Expression;
+class YieldColumn;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+struct CypherClauseContextBase;
+struct EdgeInfo;
+struct MatchClauseContext;
+struct NodeInfo;
+struct SubPlan;
+
 /*
  * The MatchClausePlanner was designed to generate plan for match clause;
  */

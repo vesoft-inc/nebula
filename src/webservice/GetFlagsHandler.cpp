@@ -5,13 +5,30 @@
 
 #include "webservice/GetFlagsHandler.h"
 
-#include <folly/String.h>
-#include <folly/json.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <folly/Conv.h>                           // for to
+#include <folly/Optional.h>                       // for Optional
+#include <folly/String.h>                         // for split
+#include <folly/dynamic.h>                        // for dynamic::operator[]
+#include <folly/json.h>                           // for toPrettyJson
+#include <gflags/gflags.h>                        // for CommandLineFlagInfo
+#include <proxygen/httpserver/ResponseBuilder.h>  // for ResponseBuilder
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
-#include "common/base/Base.h"
-#include "webservice/Common.h"
+#include <cstdint>      // for int32_t, int64_t
+#include <ostream>      // for operator<<, basic_o...
+#include <type_traits>  // for enable_if<>::type
+#include <utility>      // for move
+
+#include "common/base/Logging.h"  // for LOG, LogMessage
+#include "webservice/Common.h"    // for HttpStatusCode, Web...
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 namespace nebula {
 

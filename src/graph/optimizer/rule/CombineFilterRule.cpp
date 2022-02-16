@@ -5,10 +5,17 @@
 
 #include "graph/optimizer/rule/CombineFilterRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                  // for GetReferenceableValue
+#include "common/expression/Expression.h"         // for Expression
+#include "common/expression/LogicalExpression.h"  // for LogicalExpression
+#include "graph/context/QueryContext.h"           // for QueryContext
+#include "graph/optimizer/OptContext.h"           // for OptContext
+#include "graph/optimizer/OptGroup.h"             // for OptGroup (ptr only)
+#include "graph/planner/plan/PlanNode.h"          // for PlanNode, PlanNode:...
+#include "graph/planner/plan/Query.h"             // for Filter
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

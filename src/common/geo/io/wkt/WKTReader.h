@@ -6,11 +6,18 @@
 #ifndef COMMON_GEO_IO_WKT_WKTREADER_H
 #define COMMON_GEO_IO_WKT_WKTREADER_H
 
+#include <string.h>  // for memcpy
+
+#include <string>       // for string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Geography.h"
-#include "common/geo/io/wkt/WKTParser.hpp"
-#include "common/geo/io/wkt/WKTScanner.h"
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/Geography.h"     // for Geography
+#include "common/geo/io/wkt/WKTParser.hpp"  // for WKTParser
+#include "common/geo/io/wkt/WKTScanner.h"   // for WKTScanner
 
 namespace nebula {
 namespace geo {

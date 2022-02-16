@@ -5,11 +5,21 @@
 
 #include "common/expression/PathBuildExpression.h"
 
-#include "common/datatypes/Path.h"
-#include "common/expression/ExprVisitor.h"
-#include "common/thrift/ThriftTypes.h"
+#include <memory>         // for allocator_traits<>::value...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+
+#include "common/datatypes/Edge.h"          // for Edge
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Path.h"          // for Step, Path
+#include "common/datatypes/Vertex.h"        // for Vertex, Tag
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
+
 const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
   if (items_.empty()) {
     return Value::kNullValue;

@@ -3,18 +3,26 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/futures/Future.h>  // for Future::get
+#include <folly/init/Init.h>       // for init
+#include <glog/logging.h>          // for INFO
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "storage/test/TestUtils.h"
+#include <memory>       // for allocator, unique_ptr
+#include <ostream>      // for operator<<
+#include <type_traits>  // for remove_reference<>:...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                  // for LOG, LogMessage
+#include "common/fs/TempDir.h"                    // for TempDir
+#include "interface/gen-cpp2/storage_types.h"     // for AddVerticesRequest
+#include "mock/MockCluster.h"                     // for MockCluster
+#include "mock/MockData.h"                        // for MockData
+#include "storage/mutate/AddVerticesProcessor.h"  // for AddVerticesProcessor
+#include "storage/test/TestUtils.h"               // for checkAddVerticesData
 
 namespace nebula {
 namespace storage {

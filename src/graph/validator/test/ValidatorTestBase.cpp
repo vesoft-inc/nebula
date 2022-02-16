@@ -5,17 +5,22 @@
 
 #include "graph/validator/test/ValidatorTestBase.h"
 
-#include "common/base/Base.h"
-#include "graph/context/QueryContext.h"
-#include "graph/context/ValidateContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/planner/plan/ExecutionPlan.h"
-#include "graph/planner/plan/Maintain.h"
-#include "graph/planner/plan/Mutate.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/Utils.h"
-#include "parser/GQLParser.h"
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+
+#include <algorithm>      // for copy
+#include <cstddef>        // for size_t
+#include <cstdint>        // for int64_t
+#include <queue>          // for queue
+#include <unordered_set>  // for unordered_set, operator!=
+
+#include "common/expression/Expression.h"  // for Expression
+#include "graph/planner/plan/Logic.h"      // for Select, Loop
+#include "graph/planner/plan/Query.h"      // for GetEdges, GetVertices, Pro...
+#include "graph/util/Utils.h"              // for join
+#include "parser/Clauses.h"                // for operator!=, YieldColumns
 
 namespace nebula {
 namespace graph {

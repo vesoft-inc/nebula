@@ -5,7 +5,21 @@
 
 #include "meta/processors/admin/VerifyClientVersionProcessor.h"
 
-#include "version/Version.h"
+#include <folly/String.h>              // for splitTo, stringPrintf
+#include <gflags/gflags.h>             // for clstring, DEFINE_bool
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optional_f...
+
+#include <algorithm>      // for max
+#include <iterator>       // for insert_iterator, inse...
+#include <string>         // for string, basic_string
+#include <unordered_set>  // for unordered_set, operat...
+#include <vector>         // for vector
+
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doSyncPut
+#include "version/Version.h"                  // for getOriginVersion
 
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
 DEFINE_string(client_white_list,

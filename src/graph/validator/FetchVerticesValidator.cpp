@@ -4,10 +4,24 @@
  */
 #include "graph/validator/FetchVerticesValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/ValidateUtil.h"
-#include "graph/visitor/DeducePropsVisitor.h"
+#include <string>         // for operator==, string
+#include <unordered_map>  // for _Node_const_iterator
+#include <utility>        // for pair
+
+#include "common/base/Base.h"                      // for kTag, kVid
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/expression/Expression.h"          // for Expression::Kind
+#include "common/expression/PropertyExpression.h"  // for InputPropertyExpre...
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Symbols.h"                 // for ColsDef
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/util/ValidateUtil.h"               // for ValidateUtil
+#include "graph/visitor/DeducePropsVisitor.h"      // for ExpressionProps
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+#include "parser/TraverseSentences.h"              // for FetchVerticesSentence
 
 namespace nebula {
 namespace graph {
@@ -75,14 +89,14 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     outputs_.emplace_back(col->name(), typeStatus.value());
     if (colExpr->toString() == "id(VERTEX)") {
       col->setAlias(col->name());
-      col->setExpr(InputPropertyExpression::make(pool, nebula::kVid));
+      col->setExpr(InputPropertyExpression::make(pool, ::nebula::kVid));
     }
     newCols->addColumn(col->clone().release());
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_));
   }
   if (exprProps.tagProps().empty()) {
     for (const auto &tagSchema : tagsSchema_) {
-      exprProps.insertTagProp(tagSchema.first, nebula::kTag);
+      exprProps.insertTagProp(tagSchema.first, ::nebula::kTag);
     }
   }
   fetchCtx_->yieldExpr = newCols;

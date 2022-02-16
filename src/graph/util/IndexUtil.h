@@ -6,11 +6,34 @@
 #ifndef GRAPH_UTIL_INDEXUTIL_H_
 #define GRAPH_UTIL_INDEXUTIL_H_
 
-#include "common/base/StatusOr.h"
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"            // for Status
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 #include "graph/util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
+class IndexParamItem;
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+class IndexParams;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
+class IndexParamItem;
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+class IndexParams;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
 namespace graph {
 
 class IndexUtil final {

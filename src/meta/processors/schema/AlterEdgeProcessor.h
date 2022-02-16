@@ -6,9 +6,21 @@
 #ifndef META_ALTEREDGEPROCESSOR_H_
 #define META_ALTEREDGEPROCESSOR_H_
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for ExecResp, AlterEdgeReq (p...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class AlterEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {

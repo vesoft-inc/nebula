@@ -6,12 +6,32 @@
 #ifndef COMMON_EXPRESSION_PATHBUILDEXPRESSION_H_
 #define COMMON_EXPRESSION_PATHBUILDEXPRESSION_H_
 
+#include <stddef.h>  // for size_t
+
+#include <string>  // for operator<<, string
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"     // for Check_LTImpl, DCHECK_LT
+#include "common/base/ObjectPool.h"  // for ObjectPool
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Path.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "common/datatypes/Vertex.h"
-#include "common/expression/Expression.h"
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+struct Path;
+struct Step;
+struct Vertex;
+
+class ExprVisitor;
+class ExpressionContext;
+struct Path;
+struct Step;
+struct Vertex;
+
 class PathBuildExpression final : public Expression {
  public:
   PathBuildExpression& operator=(const PathBuildExpression& rhs) = delete;

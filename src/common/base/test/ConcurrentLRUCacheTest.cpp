@@ -3,10 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/base/ConcurrentLRUCache.h"
+#include <boost/optional.hpp>  // for operator==
+#include <cstdint>             // for int32_t
+#include <memory>              // for allocator, allo...
+#include <string>              // for string, basic_s...
+#include <thread>              // for thread
+#include <tuple>               // for get
+#include <unordered_map>       // for operator==, ope...
+#include <vector>              // for vector
+
+#include "common/base/ConcurrentLRUCache.h"  // for ConcurrentLRUCache
+#include "common/base/Logging.h"             // for SetStderrLogging
+#include "common/base/Status.h"              // for Status
+#include "common/base/StatusOr.h"            // for StatusOr
 
 namespace nebula {
 

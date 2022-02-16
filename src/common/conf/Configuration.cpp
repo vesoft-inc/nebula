@@ -4,7 +4,21 @@
  */
 #include "common/conf/Configuration.h"
 
-#include "common/base/Base.h"
+#include <errno.h>                   // for errno, ENOENT, EPERM
+#include <fcntl.h>                   // for open, O_RDONLY
+#include <folly/detail/Iterators.h>  // for operator==, IteratorFacade, oper...
+#include <folly/json.h>              // for parseJson, toJson, toPrettyJson
+#include <stdio.h>                   // for SEEK_END, SEEK_SET
+#include <unistd.h>                  // for lseek, close, read
+
+#include <cstdint>    // for int64_t
+#include <exception>  // for exception
+#include <regex>      // for regex_replace, match_results<>::...
+#include <sstream>    // for basic_stringbuf<>::int_type, ope...
+#include <utility>    // for pair, move
+
+#include "common/base/Base.h"     // for UNUSED
+#include "common/base/Logging.h"  // for COMPACT_GOOGLE_LOG_FATAL, LogMes...
 
 namespace nebula {
 namespace conf {

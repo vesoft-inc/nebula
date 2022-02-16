@@ -5,10 +5,40 @@
 
 #include "graph/executor/maintain/FTIndexExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Maintain.h"
-#include "graph/util/FTIndexUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/String.h>           // for join
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, Futu...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <algorithm>      // for max
+#include <ostream>        // for operator<<, basic_ostream
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for unordered_map, _Node_it...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"          // for MetaClient
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
+#include "common/base/Status.h"               // for operator<<, Status
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/DataSet.h"         // for Row, DataSet
+#include "common/datatypes/Value.h"           // for Value
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "common/thrift/ThriftTypes.h"        // for IndexID
+#include "common/time/ScopedTimer.h"          // for SCOPED_TIMER
+#include "graph/context/Iterator.h"           // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/context/Result.h"             // for ResultBuilder
+#include "graph/planner/plan/Maintain.h"      // for DropFTIndex, CreateFTIndex
+#include "graph/service/RequestContext.h"     // for RequestContext
+#include "graph/session/ClientSession.h"      // for ClientSession, SpaceInfo
+#include "graph/util/FTIndexUtils.h"          // for FTIndexUtils
+#include "interface/gen-cpp2/common_types.h"  // for SchemaID, SchemaID::Type
+#include "interface/gen-cpp2/meta_types.h"    // for FTIndex
 
 namespace nebula {
 namespace graph {

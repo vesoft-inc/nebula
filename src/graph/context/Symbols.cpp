@@ -5,10 +5,15 @@
 
 #include "graph/context/Symbols.h"
 
-#include <sstream>
+#include <folly/String.h>  // for join
 
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/util/Utils.h"
+#include <sstream>  // for operator<<, basic_ostream
+
+#include "common/base/Logging.h"          // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/base/Status.h"           // for Status
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode
+#include "graph/util/Utils.h"             // for join
 
 namespace nebula {
 namespace graph {

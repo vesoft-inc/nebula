@@ -6,6 +6,9 @@
 #ifndef GRAPH_PLANNER_IDGENERATOR_H_
 #define GRAPH_PLANNER_IDGENERATOR_H_
 
+#include <atomic>   // for atomic, __atomic_base
+#include <cstdint>  // for int64_t
+
 #include "common/base/Base.h"
 
 namespace nebula {

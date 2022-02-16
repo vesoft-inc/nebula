@@ -3,12 +3,23 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <double-conversion/utils.h>  // for ASSERT
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
+#include <stdint.h>                   // for INT64_MIN
 
-#include "common/base/ObjectPool.h"
-#include "common/base/Status.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/test/VisitorTestBase.h"
+#include <memory>  // for allocator
+
+#include "common/base/Status.h"                          // for Status
+#include "common/base/StatusOr.h"                        // for StatusOr
+#include "common/expression/ArithmeticExpression.h"      // for ArithmeticEx...
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "graph/visitor/test/VisitorTestBase.h"          // for VisitorTestBase
 
 namespace nebula {
 namespace graph {

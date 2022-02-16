@@ -6,11 +6,38 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_CONFIGEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_CONFIGEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>  // for allocator, string
+#include <vector>  // for vector
+
+#include "common/datatypes/DataSet.h"  // for DataSet
+#include "common/datatypes/Value.h"    // for Value
+#include "graph/executor/Executor.h"   // for Executor
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+namespace meta {
+namespace cpp2 {
+class ConfigItem;
+}  // namespace cpp2
+}  // namespace meta
+
+class Status;
+namespace meta {
+namespace cpp2 {
+class ConfigItem;
+}  // namespace cpp2
+}  // namespace meta
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class ConfigBaseExecutor : public Executor {
  public:

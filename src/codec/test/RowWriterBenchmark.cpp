@@ -3,12 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, runBenchm...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/String.h>         // for stringPrintf
+#include <folly/init/Init.h>      // for init
+#include <stddef.h>               // for size_t
+#include <stdint.h>               // for int32_t
 
-#include "codec/RowWriterV2.h"
-#include "codec/test/RowWriterV1.h"
-#include "codec/test/SchemaWriter.h"
-#include "common/base/Base.h"
+#include <string>  // for string, allocator
+
+#include "codec/RowWriterV2.h"                // for RowWriterV2
+#include "codec/test/RowWriterV1.h"           // for RowWriterV1
+#include "codec/test/SchemaWriter.h"          // for SchemaWriter
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
 
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;

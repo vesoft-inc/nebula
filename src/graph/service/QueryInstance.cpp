@@ -5,22 +5,55 @@
 
 #include "graph/service/QueryInstance.h"
 
-#include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/executor/ExecutionError.h"
-#include "graph/executor/Executor.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/planner/plan/ExecutionPlan.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
-#include "graph/scheduler/Scheduler.h"
-#include "graph/stats/GraphStats.h"
-#include "graph/util/AstUtils.h"
-#include "graph/validator/Validator.h"
-#include "parser/ExplainSentence.h"
-#include "parser/Sentence.h"
-#include "parser/SequentialSentences.h"
+#include <folly/Traits.h>              // for tag_t
+#include <folly/Try.h>                 // for Try, Try::...
+#include <folly/futures/Future-pre.h>  // for valueCalla...
+#include <folly/futures/Future.h>      // for SemiFuture...
+#include <folly/futures/Future.h>      // for Future
+#include <folly/futures/Promise.h>     // for PromiseExc...
+#include <folly/futures/Promise.h>     // for Promise::P...
+#include <folly/futures/Promise.h>     // for PromiseExc...
+#include <stddef.h>                    // for size_t
+
+#include <exception>    // for exception
+#include <ostream>      // for operator<<
+#include <type_traits>  // for remove_ref...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                           // for CheckNotNull
+#include "common/base/StatusOr.h"                          // for StatusOr
+#include "common/datatypes/DataSet.h"                      // for DataSet
+#include "common/datatypes/Value.h"                        // for Value
+#include "common/graph/Response.h"                         // for ExecutionR...
+#include "common/stats/StatsManager.h"                     // for StatsManag...
+#include "common/time/Duration.h"                          // for Duration
+#include "common/time/ScopedTimer.h"                       // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"                // for ExecutionC...
+#include "graph/executor/ExecutionError.h"                 // for ExecutionE...
+#include "graph/optimizer/Optimizer.h"                     // for Optimizer
+#include "graph/planner/plan/ExecutionPlan.h"              // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"                   // for PlanNode
+#include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"  // for AsyncMsgNo...
+#include "graph/scheduler/Scheduler.h"                     // for Scheduler
+#include "graph/service/RequestContext.h"                  // for RequestCon...
+#include "graph/session/ClientSession.h"                   // for ClientSession
+#include "graph/stats/GraphStats.h"                        // for FLAGS_enab...
+#include "graph/validator/Validator.h"                     // for Validator
+#include "parser/ExplainSentence.h"                        // for ExplainSen...
+#include "parser/GQLParser.h"                              // for GQLParser
+#include "parser/Sentence.h"                               // for Sentence
+#include "parser/SequentialSentences.h"                    // for Sequential...
+
+namespace nebula {
+namespace opt {
+class OptRule;
+class RuleSet;
+
+class OptRule;
+class RuleSet;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::opt::Optimizer;
 using nebula::opt::OptRule;

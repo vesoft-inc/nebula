@@ -6,11 +6,31 @@
 #ifndef GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
 #define GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
 
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"  // for Status
 #include "graph/planner/plan/Query.h"
-#include "graph/validator/Validator.h"
+#include "graph/validator/Validator.h"  // for Validator
 
 namespace nebula {
+class Expression;
+class GroupClause;
+class Sentence;
+class YieldClause;
+class YieldColumns;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Expression;
+class GroupClause;
+class Sentence;
+class YieldClause;
+class YieldColumns;
+
+namespace graph {
+class QueryContext;
 
 class GroupByValidator final : public Validator {
  public:

@@ -5,9 +5,17 @@
 
 #include "common/expression/TypeCastingExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <ostream>        // for operator<<, basic_ostream
+#include <unordered_map>  // for _Node_iterator, operator==
+#include <utility>        // for pair
+
+#include "common/base/Logging.h"            // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 // first:operand's type  second:vType
 static std::unordered_multimap<Value::Type, Value::Type> typeCastMap = {

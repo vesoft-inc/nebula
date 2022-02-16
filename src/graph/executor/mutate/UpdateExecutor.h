@@ -6,11 +6,28 @@
 #ifndef GRAPH_EXECUTOR_MUTATE_UPDATEEXECUTOR_H_
 #define GRAPH_EXECUTOR_MUTATE_UPDATEEXECUTOR_H_
 
-#include "common/base/StatusOr.h"
-#include "graph/executor/StorageAccessExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct DataSet;
+
+class Status;
+struct DataSet;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class UpdateBaseExecutor : public StorageAccessExecutor {
  public:

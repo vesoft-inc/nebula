@@ -5,11 +5,29 @@
 
 #include "graph/validator/YieldValidator.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/ValidateUtil.h"
-#include "parser/TraverseSentences.h"
+#include <algorithm>    // for transform
+#include <set>          // for set, _Rb_tree_cons...
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/expression/Expression.h"          // for Expression::Kind
+#include "common/expression/PropertyExpression.h"  // for VariablePropertyEx...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Symbols.h"                 // for ColsDef, ColDef
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/planner/plan/PlanNode.h"           // for SingleInputNode
+#include "graph/planner/plan/Query.h"              // for Filter, Dedup, Pro...
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/AnonVarGenerator.h"           // for AnonVarGenerator
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/util/ValidateUtil.h"               // for ValidateUtil
+#include "graph/visitor/DeducePropsVisitor.h"      // for ExpressionProps
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+#include "parser/TraverseSentences.h"              // for YieldSentence, Gro...
 
 namespace nebula {
 namespace graph {

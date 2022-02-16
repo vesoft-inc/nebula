@@ -6,13 +6,27 @@
 #ifndef COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
 #define COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
 
+#include <folly/ThreadLocal.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBaseManager.h>
+#include <stdint.h>
+
+#include <memory>
+#include <ostream>
+#include <unordered_map>
+#include <utility>
 
 #include "common/base/Base.h"
+#include "common/base/Logging.h"
 #include "common/datatypes/HostAddr.h"
 
+namespace folly {
+class EventBase;
+}  // namespace folly
+
 namespace nebula {
+struct HostAddr;
+
 namespace thrift {
 
 template <class ClientType>

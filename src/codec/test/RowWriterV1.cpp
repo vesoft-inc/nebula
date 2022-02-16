@@ -5,7 +5,23 @@
 
 #include "codec/test/RowWriterV1.h"
 
+#include <algorithm>  // for min
+#include <ostream>    // for operator<<
+
+#include "codec/test/RowWriterV1.h"           // for RowWriterV1::writeInt
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_W...
+#include "common/meta/SchemaProviderIf.h"     // for SchemaProviderIf
+#include "common/thrift/ThriftTypes.h"        // for SchemaVer
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
+
 namespace nebula {
+namespace meta {
+namespace cpp2 {
+class Schema;
+
+class Schema;
+}  // namespace cpp2
+}  // namespace meta
 
 using meta::SchemaProviderIf;
 using meta::cpp2::Schema;

@@ -6,10 +6,18 @@
 #ifndef STORAGE_TRANSACTION_CHAINRESUMEADDDOUBLEPRIMEPROCESSOR_H
 #define STORAGE_TRANSACTION_CHAINRESUMEADDDOUBLEPRIMEPROCESSOR_H
 
-#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
+#include <folly/futures/Future.h>  // for SemiFuture
+
+#include <string>  // for string
+
+#include "interface/gen-cpp2/common_types.h"                  // for ErrorCode
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"  // for ChainAd...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainResumeAddDoublePrimeProcessor : public ChainAddEdgesLocalProcessor {
  public:

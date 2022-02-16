@@ -5,12 +5,69 @@
 #ifndef GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 #define GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 
-#include "graph/optimizer/OptRule.h"
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stddef.h>            // for size_t
+#include <stdint.h>            // for int32_t
+
+#include <memory>       // for shared_ptr, uniq...
+#include <string>       // for string, basic_st...
+#include <type_traits>  // for is_same, enable_...
+#include <vector>       // for vector
+
+#include "common/base/Status.h"                      // for Status
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/Expression.h"            // for Expression (ptr ...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/thrift/ThriftTypes.h"               // for GraphSpaceID
+#include "graph/optimizer/OptRule.h"                 // for MatchedResult (p...
 #include "graph/optimizer/OptimizerUtils.h"
-#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"  // for IndexScan, Index...
 
 namespace nebula {
+class EdgePropertyExpression;
+class LabelTagPropertyExpression;
+class TagPropertyExpression;
+namespace graph {
+class QueryContext;
+}  // namespace graph
+namespace meta {
+namespace cpp2 {
+class ColumnDef;
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
 namespace opt {
+class OptGroupNode;
+}  // namespace opt
+namespace storage {
+namespace cpp2 {
+class IndexColumnHint;
+class IndexQueryContext;
+}  // namespace cpp2
+}  // namespace storage
+
+class EdgePropertyExpression;
+class LabelTagPropertyExpression;
+class TagPropertyExpression;
+namespace graph {
+class QueryContext;
+}  // namespace graph
+namespace meta {
+namespace cpp2 {
+class ColumnDef;
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+namespace storage {
+namespace cpp2 {
+class IndexColumnHint;
+class IndexQueryContext;
+}  // namespace cpp2
+}  // namespace storage
+
+namespace opt {
+class OptGroupNode;
 
 using graph::QueryContext;
 using storage::cpp2::IndexColumnHint;

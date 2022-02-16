@@ -5,7 +5,15 @@
 
 #include "common/meta/NebulaSchemaProvider.h"
 
-#include "common/base/Base.h"
+#include <folly/Likely.h>              // for UNLIKELY
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <algorithm>           // for max
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <memory>              // for allocator_traits<>::value_type
+#include <ostream>             // for operator<<, basic_ostream, bas...
+
+#include "common/base/Status.h"  // for Status
 
 namespace nebula {
 namespace meta {

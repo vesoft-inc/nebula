@@ -5,9 +5,15 @@
 
 #include "common/expression/UUIDExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <folly/String.h>  // for stringPrintf
+
+#include "common/base/Base.h"               // for UNUSED
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 bool UUIDExpression::operator==(const Expression& rhs) const {
   return kind_ == rhs.kind();

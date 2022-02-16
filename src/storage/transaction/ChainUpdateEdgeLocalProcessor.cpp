@@ -5,12 +5,32 @@
 
 #include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/futures/Future.h>                 // for SemiFuture::rele...
+#include <folly/futures/Promise.h>                // for Promise::Promise<T>
+#include <folly/small_vector.h>                   // for small_vector
+#include <thrift/lib/cpp/util/EnumUtils.h>        // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>             // for field_ref
+#include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
-#include "storage/StorageFlags.h"
-#include "storage/mutate/UpdateEdgeProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include <exception>      // for exception
+#include <ostream>        // for operator<<, basi...
+#include <tuple>          // for tie, tuple
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "clients/storage/InternalStorageClient.h"   // for InternalStorageC...
+#include "common/base/Logging.h"                     // for LogMessage, COMP...
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/utils/MemoryLockWrapper.h"          // for MemoryLockGuard
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::p...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/mutate/UpdateEdgeProcessor.h"      // for UpdateEdgeProcessor
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
 
 namespace nebula {
 namespace storage {

@@ -6,12 +6,26 @@
 #ifndef META_PROCESSORS_ADMIN_AGENTHBPROCESSOR_H
 #define META_PROCESSORS_ADMIN_AGENTHBPROCESSOR_H
 
-#include <gtest/gtest_prod.h>
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <gtest/gtest_prod.h>       // for FRIEND_TEST
 
-#include "common/stats/StatsManager.h"
-#include "meta/processors/BaseProcessor.h"
+#include <memory>   // for allocator
+#include <ostream>  // for operator<<
+#include <utility>  // for move
+
+#include "common/base/Logging.h"            // for COMPACT_GOOGLE_LOG_INFO
+#include "common/stats/StatsManager.h"      // for CounterId, StatsManager
+#include "interface/gen-cpp2/meta_types.h"  // for AgentHBResp, AgentHBR...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 struct AgentHBCounters final {

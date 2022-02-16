@@ -6,9 +6,21 @@
 #ifndef META_AUTHENTICATIONPROCESSOR_H
 #define META_AUTHENTICATIONPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for ExecResp, ListRolesResp
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

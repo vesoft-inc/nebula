@@ -3,10 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/base/EitherOr.h"
+#include <cstdint>      // for int16_t, int32_t, uint16_t
+#include <memory>       // for unique_ptr, allocator, shared_ptr
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "common/base/EitherOr.h"  // for EitherOr, kConstructLeft, kConstr...
 
 namespace nebula {
 

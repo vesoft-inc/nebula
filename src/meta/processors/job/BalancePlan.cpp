@@ -5,10 +5,35 @@
 
 #include "meta/processors/job/BalancePlan.h"
 
-#include <folly/synchronization/Baton.h>
+#include <folly/hash/Hash.h>              // for hash
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gflags/gflags.h>                // for DEFINE_uint32
+#include <s2/base/integral_types.h>       // for uint32
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
 
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
+#include <algorithm>           // for min, sort
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <memory>              // for allocator_traits<>::value...
+#include <ostream>             // for operator<<, basic_ostream...
+#include <string>              // for basic_string, operator<
+#include <tuple>               // for get
+#include <unordered_map>       // for unordered_map, _Node_iter...
+
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_INFO
+#include "common/datatypes/HostAddr.h"  // for HostAddr
+#include "common/utils/MetaKeyUtils.h"  // for BalanceTaskResult, Balanc...
+#include "kvstore/Common.h"             // for KV
+#include "kvstore/KVIterator.h"         // for KVIterator
+#include "kvstore/KVStore.h"            // for KVStore
+#include "meta/ActiveHostsMan.h"        // for ActiveHostsMan
+
+namespace nebula {
+namespace meta {
+class AdminClient;
+
+class AdminClient;
+}  // namespace meta
+}  // namespace nebula
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
 

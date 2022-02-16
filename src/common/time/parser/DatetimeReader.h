@@ -6,11 +6,15 @@
 #ifndef COMMON_TIME_PARSER_DATETIMEREADER_H
 #define COMMON_TIME_PARSER_DATETIMEREADER_H
 
+#include <string>   // for string, operator+
+#include <utility>  // for move
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Date.h"
-#include "common/time/parser/DatetimeParser.hpp"
-#include "common/time/parser/DatetimeScanner.h"
+#include "common/base/Status.h"                   // for NG_RETURN_IF_ERROR
+#include "common/base/StatusOr.h"                 // for StatusOr
+#include "common/datatypes/Date.h"                // for Time, Date, DateTime
+#include "common/time/parser/DatetimeParser.hpp"  // for DatetimeParser
+#include "common/time/parser/DatetimeScanner.h"   // for DatetimeScanner
 
 namespace nebula {
 namespace time {

@@ -2,11 +2,15 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <folly/Benchmark.h>
-#include <folly/init/Init.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BenchmarkSuspender
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/init/Init.h>      // for init
 
-#include <algorithm>
-#include <vector>
+#include <algorithm>           // for transform, for_each
+#include <cstdint>             // for int32_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <string>              // for string, basic_string, to_string
+#include <vector>              // for vector
 
 BENCHMARK(Test1_RangeTestStr) {
   std::vector<int32_t> from;

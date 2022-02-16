@@ -5,8 +5,9 @@
 
 #include "common/time/WallClock.h"
 
-#include "common/base/Base.h"
-#include "common/time/detail/TscHelper.h"
+#include <time.h>  // for clock_gettime, timespec
+
+#include "common/time/detail/TscHelper.h"  // for TscHelper
 
 namespace nebula {
 namespace time {

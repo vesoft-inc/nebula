@@ -5,8 +5,8 @@
 
 #include "meta/upgrade/v2/MetaServiceUtilsV2.h"
 
-#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
-#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <folly/String.h>        // for split
+#include <folly/small_vector.h>  // for small_vector
 
 namespace nebula::meta::v2 {
 

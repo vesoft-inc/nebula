@@ -5,11 +5,39 @@
 
 #include "storage/admin/RebuildTagIndexTask.h"
 
-#include "codec/RowReaderWrapper.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "storage/StorageFlags.h"
+#include <folly/Likely.h>  // for UNLIKELY
+#include <folly/Range.h>   // for operator<<, Range
+#include <stddef.h>        // for size_t
+#include <stdint.h>        // for int32_t
+
+#include <ostream>        // for operator<<, basic_ostr...
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for operator==, _Node_iter...
+#include <unordered_set>  // for unordered_set, unorder...
+#include <vector>         // for vector
+
+#include "codec/RowReaderWrapper.h"            // for RowReaderWrapper
+#include "common/base/Logging.h"               // for LogMessage, LOG, _LOG_...
+#include "common/meta/IndexManager.h"          // for IndexManager
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"         // for SchemaManager
+#include "common/utils/IndexKeyUtils.h"        // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "interface/gen-cpp2/meta_types.h"     // for IndexItem
+#include "kvstore/Common.h"                    // for KV
+#include "kvstore/KVIterator.h"                // for KVIterator
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "storage/CommonUtils.h"               // for StorageEnv, CommonUtils
+#include "storage/StorageFlags.h"              // for FLAGS_rebuild_index_ba...
 
 namespace nebula {
+namespace kvstore {
+class RateLimiter;
+
+class RateLimiter;
+}  // namespace kvstore
+
 namespace storage {
 
 const int32_t kReserveNum = 1024 * 4;

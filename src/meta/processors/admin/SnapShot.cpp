@@ -5,12 +5,30 @@
 
 #include "meta/processors/admin/SnapShot.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <folly/String.h>                   // for stringPrintf
+#include <folly/Try.h>                      // for Try::throwUnlessValue
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Future.h>           // for Future::get, Future::...
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Promise.h>          // for PromiseException::Pro...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include "common/network/NetworkUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
+#include <algorithm>    // for find, max
+#include <ostream>      // for operator<<, basic_ost...
+#include <type_traits>  // for add_const<>::type
+
+#include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...
+#include "common/base/Status.h"                 // for Status
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/HostAddr.h"          // for HostAddr, operator<<
+#include "common/utils/MetaKeyUtils.h"          // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/meta_types.h"      // for HostBackupInfo
+#include "kvstore/KVIterator.h"                 // for KVIterator
+#include "kvstore/KVStore.h"                    // for KVStore
+#include "meta/processors/Common.h"             // for LockUtils
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
 
 namespace nebula {
 namespace meta {

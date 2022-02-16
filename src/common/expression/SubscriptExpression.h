@@ -7,10 +7,20 @@
 #define COMMON_EXPRESSION_SUBSCRIPTEXPRESSION_H_
 
 #include <memory>
+#include <string>  // for operator<<, string
 
-#include "common/expression/BinaryExpression.h"
+#include "common/base/Logging.h"                 // for CheckNotNull, COMPAC...
+#include "common/base/ObjectPool.h"              // for ObjectPool
+#include "common/datatypes/Value.h"              // for Value
+#include "common/expression/BinaryExpression.h"  // for BinaryExpression
+#include "common/expression/Expression.h"        // for Expression, Expressi...
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class SubscriptExpression final : public BinaryExpression {
  public:

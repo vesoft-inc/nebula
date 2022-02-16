@@ -5,7 +5,17 @@
 
 #include "meta/processors/config/SetConfigProcessor.h"
 
-#include "common/conf/Configuration.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_ost...
+
+#include "common/base/ErrorOr.h"            // for error, ok, value
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doGet
+#include "meta/processors/Common.h"         // for LockUtils
 
 namespace nebula {
 namespace meta {

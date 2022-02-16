@@ -6,16 +6,30 @@
 #ifndef GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H_
 #define GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H_
 
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "graph/context/ast/AstContext.h"  // for AstContext
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
+#include "graph/planner/Planner.h"  // for Planner
 #include "graph/planner/plan/PlanNode.h"
+#include "graph/visitor/DeducePropsVisitor.h"  // for ExpressionProps, Expre...
+#include "interface/gen-cpp2/storage_types.h"  // for VertexProp
+#include "parser/Sentence.h"                   // for Sentence, Sentence::Kind
 
 namespace nebula {
 namespace graph {
+struct FetchVerticesContext;
+struct SubPlan;
+
+struct FetchVerticesContext;
+struct SubPlan;
+
 class FetchVerticesPlanner final : public Planner {
  public:
-  using VertexProp = nebula::storage::cpp2::VertexProp;
+  using VertexProp = storage::cpp2::VertexProp;
   using VertexProps = std::vector<VertexProp>;
 
   static std::unique_ptr<FetchVerticesPlanner> make() {

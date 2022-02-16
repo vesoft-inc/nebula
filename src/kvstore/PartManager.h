@@ -6,12 +6,24 @@
 #ifndef KVSTORE_PARTMANAGER_H_
 #define KVSTORE_PARTMANAGER_H_
 
-#include <gtest/gtest_prod.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int32_t
 
-#include "clients/meta/MetaClient.h"
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map, operator!=
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"  // for MetaClient (ptr only)
 #include "common/base/Base.h"
-#include "common/meta/Common.h"
-#include "kvstore/DiskManager.h"
+#include "common/base/Logging.h"            // for CHECK, COMPACT_GOOGLE_LOG...
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/meta/Common.h"             // for PartsMap, ListenersMap
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/meta_types.h"  // for ListenerType, LeaderInfo ...
+#include "kvstore/DiskManager.h"            // for SpaceDiskPartsMap
 
 namespace nebula {
 namespace kvstore {

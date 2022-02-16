@@ -5,7 +5,15 @@
 
 #include "clients/meta/FileBasedClusterIdMan.h"
 
-#include "common/base/Base.h"
+#include <errno.h>   // for errno
+#include <fcntl.h>   // for open, O_CREAT, O_RDONLY, O_TRUNC
+#include <string.h>  // for strerror
+#include <unistd.h>  // for close, read, write
+
+#include <ostream>  // for operator<<, basic_ostream, basic_os...
+
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_ERROR, _LOG_INFO
+#include "common/fs/FileUtils.h"  // for FileUtils
 
 namespace nebula {
 namespace meta {

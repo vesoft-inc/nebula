@@ -6,11 +6,17 @@
 #ifndef KVSTORE_RATELIMITER_H
 #define KVSTORE_RATELIMITER_H
 
-#include <folly/TokenBucket.h>
+#include <folly/TokenBucket.h>  // for DynamicTokenBucket, BasicDynamic...
+#include <gflags/gflags.h>      // for DECLARE_bool
+#include <stdint.h>             // for int64_t
+
+#include <chrono>  // for seconds
+#include <memory>  // for unique_ptr
+#include <thread>  // for sleep_for
 
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
-#include "common/time/WallClock.h"
+#include "common/time/WallClock.h"  // for WallClock
 
 DECLARE_bool(skip_wait_in_rate_limiter);
 

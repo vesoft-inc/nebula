@@ -5,6 +5,28 @@
 
 #include "meta/processors/job/ListEdgeIndexStatusProcessor.h"
 
+#include <folly/String.h>                   // for join
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max, sort
+#include <memory>         // for allocator, unique_ptr
+#include <ostream>        // for operator<<, basic_os...
+#include <string>         // for basic_string, string
+#include <type_traits>    // for remove_reference<>::...
+#include <unordered_map>  // for unordered_map, _Node...
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"                 // for ok, value, error
+#include "common/base/Logging.h"                 // for Check_GEImpl, DCHECK_GE
+#include "common/utils/MetaKeyUtils.h"           // for kDefaultPartId, kDef...
+#include "interface/gen-cpp2/common_types.h"     // for ErrorCode, ErrorCode...
+#include "kvstore/KVIterator.h"                  // for KVIterator
+#include "kvstore/KVStore.h"                     // for KVStore
+#include "meta/processors/BaseProcessor.h"       // for BaseProcessor::getSp...
+#include "meta/processors/job/JobDescription.h"  // for JobDescription
+#include "meta/processors/job/JobUtils.h"        // for JobUtil
+
 namespace nebula {
 namespace meta {
 

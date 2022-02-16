@@ -5,7 +5,6 @@
 
 #include "common/base/SlowOpTracker.h"
 
-#include "common/base/Base.h"
-#include "common/time/WallClock.h"
+#include <gflags/gflags.h>
 
 DEFINE_int64(slow_op_threshold_ms, 100, "default threshold for slow operation");

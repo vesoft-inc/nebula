@@ -8,6 +8,8 @@
 
 #include <folly/RWSpinLock.h>
 
+#include <regex>
+
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Value.h"

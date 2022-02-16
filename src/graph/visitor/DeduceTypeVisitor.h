@@ -6,15 +6,103 @@
 #ifndef GRAPH_VISITOR_DEDUCETYPEVISITOR_H_
 #define GRAPH_VISITOR_DEDUCETYPEVISITOR_H_
 
-#include "common/base/Status.h"
-#include "common/datatypes/Value.h"
-#include "common/expression/ExprVisitor.h"
+#include <utility>  // for move
+
+#include "common/base/Status.h"             // for Status
+#include "common/datatypes/Value.h"         // for Value, Value::Type, Value...
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID
+#include "graph/context/Symbols.h"          // for ColsDef
 #include "graph/context/ValidateContext.h"
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class PropertyExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+namespace graph {
+class ValidateContext;
+}  // namespace graph
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class PropertyExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 class QueryContext;
+class ValidateContext;
 
 class DeduceTypeVisitor final : public ExprVisitor {
  public:

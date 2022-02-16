@@ -5,8 +5,14 @@
 
 #include "graph/validator/AssignmentValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "parser/TraverseSentences.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Symbols.h"          // for ColDef, ColsDef, SymbolTable
+#include "graph/context/ValidateContext.h"  // for ValidateContext
+#include "graph/planner/plan/PlanNode.h"    // for PlanNode
+#include "parser/TraverseSentences.h"       // for AssignmentSentence
 
 namespace nebula {
 namespace graph {

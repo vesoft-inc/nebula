@@ -5,10 +5,19 @@
 
 #include "common/thread/GenericWorker.h"
 
-#include <event2/event.h>
-#include <sys/eventfd.h>
+#include <errno.h>         // for errno
+#include <event2/event.h>  // for event_free, event_new, event_add
+#include <string.h>        // for strerror
+#include <sys/eventfd.h>   // for eventfd, EFD_CLOEXEC, EFD_NON...
+#include <sys/time.h>      // for timeval
+#include <unistd.h>        // for close, read, write
 
-#include "common/base/Base.h"
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_ostream
+
+#include "common/base/Base.h"           // for UNUSED
+#include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_FATAL, DCHECK
+#include "common/thread/NamedThread.h"  // for NamedThread
 
 namespace nebula {
 namespace thread {

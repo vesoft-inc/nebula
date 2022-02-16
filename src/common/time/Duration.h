@@ -6,6 +6,8 @@
 #ifndef COMMON_TIME_DURATION_H_
 #define COMMON_TIME_DURATION_H_
 
+#include <stdint.h>  // for uint64_t
+
 #include "common/base/Base.h"
 
 namespace nebula {

@@ -6,13 +6,41 @@
 #ifndef STORAGE_MUTATE_DELETEEDGESPROCESSOR_H_
 #define STORAGE_MUTATE_DELETEEDGESPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+
+#include <functional>  // for function
+#include <memory>      // for shared_ptr
+#include <optional>    // for optional
+#include <string>      // for string
+#include <utility>     // for move
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"               // for ErrorOr
+#include "common/thrift/ThriftTypes.h"         // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse, DeleteEd...
 #include "kvstore/LogEncoder.h"
-#include "storage/BaseProcessor.h"
+#include "storage/BaseProcessor.h"  // for BaseProcessor
+#include "storage/CommonUtils.h"    // for StorageEnv (ptr only)
 #include "storage/transaction/ConsistTypes.h"
 
 namespace nebula {
 namespace storage {
+struct HookFuncPara;
+}  // namespace storage
+
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
+namespace storage {
+struct HookFuncPara;
 
 extern ProcessorCounters kDelEdgesCounters;
 

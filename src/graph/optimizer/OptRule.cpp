@@ -5,11 +5,21 @@
 
 #include "graph/optimizer/OptRule.h"
 
-#include "common/base/Logging.h"
-#include "graph/context/Symbols.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
+#include <stddef.h>  // for size_t
+
+#include <algorithm>    // for find
+#include <list>         // for list, operator!=, _List_con...
+#include <memory>       // for allocator
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference<>::type
+
+#include "common/base/Logging.h"          // for CheckNotNull, Check_EQImpl
+#include "common/base/Status.h"           // for Status, NG_RETURN_IF_ERROR
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/context/Symbols.h"        // for SymbolTable, Variable
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode, OptGroup
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
 
 using nebula::graph::PlanNode;
 

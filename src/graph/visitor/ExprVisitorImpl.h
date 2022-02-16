@@ -6,9 +6,51 @@
 #ifndef GRAPH_VISITOR_EXPRVISITORIMPL_H_
 #define GRAPH_VISITOR_EXPRVISITORIMPL_H_
 
-#include "common/expression/ExprVisitor.h"
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class FunctionCallExpression;
+class LabelAttributeExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TypeCastingExpression;
+class UnaryExpression;
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class FunctionCallExpression;
+class LabelAttributeExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TypeCastingExpression;
+class UnaryExpression;
+
 namespace graph {
 
 class ExprVisitorImpl : public ExprVisitor {

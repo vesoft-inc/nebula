@@ -3,14 +3,60 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>                   // for to
+#include <folly/Try.h>                    // for Try::~Try<T>
+#include <folly/futures/Future.h>         // for Future::Fut...
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Future.h>         // for Future::Fut...
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Promise.h>        // for Promise::Pr...
+#include <folly/futures/Promise.h>        // for Promise
+#include <folly/futures/Promise.h>        // for Promise::Pr...
+#include <folly/futures/Promise.h>        // for Promise
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for uint32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/Utils.h"
-#include "meta/processors/admin/CreateBackupProcessor.h"
-#include "meta/processors/job/JobManager.h"
-#include "meta/test/TestUtils.h"
+#include <algorithm>      // for find_if
+#include <atomic>         // for atomic
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for basic_string
+#include <type_traits>    // for remove_refe...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                             // for UNUSED
+#include "common/base/Logging.h"                          // for LOG, LogMes...
+#include "common/datatypes/HostAddr.h"                    // for HostAddr
+#include "common/fs/TempDir.h"                            // for TempDir
+#include "common/thrift/ThriftTypes.h"                    // for GraphSpaceID
+#include "common/time/WallClock.h"                        // for WallClock
+#include "common/utils/MetaKeyUtils.h"                    // for MetaKeyUtils
+#include "common/utils/Types.h"                           // for IndexID
+#include "common/utils/Utils.h"                           // for Utils
+#include "interface/gen-cpp2/StorageAdminService.h"       // for StorageAdmi...
+#include "interface/gen-cpp2/common_types.h"              // for LogInfo
+#include "interface/gen-cpp2/meta_types.h"                // for SpaceDesc
+#include "interface/gen-cpp2/storage_types.h"             // for CreateCPResp
+#include "kvstore/Common.h"                               // for KV
+#include "kvstore/KVStore.h"                              // for KVStore
+#include "kvstore/NebulaStore.h"                          // for NebulaStore
+#include "meta/ActiveHostsMan.h"                          // for ActiveHostsMan
+#include "meta/processors/admin/AdminClient.h"            // for AdminClient
+#include "meta/processors/admin/CreateBackupProcessor.h"  // for CreateBacku...
+#include "meta/processors/job/JobManager.h"               // for JobManager
+#include "meta/test/TestUtils.h"                          // for MockCluster
+#include "mock/MockCluster.h"                             // for MockCluster
+#include "mock/RpcServer.h"                               // for RpcServer
 
 namespace nebula {
 namespace meta {

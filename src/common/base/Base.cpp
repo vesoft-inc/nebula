@@ -5,6 +5,8 @@
 
 #include "common/base/Base.h"
 
+#include <cstdio>  // for size_t
+
 namespace nebula {
 
 std::string toHexStr(folly::StringPiece str) {

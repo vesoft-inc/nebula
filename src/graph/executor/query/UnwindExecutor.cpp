@@ -5,10 +5,23 @@
 
 #include "graph/executor/query/UnwindExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
-#include "parser/Clauses.h"
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr, __shar...
+#include <ostream>    // for operator<<, basic_...
+#include <string>     // for string, basic_string
+#include <utility>    // for move
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/DataSet.h"              // for Row, DataSet, oper...
+#include "common/datatypes/List.h"                 // for List
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/Query.h"              // for Unwind
 
 namespace nebula {
 namespace graph {

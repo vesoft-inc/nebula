@@ -5,9 +5,20 @@
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
 
+#include <stdint.h>  // for uint32_t, uint8_t
+
+#include <algorithm>           // for transform
+#include <cstddef>             // for size_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+#include <iterator>            // for insert_iterator
+#include <memory>              // for unique_ptr, make_unique
+#include <ostream>             // for stringstream, basic_os...
+#include <string>              // for string, basic_string
+#include <vector>              // for vector, vector<>::cons...
+
 #include "common/base/Base.h"
-#include "common/expression/Expression.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/expression/Expression.h"      // for Expression
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeDirection, EdgeDir...
 
 namespace nebula {
 class StepClause final {

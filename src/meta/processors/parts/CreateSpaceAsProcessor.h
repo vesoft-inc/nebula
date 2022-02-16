@@ -5,9 +5,28 @@
 #ifndef META_PROCESSORS_PARTS_CREATESPACEASPROCESSOR_H
 #define META_PROCESSORS_PARTS_CREATESPACEASPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for ExecResp, CreateSpaceAs...
+#include "kvstore/Common.h"                   // for KV
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 using Hosts = std::vector<HostAddr>;

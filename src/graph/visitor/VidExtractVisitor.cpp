@@ -5,9 +5,69 @@
 
 #include "graph/visitor/VidExtractVisitor.h"
 
-#include "graph/util/ExpressionUtils.h"
+#include <algorithm>    // for sort, set_in...
+#include <cstddef>      // for size_t
+#include <iterator>     // for move_iterator
+#include <ostream>      // for operator<<
+#include <type_traits>  // for remove_refer...
+#include <vector>       // for vector
+
+#include "common/base/Base.h"                            // for UNUSED
+#include "common/base/Logging.h"                         // for COMPACT_GOOG...
+#include "common/datatypes/Value.h"                      // for Value, opera...
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/ContainerExpression.h"       // for ListExpression
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/FunctionCallExpression.h"    // for FunctionCall...
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/LogicalExpression.h"         // for LogicalExpre...
+#include "common/expression/PropertyExpression.h"        // for PropertyExpr...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "graph/context/QueryExpressionContext.h"        // for QueryExpress...
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "graph/util/SchemaUtil.h"                       // for SchemaUtil
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class EdgeExpression;
+class ListComprehensionExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class VariableExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class EdgeExpression;
+class ListComprehensionExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class VariableExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 /*static*/ VidExtractVisitor::VidPattern VidExtractVisitor::intersect(VidPattern &&left,

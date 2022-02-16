@@ -6,10 +6,26 @@
 #ifndef GRAPH_EXECUTOR_MUTATE_DELETEVERTICESEXECUTOR_H_
 #define GRAPH_EXECUTOR_MUTATE_DELETEVERTICESEXECUTOR_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "common/base/Status.h"                    // for Status
+#include "common/thrift/ThriftTypes.h"             // for EdgeType
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
 
 namespace nebula {
+class EdgeKeys;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class EdgeKeys;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class DeleteVerticesExecutor final : public StorageAccessExecutor {
  public:

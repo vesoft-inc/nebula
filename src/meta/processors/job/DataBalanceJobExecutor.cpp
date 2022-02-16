@@ -5,11 +5,24 @@
 
 #include "meta/processors/job/DataBalanceJobExecutor.h"
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <stddef.h>  // for size_t
 
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
+#include <algorithm>   // for find, find_if, for_each
+#include <functional>  // for function
+#include <map>         // for map, operator!=, _Rb_tr...
+#include <memory>      // for unique_ptr, operator==
+#include <ostream>     // for operator<<, basic_ostre...
+#include <set>         // for set
+#include <utility>     // for pair, swap
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, GraphSpaceID
+#include "common/time/WallClock.h"            // for WallClock
+#include "interface/gen-cpp2/meta_types.h"    // for JobStatus
+#include "meta/ActiveHostsMan.h"              // for LastUpdateTimeMan
+#include "meta/processors/job/BalancePlan.h"  // for BalancePlan
+#include "meta/processors/job/BalanceTask.h"  // for BalanceTask
 
 namespace nebula {
 namespace meta {

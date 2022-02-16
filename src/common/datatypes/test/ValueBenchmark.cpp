@@ -3,16 +3,26 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>  // for addBenchmark, BenchmarkSuspender
+#include <folly/Random.h>     // for randomNumberSeed
+#include <stddef.h>           // for size_t
 
-#include <string>
-#include <unordered_set>
-#include <vector>
+#include <cstdint>        // for int64_t
+#include <random>         // for uniform_int_distribution, mt19937
+#include <string>         // for string, basic_string, allocator
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
 
-#include "common/base/Base.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Vertex.h"
+namespace nebula {
+struct Edge;
+struct Vertex;
+
+struct Edge;
+struct Vertex;
+}  // namespace nebula
 
 using nebula::Edge;
 using nebula::Value;

@@ -6,19 +6,28 @@
 #ifndef GRAPH_VALIDATOR_YIELDVALIDATOR_H_
 #define GRAPH_VALIDATOR_YIELDVALIDATOR_H_
 
-#include "common/base/Status.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/Status.h"  // for Status
 #include "graph/planner/plan/Query.h"
-#include "graph/validator/GroupByValidator.h"
-#include "graph/validator/Validator.h"
+#include "graph/validator/GroupByValidator.h"  // for GroupByValidator
+#include "graph/validator/Validator.h"         // for Validator
 
 namespace nebula {
 
 class Sentence;
 class YieldClause;
+namespace nebula {
+class YieldColumn;
+}  // namespace nebula
+
 class YieldColumns;
 class WhereClause;
 class Expression;
 class ObjectPool;
+
+class YieldColumn;
 
 namespace graph {
 

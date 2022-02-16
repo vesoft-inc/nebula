@@ -5,9 +5,26 @@
 
 #include "meta/processors/schema/SchemaUtil.h"
 
-#include "common/expression/ConstantExpression.h"
-#include "common/time/TimeUtils.h"
-#include "common/utils/DefaultValueContext.h"
+#include <folly/Conv.h>                     // for to
+#include <stddef.h>                         // for size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
+
+#include <cstdint>  // for uint32_t, int16_t
+#include <limits>   // for numeric_limits
+#include <ostream>  // for operator<<, basic_...
+
+#include "common/base/Logging.h"                   // for LogMessage, _LOG_E...
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/Status.h"                    // for operator<<
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Geography.h"            // for operator<<, GeoShape
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/TimeUtils.h"                 // for TimeUtils
+#include "common/utils/DefaultValueContext.h"      // for DefaultValueContext
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType, Prop...
+#include "interface/gen-cpp2/meta_types.h"         // for ColumnDef, GeoShape
 
 namespace nebula {
 namespace meta {

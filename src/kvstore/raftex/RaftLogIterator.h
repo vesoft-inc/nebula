@@ -6,9 +6,15 @@
 #ifndef KVSTORE_RAFTEX_RAFTLOGITERATOR_H
 #define KVSTORE_RAFTEX_RAFTLOGITERATOR_H
 
+#include <folly/Range.h>  // for StringPiece
+#include <stddef.h>       // for size_t
+
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
-#include "common/utils/LogIterator.h"
-#include "interface/gen-cpp2/raftex_types.h"
+#include "common/thrift/ThriftTypes.h"        // for LogID, ClusterID, TermID
+#include "common/utils/LogIterator.h"         // for LogIterator
+#include "interface/gen-cpp2/raftex_types.h"  // for RaftLogEntry
 
 namespace nebula {
 namespace raftex {

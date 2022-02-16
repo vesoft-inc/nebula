@@ -5,11 +5,24 @@
 
 #include "webservice/StatusHandler.h"
 
-#include <proxygen/httpserver/RequestHandler.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <folly/Optional.h>                       // for Optional
+#include <folly/dynamic.h>                        // for dynamic::dynamic
+#include <folly/json.h>                           // for toJson
+#include <proxygen/httpserver/ResponseBuilder.h>  // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
-#include "version/Version.h"
+#include <ostream>  // for operator<<, basic_o...
+
+#include "common/base/Logging.h"  // for LOG, LogMessage
+#include "version/Version.h"      // for gitInfoSha
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 namespace nebula {
 

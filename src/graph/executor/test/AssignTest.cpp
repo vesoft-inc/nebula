@@ -3,14 +3,34 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
 
-#include "common/expression/VariableExpression.h"
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/AssignExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include <memory>       // for unique_ptr, make...
+#include <string>       // for string
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/ArithmeticExpression.h"  // for ArithmeticExpres...
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/UnaryExpression.h"       // for UnaryExpression
+#include "common/expression/VariableExpression.h"    // for VariableExpression
+#include "graph/context/ExecutionContext.h"          // for ExecutionContext
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/Symbols.h"                   // for SymbolTable
+#include "graph/executor/query/AssignExecutor.h"     // for AssignExecutor
+#include "graph/planner/plan/Query.h"                // for Assign
 
 namespace nebula {
+class ObjectPool;
+
+class ObjectPool;
+
 namespace graph {
 
 class AssignExecutorTest : public testing::Test {

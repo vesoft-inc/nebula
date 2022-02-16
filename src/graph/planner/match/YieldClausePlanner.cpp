@@ -5,11 +5,23 @@
 
 #include "graph/planner/match/YieldClausePlanner.h"
 
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+
+#include "common/base/Logging.h"                 // for COMPACT_GOOGLE_LOG_F...
+#include "common/base/ObjectPool.h"              // for ObjectPool
+#include "graph/context/QueryContext.h"          // for QueryContext
+#include "graph/context/ast/CypherAstContext.h"  // for YieldClauseContext
+#include "graph/planner/match/MatchSolver.h"     // for MatchSolver
+#include "graph/planner/plan/ExecutionPlan.h"    // for SubPlan
+#include "graph/planner/plan/Query.h"            // for Project, Aggregate
+#include "parser/Clauses.h"                      // for YieldColumns, YieldC...
 
 namespace nebula {
+class Expression;
+
+class Expression;
+
 namespace graph {
 StatusOr<SubPlan> YieldClausePlanner::transform(CypherClauseContextBase* clauseCtx) {
   if (clauseCtx->kind != CypherClauseKind::kYield) {

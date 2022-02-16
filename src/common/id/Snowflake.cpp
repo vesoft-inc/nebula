@@ -5,6 +5,22 @@
 
 #include "common/id/Snowflake.h"
 
+#include <folly/Try.h>              // for Try::throwUnlessValue
+#include <folly/futures/Future.h>   // for Future::get, Future::getTry
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Future.h>   // for Future::get, Future::getTry
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <chrono>   // for milliseconds, duration_cast
+#include <cstdint>  // for int64_t
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string
+
+#include "clients/meta/MetaClient.h"  // for MetaClient
+#include "common/base/Logging.h"      // for LOG, LogMessage, LogMessa...
+#include "common/base/StatusOr.h"     // for StatusOr
+
 namespace nebula {
 void Snowflake::initWorkerId(meta::MetaClient* client) {
   const std::string& ip = client->getLocalIp();

@@ -5,18 +5,51 @@
 
 #include "storage/mutate/AddVerticesProcessor.h"
 
-#include <algorithm>
+#include <folly/Format.h>                   // for sformat
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "codec/RowWriterV2.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "common/utils/OperationKeyUtils.h"
-#include "storage/StorageFlags.h"
-#include "storage/stats/StorageStats.h"
+#include <algorithm>      // for find
+#include <iterator>       // for next
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ostrea...
+#include <tuple>          // for make_tuple
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for _Node_const_iterator
+#include <unordered_set>  // for unordered_set
+
+#include "codec/RowReaderWrapper.h"          // for RowReaderWrapper
+#include "codec/RowWriterV2.h"               // for WriteResult
+#include "common/base/Base.h"                // for UNUSED
+#include "common/base/Logging.h"             // for LogMessage, LOG, _LOG_ERROR
+#include "common/base/Status.h"              // for operator<<
+#include "common/base/StatusOr.h"            // for StatusOr
+#include "common/datatypes/Value.h"          // for Value
+#include "common/meta/IndexManager.h"        // for IndexManager
+#include "common/meta/SchemaManager.h"       // for SchemaManager
+#include "common/stats/StatsManager.h"       // for StatsManager
+#include "common/utils/IndexKeyUtils.h"      // for IndexKeyUtils
+#include "common/utils/MemoryLockCore.h"     // for MemoryLockCore
+#include "common/utils/MemoryLockWrapper.h"  // for MemoryLockGuard
+#include "common/utils/NebulaKeyUtils.h"     // for NebulaKeyUtils
+#include "common/utils/OperationKeyUtils.h"  // for OperationKeyUtils
+#include "interface/gen-cpp2/meta_types.h"   // for IndexItem
+#include "kvstore/Common.h"                  // for KV
+#include "kvstore/KVStore.h"                 // for KVStore
+#include "kvstore/LogEncoder.h"              // for BatchHolder, encodeBatch...
+#include "storage/BaseProcessor.h"           // for BaseProcessor::handleAsync
+#include "storage/stats/StorageStats.h"      // for kNumVerticesInserted
 
 namespace nebula {
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
 namespace storage {
 
 ProcessorCounters kAddVerticesCounters;

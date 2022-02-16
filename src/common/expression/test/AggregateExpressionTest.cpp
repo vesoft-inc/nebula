@@ -2,11 +2,34 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartRe...
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartRe...
 
-#include <ostream>
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for string, hash
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
 
-#include "common/expression/test/TestBase.h"
+#include "common/datatypes/List.h"                         // for List
+#include "common/datatypes/Set.h"                          // for Set
+#include "common/datatypes/Value.h"                        // for Value, Val...
+#include "common/expression/AggregateExpression.h"         // for AggregateE...
+#include "common/expression/ConstantExpression.h"          // for ConstantEx...
+#include "common/expression/FunctionCallExpression.h"      // for ArgumentList
+#include "common/expression/test/ExpressionContextMock.h"  // for Expression...
+#include "common/expression/test/TestBase.h"               // for pool, Expr...
+#include "common/function/AggFunctionManager.h"            // for AggData
+
+namespace nebula {
+class AggregateExpressionTest_AggregateExpression_Test;
+class Expression;
+
+class AggregateExpressionTest_AggregateExpression_Test;
+class Expression;
+}  // namespace nebula
 
 #define TEST_AGG(name, isDistinct, expr, inputVar, expected)                \
   do {                                                                      \

@@ -5,9 +5,35 @@
 
 #include "storage/admin/RebuildIndexTask.h"
 
-#include "common/utils/OperationKeyUtils.h"
-#include "kvstore/Common.h"
-#include "storage/StorageFlags.h"
+#include <folly/Conv.h>                           // for to
+#include <folly/Format.h>                         // for sformat
+#include <folly/Likely.h>                         // for UNLIKELY
+#include <folly/Range.h>                          // for operator<<, Range
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <folly/synchronization/Baton.h>          // for Baton
+#include <stdint.h>                               // for uint32_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>             // for optional_field_ref
+#include <unistd.h>                               // for usleep, size_t
+
+#include <functional>     // for _Bind_helper<>::type
+#include <new>            // for operator new
+#include <string>         // for operator<<, basic_s...
+#include <tuple>          // for tuple, make_tuple, get
+#include <type_traits>    // for remove_reference<>:...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "common/utils/OperationKeyUtils.h"    // for OperationKeyUtils
+#include "interface/gen-cpp2/storage_types.h"  // for TaskPara
+#include "kvstore/Common.h"                    // for KV
+#include "kvstore/KVIterator.h"                // for KVIterator
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "kvstore/LogEncoder.h"                // for BatchHolder, encode...
+#include "kvstore/RateLimiter.h"               // for RateLimiter
+#include "storage/CommonUtils.h"               // for IndexState, StorageEnv
+#include "storage/StorageFlags.h"              // for FLAGS_rebuild_index...
 
 namespace nebula {
 namespace storage {

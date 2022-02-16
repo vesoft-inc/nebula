@@ -5,11 +5,29 @@
 
 #include "storage/admin/StatsTask.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <bits/std_abs.h>                   // for abs
+#include <folly/Likely.h>                   // for UNLIKELY
+#include <stdlib.h>                         // for abs
+#include <string.h>                         // for memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_fi...
 
-#include "common/base/MurmurHash2.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/Common.h"
+#include <algorithm>   // for sort
+#include <cstdint>     // for int64_t, uint64_t
+#include <functional>  // for _Bind_helper<>::type
+#include <memory>      // for unique_ptr, allocator
+#include <new>         // for operator new
+
+#include "common/base/Base.h"                  // for FLOG_INFO
+#include "common/base/MurmurHash2.h"           // for MurmurHash2
+#include "common/base/StatusOr.h"              // for StatusOr
+#include "common/meta/SchemaManager.h"         // for SchemaManager
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "common/utils/Types.h"                // for VertexIDSlice
+#include "interface/gen-cpp2/storage_types.h"  // for TaskPara
+#include "kvstore/KVIterator.h"                // for KVIterator
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "storage/CommonUtils.h"               // for StorageEnv
 
 namespace nebula {
 namespace storage {

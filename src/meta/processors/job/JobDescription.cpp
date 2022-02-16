@@ -5,15 +5,21 @@
 
 #include "meta/processors/job/JobDescription.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <limits.h>                         // for INT_MAX
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include <boost/stacktrace.hpp>
-#include <stdexcept>
+#include <ctime>      // for time, size_t
+#include <exception>  // for exception
+#include <new>        // for operator new
+#include <ostream>    // for operator<<, basic_ostream
+#include <utility>    // for move
 
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/KVIterator.h"
-#include "meta/processors/Common.h"
-#include "meta/processors/job/JobUtils.h"
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_INFO
+#include "common/utils/MetaKeyUtils.h"      // for kDefaultPartId, kDefaultS...
+#include "kvstore/KVStore.h"                // for KVStore
+#include "meta/processors/job/JobStatus.h"  // for JobStatus
+#include "meta/processors/job/JobUtils.h"   // for JobUtil
 
 namespace nebula {
 namespace meta {

@@ -3,7 +3,9 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "clients/meta/stats/MetaClientStats.h"
+#include <memory>  // for allocator
+
+#include "common/stats/StatsManager.h"  // for CounterId, StatsManager
 
 namespace nebula {
 

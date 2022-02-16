@@ -5,12 +5,28 @@
 
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 
-#include "clients/meta/MetaClient.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/service/PermissionManager.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, Futu...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for operator<<, char_traits
+#include <utility>  // for move
+
+#include "clients/meta/MetaClient.h"          // for MetaClient
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
+#include "common/base/Status.h"               // for Status, operator<<, NG_...
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/time/ScopedTimer.h"          // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/planner/plan/Query.h"         // for SwitchSpace
+#include "graph/service/PermissionManager.h"  // for PermissionManager
+#include "graph/service/RequestContext.h"     // for RequestContext
+#include "graph/session/ClientSession.h"      // for SpaceInfo, ClientSession
+#include "interface/gen-cpp2/meta_types.h"    // for SpaceItem, SpaceDesc
 
 namespace nebula {
 namespace graph {

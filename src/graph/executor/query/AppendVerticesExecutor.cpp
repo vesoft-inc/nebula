@@ -5,6 +5,38 @@
 
 #include "graph/executor/query/AppendVerticesExecutor.h"
 
+#include <folly/Format.h>              // for sformat
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <ostream>        // for basic_ostream::ope...
+#include <string>         // for string, basic_string
+#include <tuple>          // for get
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for unordered_map, ope...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "clients/storage/StorageClient.h"         // for StorageClient, Sto...
+#include "clients/storage/StorageClientBase.h"     // for StorageRpcResponse
+#include "common/base/Base.h"                      // for kVid
+#include "common/base/Logging.h"                   // for CheckNotNull, DCHE...
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for Value, hash, opera...
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/Duration.h"                  // for Duration
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for PropIter, Iterator
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/ExecutionPlan.h"      // for ExecutionPlan
+#include "graph/planner/plan/Query.h"              // for AppendVertices
+#include "graph/service/GraphFlags.h"              // for FLAGS_accept_parti...
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for ClientSession
+#include "interface/gen-cpp2/storage_types.h"      // for GetPropResponse
+
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;

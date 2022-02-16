@@ -6,10 +6,17 @@
 #ifndef COMMON_FUNCTION_AGGFUNCTIONMANAGER_H_
 #define COMMON_FUNCTION_AGGFUNCTIONMANAGER_H_
 
+#include <functional>     // for function
+#include <memory>         // for unique_ptr, make_unique
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
+#include "common/base/Status.h"      // for Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/datatypes/Value.h"  // for Value, Value::kNullValue
 /**
  * AggFunctionManager is for managing builtin and dynamic-loaded aggregate
  * functions, which users could use as AggregateExpression.
@@ -18,6 +25,9 @@
  */
 
 namespace nebula {
+struct Set;
+
+struct Set;
 
 class AggData final {
  public:

@@ -5,6 +5,10 @@
 
 #include "graph/context/Result.h"
 
+#include <ostream>  // for operator<<, basic_ostream, char_traits
+
+#include "common/base/Logging.h"  // for LogMessageFatal, COMPACT_GOOGLE_LOG...
+
 namespace nebula {
 namespace graph {
 

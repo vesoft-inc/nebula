@@ -3,10 +3,22 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/utils/MemoryLockWrapper.h"
+#include <ostream>        // for operator<<, basic_ostream
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"             // for LOG, LogMessage, SetStde...
+#include "common/utils/MemoryLockCore.h"     // for MemoryLockCore
+#include "common/utils/MemoryLockWrapper.h"  // for MemoryLockGuard
 
 namespace nebula {
 namespace storage {

@@ -6,17 +6,40 @@
 #ifndef NGQL_PLANNERS_PATHPLANNER_H
 #define NGQL_PLANNERS_PATHPLANNER_H
 
+#include <stdint.h>  // for uint32_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/QueryContext.h"
+#include "graph/context/ast/AstContext.h"  // for AstContext
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
+#include "graph/planner/Planner.h"             // for Planner
+#include "graph/planner/plan/ExecutionPlan.h"  // for SubPlan
 #include "graph/planner/plan/Query.h"
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeProp
+#include "parser/Sentence.h"                   // for Sentence, Sentence::Kind
 
 namespace nebula {
+class Expression;
 namespace graph {
+class PlanNode;
+struct PathContext;
+struct Starts;
+}  // namespace graph
+
+class Expression;
+
+namespace graph {
+class PlanNode;
+struct PathContext;
+struct Starts;
 
 class PathPlanner final : public Planner {
  public:
-  using EdgeProp = nebula::storage::cpp2::EdgeProp;
+  using EdgeProp = storage::cpp2::EdgeProp;
   static std::unique_ptr<PathPlanner> make() {
     return std::unique_ptr<PathPlanner>(new PathPlanner());
   }

@@ -5,13 +5,43 @@
 
 #include "kvstore/raftex/Host.h"
 
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <folly/io/async/EventBase.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Likely.h>                                  // for UNLIKELY
+#include <folly/Range.h>                                   // for StringPiece
+#include <folly/String.h>                                  // for stringPrintf
+#include <folly/Traits.h>                                  // for tag_t
+#include <folly/Try.h>                                     // for Try
+#include <folly/futures/Future-pre.h>                      // for valueCalla...
+#include <folly/futures/Future.h>                          // for SemiFuture...
+#include <folly/futures/Promise.h>                         // for Promise::P...
+#include <folly/futures/SharedPromise.h>                   // for SharedProm...
+#include <gflags/gflags.h>                                 // for DEFINE_uint32
+#include <stddef.h>                                        // for size_t
+#include <stdint.h>                                        // for int64_t
+#include <thrift/lib/cpp/transport/TTransportException.h>  // for TTransport...
+#include <thrift/lib/cpp/util/EnumUtils.h>                 // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>                      // for field_ref
 
-#include "common/network/NetworkUtils.h"
-#include "kvstore/raftex/RaftPart.h"
-#include "kvstore/wal/FileBasedWal.h"
+#include <algorithm>    // for max
+#include <exception>    // for exception
+#include <type_traits>  // for enable_if<...
+#include <utility>      // for move, pair
+#include <vector>       // for vector
+
+#include "common/base/StatusOr.h"                         // for StatusOr
+#include "common/thrift/ThriftClientManager.h"            // for ThriftClie...
+#include "common/utils/LogIterator.h"                     // for LogIterator
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"  // for RaftexServ...
+#include "kvstore/raftex/RaftPart.h"                      // for RaftPart
+#include "kvstore/raftex/SnapshotManager.h"               // for SnapshotMa...
+#include "kvstore/wal/FileBasedWal.h"                     // for FileBasedWal
+
+namespace nebula {
+namespace network {
+class NetworkUtils;
+
+class NetworkUtils;
+}  // namespace network
+}  // namespace nebula
 
 DEFINE_uint32(max_appendlog_batch_size,
               128,

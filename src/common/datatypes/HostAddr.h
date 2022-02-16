@@ -6,10 +6,14 @@
 #ifndef COMMON_DATATYPES_HOSTADDR_H_
 #define COMMON_DATATYPES_HOSTADDR_H_
 
-#include <sstream>
+#include <cstddef>      // for size_t
+#include <sstream>      // for operator<<, basic_ostream
+#include <string>       // for string, operator<<, stoi
+#include <string_view>  // for hash
+#include <utility>      // for move
 
-#include "common/base/Logging.h"
-#include "common/thrift/ThriftTypes.h"
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_ERROR
+#include "common/thrift/ThriftTypes.h"  // for Port
 
 namespace nebula {
 

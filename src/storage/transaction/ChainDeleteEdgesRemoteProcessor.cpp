@@ -5,10 +5,29 @@
 
 #include "storage/transaction/ChainDeleteEdgesRemoteProcessor.h"
 
-#include "storage/StorageFlags.h"
-#include "storage/mutate/DeleteEdgesProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include <folly/String.h>                   // for hexlify
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <ostream>        // for operator<<, basi...
+#include <unordered_map>  // for _Node_const_iter...
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "common/base/Logging.h"                     // for LogMessage, COMP...
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::h...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/StorageFlags.h"                    // for FLAGS_trace_toss
+#include "storage/mutate/DeleteEdgesProcessor.h"     // for DeleteEdgesProce...
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil, Del...
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
 
 namespace nebula {
 namespace storage {

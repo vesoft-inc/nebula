@@ -5,10 +5,33 @@
 
 #include "graph/optimizer/rule/RemoveNoopProjectRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <stddef.h>  // for size_t
+
+#include <list>     // for list, operator!=, _List_co...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"           // for Check_EQImpl, GetReference...
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
+#include "graph/optimizer/OptGroup.h"      // for OptGroupNode, OptGroup
+#include "graph/planner/plan/PlanNode.h"   // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"      // for Project
+#include "parser/Clauses.h"                // for YieldColumn, YieldColumns
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

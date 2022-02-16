@@ -6,14 +6,25 @@
 #ifndef COMMON_EXPRESSION_EXPRESSION_H_
 #define COMMON_EXPRESSION_EXPRESSION_H_
 
+#include <folly/Range.h>  // for StringPiece
+#include <stddef.h>       // for size_t
+#include <stdint.h>       // for uint8_t
+
+#include <iosfwd>  // for ostream
+#include <string>  // for string
+
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/context/ExpressionContext.h"
-#include "common/datatypes/Value.h"
+#include "common/datatypes/Value.h"  // for Value, Value::Type
 
 namespace nebula {
+class ExpressionContext;
+class ObjectPool;
 
 class ExprVisitor;
+class ExpressionContext;
+class ObjectPool;
 
 class Expression {
  public:

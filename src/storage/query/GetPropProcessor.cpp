@@ -5,7 +5,30 @@
 
 #include "storage/query/GetPropProcessor.h"
 
-#include "storage/exec/GetPropNode.h"
+#include <folly/Executor.h>            // for Executor
+#include <folly/futures/Future.h>      // for SemiFuture::releas...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optiona...
+
+#include <memory>         // for allocator, make_un...
+#include <ostream>        // for operator<<, basic_...
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for _Node_const_iterator
+#include <unordered_set>  // for unordered_set, uno...
+
+#include "common/base/Base.h"                  // for kVid
+#include "common/base/Logging.h"               // for LOG, LogMessage
+#include "common/datatypes/List.h"             // for List
+#include "common/datatypes/Value.h"            // for operator<<, Value
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "storage/BaseProcessor.h"             // for BaseProcessor::pus...
+#include "storage/StorageFlags.h"              // for FLAGS_query_concur...
+#include "storage/exec/EdgeNode.h"             // for FetchEdgeNode, Edg...
+#include "storage/exec/GetPropNode.h"          // for GetEdgePropNode
+#include "storage/exec/RelNode.h"              // for RelNode
+#include "storage/exec/TagNode.h"              // for TagNode
+#include "storage/query/QueryBaseProcessor.h"  // for QueryBaseProcessor...
 
 namespace nebula {
 namespace storage {

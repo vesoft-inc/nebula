@@ -5,6 +5,32 @@
 
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 
+#include <folly/Format.h>                   // for sformat
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max
+#include <memory>         // for __shared_ptr_access
+#include <ostream>        // for operator<<, basic_ost...
+#include <string>         // for string, basic_string
+#include <type_traits>    // for add_const<>::type
+#include <unordered_map>  // for unordered_map, operat...
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                 // for UNUSED
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaul...
+#include "common/utils/Utils.h"               // for Utils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "kvstore/NebulaStore.h"              // for NebulaStore
+#include "kvstore/Part.h"                     // for Part
+#include "meta/ActiveHostsMan.h"              // for HostInfo
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doGet
+
 namespace nebula {
 namespace meta {
 

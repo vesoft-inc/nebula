@@ -5,13 +5,33 @@
 
 #include "graph/executor/admin/ConfigExecutor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Try.h>                      // for Try::~Try<T>
+#include <folly/futures/Future.h>           // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <gflags/gflags.h>                  // for SetCommandLineOption
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "common/conf/Configuration.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/util/SchemaUtil.h"
+#include <algorithm>           // for max
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <memory>              // for allocator, allocator_trai...
+#include <ostream>             // for operator<<, basic_ostream
+#include <unordered_map>       // for unordered_map
+#include <utility>             // for move
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"             // for Status, operator<<
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/Map.h"           // for Map
+#include "common/meta/GflagsManager.h"      // for GflagsManager
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Result.h"           // for ResultBuilder
+#include "graph/planner/plan/Admin.h"       // for SetConfig, GetConfig, Sho...
+#include "interface/gen-cpp2/meta_types.h"  // for ConfigItem, ConfigModule
 
 namespace nebula {
 namespace graph {

@@ -3,17 +3,60 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>              // for stringPrintf
+#include <folly/Try.h>                 // for Try, Try::throwUnle...
+#include <folly/detail/Iterators.h>    // for operator!=, Iterato...
+#include <folly/dynamic.h>             // for dynamic::item_iterator
+#include <folly/dynamic.h>             // for dynamic
+#include <folly/dynamic.h>             // for dynamic::item_iterator
+#include <folly/dynamic.h>             // for dynamic
+#include <folly/futures/Future.h>      // for Future
+#include <folly/futures/Future.h>      // for Future::get, Future...
+#include <folly/futures/Future.h>      // for Future
+#include <folly/futures/Promise.h>     // for PromiseException::P...
+#include <folly/init/Init.h>           // for init
+#include <folly/json.h>                // for parseJson
+#include <gflags/gflags_declare.h>     // for DECLARE_int32
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <stdint.h>                    // for int64_t, int32_t
+#include <stdlib.h>                    // for system
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, required...
+#include <unistd.h>                    // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/process/ProcessUtils.h"
-#include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "storage/mutate/UpdateEdgeProcessor.h"
-#include "storage/mutate/UpdateVertexProcessor.h"
-#include "storage/test/QueryTestUtils.h"
-#include "storage/test/TestUtils.h"
+#include <atomic>         // for __atomic_base, atomic
+#include <exception>      // for exception
+#include <memory>         // for unique_ptr, allocator
+#include <ostream>        // for operator<<, basic_o...
+#include <string>         // for basic_string, opera...
+#include <type_traits>    // for remove_reference<>:...
+#include <unordered_map>  // for _Map_base<>::mapped...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"              // for MetaClientOptions
+#include "common/base/Logging.h"                  // for LOG, LogMessage
+#include "common/base/StatusOr.h"                 // for StatusOr
+#include "common/datatypes/HostAddr.h"            // for HostAddr
+#include "common/datatypes/Value.h"               // for Value
+#include "common/fs/FileUtils.h"                  // for FileUtils
+#include "common/fs/TempDir.h"                    // for TempDir
+#include "common/meta/SchemaManager.h"            // for SchemaManager
+#include "common/network/NetworkUtils.h"          // for NetworkUtils
+#include "common/process/ProcessUtils.h"          // for ProcessUtils
+#include "common/thread/GenericWorker.h"          // for GenericWorker
+#include "common/thrift/ThriftTypes.h"            // for TagID, ClusterID
+#include "common/utils/IndexKeyUtils.h"           // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"        // for ColumnDef, ServiceC...
+#include "interface/gen-cpp2/storage_types.h"     // for NewTag, AddVertices...
+#include "mock/MockCluster.h"                     // for MockCluster
+#include "mock/MockData.h"                        // for VertexData
+#include "storage/CommonUtils.h"                  // for StorageEnv
+#include "storage/mutate/AddVerticesProcessor.h"  // for AddVerticesProcessor
+#include "storage/test/TestUtils.h"               // for checkAddVerticesData
 
 DECLARE_int32(heartbeat_interval_secs);
 

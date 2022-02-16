@@ -5,11 +5,34 @@
 
 #include "graph/executor/admin/ShowStatsExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/service/PermissionManager.h"
-#include "graph/util/SchemaUtil.h"
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Future.h>      // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>     // for PromiseException::Promise...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>      // for max, sort
+#include <cstdint>        // for int64_t
+#include <ostream>        // for operator<<, basic_ostream...
+#include <string>         // for string, basic_string, ope...
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for _Node_const_iterator, ope...
+#include <utility>        // for pair, move, make_pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"             // for Status, operator<<
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/Value.h"         // for Value
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "graph/context/Iterator.h"         // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Result.h"           // for ResultBuilder
+#include "graph/service/RequestContext.h"   // for RequestContext
+#include "graph/session/ClientSession.h"    // for ClientSession, SpaceInfo
+#include "interface/gen-cpp2/meta_types.h"  // for StatsItem
 
 namespace nebula {
 namespace graph {

@@ -5,9 +5,19 @@
 
 #include "codec/RowReaderV1.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Varint.h>                   // for decodeVarint
+#include <string.h>                         // for memcpy, size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "interface/gen-cpp2/meta_types.h"
+#include <exception>  // for exception
+#include <limits>     // for numeric_limits
+#include <memory>     // for allocator_traits<>::val...
+#include <ostream>    // for operator<<, basic_ostream
+
+#include "codec/Common.h"                     // for intToBool, toHexStr
+#include "common/base/Logging.h"              // for GetReferenceableValue, LOG
+#include "common/meta/SchemaProviderIf.h"     // for SchemaProviderIf
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
 
 #define RR_GET_OFFSET()                                         \
   if (index >= static_cast<int64_t>(schema_->getNumFields())) { \

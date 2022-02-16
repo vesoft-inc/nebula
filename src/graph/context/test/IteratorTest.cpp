@@ -3,11 +3,32 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>       // for to
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stddef.h>           // for size_t
+#include <stdint.h>           // for int64_t, int32_t
 
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Vertex.h"
-#include "graph/context/Iterator.h"
+#include <memory>         // for allocator, make_shared
+#include <string>         // for string, basic_string, ope...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Base.h"           // for kVid, kSrc
+#include "common/base/Logging.h"        // for SetStderrLogging
+#include "common/base/Status.h"         // for Status
+#include "common/datatypes/DataSet.h"   // for Row, DataSet
+#include "common/datatypes/Edge.h"      // for Edge
+#include "common/datatypes/List.h"      // for List
+#include "common/datatypes/Value.h"     // for Value
+#include "common/datatypes/Vertex.h"    // for Tag, Vertex
+#include "common/thrift/ThriftTypes.h"  // for EdgeRanking
+#include "graph/context/Iterator.h"     // for GetNeighborsIter, Sequent...
 
 namespace nebula {
 namespace graph {

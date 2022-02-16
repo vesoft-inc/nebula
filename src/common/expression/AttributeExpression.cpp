@@ -5,13 +5,23 @@
 
 #include "common/expression/AttributeExpression.h"
 
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Vertex.h"
-#include "common/expression/ExprVisitor.h"
-#include "common/time/TimeUtils.h"
+#include <unordered_map>  // for _Node_const_iterator
+#include <utility>        // for pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                      // for kDst, kRank, kSrc
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/datatypes/Edge.h"                 // for Edge
+#include "common/datatypes/Map.h"                  // for Map
+#include "common/datatypes/Vertex.h"               // for Tag, Vertex
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/ExprVisitor.h"         // for ExprVisitor
+#include "common/time/TimeUtils.h"                 // for TimeUtils
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   auto &lvalue = left()->eval(ctx);

@@ -5,8 +5,91 @@
 
 #ifndef STORAGE_EXPRVISITORBASE_H
 #define STORAGE_EXPRVISITORBASE_H
-#include "common/expression/ExprVisitor.h"
+#include <ostream>  // for operator<<, basic_ostream...
+
+#include "common/base/Logging.h"            // for LOG, LogMessageFatal, _LO...
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
+#include "common/expression/Expression.h"   // for Expression
+
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace storage {
 
 class ExprVisitorBase : public ::nebula::ExprVisitor {

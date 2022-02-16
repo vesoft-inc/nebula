@@ -5,8 +5,12 @@
 
 #include "storage/admin/StopAdminTaskProcessor.h"
 
-#include "interface/gen-cpp2/common_types.h"
-#include "storage/admin/AdminTaskManager.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "storage/admin/AdminTaskManager.h"   // for AdminTaskManager
 
 namespace nebula {
 namespace storage {

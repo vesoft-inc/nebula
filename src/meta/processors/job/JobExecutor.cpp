@@ -5,24 +5,32 @@
 
 #include "meta/processors/job/JobExecutor.h"
 
-#include "common/network/NetworkUtils.h"
+#include <gflags/gflags_declare.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
+#include <ostream>
+#include <utility>
+
+#include "common/base/Logging.h"
 #include "common/utils/MetaKeyUtils.h"
-#include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
-#include "meta/processors/admin/AdminClient.h"
+#include "kvstore/KVStore.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/DataBalanceJobExecutor.h"
 #include "meta/processors/job/FlushJobExecutor.h"
+#include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
 #include "meta/processors/job/RebuildFTJobExecutor.h"
 #include "meta/processors/job/RebuildTagJobExecutor.h"
 #include "meta/processors/job/StatsJobExecutor.h"
-#include "meta/processors/job/StorageJobExecutor.h"
-#include "meta/processors/job/TaskDescription.h"
 #include "meta/processors/job/ZoneBalanceJobExecutor.h"
+
+namespace nebula {
+namespace meta {
+class AdminClient;
+}  // namespace meta
+}  // namespace nebula
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

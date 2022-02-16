@@ -5,7 +5,31 @@
 
 #include "graph/visitor/ExtractPropExprVisitor.h"
 
+#include <ostream>  // for operator<<
+#include <utility>  // for pair
+
+#include "common/base/Base.h"                            // for UNUSED
+#include "common/base/Logging.h"                         // for CheckNotNull
+#include "common/expression/ColumnExpression.h"          // for ColumnExpres...
+#include "common/expression/EdgeExpression.h"            // for EdgeExpression
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/PropertyExpression.h"        // for PropertyExpr...
+#include "common/expression/SubscriptExpression.h"       // for SubscriptExp...
+#include "common/expression/UUIDExpression.h"            // for UUIDExpression
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "common/expression/VariableExpression.h"        // for VariableExpr...
+#include "common/expression/VertexExpression.h"          // for VertexExpres...
+#include "graph/context/ValidateContext.h"               // for ValidateContext
+#include "graph/util/AnonColGenerator.h"                 // for AnonColGener...
+#include "parser/Clauses.h"                              // for YieldColumn
+
 namespace nebula {
+class ConstantExpression;
+
+class ConstantExpression;
+
 namespace graph {
 
 ExtractPropExprVisitor::ExtractPropExprVisitor(

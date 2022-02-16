@@ -6,9 +6,27 @@
 #ifndef META_MERGEZONEPROCESSOR_H
 #define META_MERGEZONEPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/datatypes/HostAddr.h"        // for HostAddr, hash
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ExecResp, MergeZoneReq ...
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;

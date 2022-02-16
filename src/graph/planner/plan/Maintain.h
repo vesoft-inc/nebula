@@ -6,10 +6,23 @@
 #ifndef GRAPH_PLANNER_PLAN_MAINTAIN_H_
 #define GRAPH_PLANNER_PLAN_MAINTAIN_H_
 
+#include <memory>   // for unique_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/thrift/ThriftTypes.h"    // for GraphSpaceID
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode (ptr only), Plan...
 #include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"  // for AlterSchemaItem, IndexFie...
 
 namespace nebula {
+struct PlanNodeDescription;
+
+struct PlanNodeDescription;
+
 namespace graph {
 
 // which would make them in a single and big execution plan
@@ -626,7 +639,7 @@ class CreateFTIndexNode : public SingleInputNode {
                     Kind kind,
                     PlanNode* input,
                     std::string indexName,
-                    nebula::meta::cpp2::FTIndex index)
+                    ::nebula::meta::cpp2::FTIndex index)
       : SingleInputNode(qctx, kind, input),
         indexName_(std::move(indexName)),
         index_(std::move(index)) {}

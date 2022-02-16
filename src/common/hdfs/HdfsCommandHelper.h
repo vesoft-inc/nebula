@@ -6,7 +6,12 @@
 #ifndef COMMON_HDFSCOMMANDHELPER_H
 #define COMMON_HDFSCOMMANDHELPER_H
 
-#include "common/hdfs/HdfsHelper.h"
+#include <stdint.h>  // for int32_t
+
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/hdfs/HdfsHelper.h"  // for HdfsHelper
 
 namespace nebula {
 namespace hdfs {

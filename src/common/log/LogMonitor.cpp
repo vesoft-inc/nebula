@@ -4,6 +4,14 @@
  */
 #include "common/log/LogMonitor.h"
 
+#include <gflags/gflags.h>  // for DEFINE_uint64, DEFINE_...
+#include <glog/logging.h>   // for GLOG_ERROR, GLOG_FATAL
+
+#include <boost/filesystem/operations.hpp>     // for space, space_info
+#include <boost/system/detail/error_code.hpp>  // for error_code
+#include <ostream>                             // for operator<<, basic_ostream
+#include <string>                              // for char_traits, operator<<
+
 namespace nebula {
 
 // default min_warn is 256M, disk freebytes < 256M will change LOG_LEVEL to WARNING

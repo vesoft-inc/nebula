@@ -6,9 +6,17 @@
 #ifndef GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
 #define GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
 
-#include "graph/planner/Planner.h"
+#include <memory>  // for unique_ptr
+
+#include "common/base/StatusOr.h"   // for StatusOr
+#include "graph/planner/Planner.h"  // for Planner
 
 namespace nebula {
+namespace nebula {
+namespace graph {
+struct SubPlan;
+}  // namespace graph
+}  // namespace nebula
 
 class Expression;
 class YieldColumns;
@@ -17,6 +25,7 @@ namespace graph {
 
 struct LookupContext;
 struct AstContext;
+struct SubPlan;
 
 class LookupPlanner final : public Planner {
  public:

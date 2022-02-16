@@ -3,10 +3,23 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/String.h>
+#include <folly/dynamic.h>
+#include <folly/init/Init.h>  // for init
+#include <folly/json.h>
+#include <glog/logging.h>  // for INFO
 #include <gtest/gtest.h>
+#include <stddef.h>
 
-#include "common/base/Base.h"
-#include "common/network/NetworkUtils.h"
+#include <memory>
+#include <set>  // for set
+#include <string>
+#include <utility>  // for move
+#include <vector>
+
+#include "common/base/Logging.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/plugin/fulltext/FTStorageAdapter.h"
 #include "common/plugin/fulltext/FTUtils.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"

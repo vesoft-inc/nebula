@@ -3,10 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/datatypes/HostAddr.h"
+#include <string>  // for allocator, string
+
+#include "common/base/Logging.h"        // for SetStderrLogging
+#include "common/datatypes/HostAddr.h"  // for hash, HostAddr
 
 namespace nebula {
 

@@ -3,25 +3,52 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <errno.h>
+#include <folly/init/Init.h>  // for init
 #include <folly/ssl/Init.h>
-#include <signal.h>
-#include <string.h>
-#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <gflags/gflags.h>  // for SetVersionString, DECLARE_bool
+#include <signal.h>         // for SIGINT, SIGTERM
+#include <stdio.h>          // for fprintf, stderr
+#include <stdlib.h>         // for EXIT_FAILURE, EXIT_SUCCESS
+#include <string.h>         // for strsignal, strcmp
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/network/NetworkUtils.h"
-#include "common/process/ProcessUtils.h"
-#include "common/ssl/SSLConfig.h"
+#include <memory>   // for make_unique, unique_ptr
+#include <ostream>  // for operator<<, basic_ostream::...
+#include <thread>   // for thread
+
+#include "common/base/Base.h"             // for FLOG_ERROR, FLOG_INFO
+#include "common/base/Logging.h"          // for LogMessage, LOG, _LOG_ERROR
+#include "common/base/SignalHandler.h"    // for SignalHandler, SignalHandle...
+#include "common/base/Status.h"           // for operator<<, Status
+#include "common/datatypes/HostAddr.h"    // for HostAddr
+#include "common/network/NetworkUtils.h"  // for NetworkUtils
+#include "common/process/ProcessUtils.h"  // for ProcessUtils
+#include "common/ssl/SSLConfig.h"         // for FLAGS_enable_graph_ssl, FLA...
 #include "common/time/TimezoneInfo.h"
-#include "daemons/SetupLogging.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/service/GraphServer.h"
-#include "graph/service/GraphService.h"
-#include "graph/stats/GraphStats.h"
-#include "version/Version.h"
-#include "webservice/WebService.h"
+#include "daemons/SetupLogging.h"       // for setupLogging
+#include "graph/service/GraphFlags.h"   // for FLAGS_num_netio_threads
+#include "graph/service/GraphServer.h"  // for GraphServer
+#include "graph/stats/GraphStats.h"     // for initGraphStats
+#include "version/Version.h"            // for versionString
+#include "webservice/WebService.h"      // for WebService
+
+namespace nebula {
+namespace graph {
+class GraphService;
+}  // namespace graph
+template <typename T>
+class StatusOr;
+
+namespace fs {
+class FileUtils;
+
+class FileUtils;
+}  // namespace fs
+namespace graph {
+class GraphService;
+}  // namespace graph
+template <typename T>
+class StatusOr;
+}  // namespace nebula
 
 using nebula::ProcessUtils;
 using nebula::Status;
@@ -109,7 +136,7 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
-  nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
+  ::nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
 
   // load the time zone data
   status = nebula::time::Timezone::init();
@@ -127,7 +154,7 @@ int main(int argc, char *argv[]) {
   }
 
   LOG(INFO) << "Starting Graph HTTP Service";
-  auto webSvc = std::make_unique<nebula::WebService>();
+  auto webSvc = std::make_unique<::nebula::WebService>();
   status = webSvc->start();
   if (!status.ok()) {
     return EXIT_FAILURE;

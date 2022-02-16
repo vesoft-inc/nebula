@@ -6,12 +6,74 @@
 #ifndef KVSTORE_LISTENER_H_
 #define KVSTORE_LISTENER_H_
 
-#include "common/base/Base.h"
+#include <gflags/gflags_declare.h>  // for DECLARE_int32
+#include <stdint.h>                 // for int64_t
+
+#include <memory>   // for shared_ptr, uniqu...
+#include <mutex>    // for mutex
+#include <ostream>  // for operator<<, basic...
+#include <set>      // for operator==, set
+#include <string>   // for operator<<, char_...
+#include <tuple>    // for tuple
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Base.h"           // for UNUSED
+#include "common/base/Logging.h"        // for LogMessageFatal, LOG
+#include "common/datatypes/HostAddr.h"  // for operator<<, HostAddr
 #include "common/meta/SchemaManager.h"
-#include "kvstore/Common.h"
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManager
+#include "common/thrift/ThriftTypes.h"          // for LogID, TermID
+#include "interface/gen-cpp2/common_types.h"    // for ErrorCode, ErrorC...
+#include "kvstore/Common.h"                     // for KV
 #include "kvstore/raftex/Host.h"
-#include "kvstore/raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"  // for RaftPart
 #include "kvstore/wal/FileBasedWal.h"
+
+namespace nebula {
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+namespace nebula {
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 DECLARE_int32(cluster_id);
 

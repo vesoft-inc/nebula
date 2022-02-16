@@ -6,9 +6,21 @@
 #ifndef META_GETZONEPROCESSOR_H
 #define META_GETZONEPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for GetZoneResp, GetZoneReq (...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

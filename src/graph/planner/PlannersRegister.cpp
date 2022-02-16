@@ -5,22 +5,26 @@
 
 #include "graph/planner/PlannersRegister.h"
 
-#include "graph/planner/Planner.h"
-#include "graph/planner/SequentialPlanner.h"
-#include "graph/planner/match/ArgumentFinder.h"
-#include "graph/planner/match/LabelIndexSeek.h"
-#include "graph/planner/match/MatchPlanner.h"
-#include "graph/planner/match/PropIndexSeek.h"
-#include "graph/planner/match/ScanSeek.h"
-#include "graph/planner/match/StartVidFinder.h"
-#include "graph/planner/match/VertexIdSeek.h"
-#include "graph/planner/ngql/FetchEdgesPlanner.h"
-#include "graph/planner/ngql/FetchVerticesPlanner.h"
-#include "graph/planner/ngql/GoPlanner.h"
-#include "graph/planner/ngql/LookupPlanner.h"
-#include "graph/planner/ngql/MaintainPlanner.h"
-#include "graph/planner/ngql/PathPlanner.h"
-#include "graph/planner/ngql/SubgraphPlanner.h"
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "graph/planner/Planner.h"                    // for Planner
+#include "graph/planner/SequentialPlanner.h"          // for SequentialPlanner
+#include "graph/planner/match/ArgumentFinder.h"       // for ArgumentFinder
+#include "graph/planner/match/LabelIndexSeek.h"       // for LabelIndexSeek
+#include "graph/planner/match/MatchPlanner.h"         // for MatchPlanner
+#include "graph/planner/match/PropIndexSeek.h"        // for PropIndexSeek
+#include "graph/planner/match/ScanSeek.h"             // for ScanSeek
+#include "graph/planner/match/StartVidFinder.h"       // for StartVidFinder
+#include "graph/planner/match/VertexIdSeek.h"         // for VertexIdSeek
+#include "graph/planner/ngql/FetchEdgesPlanner.h"     // for FetchEdgesPlanner
+#include "graph/planner/ngql/FetchVerticesPlanner.h"  // for FetchVerticesPl...
+#include "graph/planner/ngql/GoPlanner.h"             // for GoPlanner
+#include "graph/planner/ngql/LookupPlanner.h"         // for LookupPlanner
+#include "graph/planner/ngql/MaintainPlanner.h"       // for AlterEdgePlanner
+#include "graph/planner/ngql/PathPlanner.h"           // for PathPlanner
+#include "graph/planner/ngql/SubgraphPlanner.h"       // for SubgraphPlanner
+#include "parser/Sentence.h"                          // for Sentence, Sente...
 
 namespace nebula {
 namespace graph {

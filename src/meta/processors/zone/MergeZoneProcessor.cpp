@@ -5,7 +5,29 @@
 
 #include "meta/processors/zone/MergeZoneProcessor.h"
 
-#include "kvstore/LogEncoder.h"
+#include <folly/Range.h>                    // for Range
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <string.h>                         // for memcpy, size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for find, sort, max, copy
+#include <iterator>       // for insert_iterator, back...
+#include <memory>         // for unique_ptr, make_unique
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ost...
+#include <string>         // for basic_string, string
+#include <unordered_set>  // for unordered_set, unorde...
+
+#include "common/base/EitherOr.h"           // for EitherOr
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, kDefaul...
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/KVStore.h"                // for KVStore
+#include "kvstore/LogEncoder.h"             // for BatchHolder, encodeBa...
+#include "meta/ActiveHostsMan.h"            // for ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doGet
+#include "meta/processors/Common.h"         // for LockUtils
 
 namespace nebula {
 namespace meta {

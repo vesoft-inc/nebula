@@ -5,14 +5,49 @@
 
 #include "storage/transaction/TransactionManager.h"
 
-#include <folly/container/Enumerate.h>
+#include <folly/Format.h>                          // for sformat
+#include <folly/Range.h>                           // for StringPiece
+#include <folly/String.h>                          // for hexlify
+#include <folly/Try.h>                             // for Try::~Try<T>
+#include <folly/Unit.h>                            // for Unit
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolE...
+#include <folly/executors/ThreadPoolExecutor.h>    // for ThreadPoolExe...
+#include <folly/futures/Future-pre.h>              // for valueCallable...
+#include <folly/futures/Future.h>                  // for SemiFuture::~...
+#include <folly/futures/Future.h>                  // for Future, Futur...
+#include <folly/futures/Future.h>                  // for SemiFuture::~...
+#include <folly/futures/Future.h>                  // for Future, Futur...
+#include <folly/futures/Promise.h>                 // for Promise::Prom...
+#include <folly/futures/Promise.h>                 // for PromiseExcept...
+#include <folly/futures/Promise.h>                 // for Promise::Prom...
+#include <folly/futures/Promise.h>                 // for PromiseExcept...
+#include <folly/hash/Hash.h>                       // for hash
+#include <gflags/gflags.h>                         // for DEFINE_int32
+#include <thrift/lib/cpp/util/EnumUtils.h>         // for enumNameSafe
 
-#include "codec/RowWriterV2.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "storage/CommonUtils.h"
-#include "storage/StorageFlags.h"
-#include "storage/transaction/ChainProcessorFactory.h"
+#include <chrono>       // for seconds
+#include <functional>   // for _Bind, bind, _1
+#include <ostream>      // for operator<<
+#include <thread>       // for sleep_for
+#include <type_traits>  // for remove_refere...
+
+#include "clients/meta/MetaClient.h"                    // for MetaClient
+#include "common/base/ErrorOr.h"                        // for error, ok, value
+#include "common/base/Logging.h"                        // for LogMessage, LOG
+#include "common/base/StatusOr.h"                       // for StatusOr
+#include "kvstore/KVIterator.h"                         // for KVIterator
+#include "kvstore/KVStore.h"                            // for KVStore
+#include "kvstore/NebulaStore.h"                        // for NebulaStore
+#include "storage/CommonUtils.h"                        // for StorageEnv
+#include "storage/transaction/ChainBaseProcessor.h"     // for ChainBaseProc...
+#include "storage/transaction/ChainProcessorFactory.h"  // for ChainProcesso...
+#include "storage/transaction/ConsistUtil.h"            // for ConsistUtil
+
+namespace folly {
+class EventBase;
+
+class EventBase;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

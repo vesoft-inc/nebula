@@ -6,14 +6,36 @@
 #ifndef GRAPH_PLANNER_PLAN_MUTATE_H_
 #define GRAPH_PLANNER_PLAN_MUTATE_H_
 
-#include "graph/context/QueryContext.h"
+#include <stdint.h>  // for int64_t
+
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/datatypes/Value.h"       // for Value
+#include "common/thrift/ThriftTypes.h"    // for TagID, GraphSpaceID
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode (ptr only)
 #include "graph/planner/plan/Query.h"
+#include "interface/gen-cpp2/storage_types.h"  // for UpdatedProp, NewEdge
 #include "parser/TraverseSentences.h"
 
 /**
  * All mutate-related nodes would put in this file.
  */
 namespace nebula {
+class EdgeKeyRef;
+class Expression;
+struct PlanNodeDescription;
+
+class EdgeKeyRef;
+class Expression;
+struct PlanNodeDescription;
+
 namespace graph {
 class InsertVertices final : public SingleDependencyNode {
  public:

@@ -5,6 +5,22 @@
 
 #include "kvstore/DiskManager.h"
 
+#include <gflags/gflags.h>             // for DEFINE_int32, DEFINE_u...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>                           // for find
+#include <boost/filesystem/exception.hpp>      // for filesystem_error
+#include <boost/filesystem/operations.hpp>     // for absolute, canonical
+#include <boost/system/detail/error_code.hpp>  // for error_code
+#include <ext/alloc_traits.h>                  // for __alloc_traits<>::valu...
+#include <ostream>                             // for operator<<, basic_ostream
+#include <type_traits>                         // for add_const<>::type
+#include <utility>                             // for move, pair, tuple_elem...
+
+#include "common/base/Logging.h"          // for LogMessageFatal, LOG
+#include "common/base/Status.h"           // for Status
+#include "common/thread/GenericWorker.h"  // for GenericWorker
+
 DEFINE_int32(disk_check_interval_secs, 10, "interval to check free space of data path");
 DEFINE_uint64(minimum_reserved_bytes, 1UL << 30, "minimum reserved bytes of each data path");
 

@@ -5,13 +5,28 @@
 
 #include "graph/executor/logic/LoopExecutor.h"
 
-#include <folly/String.h>
+#include <folly/String.h>  // for stringPrintf
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/common_types.h"
+#include <ostream>  // for operator<<, basic_...
+#include <string>   // for allocator, operator<<
+#include <utility>  // for move
+
+#include "common/base/Status.h"            // for Status
+#include "common/datatypes/Value.h"        // for operator<<, Value
+#include "common/expression/Expression.h"  // for Expression
+#include "graph/context/Iterator.h"        // for Iterator, Iterator...
+#include "graph/context/Result.h"          // for ResultBuilder
+#include "graph/planner/plan/Logic.h"      // for Loop
+
+namespace nebula {
+namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using folly::stringPrintf;
 

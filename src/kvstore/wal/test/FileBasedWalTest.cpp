@@ -3,11 +3,35 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <fcntl.h>                  // for open, O_APPEND, O_WRONLY
+#include <folly/Random.h>           // for Random
+#include <folly/String.h>           // for stringPrintf
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_int32
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <stdint.h>                 // for int32_t
+#include <unistd.h>                 // for close, ftruncate, sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/wal/FileBasedWal.h"
+#include <algorithm>  // for sort
+#include <iterator>   // for reverse_iterator
+#include <map>        // for _Rb_tree_iterator, operat...
+#include <memory>     // for shared_ptr, __shared_ptr_...
+#include <ostream>    // for operator<<
+#include <string>     // for string, operator<, swap
+#include <utility>    // for pair
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"        // for Check_EQImpl, Check_LEImpl
+#include "common/fs/FileUtils.h"        // for FileUtils
+#include "common/fs/TempDir.h"          // for TempDir
+#include "common/thrift/ThriftTypes.h"  // for LogID, TermID, ClusterID
+#include "common/utils/LogIterator.h"   // for LogIterator
+#include "kvstore/wal/FileBasedWal.h"   // for FileBasedWal, FileBasedWa...
+#include "kvstore/wal/WalFileInfo.h"    // for WalFileInfo
 
 DECLARE_int32(wal_ttl);
 

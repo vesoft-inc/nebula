@@ -6,14 +6,27 @@
 #ifndef RAFTEX_HOST_H_
 #define RAFTEX_HOST_H_
 
-#include <folly/futures/Future.h>
-#include <folly/futures/SharedPromise.h>
+#include <folly/Try.h>                    // for Try::~Try<T>
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Promise.h>        // for PromiseException::Promi...
+#include <folly/futures/SharedPromise.h>  // for SharedPromise
+
+#include <condition_variable>  // for condition_variable
+#include <memory>              // for shared_ptr, enable_shar...
+#include <mutex>               // for mutex, lock_guard, uniq...
+#include <ostream>             // for operator<<, basic_ostream
+#include <string>              // for operator<<, char_traits
+#include <tuple>               // for tuple
 
 #include "common/base/Base.h"
-#include "common/base/ErrorOr.h"
+#include "common/base/ErrorOr.h"        // for ErrorOr
+#include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_INFO
+#include "common/datatypes/HostAddr.h"  // for HostAddr
 #include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftTypes.h"  // for LogID, TermID
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/raftex_types.h"  // for AppendLogResponse, Appe...
 
 namespace folly {
 class EventBase;

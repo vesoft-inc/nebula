@@ -5,9 +5,6 @@
 
 #include "codec/RowReader.h"
 
-#include "codec/RowReaderWrapper.h"
-#include "common/base/Base.h"
-
 namespace nebula {
 
 /*********************************************

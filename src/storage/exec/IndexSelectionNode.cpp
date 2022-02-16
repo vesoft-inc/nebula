@@ -3,8 +3,23 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexSelectionNode.h"
+
+#include <fmt/format.h>                        // for format
+#include <folly/Likely.h>                      // for UNLIKELY
+#include <folly/container/F14Map.h>            // for F14BasicMap
+#include <folly/container/F14Set.h>            // for F14FastSet
+#include <folly/container/detail/F14Policy.h>  // for VectorContainerIterator
+
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"  // for Check_EQImpl, DCHECK_EQ
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 IndexSelectionNode::IndexSelectionNode(const IndexSelectionNode& node)
     : IndexNode(node), expr_(node.expr_), colPos_(node.colPos_) {
   ctx_ = std::make_unique<IndexExprContext>(colPos_);

@@ -5,10 +5,19 @@
 
 #ifndef KVSTORE_LOGENCODER_H_
 #define KVSTORE_LOGENCODER_H_
-#include <boost/core/noncopyable.hpp>
+#include <folly/Range.h>  // for StringPiece
+#include <stddef.h>       // for size_t
+#include <stdint.h>       // for int32_t, int64_t
 
-#include "common/cpp/helpers.h"
-#include "kvstore/Common.h"
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <string>                      // for string, basic_string
+#include <tuple>                       // for tuple, make_tuple
+#include <utility>                     // for forward, move, pair
+#include <vector>                      // for vector
+
+#include "common/cpp/helpers.h"         // for NonMovable
+#include "common/datatypes/HostAddr.h"  // for HostAddr
+#include "kvstore/Common.h"             // for KV
 
 namespace nebula {
 namespace kvstore {

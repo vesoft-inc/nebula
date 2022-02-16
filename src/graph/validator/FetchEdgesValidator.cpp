@@ -5,10 +5,36 @@
 
 #include "graph/validator/FetchEdgesValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/util/ValidateUtil.h"
+#include <ostream>        // for operator<<, basic_...
+#include <set>            // for set
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for _Node_const_iterator
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                      // for kDst, kRank, kSrc
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/datatypes/DataSet.h"              // for Row, DataSet
+#include "common/expression/ColumnExpression.h"    // for ColumnExpression
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/EdgeExpression.h"      // for EdgeExpression
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for PropertyExpression
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder
+#include "graph/context/Symbols.h"                 // for ColsDef
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/AnonVarGenerator.h"           // for AnonVarGenerator
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/util/ValidateUtil.h"               // for ValidateUtil
+#include "graph/visitor/DeducePropsVisitor.h"      // for ExpressionProps
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+#include "parser/EdgeKey.h"                        // for EdgeKey, EdgeKeyRef
+#include "parser/TraverseSentences.h"              // for FetchEdgesSentence
 
 namespace nebula {
 namespace graph {
@@ -124,7 +150,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
       ss << "the dst should be type of " << vidType_ << ", but was`" << dst.type() << "'";
       return Status::SemanticError(ss.str());
     }
-    edgeKeys.emplace_back(nebula::Row({std::move(src), ranking, std::move(dst)}));
+    edgeKeys.emplace_back(::nebula::Row({std::move(src), ranking, std::move(dst)}));
   }
   inputVarName = vctx_->anonVarGen()->getVar();
   qctx_->ectx()->setResult(inputVarName, ResultBuilder().value(Value(std::move(edgeKeys))).build());
@@ -142,9 +168,9 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   }
   fetchCtx_->distinct = yield->isDistinct();
   auto &exprProps = fetchCtx_->exprProps;
-  exprProps.insertEdgeProp(edgeType_, nebula::kSrc);
-  exprProps.insertEdgeProp(edgeType_, nebula::kDst);
-  exprProps.insertEdgeProp(edgeType_, nebula::kRank);
+  exprProps.insertEdgeProp(edgeType_, ::nebula::kSrc);
+  exprProps.insertEdgeProp(edgeType_, ::nebula::kDst);
+  exprProps.insertEdgeProp(edgeType_, ::nebula::kRank);
 
   auto size = yield->columns().size();
   outputs_.reserve(size);

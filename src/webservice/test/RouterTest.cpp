@@ -3,12 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/init/Init.h>
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 #include <proxygen/httpserver/RequestHandler.h>
-#include <proxygen/lib/http/HTTPMessage.h>
+#include <proxygen/lib/http/HTTPMessage.h>  // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>   // for HTTPMethod, HTTPMeth...
 
-#include "webservice/Router.h"
+#include <memory>         // for allocator, unique_ptr
+#include <unordered_map>  // for _Node_iterator
+
+#include "common/base/Logging.h"  // for SetStderrLogging
+#include "webservice/Router.h"    // for PathParams, Router
 
 class RouterTest : public ::testing::Test {
  public:

@@ -6,12 +6,27 @@
 #ifndef COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 #define COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 
-#include <boost/algorithm/string.hpp>
+#include <stddef.h>  // for size_t
 
-#include "common/expression/Expression.h"
-#include "common/function/FunctionManager.h"
+#include <algorithm>  // for max
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>  // for iequals
+#include <string>                                // for string, allocator
+#include <vector>                                // for vector
+
+#include "common/base/Logging.h"              // for CheckNotNull, Check_...
+#include "common/base/ObjectPool.h"           // for ObjectPool
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/Value.h"           // for Value
+#include "common/expression/Expression.h"     // for Expression, Expressi...
+#include "common/function/FunctionManager.h"  // for FunctionManager, Fun...
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class ArgumentList final {
  public:

@@ -5,15 +5,20 @@
 
 #include "graph/planner/plan/PlanNode.h"
 
-#include <folly/String.h>
-#include <folly/json.h>
+#include <folly/String.h>   // for stringPrintf
+#include <folly/dynamic.h>  // for dynamic::object, dynamic::in...
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/dynamic.h>  // for dynamic::object, dynamic::in...
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/json.h>     // for toJson
 
-#include <memory>
-#include <vector>
+#include <memory>   // for unique_ptr, operator==, make...
+#include <utility>  // for move
+#include <vector>   // for vector
 
-#include "common/graph/Response.h"
-#include "graph/context/QueryContext.h"
-#include "graph/util/ToJson.h"
+#include "common/graph/Response.h"       // for PlanNodeDescription, Pair
+#include "graph/context/QueryContext.h"  // for QueryContext
+#include "graph/util/ToJson.h"           // for toJson
 
 namespace nebula {
 namespace graph {

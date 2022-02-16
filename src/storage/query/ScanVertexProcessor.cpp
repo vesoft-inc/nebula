@@ -5,11 +5,25 @@
 
 #include "storage/query/ScanVertexProcessor.h"
 
-#include <limits>
+#include <folly/Executor.h>            // for Executor
+#include <folly/futures/Future.h>      // for SemiFuture::releas...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include "common/utils/NebulaKeyUtils.h"
-#include "storage/StorageFlags.h"
-#include "storage/exec/QueryUtils.h"
+#include <limits>         // for numeric_limits
+#include <memory>         // for unique_ptr, allocator
+#include <string>         // for string, basic_string
+#include <type_traits>    // for add_const<>::type
+#include <unordered_set>  // for unordered_set, uno...
+
+#include "common/base/Base.h"                  // for kVid
+#include "common/base/Logging.h"               // for CHECK, COMPACT_GOO...
+#include "storage/BaseProcessor.h"             // for BaseProcessor::han...
+#include "storage/StorageFlags.h"              // for FLAGS_query_concur...
+#include "storage/exec/RelNode.h"              // for RelNode
+#include "storage/exec/TagNode.h"              // for TagNode
+#include "storage/query/QueryBaseProcessor.h"  // for QueryBaseProcessor...
 
 namespace nebula {
 namespace storage {

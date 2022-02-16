@@ -6,15 +6,19 @@
 #ifndef GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
 #define GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
 
-#include <string>
+#include <stdint.h>  // for int64_t, int32_t, uint64_t
+
+#include <string>  // for string
 
 namespace nebula {
 
 struct ProfilingStats;
 struct PlanDescription;
+
 struct PlanNodeDescription;
 
 namespace graph {
+
 class PlanNode;
 
 struct SubPlan {

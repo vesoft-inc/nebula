@@ -5,9 +5,20 @@
 
 #include "storage/transaction/ChainUpdateEdgeRemoteProcessor.h"
 
-#include "storage/mutate/UpdateEdgeProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include <folly/futures/Future.h>                 // for Future::get
+#include <proxygen/httpserver/ResponseBuilder.h>  // for HTTPMethod, HTTPMet...
+#include <thrift/lib/cpp2/FieldRef.h>             // for field_ref
+
+#include <ostream>      // for operator<<
+#include <type_traits>  // for remove_reference...
+
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/utils/NebulaKeyUtils.h"             // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::p...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/mutate/UpdateEdgeProcessor.h"      // for UpdateEdgeProcessor
+#include "storage/transaction/TransactionManager.h"  // for TransactionManager
 
 namespace nebula {
 namespace storage {

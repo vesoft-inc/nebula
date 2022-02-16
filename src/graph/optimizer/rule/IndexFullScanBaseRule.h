@@ -6,16 +6,29 @@
 #ifndef GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
 #define GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
 
-#include "graph/optimizer/OptRule.h"
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only), OptRule
 
 namespace nebula {
+namespace nebula {
+namespace graph {
+class PlanNode;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
+
 class PlanNode;
 
 namespace graph {
+
 class IndexScan;
+class PlanNode;
 }  // namespace graph
 
 namespace opt {
+class OptContext;
 
 class IndexFullScanBaseRule : public OptRule {
  public:

@@ -5,14 +5,32 @@
 
 #include "graph/planner/match/ScanSeek.h"
 
-#include <vector>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
+#include <cstddef>        // for size_t
+#include <cstdint>        // for int32_t
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for _Node_iterator
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                      // for kTag, kVid, UNUSED
+#include "common/base/Status.h"                    // for Status
+#include "common/expression/LogicalExpression.h"   // for LogicalExpression
+#include "common/expression/PropertyExpression.h"  // for InputPropertyExpre...
+#include "common/expression/UnaryExpression.h"     // for UnaryExpression
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/ast/CypherAstContext.h"    // for NodeContext, ScanInfo
+#include "graph/planner/plan/ExecutionPlan.h"      // for SubPlan
+#include "graph/planner/plan/Query.h"              // for ScanVertices, Filter
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "interface/gen-cpp2/storage_types.h"      // for VertexProp
 
 namespace nebula {
+class Expression;
+
+class Expression;
+
 namespace graph {
 
 bool ScanSeek::matchEdge(EdgeContext *edgeCtx) {

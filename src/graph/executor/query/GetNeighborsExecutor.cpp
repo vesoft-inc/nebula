@@ -5,14 +5,39 @@
 
 #include "graph/executor/query/GetNeighborsExecutor.h"
 
-#include <sstream>
+#include <folly/Format.h>              // for sformat
+#include <folly/Try.h>                 // for Try::~Try<T>, Try:...
+#include <folly/futures/Future.h>      // for Future::Future<T>
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include "clients/storage/StorageClient.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Vertex.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/service/GraphFlags.h"
+#include <algorithm>      // for max
+#include <sstream>        // for operator<<, basic_...
+#include <string>         // for string, basic_string
+#include <tuple>          // for get
+#include <unordered_map>  // for unordered_map, ope...
+#include <utility>        // for move, __tuple_elem...
+#include <vector>         // for vector
+
+#include "clients/storage/StorageClient.h"         // for StorageClient, Sto...
+#include "common/base/Logging.h"                   // for LogMessage, COMPAC...
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Value.h"                // for Value
+#include "common/time/Duration.h"                  // for Duration
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator, Iterator...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/ExecutionPlan.h"      // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode
+#include "graph/service/GraphFlags.h"              // for FLAGS_accept_parti...
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for ClientSession
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;

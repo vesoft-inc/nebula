@@ -4,11 +4,25 @@
  */
 #ifndef STORAGE_EXEC_INDEXDEDUPNODE_H
 #define STORAGE_EXEC_INDEXDEDUPNODE_H
-#include "common/datatypes/DataSet.h"
-#include "folly/container/F14Set.h"
-#include "storage/exec/IndexNode.h"
+#include <stddef.h>  // for size_t
+
+#include <memory>   // for unique_ptr
+#include <string>   // for string, basic_string
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/datatypes/DataSet.h"         // for Row
+#include "common/datatypes/List.h"            // for List, hash
+#include "common/thrift/ThriftTypes.h"        // for PartitionID
+#include "folly/container/F14Set.h"           // for F14FastSet
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "storage/exec/IndexNode.h"           // for IndexNode::Result, Inde...
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
 /**
  *
  * IndexDedupNode

@@ -6,11 +6,94 @@
 #ifndef GRAPH_VISITOR_REWRITEVISITOR_H_
 #define GRAPH_VISITOR_REWRITEVISITOR_H_
 
-#include <functional>
+#include <functional>     // for function
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "common/expression/Expression.h"   // for Expression::Kind, Expression
+#include "graph/visitor/ExprVisitorImpl.h"  // for ExprVisitorImpl
 
 namespace nebula {
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class AggregateExpression;
+class ArithmeticExpression;
+class AttributeExpression;
+class BinaryExpression;
+class CaseExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class FunctionCallExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class ListComprehensionExpression;
+class ListExpression;
+class LogicalExpression;
+class MapExpression;
+class PathBuildExpression;
+class PredicateExpression;
+class ReduceExpression;
+class RelationalExpression;
+class SetExpression;
+class SourcePropertyExpression;
+class SubscriptExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class TypeCastingExpression;
+class UUIDExpression;
+class UnaryExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 class RewriteVisitor final : public ExprVisitorImpl {

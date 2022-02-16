@@ -6,6 +6,11 @@
 #ifndef COMMON_ALGORITHM_RESERVOIR_H_
 #define COMMON_ALGORITHM_RESERVOIR_H_
 
+#include <folly/Random.h>  // for Random
+#include <stdint.h>        // for uint64_t
+
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
 #include "common/time/WallClock.h"
 

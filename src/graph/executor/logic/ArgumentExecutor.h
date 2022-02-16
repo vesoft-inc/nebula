@@ -6,10 +6,23 @@
 #ifndef GRAPH_EXECUTOR_LOGIC_ARGUMENTEXECUTOR_H
 #define GRAPH_EXECUTOR_LOGIC_ARGUMENTEXECUTOR_H
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class ArgumentExecutor final : public Executor {
  public:
   ArgumentExecutor(const PlanNode *node, QueryContext *qctx);

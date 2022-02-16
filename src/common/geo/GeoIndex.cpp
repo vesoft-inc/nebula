@@ -8,24 +8,42 @@
 
 #include "common/geo/GeoIndex.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
+#include <folly/Likely.h>  // for UNLIKELY
 #include <s2/mutable_s2shape_index.h>
+#include <s2/s1angle.h>  // for S1Angle
 #include <s2/s2cap.h>
 #include <s2/s2cell.h>
 #include <s2/s2cell_id.h>
+#include <s2/s2cell_id.h>  // for S2CellId, operator==
 #include <s2/s2earth.h>
+#include <s2/s2earth.h>  // for S2Earth
 #include <s2/s2latlng.h>
+#include <s2/s2point.h>         // for S2Point
+#include <s2/s2point_region.h>  // for S2PointRegion
 #include <s2/s2polygon.h>
-#include <s2/s2region_coverer.h>
-#include <s2/s2shape_index_buffered_region.h>
+#include <s2/s2polyline.h>                     // for S2Polyline::Shape, S2P...
+#include <s2/s2region_coverer.h>               // for S2RegionCoverer
+#include <s2/s2shape.h>                        // for S2Shape
+#include <s2/s2shape_index_buffered_region.h>  // for S2ShapeIndexBufferedRe...
 #include <s2/util/units/length-units.h>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include <cstdint>
+#include <cstdint>        // for uint64_t
+#include <functional>     // for hash
+#include <memory>         // for unique_ptr, make_unique
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string
+#include <unordered_set>  // for unordered_set, operator!=
 
-#include "common/datatypes/Geography.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/base/Logging.h"               // for LOG, LogMessageFatal
+#include "common/datatypes/Geography.h"        // for Geography, GeoShape
+#include "common/datatypes/Value.h"            // for Value
+#include "common/utils/IndexKeyUtils.h"        // for IndexKeyUtils
+#include "interface/gen-cpp2/storage_types.h"  // for IndexColumnHint, ScanType
+
+class S2Region;
+
+class S2Region;
 
 namespace nebula {
 namespace geo {

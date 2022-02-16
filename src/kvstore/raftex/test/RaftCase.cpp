@@ -3,17 +3,30 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/Random.h>                          // for Random
+#include <folly/Range.h>                           // for Range
+#include <folly/String.h>                          // for stringPrintf
+#include <folly/init/Init.h>                       // for init
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <gflags/gflags_declare.h>                 // for DECLARE_uint32
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stdint.h>                                // for int32_t
+#include <unistd.h>                                // for sleep, size_t, usleep
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <memory>              // for shared_ptr, __shar...
+#include <mutex>               // for lock_guard, mutex
+#include <ostream>             // for operator<<, basic_...
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                 // for LOG, LogMessage
+#include "common/datatypes/HostAddr.h"           // for HostAddr
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for rebootOneCopy, app...
+#include "kvstore/raftex/test/TestShard.h"       // for TestShard
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

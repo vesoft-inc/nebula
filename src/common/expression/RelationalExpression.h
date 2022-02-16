@@ -6,9 +6,20 @@
 #ifndef COMMON_EXPRESSION_RELATIONALEXPRESSION_H_
 #define COMMON_EXPRESSION_RELATIONALEXPRESSION_H_
 
-#include "common/expression/BinaryExpression.h"
+#include <string>  // for operator<<, string
+
+#include "common/base/ObjectPool.h"              // for ObjectPool
+#include "common/datatypes/Value.h"              // for Value
+#include "common/expression/BinaryExpression.h"  // for BinaryExpression
+#include "common/expression/Expression.h"        // for Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
+
 class RelationalExpression final : public BinaryExpression {
  public:
   static RelationalExpression* makeEQ(ObjectPool* pool,

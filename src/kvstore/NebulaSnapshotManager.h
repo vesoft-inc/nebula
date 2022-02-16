@@ -7,14 +7,24 @@
 #define KVSTORE_NEBULASNAPSHOTMANAGER_H
 
 #include <folly/TokenBucket.h>
+#include <stdint.h>  // for int64_t
+
+#include <string>  // for string
+#include <vector>  // for vector
 
 #include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID, PartitionID
 #include "kvstore/NebulaStore.h"
 #include "kvstore/RateLimiter.h"
-#include "kvstore/raftex/SnapshotManager.h"
+#include "kvstore/raftex/SnapshotManager.h"  // for SnapshotCallback, Snapsh...
 
 namespace nebula {
 namespace kvstore {
+class NebulaStore;
+class RateLimiter;
+
+class NebulaStore;
+class RateLimiter;
 
 class NebulaSnapshotManager : public raftex::SnapshotManager {
  public:

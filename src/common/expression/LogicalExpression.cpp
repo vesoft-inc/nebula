@@ -5,9 +5,12 @@
 
 #include "common/expression/LogicalExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 const Value &LogicalExpression::eval(ExpressionContext &ctx) {
   DCHECK_GE(operands_.size(), 2UL);

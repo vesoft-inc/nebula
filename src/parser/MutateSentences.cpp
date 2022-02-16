@@ -4,6 +4,13 @@
  */
 #include "parser/MutateSentences.h"
 
+#include <utility>  // for move
+
+#include "Clauses.h"                       // for NameLabelList, VerticesClause
+#include "EdgeKey.h"                       // for EdgeKeyRef, EdgeKeys
+#include "common/base/Status.h"            // for Status
+#include "common/expression/Expression.h"  // for Expression
+
 namespace nebula {
 
 std::string PropertyList::toString() const {

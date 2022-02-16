@@ -6,11 +6,51 @@
 #ifndef RAFTEX_TEST_TESTSHARD_H_
 #define RAFTEX_TEST_TESTSHARD_H_
 
+#include <folly/Function.h>                        // for FunctionTraits
+#include <folly/Optional.h>                        // for Optional
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <folly/synchronization/RWSpinLock.h>      // for RWSpinLock, RWSpin...
+#include <stddef.h>                                // for size_t
+#include <stdint.h>                                // for int64_t, int32_t
+
+#include <functional>  // for function
+#include <memory>      // for shared_ptr, __shar...
+#include <ostream>     // for operator<<, basic_...
+#include <string>      // for string, basic_string
+#include <tuple>       // for tuple
+#include <utility>     // for pair, make_pair, move
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
-#include "kvstore/raftex/RaftPart.h"
-#include "kvstore/raftex/RaftexService.h"
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "common/datatypes/HostAddr.h"        // for operator<<, HostAddr
+#include "common/thrift/ThriftTypes.h"        // for TermID, LogID, Par...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "kvstore/raftex/RaftPart.h"          // for RaftPart
+#include "kvstore/raftex/RaftexService.h"     // for RaftexService
+#include "kvstore/raftex/SnapshotManager.h"   // for SnapshotCallback
 
 namespace nebula {
+class LogIterator;
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace nebula {
+class LogIterator;
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
 namespace raftex {
 
 // class RaftexService;

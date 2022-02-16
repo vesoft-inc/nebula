@@ -5,12 +5,11 @@
 
 #include "meta/processors/job/ReportTaskProcessor.h"
 
+#include "interface/gen-cpp2/common_types.h"
 #include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
-
-#include "meta/processors/job/JobManager.h"
 
 void ReportTaskProcessor::process(const cpp2::ReportTaskReq& req) {
   JobManager* jobMgr = JobManager::getInstance();

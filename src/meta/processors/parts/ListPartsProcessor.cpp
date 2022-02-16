@@ -5,8 +5,29 @@
 
 #include "meta/processors/parts/ListPartsProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/admin/AdminClient.h"
+#include <folly/Range.h>                    // for Range
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <gflags/gflags_declare.h>          // for DECLARE_int32
+#include <string.h>                         // for memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for required_field_ref
+
+#include <algorithm>  // for find, max
+#include <memory>     // for allocator_traits<>::v...
+#include <new>        // for operator new
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for string, basic_string
+#include <tuple>      // for tie, tuple, ignore
+
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/base/Status.h"             // for Status
+#include "common/datatypes/HostAddr.h"      // for HostAddr, operator<<
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, kDefaul...
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/KVStore.h"                // for KVStore
+#include "meta/ActiveHostsMan.h"            // for ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doGet
+#include "meta/processors/Common.h"         // for LockUtils
 
 DECLARE_int32(heartbeat_interval_secs);
 

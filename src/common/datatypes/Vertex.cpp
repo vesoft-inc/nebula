@@ -5,9 +5,10 @@
 
 #include "common/datatypes/Vertex.h"
 
-#include <folly/DynamicConverter.h>
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
+#include <folly/dynamic.h>    // for dynamic::dynamic, dynamic::object
+#include <folly/hash/Hash.h>  // for fnv64
+
+#include <algorithm>  // for transform
 
 namespace nebula {
 

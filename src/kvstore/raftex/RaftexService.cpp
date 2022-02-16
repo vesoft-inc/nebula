@@ -5,12 +5,48 @@
 
 #include "kvstore/raftex/RaftexService.h"
 
-#include <folly/ScopeGuard.h>
+#include <folly/ScopeGuard.h>                      // for operator+, SCOPE_EXIT
+#include <folly/SocketAddress.h>                   // for SocketAddress
+#include <folly/Try.h>                             // for Try, Try::~Try<T>
+#include <folly/Unit.h>                            // for Unit
+#include <folly/executors/GlobalExecutor.h>        // for getGlobalCPUExecutor
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Promise.h>                 // for PromiseException::...
+#include <folly/io/async/EventBase.h>              // for EventBase
+#include <folly/io/async/EventBaseManager.h>       // for EventBaseManager
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref
+#include <thrift/lib/cpp2/async/AsyncProcessor.h>  // for HandlerCallback
+#include <thrift/lib/cpp2/server/ThriftServer.h>   // for ThriftServer
 
-#include "common/base/Base.h"
-#include "common/base/ErrorOr.h"
-#include "common/ssl/SSLConfig.h"
-#include "kvstore/raftex/RaftPart.h"
+#include <chrono>     // for microseconds, seconds
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_...
+#include <thread>     // for sleep_for
+
+#include "common/base/Logging.h"              // for LogMessage, LOG
+#include "common/ssl/SSLConfig.h"             // for sslContextConfig
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCo...
+#include "interface/gen-cpp2/raftex_types.h"  // for AppendLogRequest
+#include "kvstore/raftex/RaftPart.h"          // for RaftPart
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace apache {
+namespace thrift {
+namespace concurrency {
+class ThreadManager;
+
+class ThreadManager;
+}  // namespace concurrency
+}  // namespace thrift
+}  // namespace apache
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
 
 namespace nebula {
 namespace raftex {

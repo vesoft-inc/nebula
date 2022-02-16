@@ -6,17 +6,20 @@
 #ifndef GRAPH_OPTIMIZER_OPTCONTEXT_H_
 #define GRAPH_OPTIMIZER_OPTCONTEXT_H_
 
-#include <boost/core/noncopyable.hpp>
-#include <memory>
-#include <unordered_map>
+#include <stdint.h>  // for int64_t
 
-#include "common/cpp/helpers.h"
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <memory>                      // for unique_ptr
+#include <unordered_map>               // for unordered_map
+
+#include "common/cpp/helpers.h"  // for NonMovable
 
 namespace nebula {
 
 class ObjectPool;
 
 namespace graph {
+
 class QueryContext;
 }  // namespace graph
 

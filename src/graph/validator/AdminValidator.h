@@ -6,14 +6,25 @@
 #ifndef GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 #define GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 
+#include <string>
+#include <vector>
+
 #include "clients/meta/MetaClient.h"
+#include "common/base/Status.h"
+#include "common/datatypes/Value.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
+#include "common/thrift/ThriftTypes.h"
 #include "graph/validator/Validator.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/AdminSentences.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
+class Sentence;
+
 namespace graph {
+class QueryContext;
+
 class CreateSpaceValidator final : public Validator {
  public:
   CreateSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {

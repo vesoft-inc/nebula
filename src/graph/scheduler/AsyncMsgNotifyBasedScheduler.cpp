@@ -5,6 +5,45 @@
 
 #include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 
+#include <folly/Try.h>                 // for Try::~Try<T>, Try
+#include <folly/futures/Future-pre.h>  // for valueCallableResult...
+#include <folly/futures/Future.h>      // for Future::Future<T>
+#include <folly/futures/Promise.h>     // for Promise::~Promise<T>
+#include <folly/futures/Promise.h>     // for Promise, PromiseExc...
+#include <folly/futures/Promise.h>     // for Promise::~Promise<T>
+#include <folly/futures/Promise.h>     // for Promise, PromiseExc...
+#include <gflags/gflags_declare.h>     // for DECLARE_bool
+
+#include <algorithm>      // for max, copy
+#include <atomic>         // for atomic, memory_orde...
+#include <cstdint>        // for int64_t, uint64_t
+#include <limits>         // for numeric_limits
+#include <ostream>        // for operator<<, basic_o...
+#include <queue>          // for queue
+#include <set>            // for set, operator!=
+#include <type_traits>    // for remove_reference<>:...
+#include <unordered_map>  // for unordered_map, oper...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/base/Logging.h"                  // for COMPACT_GOOGLE_LOG_...
+#include "common/datatypes/Value.h"               // for operator<<, Value
+#include "graph/context/ExecutionContext.h"       // for ExecutionContext
+#include "graph/context/QueryContext.h"           // for QueryContext
+#include "graph/context/Symbols.h"                // for Variable, SymbolTable
+#include "graph/executor/Executor.h"              // for Executor
+#include "graph/executor/logic/LoopExecutor.h"    // for LoopExecutor
+#include "graph/executor/logic/SelectExecutor.h"  // for SelectExecutor
+#include "graph/planner/plan/ExecutionPlan.h"     // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"          // for PlanNode, PlanNode:...
+#include "graph/service/RequestContext.h"         // for RequestContext
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+
 DECLARE_bool(enable_lifetime_optimize);
 
 namespace nebula {

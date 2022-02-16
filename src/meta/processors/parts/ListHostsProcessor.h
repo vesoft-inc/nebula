@@ -6,9 +6,27 @@
 #ifndef META_LISTHOSTSPROCESSOR_H_
 #define META_LISTHOSTSPROCESSOR_H_
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, PartitionID
+#include "common/utils/MetaKeyUtils.h"        // for LeaderParts
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ListHostsResp, HostItem
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {

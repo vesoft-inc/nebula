@@ -2,15 +2,45 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <gtest/gtest.h>
+#include <folly/container/F14Set.h>                // for F14FastSet
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/init/Init.h>                       // for init
+#include <gflags/gflags_declare.h>                 // for DECLARE_int32
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stdint.h>                                // for int32_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, optiona...
 
-#include "clients/meta/MetaClient.h"
-#include "common/fs/TempDir.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "mock/MockCluster.h"
-#include "storage/index/LookupProcessor.h"
-#include "storage/query/GetNeighborsProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <atomic>         // for atomic
+#include <memory>         // for allocator, unique_ptr
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"              // for MetaClient, MetaCl...
+#include "common/base/Base.h"                     // for kDst, kRank, kSrc
+#include "common/base/Logging.h"                  // for SetStderrLogging
+#include "common/base/StatusOr.h"                 // for StatusOr
+#include "common/datatypes/DataSet.h"             // for DataSet
+#include "common/datatypes/HostAddr.h"            // for HostAddr
+#include "common/datatypes/Value.h"               // for Value
+#include "common/fs/TempDir.h"                    // for TempDir
+#include "common/meta/IndexManager.h"             // for IndexManager
+#include "common/meta/SchemaManager.h"            // for SchemaManager
+#include "common/thrift/ThriftTypes.h"            // for VertexID, EdgeType
+#include "interface/gen-cpp2/common_types.h"      // for SchemaID, ErrorCode
+#include "interface/gen-cpp2/storage_types.h"     // for IndexColumnHint
+#include "mock/MockCluster.h"                     // for MockCluster
+#include "storage/CommonUtils.h"                  // for StorageEnv
+#include "storage/index/LookupProcessor.h"        // for LookupProcessor
+#include "storage/query/GetNeighborsProcessor.h"  // for GetNeighborsProcessor
+#include "storage/test/QueryTestUtils.h"          // for QueryTestUtils
 
 DECLARE_int32(check_plan_killed_frequency);
 namespace nebula {

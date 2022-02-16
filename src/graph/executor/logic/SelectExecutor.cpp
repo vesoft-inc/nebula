@@ -5,13 +5,24 @@
 
 #include "graph/executor/logic/SelectExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
+#include <memory>   // for allocator
+#include <utility>  // for move
+
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/Value.h"                // for Value
+#include "common/expression/Expression.h"          // for Expression
+#include "graph/context/Iterator.h"                // for Iterator, Iterator...
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder
+#include "graph/planner/plan/Logic.h"              // for Select
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
 
 SelectExecutor::SelectExecutor(const PlanNode* node, QueryContext* qctx)
     : Executor("SelectExecutor", node, qctx) {}

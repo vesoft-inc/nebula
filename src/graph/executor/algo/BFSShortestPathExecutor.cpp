@@ -5,7 +5,23 @@
 
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 
-#include "graph/planner/plan/Algo.h"
+#include <algorithm>      // for max
+#include <ostream>        // for operator<<, basic_ostream
+#include <string>         // for string, operator<<, basi...
+#include <unordered_map>  // for operator!=, unordered_mu...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_INFO
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row, DataSet
+#include "common/datatypes/Edge.h"           // for Edge, operator<<
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Algo.h"         // for BFSShortestPath
+#include "graph/planner/plan/PlanNode.h"     // for PlanNode
 
 namespace nebula {
 namespace graph {

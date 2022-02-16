@@ -5,7 +5,29 @@
 
 #include "meta/processors/admin/RestoreProcessor.h"
 
-#include "common/fs/FileUtils.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <stdint.h>                         // for uint32_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <unistd.h>                         // for unlink
+
+#include <algorithm>  // for max
+#include <atomic>     // for atomic
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for operator<<, basic_string
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"            // for error, ok, value
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, kDefaul...
+#include "kvstore/Common.h"                 // for KV
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/KVStore.h"                // for KVStore
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"         // for LockUtils
 
 namespace nebula {
 namespace meta {

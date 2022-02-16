@@ -6,13 +6,40 @@
 #ifndef STORAGE_HTTP_STORAGEHTTPINGESTHANDLER_H_
 #define STORAGE_HTTP_STORAGEHTTPINGESTHANDLER_H_
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+
+#include <memory>  // for unique_ptr
 
 #include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
 #include "kvstore/KVStore.h"
-#include "webservice/Common.h"
+#include "webservice/Common.h"  // for HttpCode, HttpCode:...
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+}  // namespace nebula
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace storage {
 
 using nebula::HttpCode;

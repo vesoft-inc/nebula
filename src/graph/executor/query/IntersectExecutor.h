@@ -6,10 +6,24 @@
 #ifndef GRAPH_EXECUTOR_QUERY_INTERSECTEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_INTERSECTEXECUTOR_H_
 
-#include "graph/executor/query/SetExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "graph/executor/query/SetExecutor.h"  // for SetExecutor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class IntersectExecutor : public SetExecutor {
  public:

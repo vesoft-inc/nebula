@@ -6,10 +6,25 @@
 #ifndef GRAPH_PLANNER_PLAN_ALGO_H_
 #define GRAPH_PLANNER_PLAN_ALGO_H_
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/PlanNode.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint32_t, uint8_t
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <string>     // for string, basic_string
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/base/Status.h"           // for Status
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode (ptr only), Sing...
 
 namespace nebula {
+struct PlanNodeDescription;
+
+struct PlanNodeDescription;
+
 namespace graph {
 class ProduceSemiShortestPath : public SingleInputNode {
  public:

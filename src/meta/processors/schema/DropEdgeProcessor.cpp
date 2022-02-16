@@ -5,6 +5,21 @@
 
 #include "meta/processors/schema/DropEdgeProcessor.h"
 
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <new>        // for operator new
+#include <ostream>    // for operator<<, basic_ost...
+
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, EntryType
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doGet
+#include "meta/processors/Common.h"         // for LockUtils
+
 namespace nebula {
 namespace meta {
 

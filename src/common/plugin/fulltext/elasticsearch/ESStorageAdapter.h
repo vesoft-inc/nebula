@@ -6,13 +6,22 @@
 #ifndef NEBULA_PLUGIN_ESSTORAGEADAPTER_H
 #define NEBULA_PLUGIN_ESSTORAGEADAPTER_H
 
-#include <gtest/gtest_prod.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
 
-#include "common/base/StatusOr.h"
-#include "common/plugin/fulltext/FTStorageAdapter.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "common/plugin/fulltext/FTStorageAdapter.h"  // for FTStorageAdapter
 
 namespace nebula {
 namespace plugin {
+struct DocItem;
+struct HttpClient;
+
+struct DocItem;
+struct HttpClient;
 
 class ESStorageAdapter final : public FTStorageAdapter {
   FRIEND_TEST(FulltextPluginTest, ESPutTest);

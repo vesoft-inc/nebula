@@ -6,6 +6,10 @@
 #ifndef GRAPH_PLANNER_MATCHSOLVER_H_
 #define GRAPH_PLANNER_MATCHSOLVER_H_
 
+#include <string>
+#include <unordered_map>
+
+#include "common/base/Status.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
@@ -14,9 +18,16 @@
 #include "graph/planner/Planner.h"
 
 namespace nebula {
+class Expression;
+class MapExpression;
+
 namespace graph {
 
 struct AstContext;
+class PlanNode;
+class QueryContext;
+struct SpaceInfo;
+struct SubPlan;
 
 class MatchSolver final {
  public:

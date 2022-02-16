@@ -6,9 +6,12 @@
 #ifndef PARSER_USERSENTENCES_H_
 #define PARSER_USERSENTENCES_H_
 
-#include "interface/gen-cpp2/meta_types.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string, basic_string
+
+#include "interface/gen-cpp2/meta_types.h"  // for RoleType
 #include "parser/Clauses.h"
-#include "parser/Sentence.h"
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 
 namespace nebula {
 

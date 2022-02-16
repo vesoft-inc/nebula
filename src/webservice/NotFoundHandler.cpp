@@ -7,8 +7,17 @@
 
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-#include "common/base/Base.h"
+#include <ostream>
+
+#include "common/base/Logging.h"
 #include "webservice/Common.h"
+
+namespace folly {
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
 
 namespace nebula {
 

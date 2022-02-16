@@ -6,15 +6,27 @@
 #ifndef CODEC_ROWREADERV2_H_
 #define CODEC_ROWREADERV2_H_
 
-#include <gtest/gtest_prod.h>
+#include <folly/Range.h>       // for StringPiece
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stddef.h>            // for size_t
+#include <stdint.h>            // for int64_t, int32_t
 
-#include "codec/RowReader.h"
+#include <string>  // for string
+
+#include "codec/RowReader.h"  // for RowReader
 #include "common/base/Base.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "common/meta/SchemaProviderIf.h"
 
 namespace nebula {
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
 
 class RowReaderWrapper;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
 
 /**
  * This class decodes the data from version 2.0

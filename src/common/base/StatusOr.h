@@ -5,11 +5,16 @@
 
 #ifndef COMMON_BASE_STATUSOR_H_
 #define COMMON_BASE_STATUSOR_H_
+#include <type_traits>
+#include <utility>
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 
 namespace nebula {
+template <typename T>
+static constexpr auto is_copy_or_move_constructible_v =
+    std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>;
 
 template <typename T>
 class StatusOr final {
@@ -47,7 +52,7 @@ class StatusOr final {
   // e.g. convertible but not constructible.
   template <typename U>
   static constexpr bool is_initializable_v =
-      is_constructible_v<T, U> &&std::is_convertible<U, T>::value && !is_status_or_v<U> &&
+      std::is_constructible_v<T, U> &&std::is_convertible<U, T>::value && !is_status_or_v<U> &&
       !is_status_v<U>;
 
   // Assert that `T' must be copy/move constructible

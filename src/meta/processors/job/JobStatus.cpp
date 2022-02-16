@@ -5,7 +5,7 @@
 
 #include "meta/processors/job/JobStatus.h"
 
-#include <folly/String.h>
+#include <limits.h>  // for INT_MIN
 
 namespace nebula {
 namespace meta {

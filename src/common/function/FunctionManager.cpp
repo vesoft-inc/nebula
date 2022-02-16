@@ -5,26 +5,39 @@
 
 #include "FunctionManager.h"
 
-#include <boost/algorithm/string/replace.hpp>
+#include <bits/std_abs.h>  // for abs
+#include <folly/Conv.h>    // for to
+#include <folly/Random.h>  // for Random
+#include <folly/Range.h>   // for StringPiece, Range
+#include <folly/String.h>  // for join, ltrimWhitespace
+#include <stdint.h>        // for int64_t, INT64_MAX
+#include <strings.h>       // for size_t, strcasecmp
 
-#include "common/base/Base.h"
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Geography.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Path.h"
-#include "common/datatypes/Set.h"
-#include "common/datatypes/Vertex.h"
-#include "common/expression/Expression.h"
-#include "common/geo/GeoFunction.h"
-#include "common/geo/io/wkb/WKBReader.h"
-#include "common/geo/io/wkb/WKBWriter.h"
-#include "common/geo/io/wkt/WKTReader.h"
-#include "common/geo/io/wkt/WKTWriter.h"
-#include "common/thrift/ThriftTypes.h"
-#include "common/time/TimeUtils.h"
-#include "common/time/WallClock.h"
+#include <algorithm>                           // for max, reverse, transform
+#include <boost/algorithm/string/replace.hpp>  // for replace_all_copy
+#include <cctype>                              // for tolower, toupper
+#include <cmath>                               // for sqrt, cbrt, ceil, exp2
+#include <cstdlib>                             // for abs, size_t
+#include <iterator>                            // for distance
+#include <limits>                              // for numeric_limits
+#include <ostream>                             // for operator<<, stringstream
+#include <set>                                 // for operator!=, set
+#include <type_traits>                         // for remove_reference<>::type
+
+#include "common/base/Base.h"            // for UNUSED
+#include "common/base/Logging.h"         // for LOG, LogMessage, _LOG_...
+#include "common/datatypes/DataSet.h"    // for path
+#include "common/datatypes/Date.h"       // for operator<<
+#include "common/datatypes/Edge.h"       // for Edge
+#include "common/datatypes/Geography.h"  // for Geography, Coordinate
+#include "common/datatypes/List.h"       // for List
+#include "common/datatypes/Map.h"        // for Map
+#include "common/datatypes/Path.h"       // for pathPath
+#include "common/datatypes/Set.h"        // for pathPath
+#include "common/datatypes/Vertex.h"     // for Vertex
+#include "common/geo/GeoFunction.h"      // for GeoFunction
+#include "common/time/TimeUtils.h"       // for TimeUtils
+#include "common/time/WallClock.h"       // for WallClock
 
 namespace nebula {
 

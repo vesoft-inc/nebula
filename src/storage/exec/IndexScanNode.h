@@ -4,19 +4,55 @@
  */
 #ifndef STORAGE_EXEC_INDEXSCANNODE_H
 #define STORAGE_EXEC_INDEXSCANNODE_H
-#include <gtest/gtest_prod.h>
+#include <folly/Range.h>             // for StringPiece, Range
+#include <folly/container/F14Set.h>  // for F14FastSet
+#include <gtest/gtest_prod.h>        // for FRIEND_TEST
+#include <sys/types.h>               // for size_t, u_short
 
-#include <cstring>
-#include <functional>
+#include <algorithm>   // for min
+#include <bitset>      // for bitset
+#include <cstdint>     // for int64_t
+#include <cstring>     // for size_t, memcmp
+#include <functional>  // for function
+#include <memory>      // for unique_ptr, shared_ptr
+#include <string>      // for string, basic_string
+#include <tuple>       // for tuple
+#include <utility>     // for move, pair
+#include <vector>      // for vector
 
 #include "common/base/Base.h"
-#include "common/datatypes/DataSet.h"
+#include "common/base/Logging.h"        // for CHECK_GE, CHECK_LE
+#include "common/datatypes/DataSet.h"   // for Row
+#include "common/datatypes/Value.h"     // for Value
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "common/utils/IndexKeyUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/utils/Types.h"                // for IndexID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"     // for IndexItem (ptr only)
+#include "interface/gen-cpp2/storage_types.h"  // for IndexColumnHint
+#include "kvstore/KVIterator.h"                // for KVIterator
 #include "storage/CommonUtils.h"
-#include "storage/exec/IndexNode.h"
+#include "storage/exec/IndexNode.h"  // for Map, IndexNode, Set
+
 namespace nebula {
+namespace meta {
+class NebulaSchemaProvider;
+class SchemaProviderIf;
+}  // namespace meta
+namespace storage {
+struct RuntimeContext;
+}  // namespace storage
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+namespace meta {
+class NebulaSchemaProvider;
+class SchemaProviderIf;
+}  // namespace meta
+
 namespace storage {
 
 /**
@@ -127,6 +163,8 @@ namespace storage {
 
 class Path;
 class QualifiedStrategySet;
+struct RuntimeContext;
+
 class IndexScanNode : public IndexNode {
   FRIEND_TEST(IndexScanTest, Base);
   FRIEND_TEST(IndexScanTest, Vertex);

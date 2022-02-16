@@ -7,13 +7,34 @@
 #define COMMON_STATS_STATSMANAGER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/Range.h>
+#include <folly/stats/BucketedTimeSeries.h>
+#include <folly/stats/Histogram.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
+#include <folly/synchronization/RWSpinLock.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <chrono>
+#include <initializer_list>
+#include <memory>
+#include <mutex>
+#include <ostream>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "common/base/Base.h"
+#include "common/base/Logging.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/time/WallClock.h"
+
+namespace folly {
+struct dynamic;
+}  // namespace folly
 
 namespace nebula {
 namespace stats {

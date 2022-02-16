@@ -5,11 +5,32 @@
 
 #include "graph/optimizer/rule/MergeGetNbrsAndProjectRule.h"
 
-#include "common/expression/PropertyExpression.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for InputPropertyExpre...
+#include "graph/optimizer/OptGroup.h"              // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for GetNeighbors, Project
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::Expression;
 using nebula::InputPropertyExpression;

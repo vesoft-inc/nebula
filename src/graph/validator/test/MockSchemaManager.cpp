@@ -5,7 +5,11 @@
 
 #include "graph/validator/test/MockSchemaManager.h"
 
-#include <memory>
+#include <algorithm>  // for max
+#include <memory>     // for shared_ptr, __shared_p...
+
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+#include "interface/gen-cpp2/common_types.h"   // for PropertyType, Property...
 
 namespace nebula {
 namespace graph {

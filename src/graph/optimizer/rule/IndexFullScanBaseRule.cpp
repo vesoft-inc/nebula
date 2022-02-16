@@ -5,14 +5,26 @@
 
 #include "graph/optimizer/rule/IndexFullScanBaseRule.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Scan.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+#include <memory>              // for __shared_ptr_access
+#include <string>              // for string, basic_string
+#include <type_traits>         // for remove_reference<>::type
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "clients/meta/MetaClient.h"           // for MetaClient
+#include "common/base/Status.h"                // for NG_RETURN_IF_ERROR
+#include "graph/context/QueryContext.h"        // for QueryContext
+#include "graph/optimizer/OptContext.h"        // for OptContext
+#include "graph/optimizer/OptGroup.h"          // for OptGroupNode
+#include "graph/optimizer/OptRule.h"           // for OptRule::TransformResult
+#include "graph/optimizer/OptimizerUtils.h"    // for OptimizerUtils
+#include "graph/planner/plan/Query.h"          // for IndexScan, IndexScan::...
+#include "interface/gen-cpp2/meta_types.h"     // for IndexItem
+#include "interface/gen-cpp2/storage_types.h"  // for IndexQueryContext
 
 using nebula::graph::IndexScan;
 using nebula::graph::OptimizerUtils;

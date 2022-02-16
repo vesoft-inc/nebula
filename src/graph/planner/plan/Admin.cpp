@@ -6,9 +6,14 @@
 
 #include "graph/planner/plan/Admin.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Conv.h>                     // for to
+#include <folly/dynamic.h>                  // for dynamic::dynamic, dynamic...
+#include <folly/json.h>                     // for toJson
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "graph/util/ToJson.h"
+#include "common/expression/Expression.h"  // for Expression
+#include "common/graph/Response.h"         // for PlanNodeDescription
+#include "graph/util/ToJson.h"             // for toJson
 
 namespace nebula {
 namespace graph {

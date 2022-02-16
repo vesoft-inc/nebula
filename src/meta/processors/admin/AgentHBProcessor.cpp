@@ -5,10 +5,27 @@
 
 #include "meta/processors/admin/AgentHBProcessor.h"
 
-#include "common/time/WallClock.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/MetaVersionMan.h"
+#include <folly/Format.h>                   // for sformat
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max
+#include <string>         // for operator<<, operator==
+#include <type_traits>    // for add_const<>::type
+#include <unordered_map>  // for unordered_map, operator==
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/datatypes/HostAddr.h"        // for HostAddr, hash, operator<<
+#include "common/time/Duration.h"             // for Duration
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...
+#include "common/utils/Utils.h"               // for Utils
+#include "interface/gen-cpp2/common_types.h"  // for DirInfo, ErrorCode, Err...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "kvstore/Part.h"                     // for Part
+#include "meta/ActiveHostsMan.h"              // for ActiveHostsMan, HostInfo
 
 namespace nebula {
 namespace meta {

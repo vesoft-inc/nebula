@@ -6,15 +6,30 @@
 #ifndef META_KVJOBDESCRIPTION_H_
 #define META_KVJOBDESCRIPTION_H_
 
-#include <gtest/gtest_prod.h>
+#include <folly/Range.h>       // for StringPiece
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int64_t, int32_t
+
+#include <string>  // for string, basic_string
+#include <tuple>   // for tuple
+#include <vector>  // for vector, operator==
 
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/thrift/ThriftTypes.h"        // for JobID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for AdminCmd, JobDesc, JobS...
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/JobStatus.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class JobDescription {

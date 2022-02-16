@@ -6,13 +6,63 @@
 #ifndef GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_
 #define GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_
 
-#include "common/base/Status.h"
-#include "common/thrift/ThriftTypes.h"
-#include "graph/visitor/ExprVisitorImpl.h"
+#include <folly/Range.h>  // for StringPiece, operator<
 
+#include <set>            // for set
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"             // for Status
+#include "common/thrift/ThriftTypes.h"      // for TagID, EdgeType, GraphSpa...
+#include "graph/visitor/ExprVisitorImpl.h"  // for ExprVisitorImpl
 namespace nebula {
+namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class PropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+}  // namespace nebula
 
 class Expression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class PropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
 
 namespace graph {
 

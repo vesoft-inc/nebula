@@ -6,11 +6,28 @@
 #ifndef STORAGE_QUERY_GETPROPPROCESSOR_H_
 #define STORAGE_QUERY_GETPROPPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
 #include <gtest/gtest_prod.h>
 
+#include <utility>  // for move, pair
+#include <vector>   // for vector
+
 #include "common/base/Base.h"
-#include "storage/exec/StoragePlan.h"
-#include "storage/query/QueryBaseProcessor.h"
+#include "common/datatypes/DataSet.h"          // for DataSet, Row
+#include "common/thrift/ThriftTypes.h"         // for PartitionID, VertexID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for GetPropResponse, GetPr...
+#include "storage/CommonUtils.h"               // for RuntimeContext, Storag...
+#include "storage/exec/StoragePlan.h"          // for StoragePlan
+#include "storage/query/QueryBaseProcessor.h"  // for QueryBaseProcessor
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

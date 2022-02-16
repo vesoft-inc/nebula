@@ -6,11 +6,22 @@
 #ifndef WAL_ATOMICLOGBUFFER_H_
 #define WAL_ATOMICLOGBUFFER_H_
 
-#include <folly/lang/Aligned.h>
-#include <gtest/gtest_prod.h>
+#include <folly/Likely.h>        // for UNLIKELY
+#include <folly/Range.h>         // for StringPiece
+#include <folly/lang/Aligned.h>  // for cacheline_aligned
+#include <gtest/gtest_prod.h>    // for FRIEND_TEST
+#include <stdint.h>              // for int32_t
 
-#include "common/thrift/ThriftTypes.h"
-#include "common/utils/LogIterator.h"
+#include <algorithm>  // for min
+#include <array>      // for array, array<>::value_type
+#include <atomic>     // for atomic, atomic_int, memory_or...
+#include <memory>     // for shared_ptr, __shared_ptr_access
+#include <string>     // for string, basic_string
+#include <utility>    // for move
+
+#include "common/base/Logging.h"        // for CheckNotNull, CHECK_GE, CHECK_LE
+#include "common/thrift/ThriftTypes.h"  // for LogID, ClusterID, TermID
+#include "common/utils/LogIterator.h"   // for LogIterator
 
 namespace nebula {
 namespace wal {

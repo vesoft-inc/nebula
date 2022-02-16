@@ -5,7 +5,13 @@
 
 #include "graph/planner/plan/Algo.h"
 
-#include "graph/util/ToJson.h"
+#include <folly/json.h>  // for toJson
+
+#include "common/base/Logging.h"    // for COMPACT_GOOGLE_LOG_FATAL, DCHECK
+#include "common/graph/Response.h"  // for PlanNodeDescription
+#include "graph/context/Symbols.h"  // for Variable, SymbolTable
+#include "graph/util/ToJson.h"      // for toJson
+
 namespace nebula {
 namespace graph {
 

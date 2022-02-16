@@ -2,7 +2,22 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "common/expression/test/TestBase.h"
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+
+#include <cmath>          // for sqrt, exp, log
+#include <string>         // for string, allocator
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/datatypes/Path.h"                     // for Step, Path
+#include "common/datatypes/Value.h"                    // for Value, Value::...
+#include "common/datatypes/Vertex.h"                   // for Vertex
+#include "common/expression/ConstantExpression.h"      // for ConstantExpres...
+#include "common/expression/FunctionCallExpression.h"  // for FunctionCallEx...
+#include "common/expression/test/TestBase.h"           // for args_, TEST_FU...
 
 namespace nebula {
 

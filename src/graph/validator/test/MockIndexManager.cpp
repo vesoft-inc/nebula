@@ -5,8 +5,13 @@
 
 #include "graph/validator/test/MockIndexManager.h"
 
-#include <memory>
-#include <vector>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, required_fie...
+
+#include <algorithm>  // for max
+#include <memory>     // for shared_ptr, make_shared
+#include <vector>     // for vector
+
+#include "interface/gen-cpp2/common_types.h"  // for SchemaID, PropertyType
 
 // tag index:
 //     person()

@@ -4,13 +4,17 @@
  */
 
 #include <folly/Benchmark.h>
+#include <folly/Range.h>
 #include <folly/init/Init.h>
 #include <folly/logging/FileHandlerFactory.h>
 #include <folly/logging/Init.h>
+#include <folly/logging/LogHandlerFactory.h>
+#include <folly/logging/LogStreamProcessor.h>
 #include <folly/logging/LoggerDB.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #include <iostream>
+#include <memory>
 
 #define LOG_SOMETHING(iters)            \
   for (int64_t i = 0; i < iters; i++) { \
@@ -42,12 +46,6 @@ static void xlogRegistFileHandler() {
   folly::initLogging(";default=file:path=/tmp/logging_bm.log");
 }
 
-/***************************
- *
- * <glog/logging.h> native
- *
- **************************/
-#include <glog/logging.h>
 void loggingUsingGlog(int64_t iters) {
   LOG_SOMETHING(iters);
 }
@@ -58,11 +56,13 @@ void loggingUsingGlog(int64_t iters) {
  *
  **************************/
 #include "common/base/Logging.h"
+
 void loggingOptimized(int64_t iters) {
   LOG_SOMETHING(iters);
 }
 
 #include <folly/logging/xlog.h>
+
 void loggingUsingXlog(int64_t iters) {
   XLOG_SOMETHING(iters);
 }

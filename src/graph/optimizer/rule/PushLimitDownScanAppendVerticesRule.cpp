@@ -5,10 +5,31 @@
 
 #include "graph/optimizer/rule/PushLimitDownScanAppendVerticesRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <cstdint>  // for int32_t, int64_t
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Base.h"                      // for kVid
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for PropertyExpression
+#include "graph/optimizer/OptGroup.h"              // for OptGroupNode, OptG...
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for ScanVertices, Appe...
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::AppendVertices;
 using nebula::graph::Limit;

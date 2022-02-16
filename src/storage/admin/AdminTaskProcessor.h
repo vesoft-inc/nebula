@@ -6,15 +6,21 @@
 #ifndef STORAGE_ADMIN_ADMINTASKPROCESSOR_H_
 #define STORAGE_ADMIN_ADMINTASKPROCESSOR_H_
 
+#include <folly/Try.h>
+#include <folly/futures/Future.h>
+#include <folly/futures/Promise.h>
+
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
 
 class AdminTaskProcessor {
  public:

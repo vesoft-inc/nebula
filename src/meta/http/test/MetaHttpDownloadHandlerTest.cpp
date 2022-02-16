@@ -3,17 +3,38 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>           // for stringPrintf
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for clstring, DECLA...
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <unistd.h>                 // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/http/HttpClient.h"
-#include "meta/http/MetaHttpDownloadHandler.h"
-#include "meta/test/MockHdfsHelper.h"
-#include "meta/test/TestUtils.h"
-#include "storage/http/StorageHttpDownloadHandler.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include <memory>   // for unique_ptr, mak...
+#include <ostream>  // for operator<<
+#include <string>   // for string, basic_s...
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                      // for SetStderrLogging
+#include "common/base/Status.h"                       // for operator<<, Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "common/fs/TempDir.h"                        // for TempDir
+#include "common/hdfs/HdfsHelper.h"                   // for HdfsHelper
+#include "common/http/HttpClient.h"                   // for HttpClient
+#include "common/thread/GenericThreadPool.h"          // for GenericThreadPool
+#include "kvstore/KVStore.h"                          // for KVStore
+#include "kvstore/NebulaStore.h"                      // for NebulaStore
+#include "kvstore/PartManager.h"                      // for MemPartManager
+#include "meta/http/MetaHttpDownloadHandler.h"        // for MetaHttpDownloa...
+#include "meta/test/MockHdfsHelper.h"                 // for MockHdfsNotExis...
+#include "meta/test/TestUtils.h"                      // for TestUtils, Mock...
+#include "mock/MockCluster.h"                         // for MockCluster
+#include "storage/http/StorageHttpDownloadHandler.h"  // for StorageHttpDown...
+#include "webservice/Router.h"                        // for PathParams, Route
+#include "webservice/WebService.h"                    // for WebService, FLA...
 
 DECLARE_string(pid_file);
 DECLARE_int32(ws_storage_http_port);

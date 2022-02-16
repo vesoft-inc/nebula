@@ -4,7 +4,27 @@
  */
 #include "storage/exec/IndexScanNode.h"
 
+#include <fmt/format.h>                        // for format
+#include <folly/Likely.h>                      // for UNLIKELY, LIKELY
+#include <folly/container/F14Map.h>            // for F14BasicMap
+#include <folly/container/detail/F14Policy.h>  // for VectorContainerIterator
+#include <thrift/lib/cpp2/FieldRef.h>          // for field_ref, optional_fi...
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+#include <ostream>             // for operator<<, basic_ostr...
+
+#include "common/base/Base.h"            // for kDst, kRank, kSrc, kTag
+#include "common/utils/IndexKeyUtils.h"  // for IndexKeyUtils
+#include "kvstore/KVStore.h"             // for KVStore
+#include "storage/CommonUtils.h"         // for CommonUtils, RuntimeCo...
+
 namespace nebula {
+namespace meta {
+class SchemaProviderIf;
+
+class SchemaProviderIf;
+}  // namespace meta
+
 namespace storage {
 // Define of Path
 Path::Path(nebula::meta::cpp2::IndexItem* index,

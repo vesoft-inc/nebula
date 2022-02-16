@@ -6,18 +6,43 @@
 #ifndef RAFTEX_SNAPSHOTMANAGER_H_
 #define RAFTEX_SNAPSHOTMANAGER_H_
 
-#include <folly/Function.h>
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <folly/futures/Future.h>
+#include <folly/Function.h>                        // for Function
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future
+#include <stdint.h>                                // for int64_t
+
+#include <memory>   // for shared_ptr, unique...
+#include <string>   // for string
+#include <utility>  // for pair
+#include <vector>   // for vector
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManager
+#include "common/thrift/ThriftTypes.h"          // for TermID, GraphSpaceID
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
 
 namespace nebula {
 namespace raftex {
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+class SendSnapshotResponse;
+}  // namespace cpp2
+}  // namespace raftex
+struct HostAddr;
+template <typename T>
+class StatusOr;
+
+struct HostAddr;
+template <typename T>
+class StatusOr;
+
+namespace raftex {
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+class SendSnapshotResponse;
+}  // namespace cpp2
 
 enum SnapshotStatus {
   IN_PROGRESS,

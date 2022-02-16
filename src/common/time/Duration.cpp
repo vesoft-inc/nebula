@@ -5,7 +5,6 @@
 
 #include "common/time/Duration.h"
 
-#include "common/base/Base.h"
 #include "common/time/detail/TscHelper.h"
 
 namespace nebula {

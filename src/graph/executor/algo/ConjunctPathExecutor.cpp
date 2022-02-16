@@ -4,7 +4,25 @@
  */
 #include "graph/executor/algo/ConjunctPathExecutor.h"
 
-#include "graph/planner/plan/Algo.h"
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr, allocator
+#include <ostream>    // for operator<<, basic_ostream
+#include <utility>    // for move, pair
+
+#include "common/base/Base.h"                // for kVid, kDst, kSrc
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_INFO
+#include "common/datatypes/Edge.h"           // for Edge, operator<<
+#include "common/datatypes/List.h"           // for List
+#include "common/datatypes/Path.h"           // for Path, operator<<, Step
+#include "common/datatypes/Vertex.h"         // for Tag, Vertex
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/QueryContext.h"      // for QueryContext
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Algo.h"         // for ConjunctPath, ConjunctPa...
+#include "graph/planner/plan/PlanNode.h"     // for PlanNode
+#include "graph/util/AnonColGenerator.h"     // for kPathStr, kCostStr, kEdg...
 
 namespace nebula {
 namespace graph {

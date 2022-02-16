@@ -5,6 +5,10 @@
 
 #include "kvstore/PartManager.h"
 
+#include <unordered_set>  // for unordered_set, unordered_set<>::iterator
+
+#include "common/base/Base.h"  // for UNUSED
+
 namespace nebula {
 namespace kvstore {
 

@@ -4,7 +4,14 @@
  */
 #ifndef TOOLS_DB_UPGRADE_NEBULAKEYUTILSV3_H
 #define TOOLS_DB_UPGRADE_NEBULAKEYUTILSV3_H
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for uint32_t
+
+#include <string>  // for string
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "common/utils/Types.h"
+
 namespace nebula {
 class NebulaKeyUtilsV3 {
  public:

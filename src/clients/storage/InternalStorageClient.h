@@ -6,16 +6,57 @@
 #ifndef CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 #define CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 
+#include <folly/Optional.h>  // for Optional
 #include <gtest/gtest_prod.h>
+#include <stdint.h>  // for int64_t
 
-#include "clients/storage/StorageClientBase.h"
+#include <memory>   // for shared_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "clients/storage/StorageClientBase.h"  // for StorageClientBase
+#include "clients/storage/StorageClientBase.h"  // for StorageClientBase...
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
-#include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManager
+#include "common/thrift/ThriftTypes.h"          // for TermID
 #include "interface/gen-cpp2/InternalStorageServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for AddEdgesRequest (...
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
 namespace storage {
+namespace cpp2 {
+class InternalStorageServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace storage
+}  // namespace nebula
+
+namespace folly {
+class EventBase;
+class IOThreadPoolExecutor;
+template <class>
+class Promise;
+
+class EventBase;
+class IOThreadPoolExecutor;
+template <class>
+class Promise;
+}  // namespace folly
+
+namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
+
+namespace storage {
+namespace cpp2 {
+class InternalStorageServiceAsyncClient;
+}  // namespace cpp2
 
 /**
  * A wrapper class for InternalStorageServiceAsyncClient thrift API

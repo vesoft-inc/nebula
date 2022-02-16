@@ -5,7 +5,29 @@
 
 #include "meta/processors/listener/ListenerProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <gflags/gflags_declare.h>          // for DECLARE_int32, DECLAR...
+#include <stddef.h>                         // for size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for max, find
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for string, basic_string
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/thrift/ThriftTypes.h"        // for PartitionID
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/ActiveHostsMan.h"              // for ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"           // for LockUtils
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

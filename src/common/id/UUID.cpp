@@ -5,6 +5,9 @@
 
 #include "common/id/UUID.h"
 
+#include <boost/uuid/random_generator.hpp>  // for random_generator
+#include <boost/uuid/uuid_io.hpp>           // for to_string
+
 namespace nebula {
 
 boost::uuids::uuid UUIDV4::getId() {

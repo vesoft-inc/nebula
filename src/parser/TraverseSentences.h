@@ -5,12 +5,23 @@
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
 
-#include "parser/Clauses.h"
-#include "parser/EdgeKey.h"
+#include <stdint.h>  // for int64_t, uint8_t
+
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr, make_unique
+#include <string>   // for string, basic_string
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"  // for COMPACT_GOOGLE_LOG_FATAL
+#include "parser/Clauses.h"       // for YieldClause, NameLabelList
+#include "parser/EdgeKey.h"       // for EdgeKeyRef, EdgeKeys
 #include "parser/MutateSentences.h"
-#include "parser/Sentence.h"
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 
 namespace nebula {
+class Expression;
+
+class Expression;
 
 class GoSentence final : public Sentence {
  public:

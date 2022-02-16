@@ -5,6 +5,9 @@
 
 #include "graph/optimizer/rule/UnionAllTagIndexScanRule.h"
 
+#include "graph/optimizer/OptRule.h"      // for Pattern, OptRule, RuleSet
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+
 using Kind = nebula::graph::PlanNode::Kind;
 
 namespace nebula {

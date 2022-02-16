@@ -6,8 +6,11 @@
 #ifndef COMMON_GEO_IO_WKT_WKTWRITER_H
 #define COMMON_GEO_IO_WKT_WKTWRITER_H
 
+#include <string>  // for string
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
-#include "common/datatypes/Geography.h"
+#include "common/datatypes/Geography.h"  // for Coordinate (ptr only)
 
 namespace nebula {
 namespace geo {

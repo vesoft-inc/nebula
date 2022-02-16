@@ -5,10 +5,30 @@
 
 #include "graph/executor/algo/CartesianProductExecutor.h"
 
-#include "graph/planner/plan/Algo.h"
+#include <stddef.h>  // for size_t
+
+#include <algorithm>  // for max
+#include <iterator>   // for move_iterator, make_move...
+#include <ostream>    // for operator<<, basic_ostream
+#include <utility>    // for move
+
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_INFO
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row, DataSet, operator<<
+#include "common/datatypes/List.h"           // for List
+#include "common/datatypes/Value.h"          // for Value
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Algo.h"         // for BiCartesianProduct, Cart...
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
 
 folly::Future<Status> CartesianProductExecutor::execute() {
   SCOPED_TIMER(&execTime_);

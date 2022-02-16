@@ -5,9 +5,18 @@
 
 #include "meta/processors/admin/GetMetaDirInfoProcessor.h"
 
-#include <boost/filesystem.hpp>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/fs/FileUtils.h"
+#include <boost/filesystem/operations.hpp>  // for current_path
+#include <boost/filesystem/path.hpp>        // for path
+#include <ostream>                          // for operator<<, basic_ostream
+#include <string>                           // for basic_string, operator<<
+#include <vector>                           // for vector
+
+#include "common/base/Base.h"                 // for UNUSED
+#include "common/base/Logging.h"              // for COMPACT_GOOGLE_LOG_INFO
+#include "interface/gen-cpp2/common_types.h"  // for DirInfo, ErrorCode, Err...
+#include "kvstore/KVStore.h"                  // for KVStore
 
 namespace nebula {
 namespace meta {

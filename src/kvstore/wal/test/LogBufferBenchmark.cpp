@@ -4,6 +4,7 @@
  */
 
 #include <folly/Benchmark.h>
+#include <folly/init/Init.h>
 
 #include "common/base/Base.h"
 #include "kvstore/wal/AtomicLogBuffer.h"

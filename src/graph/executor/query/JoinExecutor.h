@@ -6,10 +6,34 @@
 #ifndef GRAPH_EXECUTOR_QUERY_JOINEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_JOINEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <stddef.h>  // for size_t
+
+#include <memory>         // for unique_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"        // for Status
+#include "common/datatypes/DataSet.h"  // for Row
+#include "graph/context/Iterator.h"    // for Iterator
+#include "graph/executor/Executor.h"   // for Executor
 
 namespace nebula {
+class Expression;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct List;
+struct Value;
+
+class Expression;
+struct List;
+struct Value;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class JoinExecutor : public Executor {
  public:

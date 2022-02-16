@@ -6,19 +6,55 @@
 #ifndef STORAGE_ADMIN_ADMINTASKMANAGER_H_
 #define STORAGE_ADMIN_ADMINTASKMANAGER_H_
 
-#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/Optional.h>                       // for Optional
+#include <folly/concurrency/ConcurrentHashMap.h>  // for Concu...
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
-#include <gtest/gtest_prod.h>
+#include <folly/executors/IOThreadPoolExecutor.h>               // for IOThr...
+#include <folly/executors/task_queue/UnboundedBlockingQueue.h>  // for Unbou...
+#include <folly/hash/Hash.h>                                    // for hash
+#include <gtest/gtest_prod.h>                                   // for FRIEN...
+#include <stdint.h>                                             // for uint32_t
+
+#include <algorithm>           // for copy
+#include <atomic>              // for atomic
+#include <condition_variable>  // for condi...
+#include <memory>              // for share...
+#include <mutex>               // for mutex
+#include <thread>              // for thread
+#include <unordered_map>       // for unord...
+#include <unordered_set>       // for unord...
+#include <utility>             // for move
 
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
+#include "common/thread/GenericWorker.h"      // for Gener...
+#include "common/thrift/ThriftTypes.h"        // for JobID
+#include "interface/gen-cpp2/common_types.h"  // for Error...
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
 namespace nebula {
 namespace storage {
+class AdminTask;
+class StorageEnv;
+}  // namespace storage
+
+namespace meta {
+class MetaClient;
+namespace cpp2 {
+class StatsItem;
+}  // namespace cpp2
+
+class MetaClient;
+namespace cpp2 {
+class StatsItem;
+}  // namespace cpp2
+}  // namespace meta
+
+namespace storage {
+class AdminTask;
+class StorageEnv;
 
 class AdminTaskManager {
   FRIEND_TEST(TaskManagerTest, happy_path);

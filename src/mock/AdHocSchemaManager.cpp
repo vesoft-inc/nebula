@@ -5,6 +5,18 @@
 
 #include "mock/AdHocSchemaManager.h"
 
+#include <folly/Conv.h>    // for to
+#include <folly/String.h>  // for stringPrintf
+#include <stddef.h>        // for size_t
+
+#include <algorithm>           // for max
+#include <cstdint>             // for int32_t
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+
+#include "common/base/Base.h"                  // for UNUSED
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+
 namespace nebula {
 namespace mock {
 

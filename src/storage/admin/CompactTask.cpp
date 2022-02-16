@@ -5,7 +5,16 @@
 
 #include "storage/admin/CompactTask.h"
 
-#include "common/base/Logging.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <functional>  // for bind
+#include <memory>      // for __shared_ptr_access
+
+#include "interface/gen-cpp2/storage_types.h"  // for TaskPara
+#include "kvstore/KVEngine.h"                  // for KVEngine
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "kvstore/NebulaStore.h"               // for NebulaStore, SpacePart...
+#include "storage/CommonUtils.h"               // for StorageEnv
 
 namespace nebula {
 namespace storage {

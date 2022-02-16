@@ -6,14 +6,31 @@
 #ifndef GRAPH_CONTEXT_ITERATOR_H_
 #define GRAPH_CONTEXT_ITERATOR_H_
 
-#include <gtest/gtest_prod.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int64_t, int32_t
 
+#include <algorithm>  // for max
 #include <boost/dynamic_bitset.hpp>
+#include <boost/dynamic_bitset/dynamic_bitset.hpp>  // for dynamic_bitset
+#include <boost/intrusive/detail/std_fwd.hpp>       // for equal_to
+#include <cstddef>                                  // for size_t
+#include <memory>                                   // for unique_ptr, alloc...
+#include <ostream>                                  // for operator<<, ostream
+#include <string>                                   // for string, basic_string
+#include <type_traits>                              // for remove_reference<...
+#include <unordered_map>                            // for unordered_map
+#include <utility>                                  // for move, pair
+#include <variant>                                  // for hash
+#include <vector>                                   // for vector, vector<>:...
 
-#include "common/algorithm/ReservoirSampling.h"
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Value.h"
+#include "common/algorithm/ReservoirSampling.h"  // for ReservoirSampling
+#include "common/base/Base.h"                    // for UNUSED
+#include "common/base/Logging.h"                 // for LogMessageFatal
+#include "common/base/Status.h"                  // for Status
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "common/datatypes/DataSet.h"            // for Row, DataSet (ptr...
+#include "common/datatypes/List.h"               // for List, hash
+#include "common/datatypes/Value.h"              // for Value, Value::kEmpty
 #include "parser/TraverseSentences.h"
 
 namespace nebula {

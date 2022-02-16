@@ -5,8 +5,20 @@
 
 #include "graph/service/PermissionCheck.h"
 
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for operator==, basic_string
+
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
+#include "graph/service/GraphFlags.h"         // for FLAGS_enable_authorize
+#include "graph/service/PermissionManager.h"  // for PermissionManager
+#include "graph/session/ClientSession.h"      // for ClientSession
+#include "parser/Sentence.h"                  // for Sentence, Sentence::Kind
+
 namespace nebula {
 namespace graph {
+class ValidateContext;
+
+class ValidateContext;
 
 /**
  * Read space : kUse, kDescribeSpace

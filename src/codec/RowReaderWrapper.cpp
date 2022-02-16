@@ -5,6 +5,16 @@
 
 #include "codec/RowReaderWrapper.h"
 
+#include <string.h>  // for size_t, memcpy
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+#include <ostream>             // for operator<<, basic_ostr...
+
+#include "codec/Common.h"                      // for toHexStr
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"         // for SchemaManager
+#include "common/meta/SchemaProviderIf.h"      // for SchemaProviderIf
+
 namespace nebula {
 
 // static

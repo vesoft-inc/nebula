@@ -5,12 +5,33 @@
 
 #include "kvstore/wal/FileBasedWal.h"
 
-#include <utime.h>
+#include <errno.h>          // for errno
+#include <fcntl.h>          // for open, O_APPEND, O_RDWR, O_W...
+#include <folly/Conv.h>     // for to
+#include <folly/String.h>   // for stringPrintf, split
+#include <gflags/gflags.h>  // for DEFINE_int32, DEFINE_bool
+#include <stdio.h>          // for SEEK_END
+#include <string.h>         // for strerror
+#include <sys/stat.h>       // for lstat, stat, st_mtime
+#include <unistd.h>         // for close, pread, unlink, read
+#include <utime.h>          // for utimbuf, utime
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/time/WallClock.h"
-#include "kvstore/wal/WalFileIterator.h"
+#include <cstdint>             // for int32_t, int64_t
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <iterator>            // for reverse_iterator, operator!=
+#include <ostream>             // for operator<<, basic_ostream
+#include <type_traits>         // for __strip_reference_wrapper<>...
+#include <utility>             // for pair, move, make_pair
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"          // for LogMessage, LOG, _LOG_WARNING
+#include "common/fs/FileUtils.h"          // for FileUtils, FileType, FileTy...
+#include "common/time/WallClock.h"        // for WallClock
+#include "common/utils/LogIterator.h"     // for LogIterator
+#include "kvstore/DiskManager.h"          // for DiskManager
+#include "kvstore/wal/AtomicLogBuffer.h"  // for AtomicLogBuffer, AtomicLogB...
+#include "kvstore/wal/WalFileIterator.h"  // for WalFileIterator
 
 DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");

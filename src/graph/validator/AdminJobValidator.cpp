@@ -5,7 +5,20 @@
 
 #include "graph/validator/AdminJobValidator.h"
 
-#include "graph/planner/plan/Admin.h"
+#include <algorithm>    // for find_if
+#include <memory>       // for shared_ptr, __shared_ptr_...
+#include <string>       // for basic_string, operator==
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/meta/IndexManager.h"       // for IndexManager
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/ValidateContext.h"  // for ValidateContext
+#include "graph/planner/plan/Admin.h"       // for SubmitJob
+#include "graph/service/RequestContext.h"   // for RequestContext
+#include "graph/session/ClientSession.h"    // for SpaceInfo, ClientSession
 
 namespace nebula {
 namespace graph {

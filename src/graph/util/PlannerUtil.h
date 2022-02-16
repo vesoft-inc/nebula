@@ -5,14 +5,18 @@
 
 #ifndef GRAPH_UTIL_PLANNER_UTIL_H_
 #define GRAPH_UTIL_PLANNER_UTIL_H_
+#include <string>  // for string
+
 #include "common/base/Base.h"
 
 namespace nebula {
 namespace graph {
 class QueryContext;
 struct Starts;
+
 struct SubPlan;
 class PlanNode;
+
 class PlannerUtil final {
  public:
   PlannerUtil() = delete;

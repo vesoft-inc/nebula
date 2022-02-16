@@ -4,10 +4,26 @@
  */
 #ifndef STORAGE_EXEC_INDEXAGGREGATENODE_H
 #define STORAGE_EXEC_INDEXAGGREGATENODE_H
-#include "storage/exec/IndexNode.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t
+
+#include <limits>   // for numeric_limits
+#include <memory>   // for unique_ptr
+#include <string>   // for string
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/datatypes/DataSet.h"          // for Row
+#include "common/datatypes/Value.h"            // for Value
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for StatType
+#include "storage/exec/IndexNode.h"            // for IndexNode, IndexNode::...
 
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
 
 // used to save stat value for each column
 struct ColumnStat {

@@ -5,13 +5,34 @@
 
 #include "meta/processors/admin/AdminClient.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/ExceptionWrapper.h>         // for operator<<, excep...
+#include <folly/FBString.h>                 // for fbstring, fbstrin...
+#include <folly/String.h>                   // for stringPrintf
+#include <folly/Try.h>                      // for Try
+#include <folly/futures/Future-pre.h>       // for valueCallableResu...
+#include <folly/futures/Future.h>           // for Future::Future<T>
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>
+#include <folly/futures/Promise.h>          // for PromiseException:...
+#include <folly/io/async/EventBase.h>       // for EventBase
+#include <folly/lang/Assume.h>              // for assume_unreachable
+#include <gflags/gflags.h>                  // for DEFINE_int32
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, option...
+#include <unistd.h>                         // for usleep, size_t
 
-#include "common/utils/MetaKeyUtils.h"
-#include "common/utils/Utils.h"
-#include "kvstore/Part.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
+#include <algorithm>  // for find, transform
+#include <istream>    // for operator<<, basic...
+#include <new>        // for operator new
+#include <utility>    // for move
+
+#include "common/base/Logging.h"                    // for LOG, LogMessage
+#include "common/base/StatusOr.h"                   // for StatusOr
+#include "common/thrift/ThriftClientManager-inl.h"  // for ThriftClientManag...
+#include "common/utils/MetaKeyUtils.h"              // for MetaKeyUtils, kDe...
+#include "common/utils/Utils.h"                     // for Utils
+#include "kvstore/Common.h"                         // for KV
+#include "kvstore/KVStore.h"                        // for KVStore
+#include "meta/ActiveHostsMan.h"                    // for ActiveHostsMan
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 

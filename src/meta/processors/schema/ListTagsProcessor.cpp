@@ -5,6 +5,26 @@
 
 #include "meta/processors/schema/ListTagsProcessor.h"
 
+#include <folly/Range.h>               // for Range
+#include <folly/SharedMutex.h>         // for SharedMutex
+#include <stdint.h>                    // for int32_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <ostream>    // for basic_ostream::operat...
+#include <string>     // for basic_string
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, TagID
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"           // for LockUtils
+
 namespace nebula {
 namespace meta {
 

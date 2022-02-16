@@ -5,9 +5,12 @@
 
 #include "graph/stats/GraphStats.h"
 
+#include <gflags/gflags.h>
+
+#include <memory>
+
 #include "clients/meta/stats/MetaClientStats.h"
 #include "clients/storage/stats/StorageClientStats.h"
-#include "common/base/Base.h"
 
 DEFINE_int32(slow_query_threshold_us,
              200000,

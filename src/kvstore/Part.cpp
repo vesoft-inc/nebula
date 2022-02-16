@@ -5,12 +5,67 @@
 
 #include "kvstore/Part.h"
 
-#include "common/time/ScopedTimer.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "common/utils/OperationKeyUtils.h"
-#include "kvstore/LogEncoder.h"
-#include "kvstore/RocksEngineConfig.h"
+#include <folly/Function.h>                 // for Function, FunctionTraits
+#include <folly/String.h>                   // for hexlify
+#include <folly/Try.h>                      // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>           // for SemiFuture::releaseDefer...
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Future.h>           // for SemiFuture::releaseDefer...
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Pro...
+#include <folly/futures/Promise.h>          // for PromiseException::Promis...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Pro...
+#include <folly/futures/Promise.h>          // for PromiseException::Promis...
+#include <gflags/gflags.h>                  // for DEFINE_int32
+#include <string.h>                         // for memcpy, size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <atomic>       // for atomic
+#include <cstdint>      // for int64_t, int32_t, uint32_t
+#include <type_traits>  // for __strip_reference_wrappe...
+
+#include "common/datatypes/HostAddr.h"       // for operator<<, HostAddr
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "common/utils/IndexKeyUtils.h"      // for IndexKeyUtils
+#include "common/utils/LogIterator.h"        // for LogIterator
+#include "common/utils/NebulaKeyUtils.h"     // for NebulaKeyUtils
+#include "common/utils/OperationKeyUtils.h"  // for OperationKeyUtils
+#include "common/utils/Types.h"              // for IndexID
+#include "kvstore/KVEngine.h"                // for WriteBatch, KVEngine
+#include "kvstore/LogEncoder.h"              // for decodeHost, getTimestamp
+#include "kvstore/RocksEngineConfig.h"       // for FLAGS_rocksdb_disable_wal
+#include "kvstore/raftex/RaftPart.h"         // for RaftPart::kNoCommitLogId
+
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 

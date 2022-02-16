@@ -3,14 +3,24 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <double-conversion/utils.h>  // for ASSERT
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
 
-#include "common/base/ObjectPool.h"
-#include "common/expression/Expression.h"
-#include "common/expression/PropertyExpression.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
-#include "graph/visitor/test/VisitorTestBase.h"
+#include <memory>       // for allocator, uniqu...
+#include <string>       // for string, to_string
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector, vector<>...
+
+#include "common/base/Logging.h"                     // for Check_GTImpl
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression, Expr...
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for DestPropertyExpr...
+#include "graph/util/ExpressionUtils.h"              // for ExpressionUtils
+#include "graph/visitor/ExtractFilterExprVisitor.h"  // for ExtractFilterExp...
+#include "graph/visitor/test/VisitorTestBase.h"      // for VisitorTestBase
 
 namespace nebula {
 namespace graph {

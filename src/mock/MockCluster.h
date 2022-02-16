@@ -9,23 +9,50 @@
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/synchronization/Baton.h>
+#include <stdint.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/meta/IndexManager.h"
+#include "common/meta/SchemaManager.h"
+#include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "mock/LocalServer.h"
 #include "mock/RpcServer.h"
 #include "storage/BaseProcessor.h"
+#include "storage/CommonUtils.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/transaction/TransactionManager.h"
 
+namespace apache {
+namespace thrift {
+namespace concurrency {
+class PriorityThreadManager;
+}  // namespace concurrency
+}  // namespace thrift
+}  // namespace apache
+
 namespace nebula {
+namespace kvstore {
+class MemPartManager;
+struct KVOptions;
+}  // namespace kvstore
+
 namespace mock {
 
 class MockCluster {

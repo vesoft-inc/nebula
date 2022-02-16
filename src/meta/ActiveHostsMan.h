@@ -6,13 +6,35 @@
 #ifndef META_ACTIVEHOSTSMAN_H_
 #define META_ACTIVEHOSTSMAN_H_
 
+#include <folly/Range.h>  // for StringPiece
 #include <gtest/gtest_prod.h>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t, int32_t, int8_t
 
-#include "common/base/Base.h"
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"           // for FLOG_FATAL
+#include "common/base/ErrorOr.h"        // for ErrorOr
+#include "common/base/Logging.h"        // for LogMessageFatal, _LOG_F...
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
 #include "common/utils/MetaKeyUtils.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for HostRole, HostRole::STO...
 #include "kvstore/KVStore.h"
 
 namespace nebula {
+struct HostAddr;
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
 namespace meta {
 
 struct HostInfo {

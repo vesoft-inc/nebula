@@ -5,6 +5,30 @@
 
 #include "meta/processors/session/SessionManagerProcessor.h"
 
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<, basic_ost...
+#include <string>         // for basic_string, operator<<
+#include <type_traits>    // for remove_reference_t
+#include <unordered_map>  // for unordered_map, _Node_...
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LogMessage, LOG, _LOG...
+#include "common/thrift/ThriftTypes.h"        // for ExecutionPlanID, Sess...
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doGet
+#include "meta/processors/Common.h"           // for LockUtils
+
 namespace nebula {
 namespace meta {
 

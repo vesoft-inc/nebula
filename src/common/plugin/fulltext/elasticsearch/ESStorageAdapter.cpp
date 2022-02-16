@@ -5,8 +5,21 @@
 
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 
-#include "common/plugin/fulltext/FTUtils.h"
-#include "common/process/ProcessUtils.h"
+#include <folly/detail/Iterators.h>  // for operator!=, IteratorFacade
+#include <folly/dynamic.h>           // for dynamic::dynamic, dynami...
+#include <folly/dynamic.h>           // for dynamic
+#include <folly/dynamic.h>           // for dynamic::dynamic, dynami...
+#include <folly/dynamic.h>           // for dynamic
+#include <folly/json.h>              // for toJson, parseJson
+
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_ostream
+#include <utility>    // for move, pair
+
+#include "common/base/Logging.h"             // for LogMessage, COMPACT_GOOG...
+#include "common/base/Status.h"              // for Status
+#include "common/plugin/fulltext/FTUtils.h"  // for DocIDTraits, DocItem, CURL
+#include "common/process/ProcessUtils.h"     // for ProcessUtils
 
 namespace nebula {
 namespace plugin {

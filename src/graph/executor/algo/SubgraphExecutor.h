@@ -6,10 +6,27 @@
 #ifndef GRAPH_EXECUTOR_ALGO_SUBGRAPHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_SUBGRAPHEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>         // for allocator
+#include <unordered_set>  // for unordered_set
+
+#include "common/datatypes/Value.h"   // for Value, hash
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class SubgraphExecutor : public Executor {
  public:
   SubgraphExecutor(const PlanNode* node, QueryContext* qctx)

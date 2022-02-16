@@ -3,10 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Range.h>      // for StringPiece, Range
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdint.h>           // for int64_t, uint32_t
 
-#include "common/base/Base.h"
-#include "kvstore/LogEncoder.h"
+#include <memory>   // for allocator, allocator_trai...
+#include <string>   // for string, basic_string
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"        // for SetStderrLogging
+#include "common/datatypes/HostAddr.h"  // for HostAddr
+#include "kvstore/Common.h"             // for KV
+#include "kvstore/LogEncoder.h"         // for BatchLogType, decodeMulti...
 
 namespace nebula {
 namespace kvstore {

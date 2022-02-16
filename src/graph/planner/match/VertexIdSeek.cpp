@@ -5,11 +5,26 @@
 
 #include "graph/planner/match/VertexIdSeek.h"
 
-#include "graph/planner/match/MatchSolver.h"
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Value.h"
+#include "common/expression/Expression.h"
+#include "common/expression/PropertyExpression.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/Result.h"
+#include "graph/context/ValidateContext.h"
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
+#include "graph/util/AnonVarGenerator.h"
 #include "graph/visitor/VidExtractVisitor.h"
 
 namespace nebula {

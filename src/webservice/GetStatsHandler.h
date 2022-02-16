@@ -6,11 +6,31 @@
 #ifndef WEBSERVICE_GETSTATSHANDLER_H_
 #define WEBSERVICE_GETSTATSHANDLER_H_
 
-#include <folly/dynamic.h>
-#include <proxygen/httpserver/RequestHandler.h>
+#include <folly/dynamic.h>                        // for dynamic
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+#include <stdint.h>                               // for int64_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
 
 #include "common/base/Base.h"
-#include "webservice/Common.h"
+#include "webservice/Common.h"  // for HttpCode, HttpCode:...
+
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
 
 namespace nebula {
 

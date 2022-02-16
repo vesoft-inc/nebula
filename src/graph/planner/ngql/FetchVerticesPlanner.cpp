@@ -5,8 +5,18 @@
 
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/util/PlannerUtil.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>  // for transform
+#include <map>        // for operator!=
+#include <string>     // for string
+#include <utility>    // for move
+
+#include "graph/context/ast/QueryAstContext.h"  // for FetchVerticesContext
+#include "graph/planner/plan/ExecutionPlan.h"   // for SubPlan
+#include "graph/planner/plan/Query.h"           // for Expr, GetVertices, Dedup
+#include "graph/session/ClientSession.h"        // for SpaceInfo
+#include "graph/util/PlannerUtil.h"             // for PlannerUtil
 
 namespace nebula {
 namespace graph {

@@ -5,11 +5,21 @@
 
 #include "graph/optimizer/rule/PushFilterDownLeftJoinRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <algorithm>  // for find_if
+#include <cstdint>    // for int64_t
+#include <utility>    // for pair, move
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/Expression.h"          // for Expression::Kind
+#include "common/expression/PropertyExpression.h"  // for VariablePropertyEx...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Symbols.h"                 // for SymbolTable, Variable
+#include "graph/optimizer/OptContext.h"            // for OptContext
+#include "graph/optimizer/OptGroup.h"              // for OptGroupNode, OptG...
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for LeftJoin, Filter
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

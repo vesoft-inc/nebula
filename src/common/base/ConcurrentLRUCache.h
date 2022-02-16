@@ -10,6 +10,7 @@
 
 #include <boost/optional.hpp>
 #include <list>
+#include <mutex>
 #include <utility>
 
 #include "common/base/Base.h"

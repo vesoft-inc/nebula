@@ -5,12 +5,24 @@
 
 #include "graph/optimizer/rule/GetEdgesTransformRule.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <ext/alloc_traits.h>
+#include <utility>
+#include <vector>
+
+#include "common/base/Logging.h"
+#include "common/base/ObjectPool.h"
+#include "common/expression/ContainerExpression.h"
+#include "common/expression/EdgeExpression.h"
 #include "common/expression/Expression.h"
+#include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "parser/Clauses.h"
 
 using nebula::Expression;
 using nebula::graph::AppendVertices;

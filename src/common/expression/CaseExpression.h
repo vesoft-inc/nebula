@@ -6,9 +6,23 @@
 #ifndef COMMON_EXPRESSION_CASEEXPRESSION_H_
 #define COMMON_EXPRESSION_CASEEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <stddef.h>  // for size_t
+
+#include <memory>  // for allocator_traits<>::value_...
+#include <string>  // for operator<<, string
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"           // for Check_LTImpl, DCHECK_LT
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class CaseList final {
  public:

@@ -6,16 +6,44 @@
 #ifndef META_STORAGEJOBEXECUTOR_H_
 #define META_STORAGEJOBEXECUTOR_H_
 
+#include <folly/futures/Future.h>  // for Future
+#include <limits.h>                // for INT_MAX, INT_MIN
+#include <stdint.h>                // for int32_t
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/base/ErrorOr.h"
+#include <algorithm>           // for max
+#include <condition_variable>  // for condition_variable
+#include <mutex>               // for mutex
+#include <string>              // for string, basic_string
+#include <utility>             // for pair
+#include <vector>              // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for ListenerType, ReportTas...
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/JobDescription.h"
-#include "meta/processors/job/JobExecutor.h"
+#include "meta/processors/job/JobExecutor.h"  // for JobExecutor
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 using PartsOfHost = std::pair<HostAddr, std::vector<PartitionID>>;
 using ErrOrHosts = ErrorOr<nebula::cpp2::ErrorCode, std::vector<PartsOfHost>>;

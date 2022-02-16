@@ -5,12 +5,19 @@
 
 #include "common/expression/ContainerExpression.h"
 
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Set.h"
-#include "common/expression/ExprVisitor.h"
+#include <memory>         // for allocator, allocator_trai...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Map.h"           // for Map
+#include "common/datatypes/Set.h"           // for Set
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 // TODO(jie): toString of list should add `LIST` prefix
 std::string ListExpression::toString() const {

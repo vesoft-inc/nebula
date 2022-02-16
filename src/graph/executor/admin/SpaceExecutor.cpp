@@ -5,14 +5,44 @@
 
 #include "graph/executor/admin/SpaceExecutor.h"
 
-#include "common/stats/StatsManager.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/service/PermissionManager.h"
-#include "graph/stats/GraphStats.h"
-#include "graph/util/FTIndexUtils.h"
-#include "graph/util/SchemaUtil.h"
+#include <folly/String.h>              // for join, stringPrintf
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Future.h>      // for Future::Future<T>, Futu...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Promi...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Promi...
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <algorithm>      // for max, transform
+#include <iterator>       // for back_insert_iterator
+#include <ostream>        // for operator<<, basic_ostream
+#include <set>            // for set, operator!=, _Rb_tr...
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"          // for SpaceIdName, MetaClient
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
+#include "common/base/Status.h"               // for operator<<, Status, NG_...
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/DataSet.h"         // for Row, DataSet
+#include "common/datatypes/Value.h"           // for Value
+#include "common/stats/StatsManager.h"        // for StatsManager::LabelPair
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "common/time/ScopedTimer.h"          // for SCOPED_TIMER
+#include "graph/context/Iterator.h"           // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/context/Result.h"             // for ResultBuilder
+#include "graph/planner/plan/Admin.h"         // for DropSpace, AlterSpace
+#include "graph/service/PermissionManager.h"  // for PermissionManager
+#include "graph/service/RequestContext.h"     // for RequestContext
+#include "graph/session/ClientSession.h"      // for SpaceInfo, ClientSession
+#include "graph/stats/GraphStats.h"           // for FLAGS_enable_space_leve...
+#include "graph/util/FTIndexUtils.h"          // for FTIndexUtils
+#include "graph/util/SchemaUtil.h"            // for SchemaUtil
+#include "interface/gen-cpp2/meta_types.h"    // for SpaceDesc, SpaceItem
 
 namespace nebula {
 namespace graph {

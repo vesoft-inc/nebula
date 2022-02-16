@@ -3,13 +3,45 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/c++config.h>
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>      // for Future::get
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <stdint.h>                    // for int64_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "storage/query/ScanVertexProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <algorithm>           // for find, find_if
+#include <cstddef>             // for size_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>...
+#include <limits>              // for numeric_limits
+#include <memory>              // for allocator, uniqu...
+#include <ostream>             // for operator<<
+#include <string>              // for string, basic_st...
+#include <type_traits>         // for remove_reference...
+#include <unordered_map>       // for unordered_map
+#include <utility>             // for pair, make_pair
+#include <vector>              // for vector, vector<>...
+
+#include "common/base/Base.h"                        // for kTag, kVid
+#include "common/base/Logging.h"                     // for Check_EQImpl, LOG
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/DataSet.h"                // for DataSet
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value, Value::kE...
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for TagPropertyExpre...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/expression/UnaryExpression.h"       // for UnaryExpression
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/thrift/ThriftTypes.h"               // for PartitionID, TagID
+#include "interface/gen-cpp2/storage_types.h"        // for VertexProp, Scan...
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "mock/MockData.h"                           // for MockData, MockDa...
+#include "storage/query/ScanVertexProcessor.h"       // for ScanVertexProcessor
+#include "storage/test/QueryTestUtils.h"             // for QueryTestUtils
 
 namespace nebula {
 namespace storage {

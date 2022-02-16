@@ -5,7 +5,7 @@
 
 #include "common/expression/TextSearchExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <folly/String.h>  // for stringPrintf
 
 namespace nebula {
 

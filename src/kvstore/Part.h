@@ -6,16 +6,74 @@
 #ifndef KVSTORE_PART_H_
 #define KVSTORE_PART_H_
 
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int32_t, int64_t
+
+#include <functional>  // for function
+#include <memory>      // for shared_ptr, uniqu...
+#include <mutex>       // for lock_guard, mutex
+#include <ostream>     // for operator<<, basic...
+#include <string>      // for string, operator<<
+#include <tuple>       // for tuple
+#include <utility>     // for pair, move
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
+#include "common/base/Logging.h"                // for LOG, LogMessage
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManager
+#include "common/thrift/ThriftTypes.h"          // for TermID, LogID
 #include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/Common.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "kvstore/Common.h"                   // for KVCallback, NewLe...
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "raftex/RaftPart.h"
+#include "raftex/RaftPart.h"  // for AtomicOp, RaftPart
 
 namespace nebula {
+class LogIterator;
 namespace kvstore {
+class DiskManager;
+class KVEngine;
+class WriteBatch;
+}  // namespace kvstore
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+struct HostAddr;
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace nebula {
+class LogIterator;
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+struct HostAddr;
+
+namespace kvstore {
+class DiskManager;
+class KVEngine;
+class WriteBatch;
 
 using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>;
 

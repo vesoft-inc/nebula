@@ -5,10 +5,21 @@
 
 #include "graph/optimizer/rule/MergeGetNbrsAndDedupRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"          // for GetReferenceableValue, Chec...
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for GetNeighbors, Dedup
+
+namespace nebula {
+namespace opt {
+class OptContext;
+
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::Dedup;
 using nebula::graph::GetNeighbors;

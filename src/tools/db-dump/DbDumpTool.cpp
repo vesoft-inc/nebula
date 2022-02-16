@@ -3,8 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/Base.h"
-#include "tools/db-dump/DbDumper.h"
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for FATAL
+#include <stdio.h>            // for fprintf, stderr
+#include <stdlib.h>           // for EXIT_FAILURE
+
+#include <iostream>  // for operator<<, basic_ostream, ostream
+#include <string>    // for operator<<, char_traits
+
+#include "common/base/Logging.h"     // for SetStderrLogging
+#include "common/base/Status.h"      // for operator<<, Status
+#include "tools/db-dump/DbDumper.h"  // for DbDumper, FLAGS_db_path, FLAGS_e...
 
 void printHelp() {
   fprintf(stderr,

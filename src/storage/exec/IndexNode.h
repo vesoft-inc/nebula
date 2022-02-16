@@ -4,13 +4,25 @@
  */
 #ifndef STORAGE_EXEC_INDEXNODE_H
 #define STORAGE_EXEC_INDEXNODE_H
+#include <folly/Likely.h>            // for UNLIKELY
+#include <folly/container/F14Set.h>  // for F14FastSet
+#include <stddef.h>                  // for size_t
+
+#include <memory>   // for unique_ptr
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
 #include "common/base/ErrorOr.h"
-#include "common/datatypes/DataSet.h"
-#include "common/time/Duration.h"
+#include "common/base/Logging.h"        // for Check_EQImpl, DCHECK_EQ
+#include "common/datatypes/DataSet.h"   // for Row
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, GraphSpaceID
+#include "common/time/Duration.h"       // for Duration
 #include "folly/AtomicLinkedList.h"
-#include "folly/container/F14Map.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "storage/CommonUtils.h"
+#include "folly/container/F14Map.h"           // for F14FastMap
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::E...
+#include "storage/CommonUtils.h"              // for RuntimeContext
+
 namespace nebula {
 namespace storage {
 /**

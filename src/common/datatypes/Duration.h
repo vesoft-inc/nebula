@@ -6,11 +6,18 @@
 #ifndef COMMON_DATATYPES_DURATION_H
 #define COMMON_DATATYPES_DURATION_H
 
-#include <folly/dynamic.h>
+#include <folly/Format.h>     // for sformat
+#include <folly/dynamic.h>    // for dynamic
+#include <folly/dynamic.h>    // for dynamic::dynamic, dynamic::~dynamic
+#include <folly/hash/Hash.h>  // for fnv64_buf
 
+#include <cstddef>  // for size_t
+#include <cstdint>  // for int64_t, int32_t
 #include <sstream>
+#include <string>       // for string
+#include <string_view>  // for hash
 
-#include "common/time/Constants.h"
+#include "common/time/Constants.h"  // for kSecondsOfDay, kSecondsOfHour
 
 namespace nebula {
 

@@ -5,9 +5,22 @@
 
 #include "graph/executor/query/DedupExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>  // for UNLIKELY
+#include <stdint.h>        // for uint16_t
+
+#include <algorithm>      // for max
+#include <string>         // for string
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"              // for Status, operator<<
+#include "common/datatypes/DataSet.h"        // for Row
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, equal_to, hash
+#include "graph/context/Result.h"            // for Result
+#include "graph/planner/plan/Query.h"        // for Dedup
 
 namespace nebula {
 namespace graph {

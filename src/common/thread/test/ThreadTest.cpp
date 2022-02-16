@@ -3,10 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <unistd.h>       // for getpid
 
-#include "common/base/Base.h"
-#include "common/thread/NamedThread.h"
+#include <string>  // for allocator, string
+
+#include "common/thread/NamedThread.h"  // for NamedThread, gettid, NamedThr...
 
 namespace nebula {
 namespace thread {

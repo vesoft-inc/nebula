@@ -5,8 +5,22 @@
 
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>  // for UNLIKELY
+#include <stddef.h>        // for size_t
+
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, stringstream
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"             // for Check_GTImpl, COMPACT_GO...
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/Value.h"          // for operator<<, Value
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, SequentialIter
+#include "graph/context/Result.h"            // for ResultBuilder
+#include "graph/planner/plan/Query.h"        // for UnionAllVersionVar
 
 namespace nebula {
 namespace graph {

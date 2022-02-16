@@ -5,28 +5,56 @@
 
 #include "clients/meta/MetaClient.h"
 
-#include <folly/ScopeGuard.h>
-#include <folly/executors/Async.h>
-#include <folly/futures/Future.h>
-#include <folly/hash/Hash.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Format.h>                          // for sformat
+#include <folly/ScopeGuard.h>                      // for operator+, SCOPE_...
+#include <folly/String.h>                          // for stringPrintf
+#include <folly/ThreadLocal.h>                     // for ThreadLocalPtr<>:...
+#include <folly/Try.h>                             // for Try
+#include <folly/executors/Async.h>                 // for async
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Promise.h>                 // for PromiseException:...
+#include <folly/hash/Hash.h>                       // for hash
+#include <folly/io/async/EventBase.h>              // for EventBase
+#include <folly/lang/Bits.h>                       // for findLastSet
+#include <folly/synchronization/Rcu.h>             // for rcu_reader, rcu_r...
+#include <gflags/gflags.h>                         // for DEFINE_int32, Get...
+#include <string.h>                                // for memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>         // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, option...
+#include <unistd.h>                                // for size_t, sleep
 
-#include <boost/filesystem.hpp>
-#include <unordered_set>
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>:...
+#include <iterator>            // for back_insert_iterator
+#include <new>                 // for bad_alloc
+#include <ostream>             // for operator<<, basic...
+#include <unordered_set>       // for operator!=, _Node...
 
-#include "clients/meta/FileBasedClusterIdMan.h"
-#include "clients/meta/stats/MetaClientStats.h"
-#include "common/base/Base.h"
-#include "common/base/MurmurHash2.h"
-#include "common/conf/Configuration.h"
-#include "common/http/HttpClient.h"
-#include "common/meta/NebulaSchemaProvider.h"
-#include "common/network/NetworkUtils.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/TimeUtils.h"
-#include "version/Version.h"
-#include "webservice/Common.h"
+#include "clients/meta/FileBasedClusterIdMan.h"  // for FileBasedClusterI...
+#include "clients/meta/stats/MetaClientStats.h"  // for kNumRpcSentToMetad
+#include "common/base/Base.h"                    // for FLOG_WARN
+#include "common/base/MurmurHash2.h"             // for MurmurHash2
+#include "common/datatypes/Map.h"                // for Map
+#include "common/http/HttpClient.h"              // for HttpClient
+#include "common/meta/GflagsManager.h"           // for GflagsManager
+#include "common/meta/NebulaSchemaProvider.h"    // for NebulaSchemaProvider
+#include "common/ssl/SSLConfig.h"                // for FLAGS_enable_meta...
+#include "common/stats/StatsManager.h"           // for StatsManager
+#include "common/thread/GenericWorker.h"         // for GenericWorker
+#include "common/thrift/ThriftClientManager.h"   // for ThriftClientManager
+#include "common/time/WallClock.h"               // for WallClock
+#include "version/Version.h"                     // for getOriginVersion
+
+namespace nebula {
+namespace meta {
+namespace cpp2 {
+class MetaServiceAsyncClient;
+
+class MetaServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace meta
+}  // namespace nebula
 
 DECLARE_int32(ws_meta_http_port);
 DECLARE_int32(ws_meta_h2_port);

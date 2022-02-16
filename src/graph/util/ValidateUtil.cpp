@@ -5,12 +5,22 @@
 
 #include "graph/util/ValidateUtil.h"
 
-#include "common/base/Base.h"
-#include "common/expression/ColumnExpression.h"
-#include "graph/context/QueryContext.h"
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <ostream>      // for operator<<, stringstream
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/expression/Expression.h"       // for Expression::Kind, Exp...
+#include "common/meta/SchemaManager.h"          // for SchemaManager
+#include "common/thrift/ThriftTypes.h"          // for EdgeType
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/context/ValidateContext.h"      // for ValidateContext
+#include "graph/context/ast/QueryAstContext.h"  // for Over
+#include "graph/session/ClientSession.h"        // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"         // for ExpressionUtils
+#include "parser/Clauses.h"                     // for StepClause, OverClause
 
 namespace nebula {
 namespace graph {

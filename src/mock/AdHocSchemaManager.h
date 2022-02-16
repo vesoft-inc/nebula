@@ -7,13 +7,36 @@
 #define MOCK_ADHOCSCHEMAMANAGER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/Range.h>                       // for StringPiece
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock
+#include <stdint.h>                            // for int32_t
+
+#include <memory>         // for shared_ptr
+#include <ostream>        // for operator<<
+#include <set>            // for set
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
 
 #include "clients/meta/MetaClient.h"
+#include "common/base/Logging.h"   // for LOG, LogMessageFatal
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/meta/NebulaSchemaProvider.h"
-#include "common/meta/SchemaManager.h"
+#include "common/meta/SchemaManager.h"  // for EdgeSchema, EdgeSchemas
 #include "common/meta/SchemaProviderIf.h"
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, TagID
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for ServiceClient, FTIndex
 
 namespace nebula {
+namespace meta {
+class NebulaSchemaProvider;
+
+class NebulaSchemaProvider;
+}  // namespace meta
+
 namespace mock {
 
 // the different version of tag schema, from oldest to newest

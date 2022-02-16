@@ -5,6 +5,8 @@
 
 #include "clients/storage/StorageClientBase.h"
 
+#include <gflags/gflags.h>  // for DEFINE_int32, DEFINE_uint32
+
 DEFINE_int32(storage_client_timeout_ms, 60 * 1000, "storage client timeout");
 DEFINE_uint32(storage_client_retry_interval_ms,
               1000,

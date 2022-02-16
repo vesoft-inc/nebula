@@ -5,8 +5,38 @@
 
 #include "graph/executor/maintain/EdgeIndexExecutor.h"
 
-#include "graph/planner/plan/Maintain.h"
-#include "graph/util/IndexUtil.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <algorithm>    // for max
+#include <map>          // for map, operator!=, _Rb_tree...
+#include <ostream>      // for operator<<, basic_ostream
+#include <string>       // for string, basic_string, ope...
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, pair
+#include <vector>       // for vector
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"             // for operator<<, Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Value.h"         // for Value
+#include "common/thrift/ThriftTypes.h"      // for IndexID
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "graph/context/Iterator.h"         // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Result.h"           // for ResultBuilder
+#include "graph/planner/plan/Maintain.h"    // for CreateEdgeIndex, DropEdge...
+#include "graph/service/RequestContext.h"   // for RequestContext
+#include "graph/session/ClientSession.h"    // for ClientSession, SpaceInfo
+#include "graph/util/IndexUtil.h"           // for IndexUtil
+#include "interface/gen-cpp2/meta_types.h"  // for IndexFieldDef, IndexItem
 
 namespace nebula {
 namespace graph {

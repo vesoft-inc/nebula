@@ -6,13 +6,17 @@
 #ifndef GRAPH_OPTIMIZER_OPTRULE_H_
 #define GRAPH_OPTIMIZER_OPTRULE_H_
 
-#include <initializer_list>
-#include <memory>
-#include <string>
-#include <vector>
+#include <stdint.h>  // for int32_t
 
-#include "common/base/StatusOr.h"
-#include "graph/planner/plan/PlanNode.h"
+#include <initializer_list>  // for initializer_list
+#include <memory>
+#include <string>         // for string
+#include <unordered_set>  // for operator!=, unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode::Kind, PlanNode
 
 namespace nebula {
 

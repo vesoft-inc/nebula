@@ -5,7 +5,11 @@
 
 #include "graph/planner/match/PaginationPlanner.h"
 
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+
+#include "graph/context/ast/CypherAstContext.h"  // for PaginationContext
+#include "graph/planner/plan/ExecutionPlan.h"    // for SubPlan
+#include "graph/planner/plan/Query.h"            // for Limit
 
 namespace nebula {
 namespace graph {

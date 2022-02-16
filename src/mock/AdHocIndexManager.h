@@ -6,10 +6,26 @@
 #ifndef MOCK_ADHOCINDEXMANAGER_H_
 #define MOCK_ADHOCINDEXMANAGER_H_
 
-#include "common/meta/IndexManager.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock
+
+#include <memory>         // for shared_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/meta/IndexManager.h"       // for IndexManager
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, IndexID
+#include "interface/gen-cpp2/meta_types.h"  // for ColumnDef (ptr only)
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+
+class MetaClient;
+}  // namespace meta
+
 namespace mock {
 
 using IndexItem = nebula::meta::cpp2::IndexItem;

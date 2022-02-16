@@ -6,10 +6,15 @@
 #ifndef COMMON_BASE_SIGNALHANDLER_H_
 #define COMMON_BASE_SIGNALHANDLER_H_
 
-#include <signal.h>
+#include <signal.h>  // for siginfo_t, pid_t, uid_t
+
+#include <array>             // for array
+#include <functional>        // for function
+#include <initializer_list>  // for initializer_list
+#include <ostream>           // for operator<<, ostream
 
 #include "common/base/Base.h"
-#include "common/base/Status.h"
+#include "common/base/Status.h"  // for Status
 
 /**
  * SignalHandler is a singleton to do the basic signal handling,
@@ -34,10 +39,12 @@ class SignalHandler final {
    * To install one or several signals to handle.
    * Upon any signal arrives, the corresponding handler would be invoked,
    * with an argument holding the informations about the signal and the sender.
+
    * The handler typically prints out the info and do some other things,
    * e.g. stop the process on SIGTERM.
    */
   class GeneralSignalInfo;
+
   using Handler = std::function<void(GeneralSignalInfo *)>;
   static Status install(int sig, Handler handler);
   static Status install(std::initializer_list<int> sigs, Handler handler);

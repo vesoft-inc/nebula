@@ -5,10 +5,17 @@
 
 #include "graph/optimizer/OptContext.h"
 
-#include "common/base/Logging.h"
-#include "common/base/ObjectPool.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/Planner.h"
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <cstdint>  // for int64_t
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for operator<<
+#include <utility>  // for pair
+
+#include "common/base/Logging.h"          // for CheckNotNull, DCHECK_NOTNULL
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode
 
 namespace nebula {
 namespace opt {

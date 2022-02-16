@@ -5,13 +5,26 @@
 
 #include "graph/executor/StorageAccessExecutor.h"
 
-#include <folly/Format.h>
+#include <folly/Format.h>              // for sformat
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/util/Utils.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <algorithm>      // for max
+#include <cstdint>        // for int64_t, int32_t
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                      // for kVid
+#include "common/datatypes/Value.h"                // for Value, operator<<
+#include "common/expression/Expression.h"          // for Expression
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/service/RequestContext.h"
+#include "graph/service/RequestContext.h"   // for RequestContext
+#include "graph/session/ClientSession.h"    // for SpaceInfo, ClientS...
+#include "graph/util/SchemaUtil.h"          // for SchemaUtil
+#include "graph/util/Utils.h"               // for join
+#include "interface/gen-cpp2/meta_types.h"  // for SpaceDesc, ColumnT...
 
 using apache::thrift::optional_field_ref;
 

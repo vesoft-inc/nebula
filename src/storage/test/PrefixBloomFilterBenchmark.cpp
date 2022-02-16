@@ -3,15 +3,38 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/Benchmark.h>              // for addBenchmark, Benchmark...
+#include <folly/BenchmarkUtil.h>          // for doNotOptimizeAway
+#include <folly/String.h>                 // for stringPrintf
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gflags/gflags.h>                // for clstring, DEFINE_int64
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for int32_t, uint32_t
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/RocksEngineConfig.h"
-#include "mock/MockCluster.h"
+#include <atomic>   // for atomic
+#include <memory>   // for unique_ptr
+#include <ostream>  // for operator<<
+#include <string>   // for to_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for SetStderrLogging, CHECK
+#include "common/fs/TempDir.h"                // for TempDir
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, PartitionID
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "kvstore/RocksEngineConfig.h"        // for FLAGS_rocksdb_block_cache
+#include "mock/MockCluster.h"                 // for MockCluster
+#include "storage/CommonUtils.h"              // for StorageEnv
 
 DEFINE_int64(vertex_per_part, 100, "vertex count with each partition");
 

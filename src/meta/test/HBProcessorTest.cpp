@@ -3,13 +3,42 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>         // for Future::get
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stdint.h>                       // for uint32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
+#include <unistd.h>                       // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/processors/admin/HBProcessor.h"
-#include "meta/test/TestUtils.h"
+#include <atomic>       // for atomic
+#include <memory>       // for unique_ptr, allocator
+#include <ostream>      // for operator<<
+#include <string>       // for to_string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/EitherOr.h"               // for EitherOr
+#include "common/base/ErrorOr.h"                // for ok, value
+#include "common/base/Logging.h"                // for SetStderrLogging, LOG
+#include "common/datatypes/HostAddr.h"          // for HostAddr
+#include "common/fs/TempDir.h"                  // for TempDir
+#include "common/thrift/ThriftTypes.h"          // for ClusterID
+#include "common/utils/MetaKeyUtils.h"          // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/common_types.h"    // for ErrorCode, ErrorCode:...
+#include "interface/gen-cpp2/meta_types.h"      // for HBReq, HBResp, HostRole
+#include "kvstore/Common.h"                     // for KV
+#include "kvstore/KVStore.h"                    // for KVStore
+#include "kvstore/NebulaStore.h"                // for NebulaStore
+#include "meta/ActiveHostsMan.h"                // for ActiveHostsMan
+#include "meta/processors/admin/HBProcessor.h"  // for HBProcessor
+#include "meta/test/TestUtils.h"                // for MockCluster
+#include "mock/MockCluster.h"                   // for MockCluster
 
 namespace nebula {
 namespace meta {

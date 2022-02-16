@@ -6,11 +6,26 @@
 #ifndef PARSER_MATCHSENTENCE_H_
 #define PARSER_MATCHSENTENCE_H_
 
-#include "common/expression/ContainerExpression.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint8_t
+
+#include <limits>       // for numeric_limits
+#include <memory>       // for unique_ptr, alloc...
+#include <ostream>      // for stringstream, bas...
+#include <string>       // for string, basic_string
+#include <tuple>        // for get, make_tuple
+#include <type_traits>  // for remove_reference<...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                    // for COMPACT_GOOGLE_LO...
+#include "common/expression/ContainerExpression.h"  // for MapExpression
+#include "common/expression/Expression.h"           // for Expression, Expre...
 #include "common/expression/SubscriptExpression.h"
-#include "parser/Clauses.h"
-#include "parser/Sentence.h"
-#include "parser/TraverseSentences.h"
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeDirection
+#include "parser/Clauses.h"                    // for WhereClause, Yiel...
+#include "parser/Sentence.h"                   // for Sentence, Sentenc...
+#include "parser/TraverseSentences.h"          // for OrderFactors
 
 namespace nebula {
 
@@ -81,7 +96,7 @@ class MatchEdgeProp final {
 
 class MatchEdge final {
  public:
-  using Direction = nebula::storage::cpp2::EdgeDirection;
+  using Direction = ::nebula::storage::cpp2::EdgeDirection;
   MatchEdge(MatchEdgeProp* prop, Direction direction) {
     if (prop != nullptr) {
       auto tuple = std::move(*prop).get();

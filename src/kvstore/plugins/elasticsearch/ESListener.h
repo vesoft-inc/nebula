@@ -6,12 +6,67 @@
 #ifndef KVSTORE_PLUGINS_ES_LISTENER_H_
 #define KVSTORE_PLUGINS_ES_LISTENER_H_
 
+#include <folly/String.h>  // for stringPrintf
+#include <stdint.h>        // for int32_t
+
+#include <memory>   // for shared_ptr, make_unique
+#include <string>   // for string, basic_string
+#include <utility>  // for pair, move
+#include <vector>   // for vector
+
 #include "codec/RowReaderWrapper.h"
+#include "common/base/Logging.h"        // for CHECK, COMPACT_GOOGLE_LO...
+#include "common/datatypes/HostAddr.h"  // for HostAddr
 #include "common/plugin/fulltext/FTStorageAdapter.h"
-#include "kvstore/Listener.h"
+#include "common/plugin/fulltext/FTUtils.h"  // for DocItem (ptr only), Http...
+#include "common/thrift/ThriftTypes.h"       // for LogID, TermID, GraphSpaceID
+#include "kvstore/Common.h"                  // for KV
+#include "kvstore/Listener.h"                // for Listener, RaftClient
 
 namespace nebula {
+class RowReader;
 namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace meta {
+class SchemaManager;
+namespace cpp2 {
+class FTIndex;
+}  // namespace cpp2
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace nebula {
+class RowReader;
+namespace meta {
+class SchemaManager;
+namespace cpp2 {
+class FTIndex;
+}  // namespace cpp2
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
+namespace kvstore {
+class DiskManager;
 
 using nebula::plugin::DocItem;
 

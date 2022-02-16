@@ -5,11 +5,23 @@
 
 #include "graph/context/Iterator.h"
 
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Vertex.h"
-#include "common/memory/MemoryUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/common_types.h"
+#include <folly/Format.h>           // for sformat
+#include <folly/Likely.h>           // for UNLIKELY
+#include <folly/String.h>           // for split
+#include <gflags/gflags_declare.h>  // for DECLARE_double, DECLARE_int32
+#include <stddef.h>                 // for size_t
+
+#include <atomic>              // for atomic_bool
+#include <cstdint>             // for int64_t, int32_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <iterator>            // for move_iterator, make_move_iter...
+#include <stdexcept>           // for runtime_error
+#include <tuple>               // for tuple, get, make_tuple
+
+#include "common/datatypes/Edge.h"      // for Edge
+#include "common/datatypes/Vertex.h"    // for Tag, Vertex
+#include "common/memory/MemoryUtils.h"  // for MemoryUtils, MemoryUtils::kHi...
+#include "graph/util/SchemaUtil.h"      // for SchemaUtil
 
 DECLARE_int32(num_rows_to_check_memory);
 DECLARE_double(system_memory_high_watermark_ratio);

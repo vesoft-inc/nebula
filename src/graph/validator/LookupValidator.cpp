@@ -5,15 +5,64 @@
 
 #include "graph/validator/LookupValidator.h"
 
-#include "common/base/Status.h"
-#include "common/meta/NebulaSchemaProvider.h"
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/FTIndexUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/util/ValidateUtil.h"
-#include "parser/TraverseSentences.h"
+#include <bits/std_abs.h>                          // for abs
+#include <folly/Range.h>                           // for Range, opera...
+#include <folly/String.h>                          // for toLowerAscii
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <math.h>                                  // for ceil, floor
+#include <stdlib.h>                                // for abs
+
+#include <algorithm>                             // for find, transform
+#include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
+#include <boost/iterator/iterator_facade.hpp>    // for operator!=
+#include <cstdint>                               // for int32_t, uin...
+#include <ext/alloc_traits.h>                    // for __alloc_trai...
+#include <ostream>                               // for operator<<
+#include <set>                                   // for set, operator!=
+#include <type_traits>                           // for remove_refer...
+#include <unordered_map>                         // for _Node_const_...
+#include <utility>                               // for move, pair
+
+#include "clients/meta/MetaClient.h"                     // for MetaClient
+#include "common/base/Base.h"                            // for kVid, kDst
+#include "common/base/Logging.h"                         // for GetReference...
+#include "common/base/ObjectPool.h"                      // for ObjectPool
+#include "common/base/Status.h"                          // for Status, NG_R...
+#include "common/datatypes/Value.h"                      // for Value, Value...
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/FunctionCallExpression.h"    // for FunctionCall...
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/LogicalExpression.h"         // for LogicalExpre...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/TextSearchExpression.h"      // for TextSearchEx...
+#include "common/meta/NebulaSchemaProvider.h"            // for NebulaSchema...
+#include "common/meta/SchemaManager.h"                   // for SchemaManager
+#include "graph/context/QueryContext.h"                  // for QueryContext
+#include "graph/context/QueryExpressionContext.h"        // for QueryExpress...
+#include "graph/context/Symbols.h"                       // for ColsDef
+#include "graph/context/ast/QueryAstContext.h"           // for LookupContext
+#include "graph/session/ClientSession.h"                 // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "graph/util/FTIndexUtils.h"                     // for FTIndexUtils
+#include "graph/util/SchemaUtil.h"                       // for SchemaUtil
+#include "graph/util/ValidateUtil.h"                     // for ValidateUtil
+#include "interface/gen-cpp2/common_types.h"             // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"               // for FTIndex
+#include "parser/Clauses.h"                              // for YieldColumn
+#include "parser/TraverseSentences.h"                    // for LookupSentence
+
+namespace nebula {
+class Sentence;
+namespace graph {
+struct AstContext;
+}  // namespace graph
+
+class Sentence;
+namespace graph {
+struct AstContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::meta::NebulaSchemaProvider;
 using std::shared_ptr;
@@ -87,7 +136,7 @@ void LookupValidator::extractExprProps() {
     }
     std::vector<std::string> idxColNames = idxReturnCols_;
     std::transform(idxColNames.begin(), idxColNames.end(), idxColNames.begin(), buildColNames);
-    idxColNames[0] = nebula::kVid;
+    idxColNames[0] = ::nebula::kVid;
     lookupCtx_->idxColNames = std::move(idxColNames);
   }
   lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
@@ -154,13 +203,13 @@ Status LookupValidator::validateYield() {
   lookupCtx_->yieldExpr = qctx_->objPool()->add(new YieldColumns());
 
   if (lookupCtx_->isEdge) {
-    idxReturnCols_.emplace_back(nebula::kSrc);
-    idxReturnCols_.emplace_back(nebula::kDst);
-    idxReturnCols_.emplace_back(nebula::kRank);
-    idxReturnCols_.emplace_back(nebula::kType);
+    idxReturnCols_.emplace_back(::nebula::kSrc);
+    idxReturnCols_.emplace_back(::nebula::kDst);
+    idxReturnCols_.emplace_back(::nebula::kRank);
+    idxReturnCols_.emplace_back(::nebula::kType);
     NG_RETURN_IF_ERROR(validateYieldEdge());
   } else {
-    idxReturnCols_.emplace_back(nebula::kVid);
+    idxReturnCols_.emplace_back(::nebula::kVid);
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
@@ -416,7 +465,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
+  if (type == ::nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);

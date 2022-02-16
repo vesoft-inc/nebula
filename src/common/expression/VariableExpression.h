@@ -6,9 +6,22 @@
 #ifndef COMMON_EXPRESSION_VARIABLEEXPRESSION_H_
 #define COMMON_EXPRESSION_VARIABLEEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <ostream>  // for operator<<
+#include <string>   // for string, allocator, operator!=
+
+#include "common/base/Logging.h"           // for LOG, LogMessageFatal, _LOG...
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+struct Value;
+
+class ExprVisitor;
+class ExpressionContext;
+struct Value;
+
 class VariableExpression final : public Expression {
  public:
   static VariableExpression* make(ObjectPool* pool,

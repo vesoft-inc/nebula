@@ -5,6 +5,10 @@
 
 #include "common/time/parser/DatetimeReader.h"
 
+#include <string.h>  // for memcpy
+
+#include <type_traits>  // for remove_reference<>::type
+
 namespace nebula {
 namespace time {
 

@@ -7,16 +7,76 @@
 #define STORAGE_GRAPHSTORAGESERVICEHANDLER_H_
 
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for shared_ptr
 
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/GraphStorageService.h"
+#include "interface/gen-cpp2/GraphStorageService.h"  // for GraphStorageServ...
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
 
+namespace folly {
+class Executor;
+class Executor;
+}  // namespace folly
+
 namespace nebula {
 namespace storage {
+namespace cpp2 {
+class AddEdgesRequest;
+class AddVerticesRequest;
+class DeleteEdgesRequest;
+class DeleteTagsRequest;
+class DeleteVerticesRequest;
+class ExecResponse;
+class GetNeighborsRequest;
+class GetNeighborsResponse;
+class GetPropRequest;
+class GetPropResponse;
+class GetUUIDReq;
+class GetUUIDResp;
+class KVGetRequest;
+class KVGetResponse;
+class KVPutRequest;
+class KVRemoveRequest;
+class LookupIndexRequest;
+class LookupIndexResp;
+class ScanEdgeRequest;
+class ScanResponse;
+class ScanVertexRequest;
+class UpdateEdgeRequest;
+class UpdateResponse;
+class UpdateVertexRequest;
+}  // namespace cpp2
 
 class StorageEnv;
+namespace cpp2 {
+class AddEdgesRequest;
+class AddVerticesRequest;
+class DeleteEdgesRequest;
+class DeleteTagsRequest;
+class DeleteVerticesRequest;
+class ExecResponse;
+class GetNeighborsRequest;
+class GetNeighborsResponse;
+class GetPropRequest;
+class GetPropResponse;
+class GetUUIDReq;
+class GetUUIDResp;
+class KVGetRequest;
+class KVGetResponse;
+class KVPutRequest;
+class KVRemoveRequest;
+class LookupIndexRequest;
+class LookupIndexResp;
+class ScanEdgeRequest;
+class ScanResponse;
+class ScanVertexRequest;
+class UpdateEdgeRequest;
+class UpdateResponse;
+class UpdateVertexRequest;
+}  // namespace cpp2
 
 class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
  public:

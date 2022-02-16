@@ -6,12 +6,24 @@
 #ifndef GRAPH_EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
-#include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "clients/storage/StorageClientBase.h"     // for StorageRpcResponse
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/DataSet.h"              // for DataSet
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
+#include "graph/planner/plan/Query.h"              // for GetNeighbors
+#include "interface/gen-cpp2/storage_types.h"      // for GetNeighborsResponse
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
 
 class GetNeighborsExecutor final : public StorageAccessExecutor {
  public:

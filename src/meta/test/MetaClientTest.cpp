@@ -3,23 +3,72 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <double-conversion/utils.h>               // for ASSERT
+#include <folly/String.h>                          // for stringPrintf
+#include <folly/Try.h>                             // for Try::throwUnle...
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolEx...
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Promise.h>                 // for Promise::Promi...
+#include <folly/futures/Promise.h>                 // for PromiseExcepti...
+#include <folly/futures/Promise.h>                 // for Promise::Promi...
+#include <folly/futures/Promise.h>                 // for PromiseExcepti...
+#include <folly/init/Init.h>                       // for init
+#include <folly/synchronization/Baton.h>           // for Baton
+#include <gflags/gflags_declare.h>                 // for clstring, DECL...
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stdint.h>                                // for uint32_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, req...
+#include <unistd.h>                                // for sleep, size_t
 
-#include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
-#include "common/conf/Configuration.h"
-#include "common/expression/ArithmeticExpression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/fs/TempDir.h"
-#include "common/meta/GflagsManager.h"
-#include "common/meta/ServerBasedSchemaManager.h"
-#include "common/network/NetworkUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "interface/gen-cpp2/common_constants.h"
-#include "meta/processors/zone/AddHostsProcessor.h"
-#include "meta/test/TestUtils.h"
-#include "mock/MockCluster.h"
+#include <atomic>              // for atomic, __atom...
+#include <ext/alloc_traits.h>  // for __alloc_traits...
+#include <memory>              // for allocator, uni...
+#include <ostream>             // for operator<<
+#include <string>              // for string, basic_...
+#include <type_traits>         // for remove_referen...
+#include <unordered_map>       // for unordered_map
+#include <utility>             // for move, pair
+#include <vector>              // for vector
+
+#include "clients/meta/MetaClient.h"                   // for MetaClient
+#include "common/base/Base.h"                          // for UNUSED
+#include "common/base/ErrorOr.h"                       // for ok, value
+#include "common/base/Logging.h"                       // for LOG, LogMessage
+#include "common/base/Status.h"                        // for operator<<
+#include "common/base/StatusOr.h"                      // for StatusOr
+#include "common/datatypes/HostAddr.h"                 // for HostAddr
+#include "common/datatypes/Map.h"                      // for Map
+#include "common/datatypes/Value.h"                    // for Value
+#include "common/expression/ArithmeticExpression.h"    // for ArithmeticExpr...
+#include "common/expression/ConstantExpression.h"      // for ConstantExpres...
+#include "common/expression/Expression.h"              // for Expression
+#include "common/expression/FunctionCallExpression.h"  // for ArgumentList
+#include "common/fs/TempDir.h"                         // for TempDir
+#include "common/meta/Common.h"                        // for PartHosts, Lis...
+#include "common/meta/NebulaSchemaProvider.h"          // for NebulaSchemaPr...
+#include "common/meta/ServerBasedSchemaManager.h"      // for ServerBasedSch...
+#include "common/network/NetworkUtils.h"               // for NetworkUtils
+#include "common/thrift/ThriftTypes.h"                 // for GraphSpaceID
+#include "common/utils/Types.h"                        // for IndexID
+#include "interface/gen-cpp2/MetaService.h"            // for MetaServiceSvIf
+#include "interface/gen-cpp2/common_constants.h"       // for common_constants
+#include "interface/gen-cpp2/common_types.h"           // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"             // for ColumnDef, Spa...
+#include "kvstore/DiskManager.h"                       // for SpaceDiskPartsMap
+#include "kvstore/NebulaStore.h"                       // for NebulaStore
+#include "meta/ActiveHostsMan.h"                       // for ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"             // for NetworkUtils
+#include "meta/processors/zone/AddHostsProcessor.h"    // for AddHostsProcessor
+#include "meta/test/TestUtils.h"                       // for MockCluster
+#include "mock/MockCluster.h"                          // for MockCluster
+#include "mock/RpcServer.h"                            // for RpcServer
+#include "version/Version.h"                           // for gitInfoSha
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);

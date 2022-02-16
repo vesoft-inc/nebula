@@ -3,10 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "graph/context/ExecutionContext.h"
-#include "graph/context/QueryExpressionContext.h"
+#include <memory>  // for allocator
+
+#include "common/datatypes/Value.h"                // for Value
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
 
 namespace nebula {
 namespace graph {

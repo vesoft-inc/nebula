@@ -5,13 +5,30 @@
 
 #include "graph/executor/query/InnerJoinExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <iterator>   // for move_iterator, mak...
+#include <memory>     // for unique_ptr
+#include <utility>    // for move
+
+#include "common/base/Logging.h"                   // for Check_EQImpl, DCHE...
+#include "common/datatypes/List.h"                 // for hash, List
+#include "common/datatypes/Value.h"                // for Value, hash, opera...
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder
+#include "graph/executor/Executor.h"               // for Executor
+#include "graph/planner/plan/Query.h"              // for BiJoin, Join
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
+
 folly::Future<Status> InnerJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* joinNode = asNode<Join>(node());

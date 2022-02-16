@@ -6,9 +6,16 @@
 #ifndef COMMON_META_SCHEMAPROVIDERIF_H_
 #define COMMON_META_SCHEMAPROVIDERIF_H_
 
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t, uint16_t
+
+#include <string>  // for string
+
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/thrift/ThriftTypes.h"        // for SchemaVer
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for GeoShape
 
 namespace nebula {
 namespace meta {
@@ -21,7 +28,7 @@ class SchemaProviderIf {
     virtual ~Field() = default;
 
     virtual const char* name() const = 0;
-    virtual nebula::cpp2::PropertyType type() const = 0;
+    virtual ::nebula::cpp2::PropertyType type() const = 0;
     virtual bool nullable() const = 0;
     virtual bool hasDefault() const = 0;
     virtual const std::string& defaultValue() const = 0;
@@ -109,8 +116,8 @@ class SchemaProviderIf {
   virtual int64_t getFieldIndex(const std::string& name) const = 0;
   virtual const char* getFieldName(int64_t index) const = 0;
 
-  virtual nebula::cpp2::PropertyType getFieldType(int64_t index) const = 0;
-  virtual nebula::cpp2::PropertyType getFieldType(const std::string& name) const = 0;
+  virtual ::nebula::cpp2::PropertyType getFieldType(int64_t index) const = 0;
+  virtual ::nebula::cpp2::PropertyType getFieldType(const std::string& name) const = 0;
 
   virtual const Field* field(int64_t index) const = 0;
   virtual const Field* field(const std::string& name) const = 0;

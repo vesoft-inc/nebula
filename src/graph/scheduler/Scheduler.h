@@ -6,15 +6,22 @@
 #ifndef GRAPH_SCHEDULER_SCHEDULER_H_
 #define GRAPH_SCHEDULER_SCHEDULER_H_
 
+#include <folly/futures/Future.h>
+
 #include <boost/core/noncopyable.hpp>
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
+#include "common/cpp/helpers.h"
 #include "graph/executor/Executor.h"
 #include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
+class Status;
+
 namespace graph {
+class PlanNode;
+
 class Scheduler : private boost::noncopyable, private cpp::NonMovable {
  public:
   Scheduler() = default;

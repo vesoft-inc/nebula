@@ -6,16 +6,49 @@
 #ifndef META_ADMIN_SNAPSHOT_H_
 #define META_ADMIN_SNAPSHOT_H_
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/Executor.h>                         // for Executor
+#include <folly/executors/CPUThreadPoolExecutor.h>  // for CPUThreadPoolExec...
 #include <gtest/gtest_prod.h>
 
+#include <map>            // for map
+#include <memory>         // for unique_ptr
+#include <set>            // for set
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"  // for ErrorOr
 #include "common/network/NetworkUtils.h"
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
 #include "common/time/WallClock.h"
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for EngineSignType
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+namespace cpp2 {
+class HostBackupInfo;
+}  // namespace cpp2
+}  // namespace meta
+struct HostAddr;
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
+namespace meta {
+class AdminClient;
+namespace cpp2 {
+class HostBackupInfo;
+}  // namespace cpp2
 
 /**
  * @brief Create and drop snapshots for given spaces in

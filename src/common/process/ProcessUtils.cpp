@@ -5,11 +5,23 @@
 
 #include "common/process/ProcessUtils.h"
 
-#include <signal.h>
+#include <errno.h>       // for errno, ENOENT, EPERM, ESRCH
+#include <fcntl.h>       // for open, O_RDWR, pid_t
+#include <folly/Conv.h>  // for to
+#include <limits.h>      // for PATH_MAX
+#include <signal.h>      // for pid_t, kill, size_t
+#include <stdio.h>       // for snprintf, pclose, fclose, ferror
+#include <stdlib.h>      // for exit
+#include <string.h>      // for strerror
+#include <unistd.h>      // for getpid, access, close, dup2, fork
 
-#include "common/base/Base.h"
-#include "common/base/Cord.h"
-#include "common/fs/FileUtils.h"
+#include <cstdint>  // for uint32_t
+#include <regex>    // for match_results, regex, sub_match
+#include <utility>  // for move
+
+#include "common/base/Cord.h"     // for Cord
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/fs/FileUtils.h"  // for FileUtils::FileLineIterator, FileUtils
 
 namespace nebula {
 

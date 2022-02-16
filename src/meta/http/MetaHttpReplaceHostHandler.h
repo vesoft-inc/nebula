@@ -6,14 +6,42 @@
 #ifndef META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
 #define META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <gtest/gtest_prod.h>                     // for FRIEND_TEST
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string
 
 #include "common/base/Base.h"
 #include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"
-#include "webservice/Common.h"
+#include "webservice/Common.h"  // for HttpCode, HttpCode:...
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+}  // namespace nebula
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 using nebula::HttpCode;

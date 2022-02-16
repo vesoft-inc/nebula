@@ -6,10 +6,18 @@
 #ifndef STORAGE_TRANSACTION_CHAINRESUMEUPDATEPRIMEPROCESSOR_H
 #define STORAGE_TRANSACTION_CHAINRESUMEUPDATEPRIMEPROCESSOR_H
 
-#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
+#include <folly/futures/Future.h>  // for SemiF...
+
+#include <string>  // for string
+
+#include "interface/gen-cpp2/common_types.h"                    // for Error...
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"  // for Chain...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 /**
  * @brief

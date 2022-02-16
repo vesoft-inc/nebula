@@ -3,18 +3,61 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/synchronization/Baton.h>
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Future.h>           // for Future::Future<T>
+#include <folly/futures/Future.h>           // for Future
+#include <folly/futures/Promise.h>          // for PromiseException:...
+#include <folly/init/Init.h>                // for init
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <glog/logging.h>                   // for INFO
+#include <gmock/gmock-actions.h>            // for InvokeWithoutArgs...
+#include <gmock/gmock-matchers.h>           // for _
+#include <gmock/gmock-nice-strict.h>        // for NiceMock
+#include <gmock/gmock-spec-builders.h>      // for TypedExpectation
+#include <gtest/gtest-matchers.h>           // for Matcher
+#include <gtest/gtest.h>                    // for Message
+#include <gtest/gtest.h>                    // for TestPartResult
+#include <gtest/gtest.h>                    // for Message
+#include <gtest/gtest.h>                    // for TestPartResult
+#include <stdint.h>                         // for int32_t, int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, option...
+#include <unistd.h>                         // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "kvstore/Common.h"
-#include "meta/processors/job/GetStatsProcessor.h"
-#include "meta/processors/job/JobManager.h"
-#include "meta/processors/job/JobUtils.h"
-#include "meta/test/MockAdminClient.h"
-#include "meta/test/TestUtils.h"
+#include <atomic>         // for atomic
+#include <map>            // for map, operator!=
+#include <memory>         // for unique_ptr, alloc...
+#include <mutex>          // for recursive_mutex
+#include <ostream>        // for operator<<, basic...
+#include <set>            // for set
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair, make_...
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"                    // for ok, value
+#include "common/base/Logging.h"                    // for SetStderrLogging
+#include "common/base/Status.h"                     // for Status
+#include "common/base/StatusOr.h"                   // for StatusOr
+#include "common/datatypes/HostAddr.h"              // for HostAddr, operator<<
+#include "common/fs/TempDir.h"                      // for TempDir
+#include "common/thrift/ThriftTypes.h"              // for GraphSpaceID, JobID
+#include "common/time/WallClock.h"                  // for WallClock
+#include "common/utils/MetaKeyUtils.h"              // for MetaKeyUtils, kDe...
+#include "interface/gen-cpp2/common_types.h"        // for ErrorCode, ErrorC...
+#include "interface/gen-cpp2/meta_types.h"          // for StatsItem, JobStatus
+#include "kvstore/Common.h"                         // for KV
+#include "kvstore/KVStore.h"                        // for KVStore
+#include "kvstore/NebulaStore.h"                    // for NebulaStore
+#include "meta/ActiveHostsMan.h"                    // for ActiveHostsMan::A...
+#include "meta/processors/job/GetStatsProcessor.h"  // for GetStatsProcessor
+#include "meta/processors/job/JobDescription.h"     // for JobDescription
+#include "meta/processors/job/JobManager.h"         // for JobManager, JobMa...
+#include "meta/test/MockAdminClient.h"              // for MockAdminClient
+#include "meta/test/TestUtils.h"                    // for TestUtils, MockCl...
+#include "mock/MockCluster.h"                       // for MockCluster
+#include "version/Version.h"                        // for gitInfoSha
 
 namespace nebula {
 namespace meta {

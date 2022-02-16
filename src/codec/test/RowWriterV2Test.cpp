@@ -3,14 +3,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for hexlify
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
 
-#include "codec/RowReaderWrapper.h"
-#include "codec/RowWriterV2.h"
-#include "codec/test/SchemaWriter.h"
-#include "common/base/Base.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/time/WallClock.h"
+#include <cstdint>      // for int64_t, int32_t
+#include <limits>       // for numeric_limits
+#include <ostream>      // for operator<<, basic_...
+#include <string>       // for allocator, string
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "codec/RowReaderWrapper.h"                // for RowReaderWrapper
+#include "codec/RowWriterV2.h"                     // for RowWriterV2, Write...
+#include "codec/test/SchemaWriter.h"               // for SchemaWriter
+#include "common/base/Logging.h"                   // for SetStderrLogging, LOG
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/datatypes/Date.h"                 // for Date, DateTime, Time
+#include "common/datatypes/Duration.h"             // for Duration
+#include "common/datatypes/Geography.h"            // for Coordinate, Geography
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/thrift/ThriftTypes.h"             // for Timestamp
+#include "common/time/WallClock.h"                 // for WallClock
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType, Prop...
+#include "interface/gen-cpp2/meta_types.h"         // for GeoShape, GeoShape...
 
 namespace nebula {
 

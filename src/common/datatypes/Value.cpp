@@ -4,22 +4,37 @@
  */
 #include "common/datatypes/Value.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
-#include <glog/logging.h>
+#include <assert.h>         // for assert
+#include <bits/std_abs.h>   // for abs
+#include <ctype.h>          // for tolower
+#include <errno.h>          // for errno, ERANGE
+#include <folly/Conv.h>     // for to
+#include <folly/String.h>   // for stringPrintf
+#include <folly/dynamic.h>  // for dynamic::dynamic, dynamic...
 
-#include <memory>
-#include <string>
-#include <utility>
+#include <algorithm>      // for find, transform
+#include <cmath>          // for fmod
+#include <cstdint>        // for int64_t, INT64_MIN, int16_t
+#include <cstdlib>        // for abs, strtod, strtoll, size_t
+#include <limits>         // for numeric_limits
+#include <memory>         // for unique_ptr, allocator
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ostream...
+#include <string>         // for string, basic_string, ope...
+#include <unordered_map>  // for hash, operator==, unorder...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, addressof, pair
+#include <vector>         // for vector
 
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Geography.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Path.h"
-#include "common/datatypes/Set.h"
-#include "common/datatypes/Vertex.h"
+#include "common/base/Logging.h"         // for GetReferenceableValue
+#include "common/datatypes/DataSet.h"    // for DataSet
+#include "common/datatypes/Edge.h"       // for Edge, hash
+#include "common/datatypes/Geography.h"  // for Geography, hash
+#include "common/datatypes/List.h"       // for List, hash
+#include "common/datatypes/Map.h"        // for Map, hash
+#include "common/datatypes/Path.h"       // for Path, hash
+#include "common/datatypes/Set.h"        // for Set, hash
+#include "common/datatypes/Vertex.h"     // for Vertex, hash
 
 namespace std {
 

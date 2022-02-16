@@ -5,13 +5,24 @@
 
 #include "storage/transaction/ChainDeleteEdgesResumeProcessor.h"
 
-#include <thrift/lib/cpp2/protocol/JSONProtocol.h>
-#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <folly/futures/Future.h>           // for SemiFuture::rele...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "storage/StorageFlags.h"
+#include <ostream>  // for operator<<, basi...
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "interface/gen-cpp2/storage_types.h"        // for DeleteEdgesRequest
+#include "kvstore/Common.h"                          // for KV
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil, Del...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 ChainDeleteEdgesResumeProcessor::ChainDeleteEdgesResumeProcessor(StorageEnv* env,
                                                                  const std::string& val)

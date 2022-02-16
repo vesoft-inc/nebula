@@ -6,8 +6,18 @@
 #ifndef CODEC_TEST_RESULTSCHEMAPROVIDER_H_
 #define CODEC_TEST_RESULTSCHEMAPROVIDER_H_
 
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t, int16_t, int32_t
+
+#include <string>         // for string, allocator
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaProviderIf.h"     // for SchemaProviderIf, Schem...
+#include "common/thrift/ThriftTypes.h"        // for SchemaVer
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for GeoShape, GeoShape::ANY
 
 namespace nebula {
 

@@ -5,9 +5,14 @@
 
 #include "graph/planner/plan/Maintain.h"
 
-#include <sstream>
+#include <folly/Conv.h>     // for to
+#include <folly/dynamic.h>  // for dynamic::push_back, dynamic::dynamic
+#include <folly/json.h>     // for toJson
 
-#include "graph/util/ToJson.h"
+#include <algorithm>  // for transform
+
+#include "common/graph/Response.h"  // for PlanNodeDescription
+#include "graph/util/ToJson.h"      // for toJson
 
 namespace nebula {
 namespace graph {

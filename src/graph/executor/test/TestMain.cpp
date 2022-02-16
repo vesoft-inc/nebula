@@ -3,10 +3,11 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/init/Init.h>
 #include <gflags/gflags_declare.h>
-#include <gtest/gtest.h>
+#include <glog/logging.h>
 
-#include "common/base/Base.h"
+#include "common/base/Logging.h"
 
 DECLARE_bool(enable_lifetime_optimize);
 

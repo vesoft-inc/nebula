@@ -5,12 +5,26 @@
 
 #include "webservice/SetFlagsHandler.h"
 
-#include <folly/Conv.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <folly/FBString.h>                       // for fbstring
+#include <folly/Optional.h>                       // for Optional
+#include <folly/detail/Iterators.h>               // for operator!=, Iterato...
+#include <folly/dynamic.h>                        // for dynamic::dynamic
+#include <folly/dynamic.h>                        // for dynamic
+#include <folly/dynamic.h>                        // for dynamic::dynamic
+#include <folly/dynamic.h>                        // for dynamic
+#include <folly/json.h>                           // for parseJson, toPretty...
+#include <gflags/gflags.h>                        // for SetCommandLineOption
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
-#include "common/base/Base.h"
-#include "webservice/Common.h"
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_o...
+#include <string>     // for string, char_traits
+#include <utility>    // for move, pair
+
+#include "common/base/Logging.h"  // for LOG, LogMessage
+#include "webservice/Common.h"    // for HttpStatusCode, Web...
 
 namespace nebula {
 

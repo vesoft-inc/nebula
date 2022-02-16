@@ -6,13 +6,35 @@
 #ifndef META_CREATEBACKUPPROCESSOR_H_
 #define META_CREATEBACKUPPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
 #include <gtest/gtest_prod.h>
 
-#include "meta/processors/BaseProcessor.h"
+#include <string>         // for string
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for CreateBackupResp, Creat...
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief Create backup files in each mtead and storaged services' local.

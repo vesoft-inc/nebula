@@ -6,9 +6,25 @@
 #ifndef COMMON_EXPRESSION_LOGICALEXPRESSION_H_
 #define COMMON_EXPRESSION_LOGICALEXPRESSION_H_
 
+#include <stddef.h>  // for size_t
+
+#include <ostream>  // for operator<<
+#include <string>   // for operator<<, string
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"     // for Check_LTImpl, DCHECK_LT, LOG
+#include "common/base/ObjectPool.h"  // for ObjectPool
+#include "common/datatypes/Value.h"  // for Value
 #include "common/expression/BinaryExpression.h"
+#include "common/expression/Expression.h"  // for Expression::Kind, Expression
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
+
 class LogicalExpression final : public Expression {
  public:
   LogicalExpression& operator=(const LogicalExpression& rhs) = delete;

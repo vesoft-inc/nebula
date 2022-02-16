@@ -5,6 +5,11 @@
 
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
+#include <cstdint>  // for uint32_t, uint8_t
+#include <utility>  // for move
+
+#include "common/base/Status.h"  // for Status
+
 namespace nebula {
 namespace geo {
 

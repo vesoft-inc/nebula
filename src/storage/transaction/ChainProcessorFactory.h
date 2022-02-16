@@ -6,12 +6,18 @@
 #ifndef STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
 #define STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
 
+#include <string>
+
+#include "common/thrift/ThriftTypes.h"
 #include "storage/CommonUtils.h"
 #include "storage/transaction/ChainBaseProcessor.h"
+#include "storage/transaction/ConsistTypes.h"
 #include "storage/transaction/ConsistUtil.h"
 
 namespace nebula {
 namespace storage {
+class ChainBaseProcessor;
+class StorageEnv;
 
 class ChainProcessorFactory {
  public:

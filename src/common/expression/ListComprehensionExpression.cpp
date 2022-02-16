@@ -5,7 +5,13 @@
 
 #include "common/expression/ListComprehensionExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <stddef.h>  // for size_t
+
+#include <utility>  // for move
+
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/datatypes/List.h"             // for List
+#include "common/expression/ExprVisitor.h"     // for ExprVisitor
 
 namespace nebula {
 

@@ -7,7 +7,7 @@
 #define KVSTORE_STATS_KVSTATS_H
 
 #include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
+#include "common/stats/StatsManager.h"  // for CounterId
 
 namespace nebula {
 

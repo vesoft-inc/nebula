@@ -5,26 +5,80 @@
 
 #include "kvstore/raftex/RaftPart.h"
 
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <folly/gen/Base.h>
-#include <folly/io/async/EventBaseManager.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Likely.h>                          // for UNLIKELY, LIKELY
+#include <folly/Portability.h>                     // for folly
+#include <folly/Random.h>                          // for Random
+#include <folly/ScopeGuard.h>                      // for operator+, SCOPE_EXIT
+#include <folly/String.h>                          // for stringPrintf
+#include <folly/Try.h>                             // for Try
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future::operator=
+#include <folly/gen/Base.h>                        // for ReferencedSource
+#include <folly/gen/Core.h>                        // for operator|, Operator
+#include <folly/io/async/EventBase.h>              // for EventBase
+#include <gflags/gflags.h>                         // for DECLARE_int32, DEF...
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref
+#include <unistd.h>                                // for size_t, usleep
 
-#include "common/base/Base.h"
-#include "common/base/CollectNSucceeded.h"
-#include "common/base/SlowOpTracker.h"
-#include "common/network/NetworkUtils.h"
-#include "common/stats/StatsManager.h"
-#include "common/thread/NamedThread.h"
-#include "common/thrift/ThriftClientManager.h"
-#include "common/time/WallClock.h"
-#include "common/utils/LogStrListIterator.h"
-#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "kvstore/LogEncoder.h"
-#include "kvstore/raftex/Host.h"
-#include "kvstore/raftex/RaftLogIterator.h"
-#include "kvstore/stats/KVStats.h"
-#include "kvstore/wal/FileBasedWal.h"
+#include <algorithm>           // for find_if, find, max
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <iterator>            // for move_iterator, mak...
+#include <ostream>             // for operator<<, basic_...
+
+#include "common/base/CollectNSucceeded.h"    // for collectNSucceeded
+#include "common/base/SlowOpTracker.h"        // for SlowOpTracker
+#include "common/stats/StatsManager.h"        // for StatsManager
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/LogIterator.h"         // for LogIterator
+#include "kvstore/raftex/Host.h"              // for Host
+#include "kvstore/raftex/RaftLogIterator.h"   // for RaftLogIterator
+#include "kvstore/stats/KVStats.h"            // for kCommitLogLatencyUs
+#include "kvstore/wal/FileBasedWal.h"         // for FileBasedWal, File...
+
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace network {
+class NetworkUtils;
+}  // namespace network
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thrift {
+template <class ClientType>
+class ThriftClientManager;
+}  // namespace thrift
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace network {
+class NetworkUtils;
+}  // namespace network
+namespace raftex {
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thrift {
+template <class ClientType>
+class ThriftClientManager;
+}  // namespace thrift
+}  // namespace nebula
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5, "Seconds between each heartbeat");
 

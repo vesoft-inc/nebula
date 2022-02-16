@@ -6,10 +6,17 @@
 #ifndef COMMON_DATATYPES_EDGE_H_
 #define COMMON_DATATYPES_EDGE_H_
 
-#include <unordered_map>
+#include <folly/dynamic.h>  // for dynamic
 
-#include "common/datatypes/Value.h"
-#include "common/thrift/ThriftTypes.h"
+#include <cstddef>        // for size_t
+#include <iosfwd>         // for ostream
+#include <string>         // for string, hash, basic_string
+#include <string_view>    // for hash
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+
+#include "common/datatypes/Value.h"     // for Value
+#include "common/thrift/ThriftTypes.h"  // for EdgeRanking, EdgeType
 
 namespace nebula {
 

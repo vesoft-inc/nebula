@@ -3,11 +3,26 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <double-conversion/utils.h>  // for ASSERT
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
 
-#include "common/base/ObjectPool.h"
-#include "graph/visitor/FoldConstantExprVisitor.h"
-#include "graph/visitor/test/VisitorTestBase.h"
+#include <memory>  // for allocator
+
+#include "common/expression/ArithmeticExpression.h"    // for ArithmeticExpr...
+#include "common/expression/CaseExpression.h"          // for CaseExpression
+#include "common/expression/ConstantExpression.h"      // for ConstantExpres...
+#include "common/expression/ContainerExpression.h"     // for ListExpression
+#include "common/expression/Expression.h"              // for Expression
+#include "common/expression/FunctionCallExpression.h"  // for FunctionCallEx...
+#include "common/expression/LogicalExpression.h"       // for LogicalExpression
+#include "common/expression/PathBuildExpression.h"     // for PathBuildExpre...
+#include "common/expression/RelationalExpression.h"    // for RelationalExpr...
+#include "common/expression/SubscriptExpression.h"     // for SubscriptExpre...
+#include "common/expression/UnaryExpression.h"         // for UnaryExpression
+#include "common/expression/VariableExpression.h"      // for VariableExpres...
+#include "graph/visitor/FoldConstantExprVisitor.h"     // for FoldConstantEx...
+#include "graph/visitor/test/VisitorTestBase.h"        // for VisitorTestBase
 
 namespace nebula {
 namespace graph {

@@ -5,6 +5,23 @@
 
 #include "meta/processors/schema/GetEdgeProcessor.h"
 
+#include <folly/Range.h>               // for StringPiece
+#include <folly/SharedMutex.h>         // for SharedMutex
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <memory>   // for unique_ptr
+#include <ostream>  // for operator<<, basic_ost...
+#include <string>   // for operator<<, char_traits
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LogMessage, LOG, _LOG...
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doGet
+#include "meta/processors/Common.h"           // for LockUtils
+
 namespace nebula {
 namespace meta {
 

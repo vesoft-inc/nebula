@@ -6,14 +6,52 @@
 #ifndef STORAGE_ADMIN_REBUILDINDEXTASK_H_
 #define STORAGE_ADMIN_REBUILDINDEXTASK_H_
 
+#include <stddef.h>  // for size_t
+
+#include <algorithm>  // for max
+#include <atomic>     // for atomic
+#include <memory>     // for shared_ptr
+#include <ostream>    // for operator<<
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"   // for ErrorOr
+#include "common/base/Logging.h"   // for LOG, LogMessage, _LOG_INFO
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/meta/IndexManager.h"
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, PartitionID
+#include "common/utils/Types.h"               // for IndexID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::E...
 #include "interface/gen-cpp2/storage_types.h"
+#include "kvstore/Common.h"  // for KV
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RateLimiter.h"
-#include "storage/admin/AdminTask.h"
+#include "storage/admin/AdminTask.h"  // for AdminSubTask (ptr only)
 
 namespace nebula {
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
 namespace storage {
+class StorageEnv;
+}  // namespace storage
+
+namespace kvstore {
+class BatchHolder;
+class RateLimiter;
+
+class BatchHolder;
+class RateLimiter;
+}  // namespace kvstore
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
+namespace storage {
+class StorageEnv;
 
 using IndexItems = std::vector<std::shared_ptr<meta::cpp2::IndexItem>>;
 

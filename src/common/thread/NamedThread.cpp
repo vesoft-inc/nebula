@@ -5,7 +5,7 @@
 
 #include "common/thread/NamedThread.h"
 
-#include "common/base/Base.h"
+#include <syscall.h>  // for SYS_gettid
 
 namespace nebula {
 namespace thread {

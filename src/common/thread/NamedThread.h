@@ -9,9 +9,14 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <sys/prctl.h>
+#include <sys/prctl.h>  // for prctl, PR_GET_NAME, PR_SET_NAME
 #include <sys/syscall.h>
-#include <unistd.h>
+#include <unistd.h>  // for pid_t
+
+#include <functional>  // for function, bind
+#include <string>      // for string
+#include <thread>      // for thread
+#include <utility>     // for forward
 
 namespace nebula {
 namespace thread {

@@ -3,11 +3,21 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <unistd.h>           // for usleep
 
-#include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
-#include "common/thread/GenericWorker.h"
+#include <algorithm>  // for max, min
+#include <memory>     // for unique_ptr, allocator, make...
+#include <utility>    // for move
+
+#include "common/base/Logging.h"          // for SetStderrLogging
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/stats/StatsManager.h"    // for StatsManager::VT, StatsManager
+#include "common/thread/GenericWorker.h"  // for GenericWorker
 
 namespace nebula {
 namespace stats {

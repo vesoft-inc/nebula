@@ -6,10 +6,31 @@
 #ifndef STORAGE_QUERY_SCANEDGEPROCESSOR_H_
 #define STORAGE_QUERY_SCANEDGEPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for PromiseExcepti...
+#include <stdint.h>                 // for int64_t
+
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "storage/exec/ScanNode.h"
-#include "storage/exec/StoragePlan.h"
-#include "storage/query/QueryBaseProcessor.h"
+#include "common/datatypes/DataSet.h"                  // for DataSet
+#include "common/thrift/ThriftTypes.h"                 // for PartitionID
+#include "interface/gen-cpp2/common_types.h"           // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"          // for ScanResponse
+#include "storage/CommonUtils.h"                       // for RuntimeContext
+#include "storage/context/StorageExpressionContext.h"  // for StorageExpress...
+#include "storage/exec/ScanNode.h"                     // for Cursor
+#include "storage/exec/StoragePlan.h"                  // for StoragePlan
+#include "storage/query/QueryBaseProcessor.h"          // for QueryBaseProce...
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

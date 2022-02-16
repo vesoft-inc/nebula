@@ -3,17 +3,44 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/Range.h>                           // for Range
+#include <folly/futures/Future.h>                  // for Future::wait
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/init/Init.h>                       // for init
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <gflags/gflags_declare.h>                 // for DECLARE_uint32
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <unistd.h>                                // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <memory>              // for shared_ptr, __shar...
+#include <ostream>             // for operator<<
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                 // for SetStderrLogging, LOG
+#include "common/datatypes/HostAddr.h"           // for HostAddr
+#include "common/fs/TempDir.h"                   // for TempDir
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for appendLogs, checkL...
+#include "kvstore/raftex/test/TestShard.h"       // for encodeLearner, Tes...
+
+namespace nebula {
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
+namespace raftex {
+class RaftexService;
+
+class RaftexService;
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

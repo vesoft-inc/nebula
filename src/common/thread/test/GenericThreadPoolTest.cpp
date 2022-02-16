@@ -3,11 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Try.h>              // for Try::~Try<T>, Try
+#include <folly/futures/Future.h>   // for SemiFuture::get
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <folly/futures/Promise.h>  // for Promise::setWith, Promi...
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <string.h>                 // for strlen
+#include <unistd.h>                 // for usleep, size_t
 
-#include "common/base/Base.h"
-#include "common/thread/GenericThreadPool.h"
-#include "common/time/Duration.h"
+#include <algorithm>    // for max, min
+#include <exception>    // for exception
+#include <memory>       // for allocator, make_shared
+#include <string>       // for to_string, basic_string
+#include <type_traits>  // for enable_if<>::type
+#include <utility>      // for move
+
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "common/time/Duration.h"             // for Duration
 
 namespace nebula {
 namespace thread {

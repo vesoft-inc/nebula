@@ -5,12 +5,18 @@
 
 #include "graph/planner/ngql/LookupPlanner.h"
 
-#include "common/base/Base.h"
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
-#include "graph/planner/plan/Scan.h"
-#include "parser/Clauses.h"
-#include "parser/TraverseSentences.h"
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+
+#include "graph/context/ast/AstContext.h"       // for AstContext
+#include "graph/context/ast/QueryAstContext.h"  // for AstContext
+#include "graph/planner/plan/ExecutionPlan.h"   // for SubPlan
+#include "graph/planner/plan/PlanNode.h"        // for PlanNode
+#include "graph/planner/plan/Query.h"           // for IndexScan::IndexQuery...
+#include "graph/planner/plan/Scan.h"            // for EdgeIndexFullScan
+#include "graph/session/ClientSession.h"        // for SpaceInfo
+#include "parser/Sentence.h"                    // for Sentence, Sentence::Kind
+#include "parser/TraverseSentences.h"           // for LookupSentence
 
 namespace nebula {
 namespace graph {

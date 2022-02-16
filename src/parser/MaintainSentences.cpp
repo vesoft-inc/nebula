@@ -5,9 +5,13 @@
 
 #include "parser/MaintainSentences.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/String.h>                   // for stringPrintf, join
+#include <stdint.h>                         // for int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
 
-#include "common/base/Base.h"
+#include "Sentence.h"                      // for HostList, ZoneItemList
+#include "common/expression/Expression.h"  // for Expression
 
 namespace nebula {
 

@@ -5,9 +5,31 @@
 
 #include "tools/db-dump/DbDumper.h"
 
-#include "common/fs/FileUtils.h"
-#include "common/time/Duration.h"
-#include "common/utils/NebulaKeyUtils.h"
+#include <folly/String.h>                          // for splitTo, stringPrintf
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <gflags/gflags.h>                         // for clstring, DEFINE_s...
+#include <rocksdb/iterator.h>                      // for Iterator
+#include <rocksdb/slice.h>                         // for Slice
+#include <rocksdb/status.h>                        // for Status
+#include <string.h>                                // for memcpy, size_t
+
+#include <algorithm>    // for find
+#include <exception>    // for exception
+#include <iostream>     // for operator<<, basic_...
+#include <iterator>     // for insert_iterator
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move, pair
+
+#include "codec/RowReader.h"               // for RowReader
+#include "codec/RowReaderWrapper.h"        // for RowReaderWrapper
+#include "common/base/Base.h"              // for UNUSED
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "common/fs/FileUtils.h"           // for FileUtils
+#include "common/meta/SchemaProviderIf.h"  // for SchemaProviderIf::...
+#include "common/network/NetworkUtils.h"   // for NetworkUtils
+#include "common/time/Duration.h"          // for Duration
+#include "common/utils/NebulaKeyUtils.h"   // for NebulaKeyUtils
+#include "kvstore/RocksEngine.h"           // for RocksPrefixIter
 
 DEFINE_string(space_name, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");

@@ -5,9 +5,11 @@
 
 #include "graph/optimizer/rule/EdgeIndexFullScanRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Scan.h"
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptRule.h"      // for OptRule, Pattern, RuleSet
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for IndexScan
+#include "graph/planner/plan/Scan.h"      // for EdgeIndexFullScan
 
 using nebula::graph::EdgeIndexFullScan;
 using nebula::graph::IndexScan;

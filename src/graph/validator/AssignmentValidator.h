@@ -6,10 +6,24 @@
 #ifndef GRAPH_VALIDATOR_ASSIGNMENTVALIDATOR_H_
 #define GRAPH_VALIDATOR_ASSIGNMENTVALIDATOR_H_
 
-#include "graph/validator/Validator.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/Status.h"         // for Status
+#include "graph/validator/Validator.h"  // for Validator
+#include "parser/TraverseSentences.h"   // for AssignmentSentence
 
 namespace nebula {
+class Sentence;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+class QueryContext;
+
 class AssignmentValidator final : public Validator {
  public:
   AssignmentValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {

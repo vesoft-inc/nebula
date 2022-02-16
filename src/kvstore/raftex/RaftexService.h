@@ -7,16 +7,75 @@
 #define RAFTEX_RAFTEXSERVICE_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/hash/Hash.h>                   // for hash
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock
+#include <stdint.h>                            // for uint16_t, uint32_t
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include <atomic>         // for atomic_int
+#include <memory>         // for shared_ptr, unique_ptr
+#include <thread>         // for thread
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/RaftexService.h"
+#include "common/thrift/ThriftTypes.h"         // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/RaftexService.h"  // for RaftexServiceSvIf
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+namespace nebula {
+namespace raftex {
+namespace cpp2 {
+class AppendLogRequest;
+class AppendLogResponse;
+class AskForVoteRequest;
+class AskForVoteResponse;
+class GetStateRequest;
+class GetStateResponse;
+class HeartbeatRequest;
+class HeartbeatResponse;
+class SendSnapshotRequest;
+class SendSnapshotResponse;
+}  // namespace cpp2
+}  // namespace raftex
+}  // namespace nebula
+
+namespace apache {
+namespace thrift {
+class ThriftServer;
+template <typename T>
+class HandlerCallback;
+
+class ThriftServer;
+template <typename T>
+class HandlerCallback;
+}  // namespace thrift
+}  // namespace apache
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
 
 namespace nebula {
 namespace raftex {
 
 class RaftPart;
 class IOThreadPoolObserver;
+namespace cpp2 {
+class AppendLogRequest;
+class AppendLogResponse;
+class AskForVoteRequest;
+class AskForVoteResponse;
+class GetStateRequest;
+class GetStateResponse;
+class HeartbeatRequest;
+class HeartbeatResponse;
+class SendSnapshotRequest;
+class SendSnapshotResponse;
+}  // namespace cpp2
 
 /**
  * @brief Class to handle raft thrift server, also distribute request to RaftPart.

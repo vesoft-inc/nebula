@@ -5,11 +5,38 @@
 
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/Range.h>                            // for Range
+#include <folly/SharedMutex.h>                      // for SharedMutex
+#include <folly/Try.h>                              // for Try, Try::~Try<T>
+#include <folly/executors/CPUThreadPoolExecutor.h>  // for CPUThreadPoolExec...
+#include <folly/futures/Future-pre.h>               // for tryCallableResult...
+#include <folly/futures/Future.h>                   // for SemiFuture::relea...
+#include <folly/futures/Promise.h>                  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                  // for PromiseException:...
+#include <folly/futures/Promise.h>                  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                  // for PromiseException:...
+#include <folly/hash/Hash.h>                        // for hash
+#include <gflags/gflags.h>                          // for DEFINE_double
+#include <string.h>                                 // for size_t, memcpy
+#include <thrift/lib/cpp/util/EnumUtils.h>          // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>               // for field_ref
 
-#include "common/utils/MetaKeyUtils.h"
-#include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
+#include <algorithm>    // for find, find_if
+#include <cmath>        // for ceil, floor
+#include <functional>   // for function
+#include <iterator>     // for back_insert_iterator
+#include <ostream>      // for operator<<, basic...
+#include <type_traits>  // for __strip_reference...
+
+#include "common/base/Base.h"               // for UNUSED
+#include "common/base/Logging.h"            // for LOG, LogMessage
+#include "common/base/Status.h"             // for Status
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, kDe...
+#include "interface/gen-cpp2/meta_types.h"  // for SpaceDesc, JobStatus
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/KVStore.h"                // for KVStore
+#include "meta/ActiveHostsMan.h"            // for ActiveHostsMan
+#include "meta/processors/Common.h"         // for LockUtils
 
 DEFINE_double(leader_balance_deviation,
               0.05,

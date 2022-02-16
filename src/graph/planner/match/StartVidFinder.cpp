@@ -5,6 +5,10 @@
 
 #include "graph/planner/match/StartVidFinder.h"
 
+#include "common/base/Status.h"                  // for Status
+#include "graph/context/ast/CypherAstContext.h"  // for PatternContext, Patt...
+#include "graph/planner/plan/ExecutionPlan.h"    // for SubPlan
+
 namespace nebula {
 namespace graph {
 bool StartVidFinder::match(PatternContext* patternCtx) {

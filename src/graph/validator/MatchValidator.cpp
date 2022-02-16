@@ -5,12 +5,52 @@
 
 #include "graph/validator/MatchValidator.h"
 
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t
+
+#include <limits>         // for numeric_limits
+#include <ostream>        // for operator<<
+#include <type_traits>    // for remove_refer...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                            // for kTag
+#include "common/base/Logging.h"                         // for GetReference...
+#include "common/base/ObjectPool.h"                      // for ObjectPool
+#include "common/datatypes/Value.h"                      // for Value, Value...
+#include "common/expression/AggregateExpression.h"       // for AggregateExp...
+#include "common/expression/ContainerExpression.h"       // for MapExpression
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/LogicalExpression.h"         // for LogicalExpre...
+#include "common/expression/PathBuildExpression.h"       // for PathBuildExp...
+#include "common/expression/PropertyExpression.h"        // for InputPropert...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "common/meta/SchemaManager.h"                   // for SchemaManager
+#include "common/thrift/ThriftTypes.h"                   // for EdgeType, TagID
+#include "graph/context/QueryExpressionContext.h"        // for QueryExpress...
+#include "graph/context/Symbols.h"                       // for ColsDef
+#include "graph/context/ValidateContext.h"               // for ValidateContext
+#include "graph/session/ClientSession.h"                 // for SpaceInfo
+#include "graph/util/AnonVarGenerator.h"                 // for AnonVarGener...
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "parser/Clauses.h"                              // for YieldColumn
+#include "parser/MatchSentence.h"                        // for WithClause
+#include "parser/TraverseSentences.h"                    // for OrderFactor:...
 
 namespace nebula {
+class Sentence;
 namespace graph {
+struct AstContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+struct AstContext;
+
 MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
     : Validator(sentence, context) {
   cypherCtx_ = getContext<CypherContext>();

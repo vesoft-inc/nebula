@@ -4,12 +4,49 @@
  */
 #include "graph/validator/MutateValidator.h"
 
-#include "common/expression/LabelAttributeExpression.h"
-#include "graph/planner/plan/Mutate.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteSymExprVisitor.h"
+#include <folly/Range.h>                           // for Range
+#include <folly/String.h>                          // for join
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <stddef.h>                                // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref
+
+#include <algorithm>      // for find
+#include <iterator>       // for distance
+#include <ostream>        // for operator<<
+#include <set>            // for set
+#include <type_traits>    // for remove_refer...
+#include <unordered_set>  // for unordered_set
+
+#include "common/base/Base.h"                            // for kDst, kRank
+#include "common/base/Logging.h"                         // for LogMessage
+#include "common/base/ObjectPool.h"                      // for ObjectPool
+#include "common/base/StatusOr.h"                        // for StatusOr
+#include "common/datatypes/DataSet.h"                    // for Row, DataSet
+#include "common/datatypes/List.h"                       // for List
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/PropertyExpression.h"        // for InputPropert...
+#include "common/meta/NebulaSchemaProvider.h"            // for NebulaSchema...
+#include "common/meta/SchemaManager.h"                   // for SchemaManager
+#include "common/meta/SchemaProviderIf.h"                // for SchemaProvid...
+#include "graph/context/ExecutionContext.h"              // for ExecutionCon...
+#include "graph/context/QueryContext.h"                  // for QueryContext
+#include "graph/context/QueryExpressionContext.h"        // for QueryExpress...
+#include "graph/context/Result.h"                        // for ResultBuilder
+#include "graph/context/ValidateContext.h"               // for ValidateContext
+#include "graph/planner/plan/Mutate.h"                   // for UpdateEdge
+#include "graph/planner/plan/Query.h"                    // for Dedup, Verte...
+#include "graph/service/GraphFlags.h"                    // for FLAGS_enable...
+#include "graph/session/ClientSession.h"                 // for SpaceInfo
+#include "graph/util/AnonVarGenerator.h"                 // for AnonVarGener...
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "graph/util/SchemaUtil.h"                       // for SchemaUtil
+#include "graph/visitor/RewriteSymExprVisitor.h"         // for RewriteSymEx...
+#include "interface/gen-cpp2/meta_types.h"               // for IsolationLevel
+#include "parser/Clauses.h"                              // for YieldColumns
+#include "parser/EdgeKey.h"                              // for EdgeKeyRef
 
 namespace nebula {
 namespace graph {

@@ -3,14 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark
+#include <folly/BenchmarkUtil.h>  // for doNotOptim...
+#include <folly/init/Init.h>      // for init
+#include <stddef.h>               // for size_t
 
-#include <memory>
+#include <memory>  // for allocator
 
-#include "common/base/ObjectPool.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/test/ExpressionContextMock.h"
+#include "common/base/ObjectPool.h"                        // for ObjectPool
+#include "common/datatypes/Value.h"                        // for Value
+#include "common/expression/ConstantExpression.h"          // for ConstantEx...
+#include "common/expression/Expression.h"                  // for Expression
+#include "common/expression/FunctionCallExpression.h"      // for ArgumentList
+#include "common/expression/test/ExpressionContextMock.h"  // for Expression...
 
 nebula::ExpressionContextMock gExpCtxt;
 nebula::ObjectPool pool;

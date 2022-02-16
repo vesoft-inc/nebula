@@ -6,9 +6,19 @@
 #ifndef COMMON_DATATYPES_PATH_H_
 #define COMMON_DATATYPES_PATH_H_
 
-#include "common/datatypes/Value.h"
-#include "common/datatypes/Vertex.h"
-#include "common/thrift/ThriftTypes.h"
+#include <folly/dynamic.h>  // for dynamic
+
+#include <cstddef>        // for size_t
+#include <ostream>        // for operator<<, basic_ostream
+#include <string>         // for string, operator<<, char_traits
+#include <string_view>    // for hash
+#include <unordered_map>  // for unordered_map, _Node_const_it...
+#include <utility>        // for move, pair
+#include <vector>         // for vector, operator!=, operator<
+
+#include "common/datatypes/Value.h"     // for Value, operator!=, operator<<
+#include "common/datatypes/Vertex.h"    // for Vertex, operator<<
+#include "common/thrift/ThriftTypes.h"  // for EdgeRanking, EdgeType
 
 namespace nebula {
 

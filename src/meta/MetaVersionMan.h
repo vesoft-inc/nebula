@@ -7,11 +7,20 @@
 #define META_METAVERSIONMAN_H_
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"  // for Status
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
+namespace kvstore {
+class KVEngine;
+class KVStore;
+
+class KVEngine;
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 enum class MetaVersion {

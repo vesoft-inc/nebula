@@ -6,10 +6,20 @@
 #ifndef GRAPH_PLANNER_MATCH_ORDERBYCLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_ORDERBYCLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include "common/base/Status.h"                       // for Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
 namespace graph {
+struct CypherClauseContextBase;
+struct OrderByClauseContext;
+struct SubPlan;
+
+struct CypherClauseContextBase;
+struct OrderByClauseContext;
+struct SubPlan;
+
 /*
  * The OrderByClausePlanner was designed to generate plan for order by clause;
  */

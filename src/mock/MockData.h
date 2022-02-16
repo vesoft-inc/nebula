@@ -6,10 +6,40 @@
 #ifndef MOCK_MOCKDATA_H_
 #define MOCK_MOCKDATA_H_
 
+#include <gflags/gflags_declare.h>  // for DECLARE_bool, DECLARE_...
+#include <stddef.h>                 // for size_t
+#include <stdint.h>                 // for int32_t
+
+#include <memory>         // for shared_ptr, allocator
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map, _Map_ba...
+#include <utility>        // for pair
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "common/meta/NebulaSchemaProvider.h"
+#include "common/thrift/ThriftTypes.h"  // for VertexID, PartitionID
 #include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"  // for AddEdgesRequest, AddVe...
+
+namespace nebula {
+class ObjectPool;
+namespace meta {
+class NebulaSchemaProvider;
+namespace cpp2 {
+class ColumnDef;
+}  // namespace cpp2
+}  // namespace meta
+
+class ObjectPool;
+namespace meta {
+class NebulaSchemaProvider;
+namespace cpp2 {
+class ColumnDef;
+}  // namespace cpp2
+}  // namespace meta
+}  // namespace nebula
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);

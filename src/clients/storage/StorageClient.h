@@ -6,16 +6,53 @@
 #ifndef CLIENTS_STORAGE_STORAGECLIENT_H
 #define CLIENTS_STORAGE_STORAGECLIENT_H
 
-#include <gtest/gtest_prod.h>
+#include <folly/futures/Future.h>  // for SemiF...
+#include <gtest/gtest_prod.h>      // for FRIEN...
+#include <stdint.h>                // for int64_t
 
-#include "clients/storage/StorageClientBase.h"
+#include <functional>     // for function
+#include <limits>         // for numer...
+#include <memory>         // for share...
+#include <string>         // for string
+#include <unordered_map>  // for unord...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "clients/storage/StorageClientBase.h"  // for Stora...
 #include "common/base/Base.h"
-#include "common/thrift/ThriftClientManager.h"
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/DataSet.h"           // for Row
+#include "common/datatypes/Value.h"             // for Value
+#include "common/thrift/ThriftClientManager.h"  // for Thrif...
 #include "common/thrift/ThriftLocalClientManager.h"
-#include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
+#include "common/thrift/ThriftTypes.h"                          // for Graph...
+#include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"  // for Graph...
+#include "interface/gen-cpp2/storage_types.h"                   // for ExecR...
 #include "storage/GraphStorageLocalServer.h"
 
 namespace nebula {
+class Expression;
+namespace meta {
+class MetaClient;
+}  // namespace meta
+struct KeyValue;
+}  // namespace nebula
+
+namespace folly {
+class EventBase;
+class IOThreadPoolExecutor;
+
+class EventBase;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace nebula {
+class Expression;
+namespace meta {
+class MetaClient;
+}  // namespace meta
+struct KeyValue;
+
 namespace storage {
 
 template <typename T>

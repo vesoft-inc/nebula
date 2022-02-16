@@ -5,11 +5,17 @@
 
 #include "graph/executor/query/SetExecutor.h"
 
-#include <sstream>
+#include <folly/Likely.h>  // for UNLIKELY, LIKELY
+#include <folly/String.h>  // for join
 
-#include "common/datatypes/DataSet.h"
-#include "graph/context/ExecutionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max, equal
+#include <sstream>    // for operator<<, basic_ostream
+
+#include "common/datatypes/DataSet.h"        // for DataSet
+#include "common/datatypes/Value.h"          // for Value, operator<<
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, operator<<
+#include "graph/planner/plan/Query.h"        // for SetOp
 
 namespace nebula {
 namespace graph {

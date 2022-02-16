@@ -4,10 +4,22 @@
  */
 
 #if defined(__x86_64__)
-#include <breakpad/client/linux/handler/exception_handler.h>
+#include <breakpad/client/linux/handler/exception_handler.h>  // for Excepti...
+#include <client/linux/handler/minidump_descriptor.h>         // for Minidum...
+#include <gflags/gflags_declare.h>                            // for DECLARE...
 
-#include "common/base/StatusOr.h"
-#include "common/fs/FileUtils.h"
+#include <memory>  // for make_un...
+
+#include "common/base/Status.h"   // for Status
+#include "common/fs/FileUtils.h"  // for FileUtils
+
+namespace nebula {
+template <typename T>
+class StatusOr;
+
+template <typename T>
+class StatusOr;
+}  // namespace nebula
 
 static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
 

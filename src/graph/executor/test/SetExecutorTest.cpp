@@ -3,16 +3,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/String.h>          // for stringPrintf
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <stddef.h>                // for size_t
 
-#include <memory>
+#include <algorithm>           // for sort
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_...
+#include <ostream>             // for operator<<, basic_ostream
+#include <string>              // for string, basic_string
+#include <type_traits>         // for remove_reference<>::type
+#include <utility>             // for move
+#include <vector>              // for vector, operator!=, oper...
 
-#include "graph/context/ExecutionContext.h"
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/UnionExecutor.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row, DataSet, operator<<
+#include "common/datatypes/List.h"           // for List
+#include "common/datatypes/Value.h"          // for Value, operator<<, opera...
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"      // for QueryContext
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/executor/Executor.h"         // for Executor
+#include "graph/planner/plan/Logic.h"        // for StartNode
+#include "graph/planner/plan/Query.h"        // for Union, Intersect, Minus
 
 using folly::stringPrintf;
 

@@ -5,6 +5,10 @@
 
 #include "parser/SequentialSentences.h"
 
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+
+#include "Sentence.h"  // for Sentence
+
 namespace nebula {
 
 std::string SequentialSentences::toString() const {

@@ -5,7 +5,9 @@
 
 #include "parser/EdgeKey.h"
 
-#include "common/expression/Expression.h"
+#include <folly/String.h>  // for stringPrintf
+
+#include "common/expression/Expression.h"  // for Expression
 
 namespace nebula {
 

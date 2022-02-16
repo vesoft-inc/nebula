@@ -5,10 +5,27 @@
 
 #include "graph/optimizer/rule/EliminateRowCollectRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for DataCollect, Project, DataC...
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::DataCollect;
 using nebula::graph::PlanNode;

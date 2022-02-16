@@ -5,10 +5,31 @@
 
 #include "meta/processors/admin/CreateBackupProcessor.h"
 
-#include "common/time/TimeUtils.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/admin/SnapShot.h"
-#include "meta/processors/job/JobManager.h"
+#include <folly/Format.h>                   // for sformat
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>      // for max, transform
+#include <iterator>       // for insert_iterator, back...
+#include <memory>         // for unique_ptr
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ost...
+#include <unordered_map>  // for unordered_map, _Node_...
+
+#include "common/base/Logging.h"             // for LogMessage, LOG, _LOG...
+#include "common/network/NetworkUtils.h"     // for NetworkUtils
+#include "common/time/WallClock.h"           // for WallClock
+#include "common/utils/MetaKeyUtils.h"       // for MetaKeyUtils, kDefaul...
+#include "kvstore/Common.h"                  // for KV
+#include "kvstore/KVIterator.h"              // for KVIterator
+#include "kvstore/NebulaStore.h"             // for NebulaStore
+#include "meta/ActiveHostsMan.h"             // for ActiveHostsMan
+#include "meta/MetaServiceUtils.h"           // for MetaServiceUtils
+#include "meta/processors/BaseProcessor.h"   // for BaseProcessor::doSyncPut
+#include "meta/processors/Common.h"          // for LockUtils
+#include "meta/processors/admin/SnapShot.h"  // for Snapshot
+#include "meta/processors/job/JobManager.h"  // for JobManager
 
 namespace nebula {
 namespace meta {

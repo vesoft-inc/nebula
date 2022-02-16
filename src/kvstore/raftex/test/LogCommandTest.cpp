@@ -3,17 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/Optional.h>         // for Optional
+#include <folly/String.h>           // for stringPrintf
+#include <folly/futures/Future.h>   // for Future::wait
+#include <folly/futures/Future.h>   // for Future
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_uint32
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <unistd.h>                 // for sleep
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <memory>   // for allocator, __shared_...
+#include <ostream>  // for operator<<
+#include <string>   // for string, basic_string
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                 // for LOG, LogMessage, _LO...
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for checkConsensus, appe...
+#include "kvstore/raftex/test/TestShard.h"       // for TestShard, compareAn...
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

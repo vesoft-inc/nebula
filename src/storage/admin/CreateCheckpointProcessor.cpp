@@ -5,6 +5,19 @@
 
 #include "storage/admin/CreateCheckpointProcessor.h"
 
+#include <folly/Format.h>              // for sformat
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <string>   // for operator<<
+#include <utility>  // for move
+#include <vector>   // for vector, vector<>::iterator
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for CheckNotNull, CHECK_NOT...
+#include "interface/gen-cpp2/common_types.h"  // for CheckpointInfo, ErrorCode
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "storage/CommonUtils.h"              // for StorageEnv
+
 namespace nebula {
 namespace storage {
 

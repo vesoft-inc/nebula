@@ -4,17 +4,44 @@
  */
 #include "mock/MockCluster.h"
 
-#include "clients/meta/MetaClient.h"
-#include "common/meta/ServerBasedIndexManager.h"
-#include "common/meta/ServerBasedSchemaManager.h"
-#include "meta/MetaServiceHandler.h"
-#include "mock/AdHocIndexManager.h"
-#include "mock/AdHocSchemaManager.h"
-#include "mock/MockData.h"
-#include "storage/CompactionFilter.h"
-#include "storage/GraphStorageServiceHandler.h"
-#include "storage/StorageAdminServiceHandler.h"
-#include "storage/transaction/TransactionManager.h"
+#include <folly/String.h>                              // for stringPrintf
+#include <folly/Try.h>                                 // for Try::throwUnle...
+#include <folly/executors/IOThreadPoolExecutor.h>      // for IOThreadPoolEx...
+#include <folly/futures/Future.h>                      // for Future::get
+#include <folly/futures/Future.h>                      // for Future
+#include <folly/futures/Future.h>                      // for Future::get
+#include <folly/futures/Future.h>                      // for Future
+#include <folly/futures/Promise.h>                     // for PromiseExcepti...
+#include <gflags/gflags_declare.h>                     // for DECLARE_int32
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>  // for PriorityThread...
+#include <thrift/lib/cpp2/FieldRef.h>                  // for field_ref, opt...
+#include <unistd.h>                                    // for sleep, usleep
+
+#include <ostream>        // for operator<<
+#include <unordered_map>  // for unordered_map<...
+#include <utility>        // for move
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "common/base/ErrorOr.h"                     // for ok, value
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for operator==, Value
+#include "common/meta/Common.h"                      // for PartHosts
+#include "common/meta/ServerBasedIndexManager.h"     // for ServerBasedInd...
+#include "common/meta/ServerBasedSchemaManager.h"    // for ServerBasedSch...
+#include "common/network/NetworkUtils.h"             // for NetworkUtils
+#include "interface/gen-cpp2/common_types.h"         // for PropertyType
+#include "kvstore/CompactionFilter.h"                // for CompactionFilt...
+#include "kvstore/KVStore.h"                         // for KVOptions
+#include "kvstore/PartManager.h"                     // for MetaServerBase...
+#include "meta/MetaServiceHandler.h"                 // for MetaServiceHan...
+#include "mock/AdHocIndexManager.h"                  // for AdHocIndexManager
+#include "mock/AdHocSchemaManager.h"                 // for AdHocSchemaMan...
+#include "mock/MockData.h"                           // for MockData
+#include "storage/CompactionFilter.h"                // for StorageCompact...
+#include "storage/GraphStorageServiceHandler.h"      // for GraphStorageSe...
+#include "storage/StorageAdminServiceHandler.h"      // for StorageAdminSe...
+#include "storage/transaction/TransactionManager.h"  // for TransactionMan...
 
 DECLARE_int32(heartbeat_interval_secs);
 

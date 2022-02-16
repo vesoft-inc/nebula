@@ -5,10 +5,20 @@
 
 #include "graph/validator/UseValidator.h"
 
-#include "graph/planner/plan/Admin.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "parser/TraverseSentences.h"
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/meta/SchemaManager.h"      // for SchemaManager
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/ValidateContext.h"  // for ValidateContext
+#include "graph/planner/plan/Query.h"       // for SwitchSpace
+#include "graph/session/ClientSession.h"    // for SpaceInfo
+#include "interface/gen-cpp2/meta_types.h"  // for SpaceDesc
+#include "parser/TraverseSentences.h"       // for UseSentence
 
 namespace nebula {
 namespace graph {

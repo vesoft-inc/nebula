@@ -5,8 +5,18 @@
 
 #include "graph/validator/SetValidator.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t
+
+#include <string>   // for string, basic_string, ope...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"          // for CheckNotNull, DCHECK_NOTNULL
+#include "graph/context/Symbols.h"        // for ColsDef
+#include "graph/planner/plan/Logic.h"     // for PassThroughNode
+#include "graph/planner/plan/PlanNode.h"  // for BinaryInputNode, PlanNode
+#include "graph/planner/plan/Query.h"     // for Dedup, Intersect, Minus
 
 namespace nebula {
 namespace graph {

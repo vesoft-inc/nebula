@@ -5,11 +5,26 @@
 
 #include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/processors/admin/AdminClient.h"
+#include <cstdlib>  // for atoi
+#include <memory>   // for allocator_traits<>::value_type
+#include <ostream>  // for operator<<, basic_ostream
+
+#include "common/base/ErrorOr.h"  // for error, ok, value
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_INFO
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(JobID jobId,
                                                          kvstore::KVStore* kvstore,

@@ -5,11 +5,38 @@
 
 #include "graph/executor/admin/ShowHostsExecutor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Try.h>                      // for Try::~Try<T>
+#include <folly/futures/Future.h>           // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <algorithm>      // for max
+#include <cstddef>        // for size_t
+#include <cstdint>        // for int64_t
+#include <map>            // for map, operator!=, _Rb_tree...
+#include <ostream>        // for operator<<, stringstream
+#include <string>         // for string, basic_string, all...
+#include <unordered_map>  // for unordered_map, operator!=
+#include <utility>        // for pair, move, forward
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"             // for Status, operator<<
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Value.h"         // for Value
+#include "common/thrift/ThriftTypes.h"      // for PartitionID
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/planner/plan/Admin.h"       // for ShowHosts
+#include "interface/gen-cpp2/meta_types.h"  // for HostItem, ListHostType
 
 namespace nebula {
 namespace graph {

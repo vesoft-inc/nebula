@@ -5,9 +5,59 @@
 
 #include "kvstore/Listener.h"
 
-#include "codec/RowReaderWrapper.h"
-#include "common/time/WallClock.h"
-#include "kvstore/LogEncoder.h"
+#include <folly/Format.h>           // for sformat
+#include <folly/Random.h>           // for Random
+#include <folly/Range.h>            // for Range, StringPiece
+#include <folly/ScopeGuard.h>       // for operator+, SCOPE_EXIT
+#include <folly/Try.h>              // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>   // for via, Future::Future<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+#include <gflags/gflags.h>          // for DEFINE_int32, DEFINE_ui...
+#include <stddef.h>                 // for size_t
+
+#include <cstdint>      // for int64_t, int32_t, uint32_t
+#include <exception>    // for exception
+#include <type_traits>  // for __strip_reference_wrapp...
+
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/LogIterator.h"         // for LogIterator
+#include "kvstore/LogEncoder.h"               // for decodeMultiValues, deco...
+#include "kvstore/wal/FileBasedWal.h"         // for FileBasedWal
+
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+namespace nebula {
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+namespace meta {
+class SchemaManager;
+}  // namespace meta
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+}  // namespace nebula
 
 DEFINE_int32(listener_commit_interval_secs, 1, "Listener commit interval");
 DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener commit");

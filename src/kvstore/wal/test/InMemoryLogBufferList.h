@@ -3,6 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <mutex>
+
 #include "common/base/Base.h"
 #include "common/utils/LogIterator.h"
 #include "kvstore/wal/test/InMemoryLogBuffer.h"

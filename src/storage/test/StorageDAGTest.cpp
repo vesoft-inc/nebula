@@ -3,10 +3,23 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>       // for to
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stddef.h>           // for size_t
 
-#include "common/base/Base.h"
-#include "storage/exec/StoragePlan.h"
+#include <memory>   // for make_unique, allocator
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for SetStderrLogging
+#include "common/thrift/ThriftTypes.h"        // for VertexID, PartitionID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "storage/exec/RelNode.h"             // for RelNode
+#include "storage/exec/StoragePlan.h"         // for StoragePlan
 
 namespace nebula {
 namespace storage {

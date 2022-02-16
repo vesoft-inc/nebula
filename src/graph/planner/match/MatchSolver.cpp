@@ -5,14 +5,43 @@
 
 #include "graph/planner/match/MatchSolver.h"
 
-#include "common/expression/UnaryExpression.h"
-#include "graph/context/ast/AstContext.h"
-#include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/Planner.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include <type_traits>    // for remove_refer...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                            // for kVid
+#include "common/base/Logging.h"                         // for COMPACT_GOOG...
+#include "common/base/ObjectPool.h"                      // for ObjectPool
+#include "common/base/StatusOr.h"                        // for StatusOr
+#include "common/datatypes/Value.h"                      // for Value
+#include "common/expression/AttributeExpression.h"       // for AttributeExp...
+#include "common/expression/BinaryExpression.h"          // for BinaryExpres...
+#include "common/expression/ConstantExpression.h"        // for ConstantExpr...
+#include "common/expression/ContainerExpression.h"       // for MapExpression
+#include "common/expression/EdgeExpression.h"            // for EdgeExpression
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/FunctionCallExpression.h"    // for ArgumentList
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/LogicalExpression.h"         // for LogicalExpre...
+#include "common/expression/PathBuildExpression.h"       // for PathBuildExp...
+#include "common/expression/PropertyExpression.h"        // for InputPropert...
+#include "common/expression/RelationalExpression.h"      // for RelationalEx...
+#include "common/expression/UnaryExpression.h"           // for UnaryExpression
+#include "common/expression/VertexExpression.h"          // for VertexExpres...
+#include "graph/context/QueryContext.h"                  // for QueryContext
+#include "graph/context/Symbols.h"                       // for SymbolTable
+#include "graph/context/ast/CypherAstContext.h"          // for AliasType
+#include "graph/planner/plan/ExecutionPlan.h"            // for SubPlan
+#include "graph/planner/plan/PlanNode.h"                 // for PlanNode
+#include "graph/planner/plan/Query.h"                    // for Project, Expr
+#include "graph/session/ClientSession.h"                 // for SpaceInfo
+#include "graph/util/AnonColGenerator.h"                 // for kPathStr
+#include "graph/util/ExpressionUtils.h"                  // for ExpressionUtils
+#include "graph/util/SchemaUtil.h"                       // for SchemaUtil
+#include "graph/visitor/RewriteVisitor.h"                // for RewriteVisitor
+#include "parser/Clauses.h"                              // for YieldColumns
 
 namespace nebula {
 namespace graph {

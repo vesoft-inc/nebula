@@ -36,24 +36,24 @@ cpp_include "common/datatypes/DurationOps-inl.h"
 
 const binary (cpp.type = "char const *") version = "3.0.0"
 
-typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
-typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
-typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
-typedef i32 (cpp.type = "nebula::TagID") TagID
-typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
-typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
-typedef i64 (cpp.type = "nebula::LogID") LogID
-typedef i64 (cpp.type = "nebula::TermID") TermID
+typedef i64 (cpp.type = "::nebula::ClusterID") ClusterID
+typedef i32 (cpp.type = "::nebula::GraphSpaceID") GraphSpaceID
+typedef i32 (cpp.type = "::nebula::PartitionID") PartitionID
+typedef i32 (cpp.type = "::nebula::TagID") TagID
+typedef i32 (cpp.type = "::nebula::EdgeType") EdgeType
+typedef i64 (cpp.type = "::nebula::EdgeRanking") EdgeRanking
+typedef i64 (cpp.type = "::nebula::LogID") LogID
+typedef i64 (cpp.type = "::nebula::TermID") TermID
 
-typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
+typedef i64 (cpp.type = "::nebula::Timestamp") Timestamp
 
-typedef i32 (cpp.type = "nebula::IndexID") IndexID
+typedef i32 (cpp.type = "::nebula::IndexID") IndexID
 
-typedef i32 (cpp.type = "nebula::Port") Port
+typedef i32 (cpp.type = "::nebula::Port") Port
 
-typedef i64 (cpp.type = "nebula::SessionID") SessionID
+typedef i64 (cpp.type = "::nebula::SessionID") SessionID
 
-typedef i64 (cpp.type = "nebula::ExecutionPlanID") ExecutionPlanID
+typedef i64 (cpp.type = "::nebula::ExecutionPlanID") ExecutionPlanID
 
 union SchemaID {
     1: TagID     tag_id,
@@ -66,7 +66,7 @@ struct Date {
     1: i16 year;    // Calendar year, such as 2019
     2: byte month;    // Calendar month: 1 - 12
     3: byte day;      // Calendar day: 1 -31
-} (cpp.type = "nebula::Date")
+} (cpp.type = "::nebula::Date")
 
 // !! Struct Time has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
@@ -75,7 +75,7 @@ struct Time {
     2: byte minute;       // Minute: 0 - 59
     3: byte sec;          // Second: 0 - 59
     4: i32 microsec;    // Micro-second: 0 - 999,999
-} (cpp.type = "nebula::Time")
+} (cpp.type = "::nebula::Time")
 
 // !! Struct DateTime has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
@@ -87,7 +87,7 @@ struct DateTime {
     5: byte minute;       // Minute: 0 - 59
     6: byte sec;          // Second: 0 - 59
     7: i32 microsec;    // Micro-second: 0 - 999,999
-} (cpp.type = "nebula::DateTime")
+} (cpp.type = "::nebula::DateTime")
 
 enum NullType {
     __NULL__ = 0,
@@ -98,7 +98,7 @@ enum NullType {
     UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
     OUT_OF_RANGE = 7,
-} (cpp.enum_strict, cpp.type = "nebula::NullType")
+} (cpp.enum_strict, cpp.type = "::nebula::NullType")
 
 
 // The type to hold any supported values during the query
@@ -111,81 +111,81 @@ union Value {
     6: Date                                     dVal;
     7: Time                                     tVal;
     8: DateTime                                 dtVal;
-    9: Vertex (cpp.type = "nebula::Vertex")     vVal (cpp.ref_type = "unique");
-    10: Edge (cpp.type = "nebula::Edge")        eVal (cpp.ref_type = "unique");
-    11: Path (cpp.type = "nebula::Path")        pVal (cpp.ref_type = "unique");
-    12: NList (cpp.type = "nebula::List")       lVal (cpp.ref_type = "unique");
-    13: NMap (cpp.type = "nebula::Map")         mVal (cpp.ref_type = "unique");
-    14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
-    15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
-    16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
-    17: Duration (cpp.type = "nebula::Duration")     duVal (cpp.ref_type = "unique");
-} (cpp.type = "nebula::Value")
+    9: Vertex (cpp.type = "::nebula::Vertex")     vVal (cpp.ref_type = "unique");
+    10: Edge (cpp.type = "::nebula::Edge")        eVal (cpp.ref_type = "unique");
+    11: Path (cpp.type = "::nebula::Path")        pVal (cpp.ref_type = "unique");
+    12: NList (cpp.type = "::nebula::List")       lVal (cpp.ref_type = "unique");
+    13: NMap (cpp.type = "::nebula::Map")         mVal (cpp.ref_type = "unique");
+    14: NSet (cpp.type = "::nebula::Set")         uVal (cpp.ref_type = "unique");
+    15: DataSet (cpp.type = "::nebula::DataSet")  gVal (cpp.ref_type = "unique");
+    16: Geography (cpp.type = "::nebula::Geography")   ggVal (cpp.ref_type = "unique");
+    17: Duration (cpp.type = "::nebula::Duration")     duVal (cpp.ref_type = "unique");
+} (cpp.type = "::nebula::Value")
 
 
 // Ordered list
 struct NList {
     1: list<Value> values;
-} (cpp.type = "nebula::List")
+} (cpp.type = "::nebula::List")
 
 
 // Unordered key/values pairs
 struct NMap {
     1: map<binary, Value> (cpp.template = "std::unordered_map") kvs;
-} (cpp.type = "nebula::Map")
+} (cpp.type = "::nebula::Map")
 
 
 // Unordered and unique values
 struct NSet {
     1: set<Value> (cpp.template = "std::unordered_set") values;
-} (cpp.type = "nebula::Set")
+} (cpp.type = "::nebula::Set")
 
 
 struct Row {
     1: list<Value> values;
-} (cpp.type = "nebula::Row")
+} (cpp.type = "::nebula::Row")
 
 
 struct DataSet {
     1: list<binary>    column_names;   // Column names
     2: list<Row>       rows;
-} (cpp.type = "nebula::DataSet")
+} (cpp.type = "::nebula::DataSet")
 
 struct Coordinate {
     1: double          x;
     2: double          y;
-} (cpp.type = "nebula::Coordinate")
+} (cpp.type = "::nebula::Coordinate")
 
 struct Point {
     1: Coordinate      coord;
-} (cpp.type = "nebula::Point")
+} (cpp.type = "::nebula::Point")
 
 struct LineString {
     1: list<Coordinate>             coordList;
-} (cpp.type = "nebula::LineString")
+} (cpp.type = "::nebula::LineString")
 
 struct Polygon {
     1: list<list<Coordinate>>       coordListList;
-} (cpp.type = "nebula::Polygon")
+} (cpp.type = "::nebula::Polygon")
 
 union Geography {
     1: Point                                    ptVal (cpp.ref_type = "unique");
     2: LineString                               lsVal (cpp.ref_type = "unique");
     3: Polygon                                  pgVal (cpp.ref_type = "unique");
-} (cpp.type = "nebula::Geography")
+} (cpp.type = "::nebula::Geography")
 
 
 struct Tag {
     1: binary name,
     // List of <prop_name, prop_value>
     2: map<binary, Value> (cpp.template = "std::unordered_map") props,
-} (cpp.type = "nebula::Tag")
+} (cpp.type = "::nebula::Tag")
 
 
 struct Vertex {
     1: Value     vid,
     2: list<Tag> tags,
-} (cpp.type = "nebula::Vertex")
+} (cpp.type = "::nebula::Vertex")
 
 
 struct Edge {
@@ -196,7 +196,7 @@ struct Edge {
     5: EdgeRanking ranking,
     // List of <prop_name, prop_value>
     6: map<binary, Value> (cpp.template = "std::unordered_map") props,
-} (cpp.type = "nebula::Edge")
+} (cpp.type = "::nebula::Edge")
 
 
 struct Step {
@@ -205,27 +205,27 @@ struct Step {
     3: binary name,
     4: EdgeRanking ranking,
     5: map<binary, Value> (cpp.template = "std::unordered_map") props,
-} (cpp.type = "nebula::Step")
+} (cpp.type = "::nebula::Step")
 
 
 // Special type to support path during the query
 struct Path {
     1: Vertex src,
     2: list<Step> steps;
-} (cpp.type = "nebula::Path")
+} (cpp.type = "::nebula::Path")
 
 
 struct HostAddr {
     // Host could be a valid IPv4 or IPv6 address, or a valid domain name
     1: string   host,
     2: Port     port,
-} (cpp.type = "nebula::HostAddr")
+} (cpp.type = "::nebula::HostAddr")
 
 
 struct KeyValue {
     1: binary key,
     2: binary value,
-} (cpp.type = "nebula::KeyValue")
+} (cpp.type = "::nebula::KeyValue")
 
 // !! Struct Duration has a shadow data type defined in the Duration.h
 // So any change here needs to be reflected to the shadow type there
@@ -233,7 +233,7 @@ struct Duration {
     1: i64 seconds;
     2: i32 microseconds;
     3: i32 months;
-} (cpp.type = "nebula::Duration")
+} (cpp.type = "::nebula::Duration")
 
 struct LogInfo {
     1: LogID  log_id;
@@ -241,7 +241,7 @@ struct LogInfo {
 }
 
 struct DirInfo {
-    // Installation directory for nebula
+    // Installation directory for ::nebula
     1: binary                   root,
     // nebula's data directory
     2: list<binary>             data,

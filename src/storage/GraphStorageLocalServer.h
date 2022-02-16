@@ -7,17 +7,60 @@
 #define STORAGE_GRAPHSTORAGELOCALSERVER_H
 
 #include <folly/fibers/Semaphore.h>
+#include <folly/futures/Future.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include <boost/core/noncopyable.hpp>
 #include <memory>
+#include <mutex>
 
 #include "common/base/Base.h"
 #include "common/cpp/helpers.h"
 #include "folly/fibers/Semaphore.h"
 #include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
+
+namespace apache {
+namespace thrift {
+class ServerInterface;
+namespace concurrency {
+class ThreadManager;
+}  // namespace concurrency
+}  // namespace thrift
+}  // namespace apache
+namespace nebula {
+namespace storage {
+namespace cpp2 {
+class AddEdgesRequest;
+class AddVerticesRequest;
+class DeleteEdgesRequest;
+class DeleteTagsRequest;
+class DeleteVerticesRequest;
+class ExecResponse;
+class GetNeighborsRequest;
+class GetNeighborsResponse;
+class GetPropRequest;
+class GetPropResponse;
+class GetUUIDReq;
+class GetUUIDResp;
+class KVGetRequest;
+class KVGetResponse;
+class KVPutRequest;
+class KVRemoveRequest;
+class LookupAndTraverseRequest;
+class LookupIndexRequest;
+class LookupIndexResp;
+class ScanEdgeRequest;
+class ScanResponse;
+class ScanVertexRequest;
+class UpdateEdgeRequest;
+class UpdateResponse;
+class UpdateVertexRequest;
+}  // namespace cpp2
+}  // namespace storage
+}  // namespace nebula
+
 namespace nebula::storage {
-class GraphStorageLocalServer final : public boost::noncopyable, public nebula::cpp::NonMovable {
+class GraphStorageLocalServer final : public boost::noncopyable, public ::nebula::cpp::NonMovable {
  public:
   static std::shared_ptr<GraphStorageLocalServer> getInstance() {
     static std::shared_ptr<GraphStorageLocalServer> instance{new GraphStorageLocalServer()};

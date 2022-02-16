@@ -6,8 +6,15 @@
 #ifndef GRAPH_CONTEXT_EXECUTIONCONTEXT_H_
 #define GRAPH_CONTEXT_EXECUTIONCONTEXT_H_
 
-#include "common/datatypes/Value.h"
-#include "graph/context/Result.h"
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int64_t
+
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map, operator!=
+#include <vector>         // for vector
+
+#include "common/datatypes/Value.h"  // for Value
+#include "graph/context/Result.h"    // for Result
 
 namespace nebula {
 namespace graph {

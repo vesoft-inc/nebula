@@ -4,7 +4,32 @@
  */
 
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
+
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <set>            // for operator!=, set
+#include <string>         // for string, basic_st...
+#include <unordered_map>  // for _Node_const_iter...
+#include <utility>        // for move, pair
+
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/Value.h"                  // for Value, Value::kE...
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for EdgeDstIdExpression
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/ast/QueryAstContext.h"       // for FetchEdgesContext
+#include "graph/planner/plan/ExecutionPlan.h"        // for SubPlan
+#include "graph/planner/plan/Query.h"                // for Expr, GetEdges
+#include "graph/session/ClientSession.h"             // for SpaceInfo
+#include "graph/visitor/DeducePropsVisitor.h"        // for ExpressionProps
+
 namespace nebula {
+class Expression;
+
+class Expression;
+
 namespace graph {
 
 std::unique_ptr<FetchEdgesPlanner::EdgeProps> FetchEdgesPlanner::buildEdgeProps() {

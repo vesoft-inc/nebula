@@ -5,10 +5,77 @@
 
 #include "graph/visitor/FoldConstantExprVisitor.h"
 
-#include "common/function/FunctionManager.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/util/ExpressionUtils.h"
+#include <stddef.h>  // for size_t
+
+#include <memory>  // for allocator...
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Base.h"                               // for UNUSED
+#include "common/base/StatusOr.h"                           // for StatusOr
+#include "common/datatypes/Value.h"                         // for NullType
+#include "common/expression/AggregateExpression.h"          // for Aggregate...
+#include "common/expression/ArithmeticExpression.h"         // for Arithmeti...
+#include "common/expression/BinaryExpression.h"             // for BinaryExp...
+#include "common/expression/CaseExpression.h"               // for CaseExpre...
+#include "common/expression/ConstantExpression.h"           // for ConstantE...
+#include "common/expression/ContainerExpression.h"          // for ListExpre...
+#include "common/expression/FunctionCallExpression.h"       // for FunctionC...
+#include "common/expression/ListComprehensionExpression.h"  // for ListCompr...
+#include "common/expression/LogicalExpression.h"            // for LogicalEx...
+#include "common/expression/PathBuildExpression.h"          // for PathBuild...
+#include "common/expression/PredicateExpression.h"          // for Predicate...
+#include "common/expression/ReduceExpression.h"             // for ReduceExp...
+#include "common/expression/RelationalExpression.h"         // for Relationa...
+#include "common/expression/SubscriptExpression.h"          // for Subscript...
+#include "common/expression/TypeCastingExpression.h"        // for TypeCasti...
+#include "common/expression/UnaryExpression.h"              // for UnaryExpr...
+#include "common/function/FunctionManager.h"                // for FunctionM...
+#include "graph/context/QueryExpressionContext.h"           // for QueryExpr...
+
 namespace nebula {
+class AttributeExpression;
+class ColumnExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class AttributeExpression;
+class ColumnExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelAttributeExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 void FoldConstantExprVisitor::visit(ConstantExpression *expr) {

@@ -6,9 +6,21 @@
 #ifndef COMMON_GEO_GEOFUNCTION_H
 #define COMMON_GEO_GEOFUNCTION_H
 
-#include <s2/s2region_coverer.h>
+#include <s2/s2point.h>           // for S2Point
+#include <s2/s2region_coverer.h>  // for S2RegionCoverer
+#include <stdint.h>               // for uint64_t
 
-#include "common/datatypes/Geography.h"
+#include <vector>  // for vector
+
+#include "common/datatypes/Geography.h"  // for Geography
+
+class S2Polygon;
+class S2Polyline;
+class S2Region;
+
+class S2Polygon;
+class S2Polyline;
+class S2Region;
 
 namespace nebula {
 namespace geo {

@@ -5,17 +5,47 @@
 
 #include "graph/planner/match/MatchClausePlanner.h"
 
+#include <folly/String.h>
+#include <thrift/lib/cpp2/FieldRef.h>
+
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <ostream>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+
+#include "common/base/Base.h"
+#include "common/base/Logging.h"
+#include "common/base/ObjectPool.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/Expression.h"
+#include "common/expression/FunctionCallExpression.h"
+#include "common/expression/ListComprehensionExpression.h"
+#include "common/expression/PathBuildExpression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/SubscriptExpression.h"
+#include "common/expression/VariableExpression.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "common/meta/SchemaManager.h"
+#include "common/thrift/ThriftTypes.h"
+#include "graph/context/QueryContext.h"
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/Planner.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
-#include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include "graph/session/ClientSession.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "parser/Clauses.h"
+#include "parser/Sentence.h"
 
 namespace nebula {
 namespace graph {

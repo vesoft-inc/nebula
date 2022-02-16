@@ -5,11 +5,25 @@
 
 #include "graph/optimizer/rule/PushStepLimitDownGetNeighborsRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <stdint.h>  // for int64_t
+
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/expression/Expression.h"  // for Expression
+#include "graph/optimizer/OptContext.h"    // for OptContext
+#include "graph/optimizer/OptGroup.h"      // for OptGroupNode, OptGroup
+#include "graph/planner/plan/PlanNode.h"   // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"      // for GetNeighbors, Limit
+#include "graph/util/ExpressionUtils.h"    // for ExpressionUtils
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;

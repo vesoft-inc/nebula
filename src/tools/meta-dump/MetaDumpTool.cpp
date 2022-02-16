@@ -3,13 +3,36 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <rocksdb/db.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Format.h>                   // for sformat
+#include <folly/Range.h>                    // for StringPiece
+#include <folly/init/Init.h>                // for init
+#include <gflags/gflags.h>                  // for clstring, DEFINE_string
+#include <glog/logging.h>                   // for INFO
+#include <rocksdb/db.h>                     // for DB
+#include <rocksdb/iterator.h>               // for Iterator
+#include <rocksdb/options.h>                // for Options, ReadOptions
+#include <rocksdb/slice.h>                  // for Slice
+#include <rocksdb/status.h>                 // for Status
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include "common/fs/FileUtils.h"
-#include "common/time/TimeUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/ActiveHostsMan.h"
+#include <ostream>  // for operator<<, stringstream
+#include <string>   // for operator<<, string, all...
+#include <tuple>    // for tie, tuple
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
+#include "common/base/Status.h"               // for Status
+#include "common/datatypes/Date.h"            // for DateTime
+#include "common/datatypes/HostAddr.h"        // for operator<<, HostAddr
+#include "common/fs/FileUtils.h"              // for FileType, FileType::NOT...
+#include "common/thrift/ThriftTypes.h"        // for TermID
+#include "common/time/TimeConversion.h"       // for TimeConversion
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for SpaceDesc
+#include "meta/ActiveHostsMan.h"              // for HostInfo
 
 DEFINE_string(path, "", "rocksdb instance path");
 

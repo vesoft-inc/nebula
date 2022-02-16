@@ -5,8 +5,9 @@
 
 #include "kvstore/stats/KVStats.h"
 
-#include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
+#include <memory>  // for allocator
+
+#include "common/stats/StatsManager.h"  // for CounterId, StatsManager
 
 namespace nebula {
 

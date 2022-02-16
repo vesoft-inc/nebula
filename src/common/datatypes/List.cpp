@@ -5,9 +5,10 @@
 
 #include "common/datatypes/List.h"
 
-#include <folly/String.h>
+#include <folly/String.h>   // for join
+#include <folly/dynamic.h>  // for dynamic::array, dynamic::dynamic, dyn...
 
-#include <sstream>
+#include <sstream>  // for operator<<, basic_ostream, char_traits
 
 namespace nebula {
 

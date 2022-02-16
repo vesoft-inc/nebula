@@ -5,21 +5,36 @@
 #ifndef NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 #define NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 
+#include <graph/planner/plan/Query.h>
+#include <stdint.h>  // for int32_t
+
+#include <memory>   // for shared_ptr
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Status.h"  // for Status
 #include "graph/util/SchemaUtil.h"
 
 namespace nebula {
+namespace graph {
+class QueryContext;
+}  // namespace graph
+struct Value;
 
 class Expression;
+struct Value;
 
 namespace meta {
 namespace cpp2 {
 class ColumnDef;
+
 class IndexItem;
 }  // namespace cpp2
 }  // namespace meta
 
 namespace storage {
 namespace cpp2 {
+
 class IndexQueryContext;
 }  // namespace cpp2
 }  // namespace storage
@@ -27,6 +42,7 @@ class IndexQueryContext;
 namespace graph {
 
 class IndexScan;
+class QueryContext;
 
 class OptimizerUtils {
  public:
@@ -35,7 +51,7 @@ class OptimizerUtils {
   // Compare `a` and `b`, if `a`>`b` then swap a and b.That means `b`>=`a` after call this function.
   static Status compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b);
   static void eraseInvalidIndexItems(
-      int32_t schemaId, std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>* indexItems);
+      int32_t schemaId, std::vector<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>* indexItems);
 
   // Find optimal index according to filter expression and all valid indexes.
   //
@@ -65,16 +81,16 @@ class OptimizerUtils {
   // storage will union all results of multiple index contexts
   static bool findOptimalIndex(
       const Expression* condition,
-      const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems,
+      const std::vector<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>& indexItems,
       bool* isPrefixScan,
-      nebula::storage::cpp2::IndexQueryContext* ictx);
+      ::nebula::storage::cpp2::IndexQueryContext* ictx);
 
   static bool relExprHasIndex(
       const Expression* expr,
-      const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems);
+      const std::vector<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>& indexItems);
 
-  static void copyIndexScanData(const nebula::graph::IndexScan* from,
-                                nebula::graph::IndexScan* to,
+  static void copyIndexScanData(const ::nebula::graph::IndexScan* from,
+                                ::nebula::graph::IndexScan* to,
                                 QueryContext* qctx);
 };
 

@@ -5,11 +5,24 @@
 
 #include "graph/planner/match/ReturnClausePlanner.h"
 
-#include "graph/planner/match/OrderByClausePlanner.h"
-#include "graph/planner/match/PaginationPlanner.h"
-#include "graph/planner/match/SegmentsConnector.h"
-#include "graph/planner/match/YieldClausePlanner.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/String.h>  // for join
+#include <stdint.h>        // for int64_t
+
+#include <limits>       // for numeric_limits
+#include <memory>       // for unique_ptr
+#include <ostream>      // for operator<<
+#include <string>       // for operator<<
+#include <type_traits>  // for remove_referen...
+#include <utility>      // for move
+
+#include "common/base/Logging.h"                       // for COMPACT_GOOGLE...
+#include "graph/context/ast/CypherAstContext.h"        // for ReturnClauseCo...
+#include "graph/planner/match/OrderByClausePlanner.h"  // for OrderByClauseP...
+#include "graph/planner/match/PaginationPlanner.h"     // for PaginationPlanner
+#include "graph/planner/match/SegmentsConnector.h"     // for SegmentsConnector
+#include "graph/planner/match/YieldClausePlanner.h"    // for YieldClausePla...
+#include "graph/planner/plan/ExecutionPlan.h"          // for SubPlan
+#include "graph/planner/plan/PlanNode.h"               // for PlanNode
 
 namespace nebula {
 namespace graph {

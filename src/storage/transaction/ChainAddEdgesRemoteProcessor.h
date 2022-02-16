@@ -6,11 +6,22 @@
 #ifndef STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORREMOTE_H
 #define STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORREMOTE_H
 
-#include "storage/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse, ChainAdd...
+#include "storage/BaseProcessor.h"             // for BaseProcessor
 #include "storage/transaction/ChainBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainAddEdgesRemoteProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:

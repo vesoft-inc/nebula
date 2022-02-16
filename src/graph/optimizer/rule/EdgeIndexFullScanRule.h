@@ -6,10 +6,30 @@
 #ifndef GRAPH_OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
 #define GRAPH_OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
 
-#include "graph/optimizer/rule/IndexFullScanBaseRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "graph/optimizer/rule/IndexFullScanBaseRule.h"  // for IndexFullSca...
 
 namespace nebula {
 namespace opt {
+class OptContext;
+class OptRule;
+class Pattern;
+}  // namespace opt
+
+namespace graph {
+class IndexScan;
+class PlanNode;
+
+class IndexScan;
+class PlanNode;
+}  // namespace graph
+
+namespace opt {
+class OptContext;
+class OptRule;
+class Pattern;
 
 class EdgeIndexFullScanRule final : public IndexFullScanBaseRule {
  public:

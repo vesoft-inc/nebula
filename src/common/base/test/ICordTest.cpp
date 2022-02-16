@@ -3,9 +3,13 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/ICord.h"
+#include <string>  // for string, allocator
+
+#include "common/base/ICord.h"  // for ICord
 
 #define Cord ICord<>
 

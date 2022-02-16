@@ -5,36 +5,59 @@
 
 #include "storage/StorageServer.h"
 
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
+#include <folly/executors/IOThreadPoolExecutor.h>      // for IOThreadPoolEx...
+#include <gflags/gflags.h>                             // for DEFINE_int32
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>  // for ThreadManager
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>    // for PriorityThread...
+#include <thrift/lib/cpp2/server/ThriftServer.h>       // for ThriftServer
 
-#include <boost/filesystem.hpp>
+#include <algorithm>                        // for max
+#include <boost/filesystem/operations.hpp>  // for current_path
+#include <boost/filesystem/path.hpp>        // for path
+#include <chrono>                           // for seconds, micro...
+#include <exception>                        // for exception
+#include <ostream>                          // for operator<<
+#include <thread>                           // for sleep_for
+#include <utility>                          // for move
 
-#include "clients/storage/InternalStorageClient.h"
-#include "common/hdfs/HdfsCommandHelper.h"
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage
+#include "common/base/Status.h"             // for Status
+#include "common/hdfs/HdfsCommandHelper.h"  // for HdfsCommandHelper
+#include "common/hdfs/HdfsHelper.h"         // for HdfsHelper
+#include "common/log/LogMonitor.h"          // for LogMonitor
+#include "common/meta/IndexManager.h"       // for IndexManager
+#include "common/meta/SchemaManager.h"      // for SchemaManager
 #include "common/meta/ServerBasedIndexManager.h"
-#include "common/meta/ServerBasedSchemaManager.h"
-#include "common/network/NetworkUtils.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/thread/GenericThreadPool.h"
-#include "common/utils/Utils.h"
-#include "kvstore/PartManager.h"
-#include "kvstore/RocksEngine.h"
-#include "storage/BaseProcessor.h"
-#include "storage/CompactionFilter.h"
-#include "storage/GraphStorageLocalServer.h"
-#include "storage/GraphStorageServiceHandler.h"
-#include "storage/InternalStorageServiceHandler.h"
-#include "storage/StorageAdminServiceHandler.h"
-#include "storage/StorageFlags.h"
-#include "storage/http/StorageHttpAdminHandler.h"
-#include "storage/http/StorageHttpDownloadHandler.h"
-#include "storage/http/StorageHttpIngestHandler.h"
-#include "storage/http/StorageHttpPropertyHandler.h"
-#include "storage/http/StorageHttpStatsHandler.h"
-#include "storage/transaction/TransactionManager.h"
-#include "version/Version.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include "common/meta/ServerBasedSchemaManager.h"     // for ServerBasedSch...
+#include "common/ssl/SSLConfig.h"                     // for sslContextConfig
+#include "common/thread/GenericThreadPool.h"          // for GenericThreadPool
+#include "common/utils/NebulaKeyUtils.h"              // for NebulaKeyUtils
+#include "common/utils/Utils.h"                       // for Utils
+#include "interface/gen-cpp2/common_types.h"          // for ErrorCode, Err...
+#include "interface/gen-cpp2/meta_types.h"            // for HostRole, Host...
+#include "kvstore/CompactionFilter.h"                 // for CompactionFilt...
+#include "kvstore/KVEngine.h"                         // for KVEngine
+#include "kvstore/KVStore.h"                          // for KVStore, KVOpt...
+#include "kvstore/NebulaStore.h"                      // for NebulaStore
+#include "kvstore/PartManager.h"                      // for MetaServerBase...
+#include "kvstore/RocksEngine.h"                      // for RocksEngine
+#include "storage/CommonUtils.h"                      // for IndexGuard
+#include "storage/CompactionFilter.h"                 // for StorageCompact...
+#include "storage/GraphStorageServiceHandler.h"       // for GraphStorageSe...
+#include "storage/InternalStorageServiceHandler.h"    // for InternalStorag...
+#include "storage/StorageAdminServiceHandler.h"       // for StorageAdminSe...
+#include "storage/StorageFlags.h"                     // for FLAGS_store_type
+#include "storage/admin/AdminTaskManager.h"           // for AdminTaskManager
+#include "storage/http/StorageHttpAdminHandler.h"     // for StorageHttpAdm...
+#include "storage/http/StorageHttpDownloadHandler.h"  // for StorageHttpDow...
+#include "storage/http/StorageHttpIngestHandler.h"    // for StorageHttpIng...
+#include "storage/http/StorageHttpPropertyHandler.h"  // for StorageHttpPro...
+#include "storage/http/StorageHttpStatsHandler.h"     // for StorageHttpSta...
+#include "storage/transaction/TransactionManager.h"   // for TransactionMan...
+#include "version/Version.h"                          // for gitInfoSha
+#include "webservice/Router.h"                        // for PathParams, Route
+#include "webservice/WebService.h"                    // for WebService
 
 #ifndef BUILD_STANDALONE
 DEFINE_int32(port, 44500, "Storage daemon listening port");

@@ -3,17 +3,34 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/Optional.h>               // for Optional, none
+#include <folly/Try.h>                    // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>         // for Future::wait, SemiFu...
+#include <folly/futures/Promise.h>        // for PromiseException::Pr...
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gflags/gflags_declare.h>        // for DECLARE_uint32
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <math.h>                         // for log
+#include <stdint.h>                       // for uint32_t
+#include <unistd.h>                       // for sleep
 
-#include "common/base/Base.h"
+#include <memory>   // for allocator, __shared_...
+#include <ostream>  // for operator<<
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LO...
 #include "common/fs/FileUtils.h"
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
 #include "common/thread/GenericThreadPool.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode...
 #include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for checkConsensus, appe...
+#include "kvstore/raftex/test/TestShard.h"       // for compareAndSet, TestS...
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 
@@ -209,7 +226,7 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return empty string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::string(""); })
+    leader_->atomicOpAsync([]() { return std::string(""); })
         .thenValue([&baton](nebula::cpp2::ErrorCode res) {
           ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
           baton.post();
@@ -219,7 +236,7 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
+    leader_->atomicOpAsync([]() { return folly::none; })
         .thenValue([&baton](nebula::cpp2::ErrorCode res) {
           ASSERT_EQ(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED, res);
           baton.post();

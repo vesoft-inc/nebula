@@ -6,20 +6,60 @@
 #ifndef GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
 #define GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Format.h>                   // for sformat
+#include <stddef.h>                         // for size_t
+#include <stdint.h>                         // for int32_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <map>            // for map
+#include <ostream>        // for operator<<, basic_ostream
+#include <string>         // for string, allocator, oper...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
 
 #include "clients/storage/StorageClientBase.h"
-#include "graph/context/QueryContext.h"
-#include "graph/executor/Executor.h"
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
+#include "common/base/Status.h"               // for Status, operator<<
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/DataSet.h"         // for DataSet
+#include "common/thrift/ThriftTypes.h"        // for PartitionID
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/context/Result.h"             // for Result::State, Result
+#include "graph/executor/Executor.h"          // for Executor
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::E...
+namespace nebula {
+namespace graph {
+class PlanNode;
+}  // namespace graph
+namespace storage {
+template <class Response>
+class StorageRpcResponse;
+}  // namespace storage
+}  // namespace nebula
+
+namespace apache {
+namespace thrift {
+template <typename T>
+class optional_field_ref;
+
+template <typename T>
+class optional_field_ref;
+}  // namespace thrift
+}  // namespace apache
 
 namespace nebula {
 
 class Expression;
+namespace storage {
+template <class Response>
+class StorageRpcResponse;
+}  // namespace storage
 
 namespace graph {
 
 class Iterator;
 struct SpaceInfo;
+class PlanNode;
 
 // It's used for data write/update/query
 class StorageAccessExecutor : public Executor {

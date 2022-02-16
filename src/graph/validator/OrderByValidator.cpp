@@ -5,8 +5,21 @@
 
 #include "graph/validator/OrderByValidator.h"
 
-#include "graph/planner/plan/Query.h"
-#include "parser/TraverseSentences.h"
+#include <algorithm>  // for find_if
+#include <iterator>   // for distance
+#include <memory>     // for unique_ptr
+#include <set>        // for set, _Rb_tree_cons...
+
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for VariablePropertyEx...
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Symbols.h"                 // for ColDef, ColsDef
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/planner/plan/ExecutionPlan.h"      // for ExecutionPlan
+#include "graph/planner/plan/Query.h"              // for Sort
+#include "graph/visitor/DeducePropsVisitor.h"      // for ExpressionProps
+#include "parser/TraverseSentences.h"              // for OrderFactor::Order...
 
 namespace nebula {
 namespace graph {

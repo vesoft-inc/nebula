@@ -3,13 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <errno.h>             // for ESRCH, errno
+#include <folly/Random.h>      // for Random
+#include <folly/Range.h>       // for StringPiece
+#include <folly/ScopeGuard.h>  // for operator+, SCOPE_EXIT
+#include <folly/String.h>      // for stringPrintf, rtrimWhitespace
+#include <gtest/gtest.h>       // for Message
+#include <gtest/gtest.h>       // for TestPartResult
+#include <gtest/gtest.h>       // for Message
+#include <gtest/gtest.h>       // for TestPartResult
+#include <limits.h>            // for PATH_MAX
+#include <signal.h>            // for kill
+#include <stdint.h>            // for uint32_t
+#include <stdlib.h>            // for getenv
+#include <unistd.h>            // for getpid, unlink, getcwd, rmdir
 
-#include <fstream>
+#include <fstream>  // for ifstream, fpos, basic_istre...
+#include <string>   // for basic_string, allocator
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/process/ProcessUtils.h"
+#include "common/base/Base.h"             // for UNUSED
+#include "common/base/Status.h"           // for operator<<, Status
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/fs/FileUtils.h"          // for FileUtils
+#include "common/process/ProcessUtils.h"  // for ProcessUtils
 
 namespace nebula {
 

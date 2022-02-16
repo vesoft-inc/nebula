@@ -5,16 +5,59 @@
 
 #include "kvstore/NebulaStore.h"
 
-#include <folly/Likely.h>
-#include <folly/ScopeGuard.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Conv.h>                     // for to
+#include <folly/Format.h>                   // for sformat
+#include <folly/Function.h>                 // for FunctionTraits
+#include <folly/Likely.h>                   // for UNLIKELY
+#include <folly/ScopeGuard.h>               // for operator+, SCOPE_EXIT
+#include <folly/String.h>                   // for stringPrintf
+#include <folly/Try.h>                      // for Try
+#include <folly/dynamic.h>                  // for dynamic::dynamic, dynam...
+#include <folly/dynamic.h>                  // for dynamic
+#include <folly/dynamic.h>                  // for dynamic::dynamic, dynam...
+#include <folly/dynamic.h>                  // for dynamic
+#include <folly/hash/Hash.h>                // for hash
+#include <folly/json.h>                     // for toJson
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <gflags/gflags.h>                  // for DEFINE_int32, DECLARE_i...
+#include <stddef.h>                         // for size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include <algorithm>
+#include <algorithm>                        // for max, transform, equal
+#include <atomic>                           // for atomic
+#include <boost/filesystem/exception.hpp>   // for filesystem_error
+#include <boost/filesystem/operations.hpp>  // for remove_all
+#include <exception>                        // for exception
+#include <iterator>                         // for insert_iterator, back_i...
+#include <new>                              // for operator new
+#include <ostream>                          // for operator<<, basic_ostre...
+#include <set>                              // for set, operator!=
+#include <thread>                           // for thread
 
-#include "common/fs/FileUtils.h"
-#include "common/network/NetworkUtils.h"
-#include "kvstore/NebulaSnapshotManager.h"
-#include "kvstore/RocksEngine.h"
+#include "common/base/Status.h"               // for Status
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/fs/FileUtils.h"              // for FileUtils
+#include "common/meta/Common.h"               // for ListenerHosts, PartHosts
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "common/thread/GenericWorker.h"      // for GenericWorker
+#include "kvstore/CompactionFilter.h"         // for CompactionFilterFactory...
+#include "kvstore/Listener.h"                 // for Listener
+#include "kvstore/ListenerFactory.h"          // for ListenerFactory
+#include "kvstore/NebulaSnapshotManager.h"    // for NebulaSnapshotManager
+#include "kvstore/Part.h"                     // for Part
+#include "kvstore/RocksEngine.h"              // for RocksEngine
+#include "kvstore/raftex/RaftexService.h"     // for RaftexService
+#include "kvstore/wal/FileBasedWal.h"         // for FileBasedWal
+
+namespace nebula {
+namespace kvstore {
+class KVIterator;
+
+class KVIterator;
+}  // namespace kvstore
+}  // namespace nebula
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs,

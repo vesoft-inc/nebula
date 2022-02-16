@@ -2,12 +2,15 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for Message
 
+#include <algorithm>  // for sort
 #include <boost/thread/barrier.hpp>
+#include <cstdint>  // for int64_t
+#include <thread>   // for thread
+#include <vector>   // for vector<>::iterator, vector, allo...
 
-#include "common/base/Base.h"
-#include "graph/util/IdGenerator.h"
+#include "graph/util/IdGenerator.h"  // for EPIdGenerator
 
 namespace nebula {
 namespace graph {

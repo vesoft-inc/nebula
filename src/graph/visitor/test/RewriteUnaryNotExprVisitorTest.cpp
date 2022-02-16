@@ -4,11 +4,20 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/ObjectPool.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/test/VisitorTestBase.h"
+#include <memory>  // for allocator
+
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/ContainerExpression.h"   // for ListExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/expression/UnaryExpression.h"       // for UnaryExpression
+#include "graph/util/ExpressionUtils.h"              // for ExpressionUtils
+#include "graph/visitor/test/VisitorTestBase.h"      // for VisitorTestBase
 
 namespace nebula {
 namespace graph {

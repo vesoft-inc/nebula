@@ -3,16 +3,36 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/json.h>
-#include <gtest/gtest.h>
+#include <folly/String.h>           // for stringPrintf
+#include <folly/dynamic.h>          // for dynamic::asString
+#include <folly/dynamic.h>          // for dynamic
+#include <folly/init/Init.h>        // for init
+#include <folly/json.h>             // for parseJson, toPrettyJson
+#include <gflags/gflags_declare.h>  // for clstring
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/http/HttpClient.h"
-#include "version/Version.h"
-#include "webservice/WebService.h"
+#include <map>      // for map
+#include <memory>   // for allocator, unique_ptr, make_unique
+#include <regex>    // for regex_match, match_results<>::_B...
+#include <sstream>  // for operator<<, basic_stringbuf<>::i...
+#include <string>   // for operator<<, string
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"     // for LogMessage, SetStderrLogging
+#include "common/base/Status.h"      // for operator<<, Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/http/HttpClient.h"  // for HttpClient
+#include "version/Version.h"         // for gitInfoSha
+#include "webservice/WebService.h"   // for WebService, FLAGS_ws_http_port
 
 namespace nebula {
+namespace fs {
+class TempDir;
+
+class TempDir;
+}  // namespace fs
 
 using nebula::fs::TempDir;
 

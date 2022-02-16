@@ -5,6 +5,19 @@
 
 #include "storage/admin/GetLeaderProcessor.h"
 
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <unordered_map>  // for unordered_map, _Node_iter...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"               // for UNUSED
+#include "common/base/Logging.h"            // for CheckNotNull, CHECK_NOTNULL
+#include "common/thrift/ThriftTypes.h"      // for PartitionID, GraphSpaceID
+#include "interface/gen-cpp2/meta_types.h"  // for LeaderInfo
+#include "kvstore/KVStore.h"                // for KVStore
+#include "storage/CommonUtils.h"            // for StorageEnv
+
 namespace nebula {
 namespace storage {
 

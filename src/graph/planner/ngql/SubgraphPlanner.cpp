@@ -4,14 +4,39 @@
  */
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
+#include <type_traits>    // for remove_reference<...
+#include <unordered_map>  // for operator!=, _Node...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                       // for kVid
+#include "common/base/Status.h"                     // for NG_RETURN_IF_ERROR
+#include "common/datatypes/Value.h"                 // for Value, Value::kEmpty
+#include "common/expression/AggregateExpression.h"  // for AggregateExpression
+#include "common/expression/LogicalExpression.h"    // for LogicalExpression
+#include "common/expression/VertexExpression.h"     // for VertexExpression
+#include "common/meta/SchemaManager.h"              // for SchemaManager
+#include "common/thrift/ThriftTypes.h"              // for EdgeType
+#include "graph/context/ExecutionContext.h"         // for ExecutionContext
+#include "graph/context/QueryContext.h"             // for QueryContext
+#include "graph/context/ValidateContext.h"          // for ValidateContext
+#include "graph/context/ast/QueryAstContext.h"      // for SubgraphContext
 #include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/PlannerUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/Validator.h"
+#include "graph/planner/plan/ExecutionPlan.h"  // for SubPlan
+#include "graph/planner/plan/Logic.h"          // for Loop, StartNode
+#include "graph/planner/plan/Query.h"          // for EdgeProp, GetNeig...
+#include "graph/session/ClientSession.h"       // for SpaceInfo
+#include "graph/util/AnonVarGenerator.h"       // for AnonVarGenerator
+#include "graph/util/ExpressionUtils.h"        // for ExpressionUtils
+#include "graph/util/PlannerUtil.h"            // for PlannerUtil
+#include "graph/util/SchemaUtil.h"             // for SchemaUtil
+#include "parser/Clauses.h"                    // for StepClause
 
 namespace nebula {
+class Expression;
+
+class Expression;
+
 namespace graph {
 
 StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps() {
@@ -70,7 +95,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   subgraphCtx_->loopSteps = loopSteps;
   auto* subgraph = Subgraph::make(qctx, gn, oneMoreStepOutput, loopSteps, steps.steps() + 1);
   subgraph->setOutputVar(input);
-  subgraph->setColNames({nebula::kVid});
+  subgraph->setColNames({::nebula::kVid});
 
   auto* condition = loopCondition(steps.steps() + 1, gn->outputVar());
   auto* loop = Loop::make(qctx, startVidPlan.root, subgraph, condition);

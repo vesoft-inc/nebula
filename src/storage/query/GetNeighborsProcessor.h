@@ -6,11 +6,30 @@
 #ifndef STORAGE_QUERY_GETNEIGHBORSPROCESSOR_H_
 #define STORAGE_QUERY_GETNEIGHBORSPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future
+#include <folly/futures/Promise.h>  // for PromiseExcepti...
+#include <gtest/gtest_prod.h>       // for FRIEND_TEST
+#include <stdint.h>                 // for int64_t
+
+#include <utility>  // for move, pair
+#include <vector>   // for vector
 
 #include "common/base/Base.h"
-#include "storage/exec/StoragePlan.h"
-#include "storage/query/QueryBaseProcessor.h"
+#include "common/datatypes/DataSet.h"                  // for DataSet, Row
+#include "common/thrift/ThriftTypes.h"                 // for PartitionID
+#include "interface/gen-cpp2/common_types.h"           // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"          // for GetNeighborsRe...
+#include "storage/CommonUtils.h"                       // for RuntimeContext
+#include "storage/context/StorageExpressionContext.h"  // for StorageExpress...
+#include "storage/exec/StoragePlan.h"                  // for StoragePlan
+#include "storage/query/QueryBaseProcessor.h"          // for QueryBaseProce...
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

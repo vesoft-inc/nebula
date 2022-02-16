@@ -3,9 +3,23 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_N...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/Conv.h>           // for to
+#include <folly/init/Init.h>      // for init
+#include <stddef.h>               // for size_t
+#include <stdint.h>               // for int64_t
 
-#include "graph/context/Iterator.h"
+#include <memory>   // for allocator, unique_ptr
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Base.h"          // for kVid
+#include "common/datatypes/DataSet.h"  // for Row, DataSet
+#include "common/datatypes/List.h"     // for List
+#include "common/datatypes/Value.h"    // for Value
+#include "graph/context/Iterator.h"    // for GetNeighborsIter
 
 // 40 edges
 std::shared_ptr<nebula::Value> gDataSets1;

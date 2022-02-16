@@ -6,10 +6,18 @@
 #ifndef STORAGE_TRANSACTION_CHAINDELETEEDGESRESUMEPROCESSOR_H
 #define STORAGE_TRANSACTION_CHAINDELETEEDGESRESUMEPROCESSOR_H
 
-#include "storage/transaction/ChainDeleteEdgesLocalProcessor.h"
+#include <folly/futures/Future.h>  // for Semi...
+
+#include <string>  // for string
+
+#include "interface/gen-cpp2/common_types.h"                     // for Erro...
+#include "storage/transaction/ChainDeleteEdgesLocalProcessor.h"  // for Chai...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainDeleteEdgesResumeProcessor : public ChainDeleteEdgesLocalProcessor {
  public:

@@ -4,10 +4,32 @@
  */
 #ifndef STORAGE_EXEC_INDEXTOPNNODE_H
 #define STORAGE_EXEC_INDEXTOPNNODE_H
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint64_t
+
+#include <deque>       // for deque
+#include <functional>  // for function
+#include <memory>      // for unique_ptr
+#include <string>      // for string, basic_string
+#include <vector>      // for vector
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "folly/Likely.h"
-#include "storage/exec/IndexLimitNode.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "storage/exec/IndexLimitNode.h"      // for IndexLimitNode
+#include "storage/exec/IndexNode.h"           // for IndexNode::Result, Inde...
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+namespace cpp2 {
+class OrderBy;
+
+class OrderBy;
+}  // namespace cpp2
+struct RuntimeContext;
+
 template <class T>
 class TopNHeap final {
  public:

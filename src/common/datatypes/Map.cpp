@@ -5,9 +5,12 @@
 
 #include "common/datatypes/Map.h"
 
-#include <folly/String.h>
+#include <folly/String.h>   // for join
+#include <folly/dynamic.h>  // for dynamic::array, dynamic::dynamic, dyn...
 
-#include <sstream>
+#include <algorithm>  // for transform
+#include <sstream>    // for operator<<, stringstream, basic_ostream
+#include <vector>     // for vector
 
 namespace nebula {
 

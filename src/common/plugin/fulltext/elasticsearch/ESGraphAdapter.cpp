@@ -5,7 +5,16 @@
 
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 
-#include "common/process/ProcessUtils.h"
+#include <folly/detail/Iterators.h>  // for operator!=, IteratorFacade
+#include <folly/json.h>              // for parseJson, toJson
+
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_ostream
+#include <utility>    // for move, pair
+
+#include "common/base/Logging.h"          // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"           // for Status
+#include "common/process/ProcessUtils.h"  // for ProcessUtils
 
 namespace nebula {
 namespace plugin {

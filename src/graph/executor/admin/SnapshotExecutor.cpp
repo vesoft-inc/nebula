@@ -5,11 +5,33 @@
 
 #include "graph/executor/admin/SnapshotExecutor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Try.h>                      // for Try::~Try<T>
+#include <folly/futures/Future.h>           // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>          // for PromiseException::Promise...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <algorithm>    // for max
+#include <string>       // for string, basic_string, all...
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"             // for operator<<, Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/Value.h"         // for Value
+#include "common/time/ScopedTimer.h"        // for SCOPED_TIMER
+#include "graph/context/Iterator.h"         // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"     // for QueryContext
+#include "graph/context/Result.h"           // for ResultBuilder
+#include "graph/planner/plan/Admin.h"       // for DropSnapshot
+#include "interface/gen-cpp2/meta_types.h"  // for Snapshot
 
 namespace nebula {
 namespace graph {

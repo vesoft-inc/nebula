@@ -5,6 +5,8 @@
 #ifndef PARSER_GRAPHSCANNER_H_
 #define PARSER_GRAPHSCANNER_H_
 
+#include <folly/Unicode.h>
+
 #include "common/base/Base.h"
 
 // Only include FlexLexer.h if it hasn't been already included

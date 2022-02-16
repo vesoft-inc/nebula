@@ -5,12 +5,14 @@
 
 #include "meta/processors/job/TaskDescription.h"
 
-#include <folly/String.h>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/time/WallClock.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/processors/job/JobStatus.h"
-#include "meta/processors/job/JobUtils.h"
+#include <ctime>  // for time, size_t
+
+#include "common/time/WallClock.h"          // for WallClock
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils
+#include "meta/processors/job/JobStatus.h"  // for JobStatus
+#include "meta/processors/job/JobUtils.h"   // for JobUtil
 
 namespace nebula {
 namespace meta {

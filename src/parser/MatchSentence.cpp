@@ -5,6 +5,16 @@
 
 #include "parser/MatchSentence.h"
 
+#include <folly/Conv.h>    // for to
+#include <folly/String.h>  // for join, stringPrintf
+
+#include <algorithm>           // for transform
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <iterator>            // for back_insert_iterator, back_inserter
+
+#include "Clauses.h"            // for WhereClause, YieldColumns
+#include "TraverseSentences.h"  // for OrderFactors
+
 namespace nebula {
 
 std::string MatchStepRange::toString() const {

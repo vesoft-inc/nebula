@@ -5,8 +5,16 @@
 
 #include "graph/executor/query/LimitExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+
+#include "common/base/Status.h"                    // for Status
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/Query.h"              // for Limit
 
 namespace nebula {
 namespace graph {

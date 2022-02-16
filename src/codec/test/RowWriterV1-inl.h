@@ -7,6 +7,7 @@
 #define CODEC_TEST_ROWWRITERV1_INL_H
 
 namespace nebula {
+class RowWriterV1;
 
 template <typename T>
 typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type RowWriterV1::operator<<(

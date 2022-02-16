@@ -3,15 +3,56 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
-#include <folly/synchronization/Baton.h>
-#include <gtest/gtest.h>
+#include <folly/Try.h>                 // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>      // for Future
+#include <folly/futures/Future.h>      // for Future::Future<T>
+#include <folly/futures/Future.h>      // for Future
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for Promise, Promise...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for Promise, Promise...
+#include <folly/init/Init.h>           // for init
+#include <gflags/gflags_declare.h>     // for DECLARE_int32
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <stdint.h>                    // for uint32_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for required_field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/Utils.h"
-#include "interface/gen-cpp2/StorageAdminService.h"
-#include "meta/test/TestUtils.h"
+#include <algorithm>  // for max
+#include <atomic>     // for atomic
+#include <memory>     // for unique_ptr, make...
+#include <ostream>    // for operator<<, basi...
+#include <set>        // for set
+#include <string>     // for string, basic_st...
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Base.h"                        // for UNUSED
+#include "common/base/ErrorOr.h"                     // for ok, value
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/base/Status.h"                      // for Status, operator<<
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/HostAddr.h"               // for HostAddr
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/thrift/ThriftTypes.h"               // for GraphSpaceID, Port
+#include "common/time/WallClock.h"                   // for WallClock
+#include "common/utils/MetaKeyUtils.h"               // for MetaKeyUtils
+#include "common/utils/Utils.h"                      // for Utils
+#include "interface/gen-cpp2/StorageAdminService.h"  // for StorageAdminServ...
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "interface/gen-cpp2/meta_types.h"           // for HostBackupInfo
+#include "interface/gen-cpp2/storage_types.h"        // for AdminExecResp
+#include "kvstore/Common.h"                          // for KV
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "kvstore/NebulaStore.h"                     // for NebulaStore
+#include "meta/ActiveHostsMan.h"                     // for ActiveHostsMan
+#include "meta/processors/admin/AdminClient.h"       // for AdminClient
+#include "meta/test/TestUtils.h"                     // for MockCluster, Tes...
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "mock/RpcServer.h"                          // for RpcServer
 
 #define RETURN_OK(req)                                       \
   UNUSED(req);                                               \

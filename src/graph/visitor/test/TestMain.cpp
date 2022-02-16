@@ -3,9 +3,10 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>
+#include <glog/logging.h>
 
-#include "common/base/Base.h"
+#include "common/base/Logging.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

@@ -6,19 +6,43 @@
 #ifndef GRAPH_VALIDATOR_VALIDATOR_H_
 #define GRAPH_VALIDATOR_VALIDATOR_H_
 
+#include <folly/io/async/ScopedEventBaseThread.h>
+#include <stddef.h>
+
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
+#include "common/datatypes/Value.h"
+#include "common/thrift/ThriftTypes.h"
 #include "graph/context/QueryContext.h"
+#include "graph/context/Symbols.h"
 #include "graph/context/ValidateContext.h"
 #include "graph/context/ast/AstContext.h"
 #include "graph/planner/Planner.h"
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/service/PermissionCheck.h"
+#include "graph/service/RequestContext.h"
+#include "graph/session/ClientSession.h"
 #include "graph/visitor/DeducePropsVisitor.h"
 #include "parser/Sentence.h"
 
 namespace nebula {
+class Expression;
+class Sentence;
+class VerticesClause;
+
 namespace graph {
 struct Starts;
+class PlanNode;
+class ValidateContext;
+struct AstContext;
+
 class Validator {
  public:
   virtual ~Validator() = default;

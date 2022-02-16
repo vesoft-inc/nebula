@@ -5,13 +5,26 @@
 
 #include "graph/optimizer/OptGroup.h"
 
-#include <limits>
+#include <stddef.h>  // for size_t
 
-#include "graph/context/QueryContext.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/PlanNode.h"
+#include <limits>       // for numeric_limits
+#include <type_traits>  // for remove_reference<>::type
+
+#include "common/base/Logging.h"          // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptRule.h"      // for OptRule::TransformResult
+#include "graph/planner/plan/Logic.h"     // for Select, Loop
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;

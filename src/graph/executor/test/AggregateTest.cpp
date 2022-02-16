@@ -3,13 +3,44 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <stddef.h>                // for size_t
+#include <stdint.h>                // for int64_t
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/AggregateExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>           // for sort
+#include <ext/alloc_traits.h>  // for __alloc_traits<>...
+#include <memory>              // for unique_ptr, allo...
+#include <string>              // for string, basic_st...
+#include <type_traits>         // for remove_reference...
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                     // for Check_EQImpl
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/DataSet.h"                // for Row, DataSet
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value, Value::kN...
+#include "common/expression/AggregateExpression.h"   // for AggregateExpression
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/PropertyExpression.h"    // for InputPropertyExp...
+#include "graph/context/ExecutionContext.h"          // for ExecutionContext
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/Result.h"                    // for Result, Result::...
+#include "graph/context/Symbols.h"                   // for SymbolTable
+#include "graph/executor/query/AggregateExecutor.h"  // for AggregateExecutor
+#include "graph/planner/plan/Query.h"                // for Aggregate
 
 namespace nebula {
+class Expression;
+class ObjectPool;
+
+class Expression;
+class ObjectPool;
+
 namespace graph {
 class AggregateTest : public testing::Test {
  protected:

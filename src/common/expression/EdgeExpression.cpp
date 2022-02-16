@@ -5,7 +5,8 @@
 
 #include "common/expression/EdgeExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/expression/ExprVisitor.h"     // for ExprVisitor
 
 namespace nebula {
 

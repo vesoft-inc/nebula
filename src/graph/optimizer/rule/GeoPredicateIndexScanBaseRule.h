@@ -6,10 +6,14 @@
 #ifndef GRAPH_OPTIMIZER_RULE_GEOPREDICATEINDEXSCANBASERULE_H
 #define GRAPH_OPTIMIZER_RULE_GEOPREDICATEINDEXSCANBASERULE_H
 
-#include "graph/optimizer/OptRule.h"
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only), OptRule
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class GeoPredicateIndexScanBaseRule : public OptRule {
  public:

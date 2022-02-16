@@ -6,10 +6,14 @@
 #ifndef STORAGE_STORAGEADMINSERVICEHANDLER_H_
 #define STORAGE_STORAGEADMINSERVICEHANDLER_H_
 
+#include <folly/futures/Future.h>  // for Future
+
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/StorageAdminService.h"
+#include "interface/gen-cpp2/StorageAdminService.h"  // for StorageAdminServ...
+#include "interface/gen-cpp2/storage_types.h"        // for AdminExecResp (p...
 
 namespace nebula {
+
 namespace storage {
 
 class StorageEnv;

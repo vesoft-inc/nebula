@@ -6,8 +6,13 @@
 #ifndef COMMON_PROCESSUTILS_H_
 #define COMMON_PROCESSUTILS_H_
 
+#include <sys/types.h>  // for pid_t
+
+#include <string>  // for string
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 
 namespace nebula {
 

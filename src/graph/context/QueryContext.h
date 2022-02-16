@@ -6,22 +6,54 @@
 #ifndef GRAPH_CONTEXT_QUERYCONTEXT_H_
 #define GRAPH_CONTEXT_QUERYCONTEXT_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+#include <stdint.h>                 // for int64_t
+
+#include <atomic>   // for atomic
+#include <memory>   // for unique_ptr, operator!=
+#include <string>   // for string
+#include <utility>  // for move
+
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClient.h"
-#include "common/base/ObjectPool.h"
+#include "common/base/Logging.h"     // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/ObjectPool.h"  // for ObjectPool
 #include "common/charset/Charset.h"
 #include "common/cpp/helpers.h"
-#include "common/datatypes/Value.h"
+#include "common/datatypes/Value.h"  // for Value, Value::Type
+#include "common/graph/Response.h"   // for ExecutionResponse, Err...
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
-#include "graph/context/ExecutionContext.h"
-#include "graph/context/Symbols.h"
-#include "graph/context/ValidateContext.h"
-#include "graph/service/RequestContext.h"
-#include "graph/util/IdGenerator.h"
+#include "graph/context/ExecutionContext.h"    // for ExecutionContext
+#include "graph/context/Symbols.h"             // for SymbolTable
+#include "graph/context/ValidateContext.h"     // for ValidateContext
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
+#include "graph/service/RequestContext.h"      // for RequestContext
+#include "graph/util/IdGenerator.h"            // for IdGenerator
 #include "parser/SequentialSentences.h"
 
 namespace nebula {
+class CharsetInfo;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class SchemaManager;
+}  // namespace meta
+namespace storage {
+class StorageClient;
+}  // namespace storage
+
+class CharsetInfo;
+namespace meta {
+class IndexManager;
+class MetaClient;
+class SchemaManager;
+}  // namespace meta
+namespace storage {
+class StorageClient;
+}  // namespace storage
+
 namespace graph {
 
 /***************************************************************************

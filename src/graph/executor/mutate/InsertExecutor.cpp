@@ -5,10 +5,35 @@
 
 #include "graph/executor/mutate/InsertExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Mutate.h"
-#include "graph/service/GraphFlags.h"
+#include <folly/Try.h>              // for Try::~Try<T>, Try::Tr...
+#include <folly/futures/Future.h>   // for Future::Future<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+
+#include <algorithm>      // for max
+#include <ostream>        // for operator<<, basic_ost...
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for operator!=
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "clients/storage/StorageClient.h"      // for StorageClient, Storag...
+#include "clients/storage/StorageClientBase.h"  // for StorageRpcResponse
+#include "common/base/Logging.h"                // for COMPACT_GOOGLE_LOG_INFO
+#include "common/base/Status.h"                 // for Status, NG_RETURN_IF_...
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/thrift/ThriftTypes.h"          // for TagID
+#include "common/time/Duration.h"               // for Duration
+#include "common/time/ScopedTimer.h"            // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/planner/plan/ExecutionPlan.h"   // for ExecutionPlan
+#include "graph/planner/plan/Mutate.h"          // for InsertEdges, InsertVe...
+#include "graph/service/GraphFlags.h"           // for FLAGS_enable_experime...
+#include "graph/service/RequestContext.h"       // for RequestContext
+#include "graph/session/ClientSession.h"        // for ClientSession
+#include "interface/gen-cpp2/storage_types.h"   // for NewEdge, NewVertex
 
 using nebula::storage::StorageClient;
 

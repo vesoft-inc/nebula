@@ -6,9 +6,18 @@
 #ifndef COMMON_EXPRESSION_UNARYEXPRESSION_H_
 #define COMMON_EXPRESSION_UNARYEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <string>  // for operator<<, string
+
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression::Kind, Expression
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class UnaryExpression final : public Expression {
   friend class Expression;

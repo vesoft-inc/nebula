@@ -6,6 +6,8 @@
 #ifndef STORAGE_STORAGEFLAGS_H_
 #define STORAGE_STORAGEFLAGS_H_
 
+#include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_bool, DECL...
+
 #include "common/base/Base.h"
 
 DECLARE_string(store_type);

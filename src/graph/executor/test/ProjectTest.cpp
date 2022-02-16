@@ -3,13 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/ProjectExecutor.h"
-#include "graph/executor/test/QueryTestBase.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
+#include <memory>       // for allocator, unique_ptr
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Status.h"                 // for Status
+#include "common/datatypes/DataSet.h"           // for Row, DataSet
+#include "common/datatypes/Value.h"             // for Value
+#include "graph/context/ExecutionContext.h"     // for ExecutionContext
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/context/Result.h"               // for Result, ResultBuilder
+#include "graph/context/Symbols.h"              // for SymbolTable
+#include "graph/executor/Executor.h"            // for Executor
+#include "graph/executor/test/QueryTestBase.h"  // for QueryTestBase
+#include "graph/planner/plan/Logic.h"           // for StartNode
+#include "graph/planner/plan/Query.h"           // for Project
 
 namespace nebula {
 namespace graph {

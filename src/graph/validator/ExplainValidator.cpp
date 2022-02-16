@@ -5,15 +5,25 @@
 
 #include "graph/validator/ExplainValidator.h"
 
-#include <folly/String.h>
+#include <folly/String.h>  // for join
 
-#include <algorithm>
+#include <algorithm>    // for find, transform
+#include <cctype>       // for tolower
+#include <ostream>      // for operator<<, basic_o...
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>:...
+#include <utility>      // for move
+#include <vector>       // for vector
 
-#include "common/base/StatusOr.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/validator/SequentialValidator.h"
-#include "interface/gen-cpp2/graph_types.h"
-#include "parser/ExplainSentence.h"
+#include "common/base/Logging.h"                  // for GetReferenceableValue
+#include "common/base/StatusOr.h"                 // for StatusOr
+#include "graph/context/QueryContext.h"           // for QueryContext
+#include "graph/context/Symbols.h"                // for ColsDef
+#include "graph/planner/plan/ExecutionPlan.h"     // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"          // for operator<<, PlanNode
+#include "graph/validator/SequentialValidator.h"  // for SequentialValidator
+#include "parser/ExplainSentence.h"               // for ExplainSentence
+#include "parser/Sentence.h"                      // for Sentence, Sentence:...
 
 namespace nebula {
 namespace graph {

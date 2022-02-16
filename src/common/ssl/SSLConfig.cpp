@@ -5,6 +5,13 @@
 
 #include "common/ssl/SSLConfig.h"
 
+#include <folly/String.h>                 // for join
+#include <folly/io/async/SSLContext.h>    // for SSLContext, SSLContext::SSL...
+#include <folly/io/async/SSLOptions.h>    // for setSignatureAlgorithms, SSL...
+#include <wangle/ssl/SSLContextConfig.h>  // for SSLContextConfig
+
+#include <stdexcept>  // for runtime_error
+
 DEFINE_string(cert_path, "", "Path to cert pem.");
 DEFINE_string(key_path, "", "Path to cert key.");
 DEFINE_string(password_path, "", "Path to password.");

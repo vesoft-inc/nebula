@@ -6,10 +6,22 @@
 #ifndef COMMON_EXPRESSION_PREDICATEEXPRESSIONEXPRESSION_H_
 #define COMMON_EXPRESSION_PREDICATEEXPRESSIONEXPRESSION_H_
 
+#include <stdint.h>  // for int8_t
+
+#include <string>         // for string, allocator, operator<<
+#include <unordered_map>  // for unordered_map
+
+#include "common/base/ObjectPool.h"  // for ObjectPool
 #include "common/datatypes/Map.h"
-#include "common/expression/Expression.h"
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class PredicateExpression final : public Expression {
   friend class Expression;

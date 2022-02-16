@@ -5,14 +5,21 @@
 #ifndef GRAPH_PLANNER_NGQL_MAINTAINPLANNER_H
 #define GRAPH_PLANNER_NGQL_MAINTAINPLANNER_H
 
+#include <memory>  // for unique_ptr
+
 #include "common/base/Base.h"
-#include "graph/planner/Planner.h"
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "graph/context/ast/AstContext.h"  // for AstContext
+#include "graph/planner/Planner.h"         // for Planner
 #include "graph/planner/plan/PlanNode.h"
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 
 namespace nebula {
 namespace graph {
+struct SubPlan;
 
 struct AstContext;
+struct SubPlan;
 
 class CreateTagPlanner final : public Planner {
  public:

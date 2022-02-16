@@ -5,9 +5,35 @@
 
 #include "meta/processors/job/StatsJobExecutor.h"
 
-#include "common/utils/MetaKeyUtils.h"
-#include "common/utils/Utils.h"
-#include "meta/processors/Common.h"
+#include <folly/Format.h>                   // for sformat
+#include <folly/Try.h>                      // for Try, Try::~Try<T>
+#include <folly/Try.h>                      // for Try
+#include <folly/futures/Future.h>           // for Future::Future<T>
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>
+#include <folly/futures/Promise.h>          // for PromiseException::Pro...
+#include <folly/futures/Promise.h>          // for Promise::Promise<T>
+#include <folly/futures/Promise.h>          // for PromiseException::Pro...
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_f...
+
+#include <algorithm>      // for any_of
+#include <atomic>         // for atomic
+#include <ostream>        // for operator<<, basic_ost...
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for unordered_map, _Node_...
+#include <utility>        // for move, pair, make_pair
+
+#include "common/base/ErrorOr.h"                // for error, ok, value
+#include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...
+#include "common/base/Status.h"                 // for Status
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/HostAddr.h"          // for HostAddr
+#include "common/utils/MetaKeyUtils.h"          // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/meta_types.h"      // for StatsItem, JobStatus
+#include "kvstore/Common.h"                     // for KV
+#include "kvstore/KVStore.h"                    // for KVStore
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
 
 namespace nebula {
 namespace meta {

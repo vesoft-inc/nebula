@@ -6,13 +6,19 @@
 #ifndef GRAPH_PLANNER_MATCH_SEGMENTSCONNECTOR_H_
 #define GRAPH_PLANNER_MATCH_SEGMENTSCONNECTOR_H_
 
+#include <string>
+#include <unordered_set>
+
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/Planner.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+
 /**
  * The SegmentsConnector was designed to be a util to help connecting the
  * plan segment.

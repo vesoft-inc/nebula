@@ -6,14 +6,25 @@
 #ifndef GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_
 #define GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_
 
-#include <vector>
+#include <memory>         // for shared_ptr, make_unique
+#include <ostream>        // for operator<<
+#include <string>         // for string
+#include <unordered_map>  // for operator==, unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
 
-#include "common/meta/IndexManager.h"
+#include "common/base/Base.h"               // for UNUSED
+#include "common/base/Logging.h"            // for LOG, LogMessageFatal, _LO...
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/meta/IndexManager.h"       // for IndexManager
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, IndexID
+#include "interface/gen-cpp2/meta_types.h"  // for IndexItem
 
 namespace nebula {
 namespace graph {
 
-class MockIndexManager final : public nebula::meta::IndexManager {
+class MockIndexManager final : public ::nebula::meta::IndexManager {
  public:
   MockIndexManager() = default;
   ~MockIndexManager() = default;

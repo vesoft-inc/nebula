@@ -3,14 +3,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/Random.h>         // for Random
+#include <folly/String.h>         // for stringPrintf
+#include <folly/Varint.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <stdint.h>           // for int32_t
+#include <sys/types.h>        // for size_t, ssize_t
 
-#include "codec/RowReaderWrapper.h"
-#include "codec/RowWriterV2.h"
-#include "codec/test/RowWriterV1.h"
-#include "codec/test/SchemaWriter.h"
-#include "common/base/Base.h"
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "codec/RowReaderWrapper.h"           // for RowReaderWrapper
+#include "codec/RowWriterV2.h"                // for RowWriterV2
+#include "codec/test/RowWriterV1.h"           // for RowWriterV1
+#include "codec/test/SchemaWriter.h"          // for SchemaWriter
+#include "common/base/Logging.h"              // for DCHECK_EQ, SetStderrLog...
+#include "common/datatypes/Value.h"           // for Value
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
+
+namespace nebula {
+class RowReader;
+
+class RowReader;
+}  // namespace nebula
 
 using nebula::RowReader;
 using nebula::RowReaderWrapper;

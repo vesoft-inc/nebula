@@ -3,14 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/datatypes/List.h"
-#include "common/datatypes/Set.h"
-#include "common/function/AggFunctionManager.h"
-#include "common/time/TimeUtils.h"
+#include <functional>     // for function
+#include <string>         // for string, allocator, hash
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                 // for SetStderrLogging
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "common/datatypes/List.h"               // for List
+#include "common/datatypes/Set.h"                // for Set
+#include "common/datatypes/Value.h"              // for Value, Value::kNullV...
+#include "common/function/AggFunctionManager.h"  // for AggData, AggFunction...
 
 namespace nebula {
+class AggFunctionManagerTest_aggFunc_Test;
+
+class AggFunctionManagerTest_aggFunc_Test;
 
 class AggFunctionManagerTest : public ::testing::Test {
  public:

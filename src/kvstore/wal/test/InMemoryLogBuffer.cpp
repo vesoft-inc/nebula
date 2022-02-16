@@ -5,8 +5,6 @@
 
 #include "kvstore/wal/test/InMemoryLogBuffer.h"
 
-#include "common/base/Base.h"
-
 namespace nebula {
 namespace wal {
 

@@ -5,10 +5,22 @@
 
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 
-#include <proxygen/lib/utils/CryptUtil.h>
+#include <folly/Range.h>                           // for Range
+#include <folly/Try.h>                             // for Try::~Try<T>
+#include <folly/futures/Future.h>                  // for Future::Future<T>
+#include <folly/futures/Promise.h>                 // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                 // for PromiseException::...
+#include <folly/futures/Promise.h>                 // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                 // for PromiseException::...
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <proxygen/lib/utils/CryptUtil.h>          // for md5Encode
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include "clients/meta/MetaClient.h"     // for MetaClient
+#include "common/base/Status.h"          // for Status, NG_RETURN_...
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "common/time/ScopedTimer.h"     // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"  // for QueryContext
+#include "graph/planner/plan/Admin.h"    // for ChangePassword
 
 namespace nebula {
 namespace graph {

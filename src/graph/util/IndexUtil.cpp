@@ -5,7 +5,20 @@
 
 #include "graph/util/IndexUtil.h"
 
-#include <string>
+#include <folly/String.h>              // for join
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref, field...
+
+#include <string>         // for string, allocator, basic_...
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+
+#include "common/datatypes/DataSet.h"       // for Row, DataSet
+#include "common/datatypes/List.h"          // for List
+#include "common/datatypes/Value.h"         // for Value
+#include "graph/util/SchemaUtil.h"          // for SchemaUtil
+#include "interface/gen-cpp2/meta_types.h"  // for IndexItem, IndexParams
+#include "parser/MaintainSentences.h"       // for IndexParamItem, IndexPara...
 
 namespace nebula {
 namespace graph {

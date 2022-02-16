@@ -5,12 +5,46 @@
 
 #include "DeleteExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/executor/mutate/DeleteExecutor.h"
-#include "graph/planner/plan/Mutate.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/util/SchemaUtil.h"
+#include <folly/Try.h>                 // for Try::~Try<T>, Try:...
+#include <folly/futures/Future.h>      // for Future::Future<T>
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>      // for max
+#include <ostream>        // for operator<<, basic_...
+#include <string>         // for operator<<, char_t...
+#include <unordered_map>  // for operator!=
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "clients/storage/StorageClient.h"         // for StorageClient, Sto...
+#include "clients/storage/StorageClientBase.h"     // for StorageRpcResponse
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/DataSet.h"              // for Row
+#include "common/datatypes/Value.h"                // for Value, operator<<
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/Duration.h"                  // for Duration
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for Result
+#include "graph/executor/mutate/DeleteExecutor.h"  // for DeleteEdgesExecutor
+#include "graph/planner/plan/ExecutionPlan.h"      // for ExecutionPlan
+#include "graph/planner/plan/Mutate.h"             // for DeleteVertices
+#include "graph/planner/plan/PlanNode.h"           // for SingleInputNode
+#include "graph/service/GraphFlags.h"              // for FLAGS_enable_exper...
+#include "graph/service/RequestContext.h"          // for RequestContext
+#include "graph/session/ClientSession.h"           // for SpaceInfo, ClientS...
+#include "graph/util/SchemaUtil.h"                 // for SchemaUtil
+#include "interface/gen-cpp2/meta_types.h"         // for SpaceDesc
+#include "interface/gen-cpp2/storage_types.h"      // for EdgeKey, DelTags
+#include "parser/EdgeKey.h"                        // for EdgeKeyRef
 
 using nebula::storage::StorageClient;
 

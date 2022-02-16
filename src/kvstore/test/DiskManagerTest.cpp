@@ -4,13 +4,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>           // for stringPrintf
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_uint64
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/DiskManager.h"
-#include "kvstore/wal/FileBasedWal.h"
+#include <algorithm>                        // for sort
+#include <atomic>                           // for __atomic_base
+#include <boost/filesystem/operations.hpp>  // for create_directories, canon...
+#include <boost/filesystem/path.hpp>        // for path
+#include <ext/alloc_traits.h>               // for __alloc_traits<>::value_type
+#include <memory>                           // for allocator, make_shared
+#include <string>                           // for string, basic_string, ope...
+#include <unordered_map>                    // for _Map_base<>::mapped_type
+#include <vector>                           // for vector
+
+#include "common/base/Logging.h"          // for CHECK, COMPACT_GOOGLE_LOG...
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/fs/FileUtils.h"          // for FileUtils
+#include "common/fs/TempDir.h"            // for TempDir
+#include "common/thread/GenericWorker.h"  // for GenericWorker
+#include "common/thrift/ThriftTypes.h"    // for PartitionID, GraphSpaceID
+#include "kvstore/DiskManager.h"          // for DiskManager, SpaceDiskPar...
+#include "kvstore/wal/FileBasedWal.h"     // for FileBasedWalInfo, FileBas...
 
 DECLARE_uint64(minimum_reserved_bytes);
 

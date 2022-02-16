@@ -5,8 +5,27 @@
 
 #include "kvstore/plugins/elasticsearch/ESListener.h"
 
+#include <errno.h>
+#include <fcntl.h>  // for open
+#include <folly/Random.h>
+#include <gflags/gflags_declare.h>
+#include <string.h>
+#include <thrift/lib/cpp2/FieldRef.h>
+#include <unistd.h>
+
+#include <ostream>
+#include <type_traits>
+
+#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/SchemaManager.h"
+#include "common/plugin/fulltext/FTStorageAdapter.h"
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 DECLARE_uint32(ft_request_retry_times);
 DECLARE_int32(ft_bulk_batch_size);

@@ -6,10 +6,35 @@
 #ifndef META_ZONEBALANCEJOBEXECUTOR_H_
 #define META_ZONEBALANCEJOBEXECUTOR_H_
 
-#include "meta/processors/job/BalanceJobExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <gtest/gtest_prod.h>      // for FRIEND_TEST
+
+#include <map>     // for map
+#include <string>  // for string, basic_st...
+#include <vector>  // for vector
+
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/HostAddr.h"               // for HostAddr
+#include "common/thrift/ThriftTypes.h"               // for PartitionID
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "meta/processors/job/BalanceJobExecutor.h"  // for BalanceJobExecutor
+#include "meta/processors/job/JobDescription.h"      // for JobDescription
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+class BalanceTask;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
+class BalanceTask;
 
 class ZoneBalanceJobExecutor : public BalanceJobExecutor {
   FRIEND_TEST(BalanceTest, RemoveZonePlanTest);

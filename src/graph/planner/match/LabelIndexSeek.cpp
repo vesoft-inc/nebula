@@ -5,9 +5,34 @@
 
 #include "graph/planner/match/LabelIndexSeek.h"
 
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <cstddef>      // for size_t
+#include <cstdint>      // for int32_t
+#include <ostream>      // for operator<<
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+
+#include "common/base/Base.h"                      // for kVid, kDst, kSrc
+#include "common/base/Logging.h"                   // for Check_EQImpl, GetR...
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/Status.h"                    // for Status, operator<<
+#include "common/expression/Expression.h"          // for Expression::Kind
+#include "common/expression/LogicalExpression.h"   // for LogicalExpression
+#include "common/expression/PropertyExpression.h"  // for InputPropertyExpre...
+#include "common/meta/IndexManager.h"              // for IndexManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/ast/CypherAstContext.h"    // for ScanInfo, EdgeContext
+#include "graph/planner/plan/ExecutionPlan.h"      // for SubPlan
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode
+#include "graph/planner/plan/Query.h"              // for IndexScan::IndexQu...
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "interface/gen-cpp2/common_types.h"       // for SchemaID
+#include "interface/gen-cpp2/storage_types.h"      // for IndexQueryContext
+#include "parser/Clauses.h"                        // for YieldColumns, Yiel...
+#include "parser/MatchSentence.h"                  // for MatchEdge, MatchEd...
 
 namespace nebula {
 namespace graph {

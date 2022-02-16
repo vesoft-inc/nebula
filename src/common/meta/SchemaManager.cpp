@@ -3,8 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/Base.h"
-#include "common/meta/ServerBasedSchemaManager.h"
+#include "common/meta/SchemaManager.h"  // for SchemaManager
+
+#include <folly/Range.h>  // for StringPiece
+
+#include <cstdint>        // for int32_t
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map, _Node_iter...
+#include <utility>        // for pair, make_pair, move
+
+#include "common/base/Status.h"         // for Status, NG_RETURN_IF_ERROR
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/meta/SchemaManager.h"  // for SchemaManager
+#include "common/thrift/ThriftTypes.h"  // for TagID, GraphSpaceID
 
 namespace nebula {
 namespace meta {

@@ -3,19 +3,32 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <stddef.h>           // for size_t
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::va...
+#include <functional>          // for ref, bind, _1, _2, _3
+#include <memory>              // for shared_ptr, __shared...
+#include <mutex>               // for lock_guard, mutex
+#include <ostream>             // for operator<<
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"                 // for LOG, LogMessage, _LO...
+#include "common/datatypes/HostAddr.h"           // for HostAddr
+#include "common/fs/TempDir.h"                   // for TempDir
+#include "kvstore/raftex/RaftexService.h"        // for RaftexService
+#include "kvstore/raftex/test/RaftexTestBase.h"  // for checkLeadership, fin...
+#include "kvstore/raftex/test/TestShard.h"       // for TestShard
 
 namespace nebula {
+namespace thread {
+class GenericThreadPool;
+
+class GenericThreadPool;
+}  // namespace thread
+
 namespace raftex {
 
 TEST(LeaderElection, ElectionWithThreeCopies) {

@@ -5,9 +5,30 @@
 
 #include "meta/processors/job/BalanceTask.h"
 
-#include <folly/synchronization/Baton.h>
+#include <folly/Try.h>                    // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Future.h>         // for SemiFuture::releaseDe...
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Promise.h>        // for Promise::Promise<T>
+#include <folly/futures/Promise.h>        // for PromiseException::Pro...
+#include <folly/futures/Promise.h>        // for Promise::Promise<T>
+#include <folly/futures/Promise.h>        // for PromiseException::Pro...
+#include <folly/synchronization/Baton.h>  // for Baton
 
-#include "meta/processors/Common.h"
+#include <atomic>   // for atomic
+#include <ostream>  // for operator<<, basic_ost...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/ErrorOr.h"                // for ok, value
+#include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...
+#include "common/base/Status.h"                 // for Status, operator<<
+#include "common/time/WallClock.h"              // for WallClock
+#include "interface/gen-cpp2/common_types.h"    // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                     // for KV
+#include "kvstore/KVStore.h"                    // for KVStore
+#include "meta/ActiveHostsMan.h"                // for ActiveHostsMan
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
 
 namespace nebula {
 namespace meta {

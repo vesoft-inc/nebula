@@ -3,27 +3,65 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/Conv.h>                            // for to
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExec...
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/init/Init.h>                       // for init
+#include <folly/synchronization/Baton.h>           // for Baton
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest-param-test.h>                // for ParameterizedTes...
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stddef.h>                                // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, requi...
 
-#include "codec/RowWriterV2.h"
-#include "codec/test/RowWriterV1.h"
-#include "common/base/Base.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/PropertyExpression.h"
-#include "common/expression/RelationalExpression.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "mock/AdHocIndexManager.h"
-#include "mock/AdHocSchemaManager.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/index/LookupProcessor.h"
-#include "storage/mutate/AddVerticesProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <atomic>         // for atomic
+#include <cstdint>        // for int32_t, int64_t
+#include <limits>         // for numeric_limits
+#include <memory>         // for allocator, share...
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_st...
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "codec/RowWriterV2.h"                       // for RowWriterV2
+#include "codec/test/RowWriterV1.h"                  // for RowWriterV1
+#include "common/base/Base.h"                        // for kVid, kTag, kDst
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/DataSet.h"                // for Row, DataSet
+#include "common/datatypes/Date.h"                   // for Date, DateTime
+#include "common/datatypes/HostAddr.h"               // for HostAddr
+#include "common/datatypes/Value.h"                  // for Value, NullType
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for TagPropertyExpre...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/meta/NebulaSchemaProvider.h"        // for NebulaSchemaProv...
+#include "common/meta/SchemaManager.h"               // for SchemaManager
+#include "common/thrift/ThriftTypes.h"               // for PartitionID, TagID
+#include "common/utils/IndexKeyUtils.h"              // for PropertyType
+#include "common/utils/NebulaKeyUtils.h"             // for NebulaKeyUtils
+#include "common/utils/Types.h"                      // for IndexID
+#include "interface/gen-cpp2/common_types.h"         // for SchemaID, ErrorCode
+#include "interface/gen-cpp2/meta_types.h"           // for ColumnDef, Colum...
+#include "interface/gen-cpp2/storage_types.h"        // for IndexColumnHint
+#include "kvstore/Common.h"                          // for KV
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "mock/AdHocIndexManager.h"                  // for AdHocIndexManager
+#include "mock/AdHocSchemaManager.h"                 // for AdHocSchemaManager
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "mock/MockData.h"                           // for EdgeData, MockData
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/StorageFlags.h"                    // for FLAGS_query_conc...
+#include "storage/index/LookupProcessor.h"           // for LookupProcessor
+#include "storage/mutate/AddVerticesProcessor.h"     // for AddVerticesProce...
+#include "storage/test/QueryTestUtils.h"             // for QueryTestUtils
 
 using nebula::cpp2::PartitionID;
 using nebula::cpp2::PropertyType;

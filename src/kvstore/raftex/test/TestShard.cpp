@@ -5,14 +5,31 @@
 
 #include "kvstore/raftex/test/TestShard.h"
 
+#include <folly/Range.h>
+
+#include <cstdint>
+#include <type_traits>
+
 #include "common/base/Base.h"
 #include "common/ssl/SSLConfig.h"
-#include "kvstore/raftex/Host.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/wal/FileBasedWal.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "common/utils/LogIterator.h"
+
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
 
 namespace nebula {
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
 namespace raftex {
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+
 namespace test {
 
 std::string serializeHostAddr(const HostAddr& host) {

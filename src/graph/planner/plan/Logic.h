@@ -6,9 +6,20 @@
 #ifndef GRAPH_PLANNER_PLAN_LOGIC_H_
 #define GRAPH_PLANNER_PLAN_LOGIC_H_
 
-#include "graph/planner/plan/PlanNode.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode::Kind, SingleInp...
 
 namespace nebula {
+class Expression;
+struct PlanNodeDescription;
+
+class Expression;
+struct PlanNodeDescription;
+
 namespace graph {
 
 class StartNode final : public PlanNode {

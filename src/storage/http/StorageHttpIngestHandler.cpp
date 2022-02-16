@@ -5,9 +5,25 @@
 
 #include "storage/http/StorageHttpIngestHandler.h"
 
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Optional.h>                       // for Optional
+#include <proxygen/httpserver/ResponseBuilder.h>  // for ResponseBuilder
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
+#include <thrift/lib/cpp/util/EnumUtils.h>        // for enumNameSafe
+
+#include <ostream>  // for operator<<, basic_o...
+#include <string>   // for operator<<, char_tr...
+
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCod...
+#include "kvstore/KVStore.h"                  // for KVStore
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

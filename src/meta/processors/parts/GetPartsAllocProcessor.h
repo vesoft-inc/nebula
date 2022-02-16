@@ -6,9 +6,23 @@
 #ifndef META_GETPARTSALLOCPROCESSOR_H_
 #define META_GETPARTSALLOCPROCESSOR_H_
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, PartitionID
+#include "interface/gen-cpp2/meta_types.h"  // for GetPartsAllocResp, GetPar...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class GetPartsAllocProcessor : public BaseProcessor<cpp2::GetPartsAllocResp> {

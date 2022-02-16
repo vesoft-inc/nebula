@@ -5,14 +5,20 @@
 #ifndef GRAPH_UTIL_TOJSON_H_
 #define GRAPH_UTIL_TOJSON_H_
 
-#include <folly/dynamic.h>
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/dynamic.h>  // for dynamic::array, dynamic::dynamic, dyn...
+#include <stddef.h>         // for size_t
+#include <stdint.h>         // for int32_t, int64_t
 
-#include <iterator>
+#include <iterator>  // for back_inserter, pair
+#include <string>    // for string
 #include <utility>
+#include <vector>  // for vector
 
 namespace nebula {
 
 class EdgeKeyRef;
+
 class Expression;
 struct List;
 struct Value;
@@ -22,6 +28,7 @@ namespace meta {
 namespace cpp2 {
 class SpaceDesc;
 class AlterSchemaItem;
+
 class ColumnDef;
 class Schema;
 class SchemaProp;
@@ -39,6 +46,7 @@ class UpdatedProp;
 class OrderBy;
 class VertexProp;
 class EdgeProp;
+
 class StatProp;
 class Expr;
 class IndexQueryContext;

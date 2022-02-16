@@ -6,11 +6,21 @@
 #ifndef GRAPH_VALIDATOR_ACLVALIDATOR_H_
 #define GRAPH_VALIDATOR_ACLVALIDATOR_H_
 
-#include "graph/validator/Validator.h"
+#include "common/base/Status.h"         // for Status
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
+#include "graph/validator/Validator.h"  // for Validator
 #include "parser/UserSentences.h"
 
 namespace nebula {
+class Sentence;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+class QueryContext;
 
 class CreateUserValidator final : public Validator {
  public:

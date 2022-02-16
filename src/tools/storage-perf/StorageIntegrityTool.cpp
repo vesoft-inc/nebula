@@ -3,12 +3,34 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for SemiFuture::get
+#include <folly/init/Init.h>                       // for init
+#include <gflags/gflags.h>                         // for DEFINE_string, DEF...
+#include <glog/logging.h>                          // for INFO
+#include <stdint.h>                                // for int64_t, int32_t
+#include <thrift/lib/cpp/util/EnumUtils.h>         // for enumNameSafe
 
-#include "clients/storage/StorageClient.h"
-#include "codec/RowReader.h"
-#include "common/base/Base.h"
-#include "common/time/Duration.h"
+#include <algorithm>      // for max, rotate
+#include <cstdlib>        // for atoi, size_t, EXIT...
+#include <limits>         // for numeric_limits
+#include <memory>         // for unique_ptr, make_u...
+#include <ostream>        // for operator<<, basic_...
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for unordered_map, _No...
+#include <utility>        // for move, make_pair, pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"            // for MetaClient, MetaCl...
+#include "clients/storage/StorageClient.h"      // for StorageClient
+#include "clients/storage/StorageClientBase.h"  // for StorageRpcResponse
+#include "common/base/Logging.h"                // for LogMessage, LOG
+#include "common/base/Status.h"                 // for operator<<
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/KeyValue.h"          // for KeyValue
+#include "common/network/NetworkUtils.h"        // for NetworkUtils
+#include "common/thrift/ThriftTypes.h"          // for GraphSpaceID
 
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(io_threads, 10, "client io threads");

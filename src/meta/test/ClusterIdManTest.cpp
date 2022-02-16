@@ -3,12 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/test/TestUtils.h"
+#include <memory>  // for allocator, unique_ptr
+
+#include "common/base/Logging.h"       // for Check_EQImpl, Check_NEImpl
+#include "common/fs/TempDir.h"         // for TempDir
+#include "kvstore/NebulaStore.h"       // for NebulaStore
+#include "meta/KVBasedClusterIdMan.h"  // for ClusterIdMan
+#include "meta/test/TestUtils.h"       // for MockCluster
+#include "mock/MockCluster.h"          // for MockCluster
 
 namespace nebula {
 namespace meta {

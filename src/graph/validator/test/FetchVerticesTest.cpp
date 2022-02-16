@@ -3,11 +3,35 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/ObjectPool.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/validator/FetchVerticesValidator.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <memory>       // for allocator, make_...
+#include <string>       // for string, basic_st...
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Base.h"                        // for kVid
+#include "common/base/Status.h"                      // for operator<<, Status
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/expression/ArithmeticExpression.h"  // for ArithmeticExpres...
+#include "common/expression/ColumnExpression.h"      // for ColumnExpression
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/PropertyExpression.h"    // for TagPropertyExpre...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/expression/VertexExpression.h"      // for VertexExpression
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/planner/plan/ExecutionPlan.h"        // for ExecutionPlan
+#include "graph/planner/plan/Logic.h"                // for StartNode
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/planner/plan/Query.h"                // for GetVertices, Pro...
+#include "graph/validator/test/MockSchemaManager.h"  // for MockSchemaManager
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
+#include "interface/gen-cpp2/storage_types.h"        // for VertexProp, Expr
+#include "parser/Clauses.h"                          // for YieldColumns
 
 namespace nebula {
 namespace graph {
@@ -36,7 +60,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props));
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
@@ -66,7 +90,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props));
-    gv->setColNames({nebula::kVid, "person.name", "person.age", "book.name"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age", "book.name"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
@@ -96,7 +120,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -144,7 +168,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr2));
     exprs->emplace_back(std::move(expr3));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "person.age", "book.name"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age", "book.name"});
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -180,7 +204,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -232,7 +256,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr2));
     exprs->emplace_back(std::move(expr3));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "book.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "book.name", "person.age"});
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -271,7 +295,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr1));
 
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     // project, TODO(shylock) could push down to storage is it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -318,7 +342,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "book.name"});
+    gv->setColNames({::nebula::kVid, "person.name", "book.name"});
 
     // project, TODO(shylock) could push down to storage is it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -354,7 +378,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
@@ -380,7 +404,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *start = StartNode::make(qctx);
 
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
@@ -394,7 +418,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *start = StartNode::make(qctx);
 
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "node"));
@@ -409,7 +433,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *start = StartNode::make(qctx);
 
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames({nebula::kVid, "person.name"});
+    gv->setColNames({::nebula::kVid, "person.name"});
 
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
@@ -424,7 +448,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *start = StartNode::make(qctx);
 
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
@@ -440,7 +464,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     auto *start = StartNode::make(qctx);
 
     auto *gv = GetVertices::make(qctx, start, 1, src);
-    gv->setColNames({nebula::kVid, "person.name", "person.age"});
+    gv->setColNames({::nebula::kVid, "person.name", "person.age"});
 
     auto yieldColumns = std::make_unique<YieldColumns>();
     yieldColumns->addColumn(new YieldColumn(ArithmeticExpression::makeAdd(

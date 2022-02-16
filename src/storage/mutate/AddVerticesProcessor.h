@@ -6,13 +6,41 @@
 #ifndef STORAGE_MUTATE_ADDVERTICESPROCESSOR_H_
 #define STORAGE_MUTATE_ADDVERTICESPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+
+#include <memory>   // for shared_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
 #include "common/base/Base.h"
 #include "common/base/ConcurrentLRUCache.h"
+#include "common/base/ErrorOr.h"               // for ErrorOr
+#include "common/thrift/ThriftTypes.h"         // for PartitionID, VertexID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse, AddVerti...
 #include "kvstore/LogEncoder.h"
-#include "storage/BaseProcessor.h"
-#include "storage/CommonUtils.h"
+#include "storage/BaseProcessor.h"  // for BaseProcessor
+#include "storage/CommonUtils.h"    // for StorageEnv (ptr only)
 
 namespace nebula {
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
 namespace storage {
 
 extern ProcessorCounters kAddVerticesCounters;

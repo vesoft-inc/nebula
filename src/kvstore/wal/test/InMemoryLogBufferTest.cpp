@@ -3,13 +3,24 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include <utility>
+#include <cstring>  // for size_t, strlen
+#include <memory>   // for allocator, share...
+#include <string>   // for string
+#include <utility>  // for pair
 
-#include "common/base/Base.h"
-#include "kvstore/wal/test/InMemoryLogBuffer.h"
-#include "kvstore/wal/test/InMemoryLogBufferList.h"
+#include "common/base/Base.h"                        // for UNUSED
+#include "common/base/Logging.h"                     // for SetStderrLogging
+#include "common/thrift/ThriftTypes.h"               // for TermID, LogID
+#include "kvstore/wal/test/InMemoryLogBuffer.h"      // for InMemoryLogBuffer
+#include "kvstore/wal/test/InMemoryLogBufferList.h"  // for InMemoryBufferList
 
 namespace nebula {
 namespace wal {

@@ -5,8 +5,20 @@
 
 #include "graph/executor/admin/CharsetExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for _Node_iterator, operator!=
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Status.h"          // for Status
+#include "common/charset/Charset.h"      // for CharsetDesc, CharsetInfo
+#include "common/datatypes/DataSet.h"    // for Row, DataSet
+#include "common/datatypes/List.h"       // for List
+#include "common/datatypes/Value.h"      // for Value
+#include "common/time/ScopedTimer.h"     // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"  // for QueryContext
+#include "graph/context/Result.h"        // for ResultBuilder
 
 namespace nebula {
 namespace graph {

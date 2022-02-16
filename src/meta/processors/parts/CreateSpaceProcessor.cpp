@@ -5,7 +5,28 @@
 
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <gflags/gflags.h>                  // for DEFINE_int32, DECLARE...
+#include <limits.h>                         // for INT_MAX
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_f...
+
+#include <iterator>     // for end, begin
+#include <map>          // for multimap, operator!=
+#include <memory>       // for unique_ptr
+#include <new>          // for operator new
+#include <ostream>      // for operator<<, basic_ost...
+#include <type_traits>  // for remove_reference<>::type
+
+#include "clients/meta/MetaClient.h"        // for FLAGS_heartbeat_inter...
+#include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...
+#include "common/time/WallClock.h"          // for WallClock
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils, EntryType
+#include "kvstore/Common.h"                 // for KV
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "meta/ActiveHostsMan.h"            // for HostInfo
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doGet
+#include "meta/processors/Common.h"         // for LockUtils
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");

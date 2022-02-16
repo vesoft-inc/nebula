@@ -6,15 +6,66 @@
 #ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 #define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
+#include <folly/String.h>  // for stringPrintf
+#include <folly/Traits.h>  // for tag_t
 #include <folly/Try.h>
+#include <folly/futures/Future.h>   // for via
+#include <folly/futures/Future.h>   // for Future, SemiFu...
+#include <folly/futures/Promise.h>  // for Promise
+#include <stddef.h>                 // for size_t
+#include <stdint.h>                 // for int32_t
 
-#include "clients/storage/stats/StorageClientStats.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
+#include <exception>      // for exception
+#include <iterator>       // for pair
+#include <memory>         // for shared_ptr
+#include <mutex>          // for mutex, lock_guard
+#include <ostream>        // for operator<<
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair, forward
+#include <vector>         // for vector
+
+#include "clients/storage/stats/StorageClientStats.h"  // for kNumRpcSentToS...
+#include "common/base/Logging.h"                       // for LogMessage
+#include "common/base/Status.h"                        // for Status
+#include "common/base/StatusOr.h"                      // for StatusOr
+#include "common/datatypes/HostAddr.h"                 // for HostAddr, hash
+#include "common/ssl/SSLConfig.h"                      // for FLAGS_enable_ssl
+#include "common/stats/StatsManager.h"                 // for StatsManager
+#include "common/thrift/ThriftTypes.h"                 // for PartitionID
+#include "common/time/WallClock.h"                     // for WallClock
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
 namespace storage {
+namespace cpp2 {
+class ScanCursor;
+}  // namespace cpp2
+template <class Response>
+class StorageRpcResponse;
+}  // namespace storage
+}  // namespace nebula
+
+namespace folly {
+class EventBase;
+class IOThreadPoolExecutor;
+
+class EventBase;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
+namespace nebula {
+namespace meta {
+class MetaClient;
+}  // namespace meta
+
+namespace storage {
+namespace cpp2 {
+class ScanCursor;
+}  // namespace cpp2
+template <class Response>
+class StorageRpcResponse;
 
 template <class Request, class RemoteFunc, class Response>
 struct ResponseContext {
@@ -151,15 +202,15 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
                       << static_cast<int32_t>(code.get_code());
               hasFailure = true;
               context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
-              if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+              if (code.get_code() == ::nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                 auto* leader = code.get_leader();
                 if (isValidHostPtr(leader)) {
                   updateLeader(spaceId, code.get_part_id(), *leader);
                 } else {
                   invalidLeader(spaceId, code.get_part_id());
                 }
-              } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
-                         code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
+              } else if (code.get_code() == ::nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
+                         code.get_code() == ::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                 invalidLeader(spaceId, code.get_part_id());
               } else {
                 // do nothing
@@ -187,7 +238,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
                          LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
                        }
                        context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+                                                       ::nebula::cpp2::ErrorCode::E_RPC_FAILURE);
                        context->resp.markFailure();
                      })
           .thenError(folly::tag_t<std::exception>{},
@@ -197,7 +248,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
                        LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
                        invalidLeader(spaceId, parts);
                        context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+                                                       ::nebula::cpp2::ErrorCode::E_RPC_FAILURE);
                        context->resp.markFailure();
                      })
           .ensure([context, host] {
@@ -257,15 +308,15 @@ void StorageClientBase<ClientType, ClientManagerType>::getResponseImpl(
               for (auto& code : result.get_failed_parts()) {
                 VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
                         << static_cast<int32_t>(code.get_code());
-                if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+                if (code.get_code() == ::nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                   auto* leader = code.get_leader();
                   if (isValidHostPtr(leader)) {
                     updateLeader(spaceId, code.get_part_id(), *leader);
                   } else {
                     invalidLeader(spaceId, code.get_part_id());
                   }
-                } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
-                           code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
+                } else if (code.get_code() == ::nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
+                           code.get_code() == ::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                   invalidLeader(spaceId, code.get_part_id());
                 }
               }

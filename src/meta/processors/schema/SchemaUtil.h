@@ -6,11 +6,28 @@
 #ifndef META_SCHEMAUTIL_H_
 #define META_SCHEMAUTIL_H_
 
+#include <string>  // for string
+#include <vector>  // for vector
+
 #include "common/base/ObjectPool.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
+class ObjectPool;
 namespace meta {
+namespace cpp2 {
+class ColumnDef;
+}  // namespace cpp2
+}  // namespace meta
+
+class ObjectPool;
+
+namespace meta {
+namespace cpp2 {
+class ColumnDef;
+}  // namespace cpp2
+
 class SchemaUtil final {
  public:
   SchemaUtil() = default;

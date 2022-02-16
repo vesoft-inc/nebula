@@ -5,13 +5,31 @@
 
 #include "graph/executor/query/LeftJoinExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <iterator>   // for move_iterator, mak...
+#include <memory>     // for unique_ptr, __shar...
+#include <ostream>    // for operator<<, basic_...
+#include <utility>    // for move, pair
+
+#include "common/base/Logging.h"                   // for Check_EQImpl, COMP...
+#include "common/datatypes/List.h"                 // for hash, List
+#include "common/datatypes/Value.h"                // for Value, hash, Value...
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/executor/Executor.h"               // for Executor
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode
+#include "graph/planner/plan/Query.h"              // for BiJoin, Join
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+
+class QueryContext;
+
 folly::Future<Status> LeftJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* joinNode = asNode<Join>(node());

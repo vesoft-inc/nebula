@@ -5,6 +5,12 @@
 
 #include "codec/test/ResultSchemaProvider.h"
 
+#include <folly/hash/SpookyHashV2.h>  // for SpookyHashV2
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <memory>              // for allocator_traits<>::value_type
+#include <utility>             // for move, pair
+
 namespace nebula {
 
 using folly::hash::SpookyHashV2;

@@ -5,12 +5,11 @@
 
 #include "common/datatypes/Path.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
-
-#include <algorithm>
-#include <tuple>
-#include <unordered_set>
+#include <algorithm>      // for reverse
+#include <iterator>       // for move_iterator, make_move_iterator
+#include <memory>         // for allocator_traits<>::value_type
+#include <tuple>          // for tuple
+#include <unordered_set>  // for unordered_set
 
 namespace nebula {
 void Path::reverse() {

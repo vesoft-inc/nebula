@@ -6,9 +6,24 @@
 #ifndef COMMON_EXPRESSION_CONTAINEREXPRESSION_H_
 #define COMMON_EXPRESSION_CONTAINEREXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <stddef.h>  // for size_t
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <string>              // for string, operator<<, basic_...
+#include <utility>             // for pair
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"           // for Check_LTImpl, DCHECK_LT
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class ExpressionList final {
  public:

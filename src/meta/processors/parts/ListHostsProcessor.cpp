@@ -5,9 +5,29 @@
 
 #include "meta/processors/parts/ListHostsProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/admin/AdminClient.h"
-#include "version/Version.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <gflags/gflags.h>                  // for DECLARE_int32, DECLAR...
+#include <stdint.h>                         // for int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_f...
+
+#include <algorithm>  // for max, find, find_if
+#include <memory>     // for unique_ptr, __shared_...
+#include <ostream>    // for operator<<, basic_ost...
+#include <tuple>      // for tie, tuple
+
+#include "common/base/ErrorOr.h"            // for ok, value, error
+#include "common/base/Logging.h"            // for LogMessage, LOG, _LOG...
+#include "common/datatypes/HostAddr.h"      // for HostAddr, hash, opera...
+#include "common/time/WallClock.h"          // for WallClock
+#include "common/utils/Utils.h"             // for Utils
+#include "kvstore/KVIterator.h"             // for KVIterator
+#include "kvstore/KVStore.h"                // for KVStore
+#include "kvstore/Part.h"                   // for Part
+#include "meta/ActiveHostsMan.h"            // for HostInfo, ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"         // for LockUtils
+#include "version/Version.h"                // for getOriginVersion, git...
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_int32(agent_heartbeat_interval_secs);

@@ -5,7 +5,9 @@
 
 #include "common/expression/LabelAttributeExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <memory>  // for allocator
+
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
 

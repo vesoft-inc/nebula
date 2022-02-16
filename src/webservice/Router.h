@@ -5,19 +5,22 @@
 
 #ifndef WEBSERVICE_ROUTER_H_
 #define WEBSERVICE_ROUTER_H_
-#include <proxygen/lib/http/HTTPMethod.h>
+#include <proxygen/lib/http/HTTPMethod.h>  // for HTTPMethod, HTTPMethod::DE...
 
-#include <boost/core/noncopyable.hpp>
-#include <memory>
-#include <regex>
-#include <unordered_map>
-#include <vector>
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <functional>                  // for function
+#include <memory>                      // for unique_ptr
+#include <regex>                       // for regex
+#include <string>                      // for string, basic_string, hash
+#include <unordered_map>               // for unordered_map
+#include <vector>                      // for vector
 
-#include "common/base/Logging.h"
-#include "common/cpp/helpers.h"
+#include "common/base/Logging.h"  // for CheckNotNull, DCHECK_NOTNULL
+#include "common/cpp/helpers.h"   // for NonMovable
 
 namespace proxygen {
 class RequestHandler;
+
 class HTTPMessage;
 }  // namespace proxygen
 

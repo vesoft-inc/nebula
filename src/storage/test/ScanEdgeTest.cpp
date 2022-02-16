@@ -3,13 +3,42 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/c++config.h>
-#include <gtest/gtest.h>
+#include <folly/futures/Future.h>      // for Future::get
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <stdint.h>                    // for int64_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "storage/query/ScanEdgeProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <cstddef>             // for size_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>...
+#include <limits>              // for numeric_limits
+#include <memory>              // for allocator, uniqu...
+#include <ostream>             // for operator<<
+#include <string>              // for string, basic_st...
+#include <type_traits>         // for remove_reference...
+#include <unordered_map>       // for unordered_map
+#include <utility>             // for pair, move, make...
+#include <vector>              // for vector
+
+#include "common/base/Base.h"                        // for kSrc, kDst, kRank
+#include "common/base/Logging.h"                     // for Check_EQImpl, LOG
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/DataSet.h"                // for DataSet
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/PropertyExpression.h"    // for EdgePropertyExpr...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/thrift/ThriftTypes.h"               // for PartitionID, Edg...
+#include "interface/gen-cpp2/storage_types.h"        // for EdgeProp, ScanRe...
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "mock/MockData.h"                           // for MockData, MockDa...
+#include "storage/query/ScanEdgeProcessor.h"         // for ScanEdgeProcessor
+#include "storage/test/QueryTestUtils.h"             // for QueryTestUtils
 
 namespace nebula {
 namespace storage {

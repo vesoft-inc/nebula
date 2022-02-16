@@ -5,6 +5,9 @@
 
 #include "storage/StorageFlags.h"
 
+#include <gflags/gflags.h>  // for DEFINE_int32, DEFINE_bool, DEFINE_string
+#include <limits.h>         // for INT_MAX
+
 DEFINE_string(store_type,
               "nebula",
               "Which type of KVStore to be used by the storage daemon."

@@ -6,10 +6,31 @@
 #ifndef GRAPH_EXECUTOR_ALGO_PRODUCESEMISHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_PRODUCESEMISHORTESTPATHEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <algorithm>      // for max
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector, allocator
+
+#include "common/datatypes/Path.h"    // for Path
+#include "common/datatypes/Value.h"   // for Value, hash, operator==
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct Edge;
+
+class Status;
+struct Edge;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class ProduceSemiShortestPathExecutor final : public Executor {
  public:
   ProduceSemiShortestPathExecutor(const PlanNode* node, QueryContext* qctx)

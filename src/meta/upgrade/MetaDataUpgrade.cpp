@@ -5,19 +5,19 @@
 
 #include "meta/upgrade/MetaDataUpgrade.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <gflags/gflags_declare.h>                 // for DECLARE_bool, DECL...
+#include <thrift/lib/cpp2/FieldRef.h>              // for optional_field_ref
 
-#include "common/base/Base.h"
-#include "common/base/ObjectPool.h"
-#include "common/conf/Configuration.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Value.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "kvstore/Common.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
+#include <memory>   // for unique_ptr
+#include <ostream>  // for operator<<, basic_...
+#include <string>   // for basic_string, string
+#include <utility>  // for move
+
+#include "common/base/Logging.h"            // for LogMessage, LOG
+#include "common/utils/MetaKeyUtils.h"      // for MetaKeyUtils
+#include "interface/gen-cpp2/meta_types.h"  // for SpaceDesc, GeoShape
+#include "kvstore/KVIterator.h"             // for KVIterator
 #include "meta/upgrade/v2/MetaServiceUtilsV2.h"
 
 DECLARE_bool(null_type);

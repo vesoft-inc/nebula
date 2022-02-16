@@ -6,7 +6,17 @@
 #ifndef TOOLS_DBUPGRADE_NEBULAKEYUTILSV2_H_
 #define TOOLS_DBUPGRADE_NEBULAKEYUTILSV2_H_
 
-#include "common/utils/Types.h"
+#include <folly/Range.h>   // for StringPiece
+#include <folly/String.h>  // for hexDump
+#include <stddef.h>        // for size_t
+#include <stdint.h>        // for uint32_t, int32_t, int64_t
+
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string, operator<<, allocator
+
+#include "common/base/Logging.h"        // for LOG, LogMessageFatal, _LOG_FATAL
+#include "common/thrift/ThriftTypes.h"  // for PartitionID, EdgeType, TagID
+#include "common/utils/Types.h"         // for readInt, NebulaSystemKeyType
 
 namespace nebula {
 

@@ -6,8 +6,22 @@
 #ifndef WAL_INMEMORYLOGBUFFER_H_
 #define WAL_INMEMORYLOGBUFFER_H_
 
+#include <folly/Range.h>                       // for StringPiece
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock
+#include <stddef.h>                            // for size_t
+
+#include <functional>  // for function
+#include <list>        // for list
+#include <memory>      // for allocator, shared_ptr
+#include <ostream>     // for operator<<, basic_ostream
+#include <string>      // for string, operator<<
+#include <tuple>       // for tuple
+#include <utility>     // for pair
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
+#include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_INFO
+#include "common/thrift/ThriftTypes.h"  // for TermID, LogID, ClusterID
 
 namespace nebula {
 namespace wal {

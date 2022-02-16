@@ -3,13 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <sys/time.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_RELATIVE
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/init/Init.h>      // for init
+#include <stddef.h>               // for NULL
+#include <stdint.h>               // for uint32_t
+#include <sys/time.h>             // for gettimeofday, timeval
 
-#include <chrono>
+#include <chrono>  // for system_clock
 
-#include "common/base/Base.h"
-#include "common/time/WallClock.h"
+#include "common/time/WallClock.h"  // for WallClock
 
 using nebula::time::WallClock;
 

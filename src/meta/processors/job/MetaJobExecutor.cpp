@@ -5,7 +5,16 @@
 
 #include "meta/processors/job/MetaJobExecutor.h"
 
-#include "common/utils/Utils.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for SemiFuture::releaseDeferredEx...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Promise:...
+#include <folly/futures/Promise.h>  // for PromiseException::PromiseExce...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Promise:...
+#include <folly/futures/Promise.h>  // for PromiseException::PromiseExce...
+#include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_uint32
+
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_INFO
+#include "common/base/Status.h"   // for Status
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

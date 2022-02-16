@@ -6,10 +6,27 @@
 #ifndef GRAPH_VALIDATOR_ORDERBYVALIDATOR_H_
 #define GRAPH_VALIDATOR_ORDERBYVALIDATOR_H_
 
-#include "graph/validator/Validator.h"
+#include <stddef.h>  // for size_t
+
+#include <string>   // for string
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Status.h"         // for Status
+#include "graph/validator/Validator.h"  // for Validator
+#include "parser/TraverseSentences.h"   // for OrderFactor::OrderType
 
 namespace nebula {
+class Sentence;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+class QueryContext;
+
 class OrderByValidator final : public Validator {
  public:
   OrderByValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {

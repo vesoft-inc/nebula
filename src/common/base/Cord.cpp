@@ -5,7 +5,12 @@
 
 #include "common/base/Cord.h"
 
-#include "common/base/Logging.h"
+#include <string.h>  // for memcpy, strlen
+
+#include <algorithm>  // for min
+#include <ostream>    // for operator<<
+
+#include "common/base/Logging.h"  // for COMPACT_GOOGLE_LOG_FATAL, LogMessag...
 
 namespace nebula {
 

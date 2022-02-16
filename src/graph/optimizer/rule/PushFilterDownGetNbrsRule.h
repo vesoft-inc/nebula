@@ -6,10 +6,17 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNGETNBRSRULE_H_
 #define GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNGETNBRSRULE_H_
 
-#include "graph/optimizer/OptRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only)
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class PushFilterDownGetNbrsRule final : public OptRule {
  public:

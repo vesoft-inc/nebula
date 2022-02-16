@@ -3,14 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>  // for addBenchmark
+#include <folly/init/Init.h>  // for init
+#include <stddef.h>           // for size_t
 
-#include <memory>
+#include <memory>  // for allocator
 
-#include "common/base/ObjectPool.h"
-#include "common/expression/AggregateExpression.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/test/ExpressionContextMock.h"
+#include "common/base/ObjectPool.h"                        // for ObjectPool
+#include "common/expression/AggregateExpression.h"         // for AggregateE...
+#include "common/expression/ConstantExpression.h"          // for ConstantEx...
+#include "common/expression/Expression.h"                  // for Expression
+#include "common/expression/test/ExpressionContextMock.h"  // for Expression...
+#include "common/function/AggFunctionManager.h"            // for AggData
 
 nebula::ExpressionContextMock gExpCtxt;
 nebula::ObjectPool pool;

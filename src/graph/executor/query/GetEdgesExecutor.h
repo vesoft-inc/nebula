@@ -6,11 +6,27 @@
 #ifndef GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
 
-#include "graph/executor/query/GetPropExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "common/datatypes/DataSet.h"              // for DataSet
+#include "graph/executor/query/GetPropExecutor.h"  // for GetPropExecutor
 
 namespace nebula {
+class Status;
+namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
 namespace graph {
 class GetEdges;
+class PlanNode;
+class QueryContext;
+
 class GetEdgesExecutor final : public GetPropExecutor {
  public:
   GetEdgesExecutor(const PlanNode *node, QueryContext *qctx)

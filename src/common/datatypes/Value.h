@@ -6,12 +6,18 @@
 #ifndef COMMON_DATATYPES_VALUE_H_
 #define COMMON_DATATYPES_VALUE_H_
 
-#include <folly/dynamic.h>
+#include <folly/dynamic.h>  // for dynamic
+#include <stdint.h>         // for uint64_t, int64_t, int16_t
 
-#include <memory>
+#include <cstddef>      // for size_t
+#include <functional>   // for equal_to
+#include <iosfwd>       // for ostream, nullptr_t
+#include <memory>       // for unique_ptr
+#include <string>       // for string, operator<<, basic_string
+#include <string_view>  // for hash
 
-#include "common/datatypes/Date.h"
-#include "common/datatypes/Duration.h"
+#include "common/datatypes/Date.h"      // for Date, DateTime, Time
+#include "common/datatypes/Duration.h"  // for Duration
 #include "common/thrift/ThriftTypes.h"
 
 namespace apache {
@@ -28,6 +34,7 @@ namespace nebula {
 struct Vertex;
 struct Edge;
 struct Path;
+
 struct Map;
 struct List;
 struct Set;

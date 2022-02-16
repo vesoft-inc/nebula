@@ -5,8 +5,11 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include "MockSchemaManager.h"
-#include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
 
 namespace nebula {
 namespace graph {

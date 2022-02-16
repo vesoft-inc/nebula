@@ -5,7 +5,21 @@
 
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
 
-#include "common/fs/FileUtils.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for basic_string, operator<<
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doPrefix
 
 namespace nebula {
 namespace meta {

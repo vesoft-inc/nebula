@@ -6,16 +6,22 @@
 #ifndef COMMON_GRAPH_RESPONSE_H
 #define COMMON_GRAPH_RESPONSE_H
 
-#include <folly/DynamicConverter.h>
-#include <folly/dynamic.h>
+#include <folly/Conv.h>              // for to
+#include <folly/DynamicConverter.h>  // for toDynamic
+#include <folly/dynamic.h>           // for dynamic
+#include <folly/dynamic.h>           // for dynamic::insert, dynamic::object
 
-#include <algorithm>
-#include <memory>
-#include <ostream>
-#include <unordered_map>
-#include <vector>
+#include <algorithm>      // for transform
+#include <cstdint>        // for int64_t, int32_t
+#include <memory>         // for unique_ptr, unique_ptr<>::elem...
+#include <ostream>        // for operator<<, ostream
+#include <string>         // for string, operator==, basic_string
+#include <type_traits>    // for enable_if<>::type
+#include <unordered_map>  // for unordered_map, operator!=, ope...
+#include <utility>        // for move, pair
+#include <vector>         // for vector, operator==, vector<>::...
 
-#include "common/datatypes/DataSet.h"
+#include "common/datatypes/DataSet.h"  // for DataSet
 
 #define ErrorCodeEnums                                                        \
   /* for common code */                                                       \
@@ -530,7 +536,7 @@ struct ExecutionResponse {
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
   int64_t latencyInUs{0};
-  std::unique_ptr<nebula::DataSet> data{nullptr};
+  std::unique_ptr<::nebula::DataSet> data{nullptr};
   std::unique_ptr<std::string> spaceName{nullptr};
   std::unique_ptr<std::string> errorMsg{nullptr};
   std::unique_ptr<PlanDescription> planDesc{nullptr};

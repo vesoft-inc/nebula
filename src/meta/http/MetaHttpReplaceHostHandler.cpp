@@ -5,18 +5,37 @@
 
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <folly/Format.h>                 // for sformat
+#include <folly/SharedMutex.h>            // for SharedMutex
+#include <folly/String.h>                 // for stringPrintf
+#include <folly/synchronization/Baton.h>  // for Baton
 #include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
+#include <stdint.h>                               // for uint32_t
 
-#include "common/http/HttpClient.h"
-#include "common/network/NetworkUtils.h"
-#include "common/process/ProcessUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "meta/processors/Common.h"
-#include "webservice/Common.h"
-#include "webservice/WebService.h"
+#include <atomic>   // for atomic
+#include <ostream>  // for operator<<, basic_o...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefa...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCod...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/processors/Common.h"           // for LockUtils
+#include "webservice/Common.h"                // for HttpStatusCode, Web...
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 namespace nebula {
 namespace meta {

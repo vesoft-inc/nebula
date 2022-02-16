@@ -2,10 +2,15 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_NAMED_P...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/Random.h>         // for Random
+#include <gflags/gflags.h>        // for ParseCommandLineFlags
+#include <stddef.h>               // for size_t
 
-#include "common/base/Base.h"
-#include "common/base/MurmurHash2.h"
+#include <string>  // for basic_string, string, hash
+
+#include "common/base/MurmurHash2.h"  // for MurmurHash2
 
 using nebula::MurmurHash2;
 

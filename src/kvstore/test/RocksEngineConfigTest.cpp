@@ -3,17 +3,29 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/cache.h>
-#include <rocksdb/convenience.h>
-#include <rocksdb/db.h>
-#include <rocksdb/slice_transform.h>
+#include <folly/ScopeGuard.h>          // for operator+, SCOPE_EXIT
+#include <folly/String.h>              // for stringPrintf
+#include <folly/init/Init.h>           // for init
+#include <gflags/gflags_declare.h>     // for clstring
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for TestPartResult
+#include <rocksdb/compression_type.h>  // for kLZ4Compression, kNoComp...
+#include <rocksdb/env.h>               // for Env
+#include <rocksdb/options.h>           // for Options, ColumnFamilyOpt...
+#include <rocksdb/statistics.h>        // for Statistics, StatsLevel
+#include <rocksdb/status.h>            // for Status, Status::kInvalid...
+#include <rocksdb/table.h>             // for BlockBasedTableOptions
 #include <rocksdb/utilities/options_util.h>
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/RocksEngine.h"
-#include "kvstore/RocksEngineConfig.h"
+#include <memory>  // for allocator, allocator_tra...
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Logging.h"        // for SetStderrLogging
+#include "common/fs/FileUtils.h"        // for FileType, FileUtils, Fil...
+#include "common/fs/TempDir.h"          // for TempDir
+#include "kvstore/RocksEngine.h"        // for RocksEngine
+#include "kvstore/RocksEngineConfig.h"  // for initRocksdbOptions, FLAG...
 
 #define KV_DATA_PATH_FORMAT(path, spaceId) folly::stringPrintf("%s/nebula/%d/data", path, spaceId)
 
@@ -45,10 +57,10 @@ TEST(RocksEngineConfigTest, SimpleOptionTest) {
 
   rocksdb::DBOptions loadedDbOpt;
   std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
-  rocksdb::Status s = LoadLatestOptions(KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                                        rocksdb::Env::Default(),
-                                        &loadedDbOpt,
-                                        &loadedCfDescs);
+  rocksdb::Status s = rocksdb::LoadLatestOptions(KV_DATA_PATH_FORMAT(rootPath.path(), 0),
+                                                 rocksdb::Env::Default(),
+                                                 &loadedDbOpt,
+                                                 &loadedCfDescs);
   ASSERT_TRUE(s.ok()) << "Unexpected error happens when loading the option file from \""
                       << KV_DATA_PATH_FORMAT(rootPath.path(), 0) << "\": " << s.ToString();
 

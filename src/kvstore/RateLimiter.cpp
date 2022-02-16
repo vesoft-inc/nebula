@@ -5,6 +5,8 @@
 
 #include "kvstore/RateLimiter.h"
 
+#include <gflags/gflags.h>  // for DEFINE_bool
+
 DEFINE_bool(skip_wait_in_rate_limiter,
             false,
             "skip the waiting of first second in rate limiter in CI");

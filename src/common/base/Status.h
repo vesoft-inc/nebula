@@ -6,7 +6,18 @@
 #ifndef COMMON_BASE_STATUS_H_
 #define COMMON_BASE_STATUS_H_
 
+#include <folly/Likely.h>  // for UNLIKELY
+#include <folly/Range.h>   // for StringPiece
+#include <stdarg.h>        // for va_end, va_list, va_start
+#include <stdint.h>        // for uint16_t
+
+#include <iosfwd>   // for ostream
+#include <memory>   // for unique_ptr, operator==, operator!=
+#include <string>   // for operator<<, string
+#include <utility>  // for move
+
 #include "common/base/Base.h"
+#include "common/base/Logging.h"  // for LOG
 
 /**
  * Status is modeled on the one from levelDB, beyond that,

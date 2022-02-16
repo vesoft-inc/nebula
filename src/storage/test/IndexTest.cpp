@@ -3,32 +3,60 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/String.h>
-#include <gtest/gtest.h>
-#include <s2/base/integral_types.h>
+#include <double-conversion/utils.h>   // for ASSERT
+#include <fmt/format.h>                // for format
+#include <folly/Range.h>               // for StringPiece
+#include <folly/container/F14Map.h>    // for F14BasicMap
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <string.h>                    // for size_t, memcpy
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include <limits>
-#include <string>
+#include <algorithm>           // for min
+#include <cstdint>             // for int64_t, uint64_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>...
+#include <functional>          // for function
+#include <limits>              // for numeric_limits
+#include <map>                 // for map, operator!=
+#include <memory>              // for shared_ptr, uniq...
+#include <new>                 // for bad_alloc
+#include <type_traits>         // for remove_reference...
+#include <utility>             // for move, pair
+#include <vector>              // for vector, vector<>...
 
-#include "codec/RowReaderWrapper.h"
-#include "codec/RowWriterV2.h"
-#include "common/base/ObjectPool.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/PropertyExpression.h"
-#include "common/expression/RelationalExpression.h"
-#include "common/geo/GeoIndex.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/KVEngine.h"
-#include "kvstore/KVIterator.h"
-#include "storage/exec/IndexDedupNode.h"
-#include "storage/exec/IndexEdgeScanNode.h"
-#include "storage/exec/IndexLimitNode.h"
-#include "storage/exec/IndexNode.h"
-#include "storage/exec/IndexProjectionNode.h"
-#include "storage/exec/IndexSelectionNode.h"
-#include "storage/exec/IndexVertexScanNode.h"
-#include "storage/test/IndexTestUtil.h"
+#include "codec/RowReaderWrapper.h"                  // for RowReaderWrapper
+#include "codec/RowWriterV2.h"                       // for RowWriterV2
+#include "common/base/Base.h"                        // for kVid, kSrc, kDst
+#include "common/base/Logging.h"                     // for CHECK, COMPACT_G...
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/DataSet.h"                // for Row
+#include "common/datatypes/List.h"                   // for List, operator<<
+#include "common/datatypes/Value.h"                  // for Value, Value::kN...
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/PropertyExpression.h"    // for TagPropertyExpre...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/meta/NebulaSchemaProvider.h"        // for NebulaSchemaProv...
+#include "common/thrift/ThriftTypes.h"               // for PartitionID, Edg...
+#include "common/utils/IndexKeyUtils.h"              // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"             // for NebulaKeyUtils
+#include "common/utils/Types.h"                      // for IndexID
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "interface/gen-cpp2/meta_types.h"           // for IndexItem
+#include "interface/gen-cpp2/storage_types.h"        // for ScanType, ScanTy...
+#include "storage/CommonUtils.h"                     // for RuntimeContext
+#include "storage/exec/IndexDedupNode.h"             // for IndexDedupNode
+#include "storage/exec/IndexEdgeScanNode.h"          // for IndexEdgeScanNode
+#include "storage/exec/IndexLimitNode.h"             // for IndexLimitNode
+#include "storage/exec/IndexNode.h"                  // for IndexNode::Result
+#include "storage/exec/IndexProjectionNode.h"        // for IndexProjectionNode
+#include "storage/exec/IndexScanNode.h"              // for IndexScanNode
+#include "storage/exec/IndexSelectionNode.h"         // for IndexSelectionNode
+#include "storage/exec/IndexVertexScanNode.h"        // for IndexVertexScanNode
+#include "storage/test/IndexTestUtil.h"              // for operator""_row
+
 namespace nebula {
 namespace storage {
 namespace {

@@ -6,10 +6,59 @@
 #define GRAPH_VISITOR_EXTRACTFILTEREXPRVISITOR_H_
 
 #include <memory>
+#include <vector>  // for vector
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"  // for ExprVisitorImpl
 
 namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class Expression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class LogicalExpression;
+class ObjectPool;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class Expression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class LogicalExpression;
+class ObjectPool;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 
 class ExtractFilterExprVisitor final : public ExprVisitorImpl {

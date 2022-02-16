@@ -6,16 +6,30 @@
 #ifndef COMMON_DATATYPES_GEOGRAPHY_H
 #define COMMON_DATATYPES_GEOGRAPHY_H
 
+#include <bits/std_abs.h>   // for abs
+#include <folly/dynamic.h>  // for dynamic
 #include <s2/s2point.h>
 #include <s2/s2point_region.h>
 #include <s2/s2polyline.h>
 #include <s2/s2region.h>
+#include <stdint.h>  // for uint32_t
 
-#include <variant>
+#include <algorithm>  // for equal
+#include <cstdlib>    // for abs, size_t
+#include <iosfwd>     // for ostream
+#include <memory>     // for unique_ptr
+#include <string>     // for string, operator<<
+#include <typeindex>  // for hash
+#include <utility>    // for move
+#include <variant>    // for variant
+#include <vector>     // for vector, operator<, operat...
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/datatypes/Value.h"  // for kEpsilon
+class S2Region;
+
+class S2Region;
 
 // Do not include <s2/s2polygon.h> here, it will indirectly includes a header file which defines a
 // enum `BEGIN`(not enum class). While Geography.h is indirectly included by parser.yy, which has a

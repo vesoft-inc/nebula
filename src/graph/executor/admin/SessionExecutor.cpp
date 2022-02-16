@@ -5,10 +5,34 @@
 
 #include "graph/executor/admin/SessionExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+
+#include <algorithm>    // for max
+#include <ostream>      // for operator<<
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "clients/meta/MetaClient.h"            // for MetaClient
+#include "common/base/Logging.h"                // for LogMessage, COMPACT_G...
+#include "common/base/Status.h"                 // for Status, operator<<
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/DataSet.h"           // for Row, DataSet
+#include "common/datatypes/HostAddr.h"          // for HostAddr
+#include "common/datatypes/Value.h"             // for Value
+#include "common/network/NetworkUtils.h"        // for NetworkUtils
+#include "common/time/ScopedTimer.h"            // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/context/Result.h"               // for ResultBuilder
+#include "graph/planner/plan/Admin.h"           // for ShowSessions, UpdateS...
+#include "graph/service/RequestContext.h"       // for RequestContext
+#include "graph/session/GraphSessionManager.h"  // for GraphSessionManager
+#include "interface/gen-cpp2/meta_types.h"      // for Session, GetSessionResp
 
 namespace nebula {
 namespace graph {

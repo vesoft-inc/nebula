@@ -5,10 +5,26 @@
 
 #include "graph/executor/admin/RevokeRoleExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/service/PermissionManager.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Future.h>      // for Future::Future<T>, Futu...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Promi...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Promi...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <string>   // for basic_string
+#include <utility>  // for move
+
+#include "clients/meta/MetaClient.h"          // for MetaClient
+#include "common/base/Status.h"               // for Status, NG_RETURN_IF_ERROR
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/time/ScopedTimer.h"          // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/planner/plan/Admin.h"         // for RevokeRole
+#include "graph/service/PermissionManager.h"  // for PermissionManager
+#include "graph/service/RequestContext.h"     // for RequestContext
+#include "interface/gen-cpp2/meta_types.h"    // for RoleItem, RoleType, Rol...
 
 namespace nebula {
 namespace graph {

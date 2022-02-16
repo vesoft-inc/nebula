@@ -5,7 +5,15 @@
 
 #include "graph/service/GraphFlags.h"
 
-#include "version/Version.h"
+#include <gflags/gflags.h>  // for DEFINE_bool, DEFINE_int32, DEFINE_s...
+#include <stdint.h>         // for int32_t, int64_t
+
+#include <limits>  // for numeric_limits
+#include <string>  // for operator+
+
+#include "common/base/Base.h"     // for FLOG_WARN
+#include "common/base/Logging.h"  // for LogMessage, _LOG_WARNING
+#include "version/Version.h"      // for getOriginVersion
 
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs,

@@ -5,7 +5,23 @@
 
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 
-#include "graph/planner/plan/Algo.h"
+#include <memory>   // for unique_ptr, allocator_tr...
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string, operator<<, basi...
+#include <utility>  // for move, pair
+
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_INFO
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row, DataSet, operator<<
+#include "common/datatypes/Edge.h"           // for Edge
+#include "common/datatypes/List.h"           // for List
+#include "common/datatypes/Vertex.h"         // for Tag, Vertex
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Algo.h"         // for ProduceSemiShortestPath
+#include "graph/planner/plan/PlanNode.h"     // for PlanNode
 
 namespace nebula {
 namespace graph {

@@ -5,13 +5,23 @@
 
 #include "common/utils/MetaKeyUtils.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
-#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
-#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <folly/small_vector.h>                            // for small_vector
+#include <thrift/lib/cpp2/FieldRef.h>                      // for field_ref
+#include <thrift/lib/cpp2/protocol/CompactProtocol-inl.h>  // for CompactPro...
+#include <thrift/lib/cpp2/protocol/Cpp2Ops-inl.h>          // for Cpp2Ops<>:...
 
-#include <boost/stacktrace.hpp>
+#include <boost/stacktrace.hpp>  // for operator<<
+#include <ctime>                 // for size_t
+#include <initializer_list>      // for initialize...
+#include <limits>                // for numeric_li...
+#include <ostream>               // for operator<<
+#include <unordered_set>         // for unordered_set
 
-#include "common/network/NetworkUtils.h"
+#include "common/base/Base.h"               // for UNUSED
+#include "common/base/Logging.h"            // for LogMessage
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/ValueOps-inl.h"  // for Cpp2Ops<>:...
+#include "common/network/NetworkUtils.h"    // for NetworkUtils
 
 namespace nebula {
 

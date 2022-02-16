@@ -5,8 +5,40 @@
 
 #include "graph/executor/query/DataCollectExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>           // for UNLIKELY
+#include <folly/Try.h>              // for Try::~Try<T>, Try::Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, SemiF...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Pro...
+#include <folly/futures/Promise.h>  // for PromiseException::Promis...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Pro...
+#include <folly/futures/Promise.h>  // for PromiseException::Promis...
+#include <folly/hash/Hash.h>        // for hash
+#include <stdint.h>                 // for int64_t
+
+#include <algorithm>      // for max
+#include <cstddef>        // for size_t
+#include <memory>         // for unique_ptr, allocator
+#include <ostream>        // for operator<<, stringstream
+#include <tuple>          // for tuple, make_tuple
+#include <type_traits>    // for __strip_reference_wrappe...
+#include <unordered_map>  // for unordered_map, _Node_ite...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair, make_pair, swap
+
+#include "common/base/Logging.h"             // for LogMessageFatal, COMPACT...
+#include "common/datatypes/DataSet.h"        // for Row, DataSet, operator<<
+#include "common/datatypes/Edge.h"           // for Edge
+#include "common/datatypes/List.h"           // for List
+#include "common/datatypes/Path.h"           // for Path, Step
+#include "common/datatypes/Vertex.h"         // for Vertex
+#include "common/thrift/ThriftTypes.h"       // for EdgeRanking, EdgeType
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator, SequentialIter
+#include "graph/context/Result.h"            // for Result, ResultBuilder
+#include "graph/planner/plan/Query.h"        // for DataCollect, DataCollect...
+#include "graph/util/AnonColGenerator.h"     // for kCostStr, kPathStr
+#include "parser/Clauses.h"                  // for StepClause
 
 namespace nebula {
 namespace graph {

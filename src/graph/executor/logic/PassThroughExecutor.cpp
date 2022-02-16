@@ -5,8 +5,19 @@
 
 #include "graph/executor/logic/PassThroughExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <algorithm>  // for max
+#include <string>     // for string, basic_string
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for DataSet
+#include "common/datatypes/Value.h"          // for Value
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/PlanNode.h"     // for PlanNode
 
 namespace nebula {
 namespace graph {

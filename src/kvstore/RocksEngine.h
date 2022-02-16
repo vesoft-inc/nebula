@@ -6,17 +6,50 @@
 #ifndef KVSTORE_ROCKSENGINE_H_
 #define KVSTORE_ROCKSENGINE_H_
 
-#include <gtest/gtest_prod.h>
-#include <rocksdb/db.h>
+#include <folly/Range.h>                      // for StringPiece
+#include <gtest/gtest_prod.h>                 // for FRIEND_TEST
+#include <rocksdb/db.h>                       // for DB
+#include <rocksdb/iterator.h>                 // for Iterator
+#include <rocksdb/slice.h>                    // for Slice
+#include <rocksdb/utilities/backup_engine.h>  // for BackupEngine
 #include <rocksdb/utilities/backupable_db.h>
 #include <rocksdb/utilities/checkpoint.h>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int32_t
+
+#include <functional>  // for function
+#include <memory>      // for unique_ptr, shared_ptr
+#include <ostream>     // for operator<<, basic_ostream
+#include <string>      // for string, operator<<
+#include <vector>      // for vector
 
 #include "common/base/Base.h"
-#include "kvstore/KVEngine.h"
-#include "kvstore/KVIterator.h"
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVEngine.h"                 // for WriteBatch (ptr only)
+#include "kvstore/KVIterator.h"               // for KVIterator
 #include "kvstore/RocksEngineConfig.h"
 
 namespace nebula {
+class Status;
+}  // namespace nebula
+
+namespace rocksdb {
+class CompactionFilterFactory;
+class MergeOperator;
+class Snapshot;
+
+class CompactionFilterFactory;
+class MergeOperator;
+class Snapshot;
+}  // namespace rocksdb
+
+namespace nebula {
+class Status;
+
 namespace kvstore {
 
 /**

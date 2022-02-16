@@ -5,11 +5,26 @@
 
 #include "graph/util/PlannerUtil.h"
 
-#include "common/base/Base.h"
-#include "common/expression/ColumnExpression.h"
-#include "graph/context/QueryContext.h"
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Base.h"                      // for kVid, kDst
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/datatypes/DataSet.h"              // for Row, DataSet
+#include "common/datatypes/Value.h"                // for Value
+#include "common/expression/ColumnExpression.h"    // for ColumnExpression
+#include "common/expression/Expression.h"          // for Expression
+#include "common/expression/PropertyExpression.h"  // for EdgePropertyExpres...
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/Result.h"                  // for ResultBuilder
+#include "graph/context/ValidateContext.h"         // for ValidateContext
+#include "graph/context/ast/QueryAstContext.h"     // for Starts, kVariable
+#include "graph/planner/plan/ExecutionPlan.h"      // for SubPlan
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode
+#include "graph/planner/plan/Query.h"              // for Project, Dedup
+#include "graph/util/AnonVarGenerator.h"           // for AnonVarGenerator
+#include "parser/Clauses.h"                        // for YieldColumns, Yiel...
 
 namespace nebula {
 namespace graph {

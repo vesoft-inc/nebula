@@ -6,11 +6,22 @@
 #ifndef GRAPH_PLANNER_MATCH_SCANSEEK_H
 #define GRAPH_PLANNER_MATCH_SCANSEEK_H
 
+#include <memory>  // for unique_ptr
+
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/match/StartVidFinder.h"  // for StartVidFinder
 
 namespace nebula {
 namespace graph {
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
 /*
  * The ScanSeek was designed to find if could get the starting vids in
  * filter.

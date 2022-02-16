@@ -5,21 +5,31 @@
 
 #include "graph/validator/MaintainValidator.h"
 
-#include <memory>
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref, fie...
 
-#include "common/base/Status.h"
-#include "common/charset/Charset.h"
-#include "common/expression/ConstantExpression.h"
-#include "graph/planner/plan/Admin.h"
-#include "graph/planner/plan/Maintain.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/FTIndexUtils.h"
-#include "graph/util/IndexUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "parser/MaintainSentences.h"
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr, make_unique
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+
+#include "common/base/Logging.h"              // for CheckNotNull, DCHECK_NO...
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/expression/Expression.h"     // for Expression
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/context/ValidateContext.h"    // for ValidateContext
+#include "graph/planner/plan/Admin.h"         // for CreateEdgeIndex, Create...
+#include "graph/planner/plan/Maintain.h"      // for CreateEdgeIndex, Create...
+#include "graph/session/ClientSession.h"      // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"       // for ExpressionUtils
+#include "graph/util/FTIndexUtils.h"          // for FTIndexUtils
+#include "graph/util/IndexUtil.h"             // for IndexUtil
+#include "graph/util/SchemaUtil.h"            // for SchemaUtil
+#include "interface/gen-cpp2/common_types.h"  // for SchemaID, PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for AlterSchemaItem, IndexF...
+#include "parser/MaintainSentences.h"         // for CreateEdgeIndexSentence
+#include "parser/Sentence.h"                  // for HostList, ZoneItemList
 
 namespace nebula {
 namespace graph {
@@ -31,9 +41,9 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     auto type = spec->type();
     column.name_ref() = *spec->name();
     column.type.type_ref() = type;
-    if (nebula::cpp2::PropertyType::FIXED_STRING == type) {
+    if (::nebula::cpp2::PropertyType::FIXED_STRING == type) {
       column.type.type_length_ref() = spec->typeLen();
-    } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
+    } else if (::nebula::cpp2::PropertyType::GEOGRAPHY == type) {
       column.type.geo_shape_ref() = spec->geoShape();
     }
     for (const auto &property : spec->properties()->properties()) {
@@ -600,7 +610,7 @@ Status CreateFTIndexValidator::validateImpl() {
                     ? qctx_->schemaMng()->toEdgeType(space.id, *sentence->schemaName())
                     : qctx_->schemaMng()->toTagID(space.id, *sentence->schemaName());
   NG_RETURN_IF_ERROR(status);
-  nebula::cpp2::SchemaID id;
+  ::nebula::cpp2::SchemaID id;
   if (sentence->isEdge()) {
     id.edge_type_ref() = status.value();
   } else {

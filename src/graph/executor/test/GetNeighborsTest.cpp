@@ -3,11 +3,39 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>                // for to
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Promise.h>     // for Promise::Prom...
+#include <folly/futures/Promise.h>     // for PromiseExcept...
+#include <folly/futures/Promise.h>     // for Promise::Prom...
+#include <folly/futures/Promise.h>     // for PromiseExcept...
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/query/GetNeighborsExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include <memory>   // for make_unique
+#include <string>   // for string, basic...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Base.h"                           // for kVid
+#include "common/datatypes/DataSet.h"                   // for Row, DataSet
+#include "common/datatypes/Value.h"                     // for Value
+#include "common/expression/PropertyExpression.h"       // for InputProperty...
+#include "common/graph/Response.h"                      // for ExecutionResp...
+#include "common/thrift/ThriftTypes.h"                  // for EdgeType
+#include "graph/context/ExecutionContext.h"             // for ExecutionContext
+#include "graph/context/QueryContext.h"                 // for QueryContext
+#include "graph/context/Result.h"                       // for ResultBuilder
+#include "graph/context/Symbols.h"                      // for SymbolTable
+#include "graph/executor/query/GetNeighborsExecutor.h"  // for GetNeighborsE...
+#include "graph/planner/plan/Query.h"                   // for GetNeighbors
+#include "graph/service/RequestContext.h"               // for RequestContext
+#include "graph/session/ClientSession.h"                // for SpaceInfo
+#include "interface/gen-cpp2/meta_types.h"              // for Session, Spac...
+#include "interface/gen-cpp2/storage_types.h"           // for EdgeProp, Expr
 
 namespace nebula {
 namespace graph {

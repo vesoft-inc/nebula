@@ -5,11 +5,26 @@
 
 #include "meta/processors/job/RebuildJobExecutor.h"
 
-#include "common/network/NetworkUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "common/utils/Utils.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
+#include <folly/Conv.h>                     // for to
+#include <folly/Try.h>                      // for Try::value
+#include <folly/Try.h>                      // for Try
+#include <folly/futures/Future.h>           // for Future::Future<T>
+#include <folly/futures/Future.h>           // for Future, collectAll
+#include <folly/futures/Promise.h>          // for PromiseException::Pro...
+#include <gflags/gflags_declare.h>          // for DECLARE_int32
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <algorithm>  // for any_of
+#include <ostream>    // for operator<<, basic_ost...
+#include <utility>    // for move, pair
+
+#include "common/base/ErrorOr.h"                // for error, ok, value
+#include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/utils/MetaKeyUtils.h"          // for MetaKeyUtils, kDefaul...
+#include "common/utils/Types.h"                 // for IndexID
+#include "kvstore/KVStore.h"                    // for KVStore
+#include "meta/processors/admin/AdminClient.h"  // for AdminClient
 
 DECLARE_int32(heartbeat_interval_secs);
 

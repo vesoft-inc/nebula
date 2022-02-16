@@ -7,11 +7,22 @@
 #define COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_
 
 #include <memory>
+#include <ostream>  // for operator<<
+#include <string>   // for operator<<, string
 
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/LabelExpression.h"
+#include "common/base/Logging.h"                   // for LogMessageFatal, LOG
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/datatypes/Value.h"                // for Value, Value::kNul...
+#include "common/expression/ConstantExpression.h"  // for ConstantExpression
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/LabelExpression.h"     // for LabelExpression
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 // label.label
 class LabelAttributeExpression final : public Expression {

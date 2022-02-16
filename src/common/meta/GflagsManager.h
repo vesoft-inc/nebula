@@ -6,10 +6,17 @@
 #ifndef COMMON_META_GFLAGSMANAGER_H_
 #define COMMON_META_GFLAGSMANAGER_H_
 
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/meta_types.h"  // for ConfigModule, ConfigItem ...
 
 namespace nebula {
 namespace meta {

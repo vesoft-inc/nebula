@@ -5,7 +5,14 @@
 
 #include "storage/kv/PutProcessor.h"
 
-#include "common/utils/NebulaKeyUtils.h"
+#include <algorithm>      // for for_each
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"          // for CheckNotNull, CHECK_NOTNULL
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "kvstore/Common.h"               // for KV
+#include "storage/BaseProcessor.h"        // for BaseProcessor::doPut
 
 namespace nebula {
 namespace storage {

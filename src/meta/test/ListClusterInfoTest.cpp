@@ -3,13 +3,44 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>                   // for to
+#include <folly/futures/Future.h>         // for Future::get
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPart...
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPart...
+#include <stdint.h>                       // for uint32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/Utils.h"
-#include "meta/processors/admin/ListClusterInfoProcessor.h"
-#include "meta/test/TestUtils.h"
+#include <atomic>         // for atomic
+#include <memory>         // for unique_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for string
+#include <type_traits>    // for remove_r...
+#include <unordered_map>  // for unordere...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                             // for LOG, Log...
+#include "common/datatypes/HostAddr.h"                       // for HostAddr
+#include "common/fs/TempDir.h"                               // for TempDir
+#include "common/thrift/ThriftTypes.h"                       // for Port
+#include "common/utils/MetaKeyUtils.h"                       // for MetaKeyU...
+#include "common/utils/Utils.h"                              // for Utils
+#include "interface/gen-cpp2/StorageAdminService.h"          // for StorageA...
+#include "interface/gen-cpp2/common_types.h"                 // for DirInfo
+#include "interface/gen-cpp2/meta_types.h"                   // for HostRole
+#include "kvstore/Common.h"                                  // for KV
+#include "kvstore/KVStore.h"                                 // for KVStore
+#include "kvstore/NebulaStore.h"                             // for NebulaStore
+#include "meta/processors/admin/ListClusterInfoProcessor.h"  // for ListClus...
+#include "meta/test/TestUtils.h"                             // for TestUtils
+#include "mock/MockCluster.h"                                // for MockCluster
+#include "mock/RpcServer.h"                                  // for RpcServer
+#include "version/Version.h"                                 // for gitInfoSha
 
 namespace nebula {
 namespace meta {

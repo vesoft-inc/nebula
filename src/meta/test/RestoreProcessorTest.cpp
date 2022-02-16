@@ -3,12 +3,49 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Format.h>                 // for sformat
+#include <folly/futures/Future.h>         // for Future::get
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for uint32_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
+#include <thrift/lib/cpp2/Thrift.h>       // for FragileConstructor
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "meta/processors/admin/RestoreProcessor.h"
-#include "meta/test/TestUtils.h"
+#include <algorithm>      // for equal, find_if
+#include <atomic>         // for atomic
+#include <memory>         // for unique_ptr, allo...
+#include <ostream>        // for operator<<, basi...
+#include <string>         // for string, basic_st...
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+#include <vector>         // for vector, vector<>...
+
+#include "common/base/ErrorOr.h"                     // for hasValue, value
+#include "common/base/Logging.h"                     // for SetStderrLogging
+#include "common/datatypes/HostAddr.h"               // for HostAddr, hash
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/thrift/ThriftTypes.h"               // for GraphSpaceID
+#include "common/time/WallClock.h"                   // for WallClock
+#include "common/utils/MetaKeyUtils.h"               // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "interface/gen-cpp2/meta_types.h"           // for HostPair, SpaceDesc
+#include "kvstore/Common.h"                          // for KV
+#include "kvstore/KVIterator.h"                      // for KVIterator
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "kvstore/NebulaStore.h"                     // for NebulaStore
+#include "meta/ActiveHostsMan.h"                     // for ActiveHostsMan
+#include "meta/MetaServiceUtils.h"                   // for MetaServiceUtils
+#include "meta/processors/admin/RestoreProcessor.h"  // for RestoreProcessor
+#include "meta/test/TestUtils.h"                     // for MockCluster, Tes...
+#include "mock/MockCluster.h"                        // for MockCluster
 
 namespace nebula {
 namespace meta {

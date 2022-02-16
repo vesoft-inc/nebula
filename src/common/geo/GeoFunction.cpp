@@ -5,16 +5,31 @@
 
 #include "common/geo/GeoFunction.h"
 
-#include <s2/mutable_s2shape_index.h>
-#include <s2/s2cap.h>
-#include <s2/s2cell.h>
-#include <s2/s2cell_id.h>
-#include <s2/s2closest_edge_query.h>
-#include <s2/s2earth.h>
-#include <s2/s2latlng.h>
-#include <s2/s2polygon.h>
-#include <s2/s2region_coverer.h>
-#include <s2/s2shape_index_buffered_region.h>
+#include <folly/Likely.h>                      // for UNLIKELY
+#include <s2/mutable_s2shape_index.h>          // for MutableS2ShapeIndex
+#include <s2/s1angle.h>                        // for S1Angle
+#include <s2/s2cap.h>                          // for S2Cap
+#include <s2/s2cell.h>                         // for S2Cell
+#include <s2/s2cell_id.h>                      // for S2CellId
+#include <s2/s2closest_edge_query.h>           // for S2ClosestEdgeQuery
+#include <s2/s2earth.h>                        // for S2Earth
+#include <s2/s2point_region.h>                 // for S2PointRegion
+#include <s2/s2polygon.h>                      // for S2Shape
+#include <s2/s2polyline.h>                     // for S2Polyline::Shape, S2P...
+#include <s2/s2region_coverer.h>               // for S2RegionCoverer, S2Reg...
+#include <s2/s2shape.h>                        // for S2Shape
+#include <s2/s2shape_index_buffered_region.h>  // for S2ShapeIndexBufferedRe...
+#include <s2/util/units/length-units.h>        // for Meters
+
+#include <cstdint>  // for uint64_t
+#include <memory>   // for unique_ptr, make_unique
+#include <ostream>  // for operator<<, basic_ostr...
+
+#include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_...
+
+class S2Region;
+
+class S2Region;
 
 namespace nebula {
 namespace geo {

@@ -6,13 +6,21 @@
 #ifndef COMMON_DATATYPES_DATE_H_
 #define COMMON_DATATYPES_DATE_H_
 
-#include <folly/dynamic.h>
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/dynamic.h>  // for dynamic::dynamic, dynamic::~dynamic
+#include <stdint.h>         // for int8_t, uint64_t, int64_t, int16_t
 
-#include <string>
+#include <cstddef>      // for size_t
+#include <iosfwd>       // for ostream
+#include <string>       // for operator<<, operator+, string
+#include <string_view>  // for hash
 
 #include "common/datatypes/Duration.h"
 
 namespace nebula {
+struct Duration;
+
+struct Duration;
 
 // In nebula only store UTC time, and the interpretation of time value based on
 // the timezone configuration in current system.

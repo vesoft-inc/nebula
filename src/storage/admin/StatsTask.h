@@ -6,14 +6,31 @@
 #ifndef STORAGE_ADMIN_STATSTASK_H_
 #define STORAGE_ADMIN_STATSTASK_H_
 
-#include "common/thrift/ThriftTypes.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <stddef.h>                               // for size_t
+
+#include <atomic>         // for atomic
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, EdgeType
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCod...
+#include "interface/gen-cpp2/meta_types.h"    // for StatsItem
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
-#include "storage/admin/AdminTask.h"
+#include "storage/admin/AdminTask.h"  // for AdminTask, AdminSub...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class StatsTask : public AdminTask {
  public:

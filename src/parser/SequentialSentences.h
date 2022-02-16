@@ -5,13 +5,20 @@
 #ifndef PARSER_SEQUENTIALSENTENCES_H_
 #define PARSER_SEQUENTIALSENTENCES_H_
 
+#include <stddef.h>  // for size_t
+
+#include <algorithm>  // for transform
+#include <memory>     // for unique_ptr
+#include <string>     // for string
+#include <vector>     // for vector, vector<>::const_i...
+
 #include "common/base/Base.h"
 #include "parser/AdminSentences.h"
 #include "parser/MaintainSentences.h"
 #include "parser/MatchSentence.h"
 #include "parser/MutateSentences.h"
 #include "parser/ProcessControlSentences.h"
-#include "parser/Sentence.h"
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 #include "parser/TraverseSentences.h"
 #include "parser/UserSentences.h"
 

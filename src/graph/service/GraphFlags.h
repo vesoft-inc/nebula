@@ -6,6 +6,8 @@
 #ifndef GRAPH_SERVICE_GRAPHFLAGS_H_
 #define GRAPH_SERVICE_GRAPHFLAGS_H_
 
+#include <gflags/gflags_declare.h>  // for DECLARE_string, DECLARE_bool, DEC...
+
 #include "common/base/Base.h"
 
 DECLARE_int32(port);

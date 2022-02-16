@@ -5,11 +5,30 @@
 #ifndef GRAPH_SESSION_CLIENTSESSION_H_
 #define GRAPH_SESSION_CLIENTSESSION_H_
 
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock, RWSpinLock...
+#include <stdint.h>                            // for int64_t, int32_t, uint...
+#include <thrift/lib/cpp2/FieldRef.h>          // for field_ref
+
+#include <memory>         // for shared_ptr
+#include <string>         // for basic_string, string
+#include <unordered_map>  // for unordered_map, _Node_c...
+#include <utility>        // for move, pair
+
 #include "clients/meta/MetaClient.h"
-#include "common/time/Duration.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/Status.h"             // for Status
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, Executio...
+#include "common/time/Duration.h"           // for Duration
+#include "interface/gen-cpp2/meta_types.h"  // for RoleType, Session, Spa...
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+
+class MetaClient;
+}  // namespace meta
+
 namespace graph {
 
 class QueryContext;
@@ -133,9 +152,9 @@ class ClientSession final {
 
   void deleteQuery(QueryContext* qctx);
 
-  bool findQuery(nebula::ExecutionPlanID epId) const;
+  bool findQuery(::nebula::ExecutionPlanID epId) const;
 
-  void markQueryKilled(nebula::ExecutionPlanID epId);
+  void markQueryKilled(::nebula::ExecutionPlanID epId);
 
   void markAllQueryKilled();
 

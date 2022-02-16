@@ -3,21 +3,62 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>       // for to
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stdint.h>           // for int16_t
 
-#include "common/base/Base.h"
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Path.h"
-#include "common/datatypes/Set.h"
-#include "common/datatypes/Vertex.h"
-#include "common/function/FunctionManager.h"
-#include "common/time/TimeUtils.h"
-#include "common/time/TimezoneInfo.h"
+#include <cmath>               // for cbrt, sqrt, exp, hypot
+#include <cstddef>             // for size_t
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value...
+#include <functional>          // for function
+#include <limits>              // for numeric_limits
+#include <memory>              // for allocator, allocator_tr...
+#include <ostream>             // for operator<<, basic_ostre...
+#include <string>              // for string, hash, operator==
+#include <type_traits>         // for remove_reference<>::type
+#include <unordered_map>       // for unordered_map
+#include <utility>             // for move
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"              // for SetStderrLogging, DLOG
+#include "common/base/Status.h"               // for operator<<, Status
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/DataSet.h"         // for Row, DataSet
+#include "common/datatypes/Date.h"            // for Date, DateTime, Time
+#include "common/datatypes/Edge.h"            // for Edge
+#include "common/datatypes/List.h"            // for List
+#include "common/datatypes/Map.h"             // for Map
+#include "common/datatypes/Path.h"            // for Step, Path
+#include "common/datatypes/Set.h"             // for Set
+#include "common/datatypes/Value.h"           // for Value, Value::Type, Val...
+#include "common/datatypes/Vertex.h"          // for Tag, Vertex
+#include "common/function/FunctionManager.h"  // for FunctionManager, Functi...
+#include "common/time/TimeUtils.h"            // for TimeUtils
+#include "common/time/TimezoneInfo.h"         // for Timezone
 
 namespace nebula {
+class FunctionManagerTest_DataSetRowCol_Test;
+class FunctionManagerTest_ListFunctionTest_Test;
+class FunctionManagerTest_ReversePath_Test;
+class FunctionManagerTest_ScalarFunctionTest_Test;
+class FunctionManagerTest_duplicateEdgesORVerticesInPath_Test;
+class FunctionManagerTest_functionCall_Test;
+class FunctionManagerTest_testNull_Test;
+class FunctionManagerTest_time_Test;
+
+class FunctionManagerTest_DataSetRowCol_Test;
+class FunctionManagerTest_ListFunctionTest_Test;
+class FunctionManagerTest_ReversePath_Test;
+class FunctionManagerTest_ScalarFunctionTest_Test;
+class FunctionManagerTest_duplicateEdgesORVerticesInPath_Test;
+class FunctionManagerTest_functionCall_Test;
+class FunctionManagerTest_testNull_Test;
+class FunctionManagerTest_time_Test;
 
 class FunctionManagerTest : public ::testing::Test {
  public:

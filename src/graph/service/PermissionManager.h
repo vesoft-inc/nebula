@@ -6,15 +6,23 @@
 #ifndef GRAPH_SERVICE_PERMISSIONMANAGER_H_
 #define GRAPH_SERVICE_PERMISSIONMANAGER_H_
 
+#include <string>
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
+#include "common/thrift/ThriftTypes.h"
 #include "graph/context/ValidateContext.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/session/ClientSession.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/AdminSentences.h"
 
 namespace nebula {
 namespace graph {
+class ClientSession;
+class ValidateContext;
 
 class PermissionManager final {
  public:

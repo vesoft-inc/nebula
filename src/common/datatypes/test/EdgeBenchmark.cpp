@@ -3,15 +3,22 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>  // for addBenchmark, BenchmarkSuspender
+#include <folly/Random.h>     // for randomNumberSeed
+#include <folly/String.h>     // for stringPrintf
+#include <folly/hash/Hash.h>  // for fnv64, hash
+#include <stddef.h>           // for size_t
+#include <stdint.h>           // for int64_t
 
-#include <string>
-#include <unordered_set>
-#include <vector>
+#include <random>         // for uniform_int_distribution, mt1...
+#include <tuple>          // for tuple, make_tuple
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
 
-#include "common/base/Base.h"
-#include "common/datatypes/Edge.h"
-#include "common/datatypes/Value.h"
+#include "common/datatypes/Edge.h"      // for Edge, hash
+#include "common/datatypes/Value.h"     // for Value, operator==
+#include "common/thrift/ThriftTypes.h"  // for EdgeRanking, EdgeType
 
 using nebula::Edge;
 using nebula::EdgeRanking;

@@ -5,10 +5,20 @@
 
 #include "storage/http/StorageHttpStatsHandler.h"
 
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <folly/dynamic.h>                        // for dynamic::array, dyn...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
+#include <rocksdb/statistics.h>                   // for HistogramData, Stat...
+#include <stdint.h>                               // for uint64_t
 
-#include "common/base/Base.h"
-#include "kvstore/RocksEngineConfig.h"
+#include <algorithm>  // for find
+#include <map>        // for map, operator!=
+#include <memory>     // for shared_ptr, __share...
+#include <ostream>    // for operator<<, basic_o...
+#include <utility>    // for pair
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"        // for LOG, LogMessage
+#include "kvstore/RocksEngineConfig.h"  // for getDBStatistics
 
 namespace nebula {
 namespace storage {

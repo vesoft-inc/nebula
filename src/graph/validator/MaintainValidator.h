@@ -6,14 +6,23 @@
 #ifndef GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_
 #define GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "clients/meta/MetaClient.h"
+#include "common/base/Status.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "parser/AdminSentences.h"
 
 namespace nebula {
+class Sentence;
+
 namespace graph {
+class QueryContext;
+struct AstContext;
 
 class CreateTagValidator final : public Validator {
  public:

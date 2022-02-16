@@ -5,11 +5,32 @@
 
 #include "graph/validator/GoValidator.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/ValidateUtil.h"
-#include "graph/visitor/ExtractPropExprVisitor.h"
-#include "parser/TraverseSentences.h"
+#include <algorithm>  // for find
+#include <cstdint>    // for int64_t, uint32_t
+#include <ostream>    // for operator<<, basic_...
+#include <set>        // for set
+#include <utility>    // for pair
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for VariablePropertyEx...
+#include "common/expression/VertexExpression.h"    // for VertexExpression
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Symbols.h"                 // for ColsDef
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/util/ValidateUtil.h"               // for ValidateUtil
+#include "graph/visitor/DeducePropsVisitor.h"      // for ExpressionProps
+#include "graph/visitor/ExtractPropExprVisitor.h"  // for ExtractPropExprVis...
+#include "graph/visitor/RewriteVisitor.h"          // for RewriteVisitor
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+#include "parser/TraverseSentences.h"              // for GoSentence
 
 namespace nebula {
 namespace graph {

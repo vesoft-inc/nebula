@@ -5,10 +5,15 @@
 
 #include "graph/optimizer/rule/PushVFilterDownScanVerticesRule.h"
 
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PropertyExpression.h"
-#include "common/expression/UnaryExpression.h"
+#include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"

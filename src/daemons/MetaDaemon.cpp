@@ -3,37 +3,42 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/ssl/Init.h>
-#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <folly/init/Init.h>                      // for init
+#include <folly/ssl/Init.h>                       // for init
+#include <gflags/gflags.h>                        // for ParseCommandLineFlags
+#include <glog/logging.h>                         // for FATAL, INFO
+#include <signal.h>                               // for SIGINT, SIGTERM
+#include <stdlib.h>                               // for EXIT_FAILURE, EXIT_...
+#include <string.h>                               // for strsignal
+#include <thrift/lib/cpp2/server/ThriftServer.h>  // for ThriftServer
 
-#include "MetaDaemonInit.h"
-#include "common/base/Base.h"
-#include "common/base/SignalHandler.h"
-#include "common/fs/FileUtils.h"
+#include <chrono>     // for seconds
+#include <exception>  // for exception
+#include <memory>     // for unique_ptr, make_un...
+#include <ostream>    // for operator<<, basic_o...
+#include <string>     // for string, char_traits
+#include <utility>    // for move
+
+#include "common/base/ErrorOr.h"        // for ok, value
+#include "common/base/Logging.h"        // for LogMessage, LOG
+#include "common/base/SignalHandler.h"  // for operator<<, Status
+#include "common/base/Status.h"         // for operator<<, Status
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/datatypes/HostAddr.h"  // for HostAddr, operator<<
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
-#include "common/network/NetworkUtils.h"
-#include "common/process/ProcessUtils.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/thread/GenericThreadPool.h"
-#include "common/time/TimezoneInfo.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "daemons/SetupLogging.h"
-#include "kvstore/NebulaStore.h"
-#include "kvstore/PartManager.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/MetaServiceHandler.h"
-#include "meta/MetaVersionMan.h"
-#include "meta/RootUserMan.h"
-#include "meta/http/MetaHttpDownloadHandler.h"
-#include "meta/http/MetaHttpIngestHandler.h"
-#include "meta/http/MetaHttpReplaceHostHandler.h"
-#include "meta/processors/job/JobManager.h"
-#include "meta/stats/MetaStats.h"
-#include "version/Version.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include "common/network/NetworkUtils.h"  // for NetworkUtils
+#include "common/process/ProcessUtils.h"  // for operator<<, Status
+#include "common/ssl/SSLConfig.h"         // for FLAGS_enable_meta_ssl
+#include "common/time/TimezoneInfo.h"     // for operator<<, Status
+#include "daemons/MetaDaemonInit.h"       // for initMetaStats
+#include "daemons/SetupLogging.h"         // for setupLogging
+#include "kvstore/KVStore.h"              // for KVStore
+#include "meta/MetaServiceHandler.h"      // for MetaServiceHandler
+#include "meta/RootUserMan.h"             // for RootUserMan
+#include "meta/stats/MetaStats.h"         // for initMetaStats
+#include "version/Version.h"              // for versionString
+#include "webservice/WebService.h"        // for WebService
 
 using nebula::operator<<;
 using nebula::ProcessUtils;

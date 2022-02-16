@@ -5,13 +5,37 @@
 
 #include "graph/optimizer/rule/PushFilterDownAggregateRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
-#include "graph/visitor/RewriteVisitor.h"
+#include <stddef.h>  // for size_t
+
+#include <algorithm>      // for find_if
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for unordered_map, ope...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/Expression.h"          // for Expression::Kind
+#include "common/expression/PropertyExpression.h"  // for VariablePropertyEx...
+#include "graph/optimizer/OptGroup.h"              // for OptGroupNode, OptG...
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for Aggregate, Filter
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/visitor/RewriteVisitor.h"          // for RewriteVisitor
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

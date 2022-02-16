@@ -5,9 +5,24 @@
 
 #include "graph/executor/query/FilterExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>  // for UNLIKELY
+#include <stdint.h>        // for int16_t
+
+#include <ostream>      // for operator<<, basic_...
+#include <string>       // for operator<<, char_t...
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+
+#include "common/base/Logging.h"                   // for LogMessage, COMPAC...
+#include "common/base/Status.h"                    // for Status, operator<<
+#include "common/datatypes/Value.h"                // for Value
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/Query.h"              // for Filter
 
 namespace nebula {
 namespace graph {

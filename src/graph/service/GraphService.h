@@ -6,18 +6,48 @@
 #ifndef GRAPH_SERVICE_GRAPHSERVICE_H_
 #define GRAPH_SERVICE_GRAPHSERVICE_H_
 
-#include "common/base/Base.h"
+#include <folly/futures/Future.h>  // for Future
+#include <stdint.h>                // for int64_t
+
+#include <memory>         // for unique_ptr, shared_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+
+#include "clients/meta/MetaClient.h"  // for MetaClient
+#include "common/base/Base.h"         // for NG_MUST_USE_RESULT
+#include "common/base/Status.h"       // for Status
 #include "graph/service/Authenticator.h"
-#include "graph/service/QueryEngine.h"
-#include "graph/session/GraphSessionManager.h"
-#include "interface/gen-cpp2/GraphService.h"
+#include "graph/service/QueryEngine.h"          // for QueryEngine
+#include "graph/session/GraphSessionManager.h"  // for GraphSessionManager
+#include "interface/gen-cpp2/GraphService.h"    // for GraphServiceSvIf
+namespace nebula {
+namespace graph {
+namespace cpp2 {
+class VerifyClientVersionReq;
+class VerifyClientVersionResp;
+}  // namespace cpp2
+}  // namespace graph
+struct AuthResponse;
+struct ExecutionResponse;
+struct HostAddr;
+struct Value;
+}  // namespace nebula
 
 namespace folly {
 class IOThreadPoolExecutor;
 }  // namespace folly
 
 namespace nebula {
+struct AuthResponse;
+struct ExecutionResponse;
+struct HostAddr;
+struct Value;
+
 namespace graph {
+namespace cpp2 {
+class VerifyClientVersionReq;
+class VerifyClientVersionResp;
+}  // namespace cpp2
 
 class GraphService final : public cpp2::GraphServiceSvIf {
  public:

@@ -6,10 +6,19 @@
 #ifndef GRAPH_SERVICE_PASSWORDAUTHENTICATOR_H_
 #define GRAPH_SERVICE_PASSWORDAUTHENTICATOR_H_
 
+#include <string>  // for string
+
 #include "clients/meta/MetaClient.h"
-#include "graph/service/Authenticator.h"
+#include "common/base/Status.h"           // for Status
+#include "graph/service/Authenticator.h"  // for Authenticator
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+
+class MetaClient;
+}  // namespace meta
+
 namespace graph {
 
 class PasswordAuthenticator final : public Authenticator {

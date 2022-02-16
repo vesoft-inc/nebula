@@ -5,13 +5,20 @@
 
 #include "daemons/SetupLogging.h"
 
-#include <glog/logging.h>
+#include <errno.h>          // for errno
+#include <fcntl.h>          // for open, O_APPEND, O_CREAT, O_WRONLY
+#include <gflags/gflags.h>  // for DEFINE_string, DECLARE_string, DEFI...
+#include <glog/logging.h>   // for GLOG_ERROR, GLOG_FATAL, GLOG_INFO
+#include <stdio.h>          // for FILE, fileno, stderr, stdout
+#include <string.h>         // for strerror
+#include <unistd.h>         // for close, dup2
 
-#include <string>
+#include <string>  // for allocator, operator+, char_traits
 
-#include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/fs/FileUtils.h"
+#include "common/base/Logging.h"  // for SetLogDestination, FLAGS_timestamp_...
+#include "common/base/Status.h"   // for Status, NG_RETURN_IF_ERROR
+#include "common/fs/FileUtils.h"  // for FileUtils
+
 DECLARE_string(log_dir);
 
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");

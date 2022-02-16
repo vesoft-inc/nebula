@@ -6,9 +6,21 @@
 #ifndef META_GETTAGINDEXPROCESSOR_H
 #define META_GETTAGINDEXPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for GetTagIndexResp, GetTagIn...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class GetTagIndexProcessor : public BaseProcessor<cpp2::GetTagIndexResp> {

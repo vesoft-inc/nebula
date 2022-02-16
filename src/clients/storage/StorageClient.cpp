@@ -5,7 +5,32 @@
 
 #include "clients/storage/StorageClient.h"
 
-#include "common/base/Base.h"
+#include <folly/Try.h>                 // for Try, Try::~Try<T>
+#include <folly/futures/Future.h>      // for makeFuture, Futur...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, option...
+
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>:...
+#include <ostream>             // for basic_ostream::op...
+#include <stdexcept>           // for runtime_error
+#include <type_traits>         // for remove_reference<...
+
+#include "clients/meta/MetaClient.h"            // for MetaClient
+#include "common/base/Logging.h"                // for GetReferenceableV...
+#include "common/base/Status.h"                 // for Status
+#include "common/datatypes/HostAddr.h"          // for HostAddr, operator<<
+#include "common/datatypes/KeyValue.h"          // for KeyValue
+#include "common/datatypes/List.h"              // for List
+#include "common/expression/Expression.h"       // for Expression
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManag...
+#include "interface/gen-cpp2/common_types.h"    // for PropertyType, Pro...
+
+namespace folly {
+class EventBase;
+
+class EventBase;
+}  // namespace folly
 
 using nebula::cpp2::PropertyType;
 using nebula::storage::cpp2::ExecResponse;

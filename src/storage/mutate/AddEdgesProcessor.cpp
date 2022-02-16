@@ -5,17 +5,54 @@
 
 #include "storage/mutate/AddEdgesProcessor.h"
 
-#include <algorithm>
+#include <bits/std_abs.h>                   // for abs
+#include <folly/Format.h>                   // for sformat
+#include <stdlib.h>                         // for abs
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include "codec/RowWriterV2.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "common/utils/OperationKeyUtils.h"
-#include "storage/stats/StorageStats.h"
+#include <algorithm>      // for find, for_each
+#include <iterator>       // for next
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ostrea...
+#include <tuple>          // for make_tuple
+#include <type_traits>    // for remove_reference_t, remo...
+#include <unordered_map>  // for unordered_map, _Node_con...
+#include <unordered_set>  // for unordered_set
+
+#include "codec/RowReaderWrapper.h"          // for RowReaderWrapper
+#include "codec/RowWriterV2.h"               // for WriteResult
+#include "common/base/Base.h"                // for UNUSED
+#include "common/base/Logging.h"             // for LogMessage, LOG, _LOG_ERROR
+#include "common/base/Status.h"              // for operator<<
+#include "common/base/StatusOr.h"            // for StatusOr
+#include "common/datatypes/Value.h"          // for operator<<
+#include "common/meta/IndexManager.h"        // for IndexManager
+#include "common/meta/SchemaManager.h"       // for SchemaManager
+#include "common/stats/StatsManager.h"       // for StatsManager
+#include "common/utils/IndexKeyUtils.h"      // for IndexKeyUtils
+#include "common/utils/MemoryLockCore.h"     // for MemoryLockCore
+#include "common/utils/MemoryLockWrapper.h"  // for MemoryLockGuard
+#include "common/utils/NebulaKeyUtils.h"     // for NebulaKeyUtils
+#include "common/utils/OperationKeyUtils.h"  // for OperationKeyUtils
+#include "common/utils/Types.h"              // for VertexIDSlice
+#include "interface/gen-cpp2/meta_types.h"   // for IndexItem
+#include "kvstore/KVStore.h"                 // for KVStore
+#include "kvstore/LogEncoder.h"              // for BatchHolder, encodeBatch...
+#include "storage/BaseProcessor.h"           // for BaseProcessor::handleAsync
+#include "storage/stats/StorageStats.h"      // for kNumEdgesInserted
 
 namespace nebula {
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
 namespace storage {
 
 ProcessorCounters kAddEdgesCounters;

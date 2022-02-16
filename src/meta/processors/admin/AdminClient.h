@@ -6,16 +6,66 @@
 #ifndef META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 #define META_PROCESSORS_ADMIN_STORAGEADMINCLIENT_H_
 
-#include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future
+#include <gtest/gtest_prod.h>                      // for FRIEND_TEST
+#include <stdint.h>                                // for int32_t
+
+#include <memory>         // for make_unique, uniqu...
+#include <set>            // for set
+#include <string>         // for string
+#include <type_traits>    // for result_of
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector
 
 #include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/ssl/SSLConfig.h"
-#include "common/thrift/ThriftClientManager.h"
+#include "common/base/ErrorOr.h"                // for ErrorOr
+#include "common/base/Status.h"                 // for Status
+#include "common/datatypes/HostAddr.h"          // for HostAddr, hash
+#include "common/ssl/SSLConfig.h"               // for FLAGS_enable_ssl
+#include "common/thrift/ThriftClientManager.h"  // for ThriftClientManager
+#include "common/thrift/ThriftTypes.h"          // for GraphSpaceID, Part...
 #include "interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"     // for AdminCmd, HostBack...
+#include "interface/gen-cpp2/storage_types.h"  // for AdminExecResp (ptr...
 #include "kvstore/KVStore.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace storage {
+namespace cpp2 {
+class StorageAdminServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace storage
+template <typename T>
+class StatusOr;
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+template <class>
+class Promise;
+
+class Executor;
+template <class>
+class Promise;
+}  // namespace folly
+
+namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace storage {
+namespace cpp2 {
+class StorageAdminServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace storage
+template <typename T>
+class StatusOr;
+
 namespace meta {
 
 using HostLeaderMap =

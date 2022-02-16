@@ -6,8 +6,10 @@
 #ifndef GRAPH_STATS_GRAPHSTATS_H
 #define GRAPH_STATS_GRAPHSTATS_H
 
+#include <gflags/gflags_declare.h>  // for DECLARE_bool, DECLARE_int32
+
 #include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
+#include "common/stats/StatsManager.h"  // for CounterId
 
 DECLARE_int32(slow_query_threshold_us);
 DECLARE_bool(enable_space_level_metrics);

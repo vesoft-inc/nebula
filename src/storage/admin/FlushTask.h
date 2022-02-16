@@ -6,13 +6,19 @@
 #ifndef STORAGE_ADMIN_FLUSHTASK_H_
 #define STORAGE_ADMIN_FLUSHTASK_H_
 
+#include <utility>
+#include <vector>
+
+#include "common/base/ErrorOr.h"
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
 
 class FlushTask : public AdminTask {
  public:

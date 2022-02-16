@@ -6,10 +6,27 @@
 #ifndef META_DIVIDEZONEPROCESSOR_H
 #define META_DIVIDEZONEPROCESSOR_H
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
+
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ExecResp, DivideZoneReq...
 #include "kvstore/LogEncoder.h"
-#include "meta/processors/BaseProcessor.h"
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class BatchHolder;
+class KVStore;
+
+class BatchHolder;
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

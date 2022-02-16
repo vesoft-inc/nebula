@@ -6,9 +6,24 @@
 #ifndef GRAPH_PLANNER_PLAN_ADMIN_H_
 #define GRAPH_PLANNER_PLAN_ADMIN_H_
 
+#include <stdint.h>  // for int32_t
+
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+#include <vector>         // for vector
+
 #include "clients/meta/MetaClient.h"
+#include "common/base/ObjectPool.h"       // for ObjectPool
+#include "common/datatypes/HostAddr.h"    // for HostAddr
+#include "common/datatypes/Value.h"       // for Value
+#include "common/thrift/ThriftTypes.h"    // for PartitionID, GraphSpaceID
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode (ptr only), Sing...
 #include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"  // for ConfigModule, ExternalSer...
 
 /**
  * All admin-related nodes would be put in this file.
@@ -17,6 +32,12 @@
  * from each other. This would be guaranteed by parser and validator.
  */
 namespace nebula {
+class Expression;
+struct PlanNodeDescription;
+
+class Expression;
+struct PlanNodeDescription;
+
 namespace graph {
 
 // Some template node such as Create template for the node create

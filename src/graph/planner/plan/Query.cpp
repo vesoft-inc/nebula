@@ -5,13 +5,18 @@
 
 #include "graph/planner/plan/Query.h"
 
-#include <folly/String.h>
-#include <folly/dynamic.h>
-#include <folly/json.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Conv.h>                     // for to
+#include <folly/String.h>                   // for stringPrintf
+#include <folly/dynamic.h>                  // for dynamic
+#include <folly/dynamic.h>                  // for dynamic::push_back, dynam...
+#include <folly/json.h>                     // for toJson
+#include <stdint.h>                         // for int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/ToJson.h"
+#include "common/graph/Response.h"       // for PlanNodeDescription
+#include "graph/util/ExpressionUtils.h"  // for ExpressionUtils
+#include "graph/util/ToJson.h"           // for toJson
+#include "parser/MatchSentence.h"        // for MatchStepRange
 
 using folly::stringPrintf;
 

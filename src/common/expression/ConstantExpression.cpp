@@ -5,7 +5,9 @@
 
 #include "common/expression/ConstantExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <iosfwd>  // for stringstream, ostream
+
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
 

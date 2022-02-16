@@ -5,15 +5,42 @@
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
-#include "common/geo/GeoIndex.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Scan.h"
-#include "graph/util/ExpressionUtils.h"
+#include <folly/String.h>              // for toLowerAscii
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field...
+
+#include <cstdint>      // for int32_t
+#include <memory>       // for __shared_ptr_a...
+#include <string>       // for string, basic_...
+#include <type_traits>  // for remove_referen...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "clients/meta/MetaClient.h"                   // for MetaClient
+#include "common/base/Logging.h"                       // for Check_EQImpl
+#include "common/base/Status.h"                        // for NG_RETURN_IF_E...
+#include "common/datatypes/Value.h"                    // for Value
+#include "common/expression/ConstantExpression.h"      // for ConstantExpres...
+#include "common/expression/Expression.h"              // for Expression
+#include "common/expression/FunctionCallExpression.h"  // for FunctionCallEx...
+#include "common/geo/GeoIndex.h"                       // for ScanRange, Geo...
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/optimizer/OptContext.h"                // for OptContext
+#include "graph/optimizer/OptGroup.h"                  // for OptGroupNode
+#include "graph/optimizer/OptRule.h"                   // for OptRule::Trans...
+#include "graph/optimizer/OptimizerUtils.h"            // for OptimizerUtils
+#include "graph/planner/plan/PlanNode.h"               // for PlanNode, Plan...
+#include "graph/planner/plan/Query.h"                  // for IndexScan, Filter
+#include "graph/util/ExpressionUtils.h"                // for ExpressionUtils
+#include "interface/gen-cpp2/meta_types.h"             // for IndexParams
+#include "interface/gen-cpp2/storage_types.h"          // for IndexQueryContext
+
+namespace nebula {
+namespace graph {
+class TagIndexFullScan;
+
+class TagIndexFullScan;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;

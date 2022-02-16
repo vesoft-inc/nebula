@@ -6,10 +6,20 @@
 #ifndef COMMON_META_SERVERBASEDINDEXMANAGER_H_
 #define COMMON_META_SERVERBASEDINDEXMANAGER_H_
 
-#include "common/meta/IndexManager.h"
+#include <memory>  // for shared_ptr, unique_ptr
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"         // for Status
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/meta/IndexManager.h"   // for IndexItem, IndexManager
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID, IndexID
 
 namespace nebula {
 namespace meta {
+class MetaClient;
+
+class MetaClient;
 
 class ServerBasedIndexManager : public IndexManager {
  public:

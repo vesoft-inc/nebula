@@ -3,8 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexProjectionNode.h"
+
+#include <fmt/format.h>                        // for format
+#include <folly/Likely.h>                      // for UNLIKELY
+#include <folly/String.h>                      // for join
+#include <folly/container/F14Map.h>            // for F14BasicMap
+#include <folly/container/F14Set.h>            // for F14FastSet, F14BasicSe...
+#include <folly/container/detail/F14Policy.h>  // for operator!=, VectorCont...
+
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, pair
+
+#include "common/base/Logging.h"     // for Check_EQImpl, DCHECK_EQ
+#include "common/datatypes/List.h"   // for List
+#include "common/datatypes/Value.h"  // for Value
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 IndexProjectionNode::IndexProjectionNode(const IndexProjectionNode& node)
     : IndexNode(node), requiredColumns_(node.requiredColumns_), colPos_(node.colPos_) {}
 IndexProjectionNode::IndexProjectionNode(RuntimeContext* context,

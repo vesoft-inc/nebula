@@ -5,8 +5,11 @@
 
 #include "kvstore/raftex/RaftLogIterator.h"
 
-#include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
+#include <memory>   // for allocator_traits<>::value_type
+#include <utility>  // for move
+
+#include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_FATAL, DCHECK
+#include "common/thrift/ThriftTypes.h"  // for LogID, ClusterID, TermID
 
 namespace nebula {
 namespace raftex {

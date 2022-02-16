@@ -4,12 +4,44 @@
  */
 #include "graph/planner/ngql/PathPlanner.h"
 
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/PlannerUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/Validator.h"
+#include <folly/Range.h>                           // for Range, operator<
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref
+
+#include <algorithm>      // for max
+#include <set>            // for set, operator!=
+#include <type_traits>    // for remove_referen...
+#include <unordered_map>  // for _Node_const_it...
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                          // for kVid, kDst, kSrc
+#include "common/base/ObjectPool.h"                    // for ObjectPool
+#include "common/datatypes/DataSet.h"                  // for Row, DataSet
+#include "common/datatypes/Value.h"                    // for Value, Value::...
+#include "common/expression/ColumnExpression.h"        // for ColumnExpression
+#include "common/expression/ConstantExpression.h"      // for ConstantExpres...
+#include "common/expression/ContainerExpression.h"     // for ExpressionList
+#include "common/expression/Expression.h"              // for Expression
+#include "common/expression/FunctionCallExpression.h"  // for ArgumentList
+#include "common/expression/LogicalExpression.h"       // for LogicalExpression
+#include "common/expression/PathBuildExpression.h"     // for PathBuildExpre...
+#include "graph/context/ExecutionContext.h"            // for ExecutionContext
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/context/Result.h"                      // for ResultBuilder
+#include "graph/context/ValidateContext.h"             // for ValidateContext
+#include "graph/context/ast/QueryAstContext.h"         // for PathContext
+#include "graph/planner/plan/Algo.h"                   // for ConjunctPath
+#include "graph/planner/plan/Logic.h"                  // for Loop, PassThro...
+#include "graph/planner/plan/PlanNode.h"               // for PlanNode, Sing...
+#include "graph/planner/plan/Query.h"                  // for DataCollect
+#include "graph/session/ClientSession.h"               // for SpaceInfo
+#include "graph/util/AnonColGenerator.h"               // for kPathStr, kCos...
+#include "graph/util/AnonVarGenerator.h"               // for AnonVarGenerator
+#include "graph/util/ExpressionUtils.h"                // for ExpressionUtils
+#include "graph/util/PlannerUtil.h"                    // for PlannerUtil
+#include "graph/util/SchemaUtil.h"                     // for SchemaUtil
+#include "graph/visitor/DeducePropsVisitor.h"          // for ExpressionProps
+#include "parser/Clauses.h"                            // for YieldColumns
 
 namespace nebula {
 namespace graph {

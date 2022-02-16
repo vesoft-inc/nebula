@@ -5,12 +5,19 @@
 
 #include "graph/optimizer/rule/PushFilterDownGetNbrsRule.h"
 
-#include "common/expression/Expression.h"
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
+#include <cstdint>      // for int32_t
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/optimizer/OptContext.h"              // for OptContext
+#include "graph/optimizer/OptGroup.h"                // for OptGroupNode
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode, PlanNo...
+#include "graph/planner/plan/Query.h"                // for GetNeighbors
+#include "graph/visitor/ExtractFilterExprVisitor.h"  // for ExtractFilterExp...
 
 using nebula::Expression;
 using nebula::graph::Filter;

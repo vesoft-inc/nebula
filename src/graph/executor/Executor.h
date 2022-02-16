@@ -7,10 +7,13 @@
 #define GRAPH_EXECUTOR_EXECUTOR_H_
 
 #include <folly/futures/Future.h>
+#include <stdint.h>
 
 #include <boost/core/noncopyable.hpp>
 #include <set>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #include "common/base/Status.h"
@@ -20,11 +23,19 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 
+namespace folly {
+class Executor;
+}  // namespace folly
+
 namespace nebula {
+struct Value;
+
 namespace graph {
 
 class PlanNode;
 class QueryContext;
+class ExecutionContext;
+class Result;
 
 class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:

@@ -5,9 +5,15 @@
 
 #include "common/expression/ArithmeticExpression.h"
 
-#include "common/expression/ExprVisitor.h"
+#include <ostream>  // for operator<<, basic_ostream
+
+#include "common/base/Logging.h"            // for LOG, LogMessageFatal, _LO...
+#include "common/expression/ExprVisitor.h"  // for ExprVisitor
 
 namespace nebula {
+class ExpressionContext;
+
+class ExpressionContext;
 
 const Value& ArithmeticExpression::eval(ExpressionContext& ctx) {
   auto& lhs = lhs_->eval(ctx);

@@ -3,18 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>           // for stringPrintf
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for clstring
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
 
-#include "common/base/Base.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for string
+
+#include "common/base/Logging.h"   // for SetStderrLogging
+#include "common/base/Status.h"    // for operator<<, Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/fs/TempDir.h"
-#include "common/http/HttpClient.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/http/StorageHttpAdminHandler.h"
-#include "storage/test/TestUtils.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
+#include "common/http/HttpClient.h"                // for HttpClient
+#include "mock/MockCluster.h"                      // for MockCluster
+#include "storage/CommonUtils.h"                   // for StorageEnv
+#include "storage/http/StorageHttpAdminHandler.h"  // for StorageHttpAdminHa...
+#include "webservice/Router.h"                     // for PathParams, Route
+#include "webservice/WebService.h"                 // for WebService, FLAGS_...
 
 namespace nebula {
 namespace storage {

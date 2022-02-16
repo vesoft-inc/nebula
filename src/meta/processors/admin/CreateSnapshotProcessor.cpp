@@ -5,9 +5,26 @@
 
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/admin/SnapShot.h"
-#include "meta/processors/job/JobManager.h"
+#include <folly/Format.h>       // for sformat
+#include <folly/SharedMutex.h>  // for SharedMutex
+
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for operator<<, char_traits
+#include <vector>     // for vector
+
+#include "common/base/EitherOr.h"            // for EitherOr
+#include "common/base/ErrorOr.h"             // for error, ok, value
+#include "common/base/Logging.h"             // for LOG, LogMessage, _LOG...
+#include "common/network/NetworkUtils.h"     // for NetworkUtils
+#include "common/utils/MetaKeyUtils.h"       // for MetaKeyUtils, kDefaul...
+#include "kvstore/Common.h"                  // for KV
+#include "kvstore/KVStore.h"                 // for KVStore
+#include "meta/ActiveHostsMan.h"             // for ActiveHostsMan
+#include "meta/processors/BaseProcessor.h"   // for BaseProcessor::doSyncPut
+#include "meta/processors/Common.h"          // for LockUtils
+#include "meta/processors/admin/SnapShot.h"  // for Snapshot
+#include "meta/processors/job/JobManager.h"  // for JobManager
 
 namespace nebula {
 namespace meta {

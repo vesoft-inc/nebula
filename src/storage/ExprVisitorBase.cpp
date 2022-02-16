@@ -3,7 +3,64 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/ExprVisitorBase.h"
+
+#include <vector>  // for vector
+
+#include "common/base/Base.h"                               // for UNUSED
+#include "common/expression/AggregateExpression.h"          // for Aggregate...
+#include "common/expression/ArithmeticExpression.h"         // for Arithmeti...
+#include "common/expression/AttributeExpression.h"          // for Attribute...
+#include "common/expression/ColumnExpression.h"             // for ColumnExp...
+#include "common/expression/ContainerExpression.h"          // for ListExpre...
+#include "common/expression/FunctionCallExpression.h"       // for ArgumentList
+#include "common/expression/LabelAttributeExpression.h"     // for LabelAttr...
+#include "common/expression/LabelExpression.h"              // for LabelExpr...
+#include "common/expression/ListComprehensionExpression.h"  // for ListCompr...
+#include "common/expression/LogicalExpression.h"            // for LogicalEx...
+#include "common/expression/PathBuildExpression.h"          // for PathBuild...
+#include "common/expression/PredicateExpression.h"          // for Predicate...
+#include "common/expression/ReduceExpression.h"             // for ReduceExp...
+#include "common/expression/RelationalExpression.h"         // for Relationa...
+#include "common/expression/SubscriptExpression.h"          // for Subscript...
+#include "common/expression/TypeCastingExpression.h"        // for TypeCasti...
+#include "common/expression/UnaryExpression.h"              // for UnaryExpr...
+#include "common/expression/VariableExpression.h"           // for VariableE...
+
 namespace nebula {
+class CaseExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariablePropertyExpression;
+class VertexExpression;
+
+class CaseExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariablePropertyExpression;
+class VertexExpression;
+
 namespace storage {
 void ExprVisitorBase::visit(ConstantExpression *expr) {
   UNUSED(expr);

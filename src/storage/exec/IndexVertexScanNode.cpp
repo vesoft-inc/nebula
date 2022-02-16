@@ -4,11 +4,39 @@
  */
 #include "storage/exec/IndexVertexScanNode.h"
 
-#include "codec/RowReaderWrapper.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "storage/exec/QueryUtils.h"
+#include <folly/Likely.h>                      // for UNLIKELY
+#include <folly/container/F14Map.h>            // for F14BasicMap, F14BasicM...
+#include <folly/container/F14Set.h>            // for F14FastSet
+#include <folly/container/detail/F14Policy.h>  // for VectorContainerIterator
+#include <folly/lang/Bits.h>                   // for findLastSet
+#include <stdint.h>                            // for int64_t
+#include <string.h>                            // for memcpy
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
+#include <ostream>             // for operator<<, basic_ostream
+#include <unordered_map>       // for unordered_map
+
+#include "codec/RowReaderWrapper.h"            // for RowReaderWrapper
+#include "common/base/Base.h"                  // for kVid, kTag
+#include "common/base/Logging.h"               // for LOG, LogMessageFatal
+#include "common/base/StatusOr.h"              // for StatusOr
+#include "common/datatypes/Value.h"            // for Value, Value::kNullUnk...
+#include "common/meta/IndexManager.h"          // for IndexManager
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"         // for SchemaManager
+#include "common/utils/IndexKeyUtils.h"        // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "storage/CommonUtils.h"               // for RuntimeContext, Storag...
+#include "storage/exec/QueryUtils.h"           // for QueryUtils, QueryUtils...
+
 namespace nebula {
 namespace storage {
+namespace cpp2 {
+class IndexColumnHint;
+
+class IndexColumnHint;
+}  // namespace cpp2
 
 IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
     : IndexScanNode(node), tag_(node.tag_) {}

@@ -3,10 +3,21 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <double-conversion/utils.h>  // for ASSERT
+#include <folly/init/Init.h>          // for init
+#include <glog/logging.h>             // for INFO
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
+#include <gtest/gtest.h>              // for Message
+#include <gtest/gtest.h>              // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/datatypes/Path.h"
+#include <string>   // for allocator, hash
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"      // for SetStderrLogging
+#include "common/datatypes/Path.h"    // for Path, Step
+#include "common/datatypes/Vertex.h"  // for Tag, Vertex
 
 namespace nebula {
 TEST(Path, Reverse) {

@@ -3,10 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/hdfs/HdfsCommandHelper.h"
+#include <memory>  // for allocator
+
+#include "common/base/Logging.h"            // for SetStderrLogging
+#include "common/base/Status.h"             // for operator<<
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/hdfs/HdfsCommandHelper.h"  // for HdfsCommandHelper
 
 namespace nebula {
 namespace hdfs {

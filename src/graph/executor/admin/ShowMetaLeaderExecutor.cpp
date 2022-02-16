@@ -5,12 +5,21 @@
 
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Format.h>
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
+#include "clients/meta/MetaClient.h"
+#include "common/base/Status.h"
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/datatypes/List.h"
+#include "common/datatypes/Value.h"
 #include "common/time/ScopedTimer.h"
-#include "common/time/TimeUtils.h"
+#include "common/time/WallClock.h"
 #include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

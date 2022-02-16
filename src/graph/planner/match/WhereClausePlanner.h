@@ -6,10 +6,17 @@
 #ifndef GRAPH_PLANNER_MATCH_WHERECLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_WHERECLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
 namespace graph {
+struct CypherClauseContextBase;
+struct SubPlan;
+
+struct CypherClauseContextBase;
+struct SubPlan;
+
 /*
  * The WhereClausePlanner was designed to generate plan for where clause.
  */

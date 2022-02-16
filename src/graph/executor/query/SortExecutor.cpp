@@ -5,8 +5,25 @@
 
 #include "graph/executor/query/SortExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <algorithm>    // for sort
+#include <ostream>      // for stringstream, operator<<
+#include <string>       // for operator<<, char_traits
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, pair
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"             // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row
+#include "common/datatypes/Value.h"          // for Value, operator<, operat...
+#include "common/time/ScopedTimer.h"         // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for SequentialIter, operator<<
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Query.h"        // for Sort
+#include "parser/TraverseSentences.h"        // for OrderFactor, OrderFactor...
 
 namespace nebula {
 namespace graph {

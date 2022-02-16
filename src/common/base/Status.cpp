@@ -5,7 +5,10 @@
 
 #include "common/base/Status.h"
 
-#include "common/base/Base.h"
+#include <stdio.h>   // for vsnprintf, va_list
+#include <string.h>  // for memcpy
+
+#include <ostream>  // for operator<<, basic_ostream
 
 namespace nebula {
 

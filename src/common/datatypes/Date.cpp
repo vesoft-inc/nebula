@@ -5,10 +5,15 @@
 
 #include "common/datatypes/Date.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
+#include <bits/std_abs.h>     // for abs
+#include <folly/Format.h>     // for sformat
+#include <folly/String.h>     // for stringPrintf
+#include <folly/hash/Hash.h>  // for fnv64_buf
 
-#include <cstdint>
+#include <cstdint>  // for int64_t, int8_t, uint8_t, int...
+#include <cstdlib>  // for abs, size_t
+
+#include "common/datatypes/Duration.h"  // for Duration
 
 namespace nebula {
 

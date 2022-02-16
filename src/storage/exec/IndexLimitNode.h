@@ -4,10 +4,22 @@
  */
 #ifndef STORAGE_EXEC_INDEXLIMITNODE_H
 #define STORAGE_EXEC_INDEXLIMITNODE_H
+#include <stdint.h>  // for uint64_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "folly/Likely.h"
-#include "storage/exec/IndexNode.h"
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "storage/exec/IndexNode.h"           // for IndexNode, IndexNode::R...
+
 namespace nebula {
 namespace storage {
+struct RuntimeContext;
+
+struct RuntimeContext;
+
 class IndexLimitNode : public IndexNode {
  public:
   IndexLimitNode(const IndexLimitNode& node);

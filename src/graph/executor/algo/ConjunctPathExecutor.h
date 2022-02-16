@@ -6,10 +6,38 @@
 #ifndef GRAPH_EXECUTOR_ALGO_CONJUNCTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_CONJUNCTPATHEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <stddef.h>                // for size_t
+
+#include <string>         // for allocator, string
+#include <unordered_map>  // for unordered_map, unordered_...
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
+#include "common/base/Status.h"        // for Status
+#include "common/datatypes/DataSet.h"  // for DataSet (ptr only), Row
+#include "common/datatypes/Value.h"    // for Value, hash, operator==
+#include "graph/executor/Executor.h"   // for Executor
 
 namespace nebula {
 namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct Edge;
+struct List;
+struct Path;
+
+struct Edge;
+struct List;
+struct Path;
+
+namespace graph {
+class Iterator;
+class PlanNode;
+class QueryContext;
+
 class ConjunctPathExecutor final : public Executor {
  public:
   ConjunctPathExecutor(const PlanNode* node, QueryContext* qctx)

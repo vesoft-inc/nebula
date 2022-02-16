@@ -6,10 +6,25 @@
 #ifndef KVSTORE_ROCKSENGINECONFIG_H_
 #define KVSTORE_ROCKSENGINECONFIG_H_
 
+#include <gflags/gflags_declare.h>  // for DECLARE_string, DECLARE_bool
 #include <rocksdb/db.h>
+#include <rocksdb/status.h>  // for Status
+#include <stdint.h>          // for int32_t
+
+#include <memory>         // for shared_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
 
 #include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
+
+namespace rocksdb {
+class Statistics;
+struct Options;
+
+class Statistics;
+struct Options;
+}  // namespace rocksdb
 
 // [Version]
 DECLARE_string(rocksdb_options_version);

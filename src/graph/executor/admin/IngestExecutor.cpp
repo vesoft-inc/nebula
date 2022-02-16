@@ -5,8 +5,20 @@
 
 #include "graph/executor/admin/IngestExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, FutureB...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Promi...
+#include <folly/futures/Promise.h>  // for PromiseException::PromiseE...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Promi...
+#include <folly/futures/Promise.h>  // for PromiseException::PromiseE...
+
+#include "clients/meta/MetaClient.h"       // for MetaClient
+#include "common/base/Status.h"            // for Status, NG_RETURN_IF_ERROR
+#include "common/base/StatusOr.h"          // for StatusOr
+#include "common/time/ScopedTimer.h"       // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"    // for QueryContext
+#include "graph/service/RequestContext.h"  // for RequestContext
+#include "graph/session/ClientSession.h"   // for ClientSession, SpaceInfo
 
 namespace nebula {
 namespace graph {

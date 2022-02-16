@@ -6,11 +6,18 @@
 #ifndef CODEC_TEST_SCHEMAWRITER_H_
 #define CODEC_TEST_SCHEMAWRITER_H_
 
+#include <folly/Range.h>
+#include <stdint.h>
+
 #include "codec/test/ResultSchemaProvider.h"
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
+#include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
+class Expression;
 
 class SchemaWriter : public ResultSchemaProvider {
  public:

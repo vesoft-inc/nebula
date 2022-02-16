@@ -6,12 +6,29 @@
 #ifndef META_HBPROCESSOR_H_
 #define META_HBPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <gtest/gtest_prod.h>       // for FRIEND_TEST
+#include <stdint.h>                 // for int64_t
 
-#include "common/stats/StatsManager.h"
-#include "meta/processors/BaseProcessor.h"
+#include <atomic>   // for atomic
+#include <memory>   // for allocator
+#include <ostream>  // for operator<<
+#include <utility>  // for move
+
+#include "common/base/Logging.h"            // for COMPACT_GOOGLE_LOG_INFO
+#include "common/stats/StatsManager.h"      // for CounterId, StatsManager
+#include "common/thrift/ThriftTypes.h"      // for ClusterID
+#include "interface/gen-cpp2/meta_types.h"  // for HBResp, HBReq (ptr only)
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 struct HBCounters final {

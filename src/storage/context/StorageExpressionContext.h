@@ -6,13 +6,35 @@
 #ifndef STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
 #define STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
 
+#include <folly/hash/Hash.h>  // for hash
+#include <stddef.h>           // for size_t
+#include <stdint.h>           // for int32_t, int64_t
+
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map, _Node_c...
+#include <utility>        // for pair, move, make_pair
+#include <vector>         // for vector
+
 #include "codec/RowReader.h"
-#include "common/base/Base.h"
+#include "common/base/Base.h"     // for UNUSED
+#include "common/base/Logging.h"  // for LOG, LogMessageFatal
 #include "common/base/ObjectPool.h"
-#include "common/context/ExpressionContext.h"
-#include "common/datatypes/Value.h"
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/datatypes/Value.h"            // for Value, Value::kNullValue
+#include "interface/gen-cpp2/meta_types.h"     // for ColumnDef
 
 namespace nebula {
+class RowReader;
+namespace meta {
+class NebulaSchemaProvider;
+}  // namespace meta
+
+class RowReader;
+namespace meta {
+class NebulaSchemaProvider;
+}  // namespace meta
+
 namespace storage {
 
 /*

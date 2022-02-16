@@ -5,8 +5,22 @@
 
 #include "graph/validator/ACLValidator.h"
 
-#include "graph/planner/plan/Admin.h"
-#include "graph/service/PermissionManager.h"
+#include <cstddef>  // for size_t
+#include <string>   // for string
+#include <vector>   // for vector
+
+#include "clients/meta/MetaClient.h"          // for MetaClient
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/Value.h"           // for Value, Value::Type, Val...
+#include "common/meta/SchemaManager.h"        // for SchemaManager
+#include "graph/context/QueryContext.h"       // for QueryContext
+#include "graph/context/Symbols.h"            // for ColsDef
+#include "graph/planner/plan/Admin.h"         // for ChangePassword, CreateUser
+#include "graph/service/PermissionManager.h"  // for PermissionManager
+#include "graph/service/RequestContext.h"     // for RequestContext
+#include "interface/gen-cpp2/meta_types.h"    // for RoleItem, RoleType, Rol...
+#include "parser/AdminSentences.h"            // for DescribeUserSentence
+#include "parser/UserSentences.h"             // for ChangePasswordSentence
 
 namespace nebula {
 namespace graph {

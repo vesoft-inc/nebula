@@ -5,10 +5,35 @@
 #ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
 #define _VALIDATOR_LOOKUP_VALIDATOR_H_
 
+#include <stdint.h>  // for int32_t
+
+#include <memory>  // for shared_ptr, unique_ptr
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"              // for Status
+#include "common/base/StatusOr.h"            // for StatusOr
+#include "common/expression/Expression.h"    // for Expression, Expression...
+#include "common/plugin/fulltext/FTUtils.h"  // for HttpClient
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "graph/validator/Validator.h"
+#include "common/thrift/ThriftTypes.h"         // for GraphSpaceID
+#include "graph/validator/Validator.h"         // for Validator
+#include "graph/visitor/DeducePropsVisitor.h"  // for ExpressionProps
 
 namespace nebula {
+class LogicalExpression;
+class LookupSentence;
+class RelationalExpression;
+class Sentence;
+namespace graph {
+class QueryContext;
+struct AstContext;
+}  // namespace graph
+
+class LogicalExpression;
+class LookupSentence;
+class RelationalExpression;
+class Sentence;
 
 namespace meta {
 class NebulaSchemaProvider;
@@ -17,6 +42,8 @@ class NebulaSchemaProvider;
 namespace graph {
 
 struct LookupContext;
+class QueryContext;
+struct AstContext;
 
 class LookupValidator final : public Validator {
  public:
@@ -56,7 +83,7 @@ class LookupValidator final : public Validator {
   void extractExprProps();
 
   std::unique_ptr<LookupContext> lookupCtx_;
-  std::vector<nebula::plugin::HttpClient> tsClients_;
+  std::vector<::nebula::plugin::HttpClient> tsClients_;
   ExpressionProps exprProps_;
   std::vector<std::string> idxReturnCols_;
   std::vector<int32_t> schemaIds_;

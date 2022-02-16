@@ -5,10 +5,18 @@
 
 #include "common/meta/ServerBasedSchemaManager.h"
 
-#include "common/base/Base.h"
+#include <ostream>      // for operator<<, basic_ostream::oper...
+#include <type_traits>  // for remove_reference<>::type
+
+#include "clients/meta/MetaClient.h"  // for MetaClient
+#include "common/base/Logging.h"      // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"       // for Status
 
 namespace nebula {
 namespace meta {
+class NebulaSchemaProvider;
+
+class NebulaSchemaProvider;
 
 ServerBasedSchemaManager::~ServerBasedSchemaManager() {
   if (nullptr != metaClient_) {

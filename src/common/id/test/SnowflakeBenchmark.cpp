@@ -3,13 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_RELATIVE_NA...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <gflags/gflags.h>        // for ParseCommandLineFlags
 
-#include <cstddef>
-#include <cstdint>
+#include <cstddef>  // for size_t
+#include <cstdint>  // for int64_t
+#include <memory>   // for allocator_traits<>::value_type
+#include <thread>   // for thread
+#include <vector>   // for vector
 
-#include "common/base/Base.h"
-#include "common/id/Snowflake.h"
+#include "common/id/Snowflake.h"  // for Snowflake
 
 size_t SnowflakeTest(size_t iters) {
   constexpr size_t ops = 10UL;

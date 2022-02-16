@@ -5,10 +5,19 @@
 
 #include "common/expression/RelationalExpression.h"
 
-#include "common/datatypes/List.h"
-#include "common/datatypes/Map.h"
-#include "common/datatypes/Set.h"
-#include "common/expression/ExprVisitor.h"
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_ostream
+#include <regex>      // for regex_match, match_res...
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"               // for LOG, LogMessage, LogMe...
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/datatypes/List.h"             // for List
+#include "common/datatypes/Map.h"              // for Map
+#include "common/datatypes/Set.h"              // for Set
+#include "common/expression/ExprVisitor.h"     // for ExprVisitor
 
 namespace nebula {
 const Value& RelationalExpression::eval(ExpressionContext& ctx) {

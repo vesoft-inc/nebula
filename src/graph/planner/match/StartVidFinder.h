@@ -6,12 +6,26 @@
 #ifndef GRAPH_PLANNER_MATCH_STARTVIDFINDER_H_
 #define GRAPH_PLANNER_MATCH_STARTVIDFINDER_H_
 
+#include <functional>  // for function
+#include <memory>      // for unique_ptr
+#include <vector>      // for vector
+
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/Planner.h"
 
 namespace nebula {
 namespace graph {
+struct EdgeContext;
+struct NodeContext;
+struct PatternContext;
+struct SubPlan;
+
 class StartVidFinder;
+struct EdgeContext;
+struct NodeContext;
+struct PatternContext;
+struct SubPlan;
 
 using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFinder>()>;
 

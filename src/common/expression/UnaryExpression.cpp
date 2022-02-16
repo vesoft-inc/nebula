@@ -5,8 +5,15 @@
 
 #include "common/expression/UnaryExpression.h"
 
-#include "common/expression/ExprVisitor.h"
-#include "common/expression/VariableExpression.h"
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <ostream>  // for operator<<, basic_...
+#include <utility>  // for move
+
+#include "common/base/Logging.h"                   // for LogMessageFatal
+#include "common/context/ExpressionContext.h"      // for ExpressionContext
+#include "common/expression/ExprVisitor.h"         // for ExprVisitor
+#include "common/expression/VariableExpression.h"  // for VariableExpression
 
 namespace nebula {
 

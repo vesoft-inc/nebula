@@ -5,12 +5,24 @@
 
 #include "graph/session/ClientSession.h"
 
-#include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
-#include "graph/context/QueryContext.h"
-#include "graph/stats/GraphStats.h"
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference_t
+
+#include "common/base/Logging.h"               // for COMPACT_GOOGLE_LOG_INFO
+#include "common/stats/StatsManager.h"         // for StatsManager::LabelPair
+#include "common/time/WallClock.h"             // for WallClock
+#include "graph/context/QueryContext.h"        // for QueryContext
+#include "graph/planner/plan/ExecutionPlan.h"  // for ExecutionPlan
+#include "graph/service/RequestContext.h"      // for RequestContext
+#include "graph/stats/GraphStats.h"            // for FLAGS_enable_space_lev...
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+
+class MetaClient;
+}  // namespace meta
+
 namespace graph {
 
 ClientSession::ClientSession(meta::cpp2::Session&& session, meta::MetaClient* metaClient) {

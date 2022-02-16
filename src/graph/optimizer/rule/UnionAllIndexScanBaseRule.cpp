@@ -5,14 +5,39 @@
 
 #include "graph/optimizer/rule/UnionAllIndexScanBaseRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Scan.h"
-#include "graph/util/ExpressionUtils.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <cstdint>      // for int32_t, uint8_t
+#include <memory>       // for allocator_traits...
+#include <ostream>      // for operator<<, basi...
+#include <string>       // for string, basic_st...
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "common/base/Logging.h"                     // for LogMessageFatal
+#include "common/base/Status.h"                      // for NG_RETURN_IF_ERROR
+#include "common/expression/Expression.h"            // for Expression, Expr...
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/optimizer/OptContext.h"              // for OptContext
+#include "graph/optimizer/OptGroup.h"                // for OptGroupNode
+#include "graph/optimizer/OptRule.h"                 // for OptRule::Transfo...
+#include "graph/optimizer/OptimizerUtils.h"          // for OptimizerUtils
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode, PlanNo...
+#include "graph/planner/plan/Query.h"                // for IndexScan, Filter
+#include "graph/util/ExpressionUtils.h"              // for ExpressionUtils
+#include "interface/gen-cpp2/storage_types.h"        // for IndexQueryContext
+
+namespace nebula {
+namespace graph {
+class TagIndexFullScan;
+
+class TagIndexFullScan;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;

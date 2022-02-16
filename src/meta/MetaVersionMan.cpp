@@ -5,12 +5,31 @@
 
 #include "meta/MetaVersionMan.h"
 
-#include "common/fs/FileUtils.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/job/JobDescription.h"
-#include "meta/processors/job/JobUtils.h"
-#include "meta/upgrade/MetaDataUpgrade.h"
-#include "meta/upgrade/v2/MetaServiceUtilsV2.h"
+#include <folly/Format.h>   // for sformat
+#include <folly/Range.h>    // for StringPiece
+#include <folly/String.h>   // for stringPrintf
+#include <gflags/gflags.h>  // for DEFINE_bool, DEFINE_uint32
+#include <stdint.h>         // for int64_t
+
+#include <algorithm>  // for find
+#include <memory>     // for unique_ptr, allocator
+#include <ostream>    // for operator<<, basic_ostream
+#include <string>     // for operator<<, string, cha...
+#include <utility>    // for move
+#include <vector>     // for vector<>::iterator, vector
+
+#include "common/base/Logging.h"              // for CheckNotNull, LOG, LogM...
+#include "common/datatypes/HostAddr.h"        // for HostAddr
+#include "common/fs/FileUtils.h"              // for FileUtils
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "interface/gen-cpp2/meta_types.h"    // for HostRole, HostRole::STO...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVEngine.h"                 // for KVEngine
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/ActiveHostsMan.h"              // for HostInfo
+#include "meta/upgrade/MetaDataUpgrade.h"     // for MetaDataUpgrade
 
 DEFINE_bool(null_type, true, "set schema to support null type");
 DEFINE_bool(print_info, false, "enable to print the rewrite data");

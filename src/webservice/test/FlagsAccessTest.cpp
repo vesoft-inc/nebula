@@ -3,12 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/json.h>
-#include <gtest/gtest.h>
+#include <folly/String.h>            // for stringPrintf
+#include <folly/detail/Iterators.h>  // for IteratorFacade
+#include <folly/dynamic.h>           // for dynamic::operator[], dynamic:...
+#include <folly/dynamic.h>           // for dynamic
+#include <folly/init/Init.h>         // for init
+#include <folly/json.h>              // for parseJson
+#include <gflags/gflags.h>           // for DEFINE_bool, DEFINE_double
+#include <glog/logging.h>            // for INFO
+#include <gtest/gtest.h>             // for Message
+#include <gtest/gtest.h>             // for TestPartResult
 
-#include "common/base/Base.h"
-#include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
+#include <memory>   // for allocator, unique_ptr, make_u...
+#include <ostream>  // for operator<<
+#include <string>   // for string
+#include <utility>  // for pair
+
+#include "common/base/Logging.h"        // for SetStderrLogging, COMPACT_GOO...
+#include "common/base/Status.h"         // for operator<<, Status
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "webservice/WebService.h"      // for WebService, FLAGS_ws_h2_port
+#include "webservice/test/TestUtils.h"  // for getUrl, putUrl
 
 DEFINE_int32(int32_test, 10, "Test flag for int32 type");
 DEFINE_int64(int64_test, 10, "Test flag for int64 type");

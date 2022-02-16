@@ -5,11 +5,35 @@
 
 #include "graph/executor/query/IndexScanExecutor.h"
 
-#include <algorithm>
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Pro...
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/service/GraphFlags.h"
+#include <algorithm>      // for find_if
+#include <ostream>        // for basic_ostream::operat...
+#include <string>         // for string, basic_string
+#include <tuple>          // for get
+#include <unordered_map>  // for operator!=
+#include <utility>        // for move
+#include <vector>         // for vector<>::iterator
+
+#include "clients/storage/StorageClient.h"      // for StorageClient, Storag...
+#include "clients/storage/StorageClientBase.h"  // for StorageRpcResponse
+#include "common/base/Logging.h"                // for Check_EQImpl, DCHECK_EQ
+#include "common/datatypes/DataSet.h"           // for Row, DataSet
+#include "common/datatypes/Value.h"             // for Value
+#include "graph/context/Iterator.h"             // for Iterator, Iterator::Kind
+#include "graph/context/QueryContext.h"         // for QueryContext
+#include "graph/context/Result.h"               // for ResultBuilder, Result
+#include "graph/planner/plan/ExecutionPlan.h"   // for ExecutionPlan
+#include "graph/planner/plan/PlanNode.h"        // for PlanNode
+#include "graph/service/GraphFlags.h"           // for FLAGS_accept_partial_...
+#include "graph/service/RequestContext.h"       // for RequestContext
+#include "graph/session/ClientSession.h"        // for ClientSession
+#include "interface/gen-cpp2/storage_types.h"   // for OrderBy, LookupIndexResp
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;

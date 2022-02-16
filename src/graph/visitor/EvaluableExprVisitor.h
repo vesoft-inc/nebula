@@ -6,9 +6,54 @@
 #ifndef GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
 #define GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"  // for ExprVisitorImpl
 
 namespace nebula {
+class BinaryExpression;
+class ColumnExpression;
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
+class BinaryExpression;
+class ColumnExpression;
+
+class ConstantExpression;
+class DestPropertyExpression;
+class EdgeDstIdExpression;
+class EdgeExpression;
+class EdgePropertyExpression;
+class EdgeRankExpression;
+class EdgeSrcIdExpression;
+class EdgeTypeExpression;
+class InputPropertyExpression;
+class LabelExpression;
+class LabelTagPropertyExpression;
+class SourcePropertyExpression;
+class SubscriptRangeExpression;
+class TagPropertyExpression;
+class UUIDExpression;
+class VariableExpression;
+class VariablePropertyExpression;
+class VersionedVariableExpression;
+class VertexExpression;
+
 namespace graph {
 class QueryContext;
 

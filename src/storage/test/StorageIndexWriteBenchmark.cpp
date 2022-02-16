@@ -3,20 +3,48 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>           // for BenchmarkSuspender
+#include <folly/String.h>              // for stringPrintf
+#include <folly/futures/Future.h>      // for Future::get
+#include <folly/init/Init.h>           // for init
+#include <gflags/gflags.h>             // for clstring, DEFINE_int32
+#include <stddef.h>                    // for size_t
+#include <stdint.h>                    // for int32_t, uint8_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "kvstore/KVStore.h"
-#include "kvstore/NebulaStore.h"
-#include "mock/AdHocIndexManager.h"
-#include "mock/AdHocSchemaManager.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/mutate/AddVerticesProcessor.h"
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr, make_un...
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>:...
+#include <unordered_map>  // for unordered_map<>::ma...
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                  // for LOG, LogMessage
+#include "common/datatypes/HostAddr.h"            // for HostAddr
+#include "common/datatypes/Value.h"               // for Value
+#include "common/fs/FileUtils.h"                  // for FileUtils
+#include "common/meta/Common.h"                   // for PartHosts
+#include "common/meta/IndexManager.h"             // for IndexManager
+#include "common/meta/NebulaSchemaProvider.h"     // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"            // for SchemaManager
+#include "common/thrift/ThriftTypes.h"            // for PartitionID, GraphS...
+#include "common/utils/IndexKeyUtils.h"           // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"          // for NebulaKeyUtils
+#include "common/utils/Types.h"                   // for IndexID
+#include "interface/gen-cpp2/common_types.h"      // for ErrorCode, ErrorCod...
+#include "interface/gen-cpp2/meta_types.h"        // for ColumnDef, ColumnTy...
+#include "interface/gen-cpp2/storage_types.h"     // for NewTag, AddVertices...
+#include "kvstore/KVIterator.h"                   // for KVIterator
+#include "kvstore/KVStore.h"                      // for KVOptions, KVStore
+#include "kvstore/NebulaStore.h"                  // for NebulaStore
+#include "kvstore/PartManager.h"                  // for MemPartManager, Par...
+#include "mock/AdHocIndexManager.h"               // for AdHocIndexManager
+#include "mock/AdHocSchemaManager.h"              // for AdHocSchemaManager
+#include "mock/MockCluster.h"                     // for MockCluster
+#include "storage/CommonUtils.h"                  // for IndexGuard, StorageEnv
+#include "storage/mutate/AddVerticesProcessor.h"  // for AddVerticesProcessor
 
 DEFINE_int32(bulk_insert_size, 10000, "The number of vertices by bulk insert");
 DEFINE_int32(total_vertices_size, 1000000, "The number of vertices");

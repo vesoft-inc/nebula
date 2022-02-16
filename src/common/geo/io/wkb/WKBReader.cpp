@@ -5,6 +5,14 @@
 
 #include "common/geo/io/wkb/WKBReader.h"
 
+#include <stddef.h>  // for size_t
+
+#include <ostream>  // for operator<<
+#include <utility>  // for move
+
+#include "common/base/Logging.h"  // for LOG, LogMessageFatal, _LOG_FATAL
+#include "common/base/Status.h"   // for NG_RETURN_IF_ERROR, Status
+
 namespace nebula {
 namespace geo {
 

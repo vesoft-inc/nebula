@@ -6,13 +6,52 @@
 #ifndef STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 #define STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 
+#include <folly/Optional.h>         // for Optional
+#include <folly/Range.h>            // for StringPiece
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+
+#include <functional>  // for function
+#include <memory>      // for shared_ptr
+#include <string>      // for string
+#include <utility>     // for move
+#include <vector>      // for vector
+
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"  // for ErrorOr
 #include "common/stats/StatsManager.h"
+#include "common/thrift/ThriftTypes.h"         // for PartitionID, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse, AddEdges...
+#include "kvstore/Common.h"                    // for KV
 #include "kvstore/LogEncoder.h"
-#include "storage/BaseProcessor.h"
+#include "storage/BaseProcessor.h"  // for BaseProcessor
+#include "storage/CommonUtils.h"    // for StorageEnv (ptr only)
 #include "storage/StorageFlags.h"
 
 namespace nebula {
+class RowReader;
+namespace kvstore {
+class BatchHolder;
+}  // namespace kvstore
+namespace meta {
+class SchemaProviderIf;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
+class RowReader;
+namespace kvstore {
+class BatchHolder;
+}  // namespace kvstore
+namespace meta {
+class SchemaProviderIf;
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+
 namespace storage {
 
 extern ProcessorCounters kAddEdgesCounters;

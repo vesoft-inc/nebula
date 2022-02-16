@@ -4,13 +4,42 @@
  */
 #ifndef STORAGE_INDEX_LOOKUPPROCESSOR_H
 #define STORAGE_INDEX_LOOKUPPROCESSOR_H
+#include <folly/Try.h>                 // for Try::~Try<T>
+#include <folly/futures/Promise.h>     // for PromiseException::Prom...
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <memory>   // for unique_ptr
+#include <string>   // for string
+#include <utility>  // for move, pair
+#include <vector>   // for vector
+
 #include "common/base/Base.h"
-#include "common/base/ErrorOr.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "storage/BaseProcessor.h"
+#include "common/base/ErrorOr.h"               // for ErrorOr
+#include "common/datatypes/DataSet.h"          // for DataSet, Row
+#include "common/thrift/ThriftTypes.h"         // for PartitionID
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"  // for LookupIndexResp, StatType
+#include "storage/BaseProcessor.h"             // for BaseProcessor
+#include "storage/CommonUtils.h"               // for PlanContext, RuntimeCo...
 #include "storage/exec/IndexNode.h"
+
 namespace nebula {
 namespace storage {
+class IndexNode;
+}  // namespace storage
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+
+namespace nebula {
+namespace storage {
+class IndexNode;
+
 extern ProcessorCounters kLookupCounters;
 
 class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {

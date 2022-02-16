@@ -5,7 +5,15 @@
 
 #include "common/base/SignalHandler.h"
 
-#include "common/base/Base.h"
+#include <bits/types/siginfo_t.h>  // for si_pid, si_uid
+#include <errno.h>                 // for errno
+#include <stdio.h>                 // for snprintf
+#include <string.h>                // for memset, strerror, strsignal
+
+#include <utility>  // for move
+
+#include "common/base/Base.h"     // for UNUSED
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
 
 namespace nebula {
 

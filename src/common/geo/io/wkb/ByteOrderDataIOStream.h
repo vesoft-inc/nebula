@@ -6,11 +6,14 @@
 #ifndef COMMON_GEO_IO_WKB_BYTEORDERDATAIOSTREAM_H
 #define COMMON_GEO_IO_WKB_BYTEORDERDATAIOSTREAM_H
 
-#include <sstream>
+#include <stdint.h>  // for uint32_t, uint8_t
+
+#include <sstream>  // for istringstream, ostringstream
+#include <string>   // for string
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/geo/io/wkb/ByteOrder.h"
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/geo/io/wkb/ByteOrder.h"  // for ByteOrder
 
 namespace nebula {
 namespace geo {

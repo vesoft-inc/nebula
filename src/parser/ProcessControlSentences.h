@@ -5,7 +5,10 @@
 #ifndef PARSER_PROCESSCONTROLSENTENCES_H_
 #define PARSER_PROCESSCONTROLSENTENCES_H_
 
-#include "parser/Sentence.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string, basic_string
+
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 
 namespace nebula {
 class ReturnSentence final : public Sentence {

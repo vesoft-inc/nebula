@@ -6,9 +6,21 @@
 #ifndef NEBULA_PLUGIN_ESGRAPHADAPTER_H
 #define NEBULA_PLUGIN_ESGRAPHADAPTER_H
 
+#include <folly/dynamic.h>  // for dynamic::dynamic
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/dynamic.h>  // for dynamic::dynamic
+#include <folly/dynamic.h>  // for dynamic
 #include <gtest/gtest.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int32_t
 
-#include "common/plugin/fulltext/FTGraphAdapter.h"
+#include <memory>  // for allocator, unique...
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/StatusOr.h"                   // for StatusOr
+#include "common/plugin/fulltext/FTGraphAdapter.h"  // for FTGraphAdapter
+#include "common/plugin/fulltext/FTUtils.h"         // for HttpClient (ptr o...
 
 namespace nebula {
 namespace plugin {

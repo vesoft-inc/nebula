@@ -6,11 +6,26 @@
 #ifndef GRAPH_VALIDATOR_SEQUENTIALVALIDATOR_H_
 #define GRAPH_VALIDATOR_SEQUENTIALVALIDATOR_H_
 
-#include "graph/validator/Validator.h"
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
+
+#include "common/base/Status.h"            // for Status
+#include "graph/context/ast/AstContext.h"  // for AstContext
+#include "graph/validator/Validator.h"     // for Validator
 #include "parser/SequentialSentences.h"
 
 namespace nebula {
+class Sentence;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 struct SequentialAstContext final : AstContext {
   std::vector<std::unique_ptr<Validator>> validators;

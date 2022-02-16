@@ -6,6 +6,7 @@
 #ifndef COMMON_TIME_WALLCLOCK_H_
 #define COMMON_TIME_WALLCLOCK_H_
 
+#include <stdint.h>
 #include <time.h>
 
 #include "common/base/Base.h"

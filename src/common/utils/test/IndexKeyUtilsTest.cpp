@@ -3,15 +3,33 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>              // for stringPrintf
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <sys/types.h>                 // for u_short, size_t, ushort
+#include <thrift/lib/cpp2/FieldRef.h>  // for required_field_ref, fie...
 
-#include <cstdint>
+#include <cstdint>        // for uint64_t, int64_t, int16_t
+#include <limits>         // for numeric_limits
+#include <memory>         // for make_unique, allocator
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map, unordere...
+#include <utility>        // for move, pair
+#include <vector>         // for vector
 
-#include "common/base/Base.h"
-#include "common/datatypes/DataSet.h"
-#include "common/datatypes/Geography.h"
-#include "common/geo/GeoIndex.h"
-#include "common/utils/IndexKeyUtils.h"
+#include "common/base/Logging.h"              // for SetStderrLogging
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/Date.h"            // for DateTime, Date, DateTim...
+#include "common/datatypes/Geography.h"       // for Geography
+#include "common/datatypes/Value.h"           // for Value, Value::Type, Nul...
+#include "common/geo/GeoIndex.h"              // for RegionCoverParams
+#include "common/thrift/ThriftTypes.h"        // for VertexID, PartitionID
+#include "common/utils/IndexKeyUtils.h"       // for IndexKeyUtils, Property...
+#include "common/utils/Types.h"               // for IndexID
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for ColumnDef, IndexItem
 
 namespace nebula {
 

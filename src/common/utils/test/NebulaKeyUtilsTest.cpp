@@ -3,10 +3,22 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Random.h>     // for Random
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <stddef.h>           // for size_t
+#include <stdint.h>           // for int64_t
 
-#include "common/base/Base.h"
-#include "common/utils/NebulaKeyUtils.h"
+#include <string>  // for allocator, basic_string
+
+#include "common/base/Logging.h"          // for SetStderrLogging
+#include "common/thrift/ThriftTypes.h"    // for VertexID, PartitionID, Edge...
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "common/utils/Types.h"           // for VertexIDSlice, kEdgeLen
 
 namespace nebula {
 

@@ -5,21 +5,26 @@
 
 #include "graph/util/ToJson.h"
 
-#include <folly/String.h>
-#include <folly/dynamic.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/Conv.h>                     // for to
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optiona...
 
-#include <string>
+#include <algorithm>    // for transform
+#include <iosfwd>       // for stringstream, ostream
+#include <string>       // for string, basic_string
+#include <type_traits>  // for enable_if<>::type
 
-#include "clients/meta/MetaClient.h"
-#include "common/datatypes/Value.h"
-#include "common/expression/Expression.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/context/Symbols.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "parser/EdgeKey.h"
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/datatypes/HostAddr.h"             // for HostAddr
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Value.h"                // for operator<<, Value
+#include "common/expression/Expression.h"          // for Expression
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Symbols.h"                 // for Variable
+#include "graph/util/SchemaUtil.h"                 // for SchemaUtil
+#include "interface/gen-cpp2/meta_types.h"         // for ColumnDef, SpaceDesc
+#include "interface/gen-cpp2/storage_types.h"      // for EdgeKey, IndexColu...
+#include "parser/EdgeKey.h"                        // for EdgeKeyRef
 
 namespace nebula {
 namespace util {

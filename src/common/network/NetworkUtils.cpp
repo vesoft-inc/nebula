@@ -5,12 +5,31 @@
 
 #include "common/network/NetworkUtils.h"
 
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <netdb.h>
+#include <arpa/inet.h>     // for inet_ntoa
+#include <errno.h>         // for errno
+#include <folly/Conv.h>    // for to
+#include <folly/Random.h>  // for Random
+#include <folly/Range.h>   // for Range, StringPiece
+#include <folly/String.h>  // for join, split, stringPrintf
+#include <ifaddrs.h>       // for ifaddrs, freeifaddrs, getifaddrs
+#include <netdb.h>         // for addrinfo, freeaddrinfo, getad...
+#include <netinet/in.h>    // for htonl, sockaddr_in, in_addr
+#include <stdio.h>         // for fscanf, pclose, popen, FILE
+#include <string.h>        // for strcpy, strerror, NULL, memset
+#include <sys/socket.h>    // for AF_INET, AF_INET6, AF_UNSPEC
+#include <unistd.h>        // for gethostname
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
+#include <algorithm>    // for find, transform
+#include <cstdint>      // for uint16_t, int32_t, uint32_t
+#include <exception>    // for exception
+#include <ostream>      // for operator<<, basic_ostream
+#include <regex>        // for match_results, regex_match
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move, pair
+
+#include "common/base/Logging.h"        // for LogMessage, LOG, _LOG_ERROR
+#include "common/datatypes/HostAddr.h"  // for HostAddr
+#include "common/fs/FileUtils.h"        // for FileUtils::FileLineIterator
 
 namespace nebula {
 namespace network {

@@ -6,12 +6,44 @@
 #ifndef META_STATSJOBEXECUTOR_H_
 #define META_STATSJOBEXECUTOR_H_
 
+#include <folly/futures/Future.h>  // for Future
+#include <stdint.h>                // for int32_t
+
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/thrift/ThriftTypes.h"        // for JobID, PartitionID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/job/StorageJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"  // for StorageJobExecutor
 
 namespace nebula {
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
 namespace meta {
+class AdminClient;
+namespace cpp2 {
+class ReportTaskReq;
+class StatsItem;
+}  // namespace cpp2
+}  // namespace meta
+struct HostAddr;
+
+class Status;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
+namespace meta {
+class AdminClient;
+namespace cpp2 {
+class ReportTaskReq;
+class StatsItem;
+}  // namespace cpp2
 
 class StatsJobExecutor : public StorageJobExecutor {
  public:

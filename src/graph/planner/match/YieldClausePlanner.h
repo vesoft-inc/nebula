@@ -6,10 +6,29 @@
 #ifndef GRAPH_PLANNER_MATCH_YIELDCLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_YIELDCLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include <vector>  // for vector
+
+#include "common/base/Status.h"                       // for Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
+class Expression;
+class YieldColumns;
 namespace graph {
+struct CypherClauseContextBase;
+struct SubPlan;
+struct YieldClauseContext;
+}  // namespace graph
+
+class Expression;
+class YieldColumns;
+
+namespace graph {
+struct CypherClauseContextBase;
+struct SubPlan;
+struct YieldClauseContext;
+
 /*
  * The YieldClausePlanner was designed to generate plan for yield clause in
  * cypher

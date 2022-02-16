@@ -6,11 +6,21 @@
 #ifndef GRAPH_VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 #define GRAPH_VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 
-#include "graph/validator/Validator.h"
-#include "parser/AdminSentences.h"
+#include "common/base/Status.h"             // for Status
+#include "graph/validator/Validator.h"      // for Validator
+#include "interface/gen-cpp2/meta_types.h"  // for AdminCmd, AdminJobOp, Adm...
+#include "parser/AdminSentences.h"          // for AdminJobSentence
 
 namespace nebula {
+class Sentence;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
+namespace graph {
+class QueryContext;
 
 class AdminJobValidator final : public Validator {
  public:

@@ -6,9 +6,16 @@
 #ifndef GRAPH_CONTEXT_RESULT_H_
 #define GRAPH_CONTEXT_RESULT_H_
 
-#include <vector>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint8_t
 
-#include "graph/context/Iterator.h"
+#include <memory>   // for unique_ptr, shared_ptr
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/datatypes/Value.h"  // for Value
+#include "graph/context/Iterator.h"  // for Iterator, Iterator::Kind
 
 namespace nebula {
 namespace graph {

@@ -5,6 +5,15 @@
 
 #include "graph/context/ExecutionContext.h"
 
+#include <bits/std_abs.h>  // for abs
+#include <stdlib.h>        // for abs, size_t
+
+#include <memory>   // for allocator_traits<>::value_type
+#include <utility>  // for pair, move
+
+#include "common/base/Logging.h"     // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "graph/context/Iterator.h"  // for Iterator, Iterator::Kind, Iterat...
+
 namespace nebula {
 namespace graph {
 constexpr int64_t ExecutionContext::kLatestVersion;

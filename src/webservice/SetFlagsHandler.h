@@ -6,10 +6,22 @@
 #ifndef WEBSERVICE_SETFLAGSHANDLER_H_
 #define WEBSERVICE_SETFLAGSHANDLER_H_
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <folly/io/IOBuf.h>                       // for IOBuf
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/httpserver/ResponseBuilder.h>  // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+
+#include <memory>  // for unique_ptr
 
 #include "common/base/Base.h"
-#include "webservice/Common.h"
+#include "webservice/Common.h"  // for HttpCode, HttpCode:...
+
+namespace proxygen {
+class HTTPMessage;
+
+class HTTPMessage;
+}  // namespace proxygen
 
 namespace nebula {
 

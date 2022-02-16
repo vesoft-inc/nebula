@@ -3,11 +3,13 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/ObjectPool.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/validator/LookupValidator.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+
+#include <string>  // for string, allocator
+
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
 
 namespace nebula {
 namespace graph {

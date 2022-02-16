@@ -6,16 +6,44 @@
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
 #define COMMON_UTILS_INDEXKEYUTILS_H_
 
-#include <cmath>
-#include <cstdint>
+#include <folly/Conv.h>       // for to
+#include <folly/Range.h>      // for StringPiece, Range
+#include <folly/lang/Bits.h>  // for Endian
+#include <string.h>           // for memcpy
+#include <sys/types.h>        // for size_t, u_short
+
+#include <algorithm>  // for find_if
+#include <bitset>     // for bitset
+#include <cmath>      // for isnan
+#include <cstdint>    // for int64_t, int8_t, int16_t
+#include <ostream>    // for operator<<
+#include <string>     // for string, basic_string
+#include <vector>     // for vector
 
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/geo/GeoIndex.h"
-#include "common/utils/Types.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/Logging.h"              // for Check_GEImpl, CHECK_GE
+#include "common/base/Status.h"               // for Status
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/Date.h"            // for DateTime, DateTime::(an...
+#include "common/datatypes/Geography.h"       // for Geography
+#include "common/datatypes/Value.h"           // for Value, Value::Type, Val...
+#include "common/geo/GeoIndex.h"              // for GeoIndex, RegionCoverPa...
+#include "common/thrift/ThriftTypes.h"        // for EdgeRanking, PartitionID
+#include "common/utils/Types.h"               // for IndexID, readInt, Verte...
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for ColumnDef, ColumnTypeDef
+
 namespace nebula {
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class RowReader;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
 
 using PropertyType = nebula::cpp2::PropertyType;
 

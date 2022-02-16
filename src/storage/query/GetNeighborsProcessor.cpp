@@ -5,14 +5,49 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 
-#include "storage/StorageFlags.h"
-#include "storage/exec/AggregateNode.h"
-#include "storage/exec/EdgeNode.h"
-#include "storage/exec/FilterNode.h"
-#include "storage/exec/GetNeighborsNode.h"
-#include "storage/exec/HashJoinNode.h"
-#include "storage/exec/MultiTagNode.h"
-#include "storage/exec/TagNode.h"
+#include <bits/std_abs.h>              // for abs
+#include <folly/Executor.h>            // for Executor
+#include <folly/Likely.h>              // for UNLIKELY
+#include <folly/futures/Future.h>      // for SemiFuture::releas...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>
+#include <stdlib.h>                    // for abs, size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <memory>              // for make_unique, uniqu...
+#include <mutex>               // for lock_guard, mutex
+#include <ostream>             // for operator<<, basic_...
+#include <string>              // for string, basic_string
+#include <type_traits>         // for remove_reference<>...
+#include <unordered_map>       // for unordered_map, _No...
+#include <unordered_set>       // for unordered_set, uno...
+
+#include "common/base/Base.h"                      // for kVid
+#include "common/base/Logging.h"                   // for LogMessage, Check_...
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Value.h"                // for operator/
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for PropertyExpression
+#include "common/meta/NebulaSchemaProvider.h"      // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "common/meta/SchemaProviderIf.h"          // for SchemaProviderIf
+#include "common/time/Duration.h"                  // for Duration
+#include "common/utils/NebulaKeyUtils.h"           // for NebulaKeyUtils
+#include "storage/BaseProcessor.h"                 // for BaseProcessor::pus...
+#include "storage/BaseProcessor.h"                 // for BaseProcessor
+#include "storage/BaseProcessor.h"                 // for BaseProcessor::pus...
+#include "storage/BaseProcessor.h"                 // for BaseProcessor
+#include "storage/StorageFlags.h"                  // for FLAGS_max_edge_ret...
+#include "storage/exec/AggregateNode.h"            // for AggregateNode
+#include "storage/exec/EdgeNode.h"                 // for SingleEdgeNode
+#include "storage/exec/FilterNode.h"               // for FilterNode, Filter...
+#include "storage/exec/GetNeighborsNode.h"         // for GetNeighborsNode
+#include "storage/exec/HashJoinNode.h"             // for HashJoinNode
+#include "storage/exec/MultiTagNode.h"             // for MultiTagNode
+#include "storage/exec/RelNode.h"                  // for RelNode, IterateNode
+#include "storage/exec/TagNode.h"                  // for TagNode
+#include "storage/query/QueryBaseProcessor.h"      // for QueryBaseProcessor...
 
 namespace nebula {
 namespace storage {

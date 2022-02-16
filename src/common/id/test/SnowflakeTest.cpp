@@ -3,15 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/concurrency/ConcurrentHashMap.h>
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <gtest/gtest.h>                          // for Message
+#include <gtest/gtest.h>                          // for TestPartResult
 
-#include <iostream>
-#include <thread>
+#include <cstdint>        // for int64_t
+#include <memory>         // for allocator, allocato...
+#include <thread>         // for thread
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
 
-#include "common/base/Logging.h"
-#include "common/id/Snowflake.h"
+#include "common/id/Snowflake.h"  // for Snowflake, Snowflak...
 
 namespace nebula {
 

@@ -3,9 +3,18 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/utils/OperationKeyUtils.h"
+#include <memory>  // for allocator
+
+#include "common/base/Logging.h"             // for SetStderrLogging
+#include "common/thrift/ThriftTypes.h"       // for PartitionID
+#include "common/utils/OperationKeyUtils.h"  // for OperationKeyUtils
 
 namespace nebula {
 

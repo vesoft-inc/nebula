@@ -6,14 +6,41 @@
 #ifndef STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
 #define STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
 
-#include "interface/gen-cpp2/storage_types.h"
+#include <folly/Optional.h>         // for Optional, none
+#include <folly/Range.h>            // for StringPiece
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for SemiFuture
+#include <folly/futures/Promise.h>  // for PromiseException...
+#include <stdint.h>                 // for int64_t
+
+#include <memory>   // for unique_ptr
+#include <string>   // for string, basic_st...
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/thrift/ThriftTypes.h"         // for PartitionID, Gra...
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse
+#include "kvstore/Common.h"                    // for KV
 #include "kvstore/LogEncoder.h"
-#include "storage/BaseProcessor.h"
+#include "storage/BaseProcessor.h"                   // for BaseProcessor
+#include "storage/transaction/ChainBaseProcessor.h"  // for Code, ChainBaseP...
+#include "storage/transaction/ConsistTypes.h"        // for ResumeType
 #include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+}  // namespace storage
+
+namespace kvstore {
+class BatchHolder;
+
+class BatchHolder;
+}  // namespace kvstore
+
+namespace storage {
+class StorageEnv;
 
 class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
                                     public ChainBaseProcessor {

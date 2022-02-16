@@ -6,21 +6,41 @@
 #ifndef RAFTEX_TEST_RAFTEXTESTBASE_H_
 #define RAFTEX_TEST_RAFTEXTESTBASE_H_
 
-#include <folly/String.h>
+#include <folly/String.h>  // for stringPrintf
 #include <gtest/gtest.h>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for int32_t
+
+#include <condition_variable>  // for condition_variable
+#include <memory>              // for shared_ptr, unique_ptr
+#include <mutex>               // for mutex
+#include <string>              // for string, basic_string
+#include <vector>              // for vector
 
 #include "common/base/Base.h"
+#include "common/datatypes/HostAddr.h"  // for HostAddr
 #include "common/fs/FileUtils.h"
-#include "common/fs/TempDir.h"
+#include "common/fs/TempDir.h"  // for TempDir
 #include "common/network/NetworkUtils.h"
 #include "common/thread/GenericThreadPool.h"
+#include "common/thrift/ThriftTypes.h"  // for TermID
 #include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+
+namespace thread {
+class GenericThreadPool;
+
+class GenericThreadPool;
+}  // namespace thread
 
 namespace raftex {
 
 class RaftexService;
+class SnapshotManager;
 
 namespace test {
 class TestShard;

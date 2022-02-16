@@ -6,11 +6,18 @@
 #ifndef CODEC_ROWREADER_H_
 #define CODEC_ROWREADER_H_
 
+#include <folly/Range.h>  // for StringPiece, Range
+#include <stddef.h>       // for size_t
+#include <stdint.h>       // for int64_t, int32_t
+
+#include <string>  // for string
+
 #include "codec/Common.h"
 #include "common/base/Base.h"
-#include "common/datatypes/Value.h"
+#include "common/datatypes/Value.h"  // for Value
 #include "common/meta/SchemaManager.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/SchemaProviderIf.h"  // for SchemaProviderIf
+#include "common/thrift/ThriftTypes.h"     // for SchemaVer
 
 namespace nebula {
 

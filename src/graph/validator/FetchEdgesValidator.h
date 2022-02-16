@@ -6,12 +6,39 @@
 #ifndef _VALIDATOR_FETCH_EDGES_VALIDATOR_H_
 #define _VALIDATOR_FETCH_EDGES_VALIDATOR_H_
 
-#include "graph/context/ast/QueryAstContext.h"
-#include "graph/validator/Validator.h"
+#include <memory>  // for unique_ptr, shared_ptr
+#include <string>  // for string
+
+#include "common/base/Status.h"                 // for Status
+#include "common/base/StatusOr.h"               // for StatusOr
+#include "common/datatypes/Value.h"             // for Value, Value::Type
+#include "common/thrift/ThriftTypes.h"          // for EdgeType
+#include "graph/context/ast/QueryAstContext.h"  // for FetchEdgesContext
+#include "graph/validator/Validator.h"          // for Validator
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
+class Expression;
+class Sentence;
+class YieldClause;
 namespace graph {
+class QueryContext;
+struct AstContext;
+}  // namespace graph
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class Expression;
+class Sentence;
+class YieldClause;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+namespace graph {
+class QueryContext;
+struct AstContext;
 
 class FetchEdgesValidator final : public Validator {
  public:

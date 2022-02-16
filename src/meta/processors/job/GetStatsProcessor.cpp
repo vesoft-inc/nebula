@@ -5,6 +5,17 @@
 
 #include "meta/processors/job/GetStatsProcessor.h"
 
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <ostream>  // for operator<<, basic_ostre...
+#include <string>   // for operator<<, string
+
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "kvstore/KVStore.h"                  // for KVStore
+
 namespace nebula {
 namespace meta {
 

@@ -6,12 +6,51 @@
 #ifndef STORAGE_MUTATE_UPDATEVERTEXROCESSOR_H_
 #define STORAGE_MUTATE_UPDATEVERTEXROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseExcepti...
+
+#include <memory>         // for shared_ptr
+#include <string>         // for string, basic_...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
 #include "common/expression/Expression.h"
-#include "storage/context/StorageExpressionContext.h"
-#include "storage/exec/StoragePlan.h"
-#include "storage/query/QueryBaseProcessor.h"
+#include "common/thrift/ThriftTypes.h"                 // for VertexID, TagID
+#include "common/time/Duration.h"                      // for Duration
+#include "interface/gen-cpp2/common_types.h"           // for ErrorCode
+#include "interface/gen-cpp2/storage_types.h"          // for UpdateResponse
+#include "storage/CommonUtils.h"                       // for RuntimeContext
+#include "storage/context/StorageExpressionContext.h"  // for StorageExpress...
+#include "storage/exec/RelNode.h"                      // for RelNode
+#include "storage/exec/StoragePlan.h"                  // for StoragePlan
+#include "storage/query/QueryBaseProcessor.h"          // for QueryBaseProce...
 
 namespace nebula {
+class Expression;
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+}  // namespace nebula
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
+
+namespace nebula {
+class Expression;
+namespace meta {
+namespace cpp2 {
+class IndexItem;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
 namespace storage {
 
 extern ProcessorCounters kUpdateVertexCounters;

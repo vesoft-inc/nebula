@@ -5,7 +5,13 @@
 
 #include "common/fs/TempFile.h"
 
-#include "common/base/Base.h"
+#include <errno.h>   // for errno
+#include <stdlib.h>  // for mkstemp
+#include <string.h>  // for strcpy, strerror, strlen
+#include <unistd.h>  // for close, unlink
+
+#include <stdexcept>  // for runtime_error
+#include <string>     // for char_traits, operator+, string
 
 namespace nebula {
 namespace fs {

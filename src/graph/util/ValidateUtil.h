@@ -5,11 +5,19 @@
 
 #ifndef GRAPH_UTIL_VALIDATE_UTIL_H_
 #define GRAPH_UTIL_VALIDATE_UTIL_H_
+#include "common/base/Status.h"  // for Status
 #include "common/base/StatusOr.h"
 #include "common/expression/Expression.h"
 #include "parser/Clauses.h"
 
 namespace nebula {
+class Expression;
+class OverClause;
+class StepClause;
+class Expression;
+class OverClause;
+class StepClause;
+
 namespace graph {
 class QueryContext;
 class PlanNode;

@@ -3,9 +3,31 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/Base.h"
-#include "kvstore/RocksEngineConfig.h"
-#include "tools/db-upgrade/DbUpgrader.h"
+#include <folly/String.h>                          // for split, trimWhitespace
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/init/Init.h>                       // for init
+#include <gflags/gflags_declare.h>                 // for clstring
+#include <glog/logging.h>                          // for INFO
+#include <stdio.h>                                 // for fprintf, stderr
+#include <stdlib.h>                                // for EXIT_FAILURE, size_t
+
+#include <algorithm>  // for transform, find
+#include <iostream>   // for operator<<, basic_...
+#include <memory>     // for unique_ptr, allocator
+#include <string>     // for string, operator<<
+#include <thread>     // for thread
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "clients/meta/MetaClient.h"               // for MetaClient, MetaCl...
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/base/Status.h"                    // for Status
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/meta/ServerBasedIndexManager.h"   // for ServerBasedIndexMa...
+#include "common/meta/ServerBasedSchemaManager.h"  // for ServerBasedSchemaM...
+#include "common/network/NetworkUtils.h"           // for NetworkUtils
+#include "kvstore/RocksEngineConfig.h"             // for FLAGS_rocksdb_colu...
+#include "tools/db-upgrade/DbUpgrader.h"           // for FLAGS_dst_db_path
 
 void printHelp() {
   fprintf(

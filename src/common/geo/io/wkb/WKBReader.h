@@ -6,11 +6,16 @@
 #ifndef COMMON_GEO_IO_WKB_WKBREADER_H
 #define COMMON_GEO_IO_WKB_WKBREADER_H
 
+#include <stdint.h>  // for uint32_t
+
+#include <string>  // for string
+#include <vector>  // for vector
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Geography.h"
-#include "common/geo/io/wkb/ByteOrder.h"
-#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "common/datatypes/Geography.h"               // for Coordinate (ptr...
+#include "common/geo/io/wkb/ByteOrder.h"              // for ByteOrder
+#include "common/geo/io/wkb/ByteOrderDataIOStream.h"  // for ByteOrderDataIn...
 
 namespace nebula {
 namespace geo {

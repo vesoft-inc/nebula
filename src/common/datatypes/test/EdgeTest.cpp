@@ -3,10 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <stddef.h>       // for size_t
+#include <stdint.h>       // for int64_t
 
-#include "common/base/Base.h"
-#include "common/datatypes/Edge.h"
+#include <string>         // for allocator, hash, string
+#include <unordered_set>  // for unordered_set
+
+#include "common/datatypes/Edge.h"   // for Edge, hash
+#include "common/datatypes/Value.h"  // for Value
 
 namespace nebula {
 TEST(Edge, Format) {

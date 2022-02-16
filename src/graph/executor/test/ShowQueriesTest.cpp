@@ -3,12 +3,27 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include "common/time/TimeUtils.h"
-#include "graph/executor/admin/ShowQueriesExecutor.h"
-#include "graph/executor/test/QueryTestBase.h"
-#include "graph/planner/plan/Admin.h"
+#include <algorithm>    // for find
+#include <memory>       // for allocator, uni...
+#include <string>       // for string, basic_...
+#include <type_traits>  // for remove_referen...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/datatypes/DataSet.h"                  // for Row, DataSet
+#include "common/datatypes/Date.h"                     // for DateTime, Date...
+#include "common/datatypes/HostAddr.h"                 // for HostAddr
+#include "common/datatypes/List.h"                     // for List
+#include "common/time/TimeConversion.h"                // for TimeConversion
+#include "graph/executor/admin/ShowQueriesExecutor.h"  // for ShowQueriesExe...
+#include "graph/executor/test/QueryTestBase.h"         // for QueryTestBase
+#include "graph/planner/plan/Admin.h"                  // for ShowQueries
+#include "interface/gen-cpp2/meta_types.h"             // for QueryDesc, Ses...
 
 namespace nebula {
 namespace graph {

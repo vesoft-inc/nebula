@@ -6,10 +6,24 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_SPACESEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_SPACESEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <string>  // for allocator, string
+
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class CreateSpaceExecutor final : public Executor {
  public:

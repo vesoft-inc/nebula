@@ -3,12 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_uint32
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <stdint.h>                 // for int64_t
 
-#include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
-#include "common/time/WallClock.h"
-#include "kvstore/RateLimiter.h"
+#include <memory>  // for allocator
+
+#include "common/base/Logging.h"    // for SetStderrLogging
+#include "common/time/WallClock.h"  // for WallClock
+#include "kvstore/RateLimiter.h"    // for RateLimiter
 
 DECLARE_uint32(snapshot_part_rate_limit);
 

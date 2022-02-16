@@ -6,13 +6,32 @@
 #ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
 #define GRAPH_PLANNER_PLAN_PLANNODE_H_
 
+#include <stddef.h>  // for size_t
+
+#include <algorithm>    // for transform
+#include <cstdint>      // for int64_t, uint8_t
+#include <memory>       // for unique_ptr, allocator
+#include <ostream>      // for operator<<, ostream
+#include <string>       // for string, basic_string
+#include <type_traits>  // for is_base_of
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"  // for Check_LTImpl, LogMessageF...
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
-#include "graph/context/Symbols.h"
+#include "graph/context/Symbols.h"  // for Variable
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+}  // namespace graph
+struct PlanNodeDescription;
+
+struct PlanNodeDescription;
+
+namespace graph {
+class QueryContext;
 
 /**
  * PlanNode is an abstraction of nodes in an execution plan which

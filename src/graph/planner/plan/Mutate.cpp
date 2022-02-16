@@ -5,8 +5,17 @@
 
 #include "graph/planner/plan/Mutate.h"
 
-#include "graph/util/ToJson.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include <folly/Conv.h>     // for to
+#include <folly/dynamic.h>  // for dynamic::push_back
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/dynamic.h>  // for dynamic::push_back
+#include <folly/dynamic.h>  // for dynamic
+#include <folly/json.h>     // for toJson
+
+#include "common/expression/Expression.h"      // for Expression
+#include "common/graph/Response.h"             // for PlanNodeDescription
+#include "graph/util/ToJson.h"                 // for toJson
+#include "interface/gen-cpp2/storage_types.h"  // for NewEdge, NewVertex
 
 namespace nebula {
 namespace graph {

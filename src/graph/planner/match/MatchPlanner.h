@@ -6,11 +6,29 @@
 #ifndef GRAPH_PLANNER_MATCHPLANNER_H_
 #define GRAPH_PLANNER_MATCHPLANNER_H_
 
+#include <memory>  // for make_unique, unique_ptr
+
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/Planner.h"
+#include "graph/planner/Planner.h"  // for Planner
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+struct AstContext;
+struct CypherClauseContextBase;
+struct MatchClauseContext;
+struct QueryPart;
+struct SubPlan;
+
+class QueryContext;
+struct AstContext;
+struct CypherClauseContextBase;
+struct MatchClauseContext;
+struct QueryPart;
+struct SubPlan;
+
 class MatchPlanner final : public Planner {
  public:
   static std::unique_ptr<MatchPlanner> make() {

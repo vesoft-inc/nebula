@@ -6,8 +6,12 @@
 #ifndef COMMON_HTTPCLIENT_H
 #define COMMON_HTTPCLIENT_H
 
-#include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include <folly/dynamic.h>  // for dynamic
+
+#include <string>         // for string, allocator
+#include <unordered_map>  // for unordered_map
+
+#include "common/base/StatusOr.h"  // for StatusOr
 
 namespace nebula {
 namespace http {

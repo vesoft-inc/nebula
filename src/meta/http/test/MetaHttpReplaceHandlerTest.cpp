@@ -3,18 +3,36 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/sst_file_writer.h>
+#include <folly/String.h>           // for stringPrintf
+#include <folly/init/Init.h>        // for init
+#include <gflags/gflags_declare.h>  // for DECLARE_int32
+#include <glog/logging.h>           // for INFO
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/network/NetworkUtils.h"
-#include "common/process/ProcessUtils.h"
-#include "common/thread/GenericThreadPool.h"
-#include "meta/http/MetaHttpReplaceHostHandler.h"
-#include "meta/test/TestUtils.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<, basic_...
+#include <set>      // for set, operator!=
+#include <string>   // for string, operator<
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/base/Status.h"                    // for operator<<, Status
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/HostAddr.h"             // for HostAddr
+#include "common/fs/TempDir.h"                     // for TempDir
+#include "common/process/ProcessUtils.h"           // for ProcessUtils
+#include "common/thrift/ThriftTypes.h"             // for GraphSpaceID
+#include "common/utils/MetaKeyUtils.h"             // for MetaKeyUtils, kDef...
+#include "interface/gen-cpp2/common_types.h"       // for ErrorCode, ErrorCo...
+#include "kvstore/KVIterator.h"                    // for KVIterator
+#include "kvstore/KVStore.h"                       // for KVStore
+#include "kvstore/NebulaStore.h"                   // for NebulaStore
+#include "meta/http/MetaHttpReplaceHostHandler.h"  // for MetaHttpReplaceHos...
+#include "meta/test/TestUtils.h"                   // for TestUtils, MockClu...
+#include "mock/MockCluster.h"                      // for MockCluster
+#include "webservice/Router.h"                     // for PathParams, Route
+#include "webservice/WebService.h"                 // for WebService, FLAGS_...
 
 DECLARE_int32(ws_storage_http_port);
 

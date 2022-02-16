@@ -3,11 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
 
-#include "clients/meta/FileBasedClusterIdMan.h"
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
+#include <memory>  // for allocator
+
+#include "clients/meta/FileBasedClusterIdMan.h"  // for FileBasedClusterIdMan
+#include "common/base/Logging.h"                 // for Check_EQImpl, Check_...
+#include "common/fs/TempDir.h"                   // for TempDir
 
 namespace nebula {
 namespace meta {

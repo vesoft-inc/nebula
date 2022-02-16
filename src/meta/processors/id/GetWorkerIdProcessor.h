@@ -6,9 +6,26 @@
 #ifndef META_GETWORKERIDPROCESSOR_H_
 #define META_GETWORKERIDPROCESSOR_H_
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <algorithm>  // for max
+#include <string>     // for allocator, string
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Base.h"               // for UNUSED
+#include "interface/gen-cpp2/meta_types.h"  // for GetWorkerIdResp, GetWorke...
+#include "kvstore/Common.h"                 // for KV
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

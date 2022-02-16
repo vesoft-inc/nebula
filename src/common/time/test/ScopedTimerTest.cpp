@@ -3,9 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <stdint.h>       // for int64_t, uint64_t
+#include <unistd.h>       // for usleep
 
-#include "common/time/ScopedTimer.h"
+#include <functional>  // for function
+#include <memory>      // for allocator
+
+#include "common/time/ScopedTimer.h"  // for ScopedTimer, SCOPED_TIMER
 
 namespace nebula {
 

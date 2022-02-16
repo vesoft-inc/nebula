@@ -7,13 +7,32 @@
 #define META_HTTP_METAHTTPINGESTHANDLER_H
 
 #include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/lib/http/HTTPConstants.h>
+#include <proxygen/lib/http/ProxygenErrorEnum.h>
+
+#include <memory>
 
 #include "common/base/Base.h"
 #include "common/thread/GenericThreadPool.h"
+#include "common/thrift/ThriftTypes.h"
 #include "kvstore/KVStore.h"
 #include "webservice/Common.h"
 
+namespace folly {
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
 namespace meta {
 
 using nebula::HttpCode;

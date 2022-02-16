@@ -5,7 +5,14 @@
 
 #include "graph/planner/match/OrderByClausePlanner.h"
 
-#include "graph/planner/plan/Query.h"
+#include <stddef.h>  // for size_t
+
+#include <utility>  // for pair, move
+
+#include "graph/context/ast/CypherAstContext.h"  // for OrderByClauseContext
+#include "graph/planner/plan/ExecutionPlan.h"    // for SubPlan
+#include "graph/planner/plan/Query.h"            // for Sort
+#include "parser/TraverseSentences.h"            // for OrderFactor::OrderType
 
 namespace nebula {
 namespace graph {

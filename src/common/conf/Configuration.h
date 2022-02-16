@@ -5,8 +5,16 @@
 #ifndef COMMON_CONF_CONFIGURATION_H_
 #define COMMON_CONF_CONFIGURATION_H_
 
-#include "common/base/Base.h"
-#include "common/base/Status.h"
+#include <folly/dynamic.h>  // for dynamic
+#include <stdint.h>         // for int64_t
+
+#include <functional>  // for function
+#include <memory>      // for unique_ptr
+#include <string>      // for string
+#include <vector>      // for vector
+
+#include "common/base/Base.h"    // for NG_MUST_USE_RESULT
+#include "common/base/Status.h"  // for Status
 
 /**
  * Configuration loads config infos from a json file or string buffer.

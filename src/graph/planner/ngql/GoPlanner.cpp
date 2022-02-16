@@ -5,9 +5,43 @@
 
 #include "graph/planner/ngql/GoPlanner.h"
 
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/PlannerUtil.h"
+#include <folly/Range.h>                           // for Range, operator<
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref
+
+#include <algorithm>      // for transform
+#include <cstdint>        // for int64_t, uint32_t
+#include <ostream>        // for operator<<, basi...
+#include <set>            // for operator!=, set
+#include <unordered_map>  // for _Node_const_iter...
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                        // for kDst, kVid
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/List.h"                   // for List
+#include "common/datatypes/Value.h"                  // for Value, Value::kE...
+#include "common/expression/ArithmeticExpression.h"  // for ArithmeticExpres...
+#include "common/expression/ColumnExpression.h"      // for ColumnExpression
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for VariableProperty...
+#include "common/expression/SubscriptExpression.h"   // for SubscriptExpression
+#include "common/expression/VariableExpression.h"    // for VariableExpression
+#include "graph/context/ExecutionContext.h"          // for ExecutionContext
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/Symbols.h"                   // for Variable, Symbol...
+#include "graph/context/ValidateContext.h"           // for ValidateContext
+#include "graph/planner/plan/Logic.h"                // for Loop, PassThroug...
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode
+#include "graph/planner/plan/Query.h"                // for GetNeighbors
+#include "graph/session/ClientSession.h"             // for SpaceInfo
+#include "graph/util/AnonColGenerator.h"             // for AnonColGenerator
+#include "graph/util/AnonVarGenerator.h"             // for AnonVarGenerator
+#include "graph/util/ExpressionUtils.h"              // for ExpressionUtils
+#include "graph/util/PlannerUtil.h"                  // for PlannerUtil
+#include "parser/Clauses.h"                          // for YieldColumns
 
 namespace nebula {
 namespace graph {

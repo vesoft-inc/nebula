@@ -5,11 +5,13 @@
 
 #include "kvstore/LogEncoder.h"
 
-#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
+#include <folly/small_vector.h>
+#include <thrift/lib/cpp2/protocol/CompactProtocol-inl.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
-#include "common/base/Base.h"
+#include "common/base/Logging.h"
 #include "common/datatypes/HostAddrOps-inl.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/time/WallClock.h"
 
 namespace nebula {

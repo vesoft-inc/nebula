@@ -5,6 +5,16 @@
 
 #include "graph/planner/match/MatchPlanner.h"
 
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "graph/context/QueryContext.h"
+#include "graph/context/ValidateContext.h"
+#include "graph/context/ast/AstContext.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchClausePlanner.h"
 #include "graph/planner/match/ReturnClausePlanner.h"
@@ -12,8 +22,10 @@
 #include "graph/planner/match/UnwindClausePlanner.h"
 #include "graph/planner/match/WithClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/util/AnonVarGenerator.h"
+#include "parser/Sentence.h"
 
 namespace nebula {
 namespace graph {

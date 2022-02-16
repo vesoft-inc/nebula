@@ -3,11 +3,16 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, BENCHMARK_RELATIVE
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/Conv.h>           // for to
+#include <folly/init/Init.h>      // for init
 
-#include "common/base/Base.h"
-#include "common/base/Cord.h"
-#include "common/base/ICord.h"
+#include <ostream>  // for operator<<, stringstream, basic_ost...
+#include <string>   // for string, char_traits
+
+#include "common/base/Cord.h"   // for Cord
+#include "common/base/ICord.h"  // for ICord
 
 using nebula::Cord;
 using nebula::ICord;

@@ -5,9 +5,31 @@
 
 #include "graph/planner/match/PropIndexSeek.h"
 
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <cstdint>  // for int32_t
+#include <ostream>  // for operator<<
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Base.h"                       // for kVid, kDst, kSrc
+#include "common/base/Logging.h"                    // for Check_EQImpl, COM...
+#include "common/base/ObjectPool.h"                 // for ObjectPool
+#include "common/expression/ContainerExpression.h"  // for MapExpression
+#include "common/expression/Expression.h"           // for Expression
+#include "common/expression/LogicalExpression.h"    // for LogicalExpression
+#include "common/expression/PropertyExpression.h"   // for InputPropertyExpr...
+#include "graph/context/QueryContext.h"             // for QueryContext
+#include "graph/context/ast/CypherAstContext.h"     // for MatchClauseContext
+#include "graph/planner/match/MatchSolver.h"        // for MatchSolver
+#include "graph/planner/plan/ExecutionPlan.h"       // for SubPlan
+#include "graph/planner/plan/PlanNode.h"            // for PlanNode
+#include "graph/planner/plan/Query.h"               // for IndexScan::IndexQ...
+#include "graph/session/ClientSession.h"            // for SpaceInfo
+#include "interface/gen-cpp2/storage_types.h"       // for IndexQueryContext
+#include "parser/Clauses.h"                         // for YieldColumns, Yie...
+#include "parser/MatchSentence.h"                   // for MatchEdge, MatchE...
 
 namespace nebula {
 namespace graph {

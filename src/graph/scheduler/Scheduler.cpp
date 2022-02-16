@@ -5,18 +5,18 @@
 
 #include "graph/scheduler/Scheduler.h"
 
+#include <stdint.h>
+
+#include <algorithm>
 #include <atomic>
 #include <limits>
+#include <stack>
+#include <tuple>
+#include <vector>
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/ExecutionError.h"
-#include "graph/executor/Executor.h"
-#include "graph/executor/logic/LoopExecutor.h"
-#include "graph/executor/logic/PassThroughExecutor.h"
-#include "graph/executor/logic/SelectExecutor.h"
+#include "graph/context/Symbols.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

@@ -6,9 +6,16 @@
 #ifndef COMMON_DATATYPES_MAP_H_
 #define COMMON_DATATYPES_MAP_H_
 
-#include <unordered_map>
+#include <folly/dynamic.h>  // for dynamic
 
-#include "common/datatypes/Value.h"
+#include <cstddef>        // for size_t
+#include <iosfwd>         // for ostream
+#include <string>         // for string, operator==, hash, basic_...
+#include <string_view>    // for hash
+#include <unordered_map>  // for unordered_map, operator==, _Node...
+#include <utility>        // for move, pair
+
+#include "common/datatypes/Value.h"  // for Value, operator==, Value::kNullU...
 
 namespace nebula {
 

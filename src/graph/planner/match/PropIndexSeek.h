@@ -6,10 +6,21 @@
 #ifndef GRAPH_PLANNER_MATCH_PROPINDEXSEEK_H_
 #define GRAPH_PLANNER_MATCH_PROPINDEXSEEK_H_
 
-#include "graph/planner/match/StartVidFinder.h"
+#include <memory>  // for unique_ptr
+
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "graph/planner/match/StartVidFinder.h"  // for StartVidFinder
 
 namespace nebula {
 namespace graph {
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
 /*
  * The PropIndexSeek was designed to find if could get starting vids by tag
  * props or edge props index.

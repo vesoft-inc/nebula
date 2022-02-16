@@ -6,10 +6,21 @@
 #ifndef COMMON_ID_SNOWFLAKE_H_
 #define COMMON_ID_SNOWFLAKE_H_
 
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int64_t
+
+#include <mutex>  // for mutex
+
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 
 namespace nebula {
+namespace meta {
+class MetaClient;
+
+class MetaClient;
+}  // namespace meta
+
 class Snowflake {
   FRIEND_TEST(SnowflakeTest, TestWorkerId);
   FRIEND_TEST(SnowflakeTest, TestConcurrency);

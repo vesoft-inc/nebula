@@ -6,22 +6,55 @@
 #ifndef GRAPH_UTIL_SCHEMAUTIL_H_
 #define GRAPH_UTIL_SCHEMAUTIL_H_
 
-#include "common/base/StatusOr.h"
+#include <memory>  // for shared_ptr, unique_ptr
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/datatypes/DataSet.h"
+#include "common/datatypes/Value.h"  // for Value, Value::Type
 #include "common/expression/Expression.h"
 #include "common/meta/NebulaSchemaProvider.h"
-#include "interface/gen-cpp2/common_types.h"
+#include "common/thrift/ThriftTypes.h"        // for EdgeType, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
 #include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeProp, VertexProp
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
+class Expression;
+class SchemaPropItem;
+namespace meta {
+class NebulaSchemaProvider;
+namespace cpp2 {
+class ColumnDef;
+class ColumnTypeDef;
+class Schema;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
+class Expression;
+class SchemaPropItem;
+namespace meta {
+class NebulaSchemaProvider;
+namespace cpp2 {
+class ColumnDef;
+class ColumnTypeDef;
+class Schema;
+}  // namespace cpp2
+}  // namespace meta
+struct DataSet;
+
 namespace graph {
 class QueryContext;
 struct SpaceInfo;
+
 class SchemaUtil final {
  public:
-  using VertexProp = nebula::storage::cpp2::VertexProp;
-  using EdgeProp = nebula::storage::cpp2::EdgeProp;
+  using VertexProp = storage::cpp2::VertexProp;
+  using EdgeProp = storage::cpp2::EdgeProp;
   SchemaUtil() = delete;
 
  public:
@@ -50,19 +83,18 @@ class SchemaUtil final {
   static std::string typeToString(const meta::cpp2::ColumnTypeDef& col);
   static std::string typeToString(const meta::cpp2::ColumnDef& col);
 
-  static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
+  static Value::Type propTypeToValueType(::nebula::cpp2::PropertyType propType);
 
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
 
-  static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);
+  static bool isValidVid(const Value& value, ::nebula::cpp2::PropertyType type);
 
   static bool isValidVid(const Value& value);
 
   // Fetch all tags in the space and retrieve props from tags
   // only take _tag when withProp is false
-  static StatusOr<std::unique_ptr<std::vector<VertexProp>>> getAllVertexProp(QueryContext* qctx,
-                                                                             GraphSpaceID spaceId,
-                                                                             bool withProp);
+  static StatusOr<std::unique_ptr<std::vector<::nebula::storage::cpp2::VertexProp>>>
+  getAllVertexProp(QueryContext* qctx, GraphSpaceID spaceId, bool withProp);
 
   // retrieve prop from specific edgetypes
   // only take _src _dst _type _rank when withProp is false

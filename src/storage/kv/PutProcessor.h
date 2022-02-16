@@ -6,8 +6,15 @@
 #ifndef STORAGE_KV_PUTPROCESSOR_H_
 #define STORAGE_KV_PUTPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+
+#include <utility>  // for move
+
 #include "common/base/Base.h"
-#include "storage/BaseProcessor.h"
+#include "interface/gen-cpp2/storage_types.h"  // for ExecResponse, KVPutReq...
+#include "storage/BaseProcessor.h"             // for BaseProcessor
+#include "storage/CommonUtils.h"               // for StorageEnv (ptr only)
 
 namespace nebula {
 namespace storage {

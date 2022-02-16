@@ -3,18 +3,54 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/futures/Future.h>         // for Future::get
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gflags/gflags_declare.h>        // for DECLARE_bool
+#include <glog/logging.h>                 // for INFO
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartResult
+#include <stddef.h>                       // for NULL
+#include <stdint.h>                       // for uint32_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>     // for optional_field_ref
+#include <unistd.h>                       // for sleep, size_t
 
-#include "codec/RowReader.h"
-#include "common/base/Base.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/mutate/UpdateVertexProcessor.h"
-#include "storage/test/TestUtils.h"
+#include <atomic>         // for atomic
+#include <memory>         // for allocator, alloc...
+#include <ostream>        // for operator<<, basi...
+#include <string>         // for basic_string
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for _Node_iterator
+#include <utility>        // for move, make_pair
+#include <vector>         // for vector
+
+#include "codec/RowReaderWrapper.h"                  // for RowReaderWrapper
+#include "codec/RowWriterV2.h"                       // for RowWriterV2, Wri...
+#include "common/base/Base.h"                        // for kTag, kVid
+#include "common/base/Logging.h"                     // for LOG, LogMessage
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/DataSet.h"                // for DataSet
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for SourcePropertyEx...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "common/fs/TempDir.h"                       // for TempDir
+#include "common/meta/NebulaSchemaProvider.h"        // for NebulaSchemaProv...
+#include "common/meta/SchemaManager.h"               // for SchemaManager
+#include "common/thrift/ThriftTypes.h"               // for GraphSpaceID, TagID
+#include "common/utils/NebulaKeyUtils.h"             // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode, Error...
+#include "interface/gen-cpp2/storage_types.h"        // for UpdatedProp, Upd...
+#include "kvstore/Common.h"                          // for KV
+#include "kvstore/KVIterator.h"                      // for KVIterator
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "mock/MockCluster.h"                        // for MockCluster
+#include "mock/MockData.h"                           // for VertexData, Mock...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/mutate/UpdateVertexProcessor.h"    // for UpdateVertexProc...
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);

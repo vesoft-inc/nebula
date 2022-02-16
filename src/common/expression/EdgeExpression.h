@@ -6,9 +6,18 @@
 #ifndef COMMON_EXPRESSION_EDGEEXPRESSION_H_
 #define COMMON_EXPRESSION_EDGEEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <string>  // for allocator, operator<<, string
+
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression, Expression::En...
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 /**
  * This is an internal type of expression to denote a Edge value.

@@ -5,6 +5,8 @@
 
 #include "common/charset/Charset.h"
 
+#include <utility>  // for pair
+
 namespace nebula {
 
 Status CharsetInfo::isSupportCharset(const std::string& charsetName) {

@@ -6,14 +6,30 @@
 #ifndef META_METAUTILS_H_
 #define META_METAUTILS_H_
 
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+
+#include <functional>     // for function
+#include <string>         // for string
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"  // for ErrorOr
 #include "common/base/Status.h"
 #include "common/datatypes/HostAddr.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ColumnDef (ptr only)
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class MetaServiceUtils final {

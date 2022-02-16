@@ -6,10 +6,32 @@
 #ifndef GRAPH_EXECUTOR_ALGO_PRODUCEALLPATHSEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_PRODUCEALLPATHSEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <stddef.h>                // for size_t
+
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for vector, allocator
+
+#include "common/datatypes/Value.h"   // for Value, hash, operator==
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+struct Edge;
+struct Path;
+
+class Status;
+struct Edge;
+struct Path;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class ProduceAllPathsExecutor final : public Executor {
  public:
   ProduceAllPathsExecutor(const PlanNode* node, QueryContext* qctx)

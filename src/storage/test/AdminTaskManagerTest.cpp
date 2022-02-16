@@ -3,13 +3,58 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/Optional.h>                        // for None, Optional, none
+#include <folly/Try.h>                             // for Try::~Try<T>
+#include <folly/concurrency/ConcurrentHashMap.h>   // for ConcurrentHashMap
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Future.h>                  // for Future::Future<T>
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Promise.h>                 // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                 // for Promise, PromiseEx...
+#include <folly/futures/Promise.h>                 // for Promise::Promise<T>
+#include <folly/futures/Promise.h>                 // for Promise, PromiseEx...
+#include <folly/hash/Hash.h>                       // for hash
+#include <folly/init/Init.h>                       // for init
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stddef.h>                                // for size_t
+#include <stdint.h>                                // for uint64_t
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "storage/admin/AdminTaskManager.h"
+#include <algorithm>      // for max
+#include <atomic>         // for atomic, __atomic_base
+#include <chrono>         // for milliseconds, chro...
+#include <cmath>          // for pow
+#include <functional>     // for function, _Bind_he...
+#include <memory>         // for shared_ptr, make_s...
+#include <mutex>          // for mutex, lock_guard
+#include <ostream>        // for operator<<, basic_...
+#include <set>            // for set
+#include <thread>         // for sleep_for
+#include <thread>         // for thread::id, get_id
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for make_pair, pair
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/base/Logging.h"              // for LOG, LogMessage
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCo...
+#include "storage/admin/AdminTask.h"          // for AdminSubTask, Admi...
+#include "storage/admin/AdminTaskManager.h"   // for AdminTaskManager
+
+namespace nebula {
+namespace meta {
+namespace cpp2 {
+class StatsItem;
+
+class StatsItem;
+}  // namespace cpp2
+}  // namespace meta
+}  // namespace nebula
 
 using namespace std::chrono_literals;  // NOLINT
 

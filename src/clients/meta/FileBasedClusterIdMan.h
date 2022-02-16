@@ -6,8 +6,8 @@
 #ifndef CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
 #define CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
+#include <string>
+
 #include "common/meta/ClusterIdManBase.h"
 
 namespace nebula {

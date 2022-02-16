@@ -6,8 +6,15 @@
 #ifndef COMMON_BASE_SLOWOPTRACKER_H_
 #define COMMON_BASE_SLOWOPTRACKER_H_
 
+#include <gflags/gflags_declare.h>  // for DECLARE_int64
+#include <stdint.h>                 // for int64_t
+
+#include <ostream>  // for operator<<, basic_ostream, basic_...
+#include <string>   // for operator<<, char_traits, string
+
 #include "common/base/Base.h"
-#include "common/time/WallClock.h"
+#include "common/base/Logging.h"    // for LOG, LogMessage, _LOG_INFO
+#include "common/time/WallClock.h"  // for WallClock
 
 DECLARE_int64(slow_op_threshold_ms);
 

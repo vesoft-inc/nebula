@@ -5,10 +5,23 @@
 
 #include "graph/optimizer/rule/PushLimitDownIndexScanRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <stdint.h>  // for int64_t
+
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode, OptGroup
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for IndexScan, Limit, Project (...
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::graph::IndexScan;
 using nebula::graph::Limit;

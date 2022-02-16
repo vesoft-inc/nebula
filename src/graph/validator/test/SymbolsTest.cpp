@@ -3,8 +3,24 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/Base.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+
+#include <cstdint>        // for int64_t
+#include <ostream>        // for operator<<, stri...
+#include <string>         // for string, allocator
+#include <type_traits>    // for remove_reference...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
+
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value, Value::Type
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/context/Symbols.h"                   // for Variable, Symbol...
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
 
 namespace nebula {
 namespace graph {

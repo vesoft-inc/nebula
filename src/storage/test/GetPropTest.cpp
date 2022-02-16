@@ -2,13 +2,46 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <gtest/gtest.h>
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/init/Init.h>                       // for init
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <rocksdb/statistics.h>                    // for Statistics, Tickers
+#include <stddef.h>                                // for size_t
+#include <stdint.h>                                // for int32_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, optiona...
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/RocksEngineConfig.h"
-#include "storage/query/GetPropProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <memory>         // for allocator, shared_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for _Map_base<>::mappe...
+#include <utility>        // for pair, move, make_pair
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                  // for kVid, kDst, kRank
+#include "common/base/Logging.h"               // for LOG, LogMessage
+#include "common/base/StatusOr.h"              // for StatusOr
+#include "common/datatypes/DataSet.h"          // for Row, DataSet
+#include "common/datatypes/Value.h"            // for Value, hash
+#include "common/fs/TempDir.h"                 // for TempDir
+#include "common/meta/SchemaManager.h"         // for SchemaManager
+#include "common/thrift/ThriftTypes.h"         // for TagID, VertexID
+#include "common/utils/NebulaKeyUtils.h"       // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"   // for ErrorCode, ErrorCo...
+#include "interface/gen-cpp2/storage_types.h"  // for EdgeKey, GetPropRe...
+#include "kvstore/KVIterator.h"                // for KVIterator
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "kvstore/RocksEngineConfig.h"         // for getDBStatistics
+#include "mock/MockCluster.h"                  // for MockCluster
+#include "storage/CommonUtils.h"               // for StorageEnv
+#include "storage/StorageFlags.h"              // for FLAGS_query_concur...
+#include "storage/query/GetPropProcessor.h"    // for GetPropProcessor
+#include "storage/test/QueryTestUtils.h"       // for QueryTestUtils
 
 namespace nebula {
 namespace storage {

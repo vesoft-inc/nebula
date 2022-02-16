@@ -6,10 +6,18 @@
 #ifndef COMMON_DATATYPES_LIST_H_
 #define COMMON_DATATYPES_LIST_H_
 
-#include <algorithm>
-#include <vector>
+#include <folly/dynamic.h>  // for dynamic
 
-#include "common/datatypes/Value.h"
+#include <algorithm>    // for equal, find
+#include <cstddef>      // for size_t
+#include <iosfwd>       // for ostream
+#include <string>       // for operator<<, string
+#include <string_view>  // for hash
+#include <type_traits>  // for enable_if, is_convertible
+#include <utility>      // for move, forward
+#include <vector>       // for vector, vector<>::const_iterator
+
+#include "common/datatypes/Value.h"  // for Value, operator==, hash, operator<
 
 namespace nebula {
 

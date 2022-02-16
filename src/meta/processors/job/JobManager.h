@@ -6,24 +6,57 @@
 #ifndef META_JOBMANAGER_H_
 #define META_JOBMANAGER_H_
 
-#include <folly/concurrency/ConcurrentHashMap.h>
-#include <folly/concurrency/UnboundedQueue.h>
-#include <gtest/gtest_prod.h>
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <folly/concurrency/UnboundedQueue.h>     // for UMPSCQueue
+#include <gtest/gtest_prod.h>                     // for FRIEND_TEST
+#include <stddef.h>                               // for size_t
+#include <stdint.h>                               // for int32_t, uint32_t
 
-#include <boost/core/noncopyable.hpp>
+#include <algorithm>                   // for max
+#include <atomic>                      // for atomic
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <list>                        // for list
+#include <map>                         // for map
+#include <memory>                      // for unique_ptr
+#include <mutex>                       // for mutex, recursive_mutex
+#include <string>                      // for string
+#include <thread>                      // for thread
+#include <unordered_map>               // for unordered_map
+#include <unordered_set>               // for unordered_set
+#include <utility>                     // for pair
+#include <vector>                      // for vector
 
 #include "common/base/Base.h"
-#include "common/base/ErrorOr.h"
-#include "common/stats/StatsManager.h"
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/cpp/helpers.h"               // for NonMovable
+#include "common/stats/StatsManager.h"        // for CounterId
+#include "common/thrift/ThriftTypes.h"        // for JobID, GraphSpaceID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for JobDesc (ptr only)
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/JobDescription.h"  // for JobDescription
 #include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/StorageJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+class JobExecutor;
+class TaskDescription;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
+class JobExecutor;
+class TaskDescription;
+
 extern stats::CounterId kNumRunningJobs;
 
 class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {

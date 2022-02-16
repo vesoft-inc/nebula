@@ -6,13 +6,25 @@
 #ifndef STORAGE_TRANSACTION_CHAINADDEDGESGROUPPROCESSOR_H
 #define STORAGE_TRANSACTION_CHAINADDEDGESGROUPPROCESSOR_H
 
-#include "storage/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Prom...
+#include <folly/hash/Hash.h>        // for hash
+
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move, pair
+
+#include "common/thrift/ThriftTypes.h"         // for PartitionID
+#include "interface/gen-cpp2/storage_types.h"  // for AddEdgesRequest, ExecR...
+#include "storage/BaseProcessor.h"             // for BaseProcessor
 #include "storage/transaction/ChainBaseProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 #include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 class ChainAddEdgesGroupProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:

@@ -6,9 +6,11 @@
 #include "common/time/TimeUtils.h"
 
 #include <limits>
+#include <unordered_map>
 
-#include "common/fs/FileUtils.h"
-#include "common/time/TimezoneInfo.h"
+#include "common/datatypes/Duration.h"
+#include "common/datatypes/Map.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/time/parser/DatetimeReader.h"
 
 namespace nebula {

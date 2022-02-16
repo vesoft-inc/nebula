@@ -3,19 +3,76 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/synchronization/Baton.h>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <folly/Random.h>                 // for Random
+#include <folly/Range.h>                  // for Range
+#include <folly/Try.h>                    // for Try::~Try<T>
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Future.h>         // for Future::Fu...
+#include <folly/futures/Future.h>         // for Future
+#include <folly/futures/Promise.h>        // for Promise::P...
+#include <folly/futures/Promise.h>        // for PromiseExc...
+#include <folly/futures/Promise.h>        // for Promise::P...
+#include <folly/futures/Promise.h>        // for PromiseExc...
+#include <folly/init/Init.h>              // for init
+#include <folly/synchronization/Baton.h>  // for Baton
+#include <gflags/gflags_declare.h>        // for DECLARE_ui...
+#include <glog/logging.h>                 // for INFO
+#include <gmock/gmock-actions.h>          // for ByMove
+#include <gmock/gmock-cardinalities.h>    // for AtLeast
+#include <gmock/gmock-matchers.h>         // for _
+#include <gmock/gmock-nice-strict.h>      // for NiceMock
+#include <gmock/gmock-spec-builders.h>    // for TypedExpec...
+#include <gtest/gtest-matchers.h>         // for Matcher
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartRe...
+#include <gtest/gtest.h>                  // for Message
+#include <gtest/gtest.h>                  // for TestPartRe...
+#include <string.h>                       // for memcpy
+#include <thrift/lib/cpp2/FieldRef.h>     // for field_ref
+#include <unistd.h>                       // for sleep, size_t
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "meta/processors/job/BalanceJobExecutor.h"
-#include "meta/processors/job/DataBalanceJobExecutor.h"
-#include "meta/processors/job/LeaderBalanceJobExecutor.h"
-#include "meta/processors/job/ZoneBalanceJobExecutor.h"
-#include "meta/processors/parts/CreateSpaceProcessor.h"
-#include "meta/test/MockAdminClient.h"
-#include "meta/test/TestUtils.h"
+#include <algorithm>      // for find
+#include <atomic>         // for atomic
+#include <chrono>         // for seconds
+#include <cmath>          // for ceil, floor
+#include <cstdint>        // for int32_t
+#include <functional>     // for function
+#include <map>            // for map, opera...
+#include <memory>         // for allocator
+#include <ostream>        // for operator<<
+#include <set>            // for set
+#include <string>         // for string
+#include <tuple>          // for get
+#include <type_traits>    // for remove_ref...
+#include <unordered_map>  // for unordered_...
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"                           // for ok, value
+#include "common/base/Logging.h"                           // for LOG, LogMe...
+#include "common/base/Status.h"                            // for Status
+#include "common/datatypes/HostAddr.h"                     // for HostAddr
+#include "common/fs/TempDir.h"                             // for TempDir
+#include "common/thrift/ThriftTypes.h"                     // for PartitionID
+#include "common/utils/MetaKeyUtils.h"                     // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"               // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"                 // for SpaceDesc
+#include "kvstore/Common.h"                                // for KV
+#include "kvstore/KVIterator.h"                            // for KVIterator
+#include "kvstore/KVStore.h"                               // for KVStore
+#include "kvstore/NebulaStore.h"                           // for NebulaStore
+#include "meta/processors/admin/AdminClient.h"             // for HostLeaderMap
+#include "meta/processors/job/BalanceJobExecutor.h"        // for Zone, Spac...
+#include "meta/processors/job/BalancePlan.h"               // for BalancePlan
+#include "meta/processors/job/BalanceTask.h"               // for BalanceTask
+#include "meta/processors/job/DataBalanceJobExecutor.h"    // for DataBalanc...
+#include "meta/processors/job/JobDescription.h"            // for JobDescrip...
+#include "meta/processors/job/LeaderBalanceJobExecutor.h"  // for LeaderBala...
+#include "meta/processors/job/ZoneBalanceJobExecutor.h"    // for ZoneBalanc...
+#include "meta/processors/parts/CreateSpaceProcessor.h"    // for CreateSpac...
+#include "meta/test/MockAdminClient.h"                     // for MockAdminC...
+#include "meta/test/TestUtils.h"                           // for TestUtils
+#include "mock/MockCluster.h"                              // for MockCluster
 
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(heartbeat_interval_secs);

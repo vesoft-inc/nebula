@@ -6,8 +6,14 @@
 #ifndef META_METASERVICEHANDLER_H_
 #define META_METASERVICEHANDLER_H_
 
+#include <folly/futures/Future.h>
+
+#include <memory>
+
 #include "common/base/Base.h"
+#include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/MetaService.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/AgentHBProcessor.h"
@@ -16,6 +22,10 @@
 #include "meta/processors/job/JobManager.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {

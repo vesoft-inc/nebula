@@ -5,11 +5,27 @@
 
 #include "codec/RowWriterV2.h"
 
-#include <cmath>
+#include <folly/Conv.h>  // for to
+#include <string.h>      // for memcpy, size_t, memset
 
-#include "common/time/TimeUtils.h"
-#include "common/time/WallClock.h"
-#include "common/utils/DefaultValueContext.h"
+#include <cmath>        // for round
+#include <cstdint>      // for uint32_t, int32_t, int...
+#include <limits>       // for numeric_limits
+#include <memory>       // for allocator_traits<>::va...
+#include <type_traits>  // for remove_reference<>::type
+
+#include "codec/RowReader.h"                   // for RowReader
+#include "common/base/ObjectPool.h"            // for ObjectPool
+#include "common/base/StatusOr.h"              // for StatusOr
+#include "common/datatypes/Date.h"             // for DateTime, DateTime::(a...
+#include "common/datatypes/Duration.h"         // for Duration
+#include "common/expression/Expression.h"      // for Expression
+#include "common/thrift/ThriftTypes.h"         // for SchemaVer
+#include "common/time/TimeUtils.h"             // for TimeUtils
+#include "common/time/WallClock.h"             // for WallClock
+#include "common/utils/DefaultValueContext.h"  // for DefaultValueContext
+#include "interface/gen-cpp2/common_types.h"   // for PropertyType, Property...
+#include "interface/gen-cpp2/meta_types.h"     // for GeoShape, GeoShape::ANY
 
 namespace nebula {
 

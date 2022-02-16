@@ -5,6 +5,22 @@
 
 #include "codec/RowReaderV2.h"
 
+#include <string.h>  // for memcpy, size_t
+
+#include <ostream>      // for operator<<, basic_ostream
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "common/base/Logging.h"              // for Check_LTImpl, Check_EQImpl
+#include "common/base/Status.h"               // for operator<<
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/datatypes/Date.h"            // for DateTime, DateTime::(an...
+#include "common/datatypes/Duration.h"        // for Duration
+#include "common/datatypes/Geography.h"       // for Geography
+#include "common/meta/SchemaProviderIf.h"     // for SchemaProviderIf, Schem...
+#include "common/thrift/ThriftTypes.h"        // for Timestamp, SchemaVer
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType, PropertyT...
+
 namespace nebula {
 
 using nebula::cpp2::PropertyType;

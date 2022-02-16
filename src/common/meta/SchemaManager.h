@@ -7,15 +7,29 @@
 #define COMMON_META_SCHEMAMANAGER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int32_t
+
+#include <memory>         // for shared_ptr
+#include <string>         // for string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
 
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/meta/NebulaSchemaProvider.h"
+#include "common/thrift/ThriftTypes.h"        // for GraphSpaceID, TagID
+#include "interface/gen-cpp2/common_types.h"  // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"    // for ExternalServiceType
 
 namespace nebula {
 namespace meta {
+class NebulaSchemaProvider;
 
 class MetaClient;
+class NebulaSchemaProvider;
 
 using TagSchemas =
     std::unordered_map<TagID, std::vector<std::shared_ptr<const NebulaSchemaProvider>>>;
@@ -34,7 +48,7 @@ class SchemaManager {
 
   virtual StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) = 0;
 
-  virtual StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
+  virtual StatusOr<::nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
     return Status::Error("Not implemented");
   }
 
@@ -82,7 +96,7 @@ class SchemaManager {
   // get all latest version of all edge schema
   virtual StatusOr<EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) = 0;
 
-  virtual StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+  virtual StatusOr<std::vector<::nebula::meta::cpp2::ServiceClient>> getServiceClients(
       cpp2::ExternalServiceType type) = 0;
 
   // Get the TagID or EdgeType by the name.
@@ -91,7 +105,7 @@ class SchemaManager {
   StatusOr<std::pair<bool, int32_t>> getSchemaIDByName(GraphSpaceID space,
                                                        folly::StringPiece schemaName);
 
-  virtual StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
+  virtual StatusOr<std::pair<std::string, ::nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) = 0;
 
  protected:

@@ -6,6 +6,11 @@
 #ifndef COMMON_BASE_OPERATIONKEYUTILS_H_
 #define COMMON_BASE_OPERATIONKEYUTILS_H_
 
+#include <folly/Range.h>  // for StringPiece
+
+#include <string>  // for string
+
+#include "common/thrift/ThriftTypes.h"  // for PartitionID
 #include "common/utils/Types.h"
 
 namespace nebula {

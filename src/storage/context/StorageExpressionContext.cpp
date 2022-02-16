@@ -5,10 +5,15 @@
 
 #include "storage/context/StorageExpressionContext.h"
 
-#include "common/utils/DefaultValueContext.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "storage/exec/QueryUtils.h"
+#include <folly/Range.h>  // for Range
+#include <string.h>       // for memcpy
+
+#include <type_traits>  // for remove_reference<>::type
+
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/utils/IndexKeyUtils.h"   // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "storage/exec/QueryUtils.h"      // for QueryUtils
 
 namespace nebula {
 namespace storage {

@@ -3,8 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/validator/MatchValidator.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
 
 namespace nebula {
 namespace graph {

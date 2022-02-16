@@ -6,15 +6,56 @@
 #ifndef META_HTTP_METAHTTPDOWNLOADHANDLER_H_
 #define META_HTTP_METAHTTPDOWNLOADHANDLER_H_
 
-#include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/httpserver/RequestHandler.h>   // for RequestHandler
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for ProxygenError
+#include <stdint.h>                               // for int32_t
+
+#include <memory>  // for unique_ptr
+#include <string>  // for string
 
 #include "common/base/Base.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/thread/GenericThreadPool.h"
+#include "common/thrift/ThriftTypes.h"  // for GraphSpaceID
 #include "kvstore/KVStore.h"
-#include "webservice/Common.h"
+#include "webservice/Common.h"  // for HttpCode, HttpCode:...
 
 namespace nebula {
+namespace hdfs {
+class HdfsHelper;
+}  // namespace hdfs
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+}  // namespace nebula
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace nebula {
+namespace hdfs {
+class HdfsHelper;
+}  // namespace hdfs
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+
 namespace meta {
 
 using nebula::HttpCode;

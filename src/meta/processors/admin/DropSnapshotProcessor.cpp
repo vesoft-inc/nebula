@@ -5,8 +5,25 @@
 
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 
-#include "common/fs/FileUtils.h"
-#include "meta/processors/admin/SnapShot.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for operator<<, char_traits
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/network/NetworkUtils.h"      // for NetworkUtils
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaul...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doSyncPut
+#include "meta/processors/Common.h"           // for LockUtils
+#include "meta/processors/admin/SnapShot.h"   // for Snapshot
 
 namespace nebula {
 namespace meta {

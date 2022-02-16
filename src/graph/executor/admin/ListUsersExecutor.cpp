@@ -5,8 +5,26 @@
 
 #include "graph/executor/admin/ListUsersExecutor.h"
 
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/Admin.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Future.h>   // for Future::Future<T>, Future...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+#include <folly/futures/Promise.h>  // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string, all...
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_map>  // for unordered_map, _Node_iter...
+#include <utility>        // for move
+
+#include "clients/meta/MetaClient.h"     // for MetaClient
+#include "common/base/Status.h"          // for Status
+#include "common/base/StatusOr.h"        // for StatusOr
+#include "common/datatypes/DataSet.h"    // for DataSet, Row
+#include "common/datatypes/Value.h"      // for Value
+#include "common/time/ScopedTimer.h"     // for SCOPED_TIMER
+#include "graph/context/QueryContext.h"  // for QueryContext
 
 namespace nebula {
 namespace graph {

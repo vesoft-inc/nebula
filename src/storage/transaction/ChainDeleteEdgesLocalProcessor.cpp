@@ -5,14 +5,37 @@
 
 #include "storage/transaction/ChainDeleteEdgesLocalProcessor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/futures/Future.h>                 // for SemiFuture::rele...
+#include <folly/futures/Promise.h>                // for Promise::Promise<T>
+#include <folly/small_vector.h>                   // for small_vector
+#include <thrift/lib/cpp/util/EnumUtils.h>        // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>             // for field_ref, optio...
+#include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
-#include "common/utils/DefaultValueContext.h"
-#include "kvstore/Part.h"
-#include "storage/StorageFlags.h"
-#include "storage/mutate/DeleteEdgesProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include <functional>     // for _Bind, bind, _1
+#include <optional>       // for optional
+#include <ostream>        // for operator<<, basi...
+#include <tuple>          // for tie, _Swallow_as...
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+
+#include "clients/meta/MetaClient.h"                 // for MetaClient
+#include "clients/storage/InternalStorageClient.h"   // for InternalStorageC...
+#include "common/base/ErrorOr.h"                     // for error, ok, value
+#include "common/base/Logging.h"                     // for Check_EQImpl
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/utils/MemoryLockWrapper.h"          // for MemoryLockGuard
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "kvstore/LogEncoder.h"                      // for BatchHolder, enc...
+#include "kvstore/Part.h"                            // for Part
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::p...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/mutate/DeleteEdgesProcessor.h"     // for DeleteEdgesProce...
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {

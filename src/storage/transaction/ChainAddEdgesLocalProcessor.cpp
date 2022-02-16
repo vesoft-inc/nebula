@@ -5,14 +5,45 @@
 
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <bits/std_abs.h>                         // for abs
+#include <folly/FBString.h>                       // for operator<<
+#include <folly/Format.h>                         // for sformat
+#include <folly/String.h>                         // for hexlify
+#include <folly/futures/Future.h>                 // for SemiFuture::rele...
+#include <folly/futures/Promise.h>                // for Promise::Promise<T>
+#include <folly/small_vector.h>                   // for small_vector
+#include <stdlib.h>                               // for abs
+#include <thrift/lib/cpp/util/EnumUtils.h>        // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>             // for field_ref
+#include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
-#include "common/utils/DefaultValueContext.h"
-#include "kvstore/Part.h"
-#include "storage/StorageFlags.h"
-#include "storage/mutate/AddEdgesProcessor.h"
-#include "storage/transaction/ConsistUtil.h"
-#include "storage/transaction/TransactionManager.h"
+#include <algorithm>      // for find
+#include <cstdint>        // for int64_t
+#include <istream>        // for operator<<, basi...
+#include <tuple>          // for tie, tuple
+#include <type_traits>    // for remove_reference...
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+
+#include "clients/storage/InternalStorageClient.h"   // for InternalStorageC...
+#include "common/base/Logging.h"                     // for Check_EQImpl
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/datatypes/Value.h"                  // for Value, Value::Type
+#include "common/expression/Expression.h"            // for Expression
+#include "common/meta/NebulaSchemaProvider.h"        // for NebulaSchemaProv...
+#include "common/meta/SchemaManager.h"               // for SchemaManager
+#include "common/meta/SchemaProviderIf.h"            // for SchemaProviderIf...
+#include "common/utils/DefaultValueContext.h"        // for DefaultValueContext
+#include "common/utils/MemoryLockWrapper.h"          // for MemoryLockGuard
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "kvstore/KVStore.h"                         // for KVStore
+#include "kvstore/LogEncoder.h"                      // for BatchHolder
+#include "storage/BaseProcessor.h"                   // for BaseProcessor::p...
+#include "storage/CommonUtils.h"                     // for StorageEnv
+#include "storage/StorageFlags.h"                    // for FLAGS_trace_toss
+#include "storage/mutate/AddEdgesProcessor.h"        // for AddEdgesProcesso...
+#include "storage/transaction/ConsistUtil.h"         // for ConsistUtil
+#include "storage/transaction/TransactionManager.h"  // for TransactionManag...
 
 namespace nebula {
 namespace storage {

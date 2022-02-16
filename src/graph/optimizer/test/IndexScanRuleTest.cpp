@@ -3,10 +3,42 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>              // for stringPrintf
+#include <folly/init/Init.h>           // for init
+#include <glog/logging.h>              // for INFO
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <stddef.h>                    // for size_t
+#include <stdint.h>                    // for int8_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, requi...
 
-#include "graph/optimizer/OptimizerUtils.h"
-#include "graph/optimizer/rule/IndexScanRule.h"
+#include <memory>       // for allocator, make_...
+#include <string>       // for basic_string
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Logging.h"                     // for SetStderrLogging
+#include "common/base/ObjectPool.h"                  // for ObjectPool
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/Value.h"                  // for Value
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression::Kind
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "graph/optimizer/rule/IndexScanRule.h"      // for IndexColumnHint
+#include "interface/gen-cpp2/common_types.h"         // for PropertyType
+#include "interface/gen-cpp2/meta_types.h"           // for ColumnDef, Index...
+#include "interface/gen-cpp2/storage_types.h"        // for IndexColumnHint
+
+namespace nebula {
+namespace graph {
+class OptimizerUtils;
+
+class OptimizerUtils;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::cpp2::PropertyType;
 using nebula::graph::OptimizerUtils;

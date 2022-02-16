@@ -3,15 +3,22 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <string.h>       // for memcpy, strlen
 
-#include <sstream>
-#include <utility>
-#include <vector>
+#include <exception>    // for exception
+#include <functional>   // for function
+#include <sstream>      // for operator<<, basic_ostream
+#include <string>       // for string, basic_string, ope...
+#include <type_traits>  // for enable_if_t, is_floating_...
+#include <vector>       // for vector, allocator
 
-#include "common/base/Base.h"
-#include "parser/GraphParser.hpp"
-#include "parser/GraphScanner.h"
+#include "common/base/Logging.h"   // for LogMessage, LOG, _LOG_INFO
+#include "location.hh"             // for position
+#include "parser/GraphParser.hpp"  // for GraphParser, GraphParser:...
+#include "parser/GraphScanner.h"   // for GraphScanner
 
 using testing::AssertionFailure;
 using testing::AssertionResult;

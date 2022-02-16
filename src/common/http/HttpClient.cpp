@@ -5,7 +5,15 @@
 
 #include "common/http/HttpClient.h"
 
-#include "common/process/ProcessUtils.h"
+#include <folly/String.h>  // for stringPrintf
+#include <folly/json.h>    // for toJson
+
+#include <ostream>  // for operator<<, basic_ostream
+#include <utility>  // for pair
+
+#include "common/base/Logging.h"          // for LOG, LogMessage, _LOG_INFO
+#include "common/base/Status.h"           // for Status
+#include "common/process/ProcessUtils.h"  // for ProcessUtils
 
 namespace nebula {
 namespace http {

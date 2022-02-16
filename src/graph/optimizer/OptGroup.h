@@ -6,7 +6,14 @@
 #ifndef GRAPH_OPTIMIZER_OPTGROUP_H_
 #define GRAPH_OPTIMIZER_OPTGROUP_H_
 
-#include "common/base/Status.h"
+#include <stdint.h>  // for int16_t
+
+#include <algorithm>  // for find
+#include <list>       // for list
+#include <utility>    // for pair
+#include <vector>     // for vector<>::const_iterator, vector
+
+#include "common/base/Status.h"  // for Status
 
 namespace nebula {
 namespace graph {

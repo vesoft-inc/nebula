@@ -6,10 +6,18 @@
 #ifndef GRAPH_OPTIMIZER_RULE_UNIONALLTAGINDEXSCANRULE_H_
 #define GRAPH_OPTIMIZER_RULE_UNIONALLTAGINDEXSCANRULE_H_
 
-#include "graph/optimizer/rule/UnionAllIndexScanBaseRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "graph/optimizer/rule/UnionAllIndexScanBaseRule.h"  // for UnionAll...
 
 namespace nebula {
 namespace opt {
+class OptRule;
+class Pattern;
+
+class OptRule;
+class Pattern;
 
 class UnionAllTagIndexScanRule final : public UnionAllIndexScanBaseRule {
  public:

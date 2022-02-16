@@ -3,10 +3,25 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/executor/query/GetPropExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "graph/executor/query/GetPropExecutor.h"  // for GetPropExecutor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class ScanEdgesExecutor final : public GetPropExecutor {
  public:
   ScanEdgesExecutor(const PlanNode *node, QueryContext *qctx)

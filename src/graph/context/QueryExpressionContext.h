@@ -6,12 +6,22 @@
 #ifndef GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
 #define GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
 
-#include "common/context/ExpressionContext.h"
+#include <stdint.h>  // for int32_t, int64_t
+
+#include <string>  // for string, allocator
+
+#include "common/context/ExpressionContext.h"  // for ExpressionContext
+#include "common/datatypes/Value.h"            // for Value
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/Iterator.h"
 
 namespace nebula {
 namespace graph {
+class ExecutionContext;
+class Iterator;
+
+class ExecutionContext;
+class Iterator;
 
 class QueryExpressionContext final : public ExpressionContext {
  public:

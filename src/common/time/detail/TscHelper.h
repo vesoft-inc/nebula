@@ -6,7 +6,11 @@
 #ifndef COMMON_TIME_DETAIL_TSCHELPER_H_
 #define COMMON_TIME_DETAIL_TSCHELPER_H_
 
-#include "common/base/Base.h"
+#include <stdint.h>  // for uint64_t
+#include <time.h>    // for timespec
+
+#include <atomic>  // for atomic
+#include <chrono>  // for steady_clock, steady_clock::time_point
 
 namespace nebula {
 namespace time {

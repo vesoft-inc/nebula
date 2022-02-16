@@ -5,11 +5,23 @@
 
 #include "graph/service/CloudAuthenticator.h"
 
-#include <proxygen/lib/utils/CryptUtil.h>
+#include <folly/Range.h>                   // for StringPiece
+#include <folly/dynamic.h>                 // for dynamic::asString
+#include <folly/dynamic.h>                 // for dynamic
+#include <folly/dynamic.h>                 // for dynamic::asString
+#include <folly/dynamic.h>                 // for dynamic
+#include <folly/json.h>                    // for parseJson
+#include <proxygen/lib/utils/CryptUtil.h>  // for base64Encode
 
-#include "common/base/Status.h"
-#include "common/http/HttpClient.h"
-#include "graph/service/GraphFlags.h"
+#include <exception>  // for exception
+#include <ostream>    // for operator<<, basic_ostream
+
+#include "clients/meta/MetaClient.h"   // for MetaClient
+#include "common/base/Logging.h"       // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"        // for Status, operator<<
+#include "common/base/StatusOr.h"      // for StatusOr
+#include "common/http/HttpClient.h"    // for HttpClient
+#include "graph/service/GraphFlags.h"  // for FLAGS_cloud_http_url
 
 namespace nebula {
 namespace graph {

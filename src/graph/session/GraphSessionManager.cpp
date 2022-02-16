@@ -5,11 +5,37 @@
 
 #include "graph/session/GraphSessionManager.h"
 
-#include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
-#include "graph/service/GraphFlags.h"
-#include "graph/stats/GraphStats.h"
+#include <folly/Try.h>                 // for Try::~Try<T>, Try::throwU...
+#include <folly/futures/Future-pre.h>  // for valueCallableResult<>::va...
+#include <folly/futures/Future.h>      // for SemiFuture::releaseDeferr...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>     // for PromiseException::Promise...
+#include <folly/futures/Promise.h>     // for Promise::Promise<T>, Prom...
+#include <folly/futures/Promise.h>     // for PromiseException::Promise...
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>    // for max
+#include <exception>    // for exception
+#include <type_traits>  // for remove_reference_t
+#include <utility>      // for pair, move
+
+#include "clients/meta/MetaClient.h"        // for MetaClient
+#include "common/base/Base.h"               // for FLOG_INFO, FVLOG3
+#include "common/base/StatusOr.h"           // for StatusOr
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/stats/StatsManager.h"      // for StatsManager
+#include "common/thread/GenericWorker.h"    // for GenericWorker
+#include "common/time/WallClock.h"          // for WallClock
+#include "graph/service/GraphFlags.h"       // for FLAGS_session_idle_timeou...
+#include "graph/session/ClientSession.h"    // for ClientSession, SpaceInfo
+#include "graph/stats/GraphStats.h"         // for kNumActiveSessions, kNumR...
+#include "interface/gen-cpp2/meta_types.h"  // for Session, ExecResp, ListSe...
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
 
 namespace nebula {
 namespace graph {

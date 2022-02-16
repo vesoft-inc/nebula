@@ -3,10 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <signal.h>       // for raise, SIGHUP, SIGTERM, SIGPIPE
+#include <unistd.h>       // for getpid, getuid
 
-#include "common/base/Base.h"
-#include "common/base/SignalHandler.h"
+#include <memory>  // for allocator
+
+#include "common/base/SignalHandler.h"  // for SignalHandler
 
 namespace nebula {
 

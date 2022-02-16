@@ -5,7 +5,23 @@
 
 #include "meta/processors/zone/AddHostsProcessor.h"
 
-#include "version/Version.h"
+#include <folly/SharedMutex.h>      // for SharedMutex
+#include <folly/String.h>           // for stringPrintf
+#include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLAR...
+
+#include <algorithm>  // for max, unique
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for operator<<, char_traits
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok
+#include "common/base/Logging.h"              // for LOG, LogMessage, _LOG...
+#include "common/datatypes/HostAddr.h"        // for HostAddr, operator<<
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                   // for KV
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor::doPut
+#include "meta/processors/Common.h"           // for LockUtils
 
 DECLARE_uint32(expired_time_factor);
 DECLARE_int32(removed_threshold_sec);

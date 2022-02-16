@@ -3,8 +3,19 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/base/Base.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <folly/String.h>           // for join, stringPrintf
+#include <gflags/gflags_declare.h>  // for DECLARE_uint32
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <gtest/gtest.h>            // for Message
+#include <gtest/gtest.h>            // for TestPartResult
+#include <stdint.h>                 // for uint32_t
+
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
 
 DECLARE_uint32(max_allowed_statements);
 DECLARE_uint32(max_allowed_query_size);
@@ -16,7 +27,7 @@ class QueryValidatorTest : public ValidatorTestBase {
  public:
 };
 
-using PK = nebula::graph::PlanNode::Kind;
+using PK = ::nebula::graph::PlanNode::Kind;
 
 TEST_F(QueryValidatorTest, TestFirstSentence) {
   auto testFirstSentence = [](const std::string &msg) -> bool {

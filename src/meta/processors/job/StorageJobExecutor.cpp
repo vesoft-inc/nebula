@@ -5,21 +5,35 @@
 
 #include "meta/processors/job/StorageJobExecutor.h"
 
-#include "common/network/NetworkUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "common/utils/Utils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/processors/Common.h"
-#include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/job/BalanceJobExecutor.h"
-#include "meta/processors/job/CompactJobExecutor.h"
-#include "meta/processors/job/FlushJobExecutor.h"
-#include "meta/processors/job/RebuildEdgeJobExecutor.h"
-#include "meta/processors/job/RebuildFTJobExecutor.h"
-#include "meta/processors/job/RebuildTagJobExecutor.h"
-#include "meta/processors/job/StatsJobExecutor.h"
-#include "meta/processors/job/TaskDescription.h"
+#include <folly/ExceptionWrapper.h>         // for exception_wrapper
+#include <folly/FBString.h>                 // for operator<<, fbstrin...
+#include <folly/Try.h>                      // for Try
+#include <folly/Try.h>                      // for Try::value
+#include <folly/Try.h>                      // for Try
+#include <folly/futures/Future.h>           // for SemiFuture::release...
+#include <folly/futures/Promise.h>          // for PromiseException::P...
+#include <folly/lang/Assume-inl.h>          // for assume_unreachable
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <gflags/gflags_declare.h>          // for DECLARE_int32, DECL...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+
+#include <atomic>         // for atomic
+#include <istream>        // for operator<<, basic_o...
+#include <memory>         // for unique_ptr, allocat...
+#include <tuple>          // for tie, ignore, tuple
+#include <type_traits>    // for remove_reference<>:...
+#include <unordered_map>  // for _Node_iterator, uno...
+
+#include "common/base/Logging.h"                  // for LOG, LogMessage
+#include "common/base/Status.h"                   // for Status
+#include "common/network/NetworkUtils.h"          // for NetworkUtils
+#include "common/utils/MetaKeyUtils.h"            // for MetaKeyUtils, kDefa...
+#include "interface/gen-cpp2/common_types.h"      // for ErrorCode, ErrorCod...
+#include "kvstore/Common.h"                       // for KV
+#include "kvstore/KVIterator.h"                   // for KVIterator
+#include "kvstore/KVStore.h"                      // for KVStore
+#include "meta/ActiveHostsMan.h"                  // for ActiveHostsMan
+#include "meta/processors/job/TaskDescription.h"  // for TaskDescription
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

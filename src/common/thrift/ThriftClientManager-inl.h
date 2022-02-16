@@ -6,14 +6,35 @@
 #ifndef COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
 #define COMMON_THRIFT_THRIFTCLIENTMANAGER_INL_H
 
-#include <folly/io/async/AsyncSSLSocket.h>
-#include <folly/io/async/AsyncSocket.h>
+#include <folly/IPAddress.h>                  // for IPAddress
+#include <folly/SocketAddress.h>              // for SocketAddress
+#include <folly/io/async/AsyncSSLSocket.h>    // for AsyncSSLSocket
+#include <folly/io/async/AsyncSocket.h>       // for AsyncSocket
+#include <folly/io/async/AsyncTransport.h>    // for AsyncTranspor...
+#include <folly/io/async/EventBaseManager.h>  // for EventBaseManager
 #include <folly/system/ThreadName.h>
-#include <thrift/lib/cpp2/async/RocketClientChannel.h>
+#include <gflags/gflags_declare.h>                      // for DECLARE_int32
+#include <stdint.h>                                     // for uint32_t
+#include <thrift/lib/cpp/protocol/TProtocolTypes.h>     // for T_BINARY_PROT...
+#include <thrift/lib/cpp2/async/RocketClientChannel.h>  // for RocketClientC...
+
+#include <exception>  // for exception
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<
+#include <string>     // for operator<<
+#include <utility>    // for make_pair, move
 
 #include "common/base/Base.h"
+#include "common/base/Logging.h"        // for LogMessage
+#include "common/datatypes/HostAddr.h"  // for operator<<
 #include "common/network/NetworkUtils.h"
-#include "common/ssl/SSLConfig.h"
+#include "common/ssl/SSLConfig.h"  // for createSSLContext
+
+namespace folly {
+class EventBase;
+
+class EventBase;
+}  // namespace folly
 
 DECLARE_int32(conn_timeout_ms);
 
@@ -75,7 +96,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   folly::AsyncTransport::UniquePtr socket;
   evb->runImmediatelyOrRunInEventBaseThreadAndWait([this, &socket, evb, resolved]() {
     if (enableSSL_) {
-      auto sock = folly::AsyncSSLSocket::newSocket(nebula::createSSLContext(), evb);
+      auto sock = folly::AsyncSSLSocket::newSocket(::nebula::createSSLContext(), evb);
       sock->connect(nullptr, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
       socket = folly::AsyncTransport::UniquePtr(sock.release());
     } else {

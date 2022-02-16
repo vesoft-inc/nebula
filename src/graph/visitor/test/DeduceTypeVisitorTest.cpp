@@ -3,10 +3,26 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "graph/visitor/DeduceTypeVisitor.h"
-#include "graph/visitor/test/VisitorTestBase.h"
+#include <string>       // for string, basic_string
+#include <type_traits>  // for remove_reference<...
+#include <utility>      // for move
+
+#include "common/base/Status.h"                     // for operator<<
+#include "common/datatypes/Edge.h"                  // for Edge
+#include "common/datatypes/Map.h"                   // for Map
+#include "common/datatypes/Value.h"                 // for Value, Value::Type
+#include "common/datatypes/Vertex.h"                // for Tag, Vertex
+#include "common/expression/AttributeExpression.h"  // for AttributeExpression
+#include "common/expression/ConstantExpression.h"   // for ConstantExpression
+#include "common/expression/ContainerExpression.h"  // for ExpressionList
+#include "common/expression/SubscriptExpression.h"  // for SubscriptExpression
+#include "graph/context/Symbols.h"                  // for ColsDef
+#include "graph/visitor/DeduceTypeVisitor.h"        // for DeduceTypeVisitor
+#include "graph/visitor/test/VisitorTestBase.h"     // for VisitorTestBase
 
 namespace nebula {
 namespace graph {

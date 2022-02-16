@@ -6,18 +6,41 @@
 #ifndef EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 #define EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 
-#include <vector>
+#include <folly/futures/Future.h>  // for Future
+#include <stddef.h>                // for size_t
+#include <stdint.h>                // for int64_t
+
+#include <list>           // for list
+#include <unordered_map>  // for unordered_map
+#include <vector>         // for allocator, vector
 
 #include "clients/storage/StorageClient.h"
+#include "clients/storage/StorageClientBase.h"  // for StorageRpcResponse
+#include "common/base/Status.h"                 // for Status
 #include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
-#include "common/datatypes/Vertex.h"
-#include "graph/executor/StorageAccessExecutor.h"
-#include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/storage_types.h"
+#include "common/datatypes/DataSet.h"              // for Row, DataSet
+#include "common/datatypes/Edge.h"                 // for Edge
+#include "common/datatypes/Geography.h"            // for Geography
+#include "common/datatypes/List.h"                 // for List
+#include "common/datatypes/Map.h"                  // for Map
+#include "common/datatypes/Path.h"                 // for Path
+#include "common/datatypes/Set.h"                  // for Set
+#include "common/datatypes/Value.h"                // for Value
+#include "common/datatypes/Vertex.h"               // for Vertex
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
+#include "graph/planner/plan/Query.h"              // for Traverse
+#include "interface/gen-cpp2/storage_types.h"      // for GetNeighborsResponse
+#include "parser/MatchSentence.h"                  // for MatchStepRange
 
 namespace nebula {
 namespace graph {
+class GetNeighborsIter;
+class PlanNode;
+class QueryContext;
+
+class GetNeighborsIter;
+class PlanNode;
+class QueryContext;
 
 using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
 

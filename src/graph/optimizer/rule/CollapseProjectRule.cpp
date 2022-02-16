@@ -5,11 +5,37 @@
 
 #include "graph/optimizer/rule/CollapseProjectRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
+#include <stddef.h>  // for size_t
+
+#include <unordered_map>  // for unordered_map, ope...
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/expression/PropertyExpression.h"  // for PropertyExpression
+#include "graph/optimizer/OptGroup.h"              // for OptGroup (ptr only)
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode, PlanNode...
+#include "graph/planner/plan/Query.h"              // for Project
+#include "graph/util/ExpressionUtils.h"            // for ExpressionUtils
+#include "graph/visitor/RewriteVisitor.h"          // for RewriteVisitor
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
+
+namespace nebula {
+namespace opt {
+class OptContext;
+}  // namespace opt
+
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+namespace opt {
+class OptContext;
+}  // namespace opt
+}  // namespace nebula
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

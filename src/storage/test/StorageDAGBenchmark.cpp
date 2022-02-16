@@ -3,11 +3,33 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
+#include <folly/Benchmark.h>              // for addBenchmark, Benchmark...
+#include <folly/Conv.h>                   // for to
+#include <folly/FBString.h>               // for operator<<
+#include <folly/Try.h>                    // for Try::~Try<T>, Try, Try:...
+#include <folly/futures/Future.h>         // for Future::Future<T>, Futu...
+#include <folly/futures/Promise.h>        // for Promise::Promise<T>
+#include <folly/futures/SharedPromise.h>  // for SharedPromise::setValue
+#include <folly/init/Init.h>              // for init
+#include <stddef.h>                       // for size_t
 
-#include "common/base/Base.h"
-#include "storage/exec/StoragePlan.h"
+#include <istream>  // for operator<<, basic_istream
+#include <memory>   // for make_unique, unique_ptr
+#include <string>   // for string, basic_string
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for CHECK, COMPACT_GOOGLE_L...
+#include "common/thrift/ThriftTypes.h"        // for PartitionID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "storage/exec/RelNode.h"             // for RelNode
+#include "storage/exec/StoragePlan.h"         // for StoragePlan
+
+namespace folly {
+class Executor;
+
+class Executor;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

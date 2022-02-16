@@ -6,10 +6,31 @@
 #ifndef META_DATABALANCEJOBEXECUTOR_H_
 #define META_DATABALANCEJOBEXECUTOR_H_
 
-#include "meta/processors/job/BalanceJobExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+#include <gtest/gtest_prod.h>      // for FRIEND_TEST
+
+#include <string>  // for string
+#include <vector>  // for vector
+
+#include "common/base/Status.h"                      // for Status
+#include "common/datatypes/HostAddr.h"               // for HostAddr
+#include "interface/gen-cpp2/common_types.h"         // for ErrorCode
+#include "meta/processors/job/BalanceJobExecutor.h"  // for BalanceJobExecutor
+#include "meta/processors/job/JobDescription.h"      // for JobDescription
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief Executor for balance in zone, always called by job manager

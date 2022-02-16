@@ -5,10 +5,25 @@
 
 #include "graph/executor/query/ProjectExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/planner/plan/Query.h"
-#include "parser/Clauses.h"
+#include <algorithm>  // for max
+#include <ostream>    // for operator<<, basic_...
+#include <string>     // for string, operator<<
+#include <utility>    // for move
+#include <vector>     // for vector
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/DataSet.h"              // for Row, DataSet, oper...
+#include "common/datatypes/Value.h"                // for Value
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/PlanNode.h"           // for PlanNode
+#include "graph/planner/plan/Query.h"              // for Project
+#include "parser/Clauses.h"                        // for YieldColumn, Yield...
 
 namespace nebula {
 namespace graph {

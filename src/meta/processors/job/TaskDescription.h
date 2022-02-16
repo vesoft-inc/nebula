@@ -6,14 +6,19 @@
 #ifndef META_TASKDESCRIPTION_H_
 #define META_TASKDESCRIPTION_H_
 
-#include <folly/Range.h>
-#include <gtest/gtest_prod.h>
+#include <folly/Range.h>       // for StringPiece
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stdint.h>            // for int64_t, int32_t
 
 #include <ctime>
-#include <string>
+#include <string>   // for string
+#include <tuple>    // for tuple
+#include <utility>  // for pair
 #include <vector>
 
-#include "interface/gen-cpp2/meta_types.h"
+#include "common/datatypes/HostAddr.h"      // for HostAddr
+#include "common/thrift/ThriftTypes.h"      // for JobID, TaskID
+#include "interface/gen-cpp2/meta_types.h"  // for JobStatus, TaskDesc
 #include "meta/processors/job/JobStatus.h"
 
 /*

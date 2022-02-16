@@ -6,13 +6,21 @@
 #ifndef GRAPH_UTIL_PARSERUTIL_H_
 #define GRAPH_UTIL_PARSERUTIL_H_
 
+#include <string>
+
 #include "common/base/StatusOr.h"
 #include "graph/context/QueryContext.h"
 #include "graph/visitor/RewriteVisitor.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
+class Expression;
+class ListComprehensionExpression;
+class PredicateExpression;
+class ReduceExpression;
+
 namespace graph {
+class QueryContext;
 
 class ParserUtil final {
  public:

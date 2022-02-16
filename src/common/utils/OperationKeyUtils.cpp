@@ -5,7 +5,11 @@
 
 #include "common/utils/OperationKeyUtils.h"
 
-#include "common/time/WallClock.h"
+#include <folly/lang/Bits.h>  // for Endian
+#include <stdint.h>           // for int64_t, uint32_t, int32_t
+
+#include "common/time/WallClock.h"  // for WallClock
+#include "common/utils/Types.h"     // for NebulaOperationType, readInt, Neb...
 
 namespace nebula {
 

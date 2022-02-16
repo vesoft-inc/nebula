@@ -7,13 +7,13 @@
 #define META_JOBUTIL_H_
 
 #include <folly/Optional.h>
-#include <folly/Range.h>
-#include <folly/String.h>
+#include <folly/Range.h>   // for StringPiece
+#include <folly/String.h>  // for stringPrintf
 
-#include <ctime>
-#include <stdexcept>
-#include <string>
-#include <vector>
+#include <ctime>      // for size_t
+#include <stdexcept>  // for runtime_error
+#include <string>     // for string
+#include <vector>     // for vector
 
 namespace nebula {
 namespace meta {

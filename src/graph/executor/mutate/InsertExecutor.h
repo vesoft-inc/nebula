@@ -6,10 +6,24 @@
 #ifndef GRAPH_EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_
 #define GRAPH_EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "graph/executor/StorageAccessExecutor.h"  // for StorageAccessExecutor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class InsertVerticesExecutor final : public StorageAccessExecutor {
  public:

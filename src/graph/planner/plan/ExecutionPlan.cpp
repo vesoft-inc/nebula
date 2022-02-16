@@ -5,12 +5,19 @@
 
 #include "graph/planner/plan/ExecutionPlan.h"
 
-#include "common/graph/Response.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
-#include "graph/util/IdGenerator.h"
-#include "interface/gen-cpp2/graph_types.h"
+#include <stddef.h>  // for size_t
+
+#include <cstdint>        // for int64_t, uint64_t
+#include <memory>         // for make_unique, unique_ptr
+#include <unordered_map>  // for operator!=, unordered_map
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"          // for CheckNotNull, COMPACT_GOO...
+#include "common/graph/Response.h"        // for PlanNodeDescription, Plan...
+#include "graph/planner/plan/Logic.h"     // for Select, Loop
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/util/IdGenerator.h"       // for EPIdGenerator
 
 namespace nebula {
 namespace graph {

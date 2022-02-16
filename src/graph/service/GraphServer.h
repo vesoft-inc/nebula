@@ -4,13 +4,30 @@
  */
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <thread>
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/network/NetworkUtils.h"
+
+namespace apache {
+namespace thrift {
+class ThriftServer;
+namespace concurrency {
+class ThreadManager;
+}  // namespace concurrency
+}  // namespace thrift
+}  // namespace apache
+namespace folly {
+class IOThreadPoolExecutor;
+}  // namespace folly
+
 namespace nebula {
 namespace graph {
 class GraphServer {

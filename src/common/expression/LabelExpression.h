@@ -6,11 +6,20 @@
 #ifndef COMMON_EXPRESSION_LABELEXPRESSION_H_
 #define COMMON_EXPRESSION_LABELEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <string>  // for string, allocator, operator<<
+
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 // The LabelExpression use for name_label in base_expression,
 // need to rewrite it based on the usage scenario
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class LabelExpression : public Expression {
  public:

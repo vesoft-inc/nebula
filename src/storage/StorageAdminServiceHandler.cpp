@@ -5,13 +5,15 @@
 
 #include "storage/StorageAdminServiceHandler.h"
 
-#include "storage/admin/AdminProcessor.h"
-#include "storage/admin/AdminTaskProcessor.h"
-#include "storage/admin/CreateCheckpointProcessor.h"
-#include "storage/admin/DropCheckpointProcessor.h"
-#include "storage/admin/GetLeaderProcessor.h"
-#include "storage/admin/SendBlockSignProcessor.h"
-#include "storage/admin/StopAdminTaskProcessor.h"
+#include <folly/futures/Future.h>  // for Future::Future<T>
+
+#include "storage/admin/AdminProcessor.h"             // for AddLearnerProce...
+#include "storage/admin/AdminTaskProcessor.h"         // for AdminTaskProcessor
+#include "storage/admin/CreateCheckpointProcessor.h"  // for CreateCheckpoin...
+#include "storage/admin/DropCheckpointProcessor.h"    // for DropCheckpointP...
+#include "storage/admin/GetLeaderProcessor.h"         // for GetLeaderProcessor
+#include "storage/admin/SendBlockSignProcessor.h"     // for SendBlockSignPr...
+#include "storage/admin/StopAdminTaskProcessor.h"     // for StopAdminTaskPr...
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \

@@ -5,11 +5,22 @@
 
 #include "parser/AdminSentences.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <ctype.h>                          // for toupper
+#include <folly/Format.h>                   // for sformat
+#include <folly/String.h>                   // for stringPrintf, join
+#include <stddef.h>                         // for size_t
+#include <stdint.h>                         // for uint8_t, int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include <sstream>
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <sstream>             // for operator<<, basic_ostream
 
-#include "graph/util/SchemaUtil.h"
+#include "Clauses.h"                       // for NameLabelList
+#include "MutateSentences.h"               // for UpdateList
+#include "Sentence.h"                      // for HostList, ZoneNameList
+#include "common/datatypes/HostAddr.h"     // for HostAddr
+#include "common/expression/Expression.h"  // for Expression
+#include "graph/util/SchemaUtil.h"         // for SchemaUtil
 
 namespace nebula {
 

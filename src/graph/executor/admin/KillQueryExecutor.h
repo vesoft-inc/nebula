@@ -6,10 +6,34 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_KILLQUERYEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_KILLQUERYEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for allocator, vector
+
+#include "common/base/Status.h"         // for Status
+#include "common/thrift/ThriftTypes.h"  // for ExecutionPlanID, SessionID
+#include "graph/executor/Executor.h"    // for Executor
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+namespace meta {
+namespace cpp2 {
+class Session;
+
+class Session;
+}  // namespace cpp2
+}  // namespace meta
+
+namespace graph {
+class PlanNode;
+class QueryContext;
+
 class KillQueryExecutor final : public Executor {
  public:
   KillQueryExecutor(const PlanNode* node, QueryContext* qctx)

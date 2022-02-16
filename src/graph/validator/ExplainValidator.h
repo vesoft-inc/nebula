@@ -6,14 +6,23 @@
 #ifndef GRAPH_VALIDATOR_EXPLAINVALIDATOR_H
 #define GRAPH_VALIDATOR_EXPLAINVALIDATOR_H
 
-#include <memory>
+#include <memory>  // for unique_ptr
 
-#include "graph/validator/Validator.h"
+#include "common/base/Status.h"         // for Status
+#include "graph/validator/Validator.h"  // for Validator
 
 namespace nebula {
+class Sentence;
+namespace graph {
+class QueryContext;
+}  // namespace graph
+
+class Sentence;
+
 namespace graph {
 
 class SequentialValidator;
+class QueryContext;
 
 class ExplainValidator final : public Validator {
  public:

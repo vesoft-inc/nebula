@@ -5,15 +5,18 @@
 
 #include "storage/admin/AdminTask.h"
 
-#include "storage/admin/CompactTask.h"
-#include "storage/admin/FlushTask.h"
-#include "storage/admin/RebuildEdgeIndexTask.h"
-#include "storage/admin/RebuildFTIndexTask.h"
-#include "storage/admin/RebuildTagIndexTask.h"
-#include "storage/admin/StatsTask.h"
+#include "storage/admin/CompactTask.h"           // for CompactTask
+#include "storage/admin/FlushTask.h"             // for FlushTask
+#include "storage/admin/RebuildEdgeIndexTask.h"  // for RebuildEdgeIndexTask
+#include "storage/admin/RebuildFTIndexTask.h"    // for RebuildFTIndexTask
+#include "storage/admin/RebuildTagIndexTask.h"   // for RebuildTagIndexTask
+#include "storage/admin/StatsTask.h"             // for StatsTask
 
 namespace nebula {
 namespace storage {
+class StorageEnv;
+
+class StorageEnv;
 
 std::shared_ptr<AdminTask> AdminTaskFactory::createAdminTask(StorageEnv* env, TaskContext&& ctx) {
   FLOG_INFO("%s (%d, %d)", __func__, ctx.jobId_, ctx.taskId_);

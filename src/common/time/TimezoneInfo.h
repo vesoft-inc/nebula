@@ -6,13 +6,21 @@
 #ifndef COMMON_TIME_TIMEZONEINFO_H_
 #define COMMON_TIME_TIMEZONEINFO_H_
 
-#include <gflags/gflags_declare.h>
+#include <gflags/gflags_declare.h>  // for DECLARE_st...
+#include <stdint.h>                 // for int32_t
 
 #include <boost/date_time/local_time/local_time.hpp>
-#include <exception>
+#include <boost/date_time/local_time/posix_time_zone.hpp>  // for posix_time...
+#include <boost/date_time/local_time/tz_database.hpp>      // for tz_database
+#include <boost/date_time/posix_time/ptime.hpp>            // for ptime (ptr...
+#include <boost/date_time/time_zone_base.hpp>              // for time_zone_...
+#include <boost/smart_ptr/shared_ptr.hpp>                  // for shared_ptr
+#include <exception>                                       // for exception
+#include <string>                                          // for string
 
-#include "common/base/Base.h"
-#include "common/base/Status.h"
+#include "common/base/Base.h"     // for NG_MUST_US...
+#include "common/base/Logging.h"  // for CheckNotNull
+#include "common/base/Status.h"   // for Status
 
 DECLARE_string(timezone_file);
 

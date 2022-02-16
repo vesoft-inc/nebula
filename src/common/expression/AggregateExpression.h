@@ -8,10 +8,22 @@
 
 #include <common/datatypes/Set.h>
 
-#include "common/expression/Expression.h"
-#include "common/function/AggFunctionManager.h"
+#include <string>       // for string, allocator
+#include <type_traits>  // for remove_reference<>::...
+#include <utility>      // for move
+
+#include "common/base/ObjectPool.h"              // for ObjectPool
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "common/datatypes/Value.h"              // for Value
+#include "common/expression/Expression.h"        // for Expression, Expressi...
+#include "common/function/AggFunctionManager.h"  // for AggData (ptr only)
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class AggregateExpression final : public Expression {
   friend class Expression;

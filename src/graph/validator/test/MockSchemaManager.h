@@ -6,13 +6,35 @@
 #ifndef GRAPH_VALIDATOR_MOCKSCHEMAMANAGER_H_
 #define GRAPH_VALIDATOR_MOCKSCHEMAMANAGER_H_
 
+#include <folly/Range.h>  // for StringPiece
+
+#include <cstdint>        // for int32_t
+#include <memory>         // for shared_ptr, make_unique
+#include <ostream>        // for operator<<
+#include <string>         // for string, basic_string, hash
+#include <unordered_map>  // for unordered_map, _Node_cons...
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
+#include "common/base/Base.h"      // for UNUSED
+#include "common/base/Logging.h"   // for LOG, LogMessageFatal, _LO...
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "common/meta/NebulaSchemaProvider.h"
-#include "common/meta/SchemaManager.h"
+#include "common/meta/SchemaManager.h"      // for EdgeSchema, EdgeSchemas
+#include "common/thrift/ThriftTypes.h"      // for GraphSpaceID, EdgeType
+#include "interface/gen-cpp2/meta_types.h"  // for FTIndex, ExternalServiceType
 
 namespace nebula {
+namespace meta {
+class NebulaSchemaProvider;
+
+class NebulaSchemaProvider;
+}  // namespace meta
+
 namespace graph {
 
-class MockSchemaManager final : public nebula::meta::SchemaManager {
+class MockSchemaManager final : public ::nebula::meta::SchemaManager {
  public:
   MockSchemaManager() = default;
   ~MockSchemaManager() = default;
@@ -25,7 +47,7 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
 
   void init();
 
-  std::shared_ptr<const nebula::meta::NebulaSchemaProvider> getTagSchema(
+  std::shared_ptr<const ::nebula::meta::NebulaSchemaProvider> getTagSchema(
       GraphSpaceID space, TagID tag, SchemaVer version = -1) override;
 
   // Returns a negative number when the schema does not exist
@@ -35,7 +57,7 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return -1;
   }
 
-  std::shared_ptr<const nebula::meta::NebulaSchemaProvider> getEdgeSchema(
+  std::shared_ptr<const ::nebula::meta::NebulaSchemaProvider> getEdgeSchema(
       GraphSpaceID space, EdgeType edge, SchemaVer version = -1) override;
 
   // Returns a negative number when the schema does not exist
@@ -108,15 +130,15 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return allLatestVerEdgeSchemas;
   }
 
-  StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+  StatusOr<std::vector<::nebula::meta::cpp2::ServiceClient>> getServiceClients(
       meta::cpp2::ExternalServiceType type) override;
 
   StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
     LOG(FATAL) << "Unimplemented.";
   }
 
-  StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(GraphSpaceID,
-                                                                           int32_t) override {
+  StatusOr<std::pair<std::string, ::nebula::meta::cpp2::FTIndex>> getFTIndex(GraphSpaceID,
+                                                                             int32_t) override {
     LOG(FATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }

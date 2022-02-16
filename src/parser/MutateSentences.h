@@ -5,13 +5,30 @@
 #ifndef PARSER_MUTATESENTENCES_H_
 #define PARSER_MUTATESENTENCES_H_
 
+#include <folly/Conv.h>    // for to
+#include <folly/Range.h>   // for StringPiece
+#include <folly/String.h>  // for split
+
+#include <algorithm>  // for transform
+#include <cstdint>    // for int32_t, int64_t
+#include <exception>  // for exception
+#include <memory>     // for unique_ptr, make_unique
+#include <ostream>    // for operator<<, basic_ostream
+#include <string>     // for string, operator<<, basic...
+#include <vector>     // for vector, vector<>::const_i...
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
-#include "parser/Clauses.h"
-#include "parser/EdgeKey.h"
-#include "parser/Sentence.h"
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/thrift/ThriftTypes.h"  // for EdgeRanking
+#include "parser/Clauses.h"             // for NameLabelList, VerticesCl...
+#include "parser/EdgeKey.h"             // for EdgeKeyRef, EdgeKeys
+#include "parser/Sentence.h"            // for Sentence::Kind, Sentence
 
 namespace nebula {
+class Expression;
+
+class Expression;
 
 class PropertyList final {
  public:

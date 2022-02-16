@@ -3,10 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <unistd.h>           // for usleep
 
-#include "common/base/Base.h"
-#include "common/base/SlowOpTracker.h"
+#include <memory>  // for allocator
+
+#include "common/base/Logging.h"        // for SetStderrLogging, CHECK, COMP...
+#include "common/base/SlowOpTracker.h"  // for SlowOpTracker
 
 namespace nebula {
 

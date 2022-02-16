@@ -6,10 +6,23 @@
 #ifndef GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_
 #define GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include "common/base/Logging.h"      // for CheckNotNull, DCHECK_NOTNULL
+#include "graph/executor/Executor.h"  // for Executor
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class LoopExecutor final : public Executor {
  public:

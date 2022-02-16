@@ -3,10 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
+#include <string.h>       // for strlen
+#include <unistd.h>       // for access, F_OK, unlink
 
-#include "common/base/Base.h"
-#include "common/fs/TempFile.h"
+#include <regex>   // for regex_match, match_results<>::_Ba...
+#include <string>  // for string, allocator
+#include <vector>  // for vector
+
+#include "common/fs/TempFile.h"  // for TempFile
 
 namespace nebula {
 namespace fs {

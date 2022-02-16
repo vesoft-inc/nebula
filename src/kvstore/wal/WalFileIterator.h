@@ -6,8 +6,17 @@
 #ifndef WAL_WALFILEITERATOR_H_
 #define WAL_WALFILEITERATOR_H_
 
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int32_t, int64_t
+
+#include <list>     // for list
+#include <memory>   // for shared_ptr
+#include <string>   // for string
+#include <utility>  // for pair
+
 #include "common/base/Base.h"
-#include "common/utils/LogIterator.h"
+#include "common/thrift/ThriftTypes.h"  // for LogID, TermID, ClusterID
+#include "common/utils/LogIterator.h"   // for LogIterator
 
 namespace nebula {
 namespace wal {

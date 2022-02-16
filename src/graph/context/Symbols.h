@@ -6,14 +6,23 @@
 #ifndef GRAPH_CONTEXT_SYMBOLS_H_
 #define GRAPH_CONTEXT_SYMBOLS_H_
 
-#include <unordered_set>
-#include <vector>
+#include <atomic>         // for atomic
+#include <cstdint>        // for uint64_t
+#include <string>         // for string, basic_string, operator==
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move
+#include <vector>         // for vector
 
 #include "common/base/ObjectPool.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/datatypes/Value.h"  // for Value, Value::Type, Value::Type:...
 
 namespace nebula {
+class ObjectPool;
+
+class ObjectPool;
+
 namespace graph {
 
 class PlanNode;

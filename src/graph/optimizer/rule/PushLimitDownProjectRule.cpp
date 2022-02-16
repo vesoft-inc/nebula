@@ -5,10 +5,16 @@
 
 #include "graph/optimizer/rule/PushLimitDownProjectRule.h"
 
-#include "graph/optimizer/OptContext.h"
-#include "graph/optimizer/OptGroup.h"
-#include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"          // for COMPACT_GOOGLE_LOG_FATAL
+#include "graph/context/QueryContext.h"   // for QueryContext
+#include "graph/context/Symbols.h"        // for SymbolTable, Variable
+#include "graph/optimizer/OptContext.h"   // for OptContext
+#include "graph/optimizer/OptGroup.h"     // for OptGroupNode, OptGroup
+#include "graph/planner/plan/PlanNode.h"  // for PlanNode, PlanNode::Kind
+#include "graph/planner/plan/Query.h"     // for Limit, Project
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;

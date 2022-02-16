@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/init/Init.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"

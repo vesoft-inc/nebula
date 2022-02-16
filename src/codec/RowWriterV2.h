@@ -6,11 +6,34 @@
 #ifndef CODEC_ROWWRITERV2_H_
 #define CODEC_ROWWRITERV2_H_
 
+#include <folly/Range.h>  // for StringPiece
+#include <stdint.h>       // for int64_t, int16_t, int32_t
+#include <sys/types.h>    // for ssize_t, size_t
+
+#include <ostream>  // for operator<<
+#include <string>   // for string, char_traits, basi...
+#include <utility>  // for move, forward
+#include <vector>   // for vector
+
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/base/Logging.h"           // for CHECK, COMPACT_GOOGLE_LOG...
+#include "common/datatypes/Geography.h"    // for Geography
+#include "common/datatypes/Value.h"        // for Value
+#include "common/meta/SchemaProviderIf.h"  // for SchemaProviderIf
 
 namespace nebula {
+class RowReader;
+struct Date;
+struct DateTime;
+struct Duration;
+struct Time;
+
+class RowReader;
+struct Date;
+struct DateTime;
+struct Duration;
+struct Time;
 
 enum class WriteResult {
   SUCCEEDED = 0,

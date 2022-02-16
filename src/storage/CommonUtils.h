@@ -6,20 +6,64 @@
 #ifndef STORAGE_COMMON_H_
 #define STORAGE_COMMON_H_
 
-#include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/concurrency/ConcurrentHashMap.h>  // for ConcurrentHashMap
+#include <folly/hash/Hash.h>                      // for hash
+#include <stddef.h>                               // for size_t
+#include <stdint.h>                               // for int64_t, int32_t
+#include <thrift/lib/cpp2/FieldRef.h>             // for optional_field_ref
 
+#include <algorithm>      // for max
+#include <atomic>         // for atomic, memory_orde...
+#include <memory>         // for allocator, unique_ptr
+#include <ostream>        // for operator<<
+#include <string>         // for operator+, string
+#include <tuple>          // for make_tuple, tuple
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for pair
+#include <vector>         // for vector
+
+#include "clients/meta/MetaClient.h"  // for MetaClient
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
-#include "common/base/ConcurrentLRUCache.h"
+#include "common/base/ConcurrentLRUCache.h"  // for ConcurrentLRUCache
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_...
+#include "common/base/ObjectPool.h"          // for ObjectPool
+#include "common/base/StatusOr.h"            // for StatusOr
+#include "common/datatypes/Value.h"          // for Value
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
-#include "common/stats/StatsManager.h"
+#include "common/stats/StatsManager.h"    // for CounterId, StatsMan...
+#include "common/thrift/ThriftTypes.h"    // for PartitionID, GraphS...
+#include "common/utils/MemoryLockCore.h"  // for MemoryLockCore
 #include "common/utils/MemoryLockWrapper.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "kvstore/KVEngine.h"
+#include "interface/gen-cpp2/storage_types.h"  // for RequestCommon
+#include "kvstore/KVEngine.h"                  // for KVEngine
 #include "kvstore/KVStore.h"
 
 namespace nebula {
+class RowReader;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace meta {
+class IndexManager;
+class NebulaSchemaProvider;
+class SchemaManager;
+class SchemaProviderIf;
+}  // namespace meta
+
+class RowReader;
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace meta {
+class IndexManager;
+class NebulaSchemaProvider;
+class SchemaManager;
+class SchemaProviderIf;
+}  // namespace meta
+
 namespace storage {
 
 struct ProcessorCounters {

@@ -6,18 +6,43 @@
 #ifndef WAL_FILEBASEDWAL_H_
 #define WAL_FILEBASEDWAL_H_
 
-#include <folly/Function.h>
-#include <gtest/gtest_prod.h>
+#include <folly/Function.h>                    // for Function
+#include <folly/Range.h>                       // for StringPiece
+#include <folly/synchronization/RWSpinLock.h>  // for RWSpinLock
+#include <gtest/gtest_prod.h>                  // for FRIEND_TEST
+#include <stddef.h>                            // for size_t
+#include <stdint.h>                            // for int32_t
+
+#include <functional>  // for function
+#include <map>         // for map, map<>::value_compare
+#include <memory>      // for shared_ptr, unique_ptr
+#include <mutex>       // for mutex
+#include <string>      // for string
 
 #include "common/base/Base.h"
 #include "common/base/Cord.h"
+#include "common/thrift/ThriftTypes.h"  // for LogID, TermID, ClusterID
 #include "kvstore/DiskManager.h"
 #include "kvstore/wal/AtomicLogBuffer.h"
-#include "kvstore/wal/Wal.h"
-#include "kvstore/wal/WalFileInfo.h"
+#include "kvstore/wal/Wal.h"          // for Wal
+#include "kvstore/wal/WalFileInfo.h"  // for WalFileInfoPtr
 
 namespace nebula {
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
 namespace wal {
+class AtomicLogBuffer;
+}  // namespace wal
+
+class LogIterator;
+namespace kvstore {
+class DiskManager;
+}  // namespace kvstore
+
+namespace wal {
+class AtomicLogBuffer;
 
 struct FileBasedWalPolicy {
   // The maximum size of each log message file (in byte). When the existing

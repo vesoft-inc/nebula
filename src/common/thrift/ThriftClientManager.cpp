@@ -5,6 +5,6 @@
 
 #include "common/thrift/ThriftClientManager.h"
 
-#include "common/base/Base.h"
+#include <gflags/gflags.h>  // for DEFINE_int32
 
 DEFINE_int32(conn_timeout_ms, 1000, "Connection timeout in milliseconds");

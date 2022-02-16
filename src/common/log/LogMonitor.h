@@ -5,10 +5,17 @@
 #ifndef COMMON_LOG_LOGMONITOR_H
 #define COMMON_LOG_LOGMONITOR_H
 
+#include <gflags/gflags_declare.h>  // for DECLARE_uint64, DECLARE_int32
+#include <stdint.h>                 // for int32_t
+
+#include <atomic>  // for atomic_uint64_t
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
+#include <memory>   // for shared_ptr, __shared_ptr_ac...
+#include <utility>  // for move
 
-#include "common/thread/GenericWorker.h"
+#include "common/base/Logging.h"          // for FLAGS_minloglevel, CHECK
+#include "common/thread/GenericWorker.h"  // for GenericWorker
 
 namespace nebula {
 

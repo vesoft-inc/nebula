@@ -6,10 +6,23 @@
 #ifndef GRAPH_PLANNER_MATCH_LABELINDEXSEEK_H_
 #define GRAPH_PLANNER_MATCH_LABELINDEXSEEK_H_
 
-#include "graph/planner/match/StartVidFinder.h"
+#include <memory>  // for shared_ptr, unique_ptr
+#include <vector>  // for vector
+
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "common/thrift/ThriftTypes.h"           // for IndexID
+#include "graph/planner/match/StartVidFinder.h"  // for StartVidFinder
+#include "interface/gen-cpp2/meta_types.h"       // for IndexItem
 
 namespace nebula {
 namespace graph {
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
+
+struct EdgeContext;
+struct NodeContext;
+struct SubPlan;
 
 /*
  * The LabelIndexSeek was designed to find if could get the starting vids by tag

@@ -5,14 +5,48 @@
 
 #include "tools/db-upgrade/DbUpgrader.h"
 
-#include "common/datatypes/Value.h"
-#include "common/fs/FileUtils.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "rocksdb/sst_file_writer.h"
-#include "tools/db-upgrade/NebulaKeyUtilsV1.h"
-#include "tools/db-upgrade/NebulaKeyUtilsV2.h"
-#include "tools/db-upgrade/NebulaKeyUtilsV3.h"
+#include <bits/std_abs.h>              // for abs
+#include <fmt/format.h>                // for format
+#include <folly/Conv.h>                // for to
+#include <folly/String.h>              // for stringPrintf
+#include <gflags/gflags.h>             // for DEFINE_string, DEF...
+#include <rocksdb/compression_type.h>  // for CompressionType
+#include <rocksdb/env.h>               // for EnvOptions
+#include <rocksdb/options.h>           // for Options
+#include <rocksdb/status.h>            // for Status
+#include <stdlib.h>                    // for abs
+#include <unistd.h>                    // for sleep
+
+#include <chrono>              // for milliseconds
+#include <cstdint>             // for int64_t
+#include <ctime>               // for size_t, time
+#include <exception>           // for exception
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <fstream>             // for operator<<, basic_...
+#include <functional>          // for _Bind_helper<>::type
+#include <type_traits>         // for remove_reference<>...
+
+#include "clients/meta/MetaClient.h"               // for MetaClient
+#include "codec/RowReader.h"                       // for RowReader
+#include "codec/RowReaderWrapper.h"                // for RowReaderWrapper
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/base/StatusOr.h"                  // for StatusOr
+#include "common/datatypes/Value.h"                // for Value, Value::Type
+#include "common/fs/FileUtils.h"                   // for FileUtils
+#include "common/meta/IndexManager.h"              // for IndexManager
+#include "common/meta/NebulaSchemaProvider.h"      // for NebulaSchemaProvider
+#include "common/meta/SchemaProviderIf.h"          // for SchemaProviderIf
+#include "common/meta/ServerBasedSchemaManager.h"  // for ServerBasedSchemaM...
+#include "common/utils/IndexKeyUtils.h"            // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"           // for NebulaKeyUtils
+#include "common/utils/Types.h"                    // for VertexIDSlice
+#include "interface/gen-cpp2/common_types.h"       // for PropertyType, Erro...
+#include "interface/gen-cpp2/meta_types.h"         // for IndexItem
+#include "kvstore/KVIterator.h"                    // for KVIterator
+#include "rocksdb/sst_file_writer.h"               // for SstFileWriter
+#include "tools/db-upgrade/NebulaKeyUtilsV1.h"     // for NebulaKeyUtilsV1
+#include "tools/db-upgrade/NebulaKeyUtilsV2.h"     // for NebulaKeyUtilsV2
+#include "tools/db-upgrade/NebulaKeyUtilsV3.h"     // for NebulaKeyUtilsV3
 
 DEFINE_string(src_db_path,
               "",

@@ -3,14 +3,31 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
+#include <gtest/gtest.h>      // for Message
+#include <gtest/gtest.h>      // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/WalFileIterator.h"
+#include <memory>   // for unique_ptr, make_unique
+#include <ostream>  // for operator<<, basic_ostream
+#include <string>   // for string
+
+#include "common/base/Logging.h"          // for SetStderrLogging, LOG
+#include "common/fs/TempDir.h"            // for TempDir
+#include "common/thrift/ThriftTypes.h"    // for LogID, ClusterID, TermID
+#include "kvstore/wal/FileBasedWal.h"     // for FileBasedWal, FileBasedWa...
+#include "kvstore/wal/WalFileIterator.h"  // for WalFileIterator
 
 namespace nebula {
+namespace fs {
+class FileUtils;
+
+class FileUtils;
+}  // namespace fs
+
 namespace wal {
 
 using nebula::fs::FileUtils;

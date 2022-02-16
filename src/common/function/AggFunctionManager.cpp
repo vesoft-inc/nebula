@@ -5,8 +5,15 @@
 
 #include "AggFunctionManager.h"
 
-#include "common/datatypes/List.h"
-#include "common/datatypes/Set.h"
+#include <ctype.h>         // for toupper
+#include <folly/Likely.h>  // for UNLIKELY
+
+#include <algorithm>      // for transform
+#include <cmath>          // for sqrt
+#include <unordered_set>  // for unordered_set
+
+#include "common/datatypes/List.h"  // for List
+#include "common/datatypes/Set.h"   // for Set
 
 namespace nebula {
 

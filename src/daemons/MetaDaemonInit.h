@@ -5,12 +5,40 @@
 #ifndef DAEMONS_METADAEMONINIT_H
 #define DAEMONS_METADAEMONINIT_H
 
-#include <memory>
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "common/base/Status.h"
+#include "common/base/Status.h"  // for Status
 #include "common/hdfs/HdfsCommandHelper.h"
+#include "common/thrift/ThriftTypes.h"  // for ClusterID
 #include "kvstore/KVStore.h"
 #include "webservice/WebService.h"
+
+namespace nebula {
+class WebService;
+namespace hdfs {
+class HdfsCommandHelper;
+}  // namespace hdfs
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+struct HostAddr;
+
+class WebService;
+namespace hdfs {
+class HdfsCommandHelper;
+}  // namespace hdfs
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+namespace thread {
+class GenericThreadPool;
+}  // namespace thread
+struct HostAddr;
+}  // namespace nebula
 
 nebula::ClusterID& metaClusterId();
 

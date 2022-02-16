@@ -8,12 +8,32 @@
 
 #include <folly/RWSpinLock.h>
 #include <folly/concurrency/ConcurrentHashMap.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/synchronization/RWSpinLock.h>
 #include <gtest/gtest_prod.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
+#include "common/base/Logging.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/ssl/SSLConfig.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
@@ -21,11 +41,33 @@
 #include "kvstore/ListenerFactory.h"
 #include "kvstore/Part.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/raftex/RaftPart.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
+namespace folly {
+class Executor;
+class IOThreadPoolExecutor;
+}  // namespace folly
+
 namespace nebula {
+class Status;
+namespace raftex {
+class RaftexService;
+class SnapshotManager;
+namespace cpp2 {
+class RaftexServiceAsyncClient;
+}  // namespace cpp2
+}  // namespace raftex
+namespace thread {
+class GenericThreadPool;
+class GenericWorker;
+}  // namespace thread
+
 namespace kvstore {
+class KVIterator;
+class Listener;
+class Part;
 
 using ListenerMap = std::unordered_map<meta::cpp2::ListenerType, std::shared_ptr<Listener>>;
 

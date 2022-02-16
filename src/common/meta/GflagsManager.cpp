@@ -5,8 +5,26 @@
 
 #include "common/meta/GflagsManager.h"
 
-#include "common/conf/Configuration.h"
-#include "common/fs/FileUtils.h"
+#include <folly/Conv.h>                // for to
+#include <folly/Range.h>               // for StringPiece
+#include <folly/String.h>              // for join
+#include <folly/dynamic.h>             // for dynamic::asString
+#include <folly/dynamic.h>             // for dynamic
+#include <folly/dynamic.h>             // for dynamic::asString
+#include <folly/dynamic.h>             // for dynamic
+#include <gflags/gflags.h>             // for CommandLineFlagInfo, GetAllFlags
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <algorithm>  // for transform
+#include <cstdint>    // for int64_t
+#include <memory>     // for allocator, allocator_traits<>...
+#include <ostream>    // for operator<<, basic_ostream
+
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_ERROR
+#include "common/base/Status.h"         // for Status, operator<<
+#include "common/conf/Configuration.h"  // for Configuration
+#include "common/datatypes/Map.h"       // for Map
 
 DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json for service");
 

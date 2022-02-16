@@ -5,11 +5,39 @@
 
 #include "graph/visitor/DeducePropsVisitor.h"
 
-#include <sstream>
+#include <bits/std_abs.h>                          // for abs
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <stdlib.h>                                // for abs, size_t
 
-#include "graph/context/QueryContext.h"
+#include <iterator>     // for make_move_it...
+#include <memory>       // for __shared_ptr...
+#include <sstream>      // for operator<<
+#include <type_traits>  // for remove_refer...
+#include <utility>      // for move, pair
+
+#include "common/base/Base.h"                            // for UNUSED, kTag
+#include "common/base/Logging.h"                         // for COMPACT_GOOG...
+#include "common/base/StatusOr.h"                        // for StatusOr
+#include "common/expression/Expression.h"                // for Expression
+#include "common/expression/LabelAttributeExpression.h"  // for LabelAttribu...
+#include "common/expression/LabelExpression.h"           // for LabelExpression
+#include "common/expression/PropertyExpression.h"        // for LabelTagProp...
+#include "common/expression/UUIDExpression.h"            // for UUIDExpression
+#include "common/expression/VariableExpression.h"        // for VariableExpr...
+#include "common/expression/VertexExpression.h"          // for VertexExpres...
+#include "common/meta/NebulaSchemaProvider.h"            // for NebulaSchema...
+#include "common/meta/SchemaManager.h"                   // for SchemaManager
+#include "graph/context/QueryContext.h"                  // for QueryContext
 
 namespace nebula {
+class ColumnExpression;
+class ConstantExpression;
+class EdgeExpression;
+
+class ColumnExpression;
+class ConstantExpression;
+class EdgeExpression;
+
 namespace graph {
 
 // Expression properties
@@ -228,17 +256,17 @@ void DeducePropsVisitor::visit(VertexExpression *expr) {
   for (const auto &tagID : *tagIds_) {
     const auto &tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
     if (colName == "$^") {
-      exprProps_->insertSrcTagProp(tagID, nebula::kTag);
+      exprProps_->insertSrcTagProp(tagID, ::nebula::kTag);
       for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
         exprProps_->insertSrcTagProp(tagID, tagSchema->getFieldName(i));
       }
     } else if (colName == "$$") {
-      exprProps_->insertDstTagProp(tagID, nebula::kTag);
+      exprProps_->insertDstTagProp(tagID, ::nebula::kTag);
       for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
         exprProps_->insertDstTagProp(tagID, tagSchema->getFieldName(i));
       }
     } else {
-      exprProps_->insertTagProp(tagID, nebula::kTag);
+      exprProps_->insertTagProp(tagID, ::nebula::kTag);
       for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
         exprProps_->insertTagProp(tagID, tagSchema->getFieldName(i));
       }

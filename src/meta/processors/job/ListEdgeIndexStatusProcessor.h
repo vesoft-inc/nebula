@@ -6,11 +6,23 @@
 #ifndef META_LISTEDGEINDEXSTATUSPROCESSOR_H
 #define META_LISTEDGEINDEXSTATUSPROCESSOR_H
 
-#include "meta/processors/BaseProcessor.h"
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promise...
+
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/meta_types.h"  // for ListIndexStatusResp, List...
+#include "meta/processors/BaseProcessor.h"  // for BaseProcessor
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 /**

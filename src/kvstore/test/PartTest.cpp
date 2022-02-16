@@ -3,16 +3,38 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <rocksdb/db.h>
+#include <folly/Range.h>          // for StringPiece
+#include <folly/String.h>         // for stringPrintf
+#include <folly/init/Init.h>      // for init
+#include <glog/logging.h>         // for INFO
+#include <gtest/gtest.h>          // for Message
+#include <gtest/gtest.h>          // for TestPartResult
+#include <gtest/gtest.h>          // for Message
+#include <gtest/gtest.h>          // for TestPartResult
+#include <limits.h>               // for INT_MAX
+#include <rocksdb/options.h>      // for Options, ReadOptions
+#include <rocksdb/slice.h>        // for Slice
+#include <rocksdb/status.h>       // for Status
+#include <rocksdb/write_batch.h>  // for WriteBatch
+#include <stdint.h>               // for int32_t, int64_t, uint32_t
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/IndexKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "common/utils/OperationKeyUtils.h"
-#include "kvstore/Part.h"
-#include "kvstore/RocksEngine.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<
+#include <string>   // for string, to_string, basi...
+#include <utility>  // for pair
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"              // for CHECK, COMPACT_GOOGLE_L...
+#include "common/fs/TempDir.h"                // for TempDir
+#include "common/thrift/ThriftTypes.h"        // for PartitionID, EdgeType
+#include "common/utils/IndexKeyUtils.h"       // for IndexKeyUtils
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "common/utils/OperationKeyUtils.h"   // for OperationKeyUtils
+#include "common/utils/Types.h"               // for IndexID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/RocksEngine.h"              // for RocksEngine
 
 namespace nebula {
 namespace kvstore {

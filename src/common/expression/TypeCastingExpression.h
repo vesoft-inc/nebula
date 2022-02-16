@@ -6,9 +6,18 @@
 #ifndef COMMON_EXPRESSION_TYPECASTINGEXPRESSION_H_
 #define COMMON_EXPRESSION_TYPECASTINGEXPRESSION_H_
 
-#include "common/expression/Expression.h"
+#include <string>  // for operator<<, string
+
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value, Value::Type, Value:...
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class TypeCastingExpression final : public Expression {
   friend class Expression;

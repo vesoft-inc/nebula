@@ -5,14 +5,42 @@
 
 #include "kvstore/RocksEngine.h"
 
-#include <folly/String.h>
-#include <rocksdb/convenience.h>
+#include <folly/String.h>                     // for stringPrintf
+#include <gflags/gflags.h>                    // for clstring, DEFINE_bool
+#include <rocksdb/convenience.h>              // for CancelAllBackgroundWork
+#include <rocksdb/env.h>                      // for Env, EnvOptions
+#include <rocksdb/file_checksum.h>            // for GetFileChecksumGenCrc32...
+#include <rocksdb/io_status.h>                // for IOStatus
+#include <rocksdb/options.h>                  // for WriteOptions, ReadOptions
+#include <rocksdb/sst_file_writer.h>          // for SstFileWriter
+#include <rocksdb/status.h>                   // for Status
+#include <rocksdb/utilities/backupable_db.h>  // for BackupableDBOptions
+#include <rocksdb/utilities/checkpoint.h>     // for Checkpoint
+#include <rocksdb/write_batch.h>              // for WriteBatch
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
-#include "common/utils/MetaKeyUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/KVStore.h"
+#include <algorithm>      // for transform
+#include <bitset>         // for operator<<, bitset
+#include <iterator>       // for back_insert_iterator
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for move
+
+#include "common/base/Status.h"           // for Status
+#include "common/base/StatusOr.h"         // for StatusOr
+#include "common/fs/FileUtils.h"          // for FileUtils, FileType
+#include "common/utils/MetaKeyUtils.h"    // for kDefaultSpaceId
+#include "common/utils/NebulaKeyUtils.h"  // for NebulaKeyUtils
+#include "common/utils/Types.h"           // for NebulaSystemKeyType
+#include "kvstore/RocksEngineConfig.h"    // for FLAGS_rocksdb_disable_wal
+
+namespace rocksdb {
+class CompactionFilterFactory;
+class MergeOperator;
+class Snapshot;
+
+class CompactionFilterFactory;
+class MergeOperator;
+class Snapshot;
+}  // namespace rocksdb
 
 DEFINE_bool(move_files, false, "Move the SST files instead of copy when ingest into dataset");
 

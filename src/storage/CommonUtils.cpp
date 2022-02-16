@@ -5,7 +5,16 @@
 
 #include "storage/CommonUtils.h"
 
-#include "common/time/WallClock.h"
+#include <cstdint>      // for int64_t
+#include <type_traits>  // for remove_reference<>::type
+
+#include "codec/RowReader.h"                   // for RowReader
+#include "common/base/Status.h"                // for Status
+#include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider
+#include "common/meta/SchemaProviderIf.h"      // for SchemaProviderIf
+#include "common/time/WallClock.h"             // for WallClock
+#include "interface/gen-cpp2/common_types.h"   // for PropertyType, Property...
+#include "interface/gen-cpp2/meta_types.h"     // for SchemaProp
 
 namespace nebula {
 namespace storage {

@@ -5,15 +5,42 @@
 
 #include "storage/http/StorageHttpDownloadHandler.h"
 
-#include <proxygen/httpserver/RequestHandler.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/ProxygenErrorEnum.h>
+#include <folly/Conv.h>                           // for to
+#include <folly/ExceptionWrapper.h>               // for operator<<
+#include <folly/FBString.h>                       // for fbstring_core::cate...
+#include <folly/Optional.h>                       // for Optional
+#include <folly/String.h>                         // for stringPrintf, split
+#include <folly/Try.h>                            // for Try::~Try<T>, Try::...
+#include <folly/futures/Future.h>                 // for SemiFuture, collectAll
+#include <folly/futures/Promise.h>                // for Promise::setWith
+#include <folly/lang/Assume.h>                    // for assume_unreachable
+#include <gflags/gflags.h>                        // for DEFINE_int32
+#include <proxygen/httpserver/ResponseBuilder.h>  // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/HTTPMessage.h>        // for HTTPMessage
+#include <proxygen/lib/http/HTTPMethod.h>         // for HTTPMethod, HTTPMet...
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
-#include "common/fs/FileUtils.h"
-#include "common/hdfs/HdfsHelper.h"
-#include "common/process/ProcessUtils.h"
-#include "kvstore/Part.h"
-#include "webservice/Common.h"
+#include <atomic>     // for atomic_flag, ATOMIC...
+#include <exception>  // for exception
+#include <istream>    // for operator<<, basic_o...
+#include <utility>    // for move
+
+#include "common/base/ErrorOr.h"              // for ok, value
+#include "common/base/Logging.h"              // for CheckNotNull, LOG
+#include "common/base/StatusOr.h"             // for StatusOr
+#include "common/fs/FileUtils.h"              // for FileUtils, FileType
+#include "common/hdfs/HdfsHelper.h"           // for HdfsHelper
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "kvstore/KVEngine.h"                 // for KVEngine
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "kvstore/Part.h"                     // for Part
+#include "webservice/Common.h"                // for HttpStatusCode, Web...
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
 
 DEFINE_int32(download_thread_num, 3, "download thread number");
 

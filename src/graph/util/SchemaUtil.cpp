@@ -5,12 +5,37 @@
 
 #include "graph/util/SchemaUtil.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <bits/std_abs.h>                   // for abs
+#include <folly/Conv.h>                     // for to
+#include <folly/Format.h>                   // for sformat
+#include <folly/String.h>                   // for stringPrintf
+#include <stdint.h>                         // for uint8_t
+#include <stdlib.h>                         // for abs, size_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
 
-#include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "graph/context/QueryContext.h"
-#include "graph/context/QueryExpressionContext.h"
+#include <algorithm>      // for transform
+#include <cctype>         // for tolower
+#include <iterator>       // for begin, end
+#include <ostream>        // for operator<<, basic_...
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for _Node_const_iterator
+#include <utility>        // for move, pair
+
+#include "common/base/Base.h"                      // for kDst, kRank, kSrc
+#include "common/base/Logging.h"                   // for LOG, LogMessage
+#include "common/base/ObjectPool.h"                // for ObjectPool
+#include "common/base/Status.h"                    // for Status, NG_RETURN_...
+#include "common/datatypes/DataSet.h"              // for Row, DataSet
+#include "common/datatypes/List.h"                 // for List
+#include "common/expression/Expression.h"          // for Expression, Expres...
+#include "common/meta/NebulaSchemaProvider.h"      // for NebulaSchemaProvider
+#include "common/meta/SchemaManager.h"             // for SchemaManager
+#include "graph/context/QueryContext.h"            // for QueryContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/session/ClientSession.h"           // for SpaceInfo
+#include "interface/gen-cpp2/meta_types.h"         // for ColumnDef, SchemaProp
+#include "parser/MaintainSentences.h"              // for SchemaPropItem
 
 namespace nebula {
 namespace graph {

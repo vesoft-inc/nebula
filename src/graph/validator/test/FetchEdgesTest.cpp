@@ -3,9 +3,35 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/planner/plan/Query.h"
-#include "graph/validator/FetchEdgesValidator.h"
-#include "graph/validator/test/ValidatorTestBase.h"
+#include <gtest/gtest.h>               // for Message
+#include <gtest/gtest.h>               // for TestPartResult
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
+
+#include <memory>       // for allocator, make_...
+#include <set>          // for set, operator!=
+#include <string>       // for string, basic_st...
+#include <type_traits>  // for remove_reference...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Base.h"                        // for kDst, kRank, kSrc
+#include "common/base/Status.h"                      // for operator<<, Status
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/expression/ArithmeticExpression.h"  // for ArithmeticExpres...
+#include "common/expression/ColumnExpression.h"      // for ColumnExpression
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/EdgeExpression.h"        // for EdgeExpression
+#include "common/expression/PropertyExpression.h"    // for EdgePropertyExpr...
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "graph/context/QueryContext.h"              // for QueryContext
+#include "graph/planner/plan/ExecutionPlan.h"        // for ExecutionPlan
+#include "graph/planner/plan/Logic.h"                // for StartNode
+#include "graph/planner/plan/PlanNode.h"             // for PlanNode::Kind
+#include "graph/planner/plan/Query.h"                // for Project, Filter
+#include "graph/validator/test/MockSchemaManager.h"  // for MockSchemaManager
+#include "graph/validator/test/ValidatorTestBase.h"  // for ValidatorTestBase
+#include "interface/gen-cpp2/storage_types.h"        // for EdgeProp, Expr
+#include "parser/Clauses.h"                          // for YieldColumns
 
 namespace nebula {
 namespace graph {

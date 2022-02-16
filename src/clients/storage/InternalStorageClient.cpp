@@ -5,7 +5,36 @@
 
 #include "clients/storage/InternalStorageClient.h"
 
-#include "common/base/Base.h"
+#include <folly/FBString.h>
+#include <folly/Format.h>
+#include <folly/Try.h>  // for Try
+#include <folly/futures/Future.h>
+#include <folly/futures/Promise.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <thrift/lib/cpp2/FieldRef.h>
+
+#include <cstdint>
+#include <exception>
+#include <istream>
+#include <type_traits>
+#include <unordered_map>
+
+#include "common/base/Logging.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "interface/gen-cpp2/InternalStorageServiceAsyncClient.h"
+
+namespace folly {
+class EventBase;
+template <class T>
+class Future;
+
+class EventBase;
+template <class T>
+class Future;
+}  // namespace folly
 
 namespace nebula {
 namespace storage {

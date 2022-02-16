@@ -6,12 +6,26 @@
 #ifndef GRAPH_PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 #define GRAPH_PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 
+#include <memory>  // for unique_ptr
+
+#include "common/base/StatusOr.h"  // for StatusOr
 #include "graph/context/QueryContext.h"
-#include "graph/planner/Planner.h"
+#include "graph/planner/Planner.h"  // for Planner
 #include "graph/validator/Validator.h"
+#include "parser/Sentence.h"  // for Sentence, Sentence::Kind
 
 namespace nebula {
 namespace graph {
+class QueryContext;
+class Validator;
+struct AstContext;
+struct SubPlan;
+
+class QueryContext;
+class Validator;
+struct AstContext;
+struct SubPlan;
+
 class SequentialPlanner final : public Planner {
  public:
   static std::unique_ptr<SequentialPlanner> make() {

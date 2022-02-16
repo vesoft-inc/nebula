@@ -5,16 +5,27 @@
 
 #include "common/datatypes/Geography.h"
 
-#include <folly/String.h>
-#include <folly/hash/Hash.h>
+#include <folly/String.h>   // for hexlify
+#include <s2/s2point.h>     // for S2Point
+#include <s2/s2polygon.h>   // for S2Polygon
+#include <s2/s2polyline.h>  // for S2Polyline
 
-#include <cstdint>
+#include <cmath>               // for remainder
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <ostream>             // for operator<<, ostream
+#include <type_traits>         // for remove_reference<>::type
 
-#include "common/geo/GeoUtils.h"
-#include "common/geo/io/wkb/WKBReader.h"
-#include "common/geo/io/wkb/WKBWriter.h"
-#include "common/geo/io/wkt/WKTReader.h"
-#include "common/geo/io/wkt/WKTWriter.h"
+#include "common/base/Logging.h"          // for CheckNotNull, CHECK, COMPAC...
+#include "common/base/Status.h"           // for Status
+#include "common/geo/GeoUtils.h"          // for GeoUtils
+#include "common/geo/io/wkb/WKBReader.h"  // for WKBReader
+#include "common/geo/io/wkb/WKBWriter.h"  // for WKBWriter
+#include "common/geo/io/wkt/WKTReader.h"  // for WKTReader
+#include "common/geo/io/wkt/WKTWriter.h"  // for WKTWriter
+
+class S2Region;
+
+class S2Region;
 
 namespace nebula {
 

@@ -5,10 +5,17 @@
 
 #pragma once
 
-#include "graph/optimizer/OptRule.h"
+#include <memory>  // for unique_ptr
+#include <string>  // for string
+
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only)
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class EliminateRowCollectRule final : public OptRule {
  public:

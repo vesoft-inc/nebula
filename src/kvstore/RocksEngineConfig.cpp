@@ -5,20 +5,33 @@
 
 #include "kvstore/RocksEngineConfig.h"
 
-#include <rocksdb/cache.h>
-#include <rocksdb/concurrent_task_limiter.h>
-#include <rocksdb/convenience.h>
-#include <rocksdb/db.h>
+#include <folly/String.h>                     // for join, split, stringPrintf
+#include <folly/dynamic.h>                    // for dynamic::asString
+#include <folly/dynamic.h>                    // for dynamic
+#include <gflags/gflags.h>                    // for clstring, DEFINE_string
+#include <rocksdb/advanced_options.h>         // for CompactionStyle, kCompa...
+#include <rocksdb/cache.h>                    // for NewLRUCache, Cache (ptr...
+#include <rocksdb/compression_type.h>         // for CompressionType, kBZip2...
+#include <rocksdb/concurrent_task_limiter.h>  // for ConcurrentTaskLimiter
+#include <rocksdb/convenience.h>              // for GetBlockBasedTableOptio...
 #include <rocksdb/filter_policy.h>
-#include <rocksdb/rate_limiter.h>
-#include <rocksdb/slice_transform.h>
-#include <rocksdb/utilities/options_util.h>
+#include <rocksdb/options.h>          // for Options, DBOptions, Col...
+#include <rocksdb/rate_limiter.h>     // for NewGenericRateLimiter
+#include <rocksdb/slice_transform.h>  // for NewCappedPrefixTransform
+#include <rocksdb/statistics.h>       // for Statistics, StatsLevel
+#include <rocksdb/table.h>            // for BlockBasedTableOptions
+#include <stddef.h>                   // for size_t
 
-#include "common/base/Base.h"
-#include "common/conf/Configuration.h"
-#include "common/fs/FileUtils.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/EventListener.h"
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value...
+#include <ostream>             // for operator<<, basic_ostream
+#include <utility>             // for pair, move
+#include <vector>              // for vector
+
+#include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_E...
+#include "common/base/Status.h"         // for Status
+#include "common/conf/Configuration.h"  // for Configuration
+#include "common/fs/FileUtils.h"        // for FileUtils, FileType
+#include "kvstore/EventListener.h"      // for EventListener
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal, false, "Whether to disable the WAL in rocksdb");

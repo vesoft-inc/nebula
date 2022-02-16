@@ -3,14 +3,41 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
-#include <proxygen/httpserver/RequestHandler.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
+#include <folly/String.h>                         // for stringPrintf
+#include <folly/init/Init.h>                      // for init
+#include <gflags/gflags_declare.h>                // for clstring
+#include <glog/logging.h>                         // for INFO
+#include <gtest/gtest.h>                          // for Message
+#include <gtest/gtest.h>                          // for TestPartResult
+#include <proxygen/httpserver/RequestHandler.h>   // for ResponseBuilder
+#include <proxygen/httpserver/ResponseBuilder.h>  // for ResponseBuilder
+#include <proxygen/lib/http/HTTPConstants.h>      // for UpgradeProtocol
+#include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
-#include "common/http/HttpClient.h"
-#include "webservice/Common.h"
-#include "webservice/Router.h"
-#include "webservice/WebService.h"
+#include <memory>   // for unique_ptr, allocator
+#include <ostream>  // for operator<<, basic_o...
+#include <string>   // for basic_string, char_...
+
+#include "common/base/Logging.h"     // for LogMessage, SetStde...
+#include "common/base/Status.h"      // for operator<<, Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/http/HttpClient.h"  // for HttpClient
+#include "webservice/Common.h"       // for HttpStatusCode, Htt...
+#include "webservice/Router.h"       // for Route, Router
+#include "webservice/WebService.h"   // for WebService, FLAGS_w...
+
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
+
+namespace folly {
+class IOBuf;
+
+class IOBuf;
+}  // namespace folly
+namespace proxygen {
+class HTTPMessage;
+}  // namespace proxygen
 
 namespace nebula {
 namespace http {

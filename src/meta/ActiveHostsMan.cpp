@@ -5,10 +5,29 @@
 
 #include "meta/ActiveHostsMan.h"
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <gflags/gflags.h>                  // for DECLARE_int32, DECLARE_ui...
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include "common/utils/Utils.h"
-#include "meta/processors/Common.h"
+#include <algorithm>      // for find
+#include <atomic>         // for atomic
+#include <cstdint>        // for int64_t, uint32_t, int32_t
+#include <memory>         // for unique_ptr, allocator_tra...
+#include <new>            // for operator new
+#include <ostream>        // for operator<<, basic_ostream
+#include <tuple>          // for tie, ignore, tuple
+#include <type_traits>    // for remove_reference<>::type
+#include <unordered_set>  // for unordered_set, unordered_...
+
+#include "common/datatypes/HostAddr.h"  // for HostAddr, operator<<, hash
+#include "common/time/WallClock.h"      // for WallClock
+#include "common/utils/MetaKeyUtils.h"  // for MetaKeyUtils, kDefaultPartId
+#include "kvstore/Common.h"             // for KV
+#include "kvstore/KVIterator.h"         // for KVIterator
+#include "kvstore/KVStore.h"            // for KVStore
+#include "meta/processors/Common.h"     // for LockUtils
 
 DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(agent_heartbeat_interval_secs, 60, "Agent heartbeat interval in seconds");

@@ -6,8 +6,17 @@
 #ifndef COMMON_CHARSET_CHARSET_H_
 #define COMMON_CHARSET_CHARSET_H_
 
+#include <stdint.h>  // for int32_t
+
+#include <memory>         // for allocator, unique_ptr
+#include <string>         // for string, basic_string, hash, operat...
+#include <unordered_map>  // for unordered_map, unordered_map<>::ma...
+#include <unordered_set>  // for unordered_set
+#include <vector>         // for vector
+
 #include "common/base/Base.h"
-#include "common/base/StatusOr.h"
+#include "common/base/Status.h"    // for Status
+#include "common/base/StatusOr.h"  // for StatusOr
 
 namespace nebula {
 

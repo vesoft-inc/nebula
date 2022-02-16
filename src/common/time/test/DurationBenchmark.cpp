@@ -3,10 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
+#include <folly/Benchmark.h>      // for addBenchmark, runBenchmarks, BENCH...
+#include <folly/BenchmarkUtil.h>  // for doNotOptimizeAway
+#include <folly/init/Init.h>      // for init
+#include <stdint.h>               // for uint32_t
 
-#include "common/base/Base.h"
-#include "common/time/Duration.h"
+#include <chrono>  // for milliseconds, duration_cast, opera...
+
+#include "common/time/Duration.h"  // for Duration
 
 using nebula::time::Duration;
 using std::chrono::duration_cast;

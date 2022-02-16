@@ -6,10 +6,11 @@
 #ifndef COMMON_BASE_CORD_H_
 #define COMMON_BASE_CORD_H_
 
-#include <stdlib.h>
+#include <stdint.h>  // for int32_t, int16_t, int64_t, int8_t, uint16_t
+#include <stdlib.h>  // for size_t
 
-#include <functional>
-#include <string>
+#include <functional>  // for function
+#include <string>      // for string
 
 namespace nebula {
 

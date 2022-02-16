@@ -5,7 +5,24 @@
 
 #include "storage/admin/RebuildFTIndexTask.h"
 
-#include "common/base/Logging.h"
+#include <folly/Format.h>              // for sformat
+#include <gflags/gflags_declare.h>     // for DECLARE_uint32
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optional_fi...
+#include <unistd.h>                    // for sleep
+
+#include <functional>     // for _Bind_helper<>::type
+#include <memory>         // for shared_ptr, __shared_p...
+#include <ostream>        // for operator<<, basic_ostr...
+#include <string>         // for operator<<
+#include <unordered_map>  // for _Node_iterator, operat...
+
+#include "common/base/Logging.h"               // for LogMessage, COMPACT_GO...
+#include "interface/gen-cpp2/meta_types.h"     // for ListenerType, Listener...
+#include "interface/gen-cpp2/storage_types.h"  // for TaskPara
+#include "kvstore/KVStore.h"                   // for KVStore
+#include "kvstore/Listener.h"                  // for Listener
+#include "kvstore/NebulaStore.h"               // for NebulaStore, SpaceList...
+#include "storage/CommonUtils.h"               // for StorageEnv
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

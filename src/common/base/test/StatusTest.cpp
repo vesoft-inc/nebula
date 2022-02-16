@@ -3,10 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
+#include <gtest/gtest.h>  // for Message
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/base/Status.h"
+#include <iosfwd>   // for ostringstream, ostream
+#include <string>   // for allocator, string
+#include <utility>  // for move
+
+#include "common/base/Status.h"  // for Status, operator<<, NG_RETURN_IF_...
 
 namespace nebula {
 

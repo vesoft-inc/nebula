@@ -6,10 +6,20 @@
 #ifndef COMMON_EXPRESSION_CONSTANTEXPRESSION_H_
 #define COMMON_EXPRESSION_CONSTANTEXPRESSION_H_
 
-#include "common/base/Base.h"
-#include "common/expression/Expression.h"
+#include <string>   // for operator<<, string
+#include <utility>  // for move
+
+#include "common/base/Base.h"              // for UNUSED
+#include "common/base/ObjectPool.h"        // for ObjectPool
+#include "common/datatypes/Value.h"        // for Value, NullType, NullType:...
+#include "common/expression/Expression.h"  // for Expression, Expression::Kind
 
 namespace nebula {
+class ExprVisitor;
+class ExpressionContext;
+
+class ExprVisitor;
+class ExpressionContext;
 
 class ConstantExpression : public Expression {
   friend class Expression;

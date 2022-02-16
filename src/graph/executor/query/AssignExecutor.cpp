@@ -5,7 +5,20 @@
 
 #include "graph/executor/query/AssignExecutor.h"
 
-#include "graph/planner/plan/Query.h"
+#include <ostream>  // for operator<<, basic_...
+#include <string>   // for operator<<, char_t...
+#include <utility>  // for move, pair
+#include <vector>   // for vector
+
+#include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...
+#include "common/base/Status.h"                    // for Status
+#include "common/datatypes/Value.h"                // for operator<<, Value
+#include "common/expression/Expression.h"          // for Expression
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder
+#include "graph/planner/plan/Query.h"              // for Assign
 
 namespace nebula {
 namespace graph {

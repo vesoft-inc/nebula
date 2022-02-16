@@ -5,6 +5,17 @@
 
 #include "storage/transaction/ChainProcessorFactory.h"
 
+#include <folly/String.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
+#include <ostream>
+
+#include "common/base/Logging.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "kvstore/KVStore.h"
+#include "storage/CommonUtils.h"
+#include "storage/transaction/ChainBaseProcessor.h"
 #include "storage/transaction/ChainDeleteEdgesResumeProcessor.h"
 #include "storage/transaction/ChainDeleteEdgesResumeRemoteProcessor.h"
 #include "storage/transaction/ChainResumeAddDoublePrimeProcessor.h"

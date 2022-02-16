@@ -6,6 +6,11 @@
 #ifndef TOOLS_METADATAUPDATETOOL_OLDTHRIFT_METADATAUPDATE_V2_H_
 #define TOOLS_METADATAUPDATETOOL_OLDTHRIFT_METADATAUPDATE_V2_H_
 
+#include <folly/Range.h>
+
+#include <string>
+#include <vector>
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/thrift/ThriftTypes.h"

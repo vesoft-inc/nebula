@@ -6,11 +6,26 @@
 #ifndef META_RESTOREPROCESSOR_H_
 #define META_RESTOREPROCESSOR_H_
 
+#include <folly/Try.h>              // for Try::~Try<T>
+#include <folly/futures/Promise.h>  // for PromiseException::Promi...
 #include <gtest/gtest_prod.h>
 
-#include "meta/processors/BaseProcessor.h"
+#include <utility>  // for move
+
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for ExecResp, RestoreMetaRe...
+#include "meta/processors/BaseProcessor.h"    // for BaseProcessor
 
 namespace nebula {
+struct HostAddr;
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+struct HostAddr;
+
 namespace meta {
 
 /**

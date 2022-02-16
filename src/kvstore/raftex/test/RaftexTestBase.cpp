@@ -5,10 +5,44 @@
 
 #include "kvstore/raftex/test/RaftexTestBase.h"
 
-#include "common/base/Base.h"
-#include "common/thrift/ThriftClientManager.h"
-#include "kvstore/raftex/RaftexService.h"
-#include "kvstore/raftex/test/TestShard.h"
+#include <folly/Range.h>                           // for Range
+#include <folly/futures/Future.h>                  // for Future::wait
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/futures/Future.h>                  // for Future::wait
+#include <folly/futures/Future.h>                  // for Future
+#include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
+#include <gflags/gflags_declare.h>                 // for DECLARE_uint32
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <unistd.h>                                // for size_t, sleep, usleep
+
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::...
+#include <functional>          // for ref, bind, _1, _2, _3
+#include <ostream>             // for operator<<, basic_...
+#include <utility>             // for move
+
+#include "common/base/Logging.h"              // for LogMessage, LOG
+#include "common/fs/FileUtils.h"              // for FileUtils
+#include "common/thread/GenericThreadPool.h"  // for GenericThreadPool
+#include "kvstore/raftex/RaftexService.h"     // for RaftexService
+#include "kvstore/raftex/test/TestShard.h"    // for TestShard, NebulaS...
+
+namespace nebula {
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+
+namespace network {
+class NetworkUtils;
+
+class NetworkUtils;
+}  // namespace network
+namespace raftex {
+class SnapshotManager;
+}  // namespace raftex
+}  // namespace nebula
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 

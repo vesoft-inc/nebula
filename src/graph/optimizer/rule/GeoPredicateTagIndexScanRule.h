@@ -6,10 +6,18 @@
 #ifndef GRAPH_OPTIMIZER_RULE_GEOPREDICATETAGINDEXSCANRULE_H
 #define GRAPH_OPTIMIZER_RULE_GEOPREDICATETAGINDEXSCANRULE_H
 
-#include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
+#include <memory>  // for uniq...
+#include <string>  // for string
+
+#include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"  // for GeoP...
 
 namespace nebula {
 namespace opt {
+class OptRule;
+class Pattern;
+
+class OptRule;
+class Pattern;
 
 class GeoPredicateTagIndexScanRule final : public GeoPredicateIndexScanBaseRule {
  public:

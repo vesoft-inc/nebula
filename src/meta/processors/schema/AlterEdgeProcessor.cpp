@@ -5,7 +5,28 @@
 
 #include "meta/processors/schema/AlterEdgeProcessor.h"
 
-#include "meta/processors/schema/SchemaUtil.h"
+#include <folly/SharedMutex.h>              // for SharedMutex
+#include <stdint.h>                         // for int64_t
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr
+#include <ostream>    // for operator<<, basic_ost...
+#include <string>     // for operator<<, char_traits
+#include <vector>     // for vector
+
+#include "common/base/ErrorOr.h"                // for error, ok, value
+#include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...
+#include "common/thrift/ThriftTypes.h"          // for GraphSpaceID
+#include "common/utils/MetaKeyUtils.h"          // for MetaKeyUtils, EntryType
+#include "interface/gen-cpp2/common_types.h"    // for ErrorCode, ErrorCode:...
+#include "kvstore/Common.h"                     // for KV
+#include "kvstore/KVIterator.h"                 // for KVIterator
+#include "meta/MetaServiceUtils.h"              // for MetaServiceUtils
+#include "meta/processors/BaseProcessor.h"      // for BaseProcessor::doPrefix
+#include "meta/processors/Common.h"             // for LockUtils
+#include "meta/processors/schema/SchemaUtil.h"  // for SchemaUtil
 
 namespace nebula {
 namespace meta {

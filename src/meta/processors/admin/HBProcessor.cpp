@@ -5,10 +5,26 @@
 
 #include "meta/processors/admin/HBProcessor.h"
 
-#include "common/time/WallClock.h"
-#include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/MetaVersionMan.h"
+#include <folly/Format.h>                   // for sformat
+#include <folly/synchronization/Baton.h>    // for Baton
+#include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
+#include <thrift/lib/cpp2/FieldRef.h>       // for field_ref, optional_fie...
+
+#include <algorithm>      // for max
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for _Node_const_iterator
+#include <vector>         // for vector
+
+#include "common/base/ErrorOr.h"              // for error, ok, value
+#include "common/datatypes/HostAddr.h"        // for operator<<, HostAddr
+#include "common/time/Duration.h"             // for Duration
+#include "common/time/WallClock.h"            // for WallClock
+#include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, DirInfo, Err...
+#include "kvstore/Common.h"                   // for KV
+#include "kvstore/KVStore.h"                  // for KVStore
+#include "meta/ActiveHostsMan.h"              // for ActiveHostsMan, HostInfo
+#include "meta/MetaVersionMan.h"              // for MetaVersionMan
 
 namespace nebula {
 namespace meta {

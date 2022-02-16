@@ -4,19 +4,39 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/executors/IOThreadPoolExecutor.h>  // for IOThreadPoolExecutor
+#include <folly/futures/Future.h>                  // for Future::get
+#include <folly/init/Init.h>                       // for init
+#include <glog/logging.h>                          // for INFO
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <gtest/gtest.h>                           // for Message
+#include <gtest/gtest.h>                           // for TestPartResult
+#include <stdint.h>                                // for int32_t
+#include <thrift/lib/cpp2/FieldRef.h>              // for field_ref, optiona...
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "interface/gen-cpp2/common_types.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "storage/index/LookupProcessor.h"
-#include "storage/mutate/DeleteTagsProcessor.h"
-#include "storage/query/GetPropProcessor.h"
-#include "storage/test/QueryTestUtils.h"
+#include <memory>         // for allocator, shared_ptr
+#include <string>         // for string, basic_string
+#include <type_traits>    // for remove_reference<>...
+#include <unordered_map>  // for _Map_base<>::mappe...
+#include <utility>        // for pair, move
+#include <vector>         // for vector
+
+#include "common/base/Base.h"                    // for kTag, kVid
+#include "common/base/Logging.h"                 // for SetStderrLogging
+#include "common/base/StatusOr.h"                // for StatusOr
+#include "common/datatypes/DataSet.h"            // for Row
+#include "common/datatypes/Value.h"              // for Value
+#include "common/fs/TempDir.h"                   // for TempDir
+#include "common/meta/SchemaManager.h"           // for SchemaManager
+#include "common/thrift/ThriftTypes.h"           // for VertexID, TagID
+#include "interface/gen-cpp2/common_types.h"     // for SchemaID
+#include "interface/gen-cpp2/storage_types.h"    // for DelTags, IndexColu...
+#include "mock/MockCluster.h"                    // for MockCluster
+#include "storage/CommonUtils.h"                 // for StorageEnv
+#include "storage/index/LookupProcessor.h"       // for LookupProcessor
+#include "storage/mutate/DeleteTagsProcessor.h"  // for DeleteTagsProcessor
+#include "storage/query/GetPropProcessor.h"      // for GetPropProcessor
+#include "storage/test/QueryTestUtils.h"         // for QueryTestUtils
 
 namespace nebula {
 namespace storage {

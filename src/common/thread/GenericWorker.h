@@ -5,15 +5,34 @@
 #ifndef COMMON_THREAD_GENERICWORKER_H_
 #define COMMON_THREAD_GENERICWORKER_H_
 
-#include <folly/Unit.h>
-#include <folly/futures/Future.h>
+#include <folly/Try.h>              // for Try
+#include <folly/Unit.h>             // for Unit, unit
+#include <folly/futures/Future.h>   // for SemiFuture::wait, SemiFuture:...
+#include <folly/futures/Promise.h>  // for Promise
+#include <stddef.h>                 // for size_t
 
-#include <boost/core/noncopyable.hpp>
+#include <atomic>                      // for atomic
+#include <boost/core/noncopyable.hpp>  // for noncopyable
+#include <cstdint>                     // for uint64_t
+#include <exception>                   // for exception
+#include <functional>                  // for function, bind
+#include <memory>                      // for make_shared, __shared_ptr_access
+#include <mutex>                       // for mutex, lock_guard
+#include <string>                      // for string
+#include <type_traits>                 // for enable_if, is_void, result_of
+#include <unordered_map>               // for unordered_map
+#include <utility>                     // for forward
+#include <vector>                      // for vector
 
-#include "common/base/Base.h"
-#include "common/cpp/helpers.h"
+#include "common/base/Base.h"    // for NG_MUST_USE_RESULT
+#include "common/cpp/helpers.h"  // for NonMovable
 #include "common/thread/NamedThread.h"
 
+namespace nebula {
+namespace thread {
+class NamedThread;
+}  // namespace thread
+}  // namespace nebula
 /**
  * GenericWorker implements a event-based task executor that executes tasks
  * asynchronously in a separate thread. Like `std::thread', It takes any
@@ -32,8 +51,9 @@ struct event_base;
 
 namespace nebula {
 namespace thread {
+class NamedThread;
 
-class GenericWorker final : public boost::noncopyable, public nebula::cpp::NonMovable {
+class GenericWorker final : public boost::noncopyable, public ::nebula::cpp::NonMovable {
  public:
   friend class GenericThreadPool;
 
@@ -169,9 +189,10 @@ class GenericWorker final : public boost::noncopyable, public nebula::cpp::NonMo
 
 template <typename F, typename... Args>
 auto GenericWorker::addTask(F &&f, Args &&... args) ->
-    typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
+    typename std::enable_if<std::is_void<GenericWorker::ReturnType<F, Args...>>::value,
+                            UnitFutureType>::type {
   auto promise = std::make_shared<folly::Promise<folly::Unit>>();
-  auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
+  auto task = std::make_shared<std::function<GenericWorker::ReturnType<F, Args...>()>>(
       std::bind(std::forward<F>(f), std::forward<Args>(args)...));
   auto future = promise->getSemiFuture();
   {
@@ -191,10 +212,10 @@ auto GenericWorker::addTask(F &&f, Args &&... args) ->
 
 template <typename F, typename... Args>
 auto GenericWorker::addTask(F &&f, Args &&... args) ->
-    typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
+    typename std::enable_if<!std::is_void<GenericWorker::ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
-  auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
-  auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
+  auto promise = std::make_shared<folly::Promise<GenericWorker::ReturnType<F, Args...>>>();
+  auto task = std::make_shared<std::function<GenericWorker::ReturnType<F, Args...>()>>(
       std::bind(std::forward<F>(f), std::forward<Args>(args)...));
   auto future = promise->getSemiFuture();
   {
@@ -207,9 +228,10 @@ auto GenericWorker::addTask(F &&f, Args &&... args) ->
 
 template <typename F, typename... Args>
 auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&... args) ->
-    typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
+    typename std::enable_if<std::is_void<GenericWorker::ReturnType<F, Args...>>::value,
+                            UnitFutureType>::type {
   auto promise = std::make_shared<folly::Promise<folly::Unit>>();
-  auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
+  auto task = std::make_shared<std::function<GenericWorker::ReturnType<F, Args...>()>>(
       std::bind(std::forward<F>(f), std::forward<Args>(args)...));
   auto future = promise->getSemiFuture();
   addTimerTask(ms, 0, [=] {
@@ -225,10 +247,10 @@ auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&... args) ->
 
 template <typename F, typename... Args>
 auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&... args) ->
-    typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
+    typename std::enable_if<!std::is_void<GenericWorker::ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
-  auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
-  auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
+  auto promise = std::make_shared<folly::Promise<GenericWorker::ReturnType<F, Args...>>>();
+  auto task = std::make_shared<std::function<GenericWorker::ReturnType<F, Args...>()>>(
       std::bind(std::forward<F>(f), std::forward<Args>(args)...));
   auto future = promise->getSemiFuture();
   addTimerTask(ms, 0, [=] { promise->setWith(*task); });

@@ -6,10 +6,20 @@
 #ifndef GRAPH_PLANNER_MATCH_WITHCLAUSEPLANNER_H_
 #define GRAPH_PLANNER_MATCH_WITHCLAUSEPLANNER_H_
 
-#include "graph/planner/match/CypherClausePlanner.h"
+#include "common/base/Status.h"                       // for Status
+#include "common/base/StatusOr.h"                     // for StatusOr
+#include "graph/planner/match/CypherClausePlanner.h"  // for CypherClausePla...
 
 namespace nebula {
 namespace graph {
+struct CypherClauseContextBase;
+struct SubPlan;
+struct WithClauseContext;
+
+struct CypherClauseContextBase;
+struct SubPlan;
+struct WithClauseContext;
+
 /*
  * The WithClausePlanner was designed to generate plan for with clause.
  */

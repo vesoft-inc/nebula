@@ -6,13 +6,46 @@
 #ifndef GRAPH_VALIDATOR_MUTATEVALIDATOR_H_
 #define GRAPH_VALIDATOR_MUTATEVALIDATOR_H_
 
-#include "graph/validator/Validator.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "parser/MutateSentences.h"
+#include <stdint.h>  // for uint16_t
+
+#include <memory>         // for shared_ptr
+#include <string>         // for string, basic_string
+#include <unordered_map>  // for unordered_map
+#include <utility>        // for pair
+#include <vector>         // for vector
+
+#include "common/base/Status.h"                // for Status
+#include "common/datatypes/Value.h"            // for Value
+#include "common/thrift/ThriftTypes.h"         // for TagID, EdgeType, Graph...
+#include "graph/validator/Validator.h"         // for Validator
+#include "graph/visitor/DeducePropsVisitor.h"  // for ExpressionProps
+#include "interface/gen-cpp2/storage_types.h"  // for NewEdge, NewVertex
+#include "parser/MutateSentences.h"            // for EdgeRowItem (ptr only)
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
+class EdgeKey;
+class EdgeKeyRef;
+class Expression;
+class Sentence;
 namespace graph {
+class QueryContext;
+}  // namespace graph
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+class EdgeKey;
+class EdgeKeyRef;
+class Expression;
+class Sentence;
+namespace meta {
+class SchemaProviderIf;
+}  // namespace meta
+
+namespace graph {
+class QueryContext;
+
 class InsertVerticesValidator final : public Validator {
  public:
   InsertVerticesValidator(Sentence* sentence, QueryContext* context)

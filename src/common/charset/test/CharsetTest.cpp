@@ -3,10 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // for TestPartResult
 
-#include "common/base/Base.h"
-#include "common/charset/Charset.h"
+#include <memory>         // for allocator
+#include <unordered_map>  // for unordered_map
+
+#include "common/base/Status.h"      // for operator<<, Status
+#include "common/base/StatusOr.h"    // for StatusOr
+#include "common/charset/Charset.h"  // for CharsetInfo
 
 namespace nebula {
 

@@ -5,8 +5,18 @@
 
 #include "graph/executor/query/SampleExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include <cstddef>      // for size_t
+#include <type_traits>  // for remove_reference<>...
+#include <utility>      // for move
+
+#include "common/base/Logging.h"                   // for GetReferenceableValue
+#include "common/base/Status.h"                    // for Status
+#include "common/time/ScopedTimer.h"               // for SCOPED_TIMER
+#include "graph/context/ExecutionContext.h"        // for ExecutionContext
+#include "graph/context/Iterator.h"                // for Iterator, Iterator...
+#include "graph/context/QueryExpressionContext.h"  // for QueryExpressionCon...
+#include "graph/context/Result.h"                  // for ResultBuilder, Result
+#include "graph/planner/plan/Query.h"              // for Sample
 
 namespace nebula {
 namespace graph {

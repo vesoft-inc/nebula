@@ -5,9 +5,35 @@
 
 #include "graph/optimizer/OptimizerUtils.h"
 
-#include "common/base/Status.h"
-#include "common/datatypes/Value.h"
-#include "graph/planner/plan/Query.h"
+#include <stddef.h>                    // for size_t
+#include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, union...
+
+#include <algorithm>      // for find, min, sort
+#include <string>         // for string, basic_st...
+#include <type_traits>    // for remove_reference...
+#include <unordered_set>  // for unordered_set
+
+#include "common/base/Logging.h"                     // for COMPACT_GOOGLE_L...
+#include "common/base/Status.h"                      // for Status, NG_RETUR...
+#include "common/base/StatusOr.h"                    // for StatusOr
+#include "common/datatypes/Value.h"                  // for Value, operator<
+#include "common/expression/ConstantExpression.h"    // for ConstantExpression
+#include "common/expression/Expression.h"            // for Expression, Expr...
+#include "common/expression/LogicalExpression.h"     // for LogicalExpression
+#include "common/expression/PropertyExpression.h"    // for PropertyExpression
+#include "common/expression/RelationalExpression.h"  // for RelationalExpres...
+#include "graph/planner/plan/Query.h"                // for IndexScan
+#include "interface/gen-cpp2/common_types.h"         // for SchemaID, Proper...
+#include "interface/gen-cpp2/meta_types.h"           // for IndexItem, Colum...
+#include "interface/gen-cpp2/storage_types.h"        // for IndexColumnHint
+
+namespace nebula {
+namespace graph {
+class QueryContext;
+
+class QueryContext;
+}  // namespace graph
+}  // namespace nebula
 
 using nebula::meta::cpp2::ColumnDef;
 using nebula::meta::cpp2::IndexItem;

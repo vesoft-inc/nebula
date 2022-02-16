@@ -6,12 +6,17 @@
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 #define GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 
-#include <memory>
+#include <memory>  // for unique_ptr
+#include <string>  // for string
 
-#include "graph/optimizer/OptRule.h"
+#include "common/base/StatusOr.h"     // for StatusOr
+#include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only)
 
 namespace nebula {
 namespace opt {
+class OptContext;
+
+class OptContext;
 
 class PushVFilterDownScanVerticesRule final : public OptRule {
  public:

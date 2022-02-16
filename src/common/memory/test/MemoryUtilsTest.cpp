@@ -3,10 +3,17 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
+#include <gflags/gflags.h>  // for DECLARE_bool, DECLARE_double
+#include <gtest/gtest.h>    // for TestPartResult
+#include <gtest/gtest.h>    // for Message
+#include <gtest/gtest.h>    // for TestPartResult
 
-#include "common/memory/MemoryUtils.h"
+#include <memory>       // for allocator
+#include <type_traits>  // for remove_reference<>::type
+#include <utility>      // for move
+
+#include "common/base/StatusOr.h"       // for StatusOr
+#include "common/memory/MemoryUtils.h"  // for MemoryUtils
 
 DECLARE_bool(containerized);
 DECLARE_double(system_memory_high_watermark_ratio);

@@ -3,12 +3,20 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
-#include <gtest/gtest.h>
+#include <folly/Benchmark.h>  // for addBenchmark, BenchmarkSuspender
+#include <folly/String.h>     // for stringPrintf
+#include <folly/init/Init.h>  // for init
+#include <gflags/gflags.h>    // for DEFINE_bool, DEFINE_int32
 #include <rocksdb/db.h>
+#include <rocksdb/iterator.h>  // for Iterator
+#include <rocksdb/options.h>   // for Options, CompactRangeOptions, ReadO...
+#include <rocksdb/slice.h>     // for Slice
+#include <rocksdb/status.h>    // for Status
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
+#include <string>  // for string, allocator, basic_string
+
+#include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
+#include "common/fs/TempDir.h"    // for TempDir
 
 DEFINE_bool(do_compact, false, "Do compaction after puts");
 DEFINE_int32(versions, 100, "Total versions");

@@ -6,15 +6,38 @@
 #ifndef META_ADMIN_BALANCEPLAN_H_
 #define META_ADMIN_BALANCEPLAN_H_
 
-#include <gtest/gtest_prod.h>
+#include <gtest/gtest_prod.h>  // for FRIEND_TEST
+#include <stddef.h>            // for size_t
 
+#include <atomic>      // for atomic
+#include <cstdint>     // for int32_t
+#include <functional>  // for function
+#include <mutex>       // for mutex, lock_guard
+#include <utility>     // for move
+#include <vector>      // for vector
+
+#include "common/base/ErrorOr.h"              // for ErrorOr
+#include "common/thrift/ThriftTypes.h"        // for JobID
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode
+#include "interface/gen-cpp2/meta_types.h"    // for JobStatus, BalanceTa...
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
-#include "meta/processors/job/BalanceTask.h"
-#include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/BalanceTask.h"     // for BalanceTask
+#include "meta/processors/job/JobDescription.h"  // for JobDescription
 
 namespace nebula {
 namespace meta {
+class AdminClient;
+}  // namespace meta
+
+namespace kvstore {
+class KVStore;
+
+class KVStore;
+}  // namespace kvstore
+
+namespace meta {
+class AdminClient;
 
 /**
  * @brief A balance plan contains some balance tasks, and could parallel run the tasks across parts

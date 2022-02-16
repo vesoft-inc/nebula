@@ -6,11 +6,25 @@
 #ifndef GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
 #define GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
 
-#include "graph/executor/query/GetPropExecutor.h"
+#include <folly/futures/Future.h>  // for Future
+
+#include <memory>  // for allocator
+
+#include "graph/executor/query/GetPropExecutor.h"  // for GetPropExecutor
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
+class Status;
 namespace graph {
+class PlanNode;
+class QueryContext;
+}  // namespace graph
+
+class Status;
+
+namespace graph {
+class PlanNode;
+class QueryContext;
 
 class ScanVerticesExecutor final : public GetPropExecutor {
  public:

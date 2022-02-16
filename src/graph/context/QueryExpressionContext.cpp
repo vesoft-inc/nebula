@@ -5,6 +5,15 @@
 
 #include "graph/context/QueryExpressionContext.h"
 
+#include <ostream>  // for operator<<
+#include <utility>  // for move
+
+#include "common/base/Base.h"                // for UNUSED
+#include "common/base/Logging.h"             // for LOG, LogMessage, _LOG_ERROR
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/Result.h"            // for Result
+
 namespace nebula {
 namespace graph {
 const Value& QueryExpressionContext::getVar(const std::string& var) const {

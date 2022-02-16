@@ -5,9 +5,23 @@
 
 #include "kvstore/NebulaSnapshotManager.h"
 
-#include "common/utils/NebulaKeyUtils.h"
-#include "kvstore/LogEncoder.h"
-#include "kvstore/RateLimiter.h"
+#include <folly/Format.h>      // for sformat
+#include <folly/Function.h>    // for FunctionTraits
+#include <folly/ScopeGuard.h>  // for operator+, SCOPE_EXIT
+#include <gflags/gflags.h>     // for DEFINE_uint32
+#include <stddef.h>            // for size_t
+
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr, make_unique
+#include <ostream>    // for operator<<, basic_ostre...
+
+#include "common/base/Logging.h"              // for LogMessage, CheckNotNull
+#include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils
+#include "interface/gen-cpp2/common_types.h"  // for ErrorCode, ErrorCode::S...
+#include "kvstore/KVIterator.h"               // for KVIterator
+#include "kvstore/LogEncoder.h"               // for encodeKV
+#include "kvstore/NebulaStore.h"              // for NebulaStore
+#include "kvstore/RateLimiter.h"              // for RateLimiter
 
 DEFINE_uint32(snapshot_part_rate_limit,
               1024 * 1024 * 10,

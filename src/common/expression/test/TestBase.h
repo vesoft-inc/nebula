@@ -10,8 +10,12 @@
 
 #include <boost/algorithm/string.hpp>
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "common/base/ObjectPool.h"
+#include "common/base/StatusOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
@@ -28,6 +32,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/EdgeExpression.h"
+#include "common/expression/Expression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
@@ -45,7 +50,11 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
+#include "graph/context/QueryContext.h"
+#include "parser/Clauses.h"
 #include "parser/GQLParser.h"
+#include "parser/SequentialSentences.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 

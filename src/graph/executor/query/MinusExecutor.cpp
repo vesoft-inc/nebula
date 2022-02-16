@@ -5,10 +5,15 @@
 
 #include "graph/executor/query/MinusExecutor.h"
 
+#include <type_traits>
 #include <unordered_set>
+#include <utility>
 
+#include "common/base/Status.h"
+#include "common/datatypes/DataSet.h"
 #include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/Query.h"
+#include "graph/context/Iterator.h"
+#include "graph/context/Result.h"
 
 namespace nebula {
 namespace graph {

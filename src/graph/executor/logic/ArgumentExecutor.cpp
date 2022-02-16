@@ -5,10 +5,30 @@
 
 #include "graph/executor/logic/ArgumentExecutor.h"
 
-#include "graph/planner/plan/Logic.h"
+#include <algorithm>      // for max
+#include <memory>         // for unique_ptr, allocator
+#include <string>         // for string, basic_string
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for move, pair
+#include <vector>         // for vector
+
+#include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_FATAL
+#include "common/base/Status.h"              // for Status
+#include "common/datatypes/DataSet.h"        // for Row, DataSet
+#include "common/datatypes/Value.h"          // for Value, hash, operator==
+#include "common/datatypes/Vertex.h"         // for Vertex
+#include "graph/context/ExecutionContext.h"  // for ExecutionContext
+#include "graph/context/Iterator.h"          // for Iterator
+#include "graph/context/Result.h"            // for ResultBuilder, Result
+#include "graph/planner/plan/Logic.h"        // for Argument
 
 namespace nebula {
 namespace graph {
+class PlanNode;
+class QueryContext;
+
+class PlanNode;
+class QueryContext;
 
 ArgumentExecutor::ArgumentExecutor(const PlanNode *node, QueryContext *qctx)
     : Executor("ArgumentExecutor", node, qctx) {}

@@ -5,6 +5,8 @@
 
 #include "graph/service/PasswordAuthenticator.h"
 
+#include "clients/meta/MetaClient.h"  // for MetaClient
+
 namespace nebula {
 namespace graph {
 

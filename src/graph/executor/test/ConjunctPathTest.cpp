@@ -3,12 +3,37 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <gtest/gtest.h>
+#include <folly/Conv.h>            // for to
+#include <folly/futures/Future.h>  // for Future::get
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <gtest/gtest.h>           // for Message
+#include <gtest/gtest.h>           // for TestPartResult
+#include <stddef.h>                // for size_t
 
-#include "graph/context/QueryContext.h"
-#include "graph/executor/algo/ConjunctPathExecutor.h"
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
+#include <algorithm>    // for sort
+#include <memory>       // for allocator, uni...
+#include <string>       // for string, hash
+#include <type_traits>  // for remove_referen...
+#include <utility>      // for move
+#include <vector>       // for vector
+
+#include "common/base/Base.h"                          // for kVid, kDst, kSrc
+#include "common/base/Status.h"                        // for Status
+#include "common/datatypes/DataSet.h"                  // for Row, DataSet
+#include "common/datatypes/Edge.h"                     // for Edge
+#include "common/datatypes/List.h"                     // for List
+#include "common/datatypes/Path.h"                     // for Path, Step
+#include "common/datatypes/Value.h"                    // for Value, Value::...
+#include "common/datatypes/Vertex.h"                   // for Tag, Vertex
+#include "graph/context/ExecutionContext.h"            // for ExecutionContext
+#include "graph/context/QueryContext.h"                // for QueryContext
+#include "graph/context/Result.h"                      // for ResultBuilder
+#include "graph/context/Symbols.h"                     // for SymbolTable
+#include "graph/executor/algo/ConjunctPathExecutor.h"  // for ConjunctPathEx...
+#include "graph/planner/plan/Algo.h"                   // for ConjunctPath
+#include "graph/planner/plan/Logic.h"                  // for StartNode
+#include "graph/util/AnonColGenerator.h"               // for kPathStr, kEdg...
 
 namespace nebula {
 namespace graph {
