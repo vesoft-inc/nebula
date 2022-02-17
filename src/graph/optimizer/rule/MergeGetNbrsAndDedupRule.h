@@ -12,7 +12,7 @@ namespace nebula {
 namespace opt {
 
 /*
-  Merge [[Dedup]] and [[GetNeighbor]] node
+  Merge [[Dedup]] and [[GetNeighbors]] node
   Required conditions:
    1. Match the pattern
   Benefits:

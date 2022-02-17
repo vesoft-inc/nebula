@@ -12,7 +12,7 @@ namespace nebula {
 namespace opt {
 
 /*
-  Merge [[Project]] and [[GetNeighbor]] node
+  Merge [[Project]] and [[GetNeighbors]] node
   Required conditions:
    1. Match the pattern
    2. The projection must project only one column which expression will be assigned to the src
