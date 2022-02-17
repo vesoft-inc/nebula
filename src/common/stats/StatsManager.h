@@ -10,6 +10,7 @@
 #include <folly/Range.h>
 #include <folly/stats/BucketedTimeSeries.h>
 #include <folly/stats/Histogram.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
 #include <folly/synchronization/RWSpinLock.h>
@@ -226,8 +227,8 @@ class StatsManager final {
   std::unordered_map<std::string, CounterInfo> nameMap_;
 
   // All time series stats
-  std::unordered_map<std::string,
-                     std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>>
+  folly::ConcurrentHashMap<std::string,
+                           std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>>
       stats_;
 
   // All histogram stats

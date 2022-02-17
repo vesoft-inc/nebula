@@ -12,6 +12,8 @@
 #include "common/base/StatusOr.h"     // for StatusOr
 #include "graph/optimizer/OptRule.h"  // for MatchedResult (ptr only)
 
+DECLARE_bool(enable_optimizer_collapse_project_rule);
+
 namespace nebula {
 namespace opt {
 class OptContext;

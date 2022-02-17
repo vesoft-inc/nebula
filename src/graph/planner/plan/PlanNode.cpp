@@ -365,6 +365,10 @@ std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
   return desc;
 }
 
+void PlanNode::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 void PlanNode::releaseSymbols() {
   auto symTbl = qctx_->symTable();
   for (auto in : inputVars_) {

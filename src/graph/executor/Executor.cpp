@@ -643,16 +643,65 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 void Executor::drop() {
-  for (const auto &inputVar : node()->inputVars()) {
+  if (node()->kind() == PlanNode::Kind::kLoop) {
+    // Release body when loop exit
+    const auto *loopExecutor = static_cast<const LoopExecutor *>(this);
+    const auto *loop = static_cast<const Loop *>(node());
+    if (loop->loopLayers() != 1) {
+      // Not the root Loop
+      return;
+    }
+    if (loopExecutor->finally()) {
+      dropBody(loop->body());
+    }
+    return;
+  }
+  if (node()->loopLayers() != 0) {
+    // The lifetime of loop body is managed by Loop node
+    return;
+  }
+
+  if (node()->kind() == PlanNode::Kind::kSelect) {
+    // Release the branch don't execute
+    const auto *selectExecutor = static_cast<const SelectExecutor *>(this);
+    const auto *select = static_cast<const Select *>(node());
+    if (selectExecutor->condition()) {
+      dropBody(select->otherwise());
+    } else {
+      dropBody(select->then());
+    }
+    return;
+  }
+  // Normal node
+  drop(node());
+}
+
+void Executor::drop(const PlanNode *node) {
+  for (const auto &inputVar : node->inputVars()) {
     if (inputVar != nullptr) {
       // Make sure use the variable happened-before decrement count
       if (inputVar->userCount.fetch_sub(1, std::memory_order_release) == 1) {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << node()->kind() << " Drop variable " << inputVar->name;
+        VLOG(1) << node->kind() << " Drop variable " << inputVar->name;
       }
     }
+  }
+}
+
+void Executor::dropBody(const PlanNode *body) {
+  drop(body);
+  if (body->kind() == PlanNode::Kind::kSelect) {
+    const auto *select = static_cast<const Select *>(body);
+    dropBody(select->then());
+    dropBody(select->otherwise());
+  } else if (body->kind() == PlanNode::Kind::kLoop) {
+    const auto *loop = static_cast<const Loop *>(body);
+    dropBody(loop->body());
+  }
+  for (const auto &dep : body->dependencies()) {
+    dropBody(dep);
   }
 }
 

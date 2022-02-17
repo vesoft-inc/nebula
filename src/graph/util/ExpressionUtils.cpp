@@ -44,6 +44,19 @@
 #include "graph/visitor/FindVisitor.h"                      // for FindVisitor
 #include "graph/visitor/FoldConstantExprVisitor.h"          // for FoldConst...
 #include "graph/visitor/RewriteVisitor.h"                   // for RewriteVi...
+#include <memory>
+#include <queue>
+#include <unordered_set>
+
+#include "common/base/ObjectPool.h"
+#include "common/expression/ArithmeticExpression.h"
+#include "common/expression/Expression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/function/AggFunctionManager.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
 
 DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
 

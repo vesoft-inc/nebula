@@ -149,7 +149,7 @@ bool StorageServer::initWebService() {
 #ifndef BUILD_STANDALONE
   auto status = webSvc_->start();
 #else
-  auto status = webSvc_->start(FLAGS_ws_storage_http_port, FLAGS_ws_storage_h2_port);
+  auto status = webSvc_->start(FLAGS_ws_storage_http_port);
 #endif
   return status.ok();
 }

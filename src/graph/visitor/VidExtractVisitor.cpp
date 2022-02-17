@@ -374,6 +374,11 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
         }
       }
     }
+    // where id(v) == 'xxx' or id(t) == 'yyy'
+    if (inResult.nodes.size() > 1) {
+      vidPattern_ = VidPattern{};
+      return;
+    }
     vidPattern_ = std::move(inResult);
     return;
   } else {

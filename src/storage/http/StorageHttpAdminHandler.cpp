@@ -51,13 +51,15 @@ void StorageHttpAdminHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     err_ = HttpCode::SUCCEEDED;
     resp_ =
         "Space should not be empty. Usage: "
-        "http:://ip:port/admin?space=xx&op=yy";
+        "http://ip:port/admin?space=xx&op=yy";
     return;
   }
   auto* op = headers->getQueryParamPtr("op");
   if (op == nullptr) {
     err_ = HttpCode::SUCCEEDED;
-    resp_ = "Op should not be empty. Usage: http:://ip:port/admin?space=xx&op=yy";
+    resp_ =
+        "Op should not be empty. Usage: "
+        "http://ip:port/admin?space=xx&op=yy";
     return;
   }
   auto ret = schemaMan_->toGraphSpaceID(*space);

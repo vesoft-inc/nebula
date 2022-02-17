@@ -17,6 +17,14 @@
 #include "graph/util/ExpressionUtils.h"  // for ExpressionUtils
 #include "graph/util/ToJson.h"           // for toJson
 #include "parser/MatchSentence.h"        // for MatchStepRange
+#include <folly/String.h>
+#include <folly/dynamic.h>
+#include <folly/json.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
+#include "graph/planner/plan/PlanNodeVisitor.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/ToJson.h"
 
 using folly::stringPrintf;
 
@@ -274,6 +282,10 @@ std::unique_ptr<PlanNodeDescription> Filter::explain() const {
   return desc;
 }
 
+void Filter::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 PlanNode* Filter::clone() const {
   auto* newFilter = Filter::make(qctx_, nullptr);
   newFilter->cloneMembers(*this);
@@ -339,6 +351,10 @@ std::unique_ptr<PlanNodeDescription> Project::explain() const {
   }
   addDescription("columns", folly::toJson(columns), desc.get());
   return desc;
+}
+
+void Project::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 PlanNode* Project::clone() const {
@@ -493,6 +509,10 @@ std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
   }
   addDescription("groupItems", folly::toJson(itemArr), desc.get());
   return desc;
+}
+
+void Aggregate::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 PlanNode* Aggregate::clone() const {
@@ -719,24 +739,26 @@ void Traverse::cloneMembers(const Traverse& g) {
   GetNeighbors::cloneMembers(g);
 
   setStepRange(g.range_);
-  setVertexFilter(g.vFilter_->clone());
-  setEdgeFilter(g.eFilter_->clone());
+  if (g.vFilter_ != nullptr) {
+    setVertexFilter(g.vFilter_->clone());
+  }
+  if (g.eFilter_ != nullptr) {
+    setEdgeFilter(g.eFilter_->clone());
+  }
   setTrackPrevPath(g.trackPrevPath_);
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   auto desc = GetNeighbors::explain();
-  if (range_ != nullptr) {
-    addDescription("steps", range_->toString(), desc.get());
-  }
-  if (vFilter_ != nullptr) {
-    addDescription("vertex filter", vFilter_->toString(), desc.get());
-  }
-  if (eFilter_ != nullptr) {
-    addDescription("edge filter", eFilter_->toString(), desc.get());
-  }
+  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
+  addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
+  addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
+}
+
+void Traverse::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 AppendVertices* AppendVertices::clone() const {
@@ -758,11 +780,13 @@ void AppendVertices::cloneMembers(const AppendVertices& a) {
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
-  if (vFilter_ != nullptr) {
-    addDescription("vertex_filter", vFilter_->toString(), desc.get());
-  }
+  addDescription("vertex_filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
+}
+
+void AppendVertices::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
@@ -770,6 +794,10 @@ std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
   return desc;
+}
+
+void BiJoin::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 void BiJoin::cloneMembers(const BiJoin& j) {

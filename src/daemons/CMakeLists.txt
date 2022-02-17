@@ -128,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:plan_node_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>
@@ -211,6 +212,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:plan_node_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>

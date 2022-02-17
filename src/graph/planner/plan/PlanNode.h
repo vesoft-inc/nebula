@@ -32,6 +32,8 @@ struct PlanNodeDescription;
 namespace graph {
 class QueryContext;
 
+class PlanNodeVisitor;
+
 /**
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
@@ -207,6 +209,12 @@ class PlanNode {
   // Describe plan node
   virtual std::unique_ptr<PlanNodeDescription> explain() const;
 
+  virtual void accept(PlanNodeVisitor* visitor);
+
+  void markDeleted() {
+    deleted_ = true;
+  }
+
   virtual PlanNode* clone() const = 0;
 
   virtual void calcCost();
@@ -300,6 +308,14 @@ class PlanNode {
     return cost_;
   }
 
+  void setLoopLayers(std::size_t c) {
+    loopLayers_ = c;
+  }
+
+  std::size_t loopLayers() const {
+    return loopLayers_;
+  }
+
   template <typename T>
   const T* asNode() const {
     static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
@@ -329,6 +345,9 @@ class PlanNode {
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
+  // nested loop layers of current node
+  std::size_t loopLayers_{0};
+  bool deleted_{false};
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);

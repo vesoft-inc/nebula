@@ -12,6 +12,8 @@
 
 #include "graph/executor/Executor.h"  // for Executor
 
+DECLARE_int32(ws_http_port);
+
 namespace nebula {
 class Status;
 namespace graph {

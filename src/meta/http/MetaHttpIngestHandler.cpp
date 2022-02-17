@@ -44,7 +44,6 @@ class IOBuf;
 }  // namespace folly
 
 DECLARE_int32(ws_storage_http_port);
-DECLARE_int32(ws_storage_h2_port);
 
 namespace nebula {
 namespace meta {

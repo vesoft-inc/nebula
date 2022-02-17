@@ -170,10 +170,10 @@ class LabelTagPropertyExpression final : public PropertyExpression {
   }
 
  private:
-  LabelTagPropertyExpression(ObjectPool* pool,
-                             Expression* label = nullptr,
-                             const std::string& tag = "",
-                             const std::string& prop = "")
+  explicit LabelTagPropertyExpression(ObjectPool* pool,
+                                      Expression* label = nullptr,
+                                      const std::string& tag = "",
+                                      const std::string& prop = "")
       : PropertyExpression(pool, Kind::kLabelTagProperty, "", tag, prop), label_(label) {}
 
   void writeTo(Encoder& encoder) const override;

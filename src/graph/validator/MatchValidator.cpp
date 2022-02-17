@@ -69,11 +69,11 @@ Status MatchValidator::validateImpl() {
   retClauseCtx->yield = std::move(retYieldCtx);
 
   cypherCtx_->queryParts.emplace_back();
-  for (size_t i = 0; i < clauses.size(); ++i) {
-    auto kind = clauses[i]->kind();
+  for (auto &clause : clauses) {
+    auto kind = clause->kind();
     switch (kind) {
       case ReadingClause::Kind::kMatch: {
-        auto *matchClause = static_cast<MatchClause *>(clauses[i].get());
+        auto *matchClause = static_cast<MatchClause *>(clause.get());
 
         auto matchClauseCtx = getContext<MatchClauseContext>();
         matchClauseCtx->isOptional = matchClause->isOptional();
@@ -103,7 +103,7 @@ Status MatchValidator::validateImpl() {
         break;
       }
       case ReadingClause::Kind::kUnwind: {
-        auto *unwindClause = static_cast<UnwindClause *>(clauses[i].get());
+        auto *unwindClause = static_cast<UnwindClause *>(clause.get());
         auto unwindClauseCtx = getContext<UnwindClauseContext>();
         unwindClauseCtx->aliasesAvailable = aliasesAvailable;
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
@@ -118,7 +118,7 @@ Status MatchValidator::validateImpl() {
         break;
       }
       case ReadingClause::Kind::kWith: {
-        auto *withClause = static_cast<WithClause *>(clauses[i].get());
+        auto *withClause = static_cast<WithClause *>(clause.get());
         auto withClauseCtx = getContext<WithClauseContext>();
         auto withYieldCtx = getContext<YieldClauseContext>();
         withClauseCtx->yield = std::move(withYieldCtx);
@@ -481,9 +481,6 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   if (min > max) {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
-  }
-  if (max == std::numeric_limits<size_t>::max()) {
-    return Status::SemanticError("Cannot set maximum hop for variable length relationships");
   }
   return Status::OK();
 }

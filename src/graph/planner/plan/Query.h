@@ -755,6 +755,8 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
@@ -850,6 +852,8 @@ class Project final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
@@ -1138,6 +1142,8 @@ class Aggregate final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   Aggregate(QueryContext* qctx,
@@ -1494,6 +1500,8 @@ class Traverse final : public GetNeighbors {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   Traverse* clone() const override;
 
   MatchStepRange* stepRange() const {
@@ -1550,6 +1558,8 @@ class AppendVertices final : public GetVertices {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   AppendVertices* clone() const override;
 
@@ -1609,6 +1619,8 @@ class BiJoin : public BinaryInputNode {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  protected:
   BiJoin(QueryContext* qctx,

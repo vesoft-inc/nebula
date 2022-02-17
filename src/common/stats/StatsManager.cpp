@@ -287,14 +287,18 @@ void StatsManager::addValue(const CounterId& id, VT value) {
   bool isHisto = id.isHisto();
   if (!isHisto) {
     // Stats
-    DCHECK(sm.stats_.find(index) != sm.stats_.end());
-    std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
-    sm.stats_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
+    auto iter = sm.stats_.find(index);
+    if (iter != sm.stats_.end()) {
+      std::lock_guard<std::mutex> g(*(iter->second.first));
+      iter->second.second->addValue(seconds(time::WallClock::fastNowInSec()), value);
+    }
   } else {
     // Histogram
-    DCHECK(sm.histograms_.find(index) != sm.histograms_.end());
-    std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-    sm.histograms_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
+    auto iter = sm.histograms_.find(index);
+    if (iter != sm.histograms_.end()) {
+      std::lock_guard<std::mutex> g(*(iter->second.first));
+      iter->second.second->addValue(seconds(time::WallClock::fastNowInSec()), value);
+    }
   }
 }
 
@@ -472,16 +476,18 @@ StatusOr<StatsManager::VT> StatsManager::readStats(const CounterId& id,
 
   if (!id.isHisto()) {
     // stats
-    DCHECK(sm.stats_.find(index) != sm.stats_.end());
-    std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
-    sm.stats_[index].second->update(seconds(time::WallClock::fastNowInSec()));
-    return readValue(*(sm.stats_[index].second), range, method);
+    auto iter = sm.stats_.find(index);
+    DCHECK(iter != sm.stats_.end());
+    std::lock_guard<std::mutex> g(*(iter->second.first));
+    iter->second.second->update(seconds(time::WallClock::fastNowInSec()));
+    return readValue(*(iter->second.second), range, method);
   } else {
     // histograms_
-    DCHECK(sm.histograms_.find(index) != sm.histograms_.end());
-    std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-    sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
-    return readValue(*(sm.histograms_[index].second), range, method);
+    auto iter = sm.histograms_.find(index);
+    DCHECK(iter != sm.histograms_.end());
+    std::lock_guard<std::mutex> g(*(iter->second.first));
+    iter->second.second->update(seconds(time::WallClock::fastNowInSec()));
+    return readValue(*(iter->second.second), range, method);
   }
 }
 
