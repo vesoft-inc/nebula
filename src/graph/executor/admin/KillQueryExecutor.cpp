@@ -91,9 +91,9 @@ Status KillQueryExecutor::verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQ
       if (sessionPtr == nullptr) {
         toBeVerifiedQueries[sessionId].emplace(epId);
       } else {  // Sessions in current host
-        // Only GOD role could kill other's queries.
+        // Only GOD role could kill others' queries.
         if (sessionPtr->user() != session->user() && !session->isGod()) {
-          return Status::PermissionError("Only GOD role could kill other's queries.");
+          return Status::PermissionError("Only GOD role could kill others' queries.");
         }
         if (!sessionPtr->findQuery(epId)) {
           return Status::Error(
@@ -144,9 +144,9 @@ Status KillQueryExecutor::verifyTheQueriesByMetaInfo(
             "ExecutionPlanId[%ld] does not exist in Session[%ld].", epId, sessionId);
       }
     }
-    // Only GOD role could kill other's queries.
+    // Only GOD role could kill others' queries.
     if (found->get_user_name() != currentSession->user() && !currentSession->isGod()) {
-      return Status::PermissionError("Only GOD role could kill other's queries.");
+      return Status::PermissionError("Only GOD role could kill others' queries.");
     }
   }
   return Status::OK();
