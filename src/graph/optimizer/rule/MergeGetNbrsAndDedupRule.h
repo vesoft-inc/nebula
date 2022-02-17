@@ -12,7 +12,7 @@ namespace nebula {
 namespace opt {
 
 /*
-  Embedding dedup factor into [[GetNeighbor]] node
+  Merge [[Dedup]] and [[GetNeighbor]] node
   Required conditions:
    1. Match the pattern
   Benefits:
@@ -21,14 +21,13 @@ namespace opt {
   Tranformation:
   Before:
 
+  +------+-------+
+  | GetNeighbors |
+  +------+-------+
+         |
   +------+------+
   |    Dedup    |
   +------+------+
-         |
-  +------+-------+
-  | GetNeighbors |
-  | (dedup=false)|
-  +------+-------+
 
   After:
 

@@ -11,6 +11,33 @@
 namespace nebula {
 namespace opt {
 
+/*
+  Embedding dedup factor into [[GetNeighbor]] node
+  Required conditions:
+   1. Match the pattern
+  Benefits:
+   1. Delete unnecessary node
+
+  Tranformation:
+  Before:
+
+  +------+------+
+  |    Dedup    |
+  +------+------+
+         |
+  +------+-------+
+  | GetNeighbors |
+  | (dedup=false)|
+  +------+-------+
+
+  After:
+
+  +------+-------+
+  | GetNeighbors |
+  | (dedup=true) |
+  +------+-------+
+
+*/
 class MergeGetNbrsAndProjectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
