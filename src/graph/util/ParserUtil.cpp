@@ -11,12 +11,6 @@ namespace nebula {
 namespace graph {
 
 // static
-bool ParserUtil::isLabel(const Expression *expr) {
-  return expr->kind() == Expression::Kind::kLabel ||
-         expr->kind() == Expression::Kind::kLabelAttribute;
-}
-
-// static
 void ParserUtil::rewriteLC(QueryContext *qctx,
                            ListComprehensionExpression *lc,
                            const std::string &oldVarName) {

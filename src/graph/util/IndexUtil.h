@@ -16,11 +16,16 @@ class IndexUtil final {
  public:
   IndexUtil() = delete;
 
+  // Checks wether the parameter in the geo s2 index is valid
   static Status validateIndexParams(const std::vector<IndexParamItem *> &params,
                                     meta::cpp2::IndexParams &indexParams);
 
+  // TODO(Aiee) no status will be returned. Change the interface
+  // Extracts the field and type from the indexItem and returns a Dataset to depscribe the index
   static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);
 
+  // TODO(Aiee) no status will be returned. Change the interface
+  // Returns the infomation of the given index
   static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
                                              const std::string &indexName,
                                              const meta::cpp2::IndexItem &indexItem);

@@ -18,10 +18,15 @@ class ValidateUtil final {
  public:
   ValidateUtil() = delete;
 
+  // Checks the upper bound steps of clause is greater than its lower bound.
+  // TODO(Aiee) Seems this method not only checks the clause but also set the clause into step which
+  // is in the context. Consider seprate it.
   static Status validateStep(const StepClause* clause, StepClause& step);
 
+  // Retrives edges from schema manager and validate the over clause.
   static Status validateOver(QueryContext* qctx, const OverClause* clause, Over& over);
 
+  // Returns a status error if the expr contains any labelExpression.
   static Status invalidLabelIdentifiers(const Expression* expr);
 };
 

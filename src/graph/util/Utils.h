@@ -13,6 +13,8 @@
 
 namespace nebula::graph::util {
 
+// Iterates the container and for each element, apply the function fn(). Joins the results of the
+// fn() with the delimiter
 template <typename Container, typename Fn>
 std::string join(const Container& container, Fn fn, const std::string& delimiter = ",") {
   std::vector<std::string> strs;

@@ -419,6 +419,7 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
+// TODO(Aiee) Move to validateUtil
 Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
   if (clause == nullptr) {
     return Status::SemanticError("From clause nullptr.");

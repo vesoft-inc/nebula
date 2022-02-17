@@ -50,6 +50,7 @@ struct Variable;
 }  // namespace graph
 namespace util {
 
+// Converts all elements in arr to JSON objects, returns a dynamic::array
 template <typename T>
 folly::dynamic toJson(const std::vector<T> &arr);
 
@@ -64,6 +65,8 @@ std::string toJson(const List &list);
 std::string toJson(const Value &value);
 std::string toJson(const EdgeKeyRef *ref);
 std::string toJson(const Expression *expr);
+
+// Concerts the given object to a dynamic object
 folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column);
 folly::dynamic toJson(const meta::cpp2::Schema &schema);
@@ -84,6 +87,7 @@ folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc);
 folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints);
 folly::dynamic toJson(const graph::Variable *var);
 
+// Converts std::pair p into a dynamic object where the key is p.first and value if p.second
 template <typename K, typename V>
 folly::dynamic toJson(const std::pair<K, V> &p) {
   return folly::dynamic::object(toJson(p.first), toJson(p.second));

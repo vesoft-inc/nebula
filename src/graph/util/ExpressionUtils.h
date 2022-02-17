@@ -174,10 +174,9 @@ class ExpressionUtils {
                           Expression** filterPicked,
                           Expression** filterUnpicked);
 
+  // TODO(Aiee) These functions are unused. Remove when refactor.
   static Expression* expandExpr(ObjectPool* pool, const Expression* expr);
-
   static Expression* expandImplAnd(ObjectPool* pool, const Expression* expr);
-
   static std::vector<Expression*> expandImplOr(const Expression* expr);
 
   // Check if the aggExpr is valid in yield clause

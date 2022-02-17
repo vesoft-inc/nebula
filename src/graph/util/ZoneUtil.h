@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 
+// TODO(Aiee) Remove unused class
 class ZoneUtil final {
  public:
   ZoneUtil() = delete;
