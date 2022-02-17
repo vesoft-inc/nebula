@@ -10,7 +10,6 @@
 
 #include <limits>       // for numeric_limits
 #include <memory>       // for unique_ptr
-#include <ostream>      // for operator<<
 #include <string>       // for operator<<
 #include <type_traits>  // for remove_referen...
 #include <utility>      // for move

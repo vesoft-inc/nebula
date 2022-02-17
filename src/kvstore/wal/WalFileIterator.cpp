@@ -10,8 +10,6 @@
 #include <string.h>  // for strerror
 #include <unistd.h>  // for pread, ssize_t, close
 
-#include <ostream>  // for operator<<, basic_ostream
-
 #include "common/base/Logging.h"       // for Check_EQImpl, LogMessage
 #include "kvstore/wal/FileBasedWal.h"  // for FileBasedWal
 #include "kvstore/wal/WalFileInfo.h"   // for WalFileInfoPtr, WalFileInfo

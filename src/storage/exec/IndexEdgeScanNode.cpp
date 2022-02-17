@@ -14,7 +14,6 @@
 #include <string.h>                            // for memcpy
 
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
-#include <ostream>             // for operator<<, basic_ostream
 #include <unordered_map>       // for unordered_map
 
 #include "codec/RowReaderWrapper.h"            // for RowReaderWrapper

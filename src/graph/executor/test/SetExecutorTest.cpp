@@ -13,7 +13,6 @@
 
 #include <algorithm>           // for sort
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_...
-#include <ostream>             // for operator<<, basic_ostream
 #include <string>              // for string, basic_string
 #include <type_traits>         // for remove_reference<>::type
 #include <utility>             // for move

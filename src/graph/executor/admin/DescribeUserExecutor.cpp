@@ -14,7 +14,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <algorithm>    // for max
-#include <ostream>      // for operator<<, basic_ostream...
 #include <string>       // for string, basic_string, all...
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move

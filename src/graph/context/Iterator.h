@@ -15,7 +15,6 @@
 #include <boost/intrusive/detail/std_fwd.hpp>       // for equal_to
 #include <cstddef>                                  // for size_t
 #include <memory>                                   // for unique_ptr, alloc...
-#include <ostream>                                  // for operator<<, ostream
 #include <string>                                   // for string, basic_string
 #include <type_traits>                              // for remove_reference<...
 #include <unordered_map>                            // for unordered_map

@@ -15,7 +15,6 @@
 
 #include <functional>  // for function
 #include <memory>      // for shared_ptr, __shar...
-#include <ostream>     // for operator<<, basic_...
 #include <string>      // for string, basic_string
 #include <tuple>       // for tuple
 #include <utility>     // for pair, make_pair, move

@@ -13,8 +13,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 #include <stdint.h>                               // for int32_t
 
-#include <ostream>  // for operator<<, basic_o...
-
 #include "common/base/Logging.h"              // for LOG, LogMessage
 #include "common/base/StatusOr.h"             // for StatusOr
 #include "common/meta/SchemaManager.h"        // for SchemaManager

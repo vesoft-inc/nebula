@@ -12,7 +12,6 @@
 #include <exception>  // for exception
 #include <limits>     // for numeric_limits
 #include <memory>     // for allocator_traits<>::val...
-#include <ostream>    // for operator<<, basic_ostream
 
 #include "codec/Common.h"                     // for intToBool, toHexStr
 #include "common/base/Logging.h"              // for GetReferenceableValue, LOG

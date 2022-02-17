@@ -8,7 +8,6 @@
 
 #include <functional>     // for function
 #include <memory>         // for unique_ptr
-#include <ostream>        // for ostream
 #include <unordered_map>  // for unordered_map
 #include <utility>        // for move
 #include <vector>         // for vector

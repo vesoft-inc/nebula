@@ -11,7 +11,6 @@
 
 #include <algorithm>      // for max
 #include <memory>         // for unique_ptr
-#include <ostream>        // for operator<<, basic_ost...
 #include <string>         // for basic_string, operator<<
 #include <type_traits>    // for remove_reference_t
 #include <unordered_map>  // for unordered_map, _Node_...

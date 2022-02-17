@@ -13,7 +13,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>
 #include <unistd.h>
 
-#include <ostream>
 #include <type_traits>
 
 #include "codec/RowReader.h"

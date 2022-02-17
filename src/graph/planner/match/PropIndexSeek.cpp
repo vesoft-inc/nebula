@@ -8,7 +8,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
 #include <cstdint>  // for int32_t
-#include <ostream>  // for operator<<
 #include <string>   // for string, basic_string
 #include <utility>  // for move
 #include <vector>   // for vector

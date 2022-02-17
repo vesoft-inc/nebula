@@ -15,7 +15,6 @@
 #include <atomic>   // for atomic, memory_order_acquire
 #include <cstdint>  // for int32_t
 #include <memory>   // for shared_ptr, __shared_ptr_ac...
-#include <ostream>  // for operator<<, basic_ostream::...
 #include <string>   // for string, basic_string
 #include <thread>   // for thread
 #include <utility>  // for move

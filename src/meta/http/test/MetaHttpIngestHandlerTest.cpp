@@ -13,9 +13,8 @@
 #include <rocksdb/sst_file_writer.h>
 #include <rocksdb/status.h>  // for Status
 
-#include <memory>   // for unique_ptr, make_...
-#include <ostream>  // for operator<<
-#include <string>   // for basic_string
+#include <memory>  // for unique_ptr, make_...
+#include <string>  // for basic_string
 
 #include "common/base/Logging.h"                    // for SetStderrLogging
 #include "common/base/Status.h"                     // for operator<<, Status

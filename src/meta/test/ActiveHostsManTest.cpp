@@ -20,7 +20,6 @@
 #include <cstdint>        // for int64_t, uint32_t
 #include <map>            // for map, map<>::mapped_type
 #include <memory>         // for unique_ptr, allocator
-#include <ostream>        // for operator<<, basic_ostream
 #include <string>         // for operator<<, string
 #include <tuple>          // for tie, tuple
 #include <unordered_map>  // for unordered_map

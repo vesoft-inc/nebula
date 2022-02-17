@@ -7,7 +7,6 @@
 
 #include <algorithm>  // for find
 #include <cstdint>    // for int64_t, uint32_t
-#include <ostream>    // for operator<<, basic_...
 #include <set>        // for set
 #include <utility>    // for pair
 

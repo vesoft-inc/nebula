@@ -11,9 +11,8 @@
 #include <stdlib.h>         // for EXIT_FAILURE, EXIT_SUCCESS
 #include <string.h>         // for strsignal, strcmp
 
-#include <memory>   // for make_unique, unique_ptr
-#include <ostream>  // for operator<<, basic_ostream::...
-#include <thread>   // for thread
+#include <memory>  // for make_unique, unique_ptr
+#include <thread>  // for thread
 
 #include "common/base/Base.h"             // for FLOG_ERROR, FLOG_INFO
 #include "common/base/Logging.h"          // for LogMessage, LOG, _LOG_ERROR

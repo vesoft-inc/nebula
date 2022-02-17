@@ -9,8 +9,6 @@
 #include <stddef.h>      // for size_t
 #include <stdint.h>      // for uint32_t
 
-#include <ostream>  // for operator<<
-
 #include "common/base/Base.h"     // for UNUSED
 #include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_ERROR
 

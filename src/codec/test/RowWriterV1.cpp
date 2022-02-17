@@ -6,7 +6,6 @@
 #include "codec/test/RowWriterV1.h"
 
 #include <algorithm>  // for min
-#include <ostream>    // for operator<<
 
 #include "codec/test/RowWriterV1.h"           // for RowWriterV1::writeInt
 #include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_W...

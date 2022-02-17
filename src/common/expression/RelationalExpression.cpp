@@ -8,7 +8,6 @@
 #include <folly/Likely.h>  // for UNLIKELY
 
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_ostream
 #include <regex>      // for regex_match, match_res...
 #include <vector>     // for vector
 

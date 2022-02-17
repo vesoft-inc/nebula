@@ -9,7 +9,6 @@
 
 #include <boost/filesystem/operations.hpp>  // for current_path
 #include <boost/filesystem/path.hpp>        // for path
-#include <ostream>                          // for operator<<, basic_ostream
 #include <string>                           // for basic_string, operator<<
 #include <vector>                           // for vector
 

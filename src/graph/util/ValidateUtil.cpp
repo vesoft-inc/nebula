@@ -5,7 +5,6 @@
 
 #include "graph/util/ValidateUtil.h"
 
-#include <ostream>      // for operator<<, stringstream
 #include <string>       // for string, basic_string
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move

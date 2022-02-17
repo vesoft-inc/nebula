@@ -24,7 +24,6 @@
 #include <cmath>       // for pow
 #include <functional>  // for function
 #include <memory>      // for unique_ptr, allocator
-#include <ostream>     // for operator<<, basic_...
 #include <set>         // for set
 #include <string>      // for string, basic_string
 #include <thread>      // for thread

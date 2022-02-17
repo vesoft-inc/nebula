@@ -7,8 +7,6 @@
 
 #include <folly/String.h>  // for stringPrintf
 
-#include <ostream>  // for operator<<, basic_ostream
-
 #include "Clauses.h"                       // for YieldClause, WhereClause
 #include "EdgeKey.h"                       // for EdgeKeyRef, EdgeKeys
 #include "Sentence.h"                      // for Sentence, Sentence::Kind

@@ -14,7 +14,6 @@
 
 #include <boost/filesystem/operations.hpp>  // for absolute
 #include <boost/filesystem/path.hpp>        // for path
-#include <ostream>                          // for operator<<
 #include <string>                           // for string, basic_...
 #include <utility>                          // for move
 

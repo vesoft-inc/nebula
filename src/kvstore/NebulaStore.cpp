@@ -31,7 +31,6 @@
 #include <exception>                        // for exception
 #include <iterator>                         // for insert_iterator, back_i...
 #include <new>                              // for operator new
-#include <ostream>                          // for operator<<, basic_ostre...
 #include <set>                              // for set, operator!=
 #include <thread>                           // for thread
 

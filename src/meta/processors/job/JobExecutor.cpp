@@ -8,7 +8,6 @@
 #include <gflags/gflags_declare.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include <ostream>
 #include <utility>
 
 #include "common/base/Logging.h"

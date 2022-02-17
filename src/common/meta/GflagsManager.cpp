@@ -19,7 +19,6 @@
 #include <algorithm>  // for transform
 #include <cstdint>    // for int64_t
 #include <memory>     // for allocator, allocator_traits<>...
-#include <ostream>    // for operator<<, basic_ostream
 
 #include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_ERROR
 #include "common/base/Status.h"         // for Status, operator<<

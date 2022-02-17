@@ -13,7 +13,6 @@
 
 #include <algorithm>  // for find, all_of, unique
 #include <memory>     // for unique_ptr, allocator
-#include <ostream>    // for operator<<, basic_ost...
 #include <vector>     // for vector
 
 #include "common/base/ErrorOr.h"            // for value, error, ok

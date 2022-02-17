@@ -20,7 +20,6 @@
 
 #include <exception>  // for exception
 #include <memory>     // for unique_ptr
-#include <ostream>    // for operator<<
 #include <string>     // for operator<<
 #include <utility>    // for make_pair, move
 

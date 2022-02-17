@@ -9,7 +9,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basi...
 #include <tuple>      // for tie, tuple
 #include <utility>    // for move, pair
 #include <vector>     // for vector

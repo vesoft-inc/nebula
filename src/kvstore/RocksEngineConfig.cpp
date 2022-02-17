@@ -23,7 +23,6 @@
 #include <stddef.h>                   // for size_t
 
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value...
-#include <ostream>             // for operator<<, basic_ostream
 #include <utility>             // for pair, move
 #include <vector>              // for vector
 

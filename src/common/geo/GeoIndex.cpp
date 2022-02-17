@@ -31,7 +31,6 @@
 #include <cstdint>        // for uint64_t
 #include <functional>     // for hash
 #include <memory>         // for unique_ptr, make_unique
-#include <ostream>        // for operator<<
 #include <string>         // for string, basic_string
 #include <unordered_set>  // for unordered_set, operator!=
 

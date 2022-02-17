@@ -7,7 +7,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for unique_ptr, __shar...
-#include <ostream>    // for operator<<, basic_...
 #include <string>     // for string, basic_string
 #include <utility>    // for move
 

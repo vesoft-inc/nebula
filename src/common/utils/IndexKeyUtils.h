@@ -16,7 +16,6 @@
 #include <bitset>     // for bitset
 #include <cmath>      // for isnan
 #include <cstdint>    // for int64_t, int8_t, int16_t
-#include <ostream>    // for operator<<
 #include <string>     // for string, basic_string
 #include <vector>     // for vector
 

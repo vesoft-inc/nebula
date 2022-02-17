@@ -11,7 +11,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>
 
 #include <memory>
-#include <ostream>
 #include <type_traits>
 #include <utility>
 #include <vector>

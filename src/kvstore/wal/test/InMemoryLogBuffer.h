@@ -13,7 +13,6 @@
 #include <functional>  // for function
 #include <list>        // for list
 #include <memory>      // for allocator, shared_ptr
-#include <ostream>     // for operator<<, basic_ostream
 #include <string>      // for string, operator<<
 #include <tuple>       // for tuple
 #include <utility>     // for pair

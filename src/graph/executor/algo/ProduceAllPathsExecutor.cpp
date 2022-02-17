@@ -6,7 +6,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for unique_ptr, allocator_tr...
-#include <ostream>    // for operator<<, basic_ostream
 #include <string>     // for string, basic_string, hash
 #include <utility>    // for move, pair
 

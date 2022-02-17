@@ -16,7 +16,6 @@
 
 #include <algorithm>      // for max, transform
 #include <iterator>       // for back_insert_iterator
-#include <ostream>        // for operator<<, basic_ostream
 #include <set>            // for set, operator!=, _Rb_tr...
 #include <type_traits>    // for remove_reference<>::type
 #include <unordered_map>  // for unordered_map

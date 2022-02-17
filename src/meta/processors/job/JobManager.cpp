@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <ctime>
 #include <ext/alloc_traits.h>
-#include <ostream>
 
 #include "common/base/Logging.h"
 #include "common/stats/StatsManager.h"

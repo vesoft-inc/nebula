@@ -12,7 +12,6 @@
 
 #include <cmath>               // for remainder
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <ostream>             // for operator<<, ostream
 #include <type_traits>         // for remove_reference<>::type
 
 #include "common/base/Logging.h"          // for CheckNotNull, CHECK, COMPAC...

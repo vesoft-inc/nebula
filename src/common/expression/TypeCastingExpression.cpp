@@ -5,7 +5,6 @@
 
 #include "common/expression/TypeCastingExpression.h"
 
-#include <ostream>        // for operator<<, basic_ostream
 #include <unordered_map>  // for _Node_iterator, operator==
 #include <utility>        // for pair
 

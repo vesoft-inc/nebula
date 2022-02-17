@@ -9,7 +9,6 @@
 
 #include <algorithm>  // for max
 #include <iterator>   // for move_iterator, make_move...
-#include <ostream>    // for operator<<, basic_ostream
 #include <utility>    // for move
 
 #include "common/base/Logging.h"             // for COMPACT_GOOGLE_LOG_INFO

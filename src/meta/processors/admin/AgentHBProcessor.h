@@ -11,7 +11,6 @@
 #include <gtest/gtest_prod.h>       // for FRIEND_TEST
 
 #include <memory>   // for allocator
-#include <ostream>  // for operator<<
 #include <utility>  // for move
 
 #include "common/base/Logging.h"            // for COMPACT_GOOGLE_LOG_INFO

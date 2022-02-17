@@ -8,7 +8,6 @@
 #include <algorithm>    // for sort, set_in...
 #include <cstddef>      // for size_t
 #include <iterator>     // for move_iterator
-#include <ostream>      // for operator<<
 #include <type_traits>  // for remove_refer...
 #include <vector>       // for vector
 

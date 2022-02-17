@@ -8,7 +8,6 @@
 #include <folly/Likely.h>  // for UNLIKELY
 
 #include <cstdint>  // for int64_t
-#include <ostream>  // for operator<<, basic_ostream
 #include <string>   // for operator<<
 #include <utility>  // for pair
 

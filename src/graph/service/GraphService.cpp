@@ -24,7 +24,6 @@
 #include <boost/filesystem/path.hpp>        // for path
 #include <cstdint>                          // for int64_t, int32_t
 #include <iterator>                         // for insert_iterator
-#include <ostream>                          // for operator<<
 #include <type_traits>                      // for remove_referen...
 #include <unordered_set>                    // for unordered_set
 #include <utility>                          // for move

@@ -12,7 +12,6 @@
 #include <functional>  // for function
 #include <memory>      // for shared_ptr, uniqu...
 #include <mutex>       // for lock_guard, mutex
-#include <ostream>     // for operator<<, basic...
 #include <string>      // for string, operator<<
 #include <tuple>       // for tuple
 #include <utility>     // for pair, move

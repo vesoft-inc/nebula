@@ -11,7 +11,6 @@
 #include <stdint.h>        // for int32_t, uint32_t, int64_t
 
 #include <algorithm>    // for min
-#include <ostream>      // for operator<<, basic_ostream
 #include <string>       // for string, operator<<, char_traits
 #include <type_traits>  // for enable_if, is_integral
 

@@ -9,7 +9,6 @@
 #include <gtest/gtest.h>      // for Message
 #include <gtest/gtest.h>      // for TestPartResult
 
-#include <ostream>        // for operator<<, basic_ostream
 #include <string>         // for string, basic_string
 #include <unordered_map>  // for unordered_map
 #include <unordered_set>  // for unordered_set

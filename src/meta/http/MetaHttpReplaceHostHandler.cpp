@@ -16,7 +16,6 @@
 #include <stdint.h>                               // for uint32_t
 
 #include <atomic>   // for atomic
-#include <ostream>  // for operator<<, basic_o...
 #include <utility>  // for move
 #include <vector>   // for vector
 

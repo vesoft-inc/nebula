@@ -27,7 +27,6 @@
 
 #include <chrono>       // for seconds
 #include <functional>   // for _Bind, bind, _1
-#include <ostream>      // for operator<<
 #include <thread>       // for sleep_for
 #include <type_traits>  // for remove_refere...
 

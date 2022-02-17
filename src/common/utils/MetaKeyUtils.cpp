@@ -14,7 +14,6 @@
 #include <ctime>                 // for size_t
 #include <initializer_list>      // for initialize...
 #include <limits>                // for numeric_li...
-#include <ostream>               // for operator<<
 #include <unordered_set>         // for unordered_set
 
 #include "common/base/Base.h"               // for UNUSED

@@ -13,7 +13,6 @@
 #include <folly/logging/LoggerDB.h>
 #include <stdint.h>
 
-#include <iostream>
 #include <memory>
 
 #define LOG_SOMETHING(iters)            \

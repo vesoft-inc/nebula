@@ -9,7 +9,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_ost...
 
 #include "common/base/ErrorOr.h"            // for error, ok, value
 #include "common/base/Logging.h"            // for LOG, LogMessage, _LOG...

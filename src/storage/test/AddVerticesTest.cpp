@@ -11,7 +11,6 @@
 #include <gtest/gtest.h>           // for TestPartResult
 
 #include <memory>       // for allocator, unique_ptr
-#include <ostream>      // for operator<<
 #include <type_traits>  // for remove_reference<>:...
 #include <utility>      // for move
 #include <vector>       // for vector

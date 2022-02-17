@@ -9,9 +9,8 @@
 #include <folly/SharedMutex.h>         // for SharedMutex
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include <memory>   // for unique_ptr
-#include <ostream>  // for operator<<, basic_ost...
-#include <string>   // for operator<<, char_traits
+#include <memory>  // for unique_ptr
+#include <string>  // for operator<<, char_traits
 
 #include "common/base/ErrorOr.h"              // for error, ok, value
 #include "common/base/Logging.h"              // for LogMessage, LOG, _LOG...

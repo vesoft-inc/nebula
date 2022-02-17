@@ -6,7 +6,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for unique_ptr, allocator
-#include <ostream>    // for operator<<, basic_ostream
 #include <utility>    // for move, pair
 
 #include "common/base/Base.h"                // for kVid, kDst, kSrc

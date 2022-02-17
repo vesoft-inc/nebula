@@ -16,7 +16,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include <ostream>  // for operator<<, stringstream
 #include <string>   // for operator<<, string, all...
 #include <tuple>    // for tie, tuple
 #include <utility>  // for pair

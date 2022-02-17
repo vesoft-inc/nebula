@@ -15,7 +15,6 @@
 #include <map>          // for multimap, operator!=
 #include <memory>       // for unique_ptr
 #include <new>          // for operator new
-#include <ostream>      // for operator<<, basic_ost...
 #include <type_traits>  // for remove_reference<>::type
 
 #include "clients/meta/MetaClient.h"        // for FLAGS_heartbeat_inter...

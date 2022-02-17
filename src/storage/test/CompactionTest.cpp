@@ -9,9 +9,8 @@
 #include <stdint.h>           // for int32_t
 #include <unistd.h>           // for sleep
 
-#include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<
-#include <string>   // for operator==, basic_string
+#include <memory>  // for unique_ptr, allocator
+#include <string>  // for operator==, basic_string
 
 #include "common/base/Logging.h"        // for LOG, LogMessage, _LOG_INFO
 #include "common/base/StatusOr.h"       // for StatusOr

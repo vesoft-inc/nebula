@@ -17,7 +17,6 @@
 #include <unistd.h>                                // for sleep
 
 #include <memory>       // for shared_ptr, allocator
-#include <ostream>      // for operator<<
 #include <string>       // for string, basic_string
 #include <thread>       // for thread
 #include <type_traits>  // for remove_reference<>...

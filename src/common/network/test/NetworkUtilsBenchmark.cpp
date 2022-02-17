@@ -13,7 +13,6 @@
 #include <algorithm>  // for copy
 #include <deque>      // for operator!=, deque, operator==
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_ostream
 #include <string>     // for string, basic_string, char_...
 
 #include "common/base/Logging.h"          // for LOG, LogMessageFatal, _LOG_...

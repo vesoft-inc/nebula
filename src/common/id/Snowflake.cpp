@@ -14,7 +14,6 @@
 
 #include <chrono>   // for milliseconds, duration_cast
 #include <cstdint>  // for int64_t
-#include <ostream>  // for operator<<, basic_ostream
 #include <string>   // for string
 
 #include "clients/meta/MetaClient.h"  // for MetaClient

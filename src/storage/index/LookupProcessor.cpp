@@ -17,7 +17,6 @@
 #include <deque>               // for deque
 #include <ext/alloc_traits.h>  // for __alloc...
 #include <map>                 // for map
-#include <ostream>             // for operator<<
 #include <queue>               // for queue
 #include <tuple>               // for tuple
 #include <type_traits>         // for remove_...

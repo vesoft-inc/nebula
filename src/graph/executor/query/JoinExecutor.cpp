@@ -6,7 +6,6 @@
 #include "graph/executor/query/JoinExecutor.h"
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_...
 #include <utility>    // for pair, move
 
 #include "common/base/Logging.h"                   // for COMPACT_GOOGLE_LOG...

@@ -7,8 +7,7 @@
 #define COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_
 
 #include <memory>
-#include <ostream>  // for operator<<
-#include <string>   // for operator<<, string
+#include <string>  // for operator<<, string
 
 #include "common/base/Logging.h"                   // for LogMessageFatal, LOG
 #include "common/base/ObjectPool.h"                // for ObjectPool

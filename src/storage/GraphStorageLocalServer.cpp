@@ -14,7 +14,6 @@
 #include <folly/futures/Promise.h>                     // for Promise, Promi...
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>  // for ThreadManager
 
-#include <ostream>  // for operator<<
 #include <utility>  // for move
 
 #include "common/base/Logging.h"                 // for LOG, LogMessage

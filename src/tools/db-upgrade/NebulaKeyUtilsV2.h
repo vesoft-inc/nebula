@@ -11,8 +11,7 @@
 #include <stddef.h>        // for size_t
 #include <stdint.h>        // for uint32_t, int32_t, int64_t
 
-#include <ostream>  // for operator<<, basic_ostream
-#include <string>   // for string, operator<<, allocator
+#include <string>  // for string, operator<<, allocator
 
 #include "common/base/Logging.h"        // for LOG, LogMessageFatal, _LOG_FATAL
 #include "common/thrift/ThriftTypes.h"  // for PartitionID, EdgeType, TagID

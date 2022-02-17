@@ -12,7 +12,6 @@
 #include <algorithm>  // for max
 #include <cstdint>    // for int32_t
 #include <memory>     // for allocator_traits<>::...
-#include <ostream>    // for operator<<, basic_os...
 #include <string>     // for string, operator<<
 #include <vector>     // for vector
 

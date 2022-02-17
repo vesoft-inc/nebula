@@ -8,7 +8,6 @@
 #include <folly/String.h>  // for join
 
 #include <functional>   // for reference_wrapper
-#include <ostream>      // for operator<<, basic_ostream
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move
 

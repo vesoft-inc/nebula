@@ -8,8 +8,7 @@
 #include <folly/Conv.h>           // for to
 #include <folly/init/Init.h>      // for init
 
-#include <ostream>  // for operator<<, stringstream, basic_ost...
-#include <string>   // for string, char_traits
+#include <string>  // for string, char_traits
 
 #include "common/base/Cord.h"   // for Cord
 #include "common/base/ICord.h"  // for ICord

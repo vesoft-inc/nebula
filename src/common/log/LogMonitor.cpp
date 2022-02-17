@@ -9,7 +9,6 @@
 
 #include <boost/filesystem/operations.hpp>     // for space, space_info
 #include <boost/system/detail/error_code.hpp>  // for error_code
-#include <ostream>                             // for operator<<, basic_ostream
 #include <string>                              // for char_traits, operator<<
 
 namespace nebula {

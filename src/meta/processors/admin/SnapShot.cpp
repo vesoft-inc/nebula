@@ -16,7 +16,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
 #include <algorithm>    // for find, max
-#include <ostream>      // for operator<<, basic_ost...
 #include <type_traits>  // for add_const<>::type
 
 #include "common/base/Logging.h"                // for LOG, LogMessage, _LOG...

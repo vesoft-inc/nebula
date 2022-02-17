@@ -17,7 +17,6 @@
 #include <algorithm>      // for transform
 #include <cctype>         // for tolower
 #include <iterator>       // for begin, end
-#include <ostream>        // for operator<<, basic_...
 #include <type_traits>    // for remove_reference<>...
 #include <unordered_map>  // for _Node_const_iterator
 #include <utility>        // for move, pair

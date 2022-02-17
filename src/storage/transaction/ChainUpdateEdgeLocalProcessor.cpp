@@ -13,7 +13,6 @@
 #include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
 #include <exception>      // for exception
-#include <ostream>        // for operator<<, basi...
 #include <tuple>          // for tie, tuple
 #include <type_traits>    // for remove_reference...
 #include <unordered_map>  // for unordered_map

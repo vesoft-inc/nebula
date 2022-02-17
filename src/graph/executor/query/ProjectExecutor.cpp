@@ -6,7 +6,6 @@
 #include "graph/executor/query/ProjectExecutor.h"
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_...
 #include <string>     // for string, operator<<
 #include <utility>    // for move
 #include <vector>     // for vector

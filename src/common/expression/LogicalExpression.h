@@ -8,9 +8,8 @@
 
 #include <stddef.h>  // for size_t
 
-#include <ostream>  // for operator<<
-#include <string>   // for operator<<, string
-#include <vector>   // for vector
+#include <string>  // for operator<<, string
+#include <vector>  // for vector
 
 #include "common/base/Logging.h"     // for Check_LTImpl, DCHECK_LT, LOG
 #include "common/base/ObjectPool.h"  // for ObjectPool

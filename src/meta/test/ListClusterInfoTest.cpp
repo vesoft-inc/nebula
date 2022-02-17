@@ -17,7 +17,6 @@
 
 #include <atomic>         // for atomic
 #include <memory>         // for unique_ptr
-#include <ostream>        // for operator<<
 #include <string>         // for string
 #include <type_traits>    // for remove_r...
 #include <unordered_map>  // for unordere...

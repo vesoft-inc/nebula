@@ -11,7 +11,6 @@
 #include <algorithm>  // for max
 #include <atomic>     // for atomic
 #include <memory>     // for shared_ptr
-#include <ostream>    // for operator<<
 #include <vector>     // for vector
 
 #include "common/base/ErrorOr.h"   // for ErrorOr

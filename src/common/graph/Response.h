@@ -14,7 +14,6 @@
 #include <algorithm>      // for transform
 #include <cstdint>        // for int64_t, int32_t
 #include <memory>         // for unique_ptr, unique_ptr<>::elem...
-#include <ostream>        // for operator<<, ostream
 #include <string>         // for string, operator==, basic_string
 #include <type_traits>    // for enable_if<>::type
 #include <unordered_map>  // for unordered_map, operator!=, ope...

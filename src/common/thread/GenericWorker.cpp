@@ -13,7 +13,6 @@
 #include <unistd.h>        // for close, read, write
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_ostream
 
 #include "common/base/Base.h"           // for UNUSED
 #include "common/base/Logging.h"        // for COMPACT_GOOGLE_LOG_FATAL, DCHECK

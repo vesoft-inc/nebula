@@ -15,7 +15,6 @@
 #include <algorithm>      // for max
 #include <atomic>         // for atomic, memory_orde...
 #include <memory>         // for allocator, unique_ptr
-#include <ostream>        // for operator<<
 #include <string>         // for operator+, string
 #include <tuple>          // for make_tuple, tuple
 #include <unordered_map>  // for unordered_map

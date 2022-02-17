@@ -9,7 +9,6 @@
 #include <proxygen/httpserver/ResponseBuilder.h>  // for HTTPMethod, HTTPMet...
 #include <thrift/lib/cpp2/FieldRef.h>             // for field_ref
 
-#include <ostream>      // for operator<<
 #include <type_traits>  // for remove_reference...
 
 #include "common/base/Logging.h"                     // for LOG, LogMessage

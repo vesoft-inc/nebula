@@ -10,7 +10,6 @@
 
 #include <cstdint>      // for int64_t, int32_t
 #include <limits>       // for numeric_limits
-#include <ostream>      // for operator<<, basic_...
 #include <string>       // for allocator, string
 #include <type_traits>  // for remove_reference<>...
 #include <utility>      // for move

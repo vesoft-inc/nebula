@@ -10,9 +10,8 @@
 #include <gtest/gtest.h>            // for Message
 #include <gtest/gtest.h>            // for TestPartResult
 
-#include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<
-#include <string>   // for string
+#include <memory>  // for unique_ptr, allocator
+#include <string>  // for string
 
 #include "common/base/Logging.h"   // for SetStderrLogging
 #include "common/base/Status.h"    // for operator<<, Status

@@ -11,9 +11,8 @@
 #include <gtest/gtest.h>      // for Message
 #include <gtest/gtest.h>      // for TestPartResult
 
-#include <memory>   // for unique_ptr, make_unique
-#include <ostream>  // for operator<<, basic_ostream
-#include <string>   // for string
+#include <memory>  // for unique_ptr, make_unique
+#include <string>  // for string
 
 #include "common/base/Logging.h"          // for SetStderrLogging, LOG
 #include "common/fs/TempDir.h"            // for TempDir

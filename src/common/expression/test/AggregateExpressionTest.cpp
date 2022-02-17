@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>  // for TestPartRe...
 
 #include <memory>         // for unique_ptr
-#include <ostream>        // for operator<<
 #include <string>         // for string, hash
 #include <unordered_map>  // for unordered_map
 #include <utility>        // for pair

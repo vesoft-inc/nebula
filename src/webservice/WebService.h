@@ -6,9 +6,8 @@
 #include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_string
 #include <stdint.h>                 // for uint16_t
 
-#include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<
-#include <string>   // for char_traits, string
+#include <memory>  // for unique_ptr, allocator
+#include <string>  // for char_traits, string
 
 #include "common/base/Base.h"     // for NG_MUST_USE_RESULT
 #include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL
@@ -18,9 +17,8 @@
 #include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLARE_string
 #include <stdint.h>                 // for uint16_t
 
-#include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<
-#include <string>   // for char_traits, string
+#include <memory>  // for unique_ptr, allocator
+#include <string>  // for char_traits, string
 
 #include "common/base/Base.h"     // for NG_MUST_USE_RESULT
 #include "common/base/Logging.h"  // for CHECK, COMPACT_GOOGLE_LOG_FATAL

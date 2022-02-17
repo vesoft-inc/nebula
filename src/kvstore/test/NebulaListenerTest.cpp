@@ -25,7 +25,6 @@
 #include <iterator>       // for back_insert_it...
 #include <memory>         // for shared_ptr
 #include <mutex>          // for mutex
-#include <ostream>        // for operator<<
 #include <string>         // for string, basic_...
 #include <tuple>          // for make_tuple, get
 #include <unordered_map>  // for unordered_map

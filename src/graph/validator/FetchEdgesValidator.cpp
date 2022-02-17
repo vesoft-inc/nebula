@@ -5,7 +5,6 @@
 
 #include "graph/validator/FetchEdgesValidator.h"
 
-#include <ostream>        // for operator<<, basic_...
 #include <set>            // for set
 #include <type_traits>    // for remove_reference<>...
 #include <unordered_map>  // for _Node_const_iterator

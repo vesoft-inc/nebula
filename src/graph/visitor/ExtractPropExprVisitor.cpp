@@ -5,7 +5,6 @@
 
 #include "graph/visitor/ExtractPropExprVisitor.h"
 
-#include <ostream>  // for operator<<
 #include <utility>  // for pair
 
 #include "common/base/Base.h"                            // for UNUSED

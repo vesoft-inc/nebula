@@ -11,7 +11,6 @@
 #include <algorithm>    // for transform
 #include <cstdint>      // for int64_t, uint8_t
 #include <memory>       // for unique_ptr, allocator
-#include <ostream>      // for operator<<, ostream
 #include <string>       // for string, basic_string
 #include <type_traits>  // for is_base_of
 #include <vector>       // for vector

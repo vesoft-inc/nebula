@@ -5,8 +5,7 @@
 
 #include "graph/service/PermissionCheck.h"
 
-#include <ostream>  // for operator<<, basic_ostream
-#include <string>   // for operator==, basic_string
+#include <string>  // for operator==, basic_string
 
 #include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_E...
 #include "graph/service/GraphFlags.h"         // for FLAGS_enable_authorize

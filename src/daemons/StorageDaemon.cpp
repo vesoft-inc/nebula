@@ -17,7 +17,6 @@
 #include <boost/filesystem/operations.hpp>  // for absolute
 #include <boost/filesystem/path.hpp>        // for path
 #include <memory>                           // for unique_ptr, allocator
-#include <ostream>                          // for operator<<, basic_ostream
 #include <string>                           // for string, operator<<, basic...
 #include <vector>                           // for vector
 

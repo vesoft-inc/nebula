@@ -17,7 +17,6 @@
 #include <unistd.h>                       // for sleep
 
 #include <memory>   // for allocator, __shared_...
-#include <ostream>  // for operator<<
 #include <string>   // for string, basic_string
 #include <utility>  // for move
 #include <vector>   // for vector

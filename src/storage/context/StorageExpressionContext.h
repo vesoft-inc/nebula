@@ -10,7 +10,6 @@
 #include <stddef.h>           // for size_t
 #include <stdint.h>           // for int32_t, int64_t
 
-#include <ostream>        // for operator<<
 #include <string>         // for string, basic_string
 #include <unordered_map>  // for unordered_map, _Node_c...
 #include <utility>        // for pair, move, make_pair

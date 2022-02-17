@@ -6,7 +6,6 @@
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 
 #include <memory>   // for unique_ptr, allocator_tr...
-#include <ostream>  // for operator<<, basic_ostream
 #include <string>   // for string, operator<<, basi...
 #include <utility>  // for move, pair
 

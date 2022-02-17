@@ -5,7 +5,6 @@
 
 #include "graph/session/ClientSession.h"
 
-#include <ostream>      // for operator<<, basic_ostream
 #include <type_traits>  // for remove_reference_t
 
 #include "common/base/Logging.h"               // for COMPACT_GOOGLE_LOG_INFO

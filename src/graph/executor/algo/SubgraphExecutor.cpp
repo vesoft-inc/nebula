@@ -8,7 +8,6 @@
 #include <stdint.h>  // for uint32_t
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_ostream
 #include <string>     // for string, operator<<, basi...
 #include <utility>    // for move, pair
 #include <vector>     // for vector

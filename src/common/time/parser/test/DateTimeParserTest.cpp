@@ -9,8 +9,7 @@
 #include <gtest/gtest.h>      // for Message
 #include <gtest/gtest.h>      // for TestPartResult
 
-#include <ostream>  // for operator<<, basic_ost...
-#include <string>   // for allocator, operator<<
+#include <string>  // for allocator, operator<<
 
 #include "common/base/Logging.h"                // for SetStderrLogging, DLOG
 #include "common/base/Status.h"                 // for operator<<, Status

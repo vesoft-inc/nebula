@@ -14,10 +14,9 @@
 #include <gtest/gtest.h>            // for TestPartResult
 #include <unistd.h>                 // for sleep
 
-#include <memory>   // for allocator, __shared_...
-#include <ostream>  // for operator<<
-#include <string>   // for string, basic_string
-#include <vector>   // for vector
+#include <memory>  // for allocator, __shared_...
+#include <string>  // for string, basic_string
+#include <vector>  // for vector
 
 #include "common/base/Logging.h"                 // for LOG, LogMessage, _LO...
 #include "kvstore/raftex/test/RaftexTestBase.h"  // for checkConsensus, appe...

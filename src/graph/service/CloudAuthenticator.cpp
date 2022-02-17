@@ -14,7 +14,6 @@
 #include <proxygen/lib/utils/CryptUtil.h>  // for base64Encode
 
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_ostream
 
 #include "clients/meta/MetaClient.h"   // for MetaClient
 #include "common/base/Logging.h"       // for LOG, LogMessage, _LOG_ERROR

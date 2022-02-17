@@ -12,7 +12,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <map>            // for map
-#include <ostream>        // for operator<<, basic_ostream
 #include <string>         // for string, allocator, oper...
 #include <unordered_map>  // for unordered_map
 #include <utility>        // for move

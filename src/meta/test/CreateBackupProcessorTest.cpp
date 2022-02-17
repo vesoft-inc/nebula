@@ -27,7 +27,6 @@
 #include <algorithm>      // for find_if
 #include <atomic>         // for atomic
 #include <memory>         // for unique_ptr
-#include <ostream>        // for operator<<
 #include <string>         // for basic_string
 #include <type_traits>    // for remove_refe...
 #include <unordered_map>  // for unordered_map

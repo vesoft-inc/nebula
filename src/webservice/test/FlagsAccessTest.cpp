@@ -15,7 +15,6 @@
 #include <gtest/gtest.h>             // for TestPartResult
 
 #include <memory>   // for allocator, unique_ptr, make_u...
-#include <ostream>  // for operator<<
 #include <string>   // for string
 #include <utility>  // for pair
 

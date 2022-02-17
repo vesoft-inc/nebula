@@ -17,7 +17,6 @@
 
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <memory>              // for shared_ptr, __shar...
-#include <ostream>             // for operator<<
 #include <string>              // for string, basic_string
 #include <vector>              // for vector
 

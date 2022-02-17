@@ -17,7 +17,6 @@
 #include <algorithm>           // for max
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
 #include <memory>              // for allocator, allocator_trai...
-#include <ostream>             // for operator<<, basic_ostream
 #include <unordered_map>       // for unordered_map
 #include <utility>             // for move
 

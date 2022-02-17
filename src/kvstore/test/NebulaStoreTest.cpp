@@ -23,7 +23,6 @@
 #include <algorithm>                        // for sort
 #include <atomic>                           // for atomic
 #include <boost/filesystem/operations.hpp>  // for exists
-#include <iostream>                         // for operator<<
 #include <memory>                           // for unique_ptr
 #include <string>                           // for string, basic_...
 #include <unordered_map>                    // for unordered_map<...

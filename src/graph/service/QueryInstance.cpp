@@ -16,7 +16,6 @@
 #include <stddef.h>                    // for size_t
 
 #include <exception>    // for exception
-#include <ostream>      // for operator<<
 #include <type_traits>  // for remove_ref...
 #include <utility>      // for move
 #include <vector>       // for vector

@@ -10,7 +10,6 @@
 #include <stdint.h>       // for int64_t, int16_t, int32_t
 #include <sys/types.h>    // for ssize_t, size_t
 
-#include <ostream>  // for operator<<
 #include <string>   // for string, char_traits, basi...
 #include <utility>  // for move, forward
 #include <vector>   // for vector

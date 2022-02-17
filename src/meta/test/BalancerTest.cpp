@@ -39,7 +39,6 @@
 #include <functional>     // for function
 #include <map>            // for map, opera...
 #include <memory>         // for allocator
-#include <ostream>        // for operator<<
 #include <set>            // for set
 #include <string>         // for string
 #include <tuple>          // for get

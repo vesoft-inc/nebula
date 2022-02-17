@@ -8,7 +8,6 @@
 #include <folly/String.h>  // for stringPrintf
 #include <folly/json.h>    // for toJson
 
-#include <ostream>  // for operator<<, basic_ostream
 #include <utility>  // for pair
 
 #include "common/base/Logging.h"          // for LOG, LogMessage, _LOG_INFO

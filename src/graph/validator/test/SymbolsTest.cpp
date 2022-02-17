@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>  // for TestPartResult
 
 #include <cstdint>        // for int64_t
-#include <ostream>        // for operator<<, stri...
 #include <string>         // for string, allocator
 #include <type_traits>    // for remove_reference...
 #include <unordered_set>  // for unordered_set

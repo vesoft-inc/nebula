@@ -12,7 +12,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <ostream>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>

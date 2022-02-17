@@ -9,7 +9,6 @@
 
 #include <cstddef>      // for size_t
 #include <cstdint>      // for int32_t
-#include <ostream>      // for operator<<
 #include <string>       // for string, basic_string
 #include <type_traits>  // for remove_reference<>...
 #include <utility>      // for move

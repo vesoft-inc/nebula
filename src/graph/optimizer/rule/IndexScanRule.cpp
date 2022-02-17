@@ -13,7 +13,6 @@
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <iterator>            // for reverse_iterator
 #include <map>                 // for map, operator==
-#include <ostream>             // for operator<<
 #include <unordered_set>       // for unordered_set
 #include <utility>             // for pair, move, make_pair
 

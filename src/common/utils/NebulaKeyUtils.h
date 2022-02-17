@@ -13,7 +13,6 @@
 #include <stddef.h>           // for size_t
 
 #include <cstdint>  // for int64_t, uint32_t, int32_t
-#include <ostream>  // for operator<<, basic_ostream
 #include <string>   // for string, operator<<, allocator
 #include <vector>   // for vector
 

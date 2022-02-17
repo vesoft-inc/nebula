@@ -11,7 +11,6 @@
 #include <functional>  // for function
 #include <map>         // for map, operator!=, _Rb_tr...
 #include <memory>      // for unique_ptr, operator==
-#include <ostream>     // for operator<<, basic_ostre...
 #include <set>         // for set
 #include <utility>     // for pair, swap
 

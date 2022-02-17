@@ -10,7 +10,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for operator<<, char_traits
 #include <vector>     // for vector
 

@@ -7,7 +7,6 @@
 
 #include <stddef.h>  // for size_t
 
-#include <ostream>  // for operator<<
 #include <utility>  // for move
 
 #include "common/base/Logging.h"  // for LOG, LogMessageFatal, _LOG_FATAL

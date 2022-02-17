@@ -5,8 +5,6 @@
 
 #include "common/expression/ArithmeticExpression.h"
 
-#include <ostream>  // for operator<<, basic_ostream
-
 #include "common/base/Logging.h"            // for LOG, LogMessageFatal, _LO...
 #include "common/expression/ExprVisitor.h"  // for ExprVisitor
 

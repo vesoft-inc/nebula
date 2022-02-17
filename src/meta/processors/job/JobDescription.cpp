@@ -12,7 +12,6 @@
 #include <ctime>      // for time, size_t
 #include <exception>  // for exception
 #include <new>        // for operator new
-#include <ostream>    // for operator<<, basic_ostream
 #include <utility>    // for move
 
 #include "common/base/Logging.h"            // for LOG, LogMessage, _LOG_INFO

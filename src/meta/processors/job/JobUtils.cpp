@@ -5,9 +5,8 @@
 
 #include "meta/processors/job/JobUtils.h"
 
-#include <memory>   // for allocator_traits<>::value_type
-#include <ostream>  // for operator<<, basic_ostream, basic_os...
-#include <vector>   // for vector
+#include <memory>  // for allocator_traits<>::value_type
+#include <vector>  // for vector
 
 #include "common/base/Base.h"     // for toHexStr
 #include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_INFO

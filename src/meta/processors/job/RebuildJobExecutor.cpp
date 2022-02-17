@@ -15,7 +15,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <algorithm>  // for any_of
-#include <ostream>    // for operator<<, basic_ost...
 #include <utility>    // for move, pair
 
 #include "common/base/ErrorOr.h"                // for error, ok, value

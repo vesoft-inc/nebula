@@ -13,7 +13,6 @@
 #include <folly/futures/Promise.h>     // for PromiseException::Prom...
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref, optional_fi...
 
-#include <ostream>      // for operator<<, basic_ostream
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move
 

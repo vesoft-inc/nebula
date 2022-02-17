@@ -19,7 +19,6 @@
 
 #include <functional>  // for function
 #include <memory>      // for unique_ptr, shared_ptr
-#include <ostream>     // for operator<<, basic_ostream
 #include <string>      // for string, operator<<
 #include <vector>      // for vector
 

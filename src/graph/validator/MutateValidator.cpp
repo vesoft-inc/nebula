@@ -12,7 +12,6 @@
 
 #include <algorithm>      // for find
 #include <iterator>       // for distance
-#include <ostream>        // for operator<<
 #include <set>            // for set
 #include <type_traits>    // for remove_refer...
 #include <unordered_set>  // for unordered_set

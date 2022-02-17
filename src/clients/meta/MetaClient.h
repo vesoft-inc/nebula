@@ -486,7 +486,7 @@ class MetaClient {
 
   StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
-  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+  StatusOr<::nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
 
   StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
@@ -577,7 +577,7 @@ class MetaClient {
 
   StatusOr<std::vector<HostAddr>> getStorageHosts();
 
-  StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
+  StatusOr<cpp2::Session> getSessionFromCache(const ::nebula::SessionID& session_id);
 
   bool checkIsPlanKilled(SessionID session_id, ExecutionPlanID plan_id);
 
@@ -614,10 +614,10 @@ class MetaClient {
 
   folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
-  folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
+  folly::Future<StatusOr<::nebula::cpp2::ErrorCode>> reportTaskFinish(
       int32_t jobId,
       int32_t taskId,
-      nebula::cpp2::ErrorCode taskErrCode,
+      ::nebula::cpp2::ErrorCode taskErrCode,
       cpp2::StatsItem* statisticItem);
 
   folly::Future<StatusOr<bool>> download(const std::string& hdfsHost,

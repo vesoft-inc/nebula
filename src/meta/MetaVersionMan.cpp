@@ -13,7 +13,6 @@
 
 #include <algorithm>  // for find
 #include <memory>     // for unique_ptr, allocator
-#include <ostream>    // for operator<<, basic_ostream
 #include <string>     // for operator<<, string, cha...
 #include <utility>    // for move
 #include <vector>     // for vector<>::iterator, vector

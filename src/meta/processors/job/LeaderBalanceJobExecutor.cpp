@@ -25,7 +25,6 @@
 #include <cmath>        // for ceil, floor
 #include <functional>   // for function
 #include <iterator>     // for back_insert_iterator
-#include <ostream>      // for operator<<, basic...
 #include <type_traits>  // for __strip_reference...
 
 #include "common/base/Base.h"               // for UNUSED

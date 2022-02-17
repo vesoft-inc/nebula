@@ -20,7 +20,6 @@
 
 #include <chrono>     // for microseconds, seconds
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_...
 #include <thread>     // for sleep_for
 
 #include "common/base/Logging.h"              // for LogMessage, LOG

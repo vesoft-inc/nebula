@@ -7,7 +7,6 @@
 
 #include <folly/container/F14Map.h>  // for F14BasicMap
 
-#include <ostream>      // for operator<<
 #include <type_traits>  // for remove_reference<>::type
 
 #include "common/base/Logging.h"    // for Check_EQImpl, DCHECK_EQ, LOG

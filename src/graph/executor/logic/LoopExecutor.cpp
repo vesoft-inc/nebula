@@ -7,7 +7,6 @@
 
 #include <folly/String.h>  // for stringPrintf
 
-#include <ostream>  // for operator<<, basic_...
 #include <string>   // for allocator, operator<<
 #include <utility>  // for move
 

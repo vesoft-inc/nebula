@@ -11,7 +11,6 @@
 #include <algorithm>           // for max
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
 #include <memory>              // for allocator_traits<>::value_type
-#include <ostream>             // for operator<<, basic_ostream, bas...
 
 #include "common/base/Status.h"  // for Status
 

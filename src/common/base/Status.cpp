@@ -8,8 +8,6 @@
 #include <stdio.h>   // for vsnprintf, va_list
 #include <string.h>  // for memcpy
 
-#include <ostream>  // for operator<<, basic_ostream
-
 namespace nebula {
 
 Status::Status(Code code, folly::StringPiece msg) {

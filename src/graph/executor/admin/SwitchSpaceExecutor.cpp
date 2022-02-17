@@ -8,12 +8,7 @@
 #include <folly/Try.h>              // for Try::~Try<T>
 #include <folly/futures/Future.h>   // for Future::Future<T>, Futu...
 #include <folly/futures/Promise.h>  // for Promise::Promise<T>
-#include <folly/futures/Promise.h>  // for PromiseException::Promi...
-#include <folly/futures/Promise.h>  // for Promise::Promise<T>
-#include <folly/futures/Promise.h>  // for PromiseException::Promi...
 
-#include <ostream>  // for operator<<, basic_ostream
-#include <string>   // for operator<<, char_traits
 #include <utility>  // for move
 
 #include "clients/meta/MetaClient.h"          // for MetaClient

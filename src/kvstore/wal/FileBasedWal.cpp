@@ -20,7 +20,6 @@
 #include <exception>           // for exception
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
 #include <iterator>            // for reverse_iterator, operator!=
-#include <ostream>             // for operator<<, basic_ostream
 #include <type_traits>         // for __strip_reference_wrapper<>...
 #include <utility>             // for pair, move, make_pair
 #include <vector>              // for vector

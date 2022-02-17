@@ -14,7 +14,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for allocator_traits<>::v...
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for string, basic_string
 #include <tuple>      // for tie, ignore, tuple
 #include <vector>     // for vector

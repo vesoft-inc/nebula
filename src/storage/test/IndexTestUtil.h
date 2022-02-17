@@ -6,7 +6,6 @@
 #ifndef STORAGE_TEST_INDEXTESTUTIL_H
 #define STORAGE_TEST_INDEXTESTUTIL_H
 #include <cstring>
-#include <iostream>
 #include <limits>
 #include <map>
 #include <regex>

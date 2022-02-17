@@ -8,8 +8,7 @@
 
 #include <stdint.h>  // for int32_t
 
-#include <ostream>  // for operator<<
-#include <string>   // for string, operator<<
+#include <string>  // for string, operator<<
 
 #include "common/base/Base.h"
 #include "common/base/Logging.h"           // for LOG, LogMessageFatal, _LOG...

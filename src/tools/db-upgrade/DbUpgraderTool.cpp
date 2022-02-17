@@ -12,7 +12,6 @@
 #include <stdlib.h>                                // for EXIT_FAILURE, size_t
 
 #include <algorithm>  // for transform, find
-#include <iostream>   // for operator<<, basic_...
 #include <memory>     // for unique_ptr, allocator
 #include <string>     // for string, operator<<
 #include <thread>     // for thread

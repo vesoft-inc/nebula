@@ -13,7 +13,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for unique_ptr, make_unique
-#include <ostream>    // for operator<<, basic_ostre...
 
 #include "common/base/Logging.h"              // for LogMessage, CheckNotNull
 #include "common/utils/NebulaKeyUtils.h"      // for NebulaKeyUtils

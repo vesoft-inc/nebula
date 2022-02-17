@@ -6,7 +6,6 @@
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 
 #include <algorithm>      // for max
-#include <ostream>        // for operator<<, basic_ostream
 #include <string>         // for string, operator<<, basi...
 #include <unordered_map>  // for operator!=, unordered_mu...
 #include <utility>        // for move, pair

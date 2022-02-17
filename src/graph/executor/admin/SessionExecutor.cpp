@@ -12,7 +12,6 @@
 #include <folly/futures/Promise.h>  // for PromiseException::Pro...
 
 #include <algorithm>    // for max
-#include <ostream>      // for operator<<
 #include <string>       // for string, basic_string
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move

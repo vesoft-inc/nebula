@@ -14,7 +14,6 @@
 
 #include <algorithm>    // for max
 #include <map>          // for map, operator!=, _Rb_tree...
-#include <ostream>      // for operator<<, basic_ostream
 #include <string>       // for string, basic_string, ope...
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move, pair

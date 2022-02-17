@@ -7,7 +7,6 @@
 
 #include <folly/Format.h>  // for sformat
 
-#include <ostream>        // for operator<<, basic_ost...
 #include <string>         // for string, basic_string
 #include <tuple>          // for get
 #include <unordered_map>  // for operator!=, unordered...

@@ -14,7 +14,6 @@
 #include <stdint.h>           // for int64_t
 
 #include <memory>   // for allocator, unique_ptr, make_u...
-#include <ostream>  // for operator<<
 #include <string>   // for string
 #include <thread>   // for thread
 #include <utility>  // for move

@@ -12,7 +12,6 @@
 
 #include <atomic>      // for atomic
 #include <functional>  // for function
-#include <ostream>     // for operator<<, basic_os...
 #include <utility>     // for make_pair, move, pair
 
 #include "common/base/Base.h"                    // for UNUSED

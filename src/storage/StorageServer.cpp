@@ -16,7 +16,6 @@
 #include <boost/filesystem/path.hpp>        // for path
 #include <chrono>                           // for seconds, micro...
 #include <exception>                        // for exception
-#include <ostream>                          // for operator<<
 #include <thread>                           // for sleep_for
 #include <utility>                          // for move
 

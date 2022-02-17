@@ -20,7 +20,6 @@
 #include <iterator>   // for reverse_iterator
 #include <map>        // for _Rb_tree_iterator, operat...
 #include <memory>     // for shared_ptr, __shared_ptr_...
-#include <ostream>    // for operator<<
 #include <string>     // for string, operator<, swap
 #include <utility>    // for pair
 #include <vector>     // for vector

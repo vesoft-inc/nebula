@@ -7,7 +7,6 @@
 
 #include <cstdlib>  // for atoi
 #include <memory>   // for allocator_traits<>::value_type
-#include <ostream>  // for operator<<, basic_ostream
 
 #include "common/base/ErrorOr.h"  // for error, ok, value
 #include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_INFO

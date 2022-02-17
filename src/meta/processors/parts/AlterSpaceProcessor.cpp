@@ -12,7 +12,6 @@
 
 #include <algorithm>  // for max
 #include <atomic>     // for atomic
-#include <ostream>    // for operator<<
 #include <set>        // for set, operator!=, _Rb_...
 
 #include "common/base/ErrorOr.h"            // for error, ok, value

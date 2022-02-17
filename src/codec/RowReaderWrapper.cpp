@@ -8,7 +8,6 @@
 #include <string.h>  // for size_t, memcpy
 
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::valu...
-#include <ostream>             // for operator<<, basic_ostr...
 
 #include "codec/Common.h"                      // for toHexStr
 #include "common/meta/NebulaSchemaProvider.h"  // for NebulaSchemaProvider

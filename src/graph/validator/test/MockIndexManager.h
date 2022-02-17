@@ -7,7 +7,6 @@
 #define GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_
 
 #include <memory>         // for shared_ptr, make_unique
-#include <ostream>        // for operator<<
 #include <string>         // for string
 #include <unordered_map>  // for operator==, unordered_map
 #include <utility>        // for pair

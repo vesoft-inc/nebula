@@ -6,6 +6,7 @@
 #include <folly/String.h>     // for stringPrintf
 #include <folly/init/Init.h>  // for init
 #include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>
 
 #include <memory>  // for allocator
 

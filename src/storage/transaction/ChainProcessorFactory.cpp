@@ -8,8 +8,6 @@
 #include <folly/String.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include <ostream>
-
 #include "common/base/Logging.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"

@@ -7,7 +7,6 @@
 
 #include <string.h>  // for memcpy, size_t
 
-#include <ostream>      // for operator<<, basic_ostream
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move
 

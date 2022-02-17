@@ -9,7 +9,6 @@
 #include <folly/SharedMutex.h>  // for SharedMutex
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for operator<<, char_traits
 #include <vector>     // for vector
 

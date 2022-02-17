@@ -9,7 +9,6 @@
 #include <stdint.h>  // for int64_t
 
 #include <limits>         // for numeric_limits
-#include <ostream>        // for operator<<
 #include <type_traits>    // for remove_refer...
 #include <unordered_set>  // for unordered_set
 #include <utility>        // for move, pair

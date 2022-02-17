@@ -9,7 +9,6 @@
 #include <stdlib.h>  // for mkdtemp
 #include <string.h>  // for strcpy, strerror, strlen
 
-#include <ostream>  // for operator<<, basic_ostream, char_traits
 #include <utility>  // for move
 
 #include "common/base/Logging.h"  // for LogMessage, COMPACT_GOOGLE_LOG_INFO

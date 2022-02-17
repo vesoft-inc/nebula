@@ -23,7 +23,6 @@
 
 #include <cstdint>  // for uint64_t
 #include <memory>   // for unique_ptr, make_unique
-#include <ostream>  // for operator<<, basic_ostr...
 
 #include "common/base/Logging.h"  // for LOG, LogMessage, _LOG_...
 

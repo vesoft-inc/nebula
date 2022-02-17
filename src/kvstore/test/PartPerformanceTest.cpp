@@ -18,7 +18,6 @@
 #include <stdlib.h>               // for system
 
 #include <memory>   // for shared_ptr, allocator
-#include <ostream>  // for operator<<
 #include <string>   // for string, basic_string
 #include <thread>   // for thread
 #include <utility>  // for move

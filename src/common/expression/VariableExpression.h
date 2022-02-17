@@ -6,8 +6,7 @@
 #ifndef COMMON_EXPRESSION_VARIABLEEXPRESSION_H_
 #define COMMON_EXPRESSION_VARIABLEEXPRESSION_H_
 
-#include <ostream>  // for operator<<
-#include <string>   // for string, allocator, operator!=
+#include <string>  // for string, allocator, operator!=
 
 #include "common/base/Logging.h"           // for LOG, LogMessageFatal, _LOG...
 #include "common/base/ObjectPool.h"        // for ObjectPool

@@ -10,7 +10,6 @@
 #include <gflags/gflags_declare.h>  // for DECLARE_int32, DECLAR...
 
 #include <algorithm>  // for max, unique
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for operator<<, char_traits
 #include <vector>     // for vector
 

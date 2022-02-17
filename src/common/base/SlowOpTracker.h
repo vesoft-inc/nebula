@@ -9,8 +9,7 @@
 #include <gflags/gflags_declare.h>  // for DECLARE_int64
 #include <stdint.h>                 // for int64_t
 
-#include <ostream>  // for operator<<, basic_ostream, basic_...
-#include <string>   // for operator<<, char_traits, string
+#include <string>  // for operator<<, char_traits, string
 
 #include "common/base/Base.h"
 #include "common/base/Logging.h"    // for LOG, LogMessage, _LOG_INFO

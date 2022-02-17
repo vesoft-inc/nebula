@@ -15,7 +15,6 @@
 #include <chrono>     // for seconds
 #include <exception>  // for exception
 #include <memory>     // for unique_ptr, make_un...
-#include <ostream>    // for operator<<, basic_o...
 #include <string>     // for string, char_traits
 #include <utility>    // for move
 

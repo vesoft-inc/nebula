@@ -5,7 +5,6 @@
 
 #ifndef STORAGE_EXPRVISITORBASE_H
 #define STORAGE_EXPRVISITORBASE_H
-#include <ostream>  // for operator<<, basic_ostream...
 
 #include "common/base/Logging.h"            // for LOG, LogMessageFatal, _LO...
 #include "common/expression/ExprVisitor.h"  // for ExprVisitor

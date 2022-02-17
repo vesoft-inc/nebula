@@ -9,7 +9,6 @@
 #include <stddef.h>        // for size_t
 
 #include <algorithm>  // for max
-#include <ostream>    // for operator<<, stringstream
 #include <utility>    // for move
 #include <vector>     // for vector
 

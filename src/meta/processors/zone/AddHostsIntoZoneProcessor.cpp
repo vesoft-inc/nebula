@@ -9,7 +9,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
 #include <algorithm>  // for max, unique
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for operator<<, basic_string
 #include <vector>     // for vector<>::iterator
 

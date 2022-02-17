@@ -13,7 +13,6 @@
 
 #include <atomic>   // for atomic
 #include <memory>   // for allocator
-#include <ostream>  // for operator<<
 #include <utility>  // for move
 
 #include "common/base/Logging.h"            // for COMPACT_GOOGLE_LOG_INFO

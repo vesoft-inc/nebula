@@ -10,7 +10,6 @@
 #include <folly/container/detail/F14Policy.h>  // for operator!=, VectorCont...
 
 #include <algorithm>    // for copy
-#include <ostream>      // for operator<<, stringstream
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move, swap, pair
 

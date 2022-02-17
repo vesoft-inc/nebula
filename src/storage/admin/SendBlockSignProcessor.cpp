@@ -8,7 +8,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include <ostream>  // for operator<<, basic_ostream
 #include <string>   // for operator<<
 #include <utility>  // for move
 #include <vector>   // for vector

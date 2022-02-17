@@ -8,8 +8,8 @@
 #include <stdio.h>            // for fprintf, stderr
 #include <stdlib.h>           // for EXIT_FAILURE
 
-#include <iostream>  // for operator<<, basic_ostream, ostream
-#include <string>    // for operator<<, char_traits
+#include <iostream>
+#include <string>  // for operator<<, char_traits
 
 #include "common/base/Logging.h"     // for SetStderrLogging
 #include "common/base/Status.h"      // for operator<<, Status

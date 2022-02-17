@@ -5,7 +5,6 @@
 
 #include "common/expression/PropertyExpression.h"
 
-#include <ostream>        // for operator<<
 #include <unordered_map>  // for operator!=, _Node_cons...
 #include <utility>        // for pair
 #include <vector>         // for vector

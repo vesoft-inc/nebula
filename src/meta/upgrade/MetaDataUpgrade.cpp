@@ -10,7 +10,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>              // for optional_field_ref
 
 #include <memory>   // for unique_ptr
-#include <ostream>  // for operator<<, basic_...
 #include <string>   // for basic_string, string
 #include <utility>  // for move
 

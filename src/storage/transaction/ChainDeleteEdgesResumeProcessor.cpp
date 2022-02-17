@@ -8,7 +8,6 @@
 #include <folly/futures/Future.h>           // for SemiFuture::rele...
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 
-#include <ostream>  // for operator<<, basi...
 #include <utility>  // for pair
 #include <vector>   // for vector
 

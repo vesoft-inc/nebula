@@ -11,7 +11,6 @@
 
 #include <algorithm>  // for max
 #include <memory>     // for unique_ptr
-#include <ostream>    // for operator<<, basic_ost...
 #include <string>     // for string, basic_string
 #include <vector>     // for vector
 

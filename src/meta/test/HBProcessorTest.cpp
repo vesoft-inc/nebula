@@ -17,7 +17,6 @@
 
 #include <atomic>       // for atomic
 #include <memory>       // for unique_ptr, allocator
-#include <ostream>      // for operator<<
 #include <string>       // for to_string
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move

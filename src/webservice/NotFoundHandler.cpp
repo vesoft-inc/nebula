@@ -7,8 +7,6 @@
 
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-#include <ostream>
-
 #include "common/base/Logging.h"
 #include "webservice/Common.h"
 

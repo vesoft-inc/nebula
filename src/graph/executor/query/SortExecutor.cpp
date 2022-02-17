@@ -8,7 +8,6 @@
 #include <folly/Likely.h>  // for UNLIKELY
 
 #include <algorithm>    // for sort
-#include <ostream>      // for stringstream, operator<<
 #include <string>       // for operator<<, char_traits
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move, pair

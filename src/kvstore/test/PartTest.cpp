@@ -19,7 +19,6 @@
 #include <stdint.h>               // for int32_t, int64_t, uint32_t
 
 #include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<
 #include <string>   // for string, to_string, basi...
 #include <utility>  // for pair
 #include <vector>   // for vector

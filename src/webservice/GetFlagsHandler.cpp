@@ -17,7 +17,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
 #include <cstdint>      // for int32_t, int64_t
-#include <ostream>      // for operator<<, basic_o...
 #include <type_traits>  // for enable_if<>::type
 #include <utility>      // for move
 

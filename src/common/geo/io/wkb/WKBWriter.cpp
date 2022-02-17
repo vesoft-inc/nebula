@@ -9,7 +9,6 @@
 #include <stddef.h>      // for size_t
 
 #include <cstdint>  // for uint32_t, uint8_t
-#include <ostream>  // for operator<<
 
 #include "common/base/Logging.h"  // for LOG, LogMessageFatal, _LOG_FATAL
 

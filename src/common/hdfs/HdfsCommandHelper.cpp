@@ -8,7 +8,6 @@
 #include <folly/String.h>  // for stringPrintf
 
 #include <cstdlib>  // for getenv
-#include <ostream>  // for operator<<, basic_ostream
 
 #include "common/base/Logging.h"          // for LOG, LogMessage, _LOG_INFO
 #include "common/base/Status.h"           // for Status

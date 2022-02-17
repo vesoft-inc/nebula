@@ -13,7 +13,6 @@
 #include <folly/json.h>              // for toJson, parseJson
 
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_ostream
 #include <utility>    // for move, pair
 
 #include "common/base/Logging.h"             // for LogMessage, COMPACT_GOOG...

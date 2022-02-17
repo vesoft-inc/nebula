@@ -10,7 +10,6 @@
 #include <stddef.h>                               // for size_t
 
 #include <atomic>         // for atomic
-#include <ostream>        // for operator<<
 #include <string>         // for string, basic_string
 #include <unordered_map>  // for unordered_map
 #include <unordered_set>  // for unordered_set

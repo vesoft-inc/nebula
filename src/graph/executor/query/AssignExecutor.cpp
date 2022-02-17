@@ -5,7 +5,6 @@
 
 #include "graph/executor/query/AssignExecutor.h"
 
-#include <ostream>  // for operator<<, basic_...
 #include <string>   // for operator<<, char_t...
 #include <utility>  // for move, pair
 #include <vector>   // for vector

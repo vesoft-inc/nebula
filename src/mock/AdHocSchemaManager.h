@@ -12,7 +12,6 @@
 #include <stdint.h>                            // for int32_t
 
 #include <memory>         // for shared_ptr
-#include <ostream>        // for operator<<
 #include <set>            // for set
 #include <string>         // for string, basic_string
 #include <unordered_map>  // for unordered_map

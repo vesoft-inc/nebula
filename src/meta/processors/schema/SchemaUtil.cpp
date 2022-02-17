@@ -12,7 +12,6 @@
 
 #include <cstdint>  // for uint32_t, int16_t
 #include <limits>   // for numeric_limits
-#include <ostream>  // for operator<<, basic_...
 
 #include "common/base/Logging.h"                   // for LogMessage, _LOG_E...
 #include "common/base/ObjectPool.h"                // for ObjectPool

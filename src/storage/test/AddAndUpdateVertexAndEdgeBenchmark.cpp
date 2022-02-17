@@ -10,9 +10,6 @@
 #include <folly/lang/Bits.h>              // for Endian
 #include <folly/synchronization/Baton.h>  // for Baton
 #include <gtest/gtest.h>                  // for Message
-#include <gtest/gtest.h>                  // for TestPartResult
-#include <gtest/gtest.h>                  // for Message
-#include <gtest/gtest.h>                  // for TestPartResult
 #include <stdint.h>                       // for int32_t, uint32_t
 #include <stdlib.h>                       // for size_t, abs
 #include <thrift/lib/cpp2/FieldRef.h>     // for field_ref, require...
@@ -20,7 +17,6 @@
 #include <atomic>         // for atomic
 #include <limits>         // for numeric_limits
 #include <memory>         // for allocator, shared_ptr
-#include <ostream>        // for operator<<, basic_...
 #include <string>         // for basic_string, string
 #include <type_traits>    // for remove_reference<>...
 #include <unordered_map>  // for _Map_base<>::mappe...
@@ -28,7 +24,6 @@
 #include <vector>         // for vector
 
 #include "codec/RowWriterV2.h"                     // for RowWriterV2, Write...
-#include "codec/test/RowWriterV1-inl.h"            // for RowWriterV1::opera...
 #include "codec/test/RowWriterV1.h"                // for RowWriterV1
 #include "common/base/Logging.h"                   // for LOG, LogMessage
 #include "common/base/ObjectPool.h"                // for ObjectPool

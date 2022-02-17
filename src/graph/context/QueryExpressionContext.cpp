@@ -5,7 +5,6 @@
 
 #include "graph/context/QueryExpressionContext.h"
 
-#include <ostream>  // for operator<<
 #include <utility>  // for move
 
 #include "common/base/Base.h"                // for UNUSED

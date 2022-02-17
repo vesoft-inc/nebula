@@ -5,12 +5,7 @@
 
 #include <folly/Try.h>              // for Try::throwUnlessValue
 #include <folly/futures/Future.h>   // for Future::get, Future::...
-#include <folly/futures/Future.h>   // for Future
-#include <folly/futures/Future.h>   // for Future::get, Future::...
-#include <folly/futures/Future.h>   // for Future
 #include <folly/futures/Promise.h>  // for PromiseException::Pro...
-#include <gtest/gtest.h>            // for TestPartResult
-#include <gtest/gtest.h>            // for Message
 #include <gtest/gtest.h>            // for TestPartResult
 
 #include <memory>  // for allocator, unique_ptr

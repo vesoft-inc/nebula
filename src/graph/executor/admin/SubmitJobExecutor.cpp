@@ -19,7 +19,6 @@
 #include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
 #include <algorithm>    // for max
-#include <ostream>      // for basic_ostream::oper...
 #include <string>       // for string, basic_string
 #include <type_traits>  // for remove_reference<>:...
 #include <utility>      // for move

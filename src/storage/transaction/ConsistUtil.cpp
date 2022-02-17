@@ -12,7 +12,6 @@
 
 #include <boost/uuid/random_generator.hpp>  // for random_generator
 #include <boost/uuid/uuid_io.hpp>
-#include <ostream>        // for operator<<, basic_o...
 #include <unordered_map>  // for unordered_map, _Nod...
 #include <utility>        // for swap, pair
 

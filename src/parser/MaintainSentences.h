@@ -12,7 +12,6 @@
 #include <boost/variant/variant.hpp>            // for variant
 #include <cstdint>                              // for int64_t, int16_t, uin...
 #include <memory>                               // for unique_ptr, make_unique
-#include <ostream>                              // for operator<<, basic_ost...
 #include <string>                               // for string, basic_string
 #include <type_traits>                          // for remove_reference<>::type
 #include <utility>                              // for move

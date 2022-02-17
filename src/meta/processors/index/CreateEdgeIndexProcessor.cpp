@@ -11,7 +11,6 @@
 
 #include <algorithm>  // for max, find_if
 #include <memory>     // for unique_ptr
-#include <ostream>    // for operator<<, basic_ost...
 #include <set>        // for set
 #include <string>     // for basic_string, string
 #include <vector>     // for vector

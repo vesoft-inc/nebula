@@ -8,7 +8,6 @@
 #include <folly/Format.h>              // for sformat
 #include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
-#include <ostream>        // for basic_ostream::ope...
 #include <string>         // for string, basic_string
 #include <tuple>          // for get
 #include <type_traits>    // for remove_reference<>...

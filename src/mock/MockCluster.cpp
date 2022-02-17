@@ -17,7 +17,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>                  // for field_ref, opt...
 #include <unistd.h>                                    // for sleep, usleep
 
-#include <ostream>        // for operator<<
 #include <unordered_map>  // for unordered_map<...
 #include <utility>        // for move
 

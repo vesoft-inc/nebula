@@ -15,7 +15,7 @@
 
 #include <algorithm>    // for find
 #include <exception>    // for exception
-#include <iostream>     // for operator<<, basic_...
+#include <iostream>     // for find
 #include <iterator>     // for insert_iterator
 #include <type_traits>  // for remove_reference<>...
 #include <utility>      // for move, pair

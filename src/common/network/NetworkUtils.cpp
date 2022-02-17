@@ -22,7 +22,6 @@
 #include <algorithm>    // for find, transform
 #include <cstdint>      // for uint16_t, int32_t, uint32_t
 #include <exception>    // for exception
-#include <ostream>      // for operator<<, basic_ostream
 #include <regex>        // for match_results, regex_match
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move, pair

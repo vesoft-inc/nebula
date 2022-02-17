@@ -16,7 +16,6 @@
 #include <folly/synchronization/Baton.h>  // for Baton
 
 #include <atomic>   // for atomic
-#include <ostream>  // for operator<<, basic_ost...
 #include <utility>  // for move
 #include <vector>   // for vector
 

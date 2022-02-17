@@ -9,7 +9,6 @@
 #include <folly/dynamic.h>  // for dynamic
 
 #include <cstddef>        // for size_t
-#include <ostream>        // for operator<<, basic_ostream
 #include <string>         // for string, operator<<, char_traits
 #include <string_view>    // for hash
 #include <unordered_map>  // for unordered_map, _Node_const_it...

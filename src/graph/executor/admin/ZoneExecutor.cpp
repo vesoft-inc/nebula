@@ -11,7 +11,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
 #include <algorithm>    // for max
-#include <ostream>      // for operator<<, basic_ostream
 #include <string>       // for string, basic_string, all...
 #include <type_traits>  // for remove_reference<>::type
 #include <utility>      // for move

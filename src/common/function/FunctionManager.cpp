@@ -20,7 +20,6 @@
 #include <cstdlib>                             // for abs, size_t
 #include <iterator>                            // for distance
 #include <limits>                              // for numeric_limits
-#include <ostream>                             // for operator<<, stringstream
 #include <set>                                 // for operator!=, set
 #include <type_traits>                         // for remove_reference<>::type
 

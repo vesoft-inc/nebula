@@ -14,7 +14,6 @@
 #include <atomic>      // for atomic
 #include <functional>  // for function
 #include <memory>      // for unique_ptr, operator==
-#include <ostream>     // for operator<<, basic_ostre...
 #include <set>         // for set
 #include <utility>     // for pair, swap, move
 

@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 #include <memory>
-#include <ostream>
 #include <unordered_map>
 #include <utility>
 

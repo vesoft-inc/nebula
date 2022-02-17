@@ -11,7 +11,6 @@
 #include <functional>          // for ref, bind, _1, _2, _3
 #include <memory>              // for shared_ptr, __shared...
 #include <mutex>               // for lock_guard, mutex
-#include <ostream>             // for operator<<
 #include <string>              // for string, basic_string
 #include <vector>              // for vector
 

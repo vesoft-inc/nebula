@@ -7,7 +7,6 @@
 
 #include <folly/Likely.h>  // for UNLIKELY
 
-#include <ostream>  // for operator<<, basic_...
 #include <utility>  // for move
 
 #include "common/base/Logging.h"                   // for LogMessageFatal

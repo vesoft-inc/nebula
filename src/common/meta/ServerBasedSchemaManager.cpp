@@ -5,7 +5,6 @@
 
 #include "common/meta/ServerBasedSchemaManager.h"
 
-#include <ostream>      // for operator<<, basic_ostream::oper...
 #include <type_traits>  // for remove_reference<>::type
 
 #include "clients/meta/MetaClient.h"  // for MetaClient

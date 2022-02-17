@@ -19,7 +19,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>  // for getErrorString, Pro...
 
 #include <exception>  // for exception
-#include <ostream>    // for operator<<, basic_o...
 #include <string>     // for string, char_traits
 #include <utility>    // for move, pair
 

@@ -10,7 +10,6 @@
 
 #include <cstdint>        // for int32_t
 #include <memory>         // for shared_ptr, make_unique
-#include <ostream>        // for operator<<
 #include <string>         // for string, basic_string, hash
 #include <unordered_map>  // for unordered_map, _Node_cons...
 #include <utility>        // for pair, move

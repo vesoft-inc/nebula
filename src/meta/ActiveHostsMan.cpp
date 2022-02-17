@@ -16,7 +16,6 @@
 #include <cstdint>        // for int64_t, uint32_t, int32_t
 #include <memory>         // for unique_ptr, allocator_tra...
 #include <new>            // for operator new
-#include <ostream>        // for operator<<, basic_ostream
 #include <tuple>          // for tie, ignore, tuple
 #include <type_traits>    // for remove_reference<>::type
 #include <unordered_set>  // for unordered_set, unordered_...

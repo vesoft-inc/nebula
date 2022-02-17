@@ -8,8 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
-#include <ostream>  // for operator<<, basic_ostre...
-#include <string>   // for operator<<, string
+#include <string>  // for operator<<, string
 
 #include "common/base/Logging.h"              // for LOG, LogMessage, _LOG_INFO
 #include "common/utils/MetaKeyUtils.h"        // for MetaKeyUtils, kDefaultP...

@@ -20,7 +20,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
 #include <memory>         // for allocator, unique_ptr
-#include <ostream>        // for operator<<, basic_ost...
 #include <string>         // for string, basic_string
 #include <type_traits>    // for remove_reference<>::type
 #include <unordered_map>  // for _Node_const_iterator

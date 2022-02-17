@@ -9,7 +9,6 @@
 
 #include <algorithm>    // for find, transform
 #include <cctype>       // for tolower
-#include <ostream>      // for operator<<, basic_o...
 #include <string>       // for string, basic_string
 #include <type_traits>  // for remove_reference<>:...
 #include <utility>      // for move

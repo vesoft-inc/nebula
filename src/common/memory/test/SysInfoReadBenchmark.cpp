@@ -12,9 +12,9 @@
 #include <string.h>               // for strerror
 #include <sys/sysinfo.h>          // for sysinfo
 
-#include <cstdio>    // for fscanf, pclose, popen
-#include <fstream>   // for operator<<, cerr, ostream, ifstream
-#include <iostream>  // for operator<<, cerr, ostream, ifstream
+#include <cstdio>   // for fscanf, pclose, popen
+#include <fstream>  // for operator<<, cerr, ostream, ifstream
+#include <iostream>
 
 BENCHMARK(Popen) {
   auto pipe = popen("cat /sys/fs/cgroup/memory/memory.limit_in_bytes", "r");

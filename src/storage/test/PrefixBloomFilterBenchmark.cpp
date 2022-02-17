@@ -19,7 +19,6 @@
 
 #include <atomic>   // for atomic
 #include <memory>   // for unique_ptr
-#include <ostream>  // for operator<<
 #include <string>   // for to_string
 #include <utility>  // for move
 #include <vector>   // for vector

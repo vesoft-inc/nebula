@@ -13,9 +13,8 @@
 #include <folly/futures/Promise.h>     // for PromiseException::...
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
-#include <algorithm>      // for max
-#include <ostream>        // for operator<<, basic_...
-#include <string>         // for operator<<, char_t...
+#include <algorithm>  // for max
+#include <sstream>
 #include <unordered_map>  // for operator!=
 #include <utility>        // for move
 #include <vector>         // for vector

@@ -22,7 +22,6 @@
 #include <stdint.h>                   // for int32_t
 
 #include <memory>   // for unique_ptr, allocator
-#include <ostream>  // for operator<<, basic_ostre...
 #include <string>   // for string, basic_string
 #include <tuple>    // for make_tuple, get, tuple
 #include <utility>  // for move

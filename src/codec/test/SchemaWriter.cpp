@@ -9,7 +9,6 @@
 #include <stddef.h>                   // for size_t
 
 #include <cstdint>        // for uint64_t, int64_t, int32_t
-#include <ostream>        // for operator<<
 #include <unordered_map>  // for operator==, unordered_map
 #include <utility>        // for make_pair
 #include <vector>         // for vector, allocator

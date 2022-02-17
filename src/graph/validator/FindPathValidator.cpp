@@ -5,9 +5,8 @@
 
 #include "graph/validator/FindPathValidator.h"
 
-#include <ostream>  // for operator<<, basic_ostream
-#include <string>   // for string, basic_string, cha...
-#include <vector>   // for vector
+#include <string>  // for string, basic_string, cha...
+#include <vector>  // for vector
 
 #include "common/base/StatusOr.h"          // for StatusOr
 #include "common/datatypes/Value.h"        // for Value, Value::Type, opera...

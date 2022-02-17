@@ -5,8 +5,6 @@
 
 #include "kvstore/wal/AtomicLogBuffer.h"
 
-#include <ostream>  // for operator<<, basic_ostream, basic_ostream::operator<<
-
 namespace nebula {
 namespace wal {
 

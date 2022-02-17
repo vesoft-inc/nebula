@@ -10,7 +10,6 @@
 #include <algorithm>    // for find
 #include <list>         // for list, operator!=, _List_con...
 #include <memory>       // for allocator
-#include <ostream>      // for operator<<, basic_ostream
 #include <type_traits>  // for remove_reference<>::type
 
 #include "common/base/Logging.h"          // for CheckNotNull, Check_EQImpl

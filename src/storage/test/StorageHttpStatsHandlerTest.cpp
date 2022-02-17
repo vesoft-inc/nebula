@@ -9,9 +9,8 @@
 #include <glog/logging.h>           // for INFO
 #include <gtest/gtest.h>            // for Message
 
-#include <memory>   // for unique_ptr, make_u...
-#include <ostream>  // for operator<<
-#include <string>   // for string, basic_string
+#include <memory>  // for unique_ptr, make_u...
+#include <string>  // for string, basic_string
 
 #include "common/base/Logging.h"   // for SetStderrLogging
 #include "common/base/Status.h"    // for operator<<, Status

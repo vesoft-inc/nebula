@@ -9,7 +9,6 @@
 #include <stddef.h>        // for size_t
 
 #include <algorithm>    // for max
-#include <ostream>      // for stringstream, operator<<
 #include <queue>        // for make_heap, pop_heap, pus...
 #include <string>       // for operator<<, char_traits
 #include <type_traits>  // for remove_reference<>::type

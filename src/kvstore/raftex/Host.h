@@ -14,7 +14,6 @@
 #include <condition_variable>  // for condition_variable
 #include <memory>              // for shared_ptr, enable_shar...
 #include <mutex>               // for mutex, lock_guard, uniq...
-#include <ostream>             // for operator<<, basic_ostream
 #include <string>              // for operator<<, char_traits
 #include <tuple>               // for tuple
 

@@ -14,7 +14,6 @@
 #include <thrift/lib/cpp2/FieldRef.h>  // for field_ref
 
 #include <memory>       // for allocator, uniq...
-#include <ostream>      // for operator<<
 #include <string>       // for basic_string
 #include <type_traits>  // for remove_referenc...
 #include <utility>      // for move

@@ -5,6 +5,7 @@
 
 #include <folly/init/Init.h>  // for init
 #include <glog/logging.h>     // for INFO
+#include <gtest/gtest.h>      // for INFO
 #include <unistd.h>           // for usleep
 
 #include <memory>  // for allocator

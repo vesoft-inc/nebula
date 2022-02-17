@@ -19,7 +19,6 @@
 #include <iterator>       // for pair
 #include <memory>         // for shared_ptr
 #include <mutex>          // for mutex, lock_guard
-#include <ostream>        // for operator<<
 #include <unordered_map>  // for unordered_map
 #include <utility>        // for pair, forward
 #include <vector>         // for vector

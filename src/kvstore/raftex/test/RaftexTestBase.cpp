@@ -20,7 +20,6 @@
 
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <functional>          // for ref, bind, _1, _2, _3
-#include <ostream>             // for operator<<, basic_...
 #include <utility>             // for move
 
 #include "common/base/Logging.h"              // for LogMessage, LOG
