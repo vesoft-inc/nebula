@@ -1545,12 +1545,42 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // previously in fact. There are two choise: ask leader to send logs after committedLogId_ or
       // just do nothing.
       if (req.get_last_log_id_sent() < committedLogId_ ||
-          wal_->lastLogId() < req.get_last_log_id_sent() ||
-          wal_->getLogTerm(req.get_last_log_id_sent()) != req.get_last_log_term_sent()) {
+          wal_->lastLogId() < req.get_last_log_id_sent()) {
+        // case 1 and case 2
         resp.last_matched_log_id_ref() = committedLogId_;
         resp.last_matched_log_term() = committedLogTerm_;
         resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
-        // lastMatchedLogId is committedLogId_
+        return;
+      }
+      auto prevLogTerm = wal_->getLogTerm(req.get_last_log_id_sent());
+      if (UNLIKELY(prevLogTerm == FileBasedWal::INVALID_TERM)) {
+        /*
+        At this point, the condition below established:
+        committedLogId <= req.get_last_log_id_sent() <= wal_->lastLogId()
+
+        When INVALID_TERM is returned, we failed to find the log of req.get_last_log_id_sent()
+        in wal. This usually happens the node has received a snapshot recently.
+        */
+        if (req.get_last_log_id_sent() == committedLogId_ &&
+            req.get_last_log_term_sent() == committedLogTerm_) {
+          // Logs are matched of at log index of committedLogId_, and we could check remaing wal if
+          // there are any.
+          // The first log of wal must be committedLogId_ + 1, it can't be 0 (no wal) as well
+          // because it has been checked by case 2
+          DCHECK(wal_->firstLogId() == committedLogId_ + 1);
+        } else {
+          // case 3: checked by committedLogId_ and committedLogTerm_
+          // When log is not matched, we just return committedLogId_ and committedLogTerm_ instead
+          resp.last_matched_log_id_ref() = committedLogId_;
+          resp.last_matched_log_term() = committedLogTerm_;
+          resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
+          return;
+        }
+      } else if (prevLogTerm != req.get_last_log_term_sent()) {
+        // case 3
+        resp.last_matched_log_id_ref() = committedLogId_;
+        resp.last_matched_log_term() = committedLogTerm_;
+        resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
         return;
       }
 
