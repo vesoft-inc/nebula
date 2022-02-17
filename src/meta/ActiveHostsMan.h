@@ -130,6 +130,7 @@ class ActiveHostsMan final {
   static nebula::cpp2::ErrorCode updateHostInfo(kvstore::KVStore* kv,
                                                 const HostAddr& hostAddr,
                                                 const HostInfo& info,
+                                                std::vector<kvstore::KV>& data,
                                                 const AllLeaders* leaderParts = nullptr);
 
   /**
@@ -206,18 +207,6 @@ class ActiveHostsMan final {
 
  protected:
   ActiveHostsMan() = default;
-};
-
-class LastUpdateTimeMan final {
- public:
-  ~LastUpdateTimeMan() = default;
-
-  static nebula::cpp2::ErrorCode update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
-
-  static ErrorOr<nebula::cpp2::ErrorCode, int64_t> get(kvstore::KVStore* kv);
-
- protected:
-  LastUpdateTimeMan() = default;
 };
 
 }  // namespace meta

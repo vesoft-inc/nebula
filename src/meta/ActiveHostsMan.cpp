@@ -20,9 +20,9 @@ namespace meta {
 nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                                                        const HostAddr& hostAddr,
                                                        const HostInfo& info,
+                                                       std::vector<kvstore::KV>& data,
                                                        const AllLeaders* allLeaders) {
   CHECK_NOTNULL(kv);
-  std::vector<kvstore::KV> data;
   std::vector<std::string> leaderKeys;
   std::vector<int64_t> terms;
   if (allLeaders != nullptr) {
@@ -64,21 +64,12 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   bool hasUpdate = !data.empty();
   data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
 
-  folly::Baton<true, std::atomic> baton;
-  nebula::cpp2::ErrorCode ret;
-  kv->asyncMultiPut(
-      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-        ret = code;
-        baton.post();
-      });
-  baton.wait();
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return ret;
-  }
   if (hasUpdate) {
-    ret = LastUpdateTimeMan::update(kv, time::WallClock::fastNowInMilliSec());
+    auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+    data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                      MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
   }
-  return ret;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 bool ActiveHostsMan::machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr) {
@@ -256,37 +247,6 @@ ErrorOr<nebula::cpp2::ErrorCode, HostInfo> ActiveHostsMan::getHostInfo(kvstore::
     return retCode;
   }
   return HostInfo::decode(hostValue);
-}
-
-nebula::cpp2::ErrorCode LastUpdateTimeMan::update(kvstore::KVStore* kv,
-                                                  const int64_t timeInMilliSec) {
-  CHECK_NOTNULL(kv);
-  std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
-
-  folly::Baton<true, std::atomic> baton;
-  nebula::cpp2::ErrorCode ret;
-  kv->asyncMultiPut(
-      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-        ret = code;
-        baton.post();
-      });
-  baton.wait();
-  return ret;
-}
-
-ErrorOr<nebula::cpp2::ErrorCode, int64_t> LastUpdateTimeMan::get(kvstore::KVStore* kv) {
-  CHECK_NOTNULL(kv);
-  auto key = MetaKeyUtils::lastUpdateTimeKey();
-  std::string val;
-  auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Get last update time failed, error: "
-              << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-  return *reinterpret_cast<const int64_t*>(val.data());
 }
 
 }  // namespace meta

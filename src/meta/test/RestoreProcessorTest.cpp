@@ -27,11 +27,13 @@ TEST(RestoreProcessorTest, RestoreTest) {
   hosts.emplace_back(host2);
   hosts.emplace_back(host3);
 
+  std::vector<kvstore::KV> times;
   for (auto h : hosts) {
-    ActiveHostsMan::updateHostInfo(kv.get(), h, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), h, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), times);
   }
-
-  meta::TestUtils::registerHB(kv.get(), hosts);
+  TestUtils::doPut(kv.get(), times);
+  TestUtils::registerHB(kv.get(), hosts);
 
   // mock admin client
   bool ret = false;
@@ -242,11 +244,14 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   hosts.emplace_back(host2);
   hosts.emplace_back(host3);
 
+  std::vector<kvstore::KV> times;
   for (auto h : hosts) {
-    ActiveHostsMan::updateHostInfo(kv.get(), h, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+    ActiveHostsMan::updateHostInfo(
+        kv.get(), h, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), times);
   }
 
-  meta::TestUtils::registerHB(kv.get(), hosts);
+  TestUtils::doPut(kv.get(), times);
+  TestUtils::registerHB(kv.get(), hosts);
 
   // mock admin client
   bool ret = false;

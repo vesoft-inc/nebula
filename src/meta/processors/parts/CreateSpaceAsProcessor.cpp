@@ -53,7 +53,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newSpaceData).begin(), nebula::value(newSpaceData).end());
   } else {
     rc_ = nebula::error(newSpaceData);
-    LOG(INFO) << "make new space data failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Make new space data failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -62,7 +62,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newTags).begin(), nebula::value(newTags).end());
   } else {
     rc_ = nebula::error(newTags);
-    LOG(INFO) << "make new tags failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Make new tags failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -71,7 +71,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newEdges).begin(), nebula::value(newEdges).end());
   } else {
     rc_ = nebula::error(newEdges);
-    LOG(INFO) << "make new edges failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Make new edges failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -80,23 +80,20 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newIndexes).begin(), nebula::value(newIndexes).end());
   } else {
     rc_ = nebula::error(newIndexes);
-    LOG(INFO) << "make new indexes failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Make new indexes failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
   rc_ = doSyncPut(std::move(data));
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "put data error, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Update last update time error, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
-
-  rc_ = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-  if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "update last update time error, " << apache::thrift::util::enumNameSafe(rc_);
-    return;
-  }
-  LOG(INFO) << "created space " << newSpaceName;
+  LOG(INFO) << "Created space " << newSpaceName;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewSpaceData(

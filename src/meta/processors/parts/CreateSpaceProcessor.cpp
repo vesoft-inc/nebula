@@ -273,8 +273,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   }
 
   resp_.id_ref() = to(spaceId, EntryType::SPACE);
-  doSyncPutAndUpdate(std::move(data));
   LOG(INFO) << "Create space " << spaceName;
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, Hosts> CreateSpaceProcessor::pickHostsWithZone(

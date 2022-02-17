@@ -147,7 +147,12 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
                     MetaKeyUtils::schemaVal(tagName, schema));
   resp_.id_ref() = to(tagId, EntryType::TAG);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

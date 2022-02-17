@@ -85,7 +85,12 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
 
   LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

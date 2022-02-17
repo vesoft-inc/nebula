@@ -5,6 +5,8 @@
 
 #include "meta/processors/schema/DropEdgeProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
@@ -76,9 +78,18 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   }
 
   auto keys = nebula::value(ret);
-  keys.emplace_back(std::move(indexKey));
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  for (auto key : keys) {
+    batchHolder->remove(std::move(key));
+  }
+  batchHolder->remove(std::move(indexKey));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
+                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop Edge " << edgeName;
-  doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(

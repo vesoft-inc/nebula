@@ -147,6 +147,28 @@ class BalanceJobExecutor : public MetaJobExecutor {
     return Status::OK();
   }
 
+  /**
+   * @brief Update last time in meta service
+   *
+   * @return
+   */
+  nebula::cpp2::ErrorCode updateLastTime() {
+    std::vector<kvstore::KV> data;
+    auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+    data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                      MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+
+    folly::Baton<true, std::atomic> baton;
+    nebula::cpp2::ErrorCode ret;
+    kvstore_->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ret = code;
+          baton.post();
+        });
+    baton.wait();
+    return ret;
+  }
+
   void insertOneTask(const BalanceTask& task,
                      std::map<PartitionID, std::vector<BalanceTask>>* existTasks);
 

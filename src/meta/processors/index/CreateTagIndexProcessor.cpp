@@ -204,7 +204,12 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   data.emplace_back(MetaKeyUtils::indexKey(space, tagIndex), MetaKeyUtils::indexVal(item));
   LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
   resp_.id_ref() = to(tagIndex, EntryType::INDEX);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta
