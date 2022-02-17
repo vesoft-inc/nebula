@@ -12,29 +12,31 @@ namespace nebula {
 namespace opt {
 
 /*
-  Embedding dedup factor into [[GetNeighbor]] node
+  Merge [[Project]] and [[GetNeighbor]] node
   Required conditions:
    1. Match the pattern
-  Benefits:
+   2. The projection must project only one column which expression will be assigned to the src
+  expression of GetNeighbors Benefits:
    1. Delete unnecessary node
 
   Tranformation:
   Before:
 
-  +------+------+
-  |    Dedup    |
-  +------+------+
-         |
   +------+-------+
   | GetNeighbors |
-  | (dedup=false)|
+  | (src:$-.vage)|
   +------+-------+
+         |
+  +-------+-------+
+  |    Project    |
+  |(v.age AS vage)|
+  +-------+-------+
 
   After:
 
   +------+-------+
   | GetNeighbors |
-  | (dedup=true) |
+  | (src:v.age)  |
   +------+-------+
 
 */
