@@ -30,7 +30,7 @@ Feature: Test kill queries from same service
       | ORDER BY $-.dur
       | KILL QUERY(session=$-.sid, plan=$-.eid)
       """
-    Then an PermissionError should be raised at runtime: Only GOD role could kill other's queries.
+    Then an PermissionError should be raised at runtime: Only GOD role could kill others' queries.
     When executing query with user root with password nebula:
       """
       USE nba;
