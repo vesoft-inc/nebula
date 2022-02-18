@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/std_abs.h>                         // for abs
 #include <folly/Benchmark.h>                      // for addBenchmark
 #include <folly/BenchmarkUtil.h>                  // for doNotOptimizeAway
 #include <folly/Conv.h>                           // for to
@@ -21,6 +20,7 @@
 #include <thrift/lib/cpp2/protocol/Serializer.h>  // for CompactSerializer
 
 #include <cstdint>        // for int32_t, int64_t
+#include <cstdlib>        // for abs
 #include <memory>         // for allocator, uniqu...
 #include <string>         // for string, basic_st...
 #include <type_traits>    // for remove_reference...

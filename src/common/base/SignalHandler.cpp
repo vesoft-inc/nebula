@@ -5,10 +5,10 @@
 
 #include "common/base/SignalHandler.h"
 
-#include <bits/types/siginfo_t.h>  // for si_pid, si_uid
-#include <errno.h>                 // for errno
-#include <stdio.h>                 // for snprintf
-#include <string.h>                // for memset, strerror, strsignal
+#include <errno.h>   // for errno
+#include <signal.h>  // for siginfo_t, pid_t, uid_t
+#include <stdio.h>   // for snprintf
+#include <string.h>  // for memset, strerror, strsignal
 
 #include <utility>  // for move
 

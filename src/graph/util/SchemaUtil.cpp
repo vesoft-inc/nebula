@@ -5,7 +5,6 @@
 
 #include "graph/util/SchemaUtil.h"
 
-#include <bits/std_abs.h>                   // for abs
 #include <folly/Conv.h>                     // for to
 #include <folly/Format.h>                   // for sformat
 #include <folly/String.h>                   // for stringPrintf
@@ -16,6 +15,7 @@
 
 #include <algorithm>      // for transform
 #include <cctype>         // for tolower
+#include <cstdlib>        // for abs
 #include <iterator>       // for begin, end
 #include <type_traits>    // for remove_reference<>...
 #include <unordered_map>  // for _Node_const_iterator

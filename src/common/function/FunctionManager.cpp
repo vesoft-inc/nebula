@@ -5,7 +5,6 @@
 
 #include "FunctionManager.h"
 
-#include <bits/std_abs.h>  // for abs
 #include <folly/Conv.h>    // for to
 #include <folly/Random.h>  // for Random
 #include <folly/Range.h>   // for StringPiece, Range
@@ -17,6 +16,7 @@
 #include <boost/algorithm/string/replace.hpp>  // for replace_all_copy
 #include <cctype>                              // for tolower, toupper
 #include <cmath>                               // for sqrt, cbrt, ceil, exp2
+#include <cstdlib>                             // for abs
 #include <cstdlib>                             // for abs, size_t
 #include <iterator>                            // for distance
 #include <limits>                              // for numeric_limits

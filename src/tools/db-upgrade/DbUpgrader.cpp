@@ -5,7 +5,6 @@
 
 #include "tools/db-upgrade/DbUpgrader.h"
 
-#include <bits/std_abs.h>              // for abs
 #include <fmt/format.h>                // for format
 #include <folly/Conv.h>                // for to
 #include <folly/String.h>              // for stringPrintf
@@ -19,6 +18,7 @@
 
 #include <chrono>              // for milliseconds
 #include <cstdint>             // for int64_t
+#include <cstdlib>             // for abs
 #include <ctime>               // for size_t, time
 #include <exception>           // for exception
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...

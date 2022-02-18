@@ -5,7 +5,6 @@
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
 
-#include <bits/std_abs.h>                   // for abs
 #include <folly/Executor.h>                 // for Executor
 #include <folly/Likely.h>                   // for UNLIKELY
 #include <folly/String.h>                   // for stringPrintf
@@ -13,6 +12,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 #include <thrift/lib/cpp2/FieldRef.h>       // for optional_field_ref
 
+#include <cstdlib>             // for abs
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <type_traits>         // for remove_reference<>...
 #include <unordered_map>       // for unordered_map, _No...

@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/std_abs.h>                 // for abs
 #include <folly/Benchmark.h>              // for addBenchmark, Benc...
 #include <folly/futures/Future.h>         // for Future::get
 #include <folly/init/Init.h>              // for init
@@ -15,6 +14,7 @@
 #include <thrift/lib/cpp2/FieldRef.h>     // for field_ref, require...
 
 #include <atomic>         // for atomic
+#include <cstdlib>        // for abs
 #include <limits>         // for numeric_limits
 #include <memory>         // for allocator, shared_ptr
 #include <string>         // for basic_string, string

@@ -5,7 +5,6 @@
 
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 
-#include <bits/std_abs.h>                         // for abs
 #include <folly/FBString.h>                       // for operator<<
 #include <folly/Format.h>                         // for sformat
 #include <folly/String.h>                         // for hexlify
@@ -19,6 +18,7 @@
 
 #include <algorithm>      // for find
 #include <cstdint>        // for int64_t
+#include <cstdlib>        // for abs
 #include <istream>        // for operator<<, basi...
 #include <tuple>          // for tie, tuple
 #include <type_traits>    // for remove_reference...

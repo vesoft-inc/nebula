@@ -5,7 +5,6 @@
 
 #include "storage/admin/StatsTask.h"
 
-#include <bits/std_abs.h>                   // for abs
 #include <folly/Likely.h>                   // for UNLIKELY
 #include <stdlib.h>                         // for abs
 #include <string.h>                         // for memcpy
@@ -14,6 +13,7 @@
 
 #include <algorithm>   // for sort
 #include <cstdint>     // for int64_t, uint64_t
+#include <cstdlib>     // for abs
 #include <functional>  // for _Bind_helper<>::type
 #include <memory>      // for unique_ptr, allocator
 #include <new>         // for operator new

@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/std_abs.h>                          // for abs
 #include <folly/Range.h>                           // for Range
 #include <folly/init/Init.h>                       // for init
 #include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
@@ -16,6 +15,7 @@
 
 #include <chrono>              // for duration, microsec...
 #include <cstdint>             // for int32_t
+#include <cstdlib>             // for abs
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <memory>              // for unique_ptr, allocator
 #include <string>              // for string, basic_string

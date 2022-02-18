@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/std_abs.h>                          // for abs
 #include <folly/FBString.h>                        // for operator<<
 #include <folly/Random.h>                          // for Random
 #include <folly/TokenBucket.h>                     // for DynamicTokenBucket
@@ -28,6 +27,7 @@
 #include <atomic>         // for atomic_long, __ato...
 #include <chrono>         // for seconds, operator<
 #include <cstdint>        // for int64_t, int32_t
+#include <cstdlib>        // for abs
 #include <functional>     // for bind
 #include <istream>        // for operator<<, basic_...
 #include <memory>         // for unique_ptr, shared...

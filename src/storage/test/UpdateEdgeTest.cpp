@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <bits/std_abs.h>                   // for abs
 #include <folly/futures/Future.h>           // for Future::get
 #include <folly/init/Init.h>                // for init
 #include <folly/synchronization/Baton.h>    // for Baton
@@ -18,6 +17,7 @@
 #include <unistd.h>                         // for sleep, size_t
 
 #include <atomic>         // for atomic
+#include <cstdlib>        // for abs
 #include <memory>         // for allocator, alloc...
 #include <string>         // for string, basic_st...
 #include <type_traits>    // for remove_reference...

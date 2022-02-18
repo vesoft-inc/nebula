@@ -5,7 +5,6 @@
 #include "common/datatypes/Value.h"
 
 #include <assert.h>         // for assert
-#include <bits/std_abs.h>   // for abs
 #include <ctype.h>          // for tolower
 #include <errno.h>          // for errno, ERANGE
 #include <folly/Conv.h>     // for to
@@ -15,6 +14,7 @@
 #include <algorithm>      // for find, transform
 #include <cmath>          // for fmod
 #include <cstdint>        // for int64_t, INT64_MIN, int16_t
+#include <cstdlib>        // for abs
 #include <cstdlib>        // for abs, strtod, strtoll, size_t
 #include <limits>         // for numeric_limits
 #include <memory>         // for unique_ptr, allocator

@@ -5,10 +5,10 @@
 
 #include "graph/visitor/DeducePropsVisitor.h"
 
-#include <bits/std_abs.h>                          // for abs
 #include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
 #include <stdlib.h>                                // for abs, size_t
 
+#include <cstdlib>      // for abs
 #include <iterator>     // for make_move_it...
 #include <memory>       // for __shared_ptr...
 #include <sstream>      // for operator<<

@@ -11,8 +11,8 @@
 #include <array>             // for array
 #include <functional>        // for function
 #include <initializer_list>  // for initializer_list
+#include <ostream>
 
-#include "common/base/Base.h"
 #include "common/base/Status.h"  // for Status
 
 /**

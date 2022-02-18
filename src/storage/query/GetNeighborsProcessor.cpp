@@ -5,7 +5,6 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 
-#include <bits/std_abs.h>              // for abs
 #include <folly/Executor.h>            // for Executor
 #include <folly/Likely.h>              // for UNLIKELY
 #include <folly/futures/Future.h>      // for SemiFuture::releas...
@@ -13,6 +12,7 @@
 #include <stdlib.h>                    // for abs, size_t
 #include <thrift/lib/cpp2/FieldRef.h>  // for optional_field_ref
 
+#include <cstdlib>             // for abs
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::...
 #include <memory>              // for make_unique, uniqu...
 #include <mutex>               // for lock_guard, mutex

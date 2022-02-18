@@ -4,10 +4,10 @@
  */
 #ifndef COMMON_EXPRESSION_TEST_EXPRESSIONCONTEXTMOCK_H
 #define COMMON_EXPRESSION_TEST_EXPRESSIONCONTEXTMOCK_H
-#include <bits/std_abs.h>  // for abs
-#include <stdint.h>        // for int32_t, int64_t
-#include <stdlib.h>        // for abs, size_t
+#include <stdint.h>  // for int32_t, int64_t
+#include <stdlib.h>  // for abs, size_t
 
+#include <cstdlib>        // for abs
 #include <regex>          // for regex
 #include <string>         // for string, operator==
 #include <unordered_map>  // for operator==, _Node_iter...

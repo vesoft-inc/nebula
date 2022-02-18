@@ -5,13 +5,13 @@
 
 #include "storage/mutate/AddEdgesProcessor.h"
 
-#include <bits/std_abs.h>                   // for abs
 #include <folly/Format.h>                   // for sformat
 #include <stdlib.h>                         // for abs
 #include <thrift/lib/cpp/util/EnumUtils.h>  // for enumNameSafe
 #include <thrift/lib/cpp2/FieldRef.h>       // for field_ref
 
 #include <algorithm>      // for find, for_each
+#include <cstdlib>        // for abs
 #include <iterator>       // for next
 #include <new>            // for operator new
 #include <tuple>          // for make_tuple

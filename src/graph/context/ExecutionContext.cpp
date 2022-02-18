@@ -5,9 +5,9 @@
 
 #include "graph/context/ExecutionContext.h"
 
-#include <bits/std_abs.h>  // for abs
-#include <stdlib.h>        // for abs, size_t
+#include <stdlib.h>  // for abs, size_t
 
+#include <cstdlib>  // for abs
 #include <memory>   // for allocator_traits<>::value_type
 #include <utility>  // for pair, move
 

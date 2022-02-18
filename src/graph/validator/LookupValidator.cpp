@@ -5,7 +5,6 @@
 
 #include "graph/validator/LookupValidator.h"
 
-#include <bits/std_abs.h>                          // for abs
 #include <folly/Range.h>                           // for Range, opera...
 #include <folly/String.h>                          // for toLowerAscii
 #include <folly/io/async/ScopedEventBaseThread.h>  // for StringPiece
@@ -16,6 +15,7 @@
 #include <boost/algorithm/string/case_conv.hpp>  // for to_lower_copy
 #include <boost/iterator/iterator_facade.hpp>    // for operator!=
 #include <cstdint>                               // for int32_t, uin...
+#include <cstdlib>                               // for abs
 #include <ext/alloc_traits.h>                    // for __alloc_trai...
 #include <set>                                   // for set, operator!=
 #include <type_traits>                           // for remove_refer...
