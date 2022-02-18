@@ -21,30 +21,24 @@
 namespace nebula {
 namespace graph {
 
-/*static*/ void Scheduler::analyzeLifetime(const PlanNode* root, bool inLoop) {
-  std::stack<std::tuple<const PlanNode*, bool>> stack;
-  stack.push(std::make_tuple(root, inLoop));
+/*static*/ void Scheduler::analyzeLifetime(const PlanNode* root, std::size_t loopLayers) {
+  std::stack<std::tuple<const PlanNode*, std::size_t>> stack;
+  stack.push(std::make_tuple(root, loopLayers));
   while (!stack.empty()) {
     const auto& current = stack.top();
     const auto* currentNode = std::get<0>(current);
-    const auto currentInLoop = std::get<1>(current);
+    const auto currentLoopLayers = std::get<1>(current);
     for (auto& inputVar : currentNode->inputVars()) {
       if (inputVar != nullptr) {
-        if (currentNode->kind() == PlanNode::Kind::kLoop || currentInLoop) {
-          inputVar->userCount.store(std::numeric_limits<uint64_t>::max(),
-                                    std::memory_order_relaxed);
-        } else {
-          if (inputVar->userCount.load(std::memory_order_relaxed) !=
-              std::numeric_limits<uint64_t>::max()) {
-            inputVar->userCount.fetch_add(1, std::memory_order_relaxed);
-          }
-        }
+        inputVar->userCount.fetch_add(1, std::memory_order_relaxed);
       }
     }
+    auto* currentMutNode = const_cast<PlanNode*>(currentNode);
+    currentMutNode->setLoopLayers(currentLoopLayers);
     stack.pop();
 
     for (auto dep : currentNode->dependencies()) {
-      stack.push(std::make_tuple(dep, currentInLoop));
+      stack.push(std::make_tuple(dep, currentLoopLayers));
     }
     switch (currentNode->kind()) {
       case PlanNode::Kind::kSelect: {
@@ -52,16 +46,17 @@ namespace graph {
         // used by scheduler
         sel->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
                                              std::memory_order_relaxed);
-        stack.push(std::make_tuple(sel->then(), currentInLoop));
-        stack.push(std::make_tuple(sel->otherwise(), currentInLoop));
+        stack.push(std::make_tuple(sel->then(), currentLoopLayers));
+        stack.push(std::make_tuple(sel->otherwise(), currentLoopLayers));
         break;
       }
       case PlanNode::Kind::kLoop: {
-        auto loop = static_cast<const Loop*>(currentNode);
+        auto loop = const_cast<Loop*>(static_cast<const Loop*>(currentNode));
         // used by scheduler
         loop->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
                                               std::memory_order_relaxed);
-        stack.push(std::make_tuple(loop->body(), true));
+        loop->setLoopLayers(currentLoopLayers + 1);
+        stack.push(std::make_tuple(loop->body(), loop->loopLayers()));
         break;
       }
       default:

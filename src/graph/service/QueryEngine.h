@@ -8,6 +8,8 @@
 
 #include <folly/executors/IOThreadPoolExecutor.h>
 
+#include <boost/core/noncopyable.hpp>
+
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClient.h"
 #include "common/charset/Charset.h"
@@ -27,7 +29,7 @@ namespace graph {
  * For the time being, we don't have the execution plan cache support,
  * instead we create a plan for each query, and destroy it upon finish.
  */
-class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
+class QueryEngine final : public boost::noncopyable, public cpp::NonMovable {
  public:
   QueryEngine() = default;
   ~QueryEngine() = default;

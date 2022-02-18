@@ -107,7 +107,7 @@ bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
     currReader_ = &readerV2_;
     return true;
   } else {
-    LOG(ERROR) << "Unsupported row reader version " << readerVer;
+    LOG(WARNING) << "Unsupported row reader version " << readerVer;
     currReader_ = nullptr;
     return false;
   }
@@ -171,7 +171,7 @@ void RowReaderWrapper::getVersions(const folly::StringPiece& row,
     // presents
     verBytes = row[index++] & 0x07;
   } else {
-    LOG(ERROR) << "Invalid reader version: " << readerVer;
+    LOG(WARNING) << "Invalid reader version: " << readerVer;
     schemaVer = -1;
     return;
   }
@@ -180,7 +180,7 @@ void RowReaderWrapper::getVersions(const folly::StringPiece& row,
   if (verBytes > 0) {
     if (verBytes + 1 > row.size()) {
       // Data is too short
-      LOG(ERROR) << "Row data is too short: " << toHexStr(row);
+      LOG(WARNING) << "Row data is too short: " << toHexStr(row);
       schemaVer = -1;
       return;
     }

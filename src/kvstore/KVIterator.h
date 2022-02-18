@@ -15,14 +15,33 @@ class KVIterator {
  public:
   virtual ~KVIterator() = default;
 
+  /**
+   * @brief Return whether iterator has more key/value
+   */
   virtual bool valid() const = 0;
 
+  /**
+   * @brief Move to next key/value, undefined behaviour when valid is false
+   */
   virtual void next() = 0;
 
+  /**
+   * @brief Move to previous key/value
+   */
   virtual void prev() = 0;
 
+  /**
+   * @brief Return the key of iterator points to
+   *
+   * @return folly::StringPiece Key
+   */
   virtual folly::StringPiece key() const = 0;
 
+  /**
+   * @brief Return the value of iterator points to
+   *
+   * @return folly::StringPiece Value
+   */
   virtual folly::StringPiece val() const = 0;
 };
 
