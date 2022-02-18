@@ -170,11 +170,11 @@ class ClientSession final {
 
   // Finds a query within the session.
   // epId: represents a query.
-  bool findQuery(nebula::ExecutionPlanID epId) const;
+  bool findQuery(::nebula::ExecutionPlanID epId) const;
 
   // Marks a query as killed.
   // epId: represents a query.
-  void markQueryKilled(nebula::ExecutionPlanID epId);
+  void markQueryKilled(::nebula::ExecutionPlanID epId);
 
   // Marks all queries as killed.
   void markAllQueryKilled();
