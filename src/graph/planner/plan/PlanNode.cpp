@@ -7,18 +7,16 @@
 
 #include <folly/String.h>   // for stringPrintf
 #include <folly/dynamic.h>  // for dynamic::object, dynamic::in...
-#include <folly/dynamic.h>  // for dynamic
-#include <folly/dynamic.h>  // for dynamic::object, dynamic::in...
-#include <folly/dynamic.h>  // for dynamic
 #include <folly/json.h>     // for toJson
 
 #include <memory>   // for unique_ptr, operator==, make...
 #include <utility>  // for move
 #include <vector>   // for vector
 
-#include "common/graph/Response.h"       // for PlanNodeDescription, Pair
-#include "graph/context/QueryContext.h"  // for QueryContext
-#include "graph/util/ToJson.h"           // for toJson
+#include "common/graph/Response.h"               // for PlanNodeDescription, Pair
+#include "graph/context/QueryContext.h"          // for QueryContext
+#include "graph/planner/plan/PlanNodeVisitor.h"  // for QueryContext
+#include "graph/util/ToJson.h"                   // for toJson
 
 namespace nebula {
 namespace graph {
@@ -306,6 +304,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  return nullptr;
 }
 
 std::string PlanNode::toString() const {
