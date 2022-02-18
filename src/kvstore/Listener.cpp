@@ -59,7 +59,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
   committedLogTerm_ = logIdAndTerm.second;
 
   if (lastLogId_ < committedLogId_) {
-    LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
+    LOG(INFO) << idStr_ << "Listener reset lastLogId " << lastLogId_ << " to be the committedLogId "
               << committedLogId_;
     lastLogId_ = committedLogId_;
     lastLogTerm_ = committedLogTerm_;
@@ -209,7 +209,8 @@ void Listener::doApply() {
           break;
         }
         default: {
-          LOG(WARNING) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
+          VLOG(2) << idStr_
+                  << "Should not reach here. Unknown operation: " << static_cast<int32_t>(log[0]);
         }
       }
 
@@ -224,14 +225,8 @@ void Listener::doApply() {
       std::lock_guard<std::mutex> guard(raftLock_);
       lastApplyLogId_ = lastApplyId;
       persist(committedLogId_, term_, lastApplyLogId_);
-      VLOG(1) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
+      VLOG(2) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
       lastApplyTime_ = time::WallClock::fastNowInMilliSec();
-      VLOG(1) << folly::sformat(
-          "Commit snapshot to : committedLogId={},"
-          "committedLogTerm={}, lastApplyLogId_={}",
-          committedLogId_,
-          term_,
-          lastApplyLogId_);
     }
   });
 }
@@ -240,7 +235,7 @@ std::pair<int64_t, int64_t> Listener::commitSnapshot(const std::vector<std::stri
                                                      LogID committedLogId,
                                                      TermID committedLogTerm,
                                                      bool finished) {
-  VLOG(1) << idStr_ << "Listener is committing snapshot.";
+  VLOG(2) << idStr_ << "Listener is committing snapshot.";
   int64_t count = 0;
   int64_t size = 0;
   std::vector<KV> data;
@@ -252,7 +247,7 @@ std::pair<int64_t, int64_t> Listener::commitSnapshot(const std::vector<std::stri
     data.emplace_back(kv.first, kv.second);
   }
   if (!apply(data)) {
-    LOG(ERROR) << idStr_ << "Failed to apply data while committing snapshot.";
+    LOG(INFO) << idStr_ << "Failed to apply data while committing snapshot.";
     return std::make_pair(0, 0);
   }
   if (finished) {
@@ -260,9 +255,8 @@ std::pair<int64_t, int64_t> Listener::commitSnapshot(const std::vector<std::stri
     leaderCommitId_ = committedLogId;
     lastApplyLogId_ = committedLogId;
     persist(committedLogId, committedLogTerm, lastApplyLogId_);
-    LOG(INFO) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
     lastApplyTime_ = time::WallClock::fastNowInMilliSec();
-    VLOG(3) << folly::sformat(
+    LOG(INFO) << folly::sformat(
         "Commit snapshot to : committedLogId={},"
         "committedLogTerm={}, lastApplyLogId_={}",
         committedLogId,
@@ -275,7 +269,7 @@ std::pair<int64_t, int64_t> Listener::commitSnapshot(const std::vector<std::stri
 void Listener::resetListener() {
   std::lock_guard<std::mutex> g(raftLock_);
   reset();
-  VLOG(1) << folly::sformat(
+  LOG(INFO) << folly::sformat(
       "The listener has been reset : leaderCommitId={},"
       "lastLogTerm={}, term={},"
       "lastApplyLogId={}",

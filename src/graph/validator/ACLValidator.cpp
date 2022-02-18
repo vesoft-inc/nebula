@@ -104,9 +104,17 @@ Status ChangePasswordValidator::toPlan() {
 // grant role
 Status GrantRoleValidator::validateImpl() {
   const auto *sentence = static_cast<const GrantSentence *>(sentence_);
-  if (sentence->getAccount()->size() > kUsernameMaxLength) {
+  const std::string *account = sentence->getAccount();
+  if (account->size() > kUsernameMaxLength) {
     return Status::SemanticError("Username exceed maximum length %ld characters.",
                                  kUsernameMaxLength);
+  }
+  auto metaClient = qctx_->getMetaClient();
+  auto roles = metaClient->getRolesByUserFromCache(*account);
+  for (const auto &role : roles) {
+    if (role.get_role_type() == meta::cpp2::RoleType::GOD) {
+      return Status::SemanticError("User '%s' is GOD, cannot be granted.", account->c_str());
+    }
   }
   return Status::OK();
 }

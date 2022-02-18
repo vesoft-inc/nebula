@@ -17,6 +17,21 @@ using nebula::plugin::DocItem;
 
 class ESListener : public Listener {
  public:
+  /**
+   * @brief Construct a new ES Listener, it is a derived class of Listener
+   *
+   * @param spaceId
+   * @param partId
+   * @param localAddr Listener ip/addr
+   * @param walPath Listener's wal path
+   * @param ioPool IOThreadPool for listener
+   * @param workers Background thread for listener
+   * @param handlers Worker thread for listener
+   * @param snapshotMan Snapshot manager
+   * @param clientMan Client manager
+   * @param diskMan Disk manager
+   * @param schemaMan Schema manager
+   */
   ESListener(GraphSpaceID spaceId,
              PartitionID partId,
              HostAddr localAddr,
@@ -45,33 +60,112 @@ class ESListener : public Listener {
   }
 
  protected:
+  /**
+   * @brief Init work: get vid length, get es client
+   */
   void init() override;
 
+  /**
+   * @brief Send data by es client
+   *
+   * @param data Key/value to apply
+   * @return True if succeed. False if failed.
+   */
   bool apply(const std::vector<KV>& data) override;
 
+  /**
+   * @brief Persist commitLogId commitLogTerm and lastApplyLogId
+   */
   bool persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) override;
 
+  /**
+   * @brief Get commit log id and commit log term from persistance storage, called in start()
+   *
+   * @return std::pair<LogID, TermID>
+   */
   std::pair<LogID, TermID> lastCommittedLogId() override;
 
+  /**
+   * @brief Get last apply id from persistance storage, used in initialization
+   *
+   * @return LogID Last apply log id
+   */
   LogID lastApplyLogId() override;
 
  private:
+  /**
+   * @brief Write last commit id, last commit term, last apply id to a file
+   *
+   * @param lastId Last commit id
+   * @param lastTerm Last commit term
+   * @param lastApplyLogId Last apply id
+   * @return Whether persist succeed
+   */
   bool writeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId);
 
+  /**
+   * @brief Encode last commit id, last commit term, last apply id to a file
+   *
+   * @param lastId Last commit id
+   * @param lastTerm Last commit term
+   * @param lastApplyLogId Last apply id
+   * @return Encoded string
+   */
   std::string encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const noexcept;
 
+  /**
+   * @brief Convert key value to DocItem
+   *
+   * @param items DocItems to send
+   * @param kv Key/value to encode into DocItems
+   * @return Whether append DocItem succeed
+   */
   bool appendDocItem(std::vector<DocItem>& items, const KV& kv) const;
 
+  /**
+   * @brief Convert edge key value to DocItem
+   *
+   * @param items DocItems to send
+   * @param kv Edge key/value to encode into DocItems
+   * @return Whether append DocItem succeed
+   */
   bool appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) const;
 
+  /**
+   * @brief Convert tag key value to DocItem
+   *
+   * @param items DocItems to send
+   * @param kv Edge key/value to encode into DocItems
+   * @return Whether append DocItem succeed
+   */
   bool appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const;
 
+  /**
+   * @brief Add the fulltext index field to DocItem
+   *
+   * @param items DocItems to send
+   * @param reader Key/value's reader
+   * @param fti Fulltext index schema
+   * @return Whether append DocItem succeed
+   */
   bool appendDocs(std::vector<DocItem>& items,
                   RowReader* reader,
                   const std::pair<std::string, nebula::meta::cpp2::FTIndex>& fti) const;
 
+  /**
+   * @brief Bulk DocItem to es
+   *
+   * @param items DocItems to send
+   * @return Whether send succeed
+   */
   bool writeData(const std::vector<nebula::plugin::DocItem>& items) const;
 
+  /**
+   * @brief Put DocItem to es
+   *
+   * @param items DocItems to send
+   * @return Whether send succeed
+   */
   bool writeDatum(const std::vector<nebula::plugin::DocItem>& items) const;
 
  private:

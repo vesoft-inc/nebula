@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_EXEC_SCANNODE_H
+#define STORAGE_EXEC_SCANNODE_H
 
 #include "common/base/Base.h"
 #include "storage/exec/GetPropNode.h"
@@ -318,3 +319,4 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXTOPNNODE_H
+#define STORAGE_EXEC_INDEXTOPNNODE_H
 #include "folly/Likely.h"
 #include "storage/exec/IndexLimitNode.h"
 namespace nebula {
@@ -96,3 +97,4 @@ class IndexTopNNode : public IndexLimitNode {
 }  // namespace storage
 
 }  // namespace nebula
+#endif
