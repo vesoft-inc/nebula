@@ -12,7 +12,8 @@ namespace meta {
 
 /**
  * @brief Create fulltext index, only inserting the meta info to the meta kv store.
- *        The user should also sign in elasticsearch client and listener before really use it.
+ *        The user should also sign in elasticsearch client and set up listener before really use
+ * it.
  *
  */
 class CreateFTIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
@@ -46,7 +47,7 @@ class DropFTIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
 };
 
 /**
- * @brief Get all the fulltext index info by scaning fulltext index prefix
+ * @brief Get all the fulltext index info by scaning fulltext index prefix.
  *
  */
 class ListFTIndexesProcessor : public BaseProcessor<cpp2::ListFTIndexesResp> {

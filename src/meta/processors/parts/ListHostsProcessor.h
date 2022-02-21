@@ -79,6 +79,11 @@ class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
    */
   void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
 
+  /**
+   * @brief Remove leaders which do not exist
+   *
+   * @param removeLeadersKey
+   */
   void removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey);
 
  private:

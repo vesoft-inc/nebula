@@ -12,8 +12,9 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Create tag schema. Will check conflict tag name and edge it, then verify all the
- *        columns.
+ * @brief Create tag schema. Will check conflict with tag name and edge type name, then verify all
+ * the columns.
+ *
  *
  */
 class CreateTagProcessor : public BaseProcessor<cpp2::ExecResp> {

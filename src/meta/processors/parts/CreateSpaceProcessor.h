@@ -45,7 +45,7 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
 
   /**
    * @brief Get replica factor count of zones for an partition according to current loading.
-   *        We will calculate load by partition count now.
+   *        We calculate loading only by partition's count now.
    *
    * @param replicaFactor space replicate factor
    * @return StatusOr<std::vector<std::string>>

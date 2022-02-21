@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Get tag index item from meta kv store, containing two steps:
+ * @brief Get tag index item from meta kv store, including two steps:
  *        1. Get index id by space id and index name.
  *        2. Get tag index item by space id and index id.
  *

@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Create tag index on given tag fields, which has similar logic with the
+ * @brief Create tag index on given tag fields. This processor has similar logic with the
  *        CreateEdgeIndexProcessor. It only check if the tag index could be built
  *        and then create a tag index item to save all the tag index meta.
  *        After tag index created, any vertex inserted satisfying the tag and fields

@@ -78,7 +78,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
   }
 
-  // If index exist, could not alter ttl column
+  // If index exist, could not alter ttl column. Because the old indexes either already
+  // set ttl according to the old ttl column or do not have any ttl.
   auto& alterSchemaProp = req.get_schema_prop();
   if (existIndex) {
     int64_t duration = 0;

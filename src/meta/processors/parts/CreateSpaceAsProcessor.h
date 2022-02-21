@@ -13,7 +13,8 @@ namespace meta {
 using Hosts = std::vector<HostAddr>;
 
 /**
- * @brief Create a new space same with an existing space, including:
+ * @brief Create a new space, copying schema and partition topology from an existing space,
+ * including:
  *        - space properties
  *        - partition hosts distribution
  *        - tags

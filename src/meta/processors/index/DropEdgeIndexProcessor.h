@@ -12,9 +12,9 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Drop the edge index, it will drop the index name and index id key for given space.
- *        The index data in storaged will be remove when do compact with
- *        custom compaction filter.
+ * @brief Drop the edge index. It will drop the index name and index id key for given space,
+ *        but will not handle the index data. The index data in storaged will be removed when
+ *        do compact with custom compaction filter.
  *
  */
 class DropEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {

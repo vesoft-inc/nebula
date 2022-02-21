@@ -19,8 +19,9 @@ namespace meta {
  *
  *        It will first check if all the parameters valid, then create index item
  *        to save these meta without building the index on existing data actually.
- *        But when new data inserted, it will generated index data according to the index
+ *        But when new data inserted, it will generate index data according to the index
  *        created before.
+ *        Or user could call `rebuild index` to generate indexes for all existing data.
  *
  */
 class CreateEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
