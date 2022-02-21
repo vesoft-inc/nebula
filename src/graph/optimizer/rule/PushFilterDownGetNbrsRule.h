@@ -15,7 +15,7 @@ namespace opt {
   Embed the [[Filter]] into [[GetNeighbors]]
   Required conditions:
    1. Match the pattern
-   2. Filter contains subexpressions that meet pushdown conditions()
+   2. Filter contains subexpressions that meet pushdown conditions
   Benefits:
    1. Filter data early to optimize performance
 
