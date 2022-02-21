@@ -41,6 +41,7 @@ nebula_add_library(
     query/AppendVerticesExecutor.cpp
     algo/ConjunctPathExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
+    algo/FindPathExecutor.cpp
     algo/ProduceSemiShortestPathExecutor.cpp
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp

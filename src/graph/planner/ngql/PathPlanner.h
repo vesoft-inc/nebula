@@ -28,6 +28,12 @@ class PathPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
+  SubPlan doPlan(PlanNode* dep);
+
+  SubPlan loopDepPlan();
+
+  Expression* shortestPathLoopCondition(uint32_t steps, const std::string& endVar);
+
   SubPlan singlePairPlan(PlanNode* dep);
 
   SubPlan multiPairPlan(PlanNode* dep);

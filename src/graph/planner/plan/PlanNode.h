@@ -62,6 +62,7 @@ class PlanNode {
     kProduceSemiShortestPath,
     kConjunctPath,
     kProduceAllPaths,
+    kFindPath,
     kCartesianProduct,
     kSubgraph,
     kDataCollect,

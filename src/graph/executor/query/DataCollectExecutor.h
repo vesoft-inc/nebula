@@ -10,6 +10,20 @@
 
 namespace nebula {
 namespace graph {
+
+//
+// Member:
+//  `colNames_` : save the column name of the result of the DataCollect
+// Funcitons:
+//  `collectSubgraph` : receive result from GetNeighbors, collect vertices & edges by calling
+//   GetNeighborIter's getVertices & getEdges interface
+//  `rowBaseMove` :
+//  `collectMToN` : Only used in go  MToN scenarios.
+//  `collectBFSShortest` : `collectAllPaths` : `collectMultiplePairShortestPath`
+//  : `collectPathProp` :
+//  `collectAllPaths`
+//
+
 class DataCollectExecutor final : public Executor {
  public:
   DataCollectExecutor(const PlanNode* node, QueryContext* qctx)

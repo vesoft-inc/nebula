@@ -11,6 +11,73 @@
 
 namespace nebula {
 namespace graph {
+
+class FindPath : public BinaryInputNode {
+public:
+  static FindPath* make(QueryContext* qctx,
+                        PlanNode* left,
+                        PlanNode* right,
+                        bool shortest,
+                        bool noLoop,
+                        size_t steps) {
+    return qctx->objPool()->add(new FindPath(qctx, left, right, shortest, noLoop, steps));
+  }
+
+  size_t steps() const {
+    return steps_;
+  }
+
+  bool isShortest() const {
+    return shortest_;
+  }
+
+  bool noLoop() const {
+    return noLoop_;
+  }
+
+  std::string leftVidVar() const {
+    return leftVidVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  void setTerminationVar(const std::string& var) {
+    terminationVar_ = var;
+  }
+
+  std::string terminationVar() const {
+    return terminationVar_;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+private:
+  FindPath(
+      QueryContext* qctx, PlanNode* left, PlanNode* right, bool shortest, bool noLoop, size_t steps)
+      : BinaryInputNode(qctx, Kind::kFindPath, left, right),
+        shortest_(shortest),
+        noLoop_(noLoop),
+        steps_(steps) {}
+
+private:
+  bool shortest_{false};
+  bool noLoop_{false};
+  size_t steps_{0};
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  std::string terminationVar_;
+};
+
 class ProduceSemiShortestPath : public SingleInputNode {
  public:
   static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {

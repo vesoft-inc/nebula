@@ -1182,9 +1182,10 @@ class DataCollect final : public VariableDependencyNode {
     kSubgraph,
     kRowBasedMove,
     kMToN,
+    kAllPath,
     kBFSShortest,
-    kAllPaths,
     kMultiplePairShortest,
+    kFindPath,
     kPathProp,
   };
 

@@ -6,6 +6,7 @@ Feature: Shortest Path
   Background:
     Given a graph with space named "nba"
 
+  @jmq
   Scenario: [1] SinglePair Shortest Path
     When executing query:
       """

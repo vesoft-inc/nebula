@@ -235,6 +235,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ProduceSemiShortestPath";
     case Kind::kConjunctPath:
       return "ConjunctPath";
+    case Kind::kFindPath:
+      return "FindPath";
     case Kind::kProduceAllPaths:
       return "ProduceAllPaths";
     case Kind::kCartesianProduct:

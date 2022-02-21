@@ -9,6 +9,16 @@
 namespace nebula {
 namespace graph {
 
+std::unique_ptr<PlanNodeDescription> FindPath::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
+  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
+  addDescription("shortest", util::toJson(shortest_), desc.get());
+  addDescription("noloop", util::toJson(noLoop_), desc.get());
+  addDescription("steps", util::toJson(steps_), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
   auto desc = BinaryInputNode::explain();
   switch (pathKind_) {

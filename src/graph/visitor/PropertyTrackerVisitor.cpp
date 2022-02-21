@@ -88,11 +88,6 @@ void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
-  if (!status.ok()) {
-    status_ = std::move(status).status();
-    return;
-  }
   auto &nodeAlias = static_cast<VariablePropertyExpression *>(expr->label())->prop();
   auto &tagName = expr->sym();
   auto &propName = expr->prop();
