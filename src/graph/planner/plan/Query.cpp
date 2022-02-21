@@ -727,22 +727,20 @@ void Traverse::cloneMembers(const Traverse& g) {
   GetNeighbors::cloneMembers(g);
 
   setStepRange(g.range_);
-  setVertexFilter(g.vFilter_->clone());
-  setEdgeFilter(g.eFilter_->clone());
+  if (g.vFilter_ != nullptr) {
+    setVertexFilter(g.vFilter_->clone());
+  }
+  if (g.eFilter_ != nullptr) {
+    setEdgeFilter(g.eFilter_->clone());
+  }
   setTrackPrevPath(g.trackPrevPath_);
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   auto desc = GetNeighbors::explain();
-  if (range_ != nullptr) {
-    addDescription("steps", range_->toString(), desc.get());
-  }
-  if (vFilter_ != nullptr) {
-    addDescription("vertex filter", vFilter_->toString(), desc.get());
-  }
-  if (eFilter_ != nullptr) {
-    addDescription("edge filter", eFilter_->toString(), desc.get());
-  }
+  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
+  addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
+  addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
 }
@@ -770,9 +768,7 @@ void AppendVertices::cloneMembers(const AppendVertices& a) {
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
-  if (vFilter_ != nullptr) {
-    addDescription("vertex_filter", vFilter_->toString(), desc.get());
-  }
+  addDescription("vertex_filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
   return desc;
 }
