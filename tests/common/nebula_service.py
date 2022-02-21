@@ -59,7 +59,6 @@ class NebulaProcess(object):
                 'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
                 'port': self.tcp_port,
                 'ws_http_port': self.http_port,
-                'ws_h2_port': self.https_port,
             }
         else:
             process_params = {
@@ -67,13 +66,10 @@ class NebulaProcess(object):
                 'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
                 'port': self.tcp_port,
                 'ws_http_port': self.http_port,
-                'ws_h2_port': self.https_port,
                 'meta_port': self.meta_port,
                 'ws_meta_http_port': self.meta_http_port,
-                'ws_meta_h2_port': self.meta_https_port,
                 'storage_port': self.storage_port,
                 'ws_storage_http_port': self.storage_http_port,
-                'ws_storage_h2_port': self.storage_https_port,
             }
         # data path
         if self.name.upper() != 'GRAPHD':
