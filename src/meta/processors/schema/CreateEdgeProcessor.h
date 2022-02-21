@@ -14,7 +14,7 @@ namespace meta {
 /**
  * @brief Create edge schema. It will check conflict edge type name and tag name, then verify all
  *        the columns.
- *        In one space, tag and edge could not have the same name.
+ *        In one space, the tag and edge could not have the same name.
  *
  */
 class CreateEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
