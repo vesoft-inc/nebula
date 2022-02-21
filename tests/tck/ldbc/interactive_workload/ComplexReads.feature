@@ -6,25 +6,23 @@ Feature: LDBC Interactive Workload - Complex Reads
   Background:
     Given a graph with space named "ldbc_v0_3_3"
 
-  @skip
   Scenario: 1. Friends with certain name
-    # TODO: shortestPath syntax is not supported for now
+    Given parameters: {"personId":"4398046511333", "firstName":"Jose"}
     When executing query:
       """
-      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "$firstName"}))
-      WHERE id(person) == ""
-      WHERE person <> friend
+      MATCH p=(person:Person)-[:KNOWS*1..3]-(friend:Person {firstName: $firstName})
+      WHERE id(person) == $personId
+      AND person <> friend
       WITH friend, length(p) AS distance
-      ORDER BY distance ASC, friend.lastName ASC, toInteger(friend.id) ASC
       LIMIT 20
       MATCH (friend)-[:IS_LOCATED_IN]->(friendCity:Place)
       OPTIONAL MATCH (friend)-[studyAt:STUDY_AT]->(uni:Organisation)-[:IS_LOCATED_IN]->(uniCity:Place)
       WITH
         friend,
         collect(
-          CASE uni.name
+          CASE uni.Organisation.name
             WHEN null THEN null
-            ELSE [uni.name, studyAt.classYear, uniCity.name]
+            ELSE [uni.Organisation.name, studyAt.classYear, uniCity.Place.name]
           END
         ) AS unis,
         friendCity,
@@ -33,32 +31,32 @@ Feature: LDBC Interactive Workload - Complex Reads
       WITH
         friend,
         collect(
-          CASE company.name
+          CASE company.Organisation.name
             WHEN null THEN null
-            ELSE [company.name, workAt.workFrom, companyCountry.name]
+            ELSE [company.Organisation.name, workAt.workFrom, companyCountry.Place.name]
           END
         ) AS companies,
         unis,
         friendCity,
         distance
       RETURN
-        friend.id AS friendId,
-        friend.lastName AS friendLastName,
+        friend.Person.id AS friendId,
+        friend.Person.lastName AS friendLastName,
         distance AS distanceFromPerson,
-        friend.birthday AS friendBirthday,
-        friend.creationDate AS friendCreationDate,
-        friend.gender AS friendGender,
-        friend.browserUsed AS friendBrowserUsed,
-        friend.locationIP AS friendLocationIp,
-        friend.email AS friendEmails,
-        friend.speaks AS friendLanguages,
-        friendCity.name AS friendCityName,
+        friend.Person.birthday AS friendBirthday,
+        friend.Person.creationDate AS friendCreationDate,
+        friend.Person.gender AS friendGender,
+        friend.Person.browserUsed AS friendBrowserUsed,
+        friend.Person.locationIP AS friendLocationIp,
+        friend.Person.email AS friendEmails,
+        friend.Person.speaks AS friendLanguages,
+        friendCity.Place.name AS friendCityName,
         unis AS friendUniversities,
         companies AS friendCompanies
-      ORDER BY distanceFromPerson ASC, friendLastName ASC, toInteger(friendId) ASC
+      ORDER BY distanceFromPerson ASC, friendLastName ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `shortestPath'
+    Then the result should be, in any order:
 
   Scenario: 2. Recent messages by your friends
     When executing query:
