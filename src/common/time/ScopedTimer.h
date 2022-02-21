@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_TIME_SCOPEDTIMER_H
+#define COMMON_TIME_SCOPEDTIMER_H
 
 #include <functional>
 
@@ -54,3 +55,4 @@ class ScopedTimer final {
 #define CONCAT_IMPL(x, y) x##y
 #define MACRO_CONCAT(x, y) CONCAT_IMPL(x, y)
 #define SCOPED_TIMER(v) ::nebula::ScopedTimer MACRO_CONCAT(_SCOPED_TIMER_, __LINE__)(v)
+#endif

@@ -20,7 +20,6 @@ class StatusHandlerTestEnv : public ::testing::Environment {
  public:
   void SetUp() override {
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     VLOG(1) << "Starting web service...";
 
     webSvc_ = std::make_unique<WebService>();

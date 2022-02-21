@@ -19,12 +19,12 @@ class InMemoryLogBuffer final {
  public:
   explicit InMemoryLogBuffer(LogID firstLogId, const std::string& idStr = "")
       : firstLogId_(firstLogId), idStr_(idStr) {
-    VLOG(1) << idStr_ << "InMemoryLogBuffer ctor, firstLogId " << firstLogId_;
+    VLOG(2) << idStr_ << "InMemoryLogBuffer ctor, firstLogId " << firstLogId_;
     logs_.reserve(1024);
   }
 
   ~InMemoryLogBuffer() {
-    VLOG(1) << idStr_ << "InMemoryLogBuffer dtor, firstLogId " << firstLogId_;
+    VLOG(2) << idStr_ << "InMemoryLogBuffer dtor, firstLogId " << firstLogId_;
   }
 
   // Push a new message to the end of the buffer

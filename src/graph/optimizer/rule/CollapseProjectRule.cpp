@@ -11,6 +11,8 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 
+DEFINE_bool(enable_optimizer_collapse_project_rule, true, "");
+
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;
 
@@ -110,6 +112,9 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
 }
 
 bool CollapseProjectRule::match(OptContext* octx, const MatchedResult& matched) const {
+  if (!FLAGS_enable_optimizer_collapse_project_rule) {
+    return false;
+  }
   return OptRule::match(octx, matched);
 }
 

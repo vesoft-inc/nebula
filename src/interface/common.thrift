@@ -479,6 +479,7 @@ enum ErrorCode {
     E_RAFT_LOG_GAP                    = -3501,
     E_RAFT_LOG_STALE                  = -3502,
     E_RAFT_TERM_OUT_OF_DATE           = -3503,
+    E_RAFT_UNKNOWN_APPEND_LOG         = -3504,
     // Raft state errors
     E_RAFT_WAITING_SNAPSHOT           = -3511,
     E_RAFT_SENDING_SNAPSHOT           = -3512,

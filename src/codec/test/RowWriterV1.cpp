@@ -83,7 +83,7 @@ RowWriterV1& RowWriterV1::operator<<(bool v) noexcept {
       cord_ << v;
       break;
     default:
-      LOG(ERROR) << "Incompatible value type \"bool\"";
+      LOG(WARNING) << "Incompatible value type \"bool\"";
       // Output a default value
       cord_ << false;
       break;
@@ -107,7 +107,7 @@ RowWriterV1& RowWriterV1::operator<<(float v) noexcept {
       cord_ << static_cast<double>(v);
       break;
     default:
-      LOG(ERROR) << "Incompatible value type \"float\"";
+      LOG(WARNING) << "Incompatible value type \"float\"";
       cord_ << static_cast<float>(0.0);
       break;
   }
@@ -130,7 +130,7 @@ RowWriterV1& RowWriterV1::operator<<(double v) noexcept {
       cord_ << v;
       break;
     default:
-      LOG(ERROR) << "Incompatible value type \"double\"";
+      LOG(WARNING) << "Incompatible value type \"double\"";
       cord_ << static_cast<double>(0.0);
       break;
   }
@@ -160,7 +160,7 @@ RowWriterV1& RowWriterV1::operator<<(folly::StringPiece v) noexcept {
       break;
     }
     default: {
-      LOG(ERROR) << "Incompatible value type \"string\"";
+      LOG(WARNING) << "Incompatible value type \"string\"";
       writeInt(0);
       break;
     }
@@ -182,7 +182,7 @@ RowWriterV1& RowWriterV1::operator<<(folly::StringPiece v) noexcept {
  ***************************/
 RowWriterV1& RowWriterV1::operator<<(Skip&& skip) noexcept {
   if (skip.toSkip_ <= 0) {
-    VLOG(2) << "Nothing to skip";
+    VLOG(4) << "Nothing to skip";
     return *this;
   }
 

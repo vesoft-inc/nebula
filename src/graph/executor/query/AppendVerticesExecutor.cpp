@@ -70,6 +70,12 @@ Status AppendVerticesExecutor::handleResp(
   auto *av = asNode<AppendVertices>(node());
   auto *vFilter = av->vFilter();
   QueryExpressionContext ctx(qctx()->ectx());
+
+  auto inputIter = qctx()->ectx()->getResult(av->inputVar()).iter();
+  DataSet ds;
+  ds.colNames = av->colNames();
+  ds.rows.reserve(inputIter->size());
+
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
@@ -80,26 +86,28 @@ Status AppendVerticesExecutor::handleResp(
             continue;
           }
         }
-        map.emplace(iter.getColumn(kVid), iter.getVertex());
+        if (!av->trackPrevPath()) {  // eg. MATCH (v:Person) RETURN v
+          Row row;
+          row.values.emplace_back(iter.getVertex());
+          ds.rows.emplace_back(std::move(row));
+        } else {
+          map.emplace(iter.getColumn(kVid), iter.getVertex());
+        }
       }
     }
   }
 
-  auto iter = qctx()->ectx()->getResult(av->inputVar()).iter();
-  auto *src = av->src();
+  if (!av->trackPrevPath()) {
+    return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
+  }
 
-  DataSet ds;
-  ds.colNames = av->colNames();
-  ds.rows.reserve(iter->size());
-  for (; iter->valid(); iter->next()) {
-    auto dstFound = map.find(src->eval(ctx(iter.get())));
+  auto *src = av->src();
+  for (; inputIter->valid(); inputIter->next()) {
+    auto dstFound = map.find(src->eval(ctx(inputIter.get())));
     if (dstFound == map.end()) {
       continue;
     }
-    Row row;
-    if (av->trackPrevPath()) {
-      row = *iter->row();
-    }
+    Row row = *inputIter->row();
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));
   }
