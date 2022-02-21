@@ -11,6 +11,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Used for command `show hosts`, it have two actions:
+ *        1. If role is not provided, it will show all storaged hosts with part and leader
+ *           distribution.
+ *        2. If role is provided, it only show all hosts' status with given role.
+ */
 class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
  public:
   static ListHostsProcessor* instance(kvstore::KVStore* kvstore) {
@@ -24,30 +30,40 @@ class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
       : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
 
   /**
-   * @brief return online/offline, gitInfoSHA for the specific HostRole
+   * @brief Get all hosts with status online/offline, gitInfoSHA for the specific HostRole
    *
    * @param type graph/meta/storage
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
 
+  /**
+   * @brief Fill the hostItems_ with leader distribution
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode fillLeaders();
 
+  /**
+   * @brief Fill the hostItems_ with parts distribution
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode fillAllParts();
 
   /**
-   * @brief now(2020-04-29), assume all metad have same gitInfoSHA
-   * this will change if some day
-   * meta.thrift support interface like getHostStatus()
-   * which return a bunch of host information
-   * it's not necessary add this interface only for gitInfoSHA
+   * @brief Now(2020-04-29), assume all metad have same gitInfoSHA
+   *        this will change if some day
+   *        meta.thrift support interface like getHostStatus()
+   *        which return a bunch of host information
+   *        it's not necessary add this interface only for gitInfoSHA
    *
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode allMetaHostsStatus();
 
   /**
-   * @brief Get map of spaceId -> spaceName
+   * @brief Get map of spaceId -> spaceName for all spaces
    *
    * @return nebula::cpp2::ErrorCode
    */

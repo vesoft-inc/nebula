@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create edge schema. Will check conflict edge type name and edge it, then verify all the
+ *        columns.
+ *
+ */
 class CreateEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateEdgeProcessor* instance(kvstore::KVStore* kvstore) {

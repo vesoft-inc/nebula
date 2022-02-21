@@ -46,7 +46,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
       return;
     }
     schemaValue = iter->val().str();
-  } else {
+  } else {  // Get given version
     auto edgeKey = MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver);
     auto ret = doGet(edgeKey);
     if (!nebula::ok(ret)) {

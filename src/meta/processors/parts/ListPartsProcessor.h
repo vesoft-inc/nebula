@@ -12,6 +12,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Used for command `show parts`, will show leader peer, active peers and lost peers of given
+ *        parts or all parts.
+ *
+ */
 class ListPartsProcessor : public BaseProcessor<cpp2::ListPartsResp> {
  public:
   static ListPartsProcessor* instance(kvstore::KVStore* kvstore) {
@@ -25,16 +30,16 @@ class ListPartsProcessor : public BaseProcessor<cpp2::ListPartsResp> {
       : BaseProcessor<cpp2::ListPartsResp>(kvstore) {}
 
   /**
-   * @brief Get Parts alloc information
+   * @brief Get all parts' distribution information.
    *
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
-   * std::vector<HostAddr>>> info for parts alloc
+   *         std::vector<HostAddr>>> map for part id -> peer hosts.
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
   getAllParts();
 
   /**
-   * @brief Get all parts with storage leaser distribution
+   * @brief Fill the given partItems with leader distribution.
    *
    * @param partItems
    * @return nebula::cpp2::ErrorCode

@@ -29,6 +29,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   auto edgeType = nebula::value(ret);
 
   // Check the edge belongs to the space
+  // Because there are many edge types with same type and different versions, we should get
+  // latest edge type by prefix scaning.
   auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto retPre = doPrefix(edgePrefix);
   if (!nebula::ok(retPre)) {
@@ -47,7 +49,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     return;
   }
 
-  // Get lasted version of edge
+  // Parse version from edge type key
   auto version = MetaKeyUtils::parseEdgeVersion(iter->key()) + 1;
   auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
@@ -56,13 +58,13 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   // Update schema column
   auto& edgeItems = req.get_edge_items();
 
+  // Index check: could drop or change property having index
   auto iRet = getIndexes(spaceId, edgeType);
   if (!nebula::ok(iRet)) {
     handleErrorCode(nebula::error(iRet));
     onFinished();
     return;
   }
-
   auto indexes = std::move(nebula::value(iRet));
   auto existIndex = !indexes.empty();
   if (existIndex) {
@@ -76,6 +78,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
   }
 
+  // If index exist, could not alter ttl column
   auto& alterSchemaProp = req.get_schema_prop();
   if (existIndex) {
     int64_t duration = 0;
@@ -94,7 +97,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
   }
 
-  // check fulltext index
+  // Check fulltext index
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));

@@ -28,7 +28,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   }
   auto tagId = nebula::value(ret);
 
-  // Check the tag belongs to the space
+  // Check the tag belongs to the space, and get the shcema with latest version
   auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
   auto retPre = doPrefix(tagPrefix);
   if (!nebula::ok(retPre)) {
@@ -47,7 +47,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  // Get the last version of the tag
   auto version = MetaKeyUtils::parseTagVersion(iter->key()) + 1;
   auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
@@ -78,6 +77,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 
   auto& alterSchemaProp = req.get_schema_prop();
 
+  // If index exist, could not alter ttl column
   if (existIndex) {
     int64_t duration = 0;
     if (alterSchemaProp.get_ttl_duration()) {
@@ -95,7 +95,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     }
   }
 
-  // check fulltext index
+  // Check fulltext index
   auto ftIdxRet = getFTIndex(spaceId, tagId);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));

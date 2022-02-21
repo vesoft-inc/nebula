@@ -46,6 +46,8 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     }
 
     meta::cpp2::ListHostType type = req.get_type();
+    // ALLOC will show the partition leader and distribution info in storaged.
+    // Others(GRAPH/METASTORAGE/AGENT) will only show the basic hosts' status info.
     if (type == cpp2::ListHostType::ALLOC) {
       retCode = fillLeaders();
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -195,6 +197,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     return nebula::error(activeHostsRet);
   }
 
+  // TOOD(spw): duplicated with allHostsWithStatus, could be removed when refactor the next time.
   auto activeHosts = nebula::value(activeHostsRet);
   const auto& prefix = MetaKeyUtils::leaderPrefix();
   auto iterRet = doPrefix(prefix);

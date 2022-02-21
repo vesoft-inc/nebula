@@ -8,6 +8,11 @@
 
 #include "meta/processors/BaseProcessor.h"
 
+/**
+ * @brief Alter edge properties. Will get the edge schema with latest version. Then check if there
+ *        are indexes on it.
+ *
+ */
 namespace nebula {
 namespace meta {
 

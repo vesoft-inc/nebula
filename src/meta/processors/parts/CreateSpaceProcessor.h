@@ -13,6 +13,12 @@ namespace meta {
 
 using Hosts = std::vector<HostAddr>;
 
+/**
+ * @brief Create a space:
+ *        1. Validate all the given space parameters.
+ *        2. Pick a group of hosts for each partition according to the hosts loading.
+ *
+ */
 class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateSpaceProcessor* instance(kvstore::KVStore* kvstore) {
@@ -26,7 +32,9 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
   /**
-   * @brief Get the host with the least load in the zone
+   * @brief Pick one least load host from each given zone, which is used to lay one partition
+   *        replica.
+   *        Note that the two pick* functions are for only one partition instead of all partitions.
    *
    * @param zones
    * @param zoneHosts
@@ -36,9 +44,10 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
                                     const std::unordered_map<std::string, Hosts>& zoneHosts);
 
   /**
-   * @brief Get the zones with the least load
+   * @brief Get replica factor count of zones for an partition according to current loading.
+   *        We will calculate load by partition count now.
    *
-   * @param replicaFactor
+   * @param replicaFactor space replicate factor
    * @return StatusOr<std::vector<std::string>>
    */
   StatusOr<std::vector<std::string>> pickLightLoadZones(int32_t replicaFactor);
