@@ -17,7 +17,7 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
   for (auto& spaceId : spaceIdList) {
     auto ckRet = env_->kvstore_->createCheckpoint(spaceId, name);
     if (!ok(ckRet) && error(ckRet) == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-      LOG(ERROR) << folly::sformat("Space {} to create backup is not found", spaceId);
+      LOG(INFO) << folly::sformat("Space {} to create backup is not found", spaceId);
       continue;
     }
 

@@ -48,7 +48,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     auto partId = req.get_part_id();
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;
@@ -64,7 +64,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     auto* partManager = env_->kvstore_->partManager();
     auto status = partManager->partMeta(spaceId, partId);
     if (!status.ok()) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(nebula::cpp2::ErrorCode::E_PART_NOT_FOUND, partId);
       onFinished();
       return;
@@ -92,7 +92,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
           while (retry-- > 0) {
             auto leaderRet = env_->kvstore_->partLeader(spaceId, partId);
             if (!ok(leaderRet)) {
-              LOG(ERROR) << "Space " << spaceId << " Part " << partId << " leader not found";
+              LOG(INFO) << "Space " << spaceId << " Part " << partId << " leader not found";
               this->pushResultCode(error(leaderRet), partId);
               onFinished();
               return;
@@ -120,8 +120,8 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
           onFinished();
         });
       } else {
-        LOG(ERROR) << "Space " << spaceId << " part " << partId
-                   << " failed transfer leader, error: " << static_cast<int32_t>(code);
+        LOG(INFO) << "Space " << spaceId << " part " << partId
+                  << " failed transfer leader, error: " << static_cast<int32_t>(code);
         this->pushResultCode(code, partId);
         onFinished();
         return;
@@ -245,7 +245,7 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
               << ", add/remove " << (req.get_add() ? "add" : "remove");
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;
@@ -270,19 +270,34 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit MemberChangeProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor class to handle adding leader.
+ *
+ */
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of AddLearnerProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return AddLearnerProcessor* AddLearnerProcessor instance.
+   */
   static AddLearnerProcessor* instance(StorageEnv* env) {
     return new AddLearnerProcessor(env);
   }
 
+  /**
+   * @brief Entry point for adding learner.
+   *
+   * @param req Reuqest for adding learner.
+   */
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
     LOG(INFO) << "Receive add learner for space " << spaceId << ", part " << partId;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;

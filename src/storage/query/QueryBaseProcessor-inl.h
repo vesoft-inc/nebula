@@ -167,7 +167,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTagTTLInfo() {
 
     auto ttlInfo = tagSchema->getTTLInfo();
     if (ttlInfo.ok()) {
-      VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of tag " << tagId;
+      VLOG(1) << "Add ttl col " << ttlInfo.value().first << " of tag " << tagId;
       tagContext_.ttlInfo_.emplace(tagId, std::move(ttlInfo).value());
     }
   }
@@ -183,7 +183,7 @@ void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
 
     auto ttlInfo = edgeSchema->getTTLInfo();
     if (ttlInfo.ok()) {
-      VLOG(2) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
+      VLOG(1) << "Add ttl col " << ttlInfo.value().first << " of edge " << edgeType;
       edgeContext_.ttlInfo_.emplace(std::abs(edgeType), std::move(ttlInfo).value());
     }
   }
@@ -608,7 +608,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kAggregate:
     case Expression::Kind::kSubscriptRange:
     case Expression::Kind::kVersionedVar: {
-      LOG(ERROR) << "Unimplemented expression type! kind = " << exp->kind();
+      LOG(INFO) << "Unimplemented expression type! kind = " << exp->kind();
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
     }
   }
