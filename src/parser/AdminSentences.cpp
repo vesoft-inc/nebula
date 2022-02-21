@@ -57,6 +57,14 @@ std::string ShowCollationSentence::toString() const {
   return std::string("SHOW COLLATION");
 }
 
+std::string ShowGroupsSentence::toString() const {
+  return std::string("SHOW GROUPS");
+}
+
+std::string ShowZonesSentence::toString() const {
+  return std::string("SHOW ZONES");
+}
+
 std::string SpaceOptItem::toString() const {
   switch (optType_) {
     case OptionType::PARTITION_NUM:

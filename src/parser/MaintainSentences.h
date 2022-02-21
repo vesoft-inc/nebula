@@ -1081,9 +1081,9 @@ class DescribeZoneSentence : public Sentence {
   std::unique_ptr<std::string> zoneName_;
 };
 
-class ShowZonesSentence : public Sentence {
+class ListZonesSentence : public Sentence {
  public:
-  ShowZonesSentence() {
+  ListZonesSentence() {
     kind_ = Kind::kListZones;
   }
 

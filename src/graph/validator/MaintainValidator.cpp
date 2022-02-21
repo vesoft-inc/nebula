@@ -501,7 +501,7 @@ Status ShowEdgeIndexStatusValidator::toPlan() {
 }
 
 Status MergeZoneValidator::validateImpl() {
-  return Status::SemanticError("Merge zone is unsupported");
+  return Status::OK();
 }
 
 Status MergeZoneValidator::toPlan() {
@@ -514,7 +514,7 @@ Status MergeZoneValidator::toPlan() {
 }
 
 Status RenameZoneValidator::validateImpl() {
-  return Status::SemanticError("Rename zone is unsupported");
+  return Status::OK();
 }
 
 Status RenameZoneValidator::toPlan() {
@@ -539,7 +539,7 @@ Status DropZoneValidator::toPlan() {
 }
 
 Status DivideZoneValidator::validateImpl() {
-  return Status::SemanticError("Divide zone is unsupported");
+  return Status::OK();
 }
 
 Status DivideZoneValidator::toPlan() {
@@ -563,11 +563,11 @@ Status DescribeZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowZonesValidator::validateImpl() {
-  return Status::SemanticError("Show zones is unsupported");
+Status ListZonesValidator::validateImpl() {
+  return Status::OK();
 }
 
-Status ShowZonesValidator::toPlan() {
+Status ListZonesValidator::toPlan() {
   auto *doNode = ListZones::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
