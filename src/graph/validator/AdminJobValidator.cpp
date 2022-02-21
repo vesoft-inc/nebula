@@ -11,11 +11,6 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
-  if (sentence_->getJobType() == meta::cpp2::JobType::DATA_BALANCE ||
-      sentence_->getJobType() == meta::cpp2::JobType::ZONE_BALANCE) {
-    return Status::SemanticError("Data balance not support");
-  }
-
   // Note: The last parameter of paras is no longer spacename
   if (sentence_->getOp() == meta::cpp2::JobOp::ADD) {
     auto jobType = sentence_->getJobType();
