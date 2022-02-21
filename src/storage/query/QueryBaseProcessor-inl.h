@@ -6,6 +6,14 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Handle vertex properties add fill tag context.
+ *
+ * @tparam REQ Request type.
+ * @tparam RESP Response type.
+ * @param vertexProps Vertex properties.
+ * @return nebula::cpp2::ErrorCode ErrorCode: E_TAG_NOT_FOUND or SUCCEEDED.
+ */
 template <typename REQ, typename RESP>
 nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
     std::vector<cpp2::VertexProp>& vertexProps) {

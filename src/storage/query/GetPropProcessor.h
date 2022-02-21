@@ -17,16 +17,38 @@ namespace storage {
 
 extern ProcessorCounters kGetPropCounters;
 
+/**
+ * @brief Processor to get properties.
+ *
+ */
 class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse> {
  public:
+  /**
+   * @brief Consturct instance of GetPropProcessor
+   *
+   * @param env Related environment variables for storage.
+   * @param counters Statistic counter pointer for getting properties.
+   * @param executor Expected executor for this processor, running directly if nullptr.
+   * @return GetPropProcessor* Consturcted instance.
+   */
   static GetPropProcessor* instance(StorageEnv* env,
                                     const ProcessorCounters* counters = &kGetPropCounters,
                                     folly::Executor* executor = nullptr) {
     return new GetPropProcessor(env, counters, executor);
   }
 
+  /**
+   * @brief Entry point of getting properties.
+   *
+   * @param req Reuqest for getting properties.
+   */
   void process(const cpp2::GetPropRequest& req) override;
 
+  /**
+   * @brief Logic part of getting properties.
+   *
+   * @param req Reuqest for getting properties.
+   */
   void doProcess(const cpp2::GetPropRequest& req);
 
  protected:
