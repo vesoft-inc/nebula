@@ -29,7 +29,12 @@ TEST_F(LogCASTest, StartWithValidCAS) {
   // Append logs
   LOG(INFO) << "=====> Start appending logs";
   std::vector<std::string> msgs;
-  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message"); });
+  leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    ret.batch = "CAS Log Message";
+    return ret;
+  });
   msgs.emplace_back("CAS Log Message");
   appendLogs(1, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
@@ -41,7 +46,11 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
   // Append logs
   LOG(INFO) << "=====> Start appending logs";
   std::vector<std::string> msgs;
-  leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
+  leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+    return ret;
+  });
   appendLogs(0, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
 
@@ -54,7 +63,12 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
   std::vector<std::string> msgs;
   appendLogs(0, 4, leader_, msgs);
 
-  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message"); });
+  leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    ret.batch = "CAS Log Message";
+    return ret;
+  });
   msgs.emplace_back("CAS Log Message");
 
   appendLogs(6, 9, leader_, msgs);
@@ -69,7 +83,11 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
   std::vector<std::string> msgs;
   appendLogs(0, 4, leader_, msgs);
 
-  leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
+  leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+    return ret;
+  });
 
   appendLogs(5, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
@@ -83,10 +101,21 @@ TEST_F(LogCASTest, EndWithValidCAS) {
   std::vector<std::string> msgs;
   appendLogs(0, 7, leader_, msgs);
 
-  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message"); });
+  // leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message"); });
+  leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    ret.batch = "CAS Log Message";
+    return ret;
+  });
   msgs.emplace_back("CAS Log Message");
 
-  auto fut = leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message"); });
+  auto fut = leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    ret.batch = "CAS Log Message";
+    return ret;
+  });
   msgs.emplace_back("CAS Log Message");
   fut.wait();
   LOG(INFO) << "<===== Finish appending logs";
@@ -100,8 +129,12 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
   std::vector<std::string> msgs;
   appendLogs(0, 7, leader_, msgs);
 
-  leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
-  auto fut = leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
+  auto fut = leader_->atomicOpAsync([] {
+    kvstore::MergeableAtomicOpResult ret;
+    ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+    return ret;
+  });
+
   fut.wait();
   LOG(INFO) << "<===== Finish appending logs";
 
@@ -113,7 +146,12 @@ TEST_F(LogCASTest, AllValidCAS) {
   LOG(INFO) << "=====> Start appending logs";
   std::vector<std::string> msgs;
   for (int i = 1; i <= 10; ++i) {
-    auto fut = leader_->atomicOpAsync([]() { return test::compareAndSet("TTest CAS Log"); });
+    auto fut = leader_->atomicOpAsync([] {
+      kvstore::MergeableAtomicOpResult ret;
+      ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+      ret.batch = "Test CAS Log";
+      return ret;
+    });
     msgs.emplace_back("Test CAS Log");
     if (i == 10) {
       fut.wait();
@@ -129,7 +167,14 @@ TEST_F(LogCASTest, AllInvalidCAS) {
   LOG(INFO) << "=====> Start appending logs";
   std::vector<std::string> msgs;
   for (int i = 1; i <= 10; ++i) {
-    auto fut = leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log"); });
+    // auto fut = leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log"); });
+
+    auto fut = leader_->atomicOpAsync([] {
+      kvstore::MergeableAtomicOpResult ret;
+      ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+      return ret;
+    });
+
     if (i == 10) {
       fut.wait();
     }
@@ -157,8 +202,15 @@ TEST_F(LogCASTest, OnlyOneCasSucceed) {
     } else {
       log = "FCAS Log " + std::to_string(i);
     }
-    auto fut = leader_->atomicOpAsync(
-        [log = std::move(log)]() mutable { return test::compareAndSet(log); });
+    auto fut = leader_->atomicOpAsync([=] {
+      kvstore::MergeableAtomicOpResult ret;
+      ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+      if (i == 1) {
+        ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+        ret.batch = msgs.back();
+      }
+      return ret;
+    });
     if (i == 10) {
       fut.wait();
     }
@@ -187,8 +239,15 @@ TEST_F(LogCASTest, ZipCasTest) {
     } else {
       log = "FCAS Log " + std::to_string(i);
     }
-    auto fut = leader_->atomicOpAsync(
-        [log = std::move(log)]() mutable { return test::compareAndSet(log); });
+    auto fut = leader_->atomicOpAsync([=] {
+      kvstore::MergeableAtomicOpResult ret;
+      ret.code = ::nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+      if (i % 2) {
+        ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+        ret.batch = msgs.back();
+      }
+      return ret;
+    });
     if (i == 10) {
       fut.wait();
     }
@@ -209,7 +268,13 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return empty string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::string(""); })
+    leader_
+        ->atomicOpAsync([]() mutable {
+          kvstore::MergeableAtomicOpResult ret;
+          ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+          // ret.batch = log;
+          return ret;
+        })
         .thenValue([&baton](nebula::cpp2::ErrorCode res) {
           ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
           baton.post();
@@ -219,7 +284,14 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::nullopt; })
+    // leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
+    leader_
+        ->atomicOpAsync([]() mutable {
+          kvstore::MergeableAtomicOpResult ret;
+          ret.code = ::nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED;
+          // ret.batch = log;
+          return ret;
+        })
         .thenValue([&baton](nebula::cpp2::ErrorCode res) {
           ASSERT_EQ(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED, res);
           baton.post();
