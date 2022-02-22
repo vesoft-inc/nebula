@@ -86,15 +86,15 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH (countryX:Country)
-      WHERE id(countryX) == $countryXName
+      WHERE id(countryX) == "Angola"
       MATCH (countryY:Country)
-      WHERE id(countryY) == $countryYName
+      WHERE id(countryY) == "Colombia"
       MATCH (person:Person)
-      WHERE id(person) == $personId
+      WHERE id(person) == "6597069766734"
       WITH person, countryX, countryY
       LIMIT 1
       MATCH (city:City)-[:IS_PART_OF]->(country:Country)
-      WHERE id(country) IN [countryX, countryY]
+      WHERE id(country) IN ["Angola", "Colombia"]
       WITH person, countryX, countryY, collect(city) AS cities
       MATCH (person)-[:KNOWS*1..2]-(friend)-[:IS_LOCATED_IN]->(city)
       WHERE person<>friend AND NOT city IN cities
@@ -121,11 +121,12 @@ Feature: LDBC Interactive Workload - Complex Reads
       | friendId | friendFirstName | friendLastName | xCount | yCount | xyCount |
 
   Scenario: 4. New topics
+    Given parameters: {"personId":"4398046511333","startDate":"1275350400000","endDate":"1277856000000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(`tag`:`Tag`)
-      WHERE id(person) == "" AND post.Post.creationDate >= "$startDate"
-         AND post.Post.creationDate < "$endDate"
+      WHERE id(person) == $personId AND post.Post.creationDate >= $startDate
+         AND post.Post.creationDate < $endDate
       WITH person, count(post) AS postsOnTag, `tag`
       OPTIONAL MATCH (person)-[:KNOWS]-()<-[:HAS_CREATOR]-(oldPost:Post)-[:HAS_TAG]->(`tag`)
       WHERE oldPost.Post.creationDate < $startDate
@@ -140,10 +141,11 @@ Feature: LDBC Interactive Workload - Complex Reads
       | tagName | postCount |
 
   Scenario: 5. New groups
+    Given parameters: {"personId":"6597069766734","minDate":"1288612800000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[membership:HAS_MEMBER]-(forum:Forum)
-      WHERE id(person) == "" AND membership.joinDate>"$minDate"
+      WHERE id(person) == $personId AND membership.joinDate>$minDate
           AND not(person==friend)
       WITH DISTINCT friend, forum
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(forum)
@@ -158,27 +160,28 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | forumId | forumTitle | postCount |
 
-  @skip
   Scenario: 6. Tag co-occurrence
-    # TODO: WHERE (commonPost)-[:HAS_CREATOR]->(friend)
+    Given parameters: {"personId":"4398046511333","tagName":"Carl_Gustaf_Emil_Mannerheim"}
     When executing query:
       """
       MATCH
-        (person:Person)-[:KNOWS*1..2]-(friend:Person),
-        (friend)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"$tagName"})
-      WHERE id(person) == "" AND not(person==friend)
+        (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:$tagName})
+      WHERE id(person) == "4398046511333" AND not(person==friend)
       MATCH (friendPost)-[:HAS_TAG]->(commonTag:`Tag`)
       WHERE not(commonTag==knownTag)
       WITH DISTINCT commonTag, knownTag, friend
       MATCH (commonTag)<-[:HAS_TAG]-(commonPost:Post)-[:HAS_TAG]->(knownTag)
-      WHERE (commonPost)-[:HAS_CREATOR]->(friend)
+      OPTIONAL MATCH p = (commonPost)-[:HAS_CREATOR]->(friend)
+      WITH commonTag, commonPost, p
+      WHERE p IS NOT NULL
       RETURN
-        commonTag.name AS tagName,
+        commonTag.`Tag`.name AS tagName,
         count(commonPost) AS postCount
       ORDER BY postCount DESC, tagName ASC
       LIMIT 10
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | tagName | postCount |
 
   @skip
   Scenario: 7. Recent likers
