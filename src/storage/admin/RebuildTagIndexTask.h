@@ -40,9 +40,9 @@ class RebuildTagIndexTask : public RebuildIndexTask {
                                                             IndexID index) override;
 
   /**
-   * @brief
+   * @brief Rebuilding index.
    *
-   * @param space
+   * @param space space id.
    * @param part Partition id.
    * @param items Index items.
    * @param rateLimiter Rate limiter of kvstore.
