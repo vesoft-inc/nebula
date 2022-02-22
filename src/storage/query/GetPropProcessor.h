@@ -6,8 +6,6 @@
 #ifndef STORAGE_QUERY_GETPROPPROCESSOR_H_
 #define STORAGE_QUERY_GETPROPPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "common/base/Base.h"
 #include "storage/exec/StoragePlan.h"
 #include "storage/query/QueryBaseProcessor.h"
@@ -65,6 +63,7 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
   std::vector<RuntimeContext> contexts_;
   std::vector<nebula::DataSet> results_;
   bool isEdge_ = false;  // true for edge, false for tag
+  std::size_t limit_{std::numeric_limits<std::size_t>::max()};
 };
 
 }  // namespace storage
