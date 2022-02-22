@@ -7,13 +7,13 @@ nebula_add_test(
         response_encode_decode_test
     SOURCES
         ResponseEncodeDecodeTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:graph_obj>
-        $<TARGET_OBJECTS:graph_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        base_obj
+        graph_obj
+        graph_thrift_obj
+        common_thrift_obj
+        datatypes_obj
+        wkt_wkb_io_obj
     LIBRARIES
         gtest
         gtest_main

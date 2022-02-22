@@ -4,6 +4,6 @@
 
 nebula_add_library(
   kv_stats_obj
-  OBJECT
+  SHARED
   KVStats.cpp
   )

@@ -4,7 +4,7 @@
 
 
 nebula_add_library(
-  meta_http_handler OBJECT
+  meta_http_handler SHARED
   MetaHttpIngestHandler.cpp
   MetaHttpDownloadHandler.cpp
   MetaHttpReplaceHostHandler.cpp

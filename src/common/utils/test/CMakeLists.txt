@@ -3,21 +3,21 @@ nebula_add_test(
         nebula_key_utils_test
     SOURCES
         NebulaKeyUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:geo_index_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>        
+    LIBRARIES
+        keyutils_obj
+        time_obj
+        base_obj
+        datatypes_obj
+        wkt_wkb_io_obj
+        meta_thrift_obj
+        common_thrift_obj
+        storage_thrift_obj
+        geo_index_obj
+        expression_obj
+        function_manager_obj
+        agg_function_manager_obj
+        time_utils_obj
+        datetime_parser_obj        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -28,21 +28,21 @@ nebula_add_test(
         index_key_utils_test
     SOURCES
         IndexKeyUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:geo_index_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>        
+    LIBRARIES
+        keyutils_obj
+        time_obj
+        base_obj
+        datatypes_obj
+        wkt_wkb_io_obj
+        meta_thrift_obj
+        common_thrift_obj
+        storage_thrift_obj
+        geo_index_obj
+        expression_obj
+        function_manager_obj
+        agg_function_manager_obj
+        time_utils_obj
+        datetime_parser_obj        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -53,24 +53,24 @@ nebula_add_test(
         operation_key_utils_test
     SOURCES
         OperationKeyUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:meta_keyutils_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:geo_index_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>        
+    LIBRARIES
+        keyutils_obj
+        meta_keyutils_obj
+        network_obj
+        fs_obj
+        time_obj
+        base_obj
+        datatypes_obj
+        wkt_wkb_io_obj
+        meta_thrift_obj
+        common_thrift_obj
+        storage_thrift_obj
+        geo_index_obj
+        expression_obj
+        function_manager_obj
+        agg_function_manager_obj
+        time_utils_obj
+        datetime_parser_obj        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -81,19 +81,19 @@ nebula_add_test(
         meta_key_utils_test
     SOURCES
         MetaKeyUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:meta_keyutils_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    LIBRARIES
+        meta_thrift_obj
+        meta_keyutils_obj
+        common_thrift_obj
+        thrift_obj
+        base_obj
+        fs_obj
+        network_obj
+        thread_obj
+        datatypes_obj
+        wkt_wkb_io_obj
+        process_obj
+        ft_es_storage_adapter_obj
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}

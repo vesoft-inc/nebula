@@ -1,66 +1,66 @@
 set(storage_test_deps
-    $<TARGET_OBJECTS:mock_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:meta_version_man_obj>
-    $<TARGET_OBJECTS:meta_v2_thrift_obj>
-    $<TARGET_OBJECTS:meta_data_upgrade_obj>
-    $<TARGET_OBJECTS:storage_admin_service_handler>
-    $<TARGET_OBJECTS:graph_storage_service_handler>
-    $<TARGET_OBJECTS:storage_common_obj>
-    $<TARGET_OBJECTS:storage_transaction_executor>
-    $<TARGET_OBJECTS:storage_client_obj>
-    $<TARGET_OBJECTS:storage_client_base_obj>
-    $<TARGET_OBJECTS:internal_storage_client_obj>
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:keyutils_obj>
-    $<TARGET_OBJECTS:meta_keyutils_obj>
-    $<TARGET_OBJECTS:log_str_list_iterator_obj>
-    $<TARGET_OBJECTS:codec_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:charset_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:conf_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:function_manager_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:time_utils_obj>
-    $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
-    $<TARGET_OBJECTS:version_obj>
-    $<TARGET_OBJECTS:ssl_obj>
-    $<TARGET_OBJECTS:geo_index_obj>
-    $<TARGET_OBJECTS:storage_stats_obj>
-    $<TARGET_OBJECTS:meta_client_stats_obj>
-    $<TARGET_OBJECTS:storage_client_stats_obj>
-    $<TARGET_OBJECTS:kv_stats_obj>
+    mock_obj
+    meta_service_handler
+    meta_version_man_obj
+    meta_v2_thrift_obj
+    meta_data_upgrade_obj
+    storage_admin_service_handler
+    graph_storage_service_handler
+    storage_common_obj
+    storage_transaction_executor
+    storage_client_obj
+    storage_client_base_obj
+    internal_storage_client_obj
+    kvstore_obj
+    raftex_obj
+    wal_obj
+    disk_man_obj
+    keyutils_obj
+    meta_keyutils_obj
+    log_str_list_iterator_obj
+    codec_obj
+    ws_obj
+    ws_common_obj
+    http_client_obj
+    storage_thrift_obj
+    meta_client_obj
+    file_based_cluster_id_man_obj
+    time_obj
+    meta_thrift_obj
+    common_thrift_obj
+    raftex_thrift_obj
+    meta_obj
+    thrift_obj
+    thread_obj
+    time_obj
+    fs_obj
+    network_obj
+    charset_obj
+    stats_obj
+    process_obj
+    conf_obj
+    datatypes_obj
+    base_obj
+    function_manager_obj
+    wkt_wkb_io_obj
+    agg_function_manager_obj
+    expression_obj
+    time_utils_obj
+    datetime_parser_obj
+    ft_es_storage_adapter_obj
+    version_obj
+    ssl_obj
+    geo_index_obj
+    storage_stats_obj
+    meta_client_stats_obj
+    storage_client_stats_obj
+    kv_stats_obj
 )
 
 if(ENABLE_STANDALONE_VERSION)
 set(storage_test_deps
     ${storage_test_deps}
-    $<TARGET_OBJECTS:storage_local_server_obj>
+    storage_local_server_obj
 )
 endif()
 
@@ -69,7 +69,7 @@ nebula_add_test(
         task_manager_test
     SOURCES
         AdminTaskManagerTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -84,7 +84,7 @@ nebula_add_test(
         rebuild_index_test
     SOURCES
         RebuildIndexTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -99,7 +99,7 @@ nebula_add_test(
         stats_task_test
     SOURCES
         StatsTaskTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -114,7 +114,7 @@ nebula_add_test(
         add_vertices_test
     SOURCES
         AddVerticesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -129,7 +129,7 @@ nebula_add_test(
         add_edges_test
     SOURCES
         AddEdgesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -144,7 +144,7 @@ nebula_add_test(
         delete_vertices_test
     SOURCES
         DeleteVerticesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -159,7 +159,7 @@ nebula_add_test(
         delete_tags_test
     SOURCES
         DeleteTagsTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -174,7 +174,7 @@ nebula_add_test(
         delete_edges_test
     SOURCES
         DeleteEdgesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -189,7 +189,7 @@ nebula_add_test(
         update_vertex_test
     SOURCES
         UpdateVertexTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -204,7 +204,7 @@ nebula_add_test(
         update_edge_test
     SOURCES
         UpdateEdgeTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -219,7 +219,7 @@ nebula_add_test(
         storage_dag_test
     SOURCES
         StorageDAGTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -234,7 +234,7 @@ nebula_add_executable(
         storage_dag_bm
     SOURCES
         StorageDAGBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -252,7 +252,7 @@ nebula_add_test(
         index_write_test
     SOURCES
         IndexWriteTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -267,7 +267,7 @@ nebula_add_test(
         checkpoint_test
     SOURCES
         CheckpointTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -282,7 +282,7 @@ nebula_add_test(
         shuffle_ip_test
     SOURCES
         ShuffleIpTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -297,7 +297,7 @@ nebula_add_test(
         get_neighbors_test
     SOURCES
         GetNeighborsTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -313,7 +313,7 @@ nebula_add_executable(
         get_neighbors_bm
     SOURCES
         GetNeighborsBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -330,7 +330,7 @@ nebula_add_executable(
         scan_edge_prop_bm
     SOURCES
         ScanEdgePropBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -345,7 +345,7 @@ nebula_add_test(
         get_prop_test
     SOURCES
         GetPropTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -361,9 +361,9 @@ nebula_add_executable(
     SOURCES
         AddAndUpdateVertexAndEdgeBenchmark.cpp
         ../../codec/test/RowWriterV1.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
-        $<TARGET_OBJECTS:codec_test_obj>
+        codec_test_obj
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -380,7 +380,7 @@ nebula_add_test(
     SOURCES
         LookupIndexTest.cpp
         ../../codec/test/RowWriterV1.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -395,12 +395,12 @@ nebula_add_test(
         storage_http_stats_test
     SOURCES
         StorageHttpStatsHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:process_obj>
+    LIBRARIES
+        storage_http_handler
+        http_client_obj
+        ws_obj
+        ws_common_obj
+        process_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -416,7 +416,7 @@ nebula_add_executable(
         prefix_bloom_filter_bm
     SOURCES
         PrefixBloomFilterBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -433,7 +433,7 @@ nebula_add_test(
         compaction_test
     SOURCES
         CompactionTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -448,9 +448,9 @@ nebula_add_test(
         storage_http_admin_test
     SOURCES
         StorageHttpAdminHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_http_handler
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -465,9 +465,9 @@ nebula_add_test(
         storage_http_download_test
     SOURCES
         StorageHttpDownloadHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_http_handler
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -482,9 +482,9 @@ nebula_add_test(
         storage_http_ingest_test
     SOURCES
         StorageHttpIngestHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_http_handler
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -499,9 +499,9 @@ nebula_add_test(
         storage_http_property_test
     SOURCES
         StorageHttpPropertyHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_http_handler
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -516,7 +516,7 @@ nebula_add_test(
         scan_edge_test
     SOURCES
         ScanEdgeTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -531,7 +531,7 @@ nebula_add_test(
         memory_lock_test
     SOURCES
         MemoryLockTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -546,7 +546,7 @@ nebula_add_test(
         scan_vertex_test
     SOURCES
         ScanVertexTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -561,7 +561,7 @@ nebula_add_test(
 #        storage_lookup_bm
 #    SOURCES
 #        StorageLookupBenchmark.cpp
-#    OBJECTS
+#    LIBRARIES
 #        ${storage_test_deps}
 #    LIBRARIES
 #        ${ROCKSDB_LIBRARIES}
@@ -577,7 +577,7 @@ nebula_add_test(
         kv_test
     SOURCES
         KVTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -592,7 +592,7 @@ nebula_add_test(
         kv_client_test
     SOURCES
         KVClientTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -607,7 +607,7 @@ nebula_add_test(
         index_ttl_test
     SOURCES
         IndexWithTTLTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -622,12 +622,12 @@ nebula_add_test(
         storage_kill_query_test
     SOURCES
         KillQueryTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_common_obj
+        meta_service_handler
+        mock_obj
+        ws_common_obj
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -642,12 +642,12 @@ nebula_add_test(
         index_scan_limit_test
     SOURCES
         IndexScanLimitTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_common_obj
+        meta_service_handler
+        mock_obj
+        ws_common_obj
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -662,12 +662,12 @@ nebula_add_test(
         index_scan_topN_test
     SOURCES
         IndexScanTopNTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
+    LIBRARIES
+        storage_common_obj
+        meta_service_handler
+        mock_obj
+        ws_common_obj
+        ws_obj
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -682,7 +682,7 @@ nebula_add_executable(
         es_bulk_example
     SOURCES
         ElasticSearchBulkInsertTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -697,7 +697,7 @@ nebula_add_executable(
         mem_lock_bm
     SOURCES
         MemoryLockBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -713,7 +713,7 @@ nebula_add_test(
         chain_add_edge_test
     SOURCES
         ChainAddEdgesTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -728,7 +728,7 @@ nebula_add_test(
         index_test
     SOURCES
         IndexTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -742,7 +742,7 @@ nebula_add_executable(
         chain_update_edge_test
     SOURCES
         ChainUpdateEdgeTest.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -757,7 +757,7 @@ nebula_add_executable(
         storage_index_write_bm
     SOURCES
         StorageIndexWriteBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

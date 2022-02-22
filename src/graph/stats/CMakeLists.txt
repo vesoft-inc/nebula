@@ -4,6 +4,6 @@
 
 nebula_add_library(
   graph_stats_obj
-  OBJECT
+  SHARED
   GraphStats.cpp
   )

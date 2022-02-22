@@ -5,10 +5,10 @@
 nebula_add_test(
     NAME file_based_cluster_id_man_test
     SOURCES FileBasedClusterIdManTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:ssl_obj>
+    LIBRARIES
+        file_based_cluster_id_man_obj
+        base_obj
+        fs_obj
+        ssl_obj
     LIBRARIES gtest
 )

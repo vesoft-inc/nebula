@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    validator_obj OBJECT
+    validator_obj SHARED
     Validator.cpp
     AssignmentValidator.cpp
     GoValidator.cpp

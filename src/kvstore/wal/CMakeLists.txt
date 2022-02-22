@@ -1,5 +1,5 @@
 nebula_add_library(
-    wal_obj OBJECT
+    wal_obj SHARED
     FileBasedWal.cpp
     WalFileIterator.cpp
     AtomicLogBuffer.cpp

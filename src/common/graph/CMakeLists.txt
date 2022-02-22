@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    graph_obj OBJECT
+    graph_obj SHARED
     Response.cpp
 )
 

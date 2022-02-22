@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    hdfs_helper_obj OBJECT
+    hdfs_helper_obj SHARED
     HdfsCommandHelper.cpp
 )
 

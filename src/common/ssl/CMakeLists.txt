@@ -4,6 +4,6 @@
 
 nebula_add_library(
     ssl_obj
-    OBJECT
+    SHARED
     SSLConfig.cpp
 )

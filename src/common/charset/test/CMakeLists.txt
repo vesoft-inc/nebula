@@ -7,9 +7,9 @@ nebula_add_test(
         charset_test
     SOURCES
         CharsetTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:charset_obj>
-        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        charset_obj
+        base_obj
     LIBRARIES
         gtest
         gtest_main

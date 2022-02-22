@@ -4,6 +4,6 @@
 
 nebula_add_library(
   meta_client_stats_obj
-  OBJECT
+  SHARED
   MetaClientStats.cpp
   )

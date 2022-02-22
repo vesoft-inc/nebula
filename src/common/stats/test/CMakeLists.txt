@@ -7,13 +7,13 @@ nebula_add_test(
         stats_manager_test
     SOURCES
         StatsManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        stats_obj
+        datatypes_obj
+        time_obj
+        base_obj
+        thread_obj
+        wkt_wkb_io_obj
     LIBRARIES
         gtest
 )
@@ -23,13 +23,13 @@ nebula_add_test(
         stats_manager_rate_test
     SOURCES
         StatsManagerRateTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        stats_obj
+        datatypes_obj
+        time_obj
+        base_obj
+        thread_obj
+        wkt_wkb_io_obj
     LIBRARIES
         gtest
 )
@@ -39,13 +39,13 @@ nebula_add_test(
         stats_manager_cross_level_test
     SOURCES
         StatsManagerCrossLevelTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        stats_obj
+        datatypes_obj
+        time_obj
+        base_obj
+        thread_obj
+        wkt_wkb_io_obj
     LIBRARIES
         gtest
 )
@@ -56,12 +56,12 @@ nebula_add_executable(
         stats_manager_bm
     SOURCES
         StatsManagerBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        stats_obj
+        datatypes_obj
+        time_obj
+        base_obj
+        wkt_wkb_io_obj
     LIBRARIES
         follybenchmark boost_regex
 )

@@ -4,6 +4,6 @@
 
 nebula_add_library(
   storage_client_stats_obj
-  OBJECT
+  SHARED
   StorageClientStats.cpp
   )

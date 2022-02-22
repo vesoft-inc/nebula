@@ -17,7 +17,7 @@ add_custom_command(
   DEPENDS meta.thrift
   )
 
-nebula_add_library(meta_v2_thrift_obj OBJECT ${meta_v2_sources})
+nebula_add_library(meta_v2_thrift_obj SHARED ${meta_v2_sources})
 
 target_compile_options(meta_v2_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(meta_v2_thrift_obj PRIVATE "-Wno-extra")

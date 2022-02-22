@@ -5,6 +5,6 @@
 # note: These flags is used for standalone version ut.
 
 nebula_add_library(
-    sa_test_graph_flags_obj OBJECT
+    sa_test_graph_flags_obj SHARED
     StandAloneTestGraphFlags.cpp
 )

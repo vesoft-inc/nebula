@@ -5,9 +5,9 @@
 nebula_add_test(
     NAME wkb_test
     SOURCES WKBTest.cpp
-    OBJECTS
-      $<TARGET_OBJECTS:datatypes_obj>
-      $<TARGET_OBJECTS:base_obj>
-      $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+      datatypes_obj
+      base_obj
+      wkt_wkb_io_obj
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )

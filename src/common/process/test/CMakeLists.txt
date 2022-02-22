@@ -7,10 +7,10 @@ nebula_add_test(
         process_test
     SOURCES
         ProcessTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        process_obj
+        fs_obj
+        base_obj
     LIBRARIES
         gtest
         gtest_main

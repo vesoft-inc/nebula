@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    graph_context_obj OBJECT
+    graph_context_obj SHARED
     QueryContext.cpp
     QueryExpressionContext.cpp
     ExecutionContext.cpp

@@ -9,6 +9,6 @@ configure_file(
 
 nebula_add_library(
   version_obj
-  OBJECT
+  SHARED
   ${CMAKE_CURRENT_BINARY_DIR}/Version.cpp
   )

@@ -7,7 +7,7 @@ if (ENABLE_GDB_SCRIPT_SECTION)
 endif()
 
 nebula_add_library(
-    base_obj OBJECT
+    base_obj SHARED
     Base.cpp
     Cord.cpp
     Status.cpp

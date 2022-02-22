@@ -4,7 +4,7 @@
 
 
 nebula_add_library(
-  memory_obj OBJECT
+  memory_obj SHARED
   MemoryUtils.cpp
 )
 

@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    geo_index_obj OBJECT
+    geo_index_obj SHARED
     GeoIndex.cpp
 )
 

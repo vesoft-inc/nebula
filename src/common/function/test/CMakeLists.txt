@@ -7,15 +7,15 @@ nebula_add_test(
         function_manager_test
     SOURCES
         FunctionManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        function_manager_obj
+        wkt_wkb_io_obj
+        base_obj
+        datatypes_obj
+        time_utils_obj
+        datetime_parser_obj
+        time_obj
+        fs_obj
     LIBRARIES
         gtest
         gtest_main
@@ -26,11 +26,11 @@ nebula_add_test(
         agg_function_manager_test
     SOURCES
         AggFunctionManagerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        agg_function_manager_obj
+        base_obj
+        datatypes_obj
+        wkt_wkb_io_obj
     LIBRARIES
         gtest
         gtest_main

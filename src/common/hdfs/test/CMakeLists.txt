@@ -7,11 +7,11 @@ nebula_add_test(
         hdfs_helper_test
     SOURCES
         HdfsHelperTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:hdfs_helper_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        hdfs_helper_obj
+        process_obj
+        fs_obj
+        base_obj
     LIBRARIES
         gtest
         gtest_main

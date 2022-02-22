@@ -1,24 +1,24 @@
 set(RAFTEX_TEST_LIBS
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:log_str_list_iterator_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:ssl_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:meta_client_stats_obj>
-    $<TARGET_OBJECTS:storage_client_stats_obj>
-    $<TARGET_OBJECTS:kv_stats_obj>
+    raftex_obj
+    wal_obj
+    disk_man_obj
+    raftex_thrift_obj
+    common_thrift_obj
+    meta_thrift_obj
+    base_obj
+    log_str_list_iterator_obj
+    datatypes_obj
+    wkt_wkb_io_obj
+    thread_obj
+    fs_obj
+    network_obj
+    thrift_obj
+    time_obj
+    ssl_obj
+    stats_obj
+    meta_client_stats_obj
+    storage_client_stats_obj
+    kv_stats_obj
 )
 
 
@@ -29,7 +29,7 @@ nebula_add_test(
         LeaderElectionTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -45,7 +45,7 @@ nebula_add_test(
         LogAppendTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -61,7 +61,7 @@ nebula_add_test(
         LogCASTest.cpp
         RaftexTestBase.cpp
          TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -77,7 +77,7 @@ nebula_add_test(
         LearnerTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -93,7 +93,7 @@ nebula_add_test(
         LogCommandTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -108,7 +108,7 @@ nebula_add_test(
         RaftCase.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -123,7 +123,7 @@ nebula_add_test(
         LeaderTransferTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -138,7 +138,7 @@ nebula_add_test(
         MemberChangeTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    OBJECTS
+    LIBRARIES
         ${RAFTEX_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

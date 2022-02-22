@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    expr_visitor_obj OBJECT
+    expr_visitor_obj SHARED
     ExprVisitorImpl.cpp
     DeducePropsVisitor.cpp
     PropertyTrackerVisitor.cpp
@@ -19,7 +19,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    plan_node_visitor_obj OBJECT
+    plan_node_visitor_obj SHARED
     PrunePropertiesVisitor.cpp
 )
 

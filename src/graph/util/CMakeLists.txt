@@ -4,7 +4,7 @@
 #
 
 nebula_add_library(
-    util_obj OBJECT
+    util_obj SHARED
     ExpressionUtils.cpp
     SchemaUtil.cpp
     IndexUtil.cpp
@@ -17,7 +17,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    idgenerator_obj OBJECT
+    idgenerator_obj SHARED
     IdGenerator.cpp
 )
 

@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    datatypes_obj OBJECT
+    datatypes_obj SHARED
     Date.cpp
     Path.cpp
     Value.cpp

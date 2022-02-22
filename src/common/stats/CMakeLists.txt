@@ -4,7 +4,7 @@
 
 nebula_add_library(
     stats_obj
-    OBJECT
+    SHARED
     StatsManager.cpp
 )
 

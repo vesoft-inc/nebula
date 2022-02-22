@@ -4,7 +4,7 @@
 
 nebula_add_library(
   scheduler_obj
-  OBJECT
+  SHARED
   AsyncMsgNotifyBasedScheduler.cpp
   Scheduler.cpp
   )

@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    expression_obj OBJECT
+    expression_obj SHARED
     Expression.cpp
     BinaryExpression.cpp
     ConstantExpression.cpp

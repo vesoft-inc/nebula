@@ -9,9 +9,9 @@ nebula_add_test(
         ThreadTest.cpp
         GenericWorkerTest.cpp
         GenericThreadPoolTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        thread_obj
+        time_obj
     LIBRARIES
         gtest
         gtest_main

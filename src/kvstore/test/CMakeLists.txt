@@ -1,46 +1,46 @@
 set(KVSTORE_TEST_LIBS
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:keyutils_obj>
-    $<TARGET_OBJECTS:meta_keyutils_obj>
-    $<TARGET_OBJECTS:log_str_list_iterator_obj>
-    $<TARGET_OBJECTS:codec_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:conf_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:function_manager_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:time_utils_obj>
-    $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
-    $<TARGET_OBJECTS:version_obj>
-    $<TARGET_OBJECTS:ssl_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:geo_index_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:meta_client_stats_obj>
-    $<TARGET_OBJECTS:storage_client_stats_obj>
-    $<TARGET_OBJECTS:kv_stats_obj>
+    kvstore_obj
+    raftex_obj
+    wal_obj
+    disk_man_obj
+    keyutils_obj
+    meta_keyutils_obj
+    log_str_list_iterator_obj
+    codec_obj
+    meta_obj
+    meta_client_obj
+    ws_obj
+    ws_common_obj
+    http_client_obj
+    meta_thrift_obj
+    common_thrift_obj
+    raftex_thrift_obj
+    base_obj
+    datatypes_obj
+    conf_obj
+    thread_obj
+    fs_obj
+    file_based_cluster_id_man_obj
+    network_obj
+    thrift_obj
+    time_obj
+    stats_obj
+    expression_obj
+    function_manager_obj
+    wkt_wkb_io_obj
+    agg_function_manager_obj
+    time_utils_obj
+    datetime_parser_obj
+    process_obj
+    ft_es_storage_adapter_obj
+    version_obj
+    ssl_obj
+    storage_thrift_obj
+    geo_index_obj
+    stats_obj
+    meta_client_stats_obj
+    storage_client_stats_obj
+    kv_stats_obj
 )
 
 nebula_add_test(
@@ -48,7 +48,7 @@ nebula_add_test(
         part_test
     SOURCES
         PartTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -63,7 +63,7 @@ nebula_add_test(
         rocks_engine_test
     SOURCES
         RocksEngineTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -78,7 +78,7 @@ nebula_add_test(
         nebula_store_test
     SOURCES
         NebulaStoreTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -93,7 +93,7 @@ nebula_add_test(
         nebula_listener_test
     SOURCES
         NebulaListenerTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -108,7 +108,7 @@ nebula_add_test(
         rocks_engine_config_test
     SOURCES
         RocksEngineConfigTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -123,7 +123,7 @@ nebula_add_test(
         disk_man_test
     SOURCES
         DiskManagerTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -138,7 +138,7 @@ nebula_add_test(
         log_encoder_test
     SOURCES
         LogEncoderTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -153,7 +153,7 @@ nebula_add_test(
         snapshot_link_test
     SOURCES
         SnapshotLinkTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -168,7 +168,7 @@ nebula_add_executable(
         multi_versions_perf_test_bm
     SOURCES
         MultiVersionBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -184,7 +184,7 @@ nebula_add_executable(
         part_performance_test
     SOURCES
         PartPerformanceTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -201,7 +201,7 @@ nebula_add_test(
         rate_limiter_test
     SOURCES
         RateLimiterTest.cpp
-    OBJECTS
+    LIBRARIES
         ${KVSTORE_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

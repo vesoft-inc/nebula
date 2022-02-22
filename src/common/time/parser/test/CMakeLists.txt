@@ -7,14 +7,14 @@ nebula_add_test(
         datetime_parser_test
     SOURCES
         DateTimeParserTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>
+    LIBRARIES
+        time_utils_obj
+        thread_obj
+        datatypes_obj
+        base_obj
+        fs_obj
+        wkt_wkb_io_obj
+        datetime_parser_obj
     LIBRARIES
         gtest
 )

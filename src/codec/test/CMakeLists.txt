@@ -1,49 +1,49 @@
 nebula_add_library(
-    codec_test_obj OBJECT
+    codec_test_obj SHARED
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
 )
 
 set(CODEC_TEST_LIBS
-    $<TARGET_OBJECTS:codec_obj>
-    $<TARGET_OBJECTS:codec_test_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:meta_client_stats_obj>
-    $<TARGET_OBJECTS:storage_client_stats_obj>
-    $<TARGET_OBJECTS:kv_stats_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:conf_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:function_manager_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:time_utils_obj>
-    $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:version_obj>
-    $<TARGET_OBJECTS:ssl_obj>
+    codec_obj
+    codec_test_obj
+    datatypes_obj
+    thrift_obj
+    meta_thrift_obj
+    common_thrift_obj
+    raftex_thrift_obj
+    meta_client_obj
+    ws_obj
+    ws_common_obj
+    http_client_obj
+    file_based_cluster_id_man_obj
+    base_obj
+    network_obj
+    fs_obj
+    thread_obj
+    stats_obj
+    meta_client_stats_obj
+    storage_client_stats_obj
+    kv_stats_obj
+    time_obj
+    conf_obj
+    meta_obj
+    process_obj
+    expression_obj
+    function_manager_obj
+    wkt_wkb_io_obj
+    agg_function_manager_obj
+    time_utils_obj
+    datetime_parser_obj
+    version_obj
+    ssl_obj
 )
 
 
 nebula_add_test(
     NAME row_reader_v1_test
     SOURCES RowReaderV1Test.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
+    LIBRARIES ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -55,7 +55,7 @@ nebula_add_test(
 nebula_add_test(
     NAME row_reader_v2_test
     SOURCES RowReaderV2Test.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
+    LIBRARIES ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -67,7 +67,7 @@ nebula_add_test(
 nebula_add_test(
     NAME row_writer_v2_test
     SOURCES RowWriterV2Test.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
+    LIBRARIES ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -81,7 +81,7 @@ nebula_add_test(
     SOURCES
         RowReaderBenchmark.cpp
         RowWriterV1.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
+    LIBRARIES ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -97,7 +97,7 @@ nebula_add_executable(
     SOURCES
         RowWriterBenchmark.cpp
         RowWriterV1.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
+    LIBRARIES ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -109,6 +109,6 @@ nebula_add_executable(
 #nebula_add_test(
 #    NAME nebula_codec_test
 #    SOURCES NebulaCodecTest.cpp
-#    OBJECTS ${CODEC_TEST_LIBS}
+#    LIBRARIES ${CODEC_TEST_LIBS}
 #    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 #)

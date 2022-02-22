@@ -8,10 +8,10 @@ nebula_add_test(
     SOURCES
         DurationTest.cpp
         ScopedTimerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+    LIBRARIES
+        base_obj
+        time_obj
+        thread_obj
     LIBRARIES
         gtest
 )
@@ -21,9 +21,9 @@ nebula_add_test(
         wallclock_test
     SOURCES
         WallClockTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+    LIBRARIES
+        time_obj
+        thread_obj
     LIBRARIES
         gtest
 )
@@ -33,8 +33,8 @@ nebula_add_test(
         timezone_info_test
     SOURCES
         TimezoneInfoTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        base_obj
     LIBRARIES
         gtest
 )
@@ -44,14 +44,14 @@ nebula_add_test(
         time_utils_test
     SOURCES
         TimeUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>
+    LIBRARIES
+        time_utils_obj
+        thread_obj
+        datatypes_obj
+        base_obj
+        fs_obj
+        wkt_wkb_io_obj
+        datetime_parser_obj
     LIBRARIES
         gtest
 )
@@ -61,10 +61,10 @@ nebula_add_executable(
         duration_bm
     SOURCES
         DurationBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+    LIBRARIES
+        base_obj
+        time_obj
+        thread_obj
     LIBRARIES
         follybenchmark
         boost_regex
@@ -73,7 +73,7 @@ nebula_add_executable(
 nebula_add_executable(
     NAME wallclock_bm
     SOURCES WallClockBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        time_obj
     LIBRARIES follybenchmark boost_regex
 )

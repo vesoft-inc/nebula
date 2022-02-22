@@ -3,19 +3,19 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    storage_client_obj OBJECT
+    storage_client_obj SHARED
     StorageClient.cpp
 )
 
 
 nebula_add_library(
-    storage_client_base_obj OBJECT
+    storage_client_base_obj SHARED
     StorageClientBase.cpp
 )
 
 
 nebula_add_library(
-    internal_storage_client_obj OBJECT
+    internal_storage_client_obj SHARED
     InternalStorageClient.cpp
 )
 

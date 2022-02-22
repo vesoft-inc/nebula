@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    process_obj OBJECT
+    process_obj SHARED
     ProcessUtils.cpp
 )
 

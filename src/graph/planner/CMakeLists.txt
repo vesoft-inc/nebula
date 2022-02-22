@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    planner_obj OBJECT
+    planner_obj SHARED
     Planner.cpp
     PlannersRegister.cpp
     SequentialPlanner.cpp
@@ -34,7 +34,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    plan_obj OBJECT
+    plan_obj SHARED
     plan/PlanNode.cpp
     plan/ExecutionPlan.cpp
     plan/Algo.cpp

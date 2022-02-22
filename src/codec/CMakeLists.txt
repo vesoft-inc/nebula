@@ -1,5 +1,5 @@
 nebula_add_library(
-    codec_obj OBJECT
+    codec_obj SHARED
     RowReader.cpp
     RowReaderV1.cpp
     RowReaderV2.cpp

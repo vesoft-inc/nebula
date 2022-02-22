@@ -1,5 +1,5 @@
 nebula_add_library(
-    kvstore_obj OBJECT
+    kvstore_obj SHARED
     Part.cpp
     Listener.cpp
     RocksEngine.cpp
@@ -13,7 +13,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    disk_man_obj OBJECT
+    disk_man_obj SHARED
     DiskManager.cpp
 )
 

@@ -1,11 +1,11 @@
 nebula_add_library(
-    storage_common_obj OBJECT
+    storage_common_obj SHARED
     StorageFlags.cpp
     CommonUtils.cpp
 )
 
 nebula_add_library(
-    storage_admin_service_handler OBJECT
+    storage_admin_service_handler SHARED
     StorageAdminServiceHandler.cpp
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
@@ -25,7 +25,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    graph_storage_service_handler OBJECT
+    graph_storage_service_handler SHARED
     GraphStorageServiceHandler.cpp
     ExprVisitorBase.cpp
     context/StorageExpressionContext.cpp
@@ -57,12 +57,12 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    internal_storage_service_handler OBJECT
+    internal_storage_service_handler SHARED
     InternalStorageServiceHandler.cpp
 )
 
 nebula_add_library(
-    storage_http_handler OBJECT
+    storage_http_handler SHARED
     http/StorageHttpIngestHandler.cpp
     http/StorageHttpDownloadHandler.cpp
     http/StorageHttpAdminHandler.cpp
@@ -71,7 +71,7 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    storage_transaction_executor OBJECT
+    storage_transaction_executor SHARED
     transaction/TransactionManager.cpp
     transaction/ConsistUtil.cpp
     transaction/ChainUpdateEdgeLocalProcessor.cpp
@@ -92,13 +92,13 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    storage_server OBJECT
+    storage_server SHARED
     StorageServer.cpp
 )
 
 
 nebula_add_library(
-    storage_local_server_obj OBJECT
+    storage_local_server_obj SHARED
     GraphStorageLocalServer.cpp
 )
 

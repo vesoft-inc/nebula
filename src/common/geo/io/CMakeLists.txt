@@ -25,7 +25,7 @@ add_flex_bison_dependency(Scanner Parser)
 add_compile_options(-Wno-sign-compare -Wno-conversion-null -Wno-pedantic -Wno-extra)
 
 nebula_add_library(
-    wkt_wkb_io_obj OBJECT
+    wkt_wkb_io_obj SHARED
     ${FLEX_Scanner_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
     wkt/WKTReader.cpp

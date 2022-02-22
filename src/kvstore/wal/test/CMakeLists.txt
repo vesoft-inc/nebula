@@ -1,15 +1,15 @@
 set(WAL_TEST_LIBS
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    wal_obj
+    disk_man_obj
+    meta_thrift_obj
+    common_thrift_obj
+    datatypes_obj
+    base_obj
+    thread_obj
+    fs_obj
+    time_obj
+    thread_obj
+    wkt_wkb_io_obj
 )
 
 nebula_add_test(
@@ -17,7 +17,7 @@ nebula_add_test(
         file_based_wal_test
     SOURCES
         FileBasedWalTest.cpp
-    OBJECTS
+    LIBRARIES
         ${WAL_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -30,7 +30,7 @@ nebula_add_test(
     SOURCES
         InMemoryLogBufferTest.cpp
         InMemoryLogBuffer.cpp
-    OBJECTS
+    LIBRARIES
         ${WAL_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -42,7 +42,7 @@ nebula_add_test(
         atomic_log_buffer_test
     SOURCES
         AtomicLogBufferTest.cpp
-    OBJECTS
+    LIBRARIES
         ${WAL_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -55,7 +55,7 @@ nebula_add_executable(
     SOURCES
         LogBufferBenchmark.cpp
         InMemoryLogBuffer.cpp
-    OBJECTS
+    LIBRARIES
         ${WAL_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -68,7 +68,7 @@ nebula_add_test(
         wal_file_iter_test
     SOURCES
         WalFileIterTest.cpp
-    OBJECTS
+    LIBRARIES
         ${WAL_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

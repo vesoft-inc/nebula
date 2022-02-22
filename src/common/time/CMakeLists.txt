@@ -3,14 +3,14 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    time_obj OBJECT
+    time_obj SHARED
     detail/TscHelper.cpp
     Duration.cpp
     WallClock.cpp
 )
 
 nebula_add_library(
-    time_utils_obj OBJECT
+    time_utils_obj SHARED
     TimeUtils.cpp
     TimezoneInfo.cpp
     TimeConversion.cpp

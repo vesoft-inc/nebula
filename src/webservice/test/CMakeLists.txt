@@ -7,18 +7,18 @@ nebula_add_test(
         flags_access_test
     SOURCES
         FlagsAccessTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        http_client_obj
+        ws_obj
+        ws_common_obj
+        base_obj
+        process_obj
+        fs_obj
+        stats_obj
+        datatypes_obj
+        time_obj
+        version_obj
+        wkt_wkb_io_obj
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -30,18 +30,18 @@ nebula_add_test(
         stats_read_test
     SOURCES
         StatsReaderTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        http_client_obj
+        ws_obj
+        ws_common_obj
+        base_obj
+        process_obj
+        fs_obj
+        stats_obj
+        datatypes_obj
+        time_obj
+        version_obj
+        wkt_wkb_io_obj
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -53,18 +53,18 @@ nebula_add_test(
         router_test
     SOURCES
         RouterTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        http_client_obj
+        ws_obj
+        ws_common_obj
+        base_obj
+        process_obj
+        fs_obj
+        stats_obj
+        datatypes_obj
+        time_obj
+        version_obj
+        wkt_wkb_io_obj
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -75,18 +75,18 @@ nebula_add_test(
         http_status_test
     SOURCES
         StatusHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        http_client_obj
+        ws_obj
+        ws_common_obj
+        stats_obj
+        datatypes_obj
+        process_obj
+        fs_obj
+        time_obj
+        base_obj
+        version_obj
+        wkt_wkb_io_obj
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest

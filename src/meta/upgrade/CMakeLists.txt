@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    meta_data_upgrade_obj OBJECT
+    meta_data_upgrade_obj SHARED
     MetaDataUpgrade.cpp
     v2/MetaServiceUtilsV2.cpp
 )

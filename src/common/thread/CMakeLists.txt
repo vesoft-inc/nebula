@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    thread_obj OBJECT
+    thread_obj SHARED
     NamedThread.cpp
     GenericWorker.cpp
     GenericThreadPool.cpp

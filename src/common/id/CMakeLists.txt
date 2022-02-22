@@ -4,12 +4,12 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-    snowflake_obj OBJECT
+    snowflake_obj SHARED
     Snowflake.cpp
 )
 
 nebula_add_library(
-    uuid_obj OBJECT
+    uuid_obj SHARED
     UUID.cpp
 )
 

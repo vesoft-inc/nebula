@@ -7,7 +7,7 @@ nebula_add_test(
         processor_test
     SOURCES
         ProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -22,7 +22,7 @@ nebula_add_test(
         index_processor_test
     SOURCES
         IndexProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -37,7 +37,7 @@ nebula_add_test(
         hb_processor_test
     SOURCES
         HBProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -52,7 +52,7 @@ nebula_add_test(
         agent_hb_processor_test
     SOURCES
         AgentHBProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -67,7 +67,7 @@ nebula_add_test(
         meta_client_test
     SOURCES
         MetaClientTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -82,7 +82,7 @@ nebula_add_test(
         active_hosts_man_test
     SOURCES
         ActiveHostsManTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -98,7 +98,7 @@ nebula_add_test(
         balancer_test
     SOURCES
         BalancerTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -115,14 +115,14 @@ nebula_add_test(
 #        balance_integration_test
 #    SOURCES
 #        BalanceIntegrationTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:index_obj>
-#        $<TARGET_OBJECTS:storage_service_handler>
-#        $<TARGET_OBJECTS:storage_client>
-#        $<TARGET_OBJECTS:codec_obj>
-#        $<TARGET_OBJECTS:filter_obj>
-#        $<TARGET_OBJECTS:adHocSchema_obj>
-#        $<TARGET_OBJECTS:adHocIndex_obj>
+#    LIBRARIES
+#        index_obj
+#        storage_service_handler
+#        storage_client
+#        codec_obj
+#        filter_obj
+#        adHocSchema_obj
+#        adHocIndex_obj
 #        ${meta_test_deps}
 #    LIBRARIES
 #        ${ROCKSDB_LIBRARIES}
@@ -137,7 +137,7 @@ nebula_add_test(
         admin_client_test
     SOURCES
         AdminClientTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -153,7 +153,7 @@ nebula_add_test(
         authentication_test
     SOURCES
         AuthProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -168,7 +168,7 @@ nebula_add_test(
         cluster_id_man_test
     SOURCES
         ClusterIdManTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -183,7 +183,7 @@ nebula_add_test(
         job_manager_test
     SOURCES
         JobManagerTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -199,7 +199,7 @@ nebula_add_test(
         get_stats_test
     SOURCES
         GetStatsTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -215,7 +215,7 @@ nebula_add_test(
         create_backup_test
     SOURCES
         CreateBackupProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -230,7 +230,7 @@ nebula_add_test(
         restore_test
     SOURCES
         RestoreProcessorTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -245,7 +245,7 @@ nebula_add_test(
         list_meta_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -260,7 +260,7 @@ nebula_add_test(
         verify_client_version_test
     SOURCES
         VerifyClientVersionTest.cpp
-    OBJECTS
+    LIBRARIES
         ${meta_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

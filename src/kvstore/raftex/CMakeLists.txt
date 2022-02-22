@@ -1,5 +1,5 @@
 nebula_add_library(
-    raftex_obj OBJECT
+    raftex_obj SHARED
     RaftLogIterator.cpp
     RaftPart.cpp
     RaftexService.cpp

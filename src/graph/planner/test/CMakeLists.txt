@@ -3,14 +3,14 @@
 # This source code is licensed under Apache 2.0 License.
 
 set(EXEC_PLAN_TEST_FLAG_DEPS
-    $<TARGET_OBJECTS:graph_flags_obj>
+    graph_flags_obj
 )
 
 if(ENABLE_STANDALONE_VERSION)
 set(EXEC_PLAN_TEST_FLAG_DEPS
     ${EXEC_PLAN_TEST_FLAG_DEPS}
-    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
-    $<TARGET_OBJECTS:storage_local_server_obj>
+    sa_test_graph_flags_obj
+    storage_local_server_obj
 )
 endif()
 
@@ -18,50 +18,50 @@ nebula_add_test(
     NAME execution_plan_test
     SOURCES
         ExecutionPlanTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:graph_thrift_obj>
-        $<TARGET_OBJECTS:storage_client_base_obj>
-        $<TARGET_OBJECTS:storage_client_obj>
-        $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:meta_client_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:graph_stats_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:meta_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-        $<TARGET_OBJECTS:charset_obj>
-        $<TARGET_OBJECTS:version_obj>
-        $<TARGET_OBJECTS:query_engine_obj>
-        $<TARGET_OBJECTS:graph_session_obj>
+    LIBRARIES
+        conf_obj
+        expression_obj
+        http_client_obj
+        network_obj
+        process_obj
+        graph_thrift_obj
+        storage_client_base_obj
+        storage_client_obj
+        storage_thrift_obj
+        meta_client_obj
+        stats_obj
+        graph_stats_obj
+        time_obj
+        meta_thrift_obj
+        common_thrift_obj
+        thrift_obj
+        meta_obj
+        ws_obj
+        ws_common_obj
+        thread_obj
+        time_obj
+        fs_obj
+        base_obj
+        datatypes_obj
+        wkt_wkb_io_obj
+        conf_obj
+        file_based_cluster_id_man_obj
+        charset_obj
+        version_obj
+        query_engine_obj
+        graph_session_obj
         ${EXEC_PLAN_TEST_FLAG_DEPS}
-        $<TARGET_OBJECTS:parser_obj>
-        $<TARGET_OBJECTS:validator_obj>
-        $<TARGET_OBJECTS:expr_visitor_obj>
-        $<TARGET_OBJECTS:planner_obj>
-        $<TARGET_OBJECTS:plan_obj>
-        $<TARGET_OBJECTS:executor_obj>
-        $<TARGET_OBJECTS:scheduler_obj>
-        $<TARGET_OBJECTS:util_obj>
-        $<TARGET_OBJECTS:idgenerator_obj>
-        $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:memory_obj>
+        parser_obj
+        validator_obj
+        expr_visitor_obj
+        planner_obj
+        plan_obj
+        executor_obj
+        scheduler_obj
+        util_obj
+        idgenerator_obj
+        graph_context_obj
+        memory_obj
     LIBRARIES
         gtest
         ${PROXYGEN_LIBRARIES}

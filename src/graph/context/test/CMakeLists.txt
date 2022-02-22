@@ -3,54 +3,54 @@
 # This source code is licensed under Apache 2.0 License.
 
 SET(CONTEXT_TEST_LIBS
-    $<TARGET_OBJECTS:charset_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:expression_obj>
-    $<TARGET_OBJECTS:function_manager_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    $<TARGET_OBJECTS:agg_function_manager_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:conf_obj>
-    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:time_utils_obj>
-    $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
-    $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:version_obj>
-    $<TARGET_OBJECTS:util_obj>
-    $<TARGET_OBJECTS:graph_context_obj>
-    $<TARGET_OBJECTS:expr_visitor_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:graph_flags_obj>
-    $<TARGET_OBJECTS:graph_auth_obj>
-    $<TARGET_OBJECTS:graph_session_obj>
-    $<TARGET_OBJECTS:plan_obj>
-    $<TARGET_OBJECTS:idgenerator_obj>
-    $<TARGET_OBJECTS:ssl_obj>
-    $<TARGET_OBJECTS:memory_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:graph_stats_obj>
-    $<TARGET_OBJECTS:meta_client_stats_obj>
-    $<TARGET_OBJECTS:storage_client_stats_obj>
+    charset_obj
+    datatypes_obj
+    expression_obj
+    function_manager_obj
+    wkt_wkb_io_obj
+    agg_function_manager_obj
+    fs_obj
+    time_obj
+    base_obj
+    thread_obj
+    conf_obj
+    file_based_cluster_id_man_obj
+    meta_obj
+    meta_client_obj
+    meta_thrift_obj
+    thrift_obj
+    common_thrift_obj
+    graph_thrift_obj
+    storage_thrift_obj
+    http_client_obj
+    process_obj
+    time_utils_obj
+    datetime_parser_obj
+    graph_obj
+    ft_es_graph_adapter_obj
+    ws_common_obj
+    version_obj
+    util_obj
+    graph_context_obj
+    expr_visitor_obj
+    parser_obj
+    graph_flags_obj
+    graph_auth_obj
+    graph_session_obj
+    plan_obj
+    idgenerator_obj
+    ssl_obj
+    memory_obj
+    stats_obj
+    graph_stats_obj
+    meta_client_stats_obj
+    storage_client_stats_obj
 )
 
 if(ENABLE_STANDALONE_VERSION)
 set(CONTEXT_TEST_LIBS
     ${CONTEXT_TEST_LIBS}
-    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+    sa_test_graph_flags_obj
 )
 endif()
 
@@ -60,7 +60,7 @@ nebula_add_test(
         IteratorTest.cpp
         ExpressionContextTest.cpp
         ExecutionContextTest.cpp
-    OBJECTS
+    LIBRARIES
         ${CONTEXT_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -74,7 +74,7 @@ nebula_add_executable(
         iterator_bm
     SOURCES
         IteratorBenchmark.cpp
-    OBJECTS
+    LIBRARIES
         ${CONTEXT_TEST_LIBS}
     LIBRARIES
         follybenchmark

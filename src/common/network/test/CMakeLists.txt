@@ -7,10 +7,10 @@ nebula_add_test(
         network_utils_test
     SOURCES
         NetworkUtilsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        base_obj
+        network_obj
+        fs_obj
     LIBRARIES
         ${THRIFT_LIBRARIES}
         gtest
@@ -22,10 +22,10 @@ nebula_add_executable(
         network_utils_bm
     SOURCES
         NetworkUtilsBenchmark.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        base_obj
+        network_obj
+        fs_obj
     LIBRARIES
         wangle
         fizz

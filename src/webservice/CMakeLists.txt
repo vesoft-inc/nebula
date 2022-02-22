@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    ws_obj OBJECT
+    ws_obj SHARED
     WebService.cpp
     NotFoundHandler.cpp
     GetFlagsHandler.cpp
@@ -16,7 +16,7 @@ nebula_add_library(
 set_target_properties(ws_obj PROPERTIES COMPILE_FLAGS "-Wno-error=format-security")
 
 nebula_add_library(
-    ws_common_obj OBJECT
+    ws_common_obj SHARED
     Common.cpp
 )
 
