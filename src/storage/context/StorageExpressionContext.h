@@ -153,15 +153,6 @@ class StorageExpressionContext final : public ExpressionContext {
   }
 
   /**
-   * @brief Get index columns.
-   *
-   * @return const std::vector<meta::cpp2::ColumnDef>&
-   */
-  const std::vector<meta::cpp2::ColumnDef>& indexCols() const {
-    return fields_;
-  }
-
-  /**
    * @brief Set the Var object by name.
    *
    * @param name Given variable name.
