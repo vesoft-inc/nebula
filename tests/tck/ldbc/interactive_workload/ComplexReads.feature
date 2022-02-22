@@ -57,12 +57,14 @@ Feature: LDBC Interactive Workload - Complex Reads
       LIMIT 20
       """
     Then the result should be, in any order:
+      | friendId | friendLastName | distanceFromPerson | friendBirthday | friendCreationDate | friendGender | friendBrowserUsed | friendLocationIp | friendEmails | friendLanguages | friendCityName | friendUniversities | friendCompanies |
 
   Scenario: 2. Recent messages by your friends
+    Given parameters: {"personId":"10995116278009", "maxDate":"1287230400000"}
     When executing query:
       """
       MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" and message.Message.creationDate <= $maxDate
+      WHERE id(n) == $personId and message.Message.creationDate <= $maxDate
       RETURN
         friend.Person.id AS personId,
         friend.Person.firstName AS personFirstName,
@@ -79,43 +81,44 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
-  @skip
   Scenario: 3. Friends and friends of friends that have been to given countries
+    Given parameters: {"personId":"6597069766734","countryXName":"Angola","countryYName":"Colombia","startDate":"1275393600000","endDate":"1277812800000"}
     When executing query:
-      # TODO: WHERE not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX)) not supported now
       """
-      MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(messageX:Message),
-      (messageX)-[:IS_LOCATED_IN]->(countryX:Place)
-      WHERE
-        id(person) == ""
-        AND not(person==friend)
-        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX))
-        AND countryX.name=$countryXName AND messageX.creationDate>=$startDate
-        AND messageX.creationDate<$endDate
-      WITH friend, count(DISTINCT messageX) AS xCount
-      MATCH (friend)<-[:HAS_CREATOR]-(messageY:Message)-[:IS_LOCATED_IN]->(countryY:Place)
-      WHERE
-        countryY.name="$countryYName"
-        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryY))
-        AND messageY.creationDate>="$startDate"
-        AND messageY.creationDate<"$endDate"
-      WITH
-        friend.id AS personId,
-        friend.firstName AS personFirstName,
-        friend.lastName AS personLastName,
-        xCount,
-        count(DISTINCT messageY) AS yCount
-      RETURN
-        personId,
-        personFirstName,
-        personLastName,
-        xCount,
-        yCount,
-        xCount + yCount AS count
-      ORDER BY count DESC, toInteger(personId) ASC
+      MATCH (countryX:Country)
+      WHERE id(countryX) == $countryXName
+      MATCH (countryY:Country)
+      WHERE id(countryY) == $countryYName
+      MATCH (person:Person)
+      WHERE id(person) == $personId
+      WITH person, countryX, countryY
+      LIMIT 1
+      MATCH (city:City)-[:IS_PART_OF]->(country:Country)
+      WHERE id(country) IN [countryX, countryY]
+      WITH person, countryX, countryY, collect(city) AS cities
+      MATCH (person)-[:KNOWS*1..2]-(friend)-[:IS_LOCATED_IN]->(city)
+      WHERE person<>friend AND NOT city IN cities
+      WITH DISTINCT friend, countryX, countryY
+      MATCH (friend)<-[:HAS_CREATOR]-(message),
+            (message)-[:IS_LOCATED_IN]->(country)
+      WHERE $endDate > message.Message.creationDate >= $startDate AND
+            country IN [countryX, countryY]
+      WITH friend,
+           CASE WHEN country==countryX THEN 1 ELSE 0 END AS messageX,
+           CASE WHEN country==countryY THEN 1 ELSE 0 END AS messageY
+      WITH friend, sum(messageX) AS xCount, sum(messageY) AS yCount
+      WHERE xCount>0 AND yCount>0
+      RETURN friend.Person.id AS friendId,
+             friend.Person.firstName AS friendFirstName,
+             friend.Person.lastName AS friendLastName,
+             xCount,
+             yCount,
+             xCount + yCount AS xyCount
+      ORDER BY xyCount DESC, friendId ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | friendId | friendFirstName | friendLastName | xCount | yCount | xyCount |
 
   Scenario: 4. New topics
     When executing query:
