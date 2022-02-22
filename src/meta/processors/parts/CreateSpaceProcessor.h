@@ -40,8 +40,9 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
    * @param zoneHosts
    * @return StatusOr<Hosts>
    */
-  StatusOr<Hosts> pickHostsWithZone(const std::vector<std::string>& zones,
-                                    const std::unordered_map<std::string, Hosts>& zoneHosts);
+  ErrorOr<nebula::cpp2::ErrorCode, Hosts> pickHostsWithZone(
+      const std::vector<std::string>& zones,
+      const std::unordered_map<std::string, Hosts>& zoneHosts);
 
   /**
    * @brief Get replica factor count of zones for an partition according to current loading.
