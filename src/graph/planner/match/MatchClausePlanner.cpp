@@ -474,7 +474,7 @@ Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClau
     auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
       return alias.second == AliasType::kPath;
     });
-    if (iter != aliases.end()) {
+    if (iter != aliases.end() && path.pathBuild != nullptr) {
       auto& alias = iter->first;
       columns->addColumn(buildPathColumn(path.pathBuild, alias));
       colNames.emplace_back(alias);

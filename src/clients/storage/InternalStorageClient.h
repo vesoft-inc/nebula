@@ -6,8 +6,6 @@
 #ifndef CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 #define CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "clients/storage/StorageClientBase.h"
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
