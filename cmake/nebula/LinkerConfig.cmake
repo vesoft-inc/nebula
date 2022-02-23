@@ -1,5 +1,5 @@
 set(NEBULA_USE_LINKER
-  "bfd"
+  "gold"
   CACHE STRING "Linker to be used")
 set(USER_LINKER_OPTION_VALUES "lld" "gold" "bfd")
 set_property(CACHE NEBULA_USE_LINKER PROPERTY STRINGS ${USER_LINKER_OPTION_VALUES})

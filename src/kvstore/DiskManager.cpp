@@ -31,7 +31,7 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
       }
       auto canonical = std::filesystem::canonical(path);
       auto info = std::filesystem::space(canonical);
-      dataPaths_.emplace_back(std::move(canonical));
+      paths->dataPaths_.emplace_back(std::move(canonical));
       freeBytes[index++] = info.available;
     }
     freeBytes_ = std::move(freeBytes);
