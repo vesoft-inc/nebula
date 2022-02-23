@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexScanNode.h"
-#include <folly/Format.h>
 
+#include <folly/Format.h>
 namespace nebula {
 namespace storage {
 // Define of Path
@@ -179,7 +179,8 @@ void RangePath::buildKey() {
   // left will be `b]`,`b)`, or `[INF`
   std::string right =
       (hint.end_value_ref().is_set() && !hint.get_end_value().empty())
-          ? folly::sformat("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
+          ? folly::sformat(
+                "{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
           : "INF]";
   serializeString_ += folly::sformat("{}={},{}", hint.get_column_name(), left, right);
   startKey_ = commonIndexPrefix + a;
