@@ -279,6 +279,9 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
 Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
   for (const auto *dep : dependencies) {
     const_cast<PlanNode *>(dep)->accept(this);
+    if (!status_.ok()) {
+      return status_;
+    }
   }
   return Status::OK();
 }
