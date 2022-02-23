@@ -7,11 +7,11 @@ Feature: LDBC Interactive Workload - Complex Reads
     Given a graph with space named "ldbc_v0_3_3"
 
   Scenario: 1. Friends with certain name
-    Given parameters: {"personId":"4398046511333", "firstName":"Jose"}
+    # {"personId":"4398046511333", "firstName":"Jose"}
     When executing query:
       """
-      MATCH p=(person:Person)-[:KNOWS*1..3]-(friend:Person {firstName: $firstName})
-      WHERE id(person) == $personId
+      MATCH p=(person:Person)-[:KNOWS*1..3]-(friend:Person {firstName: "Jose"})
+      WHERE id(person) == "4398046511333"
       AND person <> friend
       WITH friend, length(p) AS distance
       LIMIT 20
@@ -60,11 +60,11 @@ Feature: LDBC Interactive Workload - Complex Reads
       | friendId | friendLastName | distanceFromPerson | friendBirthday | friendCreationDate | friendGender | friendBrowserUsed | friendLocationIp | friendEmails | friendLanguages | friendCityName | friendUniversities | friendCompanies |
 
   Scenario: 2. Recent messages by your friends
-    Given parameters: {"personId":"10995116278009", "maxDate":"1287230400000"}
+    # {"personId":"10995116278009", "maxDate":"1287230400000"}
     When executing query:
       """
       MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == $personId and message.Message.creationDate <= $maxDate
+      WHERE id(n) == "10995116278009" and message.Message.creationDate <= 1287230400000
       RETURN
         friend.Person.id AS personId,
         friend.Person.firstName AS personFirstName,
@@ -82,7 +82,7 @@ Feature: LDBC Interactive Workload - Complex Reads
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
   Scenario: 3. Friends and friends of friends that have been to given countries
-    Given parameters: {"personId":"6597069766734","countryXName":"Angola","countryYName":"Colombia","startDate":"1275393600000","endDate":"1277812800000"}
+    # {"personId":"6597069766734","countryXName":"Angola","countryYName":"Colombia","startDate":"1275393600000","endDate":"1277812800000"}
     When executing query:
       """
       MATCH (countryX:Country)
@@ -101,7 +101,7 @@ Feature: LDBC Interactive Workload - Complex Reads
       WITH DISTINCT friend, countryX, countryY
       MATCH (friend)<-[:HAS_CREATOR]-(message),
             (message)-[:IS_LOCATED_IN]->(country)
-      WHERE $endDate > message.Message.creationDate >= $startDate AND
+      WHERE "1277812800000" > message.Message.creationDate >= "1275393600000" AND
             country IN [countryX, countryY]
       WITH friend,
            CASE WHEN country==countryX THEN 1 ELSE 0 END AS messageX,
@@ -121,12 +121,12 @@ Feature: LDBC Interactive Workload - Complex Reads
       | friendId | friendFirstName | friendLastName | xCount | yCount | xyCount |
 
   Scenario: 4. New topics
-    Given parameters: {"personId":"4398046511333","startDate":"1275350400000","endDate":"1277856000000"}
+    # {"personId":"4398046511333","startDate":"1275350400000","endDate":"1277856000000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(`tag`:`Tag`)
-      WHERE id(person) == $personId AND post.Post.creationDate >= $startDate
-         AND post.Post.creationDate < $endDate
+      WHERE id(person) == "4398046511333" AND post.Post.creationDate >= "1275350400000"
+         AND post.Post.creationDate < "1277856000000"
       WITH person, count(post) AS postsOnTag, `tag`
       OPTIONAL MATCH (person)-[:KNOWS]-()<-[:HAS_CREATOR]-(oldPost:Post)-[:HAS_TAG]->(`tag`)
       WHERE oldPost.Post.creationDate < $startDate
@@ -141,11 +141,11 @@ Feature: LDBC Interactive Workload - Complex Reads
       | tagName | postCount |
 
   Scenario: 5. New groups
-    Given parameters: {"personId":"6597069766734","minDate":"1288612800000"}
+    # {"personId":"6597069766734","minDate":"1288612800000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[membership:HAS_MEMBER]-(forum:Forum)
-      WHERE id(person) == $personId AND membership.joinDate>$minDate
+      WHERE id(person) == "6597069766734" AND membership.joinDate>"1288612800000"
           AND not(person==friend)
       WITH DISTINCT friend, forum
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(forum)
@@ -161,11 +161,11 @@ Feature: LDBC Interactive Workload - Complex Reads
       | forumId | forumTitle | postCount |
 
   Scenario: 6. Tag co-occurrence
-    Given parameters: {"personId":"4398046511333","tagName":"Carl_Gustaf_Emil_Mannerheim"}
+    # {"personId":"4398046511333","tagName":"Carl_Gustaf_Emil_Mannerheim"}
     When executing query:
       """
       MATCH
-        (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:$tagName})
+        (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"Carl_Gustaf_Emil_Mannerheim"})
       WHERE id(person) == "4398046511333" AND not(person==friend)
       MATCH (friendPost)-[:HAS_TAG]->(commonTag:`Tag`)
       WHERE not(commonTag==knownTag)
