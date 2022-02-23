@@ -12,3 +12,4 @@ nebula_add_library(
     IndexManager.cpp
     ServerBasedIndexManager.cpp
 )
+target_link_libraries(meta_obj PRIVATE conf_obj)

@@ -8,8 +8,8 @@
 
 #include <gtest/gtest_prod.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
+#include <filesystem>
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -109,7 +109,7 @@ class DiskManager {
   std::shared_ptr<thread::GenericWorker> bgThread_;
 
   // canonical path of data_path flag
-  std::vector<boost::filesystem::path> dataPaths_;
+  std::vector<std::filesystem::path> dataPaths_;
   // free space available to a non-privileged process, in bytes
   std::vector<std::atomic_uint64_t> freeBytes_;
 

@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexTopNNode.h"
+#include <folly/Format.h>
 namespace nebula {
 namespace storage {
 IndexTopNNode::IndexTopNNode(const IndexTopNNode& node)
@@ -119,9 +120,9 @@ std::string IndexTopNNode::identify() {
     }
   }
   if (offset_ > 0) {
-    return fmt::format("{}({} offset={}, limit={})", name_, ss.str(), offset_, limit_);
+    return folly::sformat("{}({} offset={}, limit={})", name_, ss.str(), offset_, limit_);
   } else {
-    return fmt::format("{}({} limit={})", name_, ss.str(), limit_);
+    return folly::sformat("{}({} limit={})", name_, ss.str(), limit_);
   }
 }
 

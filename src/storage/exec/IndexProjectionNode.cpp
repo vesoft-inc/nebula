@@ -62,7 +62,7 @@ std::unique_ptr<IndexNode> IndexProjectionNode::copy() {
 }
 
 std::string IndexProjectionNode::identify() {
-  return fmt::format("{}(projectColumn=[{}])", name_, folly::join(",", requiredColumns_));
+  return folly::sformat("{}(projectColumn=[{}])", name_, folly::join(",", requiredColumns_));
 }
 
 }  // namespace storage

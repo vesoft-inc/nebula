@@ -11,7 +11,6 @@
 #include <folly/hash/Hash.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include <boost/filesystem.hpp>
 #include <unordered_set>
 
 #include "clients/meta/FileBasedClusterIdMan.h"

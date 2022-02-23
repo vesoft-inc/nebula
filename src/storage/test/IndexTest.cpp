@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/Format.h>
 #include <folly/String.h>
 #include <gtest/gtest.h>
 #include <s2/base/integral_types.h>
@@ -834,7 +835,7 @@ float     | float                     | float                   | int
     std::vector<double> val{
         -INF, -MAX_NV, -MIN_NV, -MAX_SV, -MIN_SV, -0.0, 0.0, MIN_SV, MAX_SV, MIN_NV, MAX_NV, INF};
     for (size_t i = 0; i < val.size(); i++) {
-      std::string case_ = fmt::format("case2.{}", i + 3);
+      std::string case_ = folly::sformat("case2.{}", i + 3);
       auto offset = i;
       if (val[i] == 0 && val[i - 1] == 0) {
         offset--;
@@ -864,7 +865,7 @@ float     | float                     | float                   | int
     std::vector<double> val{
         -INF, -MAX_NV, -MIN_NV, -MAX_SV, -MIN_SV, -0.0, 0.0, MIN_SV, MAX_SV, MIN_NV, MAX_NV, INF};
     for (size_t i = 0; i < val.size(); i++) {
-      std::string case_ = fmt::format("case3.{}", i + 7);
+      std::string case_ = folly::sformat("case3.{}", i + 7);
       auto offset = i;
       if (val[i] == 0 && val[i - 1] == 0) {
         offset--;
@@ -911,7 +912,7 @@ float     | float                     | float                   | int
     std::vector<double> val{
         -INF, -MAX_NV, -MIN_NV, -MAX_SV, -MIN_SV, -0.0, 0.0, MIN_SV, MAX_SV, MIN_NV, MAX_NV, INF};
     for (size_t i = 0; i < val.size(); i++) {
-      std::string case_ = fmt::format("case5.{}", i + 7);
+      std::string case_ = folly::sformat("case5.{}", i + 7);
       auto offset = i + 1;
       if (val[i] == 0 && val[i + 1] == 0) {
         offset++;
@@ -934,7 +935,7 @@ float     | float                     | float                   | int
     std::vector<double> val{
         -INF, -MAX_NV, -MIN_NV, -MAX_SV, -MIN_SV, -0.0, 0.0, MIN_SV, MAX_SV, MIN_NV, MAX_NV, INF};
     for (size_t i = 0; i < val.size(); i++) {
-      std::string case_ = fmt::format("case6.{}", i + 3);
+      std::string case_ = folly::sformat("case6.{}", i + 3);
       auto offset = i + 1;
       if (val[i] == 0 && val[i + 1] == 0) {
         offset++;

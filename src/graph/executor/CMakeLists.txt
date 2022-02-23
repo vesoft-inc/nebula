@@ -86,5 +86,6 @@ nebula_add_library(
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp
 )
+target_link_libraries(executor_obj PRIVATE storage_client_obj)
 
 nebula_add_subdirectory(test)

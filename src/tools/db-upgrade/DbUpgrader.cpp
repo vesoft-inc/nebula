@@ -5,6 +5,8 @@
 
 #include "tools/db-upgrade/DbUpgrader.h"
 
+#include <folly/Format.h>
+
 #include "common/datatypes/Value.h"
 #include "common/fs/FileUtils.h"
 #include "common/utils/IndexKeyUtils.h"
@@ -916,11 +918,11 @@ void UpgraderSpace::runPartV3() {
       option.create_if_missing = true;
       option.compression = ::rocksdb::CompressionType::kNoCompression;
       ::rocksdb::SstFileWriter sst_file_writer(::rocksdb::EnvOptions(), option);
-      std::string file = ::fmt::format(".nebula_upgrade.space-{}.part-{}-{}-{}.sst",
-                                       spaceId_,
-                                       partId,
-                                       ingestFileCount++,
-                                       std::time(nullptr));
+      std::string file = ::folly::sformat(".nebula_upgrade.space-{}.part-{}-{}-{}.sst",
+                                          spaceId_,
+                                          partId,
+                                          ingestFileCount++,
+                                          std::time(nullptr));
       ::rocksdb::Status s = sst_file_writer.Open(file);
       if (!s.ok()) {
         LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"

@@ -5,6 +5,8 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
+#include <folly/Format.h>
+
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
@@ -243,8 +245,8 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
   bool isRangeScan = true;
   for (const auto& item : items.items) {
     if (!verifyType(item.value_)) {
-      return Status::SemanticError(
-          fmt::format("Not supported value type {} for index.", item.value_.type()));
+      return Status::SemanticError(folly::sformat("Not supported value type {} for index.",
+                                                  static_cast<uint64_t>(item.value_.type())));
     }
     if (item.relOP_ == Expression::Kind::kRelEQ) {
       isRangeScan = false;

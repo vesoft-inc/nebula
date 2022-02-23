@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   std::transform(
       paths.begin(), paths.end(), paths.begin(), [](const std::string &p) -> std::string {
         auto path = folly::trimWhitespace(p).str();
-        path = boost::filesystem::absolute(path).string();
+        path = std::filesystem::absolute(path).string();
         LOG(INFO) << "data path= " << path;
         return path;
       });

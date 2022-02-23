@@ -19,19 +19,19 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
     std::vector<std::atomic_uint64_t> freeBytes(dataPaths.size() + 1);
     size_t index = 0;
     for (const auto& path : dataPaths) {
-      auto absolute = boost::filesystem::absolute(path);
-      if (!boost::filesystem::exists(absolute)) {
-        boost::filesystem::create_directories(absolute);
-      } else if (!boost::filesystem::is_directory(absolute)) {
+      auto absolute = std::filesystem::absolute(path);
+      if (!std::filesystem::exists(absolute)) {
+        std::filesystem::create_directories(absolute);
+      } else if (!std::filesystem::is_directory(absolute)) {
         LOG(FATAL) << "DataPath is not a valid directory: " << path;
       }
-      auto canonical = boost::filesystem::canonical(path);
-      auto info = boost::filesystem::space(canonical);
+      auto canonical = std::filesystem::canonical(path);
+      auto info = std::filesystem::space(canonical);
       dataPaths_.emplace_back(std::move(canonical));
       freeBytes[index++] = info.available;
     }
     freeBytes_ = std::move(freeBytes);
-  } catch (boost::filesystem::filesystem_error& e) {
+  } catch (std::filesystem::filesystem_error& e) {
     LOG(FATAL) << "DataPath invalid: " << e.what();
   }
   if (bgThread_) {
@@ -67,14 +67,14 @@ StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId
 void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path) {
   std::lock_guard<std::mutex> lg(lock_);
   try {
-    auto canonical = boost::filesystem::canonical(path);
+    auto canonical = std::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = boost::filesystem::absolute(dataPath);
+    dataPath = std::filesystem::absolute(dataPath);
     auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
     CHECK(iter != dataPaths_.end());
     partIndex_[spaceId][partId] = iter - dataPaths_.begin();
     partPath_[spaceId][canonical.string()].emplace(partId);
-  } catch (boost::filesystem::filesystem_error& e) {
+  } catch (std::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
@@ -84,14 +84,14 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
                                      const std::string& path) {
   std::lock_guard<std::mutex> lg(lock_);
   try {
-    auto canonical = boost::filesystem::canonical(path);
+    auto canonical = std::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = boost::filesystem::absolute(dataPath);
+    dataPath = std::filesystem::absolute(dataPath);
     auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
     CHECK(iter != dataPaths_.end());
     partIndex_[spaceId].erase(partId);
     partPath_[spaceId][canonical.string()].erase(partId);
-  } catch (boost::filesystem::filesystem_error& e) {
+  } catch (std::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
@@ -128,8 +128,8 @@ bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) {
 void DiskManager::refresh() {
   // refresh the available bytes of each data path, skip the dummy path
   for (size_t i = 0; i < dataPaths_.size(); i++) {
-    boost::system::error_code ec;
-    auto info = boost::filesystem::space(dataPaths_[i], ec);
+    std::error_code ec;
+    auto info = std::filesystem::space(dataPaths_[i], ec);
     if (!ec) {
       VLOG(2) << "Refresh filesystem info of " << dataPaths_[i];
       freeBytes_[i] = info.available;

@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexSelectionNode.h"
+#include <folly/Format.h>
 namespace nebula {
 namespace storage {
 IndexSelectionNode::IndexSelectionNode(const IndexSelectionNode& node)
@@ -50,7 +51,7 @@ std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
 }
 
 std::string IndexSelectionNode::identify() {
-  return fmt::format("{}(expr=[{}])", name_, expr_->toString());
+  return folly::sformat("{}(expr=[{}])", name_, expr_->toString());
 }
 
 }  // namespace storage

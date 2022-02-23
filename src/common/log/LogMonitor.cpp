@@ -25,8 +25,8 @@ DEFINE_uint64(log_min_reserved_bytes_to_fatal,
 DEFINE_int32(log_disk_check_interval_secs, 10, "interval to check free space of log path");
 
 void LogMonitor::getLogDiskFreeByte() {
-  boost::system::error_code ec;
-  auto info = boost::filesystem::space(FLAGS_log_dir, ec);
+  std::error_code ec;
+  auto info = std::filesystem::space(FLAGS_log_dir, ec);
   if (!ec) {
     freeByte_ = info.available;
   } else {

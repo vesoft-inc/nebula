@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexScanNode.h"
+#include <folly/Format.h>
 
 namespace nebula {
 namespace storage {
@@ -160,7 +161,7 @@ void RangePath::buildKey() {
     CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, commonIndexPrefix);
     serializeString_ +=
-        fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
+        folly::sformat("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   auto& hint = hints_.back();
   size_t index = hints_.size() - 1;
@@ -172,15 +173,15 @@ void RangePath::buildKey() {
   // left will be `[a`,`(a`, or `[INF`
   std::string left =
       (hint.begin_value_ref().is_set() && !hint.get_begin_value().empty())
-          ? fmt::format(
+          ? folly::sformat(
                 "{}{}", hint.get_include_begin() ? '[' : '(', hint.get_begin_value().toString())
           : "[-INF";
   // left will be `b]`,`b)`, or `[INF`
   std::string right =
       (hint.end_value_ref().is_set() && !hint.get_end_value().empty())
-          ? fmt::format("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
+          ? folly::sformat("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
           : "INF]";
-  serializeString_ += fmt::format("{}={},{}", hint.get_column_name(), left, right);
+  serializeString_ += folly::sformat("{}={},{}", hint.get_column_name(), left, right);
   startKey_ = commonIndexPrefix + a;
   endKey_ = commonIndexPrefix + b;
   // If `end_value` is not set, `b` will be empty. So `endKey_` should append '\xFF' until
@@ -339,7 +340,7 @@ void PrefixPath::buildKey() {
     CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
     serializeString_ +=
-        fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
+        folly::sformat("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   for (; fieldIter != index_->get_fields().end(); fieldIter++) {
     if (UNLIKELY(fieldIter->get_type().get_type() == nebula::cpp2::PropertyType::GEOGRAPHY)) {
@@ -551,7 +552,7 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
 }
 
 std::string IndexScanNode::identify() {
-  return fmt::format("{}(IndexID={}, Path=({}))", name_, indexId_, path_->toString());
+  return folly::sformat("{}(IndexID={}, Path=({}))", name_, indexId_, path_->toString());
 }
 
 // End of IndexScan

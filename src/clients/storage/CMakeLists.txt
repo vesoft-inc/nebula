@@ -12,6 +12,7 @@ nebula_add_library(
     storage_client_base_obj SHARED
     StorageClientBase.cpp
 )
+target_link_libraries(storage_client_obj PRIVATE storage_client_base_obj)
 
 
 nebula_add_library(

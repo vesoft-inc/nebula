@@ -23,12 +23,12 @@ TEST(DiskManagerTest, PathTest) {
   CHECK(status.ok());
   auto realPath = status.value();
 
-  auto absolute = boost::filesystem::absolute(relative);
+  auto absolute = std::filesystem::absolute(relative);
   EXPECT_NE(realPath, absolute.string());
-  boost::filesystem::equivalent(absolute, realPath);
+  std::filesystem::equivalent(absolute, realPath);
 
-  auto canonical1 = boost::filesystem::canonical(relative);
-  auto canonical2 = boost::filesystem::canonical(absolute);
+  auto canonical1 = std::filesystem::canonical(relative);
+  auto canonical2 = std::filesystem::canonical(absolute);
   EXPECT_EQ(realPath, canonical1.string());
   EXPECT_EQ(realPath, canonical2.string());
 }
@@ -76,10 +76,10 @@ TEST(DiskManagerTest, AvailableTest) {
   GraphSpaceID spaceId = 1;
   fs::TempDir disk1("/tmp/disk_man_test.XXXXXX");
   auto path1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), spaceId);
-  boost::filesystem::create_directories(path1);
+  std::filesystem::create_directories(path1);
   fs::TempDir disk2("/tmp/disk_man_test.XXXXXX");
   auto path2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), spaceId);
-  boost::filesystem::create_directories(path2);
+  std::filesystem::create_directories(path2);
 
   std::vector<std::string> dataPaths = {disk1.path(), disk2.path()};
   DiskManager diskMan(dataPaths);
@@ -111,7 +111,7 @@ TEST(DiskManagerTest, WalNoSpaceTest) {
   PartitionID partId = 1;
   fs::TempDir root("/tmp/testWal.XXXXXX");
   std::string spacePath = folly::stringPrintf("%s/nebula/%d", root.path(), spaceId);
-  boost::filesystem::create_directories(spacePath);
+  std::filesystem::create_directories(spacePath);
   auto walPath = folly::stringPrintf("%s/wal/%d", spacePath.c_str(), partId);
 
   wal::FileBasedWalInfo info;
@@ -149,14 +149,14 @@ TEST(DiskManagerTest, GetDiskPartsTest) {
   GraphSpaceID spaceId = 1;
   fs::TempDir disk1("/tmp/get_disk_part_test.XXXXXX");
   auto path1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), spaceId);
-  boost::filesystem::create_directories(path1);
+  std::filesystem::create_directories(path1);
   fs::TempDir disk2("/tmp/get_disk_part_test.XXXXXX");
   auto path2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), spaceId);
-  boost::filesystem::create_directories(path2);
+  std::filesystem::create_directories(path2);
   GraphSpaceID spaceId2 = 2;
   fs::TempDir disk3("/tmp/get_disk_part_test.XXXXXX");
   auto path3 = folly::stringPrintf("%s/nebula/%d", disk3.path(), spaceId2);
-  boost::filesystem::create_directories(path3);
+  std::filesystem::create_directories(path3);
 
   std::vector<std::string> dataPaths = {disk1.path(), disk2.path(), disk3.path()};
   DiskManager diskMan(dataPaths);

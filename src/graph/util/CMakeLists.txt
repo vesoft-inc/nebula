@@ -15,6 +15,7 @@ nebula_add_library(
     PlannerUtil.cpp
     ValidateUtil.cpp
 )
+target_link_libraries(util_obj PRIVATE ft_es_graph_adapter_obj)
 
 nebula_add_library(
     idgenerator_obj SHARED

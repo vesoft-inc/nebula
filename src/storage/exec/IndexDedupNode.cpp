@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexDedupNode.h"
+#include <folly/Format.h>
 namespace nebula {
 namespace storage {
 IndexDedupNode::IndexDedupNode(const IndexDedupNode& node)
@@ -86,7 +87,7 @@ std::unique_ptr<IndexNode> IndexDedupNode::copy() {
 }
 
 std::string IndexDedupNode::identify() {
-  return fmt::format("{}(dedup=[{}])", name_, folly::join(',', dedupColumns_));
+  return folly::sformat("{}(dedup=[{}])", name_, folly::join(',', dedupColumns_));
 }
 
 }  // namespace storage

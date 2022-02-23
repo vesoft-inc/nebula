@@ -80,9 +80,9 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   threadManager->start();
   nebula::kvstore::KVOptions options;
 #ifndef BUILD_STANDALONE
-  auto absolute = boost::filesystem::absolute(FLAGS_data_path);
+  auto absolute = std::filesystem::absolute(FLAGS_data_path);
 #else
-  auto absolute = boost::filesystem::absolute(FLAGS_meta_data_path);
+  auto absolute = std::filesystem::absolute(FLAGS_meta_data_path);
 #endif
   options.dataPaths_ = {absolute.string()};
   options.partMan_ = std::move(partMan);

@@ -566,9 +566,9 @@ void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
 void NebulaStore::removeSpaceDir(const std::string& dir) {
   try {
     LOG(INFO) << "Try to remove space directory: " << dir;
-    boost::filesystem::remove_all(dir);
+    std::filesystem::remove_all(dir);
     LOG(INFO) << "Space directory removed: " << dir;
-  } catch (const boost::filesystem::filesystem_error& e) {
+  } catch (const std::filesystem::filesystem_error& e) {
     LOG(WARNING) << "Exception caught while remove directory, please delete it by manual: "
                  << e.what();
   }

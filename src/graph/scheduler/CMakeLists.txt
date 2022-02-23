@@ -8,3 +8,4 @@ nebula_add_library(
   AsyncMsgNotifyBasedScheduler.cpp
   Scheduler.cpp
   )
+  target_link_libraries(scheduler_obj PRIVATE executor_obj)

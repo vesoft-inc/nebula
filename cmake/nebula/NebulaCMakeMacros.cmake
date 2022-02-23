@@ -77,17 +77,16 @@ macro(nebula_link_libraries target)
     target_link_libraries(
         ${target}
         ${ARGN}
-        folly
+        ${Folly_LIBRARY}
         fmt
-        glog
-        gflags
+        ${Glog_LIBRARY}
+        ${Gflags_LIBRARY}
         boost_context
         boost_system
         boost_regex
-        boost_filesystem
         boost_program_options
-        event
-        double-conversion
+        ${Libevent_LIBRARY}
+        ${DoubleConversion_LIBRARY}
         s2
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}

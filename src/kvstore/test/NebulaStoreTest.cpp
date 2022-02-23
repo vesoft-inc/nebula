@@ -952,8 +952,8 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
 
   auto space1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), 1);
   auto space2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), 2);
-  CHECK(boost::filesystem::exists(space1));
-  CHECK(boost::filesystem::exists(space2));
+  CHECK(std::filesystem::exists(space1));
+  CHECK(std::filesystem::exists(space2));
 
   FLAGS_auto_remove_invalid_space = true;
   // remove space1, when the flag is true, the directory will be removed
@@ -962,8 +962,8 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   }
   store->removeSpace(1, false);
   EXPECT_EQ(1, store->spaces_.size());
-  CHECK(!boost::filesystem::exists(space1));
-  CHECK(boost::filesystem::exists(space2));
+  CHECK(!std::filesystem::exists(space1));
+  CHECK(std::filesystem::exists(space2));
 
   FLAGS_auto_remove_invalid_space = false;
   // remove space2, when the flag is false, the directory won't be removed
@@ -972,8 +972,8 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   }
   store->removeSpace(2, false);
   EXPECT_EQ(0, store->spaces_.size());
-  CHECK(!boost::filesystem::exists(space1));
-  CHECK(boost::filesystem::exists(space2));
+  CHECK(!std::filesystem::exists(space1));
+  CHECK(std::filesystem::exists(space2));
 }
 
 TEST(NebulaStoreTest, BackupRestoreTest) {

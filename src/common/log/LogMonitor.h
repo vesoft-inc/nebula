@@ -5,8 +5,7 @@
 #ifndef COMMON_LOG_LOGMONITOR_H
 #define COMMON_LOG_LOGMONITOR_H
 
-#include <boost/filesystem.hpp>
-#include <boost/system/error_code.hpp>
+#include <filesystem>
 
 #include "common/thread/GenericWorker.h"
 

@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "storage/exec/IndexLimitNode.h"
+#include <folly/Format.h>
 namespace nebula {
 namespace storage {
 IndexLimitNode::IndexLimitNode(const IndexLimitNode& node)
@@ -41,9 +42,9 @@ std::unique_ptr<IndexNode> IndexLimitNode::copy() {
 
 std::string IndexLimitNode::identify() {
   if (offset_ > 0) {
-    return fmt::format("{}(offset={}, limit={})", name_, offset_, limit_);
+    return folly::sformat("{}(offset={}, limit={})", name_, offset_, limit_);
   } else {
-    return fmt::format("{}(limit={})", name_, limit_);
+    return folly::sformat("{}(limit={})", name_, limit_);
   }
 }
 

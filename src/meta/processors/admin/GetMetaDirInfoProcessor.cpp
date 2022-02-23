@@ -5,7 +5,7 @@
 
 #include "meta/processors/admin/GetMetaDirInfoProcessor.h"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "common/fs/FileUtils.h"
 
@@ -18,7 +18,7 @@ void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq& req) {
   auto datapaths = kvstore_->getDataRoot();
   nebula::cpp2::DirInfo dir;
   dir.data_ref() = datapaths;
-  dir.root_ref() = boost::filesystem::current_path().string();
+  dir.root_ref() = std::filesystem::current_path().string();
   VLOG(1) << "Get meta dir info, data paths size: " << dir.get_data().size()
           << ", root path:" << dir.get_root();
 
