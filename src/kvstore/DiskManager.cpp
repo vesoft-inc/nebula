@@ -17,6 +17,8 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
   try {
     // atomic is not copy-constructible
     std::vector<std::atomic_uint64_t> freeBytes(dataPaths.size() + 1);
+    Paths* paths = new Paths();
+    paths_.store(paths);
     size_t index = 0;
     for (const auto& path : dataPaths) {
       auto absolute = std::filesystem::absolute(path);
@@ -39,21 +41,31 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
   }
 }
 
-StatusOr<std::vector<std::string>> DiskManager::path(GraphSpaceID spaceId) {
-  auto spaceIt = partPath_.find(spaceId);
-  if (spaceIt == partPath_.end()) {
-    return Status::Error("Space not found");
-  }
-  std::vector<std::string> paths;
-  for (const auto& partEntry : spaceIt->second) {
-    paths.emplace_back(partEntry.first);
-  }
-  return paths;
+DiskManager::~DiskManager() {
+  std::lock_guard<std::mutex> lg(lock_);
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  folly::rcu_retire(paths, std::default_delete<Paths>());
 }
 
-StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId) {
-  auto spaceIt = partPath_.find(spaceId);
-  if (spaceIt == partPath_.end()) {
+StatusOr<std::vector<std::string>> DiskManager::path(GraphSpaceID spaceId) const {
+  folly::rcu_reader guard;
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  auto spaceIt = paths->partPath_.find(spaceId);
+  if (spaceIt == paths->partPath_.end()) {
+    return Status::Error("Space not found");
+  }
+  std::vector<std::string> pathsRes;
+  for (const auto& partEntry : spaceIt->second) {
+    pathsRes.emplace_back(partEntry.first);
+  }
+  return pathsRes;
+}
+
+StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId) const {
+  folly::rcu_reader guard;
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  auto spaceIt = paths->partPath_.find(spaceId);
+  if (spaceIt == paths->partPath_.end()) {
     return Status::Error("Space not found");
   }
   for (const auto& [path, parts] : spaceIt->second) {
@@ -67,14 +79,18 @@ StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId
 void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path) {
   std::lock_guard<std::mutex> lg(lock_);
   try {
-    auto canonical = std::filesystem::canonical(path);
+    Paths* oldPaths = paths_.load(std::memory_order_acquire);
+    Paths* newPaths = new Paths(*oldPaths);
+    auto canonical = boost::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = std::filesystem::absolute(dataPath);
-    auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
-    CHECK(iter != dataPaths_.end());
-    partIndex_[spaceId][partId] = iter - dataPaths_.begin();
-    partPath_[spaceId][canonical.string()].emplace(partId);
-  } catch (std::filesystem::filesystem_error& e) {
+    dataPath = boost::filesystem::absolute(dataPath);
+    auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
+    CHECK(iter != newPaths->dataPaths_.end());
+    newPaths->partIndex_[spaceId][partId] = iter - newPaths->dataPaths_.begin();
+    newPaths->partPath_[spaceId][canonical.string()].emplace(partId);
+    paths_.store(newPaths, std::memory_order_release);
+    folly::rcu_retire(oldPaths, std::default_delete<Paths>());
+  } catch (boost::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
@@ -84,21 +100,26 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
                                      const std::string& path) {
   std::lock_guard<std::mutex> lg(lock_);
   try {
-    auto canonical = std::filesystem::canonical(path);
+    Paths* oldPaths = paths_.load(std::memory_order_acquire);
+    Paths* newPaths = new Paths(*oldPaths);
+    auto canonical = boost::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = std::filesystem::absolute(dataPath);
-    auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
-    CHECK(iter != dataPaths_.end());
-    partIndex_[spaceId].erase(partId);
-    partPath_[spaceId][canonical.string()].erase(partId);
-  } catch (std::filesystem::filesystem_error& e) {
+    dataPath = boost::filesystem::absolute(dataPath);
+    auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
+    CHECK(iter != newPaths->dataPaths_.end());
+    newPaths->partIndex_[spaceId].erase(partId);
+    newPaths->partPath_[spaceId][canonical.string()].erase(partId);
+    paths_.store(newPaths, std::memory_order_release);
+    folly::rcu_retire(oldPaths, std::default_delete<Paths>());
+  } catch (boost::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
 
-void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
-  std::lock_guard<std::mutex> lg(lock_);
-  for (const auto& [space, partDiskMap] : partPath_) {
+void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) const {
+  folly::rcu_reader guard;
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  for (const auto& [space, partDiskMap] : paths->partPath_) {
     std::unordered_map<std::string, meta::cpp2::PartitionList> tmpPartPaths;
     for (const auto& [path, partitions] : partDiskMap) {
       std::vector<PartitionID> tmpPartitions;
@@ -113,9 +134,11 @@ void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
   }
 }
 
-bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) {
-  auto spaceIt = partIndex_.find(spaceId);
-  if (spaceIt == partIndex_.end()) {
+bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) const {
+  folly::rcu_reader guard;
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  auto spaceIt = paths->partIndex_.find(spaceId);
+  if (spaceIt == paths->partIndex_.end()) {
     return false;
   }
   auto partIt = spaceIt->second.find(partId);
@@ -127,14 +150,16 @@ bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) {
 
 void DiskManager::refresh() {
   // refresh the available bytes of each data path, skip the dummy path
-  for (size_t i = 0; i < dataPaths_.size(); i++) {
-    std::error_code ec;
-    auto info = std::filesystem::space(dataPaths_[i], ec);
+  folly::rcu_reader guard;
+  Paths* paths = paths_.load(std::memory_order_acquire);
+  for (size_t i = 0; i < paths->dataPaths_.size(); i++) {
+    boost::system::error_code ec;
+    auto info = boost::filesystem::space(paths->dataPaths_[i], ec);
     if (!ec) {
-      VLOG(2) << "Refresh filesystem info of " << dataPaths_[i];
+      VLOG(2) << "Refresh filesystem info of " << paths->dataPaths_[i];
       freeBytes_[i] = info.available;
     } else {
-      LOG(WARNING) << "Get filesystem info of " << dataPaths_[i] << " failed";
+      LOG(WARNING) << "Get filesystem info of " << paths->dataPaths_[i] << " failed";
     }
   }
 }

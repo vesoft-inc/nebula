@@ -993,9 +993,12 @@ void UpgraderSpace::doProcessV3() {
   while (unFinishedPart_ != 0) {
     sleep(10);
   }
-  auto code = readEngine_->ingest(ingest_sst_file_, true);
-  if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
+
+  if (ingest_sst_file_.size() != 0) {
+    auto code = readEngine_->ingest(ingest_sst_file_, true);
+    if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
+    }
   }
   readEngine_->put(NebulaKeyUtils::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());
 }
