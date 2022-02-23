@@ -5,6 +5,8 @@
 
 #include "kvstore/DiskManager.h"
 
+#include <filesystem>
+
 DEFINE_int32(disk_check_interval_secs, 10, "interval to check free space of data path");
 DEFINE_uint64(minimum_reserved_bytes, 1UL << 30, "minimum reserved bytes of each data path");
 
@@ -81,16 +83,16 @@ void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const 
   try {
     Paths* oldPaths = paths_.load(std::memory_order_acquire);
     Paths* newPaths = new Paths(*oldPaths);
-    auto canonical = boost::filesystem::canonical(path);
+    auto canonical = std::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = boost::filesystem::absolute(dataPath);
+    dataPath = std::filesystem::absolute(dataPath);
     auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
     CHECK(iter != newPaths->dataPaths_.end());
     newPaths->partIndex_[spaceId][partId] = iter - newPaths->dataPaths_.begin();
     newPaths->partPath_[spaceId][canonical.string()].emplace(partId);
     paths_.store(newPaths, std::memory_order_release);
     folly::rcu_retire(oldPaths, std::default_delete<Paths>());
-  } catch (boost::filesystem::filesystem_error& e) {
+  } catch (std::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
@@ -102,16 +104,16 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
   try {
     Paths* oldPaths = paths_.load(std::memory_order_acquire);
     Paths* newPaths = new Paths(*oldPaths);
-    auto canonical = boost::filesystem::canonical(path);
+    auto canonical = std::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
-    dataPath = boost::filesystem::absolute(dataPath);
+    dataPath = std::filesystem::absolute(dataPath);
     auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
     CHECK(iter != newPaths->dataPaths_.end());
     newPaths->partIndex_[spaceId].erase(partId);
     newPaths->partPath_[spaceId][canonical.string()].erase(partId);
     paths_.store(newPaths, std::memory_order_release);
     folly::rcu_retire(oldPaths, std::default_delete<Paths>());
-  } catch (boost::filesystem::filesystem_error& e) {
+  } catch (std::filesystem::filesystem_error& e) {
     LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
@@ -153,8 +155,8 @@ void DiskManager::refresh() {
   folly::rcu_reader guard;
   Paths* paths = paths_.load(std::memory_order_acquire);
   for (size_t i = 0; i < paths->dataPaths_.size(); i++) {
-    boost::system::error_code ec;
-    auto info = boost::filesystem::space(paths->dataPaths_[i], ec);
+    std::error_code ec;
+    auto info = std::filesystem::space(paths->dataPaths_[i], ec);
     if (!ec) {
       VLOG(2) << "Refresh filesystem info of " << paths->dataPaths_[i];
       freeBytes_[i] = info.available;
