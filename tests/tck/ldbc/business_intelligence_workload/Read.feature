@@ -263,7 +263,7 @@ Feature: LDBC Business Intelligence Workload - Read
 
   @skip
   Scenario: 10. Central person for a tag
-    # TODO: The execution plan has scan at the last query part. This is not in expectation. 
+    # TODO: The execution plan has scan at the last query part. This is not in expectation.
     When executing query:
       """
       MATCH (`tag`:`Tag`)
