@@ -331,6 +331,7 @@ Status MatchClausePlanner::leftExpandFromNode(
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
     if (expandInto) {
+      // TODO(shylock) optimize to embed filter to Traverse
       auto* startVid = nodeId(qctx->objPool(), dst);
       auto* endVid = nextTraverseStart;
       auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
