@@ -8,7 +8,6 @@
 
 #include <gtest/gtest_prod.h>
 
-#include <boost/system/error_code.hpp>
 #include <filesystem>
 
 #include "common/base/Base.h"
@@ -110,7 +109,7 @@ class DiskManager {
 
   struct Paths {
     // canonical path of data_path flag
-    std::vector<boost::filesystem::path> dataPaths_;
+    std::vector<std::filesystem::path> dataPaths_;
     // given a space and data path, return all parts in the path
     std::unordered_map<GraphSpaceID, PartDiskMap> partPath_;
     // the index in dataPaths_ for a given space + part
