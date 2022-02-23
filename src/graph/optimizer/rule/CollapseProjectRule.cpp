@@ -64,9 +64,11 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
   // disable this case to avoid the expression in ProjBelow being eval multiple
   // times
   std::unordered_set<std::string> uniquePropRefNames;
+  std::unordered_set<std::string> multiRefColNames;
   for (auto p : allPropRefNames) {
     if (!uniquePropRefNames.insert(p).second) {
-      return TransformResult::noTransform();
+      // Records PropRefNames that are referenced multiple times
+      multiRefColNames.insert(p);
     }
   }
 
@@ -75,7 +77,13 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
   auto colNames = projBelow->colNames();
   for (size_t i = 0; i < colNames.size(); ++i) {
     if (uniquePropRefNames.count(colNames[i])) {
-      rewriteMap[colNames[i]] = colsBelow[i]->expr();
+      auto colExpr = colsBelow[i]->expr();
+      // disable this case to avoid the expression in ProjBelow being eval multiple
+      // times
+      if (!graph::ExpressionUtils::isPropertyExpr(colExpr) && multiRefColNames.count(colNames[i])) {
+        return TransformResult::noTransform();
+      }
+      rewriteMap[colNames[i]] = colExpr;
     }
   }
 
