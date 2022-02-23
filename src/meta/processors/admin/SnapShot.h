@@ -7,7 +7,6 @@
 #define META_ADMIN_SNAPSHOT_H_
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include <gtest/gtest_prod.h>
 
 #include "common/network/NetworkUtils.h"
 #include "common/time/WallClock.h"

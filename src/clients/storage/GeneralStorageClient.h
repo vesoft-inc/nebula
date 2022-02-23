@@ -6,8 +6,6 @@
 #ifndef CLIENTS_STORAGE_GENERALSTORAGECLIENT_H_
 #define CLIENTS_STORAGE_GENERALSTORAGECLIENT_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/StorageClientBase.h"
 #include "common/base/Base.h"

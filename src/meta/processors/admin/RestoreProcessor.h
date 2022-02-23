@@ -6,8 +6,6 @@
 #ifndef META_RESTOREPROCESSOR_H_
 #define META_RESTOREPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
