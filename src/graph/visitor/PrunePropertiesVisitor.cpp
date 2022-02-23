@@ -207,7 +207,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
 
   if (node->vFilter() != nullptr) {
     status_ = extractPropsFromExpr(node->vFilter(), nodeAlias);
-    return;
+    if (!status_.ok()) {
+      return;
+    }
   }
   auto *vertexProps = node->props();
   if (vertexProps != nullptr) {
