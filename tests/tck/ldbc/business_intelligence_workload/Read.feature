@@ -87,39 +87,36 @@ Feature: LDBC Business Intelligence Workload - Read
     Then the result should be, in order:
       | countryName | month | gender | ageGroup | tagName | messageCount |
 
-  @skip
   Scenario: 3. Tag evolution
-    # TODO: Need an index on tag `Tag`, and fix the expr rewrite bug on toInteger(message1.creationDate)/100000000000%100
     When executing query:
       """
-      WITH
-        2010 AS year1,
-        10 AS month1,
-        2010 + toInteger(10 / 12.0) AS year2,
-        10 % 12 + 1 AS month2
-      MATCH (`tag`:`Tag`)
+      MATCH (`tag`:`Tag`)-[:HAS_TYPE]->(tagClass:TagClass)
+      WHERE id(tagClass) == "MusicalArtist"
+      /* window 1 */
       OPTIONAL MATCH (message1:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message1.creationDate)/10000000000000   == year1
-          AND toInteger(message1.creationDate)/100000000000%100 == month1
-      WITH year2, month2, `tag`, count(message1) AS countMonth1
+      WHERE datetime('2012-06-01') <= message1.Message.creationDate
+            AND message1.Message.creationDate < datetime('2012-06-01') + duration({days: 100})
+      WITH `tag`, count(message1) AS countMonth1
+      /* window 2 */
       OPTIONAL MATCH (message2:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message2.creationDate)/10000000000000   == year2
-          AND toInteger(message2.creationDate)/100000000000%100 == month2
+      WHERE datetime('2012-06-01') + duration({days: 100}) <= message2.Message.creationDate
+            AND message2.Message.creationDate < datetime('2012-06-01') + duration({days: 200})
       WITH
         `tag`,
         countMonth1,
         count(message2) AS countMonth2
       RETURN
-        `tag`.name,
+        `tag`.`Tag`.name AS tagName,
         countMonth1,
         countMonth2,
-        abs(countMonth1-countMonth2) AS diff
+        abs(countMonth1 - countMonth2) AS diff
       ORDER BY
         diff DESC,
-        `tag`.name ASC
+        tagName ASC
       LIMIT 100
       """
     Then the result should be, in any order:
+      | tagName | countMonth1 | countMonth2 | diff |
 
   Scenario: 4. Popular topics in a country
     When executing query:
@@ -217,14 +214,14 @@ Feature: LDBC Business Intelligence Workload - Read
       | person1Id | authorityScore |
 
   Scenario: 8. Related topics
-    # NOTICE: I had rewrite the original query
-    # TODO: WHERE NOT (comment)-[:HAS_TAG]->(tag)
     When executing query:
       """
       MATCH
-        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message),
-        (message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
-      WHERE id(`tag`) == "Genghis_Khan" AND NOT `tag` == relatedTag
+        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
+      WHERE id(`tag`) == "Genghis_Khan"
+      OPTIONAL MATCH p = (comment)-[:HAS_TAG]->(`tag`)
+      WITH relatedTag,comment,p
+      WHERE p IS NULL
       RETURN
         relatedTag.`Tag`.name AS relatedTagName,
         count(DISTINCT comment) AS count
