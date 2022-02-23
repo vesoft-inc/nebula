@@ -183,23 +183,23 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | tagName | postCount |
 
-  @skip
   Scenario: 7. Recent likers
-    # TODO: RETURN not((liker)-[:KNOWS]-(person)) AS isNew
+    # personId: 4398046511268
     When executing query:
       """
       MATCH (person:Person)<-[:HAS_CREATOR]-(message:Message)<-[like:LIKES]-(liker:Person)
-      WHERE id(person) == ""
-      WITH liker, message, like.creationDate AS likeTime, person
-      ORDER BY likeTime DESC, toInteger(message.id) ASC
+      WHERE id(person) == "4398046511268"
+      WITH liker, message, like.creationDate AS likeTime, person, toInteger(message.Message.id) AS messageId
+      ORDER BY likeTime DESC, messageId ASC
       WITH
         liker,
         head(collect({msg: message, likeTime: likeTime})) AS latestLike,
         person
+      OPTIONAL MATCH p = (liker)-[:KNOWS]-(person)
       RETURN
-        toInteger(liker.id) AS personId,
-        liker.firstName AS personFirstName,
-        liker.lastName AS personLastName,
+        toInteger(liker.Person.id) AS personId,
+        liker.Person.firstName AS personFirstName,
+        liker.Person.lastName AS personLastName,
         latestLike.likeTime AS likeCreationDate,
         latestLike.msg.id AS messageId,
         CASE exists(latestLike.msg.content)
@@ -207,11 +207,12 @@ Feature: LDBC Interactive Workload - Complex Reads
           ELSE latestLike.msg.imageFile
         END AS messageContent,
         latestLike.msg.creationDate AS messageCreationDate,
-        not((liker)-[:KNOWS]-(person)) AS isNew
+        p IS NULL AS isNew
       ORDER BY likeCreationDate DESC, personId ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | personId | personFirstName | personLastName | likeCreationDate | messageId | messageContent | messageCreationDate | isNew |
 
   Scenario: 8. Recent replies
     When executing query:
@@ -253,36 +254,38 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
-  @skip
   Scenario: 10. Friend recommendation
-    # TODO: WHERE patterns, WITH patterns
+    # personId: 4398046511333, moth:5
     When executing query:
       """
-      MATCH (person:Person)-[:KNOWS*2..2]-(friend:Person)-[:IS_LOCATED_IN]->(city:Place)
-      WHERE id(person) == "" AND
-        ((friend.birthday/100%100 = "$month" AND friend.birthday%100 >= 21) OR
-        (friend.birthday/100%100 = "$nextMonth" AND friend.birthday%100 < 22))
-        AND not(friend=person)
-        AND not((friend)-[:KNOWS]-(person))
+      MATCH (person:Person)-[:KNOWS*2..2]-(friend)-[:IS_LOCATED_IN]->(city:City)
+      WHERE id(person)=="4398046511333" AND
+            NOT friend==person
+      OPTIONAL MATCH p = (friend)-[:KNOWS]-(person)
+      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday, p
+      WHERE  p IS NULL AND
+             ((birthday.month==5 AND birthday.day>=21) OR
+             (birthday.month==(5%12)+1 AND birthday.day<22))
       WITH DISTINCT friend, city, person
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)
-      WITH friend, city, collect(post) AS posts, person
-      WITH
-        friend,
-        city,
-        length(posts) AS postCount,
-        length([p IN posts WHERE (p)-[:HAS_TAG]->(:`Tag`)<-[:HAS_INTEREST]-(person)]) AS commonPostCount
-      RETURN
-        friend.id AS personId,
-        friend.firstName AS personFirstName,
-        friend.lastName AS personLastName,
-        commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
-        friend.gender AS personGender,
-        city.name AS personCityName
-      ORDER BY commonInterestScore DESC, toInteger(personId) ASC
+      OPTIONAL MATCH p = (post)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)
+      WITH friend, city, post, person, p
+      WITH friend, city, collect(post) AS posts, person, collect(p) AS paths
+      WITH friend,
+           city,
+           size(posts) AS postCount,
+           size([p IN paths WHERE p IS NOT NULL ]) AS commonPostCount
+      RETURN friend.Person.id AS personId,
+             friend.Person.firstName AS personFirstName,
+             friend.Person.lastName AS personLastName,
+             commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
+             friend.Person.gender AS personGender,
+             city.City.name AS personCityName
+      ORDER BY commonInterestScore DESC, personId ASC
       LIMIT 10
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | personId | personFirstName | personLastName | commonInterestScore | personGender | personCityName |
 
   Scenario: 11. Job referral
     When executing query:
