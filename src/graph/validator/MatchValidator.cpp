@@ -177,10 +177,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
-      if (!nodeAliases.emplace(alias, AliasType::kNode).second) {
-        return Status::SemanticError("`%s': Redefined alias in a single path pattern.",
-                                     alias.c_str());
-      }
+      nodeAliases.emplace(alias, AliasType::kNode);
     }
     Expression *filter = nullptr;
     if (props != nullptr) {

@@ -33,13 +33,15 @@ class MatchClausePlanner final : public CypherClausePlanner {
                 MatchClauseContext* matchClauseCtx,
                 bool startFromEdge,
                 size_t startIndex,
-                SubPlan& subplan);
+                SubPlan& subplan,
+                std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
   Status expandFromNode(const std::vector<NodeInfo>& nodeInfos,
                         const std::vector<EdgeInfo>& edgeInfos,
                         MatchClauseContext* matchClauseCtx,
                         size_t startIndex,
-                        SubPlan& subplan);
+                        SubPlan& subplan,
+                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
   PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
 
@@ -48,19 +50,22 @@ class MatchClausePlanner final : public CypherClausePlanner {
                             MatchClauseContext* matchClauseCtx,
                             size_t startIndex,
                             std::string inputVar,
-                            SubPlan& subplan);
+                            SubPlan& subplan,
+                            std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
   Status rightExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
                              const std::vector<EdgeInfo>& edgeInfos,
                              MatchClauseContext* matchClauseCtx,
                              size_t startIndex,
-                             SubPlan& subplan);
+                             SubPlan& subplan,
+                             std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
   Status expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
                         const std::vector<EdgeInfo>& edgeInfos,
                         MatchClauseContext* matchClauseCtx,
                         size_t startIndex,
-                        SubPlan& subplan);
+                        SubPlan& subplan,
+                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
   /*
    * Project all named alias.
