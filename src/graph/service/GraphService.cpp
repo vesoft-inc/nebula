@@ -69,8 +69,10 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 
   auto ctx = std::make_unique<RequestContext<AuthResponse>>();
   auto future = ctx->future();
-  // check username and password failed
-  auto authResult = auth(username, password);
+  // Check username and password failed
+  // Check whether the client has called verifyClientVersion()
+  auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
+  auto authResult = auth(username, password, clientAddr);
   if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
     ctx->resp().errorMsg.reset(new std::string(authResult.toString()));
@@ -202,14 +204,17 @@ folly::Future<std::string> GraphService::future_executeJsonWithParameter(
   });
 }
 
-Status GraphService::auth(const std::string& username, const std::string& password) {
+Status GraphService::auth(const std::string& username,
+                          const std::string& password,
+                          const HostAddr& clientIp) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
 
   if (FLAGS_auth_type == "password") {
     auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
-    return authenticator->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
+    return authenticator->auth(
+        username, proxygen::md5Encode(folly::StringPiece(password)), clientIp);
   } else if (FLAGS_auth_type == "cloud") {
     // Cloud user and native user will be mixed.
     // Since cloud user and native user has the same transport protocol,
@@ -230,6 +235,7 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   folly::splitTo<std::string>(
       ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
   cpp2::VerifyClientVersionResp resp;
+
   if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
     resp.error_msg_ref() = folly::stringPrintf(
@@ -239,6 +245,11 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   } else {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
+
+  // The client sent request has a version >= v2.6.0, mark the address as valid
+  auto* peer = getRequestContext()->getPeerAddress();
+  auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
+  metaClient_->getClientAddr().insert(clientAddr, true);
   return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
 }
 }  // namespace graph

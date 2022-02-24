@@ -154,6 +154,8 @@ using MetaConfigMap =
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
 using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
+
+using clientAddr = folly::ConcurrentHashMap<HostAddr, bool>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -569,7 +571,9 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  Status authCheckFromCache(const std::string& account, const std::string& password);
+  Status authCheckFromCache(const std::string& account,
+                            const std::string& password,
+                            const HostAddr& clientIp);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
@@ -639,6 +643,10 @@ class MetaClient {
 
   std::string getLocalIp() {
     return options_.localHost_.toString();
+  }
+
+  clientAddr& getClientAddr() {
+    return clientAddr_;
   }
 
  protected:
@@ -806,6 +814,18 @@ class MetaClient {
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
+
+  // TODO(Aiee) This is a walkround to address the problem that using a lower version(< v2.6.0)
+  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
+  //
+  // The key here is the host of the client that sends the request, and the value indicates whether
+  // the service allows the connection from that address.
+  //
+  // The assumption here is that there is ONLY ONE VERSION of the client in the host.
+  //
+  // This map will be updated when verifyVersion() is called. Only the clients since v2.6.0 will
+  // call verifyVersion(), thus we could determine whether the client version is lower than v2.6.0
+  clientAddr clientAddr_;
 
   // Global service client
   ServiceClientsList serviceClientList_;

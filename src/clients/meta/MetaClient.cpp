@@ -2293,11 +2293,29 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   return iter->second;
 }
 
-Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+Status MetaClient::authCheckFromCache(const std::string& account,
+                                      const std::string& password,
+                                      const HostAddr& clientIp) {
   // Check meta service status
   if (!ready_) {
     return Status::Error("Meta Service not ready");
   }
+
+  // TODO(Aiee) This is a walkround to address the problem that using a lower version(< v2.6.0)
+  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
+  //
+  // Only the clients since v2.6.0 will call verifyVersion(), thus we could determine whether the
+  // client version is lower than v2.6.0
+  auto clientAddrIt = clientAddr_.find(clientIp);
+  if (clientAddrIt == clientAddr_.end()) {
+    return Status::Error(
+        folly::sformat("The version of the client sending request from {} is lower than v2.6.0, "
+                       "please update the client.",
+                       clientIp.toString()));
+  }
+  // clear the key
+  clientAddr_.erase(clientAddrIt);
+
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto iter = metadata.userPasswordMap_.find(account);
