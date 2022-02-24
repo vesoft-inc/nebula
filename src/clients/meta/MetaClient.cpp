@@ -2486,6 +2486,11 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     }
   }
 
+  // TTL for clientAddrMap
+  // If multiple connections are created but do not authenticate, the clientAddr_ will keep growing.
+  // This is to clear the clientAddr_ regularly.
+  clientAddr_.clear();
+
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
   // reported every time it changes
