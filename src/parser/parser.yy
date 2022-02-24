@@ -312,7 +312,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> case_condition
 %type <expr> case_default
 
-%type <match_path> match_path_pattern match_relationship_pattern
+%type <match_path> match_path_pattern match_relationships_pattern
 %type <match_path> match_path
 %type <match_path_list> match_path_list
 %type <match_node> match_node
@@ -1123,7 +1123,7 @@ uuid_expression
     ;
 
 match_path_pattern_expression
-    : match_relationship_pattern {
+    : match_relationships_pattern {
         $$ = MatchPathPatternExpression::make(qctx->objPool(), std::unique_ptr<MatchPath>($1));
     }
     ;
@@ -1715,12 +1715,12 @@ match_sentence
     }
     ;
 
-match_relationship_pattern
+match_relationships_pattern
     : match_node match_edge match_node {
         $$ = new MatchPath($1);
         $$->add($2, $3);
     }
-    | match_relationship_pattern match_edge match_node {
+    | match_relationships_pattern match_edge match_node {
         $$ = $1;
         $$->add($2, $3);
     }
