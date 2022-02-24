@@ -16,17 +16,6 @@ macro(nebula_add_executable)
         ${nebula_exec_LIBRARIES}
     )
 
-    if(${nebula_exec_NAME} MATCHES "_test$")
-        set_target_properties(
-            ${nebula_exec_NAME}
-            PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test
-        )
-    elseif(${nebula_exec_NAME} MATCHES "_bm$")
-        set_target_properties(
-            ${nebula_exec_NAME}
-            PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/bench
-        )
-    endif()
     if(TARGET common_project)
         add_dependencies(
             ${nebula_exec_NAME}

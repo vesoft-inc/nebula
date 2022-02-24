@@ -22,4 +22,9 @@ endif()
 print_config(CMAKE_INSTALL_PREFIX)
 
 
-set(CMAKE_SKIP_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+elseif(UNIX)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()

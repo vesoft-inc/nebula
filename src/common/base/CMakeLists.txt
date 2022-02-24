@@ -16,5 +16,6 @@ nebula_add_library(
     SlowOpTracker.cpp
     ${gdb_debug_script}
 )
+#target_link_libraries(base_obj PUBLIC "${Glog_LIBRARY}")
 
 nebula_add_subdirectory(test)
