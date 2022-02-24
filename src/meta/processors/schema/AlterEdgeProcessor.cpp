@@ -15,6 +15,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
   const auto& edgeName = req.get_edge_name();
 
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto ret = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(ret)) {

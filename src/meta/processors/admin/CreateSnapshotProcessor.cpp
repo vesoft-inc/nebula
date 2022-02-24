@@ -31,7 +31,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   }
 
   auto snapshot = folly::sformat("SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
-  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
 
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {

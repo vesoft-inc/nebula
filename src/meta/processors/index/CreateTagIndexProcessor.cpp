@@ -36,6 +36,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     return;
   }
 
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto ret = getIndexID(space, indexName);
   if (nebula::ok(ret)) {

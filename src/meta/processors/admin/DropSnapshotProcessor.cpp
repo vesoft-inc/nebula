@@ -13,7 +13,7 @@ namespace meta {
 
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   auto& snapshot = req.get_name();
-  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
 
   // Check snapshot is exists
   auto key = MetaKeyUtils::snapshotKey(snapshot);

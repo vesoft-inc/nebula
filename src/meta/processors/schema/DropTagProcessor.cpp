@@ -12,6 +12,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& tagName = req.get_tag_name();
 

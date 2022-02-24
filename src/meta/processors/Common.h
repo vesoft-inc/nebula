@@ -19,6 +19,16 @@ class LockUtils {
     static folly::SharedMutex lock;
     return lock;
   }
+
+  static folly::SharedMutex& snapshotLock() {
+    static folly::SharedMutex snapshotLock;
+    return snapshotLock;
+  }
+
+  static folly::SharedMutex& sessionLock() {
+    static folly::SharedMutex sessionLock;
+    return sessionLock;
+  }
 };
 
 }  // namespace meta

@@ -36,6 +36,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     return;
   }
 
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto ret = getIndexID(space, indexName);
   if (nebula::ok(ret)) {

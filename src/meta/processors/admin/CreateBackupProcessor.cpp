@@ -97,7 +97,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
 
-  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
   // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
