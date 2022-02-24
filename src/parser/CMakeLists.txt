@@ -43,4 +43,9 @@ nebula_add_library(
     MatchSentence.cpp
 )
 
+nebula_add_library(
+    ast_match_path_obj OBJECT
+    MatchPath.cpp
+)
+
 nebula_add_subdirectory(test)

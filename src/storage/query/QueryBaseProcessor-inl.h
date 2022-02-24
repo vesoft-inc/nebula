@@ -599,7 +599,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kTSFuzzy:
     case Expression::Kind::kAggregate:
     case Expression::Kind::kSubscriptRange:
-    case Expression::Kind::kVersionedVar: {
+    case Expression::Kind::kVersionedVar:
+    case Expression::Kind::kMatchPathPattern: {
       LOG(ERROR) << "Unimplemented expression type! kind = " << exp->kind();
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
     }

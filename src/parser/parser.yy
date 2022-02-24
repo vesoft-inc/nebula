@@ -250,6 +250,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> text_search_expression
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
+%type <expr> match_path_pattern_expression
 %type <argument_list> argument_list opt_argument_list
 %type <geo_shape> geo_shape_type
 %type <type> type_spec
@@ -702,6 +703,9 @@ expression_internal
     | uuid_expression {
         $$ = $1;
     }
+    | match_path_pattern_expression {
+        $$ = $1;
+    }
     ;
 
 constant_expression
@@ -1115,6 +1119,12 @@ function_call_expression
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
         $$ = UUIDExpression::make(qctx->objPool());
+    }
+    ;
+
+match_path_pattern_expression
+    : match_path_pattern {
+        $$ = MatchPathPatternExpression::make(qctx->objPool(), std::unique_ptr<MatchPath>($1));
     }
     ;
 

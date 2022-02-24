@@ -7,6 +7,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
@@ -40,6 +41,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
