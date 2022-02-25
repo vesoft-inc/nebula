@@ -11,6 +11,38 @@
 namespace nebula {
 namespace opt {
 
+/*
+  Push down the filter items
+  Required conditions:
+   1. Match the pattern
+  Benefits:
+   1. Filter data early to optimize performance
+
+  Tranformation:
+  Before:
+
+  +-------------+-------------+
+  |           Filter          |
+  |   ($^.age>3 and $$.age<4) |
+  +-------------+-------------+
+                |
+      +---------+---------+
+      |   GetNeighbors    |
+      +---------+---------+
+
+  After:
+
+  +--------+--------+
+  |      Filter     |
+  |     ($$.age<4)  |
+  +--------+--------+
+           |
+ +---------+---------+
+ |    GetNeighbors   |
+ |     ($^.age>3)    |
+ +---------+---------+
+
+*/
 class PushLimitDownGetNeighborsRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
