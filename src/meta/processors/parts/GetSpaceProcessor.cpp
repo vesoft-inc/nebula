@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& spaceName = req.get_space_name();
 
   auto spaceRet = getSpaceId(spaceName);

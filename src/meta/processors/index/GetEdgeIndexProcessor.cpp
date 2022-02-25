@@ -12,7 +12,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
   auto spaceID = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceID);
   auto indexName = req.get_index_name();
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto edgeIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(edgeIndexIDRet)) {
     auto retCode = nebula::error(edgeIndexIDRet);

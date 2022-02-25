@@ -10,7 +10,7 @@ namespace meta {
 
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& spaceName = req.get_space_name();
   auto spaceRet = getSpaceId(spaceName);
 

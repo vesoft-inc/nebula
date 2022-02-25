@@ -13,7 +13,7 @@ namespace meta {
 
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   auto& snapshot = req.get_name();
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
 
   // Check snapshot is exists
   auto key = MetaKeyUtils::snapshotKey(snapshot);
@@ -53,9 +53,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
                       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
     auto putRet = doSyncPut(std::move(data));
     if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Update snapshot status error. "
-                   "snapshot : "
-                << snapshot;
+      LOG(INFO) << "Update snapshot status error. snapshot: " << snapshot;
     }
     handleErrorCode(putRet);
     onFinished();
@@ -72,9 +70,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
                       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
     auto putRet = doSyncPut(std::move(data));
     if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Update snapshot status error. "
-                   "snapshot : "
-                << snapshot;
+      LOG(INFO) << "Update snapshot status error. snapshot: " << snapshot;
     }
     handleErrorCode(putRet);
     onFinished();

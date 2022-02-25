@@ -12,7 +12,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
   auto spaceID = req.get_space_id();
   const auto& indexName = req.get_index_name();
   CHECK_SPACE_ID_AND_RETURN(spaceID);
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
 
   auto tagIndexIDRet = getIndexID(spaceID, indexName);
   if (!nebula::ok(tagIndexIDRet)) {

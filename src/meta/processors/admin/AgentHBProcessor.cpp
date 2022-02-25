@@ -28,6 +28,7 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
   HostAddr agentAddr((*req.host_ref()).host, (*req.host_ref()).port);
   LOG(INFO) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
 
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     // update agent host info
