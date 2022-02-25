@@ -6,8 +6,6 @@
 #ifndef STORAGE_QUERY_GETPROPPROCESSOR_H_
 #define STORAGE_QUERY_GETPROPPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "common/base/Base.h"
 #include "storage/exec/StoragePlan.h"
 #include "storage/query/QueryBaseProcessor.h"

@@ -27,6 +27,7 @@ Status GetSubgraphValidator::validateImpl() {
   return Status::OK();
 }
 
+// Validate in-bound edge types
 Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   if (in != nullptr) {
@@ -49,6 +50,7 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
   return Status::OK();
 }
 
+// Validate out-bound edge types
 Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   if (out != nullptr) {
@@ -70,6 +72,7 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
   return Status::OK();
 }
 
+// Validate bidirectional(in-bound and out-bound) edge types
 Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   if (out != nullptr) {
@@ -93,6 +96,7 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   return Status::OK();
 }
 
+// Validate yield clause, which only supports YIELD vertices or edges
 Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
