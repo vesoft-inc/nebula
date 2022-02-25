@@ -77,8 +77,9 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
     if (statusVec[i].ok()) {
       std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(INFO) << apache::thrift::util::enumNameSafe(code);
-        LOG(INFO) << folly::sformat("term of part {} is invalid", partIdVec[i]);
+        LOG(INFO) << folly::sformat("term of part {} is invalid, error = {}",
+                                    partIdVec[i],
+                                    apache::thrift::util::enumNameSafe(code));
         continue;
       }
       VLOG(2) << folly::sformat("term of part {} is {}", partIdVec[i], term);

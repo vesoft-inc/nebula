@@ -261,7 +261,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       ss << host << ", ";
     }
 
-    LOG(INFO) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
+    VLOG(2) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
     data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(partHosts));
   }
 
