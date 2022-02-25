@@ -13,6 +13,38 @@
 namespace nebula {
 namespace opt {
 
+/*
+  Push down the filter items
+  Required conditions:
+   1. Match the pattern
+  Benefits:
+   1. Filter data early to optimize performance
+
+  Tranformation:
+  Before:
+
+  +-------------+-------------+
+  |           Filter          |
+  |($p1>3 and $p2<4 and $p1<9)|
+  +-------------+-------------+
+                |
+      +---------+---------+
+      |   ScanVertices    |
+      +---------+---------+
+
+  After:
+
+  +--------+--------+
+  |      Filter     |
+  |($p1>3 and $p1<9)|
+  +--------+--------+
+           |
+ +---------+---------+
+ |    ScanVertices   |
+ |      ($p2<4)      |
+ +---------+---------+
+
+*/
 class PushFilterDownScanVerticesRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
