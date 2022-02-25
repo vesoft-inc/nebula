@@ -12,18 +12,18 @@ namespace nebula {
 namespace opt {
 
 /*
-  Push down the filter items
+  Push down the limit to storage layer
   Required conditions:
    1. Match the pattern
   Benefits:
-   1. Filter data early to optimize performance
+   1. Limit data early to optimize performance
 
   Tranformation:
   Before:
 
   +-------------+-------------+
-  |           Filter          |
-  |   ($^.age>3 and $$.age<4) |
+  |           Limit           |
+  |        (limit =3)         |
   +-------------+-------------+
                 |
       +---------+---------+
@@ -33,13 +33,13 @@ namespace opt {
   After:
 
   +--------+--------+
-  |      Filter     |
-  |     ($$.age<4)  |
+  |      Limit      |
+  |    (limit=3)    |
   +--------+--------+
            |
  +---------+---------+
  |    GetNeighbors   |
- |     ($^.age>3)    |
+ |     (limit=3)     |
  +---------+---------+
 
 */
