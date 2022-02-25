@@ -16,7 +16,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   const auto& tagName = req.get_tag_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto ret = getTagId(spaceId, tagName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);

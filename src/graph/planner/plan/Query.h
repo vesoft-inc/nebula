@@ -1168,6 +1168,8 @@ class Dedup final : public SingleInputNode {
     return qctx->objPool()->add(new Dedup(qctx, input));
   }
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   PlanNode* clone() const override;
 
  private:

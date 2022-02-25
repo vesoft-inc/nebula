@@ -12,7 +12,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto prefix = MetaKeyUtils::schemaEdgesPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {

@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto spaceId = req.get_space_id();
   auto prefix = MetaKeyUtils::partPrefix(spaceId);
   auto iterRet = doPrefix(prefix);
