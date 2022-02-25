@@ -2306,15 +2306,15 @@ Status MetaClient::authCheckFromCache(const std::string& account,
   //
   // Only the clients since v2.6.0 will call verifyVersion(), thus we could determine whether the
   // client version is lower than v2.6.0
-  auto clientAddrIt = clientAddr_.find(clientIp);
-  if (clientAddrIt == clientAddr_.end()) {
+  auto clientAddrIt = clientAddrMap_.find(clientIp);
+  if (clientAddrIt == clientAddrMap_.end()) {
     return Status::Error(
         folly::sformat("The version of the client sending request from {} is lower than v2.6.0, "
                        "please update the client.",
                        clientIp.toString()));
   }
   // clear the key
-  clientAddr_.erase(clientAddrIt);
+  // clientAddrMap_.erase(clientAddrIt);
 
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
@@ -2487,9 +2487,9 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   }
 
   // TTL for clientAddrMap
-  // If multiple connections are created but do not authenticate, the clientAddr_ will keep growing.
-  // This is to clear the clientAddr_ regularly.
-  clientAddr_.clear();
+  // If multiple connections are created but do not authenticate, the clientAddrMap_ will keep
+  // growing. This is to clear the clientAddrMap_ regularly.
+  clearClientAddrMap();
 
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
@@ -3641,6 +3641,22 @@ Status MetaClient::verifyVersion() {
     return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
   }
   return Status::OK();
+}
+
+void MetaClient::clearClientAddrMap() {
+  if (clientAddrMap_.size() == 0) {
+    return;
+  }
+
+  auto curTimestamp = time::WallClock::fastNowInSec();
+  for (auto it = clientAddrMap_.cbegin(); it != clientAddrMap_.cend();) {
+    // The clientAddr is expired
+    if (it->second < curTimestamp) {
+      it = clientAddrMap_.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 }  // namespace meta
 }  // namespace nebula

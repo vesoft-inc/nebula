@@ -24,6 +24,8 @@
 namespace nebula {
 namespace graph {
 
+const int64_t clientAddrTimeout = 60;
+
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
                           const HostAddr& hostAddr) {
   auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
@@ -249,7 +251,9 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   // The client sent request has a version >= v2.6.0, mark the address as valid
   auto* peer = getRequestContext()->getPeerAddress();
   auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
-  metaClient_->getClientAddr().insert(clientAddr, true);
+
+  auto ttlTimestamp = time::WallClock::fastNowInSec() + clientAddrTimeout;
+  metaClient_->getClientAddrMap().insert(clientAddr, ttlTimestamp);
   return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
 }
 }  // namespace graph
