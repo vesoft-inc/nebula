@@ -11,6 +11,16 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop space and its relative meta info, including:
+ *        - part hosts distribution
+ *        - space id and space spec
+ *        - role data
+ *        - listener meta data
+ *        - status data
+ *        - fulltext data
+ *        - local id
+ */
 class DropSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropSpaceProcessor* instance(kvstore::KVStore* kvstore) {

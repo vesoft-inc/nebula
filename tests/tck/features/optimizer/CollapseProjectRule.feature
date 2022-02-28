@@ -64,3 +64,44 @@ Feature: Collapse Project Rule
       | 3  | Traverse       | 8            |                                                                                                                                                                     |
       | 8  | IndexScan      | 2            | {"indexCtx": {"columnHints":{"scanType":"PREFIX","column":"name","beginValue":"\"Tim Duncan\"","endValue":"__EMPTY__","includeBegin":"true","includeEnd":"false"}}} |
       | 2  | Start          |              |                                                                                                                                                                     |
+    When profiling query:
+      """
+      MATCH (v1:player)-[:like*1..2]-(v2:player)-[:serve]->(v3:team)
+      WHERE id(v1)=="Tim Duncan" and v3.team.name < "z"
+      RETURN DISTINCT v2.player.age AS vage ,v2.player.name AS vname
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vage | vname               |
+      | 31   | "JaVale McGee"      |
+      | 47   | "Shaquille O'Neal"  |
+      | 31   | "Danny Green"       |
+      | 32   | "Rudy Gay"          |
+      | 25   | "Kyle Anderson"     |
+      | 34   | "LeBron James"      |
+      | 33   | "Chris Paul"        |
+      | 28   | "Damian Lillard"    |
+      | 33   | "LaMarcus Aldridge" |
+      | 32   | "Marco Belinelli"   |
+      | 29   | "James Harden"      |
+      | 30   | "Kevin Durant"      |
+      | 30   | "Russell Westbrook" |
+      | 36   | "Boris Diaw"        |
+      | 36   | "Tony Parker"       |
+      | 32   | "Aron Baynes"       |
+      | 38   | "Yao Ming"          |
+      | 34   | "Tiago Splitter"    |
+      | 41   | "Manu Ginobili"     |
+      | 42   | "Tim Duncan"        |
+      | 29   | "Dejounte Murray"   |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 11 | DataCollect    | 10           |               |
+      | 10 | Dedup          | 14           |               |
+      | 14 | Project        | 12           |               |
+      | 12 | Filter         | 6            |               |
+      | 6  | AppendVertices | 5            |               |
+      | 5  | Traverse       | 4            |               |
+      | 4  | Traverse       | 2            |               |
+      | 2  | Dedup          | 1            |               |
+      | 1  | PassThrough    | 3            |               |
+      | 3  | Start          |              |               |

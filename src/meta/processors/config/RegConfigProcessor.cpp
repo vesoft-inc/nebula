@@ -11,7 +11,7 @@ namespace meta {
 void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
   std::vector<kvstore::KV> data;
   {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
     for (const auto& item : req.get_items()) {
       auto module = item.get_module();
       auto name = item.get_name();

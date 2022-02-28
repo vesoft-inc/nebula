@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get the tag schema with given version or latest version.
+ *
+ */
 class GetTagProcessor : public BaseProcessor<cpp2::GetTagResp> {
  public:
   static GetTagProcessor* instance(kvstore::KVStore* kvstore) {

@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get all edge schemas of all version for given space id.
+ *
+ */
 class ListEdgesProcessor : public BaseProcessor<cpp2::ListEdgesResp> {
  public:
   /*

@@ -106,6 +106,7 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
   for (const auto& [host, spaces] : hostSpaces) {
     LOG(INFO) << "will block write host: " << host;
     auto result = client_->blockingWrites(spaces, sign, host).get();
+    LOG(INFO) << "after block write host";
     if (!result.ok()) {
       LOG(INFO) << "Send blocking sign error on host " << host
                 << ", errorcode: " << result.status().toString();
@@ -120,7 +121,6 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
 
 ErrorOr<nebula::cpp2::ErrorCode, std::map<HostAddr, std::set<GraphSpaceID>>>
 Snapshot::getHostSpaces() {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);

@@ -11,8 +11,7 @@ namespace nebula {
 namespace meta {
 
 void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::WriteHolder lockHolder(LockUtils::lock());
   auto hosts = req.get_hosts();
   if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
     LOG(INFO) << "Hosts have duplicated element";

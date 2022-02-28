@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get space description(SpaceDesc) with space name
+ *
+ */
 class GetSpaceProcessor : public BaseProcessor<cpp2::GetSpaceResp> {
  public:
   static GetSpaceProcessor* instance(kvstore::KVStore* kvstore) {
