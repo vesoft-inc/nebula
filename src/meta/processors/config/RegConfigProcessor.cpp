@@ -11,7 +11,7 @@ namespace meta {
 void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
   std::vector<kvstore::KV> data;
   {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
     for (const auto& item : req.get_items()) {
       auto module = item.get_module();
       auto name = item.get_name();
@@ -28,7 +28,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
       } else {
         auto retCode = nebula::error(configRet);
         if (retCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-          LOG(ERROR) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+          LOG(INFO) << "Get config Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
           handleErrorCode(retCode);
           onFinished();
           return;

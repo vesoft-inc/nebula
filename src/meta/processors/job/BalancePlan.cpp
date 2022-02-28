@@ -8,7 +8,6 @@
 #include <folly/synchronization/Baton.h>
 
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
@@ -48,7 +47,7 @@ void BalancePlan::invoke() {
         {
           std::lock_guard<std::mutex> lg(lock_);
           finishedTaskNum_++;
-          VLOG(1) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
+          LOG(INFO) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
           if (finishedTaskNum_ == tasks_.size()) {
             finished = true;
             if (status() == meta::cpp2::JobStatus::RUNNING) {
@@ -91,7 +90,7 @@ void BalancePlan::invoke() {
           std::lock_guard<std::mutex> lg(lock_);
           finishedTaskNum_++;
           failed_ = true;
-          VLOG(1) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
+          LOG(INFO) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
           setStatus(meta::cpp2::JobStatus::FAILED);
           if (finishedTaskNum_ == tasks_.size()) {
             finished = true;
@@ -152,7 +151,7 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore() {
                      [&baton, &ret](nebula::cpp2::ErrorCode code) {
                        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
                          ret = code;
-                         LOG(ERROR)
+                         LOG(INFO)
                              << "Can't write the kvstore, ret = " << static_cast<int32_t>(code);
                        }
                        baton.post();
@@ -205,7 +204,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+    LOG(INFO) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
     return ret;
   }
   std::vector<BalanceTask> tasks;
@@ -234,16 +233,15 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
         if (task.ret_ == BalanceTaskResult::FAILED || task.ret_ == BalanceTaskResult::INVALID) {
           task.ret_ = BalanceTaskResult::IN_PROGRESS;
         }
-        task.status_ = BalanceTaskStatus::START;
         auto activeHostRet = ActiveHostsMan::isLived(kv, task.dst_);
         if (!nebula::ok(activeHostRet)) {
           auto retCode = nebula::error(activeHostRet);
-          LOG(ERROR) << "Get active hosts failed, error: " << static_cast<int32_t>(retCode);
+          LOG(INFO) << "Get active hosts failed, error: " << static_cast<int32_t>(retCode);
           return retCode;
         } else {
           auto isLive = nebula::value(activeHostRet);
           if (!isLive) {
-            LOG(ERROR) << "The destination is not lived";
+            LOG(INFO) << "The destination is not lived";
             task.ret_ = BalanceTaskResult::INVALID;
           }
         }

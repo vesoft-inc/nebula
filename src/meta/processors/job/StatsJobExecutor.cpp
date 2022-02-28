@@ -7,7 +7,6 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
@@ -45,7 +44,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::doRemove(const std::string& key) {
 nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
   auto spaceRet = getSpaceIdFromName(paras_[0]);
   if (!nebula::ok(spaceRet)) {
-    LOG(ERROR) << "Can't find the space: " << paras_[0];
+    LOG(INFO) << "Can't find the space: " << paras_[0];
     return nebula::error(spaceRet);
   }
   space_ = nebula::value(spaceRet);
@@ -60,17 +59,27 @@ nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
 
 folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
                                                         std::vector<PartitionID>&& parts) {
-  cpp2::StatsItem item;
-  statsItem_.emplace(address, item);
-  return adminClient_->addTask(cpp2::AdminCmd::STATS,
-                               jobId_,
-                               taskId_++,
-                               space_,
-                               {std::move(address)},
-                               {},
-                               std::move(parts),
-                               concurrency_,
-                               &(statsItem_[address]));
+  folly::Promise<Status> pro;
+  auto f = pro.getFuture();
+  adminClient_
+      ->addTask(cpp2::AdminCmd::STATS,
+                jobId_,
+                taskId_++,
+                space_,
+                std::move(address),
+                {},
+                std::move(parts),
+                concurrency_)
+      .then([pro = std::move(pro)](auto&& t) mutable {
+        CHECK(!t.hasException());
+        auto status = std::move(t).value();
+        if (status.ok()) {
+          pro.setValue(Status::OK());
+        } else {
+          pro.setValue(status.status());
+        }
+      });
+  return f;
 }
 
 void showStatsItem(const cpp2::StatsItem& item, const std::string& msg) {
@@ -158,7 +167,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't find the stats data, spaceId : " << space_;
+    LOG(INFO) << "Can't find the stats data, spaceId : " << space_;
     return ret;
   }
   auto statsItem = MetaKeyUtils::parseStatsVal(val);
@@ -170,7 +179,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
   auto statsVal = MetaKeyUtils::statsVal(statsItem);
   auto retCode = save(statsKey, statsVal);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Sace stats data failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Sace stats data failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return doRemove(tempKey);
@@ -179,7 +188,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
 nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   auto errOrTargetHost = getTargetHost(space_);
   if (!nebula::ok(errOrTargetHost)) {
-    LOG(ERROR) << "Get target host failed";
+    LOG(INFO) << "Get target host failed";
     auto retCode = nebula::error(errOrTargetHost);
     if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
@@ -188,21 +197,22 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   }
 
   auto& hosts = nebula::value(errOrTargetHost);
-  std::vector<folly::Future<Status>> futures;
+  std::vector<folly::Future<StatusOr<bool>>> futures;
   for (auto& host : hosts) {
-    auto future = adminClient_->stopTask({Utils::getAdminAddrFromStoreAddr(host.first)}, jobId_, 0);
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    auto future = adminClient_->stopTask(host.first, jobId_, 0);
     futures.emplace_back(std::move(future));
   }
 
   auto tries = folly::collectAll(std::move(futures)).get();
   if (std::any_of(tries.begin(), tries.end(), [](auto& t) { return t.hasException(); })) {
-    LOG(ERROR) << "stats job stop() RPC failure.";
+    LOG(INFO) << "stats job stop() RPC failure.";
     return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
   }
 
   for (const auto& t : tries) {
     if (!t.value().ok()) {
-      LOG(ERROR) << "Stop stats job Failed";
+      LOG(INFO) << "Stop stats job Failed";
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }

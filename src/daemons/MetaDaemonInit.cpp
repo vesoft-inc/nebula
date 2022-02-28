@@ -46,7 +46,6 @@ DEFINE_int32(meta_num_worker_threads, 32, "Number of workers");
 DEFINE_string(meta_data_path, "", "Root data path");
 DECLARE_string(meta_server_addrs);  // use define from grap flags.
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 #endif
 
 using nebula::web::PathParams;
@@ -145,13 +144,8 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     LOG(ERROR) << "Meta version is invalid";
     return nullptr;
   } else if (version == nebula::meta::MetaVersion::V1) {
-    auto ret = nebula::meta::MetaVersionMan::updateMetaV1ToV2(engine);
-    if (!ret.ok()) {
-      LOG(ERROR) << "Update meta from V1 to V2 failed " << ret;
-      return nullptr;
-    }
-
-    nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V2);
+    LOG(ERROR) << "Can't upgrade meta from V1 to V3";
+    return nullptr;
   } else if (version == nebula::meta::MetaVersion::V2) {
     auto ret = nebula::meta::MetaVersionMan::updateMetaV2ToV3(engine);
     if (!ret.ok()) {
@@ -190,6 +184,6 @@ nebula::Status initWebService(nebula::WebService* svc,
 #ifndef BUILD_STANDALONE
   return svc->start();
 #else
-  return svc->start(FLAGS_ws_meta_http_port, FLAGS_ws_meta_h2_port);
+  return svc->start(FLAGS_ws_meta_http_port);
 #endif
 }

@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Assign an incremental work id for each host in cluster, used to
+ *        generate snowflake uuid
+ *
+ */
 class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
  public:
   static GetWorkerIdProcessor* instance(kvstore::KVStore* kvstore) {
@@ -30,8 +35,6 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
     }();
     UNUSED(once);
   }
-
-  void doPut(std::vector<kvstore::KV> data);
 
   inline static const string kIdKey = "snowflake_worker_id";
 };

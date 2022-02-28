@@ -13,8 +13,8 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-  auto tagName = req.get_tag_name();
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  const auto& tagName = req.get_tag_name();
 
   TagID tagId;
   auto indexKey = MetaKeyUtils::indexTagKey(spaceId, tagName);
@@ -28,12 +28,12 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop tag failed :" << tagName << " not found.";
+        LOG(INFO) << "Drop tag failed :" << tagName << " not found.";
         retCode = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
       }
     } else {
-      LOG(ERROR) << "Get Tag failed, tag name " << tagName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get Tag failed, tag name " << tagName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -47,7 +47,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     return;
   }
   if (!nebula::value(indexes).empty()) {
-    LOG(ERROR) << "Drop tag error, index conflict, please delete index first.";
+    LOG(INFO) << "Drop tag error, index conflict, please delete index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -55,8 +55,8 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
 
   auto ftIdxRet = getFTIndex(spaceId, tagId);
   if (nebula::ok(ftIdxRet)) {
-    LOG(ERROR) << "Drop tag error, fulltext index conflict, "
-               << "please delete fulltext index first.";
+    LOG(INFO) << "Drop tag error, fulltext index conflict, "
+              << "please delete fulltext index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -87,7 +87,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropTagProcessor::get
   auto key = MetaKeyUtils::schemaTagPrefix(id, tagId);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "Tag schema prefix failed, tag id " << tagId;
+    LOG(INFO) << "Tag schema prefix failed, tag id " << tagId;
     return nebula::error(iterRet);
   }
 

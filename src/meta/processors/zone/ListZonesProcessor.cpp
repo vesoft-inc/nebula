@@ -9,12 +9,12 @@ namespace nebula {
 namespace meta {
 
 void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

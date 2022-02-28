@@ -20,7 +20,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     return;
   }
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::workerIdLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto newResult = doGet(kIdKey);
   if (!nebula::ok(newResult)) {
     handleErrorCode(nebula::cpp2::ErrorCode::E_WORKER_ID_FAILED);
@@ -29,24 +29,12 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   }
 
   int64_t workerId = std::stoi(std::move(nebula::value(newResult)));
+  resp_.workerid_ref() = workerId;
+  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+
   // TODO: (jackwener) limit worker, add LOG ERROR
   doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
-
-  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.workerid_ref() = workerId;
   onFinished();
-}
-
-void GetWorkerIdProcessor::doPut(std::vector<kvstore::KV> data) {
-  folly::Baton<true, std::atomic> baton;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [this, &baton](nebula::cpp2::ErrorCode code) {
-                            this->handleErrorCode(code);
-                            baton.post();
-                          });
-  baton.wait();
 }
 
 }  // namespace meta

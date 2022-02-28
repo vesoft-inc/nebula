@@ -7,7 +7,6 @@
 #define META_ADMIN_SNAPSHOT_H_
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include <gtest/gtest_prod.h>
 
 #include "common/network/NetworkUtils.h"
 #include "common/time/WallClock.h"
@@ -17,6 +16,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create and drop snapshots for given spaces in
+ *        storage hosts(include followers)
+ *        Another feature is providing blocking/unbloking writings.
+ *
+ */
 class Snapshot {
  public:
   static Snapshot* instance(kvstore::KVStore* kv, AdminClient* client) {
@@ -34,8 +39,22 @@ class Snapshot {
           std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>>>
   createSnapshot(const std::string& name);
 
+  /**
+   * @brief Drop specified snapshot in given storage hosts
+   *
+   * @param name snapshot name
+   * @param hosts storage hosts
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
+  /**
+   * @brief Blocking writings before create snapshot, allow writings after create
+   *        snapshot failed or completely
+   *
+   * @param sign BLOCK_ON and BLOCK_OFF(allow)
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
  private:

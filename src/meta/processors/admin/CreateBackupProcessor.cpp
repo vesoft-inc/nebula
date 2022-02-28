@@ -15,7 +15,6 @@ namespace meta {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::unordered_set<GraphSpaceID>>
 CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpaces) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   std::unordered_set<GraphSpaceID> spaces;
 
   bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
@@ -30,7 +29,7 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
     auto result = doMultiGet(std::move(keys));
     if (!nebula::ok(result)) {
       auto err = nebula::error(result);
-      LOG(ERROR) << "Failed to get space id, error: " << apache::thrift::util::enumNameSafe(err);
+      LOG(INFO) << "Failed to get space id, error: " << apache::thrift::util::enumNameSafe(err);
       if (err == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
         return nebula::cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND;
       }
@@ -50,7 +49,7 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
       auto retCode = nebula::error(iterRet);
-      LOG(ERROR) << "Space prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Space prefix failed, error: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
 
@@ -65,8 +64,8 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
   }
 
   if (spaces.empty()) {
-    LOG(ERROR) << "Failed to create a full backup because there is currently "
-                  "no space.";
+    LOG(INFO) << "Failed to create a full backup because there is currently "
+                 "no space.";
     return nebula::cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND;
   }
 
@@ -86,20 +85,19 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // make sure there is no index job
   auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
-    LOG(ERROR) << "get Index status failed, not allowed to create backup.";
+    LOG(INFO) << "Get Index status failed, not allowed to create backup.";
     handleErrorCode(nebula::error(result));
     onFinished();
     return;
   }
   if (nebula::value(result)) {
-    LOG(ERROR) << "Index is rebuilding, not allowed to create backup.";
+    LOG(INFO) << "Index is rebuilding, not allowed to create backup.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX);
     onFinished();
     return;
   }
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
-
+  folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
   // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
@@ -109,7 +107,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
   auto hosts = std::move(nebula::value(activeHostsRet));
   if (hosts.empty()) {
-    LOG(ERROR) << "There has some offline hosts";
+    LOG(INFO) << "There are some offline hosts";
     handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
     onFinished();
     return;
@@ -133,7 +131,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, NetworkUtils::toHostsStr(hosts)));
   auto putRet = doSyncPut(data);
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Write backup meta error";
+    LOG(INFO) << "Write backup meta error";
     handleErrorCode(putRet);
     onFinished();
     return;
@@ -143,11 +141,11 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // step 2 : Blocking all writes action for storage engines.
   auto ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_ON);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Send blocking sign to storage engine error";
+    LOG(INFO) << "Send blocking sign to storage engine error";
     handleErrorCode(ret);
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error";
     }
     onFinished();
     return;
@@ -156,12 +154,12 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // step 3 : Create checkpoint for all storage engines.
   auto sret = Snapshot::instance(kvstore_, client_)->createSnapshot(backupName);
   if (!nebula::ok(sret)) {
-    LOG(ERROR) << "Checkpoint create error on storage engine: "
-               << apache::thrift::util::enumNameSafe(nebula::error(sret));
+    LOG(INFO) << "Checkpoint create error on storage engine: "
+              << apache::thrift::util::enumNameSafe(nebula::error(sret));
     handleErrorCode(nebula::error(sret));
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error";
     }
     onFinished();
     return;
@@ -170,7 +168,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // step 4 created backup for meta(export sst).
   auto backupFiles = MetaServiceUtils::backupTables(kvstore_, spaces, backupName, backupSpaces);
   if (!nebula::ok(backupFiles)) {
-    LOG(ERROR) << "Failed backup meta";
+    LOG(INFO) << "Failed backup meta";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_FAILED);
     onFinished();
     return;
@@ -179,7 +177,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // step 5 : checkpoint created done, so release the write blocking.
   ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Cancel write blocking error";
+    LOG(INFO) << "Cancel write blocking error";
     handleErrorCode(ret);
     onFinished();
     return;
@@ -192,10 +190,10 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
   putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "All checkpoint creations are done, "
-                  "but update checkpoint status error. "
-                  "backup : "
-               << backupName;
+    LOG(INFO) << "All checkpoint creations are done, "
+                 "but update checkpoint status error. "
+                 "backup : "
+              << backupName;
     handleErrorCode(putRet);
     onFinished();
     return;
@@ -239,11 +237,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   backup.backup_name_ref() = std::move(backupName);
   backup.full_ref() = true;
   bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
-  if (allSpaces) {
-    backup.all_spaces_ref() = true;
-  } else {
-    backup.all_spaces_ref() = false;
-  }
+  backup.all_spaces_ref() = allSpaces;
   backup.create_time_ref() = time::WallClock::fastNowInMilliSec();
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

@@ -9,19 +9,19 @@ namespace nebula {
 namespace meta {
 
 void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
 
   const auto& prefix = MetaKeyUtils::configKeyPrefix(req.get_module());
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List configs failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List configs failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
-  auto iter = nebula::value(iterRet).get();
 
+  auto iter = nebula::value(iterRet).get();
   std::vector<cpp2::ConfigItem> items;
   while (iter->valid()) {
     auto key = iter->key();

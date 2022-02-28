@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINBASEPROCESSOR_H
+#define STORAGE_TRANSACTION_CHAINBASEPROCESSOR_H
 
 #include "common/utils/MemoryLockWrapper.h"
 #include "storage/CommonUtils.h"
@@ -20,6 +21,8 @@ using Code = ::nebula::cpp2::ErrorCode;
  *
  */
 class ChainBaseProcessor {
+  friend class ChainProcessorFactory;
+
  public:
   virtual ~ChainBaseProcessor() = default;
 
@@ -42,16 +45,13 @@ class ChainBaseProcessor {
   virtual void finish() = 0;
 
  protected:
-  void setErrorCode(Code code) {
-    if (code_ == Code::SUCCEEDED) {
-      code_ = code;
-    }
-  }
-
- protected:
-  Code code_ = Code::SUCCEEDED;
+  Code rcPrepare_ = Code::SUCCEEDED;
+  Code rcRemote_ = Code::E_UNKNOWN;
+  Code rcCommit_ = Code::E_UNKNOWN;
+  TermID term_;
   folly::Promise<Code> finished_;
 };
 
 }  // namespace storage
 }  // namespace nebula
+#endif

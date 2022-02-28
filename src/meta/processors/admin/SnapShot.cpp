@@ -10,7 +10,6 @@
 #include "common/network/NetworkUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
@@ -82,12 +81,11 @@ nebula::cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
       continue;
     }
 
-    auto status = client_->dropSnapshot(spaces, name, host).get();
-    if (!status.ok()) {
+    auto result = client_->dropSnapshot(spaces, name, host).get();
+    if (!result.ok()) {
       auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
-      auto error = folly::stringPrintf(
-          msg, name.c_str(), host.toString().c_str(), status.toString().c_str());
-      LOG(ERROR) << error;
+      LOG(INFO) << folly::stringPrintf(
+          msg, name.c_str(), host.toString().c_str(), result.status().toString().c_str());
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -107,10 +105,11 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
   auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (const auto& [host, spaces] : hostSpaces) {
     LOG(INFO) << "will block write host: " << host;
-    auto status = client_->blockingWrites(spaces, sign, host).get();
-    if (!status.ok()) {
-      LOG(ERROR) << "Send blocking sign error on host " << host
-                 << ", errorcode: " << status.message();
+    auto result = client_->blockingWrites(spaces, sign, host).get();
+    LOG(INFO) << "after block write host";
+    if (!result.ok()) {
+      LOG(INFO) << "Send blocking sign error on host " << host
+                << ", errorcode: " << result.status().toString();
       ret = nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
       if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
         break;
@@ -122,13 +121,12 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
 
 ErrorOr<nebula::cpp2::ErrorCode, std::map<HostAddr, std::set<GraphSpaceID>>>
 Snapshot::getHostSpaces() {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get hosts meta data failed, error: "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get hosts meta data failed, error: "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

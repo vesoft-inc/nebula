@@ -24,15 +24,15 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       auto name = column.get_name();
       auto defaultValueExpr = Expression::decode(pool, *column.default_value_ref());
       if (defaultValueExpr == nullptr) {
-        LOG(ERROR) << "Wrong format default value expression for column name: " << name;
+        LOG(INFO) << "Wrong format default value expression for column name: " << name;
         return false;
       }
       auto value = Expression::eval(defaultValueExpr, mContext);
       auto nullable = column.nullable_ref().value_or(false);
       if (nullable && value.isNull()) {
         if (value.getNull() != NullType::__NULL__) {
-          LOG(ERROR) << "Invalid default value for `" << name
-                     << "', it's the wrong null type: " << value.getNull();
+          LOG(INFO) << "Invalid default value for `" << name
+                    << "', it's the wrong null type: " << value.getNull();
           return false;
         }
         continue;
@@ -52,71 +52,71 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
   switch (column.get_type().get_type()) {
     case PropertyType::BOOL:
       if (!value.isBool()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::INT8: {
       if (!value.isInt()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
 
       auto v = value.getInt();
       if (v > std::numeric_limits<int8_t>::max() || v < std::numeric_limits<int8_t>::min()) {
-        LOG(ERROR) << "`" << name << "'  out of rang";
+        LOG(INFO) << "`" << name << "'  out of rang";
         return false;
       }
       return true;
     }
     case PropertyType::INT16: {
       if (!value.isInt()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
 
       auto v = value.getInt();
       if (v > std::numeric_limits<int16_t>::max() || v < std::numeric_limits<int16_t>::min()) {
-        LOG(ERROR) << "`" << name << "'  out of rang";
+        LOG(INFO) << "`" << name << "'  out of rang";
         return false;
       }
       return true;
     }
     case PropertyType::INT32: {
       if (!value.isInt()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
 
       auto v = value.getInt();
       if (v > std::numeric_limits<int32_t>::max() || v < std::numeric_limits<int32_t>::min()) {
-        LOG(ERROR) << "`" << name << "'  out of rang";
+        LOG(INFO) << "`" << name << "'  out of rang";
         return false;
       }
       return true;
     }
     case PropertyType::INT64:
       if (!value.isInt()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::FLOAT:
     case PropertyType::DOUBLE:
       if (!value.isFloat()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::STRING:
       if (!value.isStr()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::FIXED_STRING: {
       if (!value.isStr()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       auto& colType = column.get_type();
@@ -130,43 +130,43 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     }
     case PropertyType::TIMESTAMP: {
       if (!value.isInt()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       auto ret = time::TimeUtils::toTimestamp(value);
       if (!ret.ok()) {
-        LOG(ERROR) << ret.status();
+        LOG(INFO) << ret.status();
         return false;
       }
       return true;
     }
     case PropertyType::DATE:
       if (!value.isDate()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::TIME:
       if (!value.isTime()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::DATETIME:
       if (!value.isDateTime()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::DURATION:
       if (!value.isDuration()) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       return true;
     case PropertyType::GEOGRAPHY: {
       if (!value.isGeography()) {  // TODO(jie)
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type();
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type();
         return false;
       }
       meta::cpp2::GeoShape columnGeoShape =
@@ -174,16 +174,16 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       GeoShape defaultExprGeoShape = value.getGeography().shape();
       if (columnGeoShape != meta::cpp2::GeoShape::ANY &&
           folly::to<uint32_t>(columnGeoShape) != folly::to<uint32_t>(defaultExprGeoShape)) {
-        LOG(ERROR) << "Invalid default value for ` " << name << "', value type is " << value.type()
-                   << ", geo shape is " << defaultExprGeoShape;
+        LOG(INFO) << "Invalid default value for ` " << name << "', value type is " << value.type()
+                  << ", geo shape is " << defaultExprGeoShape;
         return false;
       }
       return true;
     }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:
-      DLOG(ERROR) << "Don't supported type "
-                  << apache::thrift::util::enumNameSafe(column.get_type().get_type());
+      DLOG(INFO) << "Don't supported type "
+                 << apache::thrift::util::enumNameSafe(column.get_type().get_type());
       return false;
       // no default so compiler will warning when lack
   }  // switch

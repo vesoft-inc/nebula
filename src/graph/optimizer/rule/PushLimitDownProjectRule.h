@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNPROJECTRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNPROJECTRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -27,3 +28,4 @@ class PushLimitDownProjectRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

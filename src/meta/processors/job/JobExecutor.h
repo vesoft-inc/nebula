@@ -22,32 +22,74 @@ class JobExecutor {
   explicit JobExecutor(kvstore::KVStore* kv) : kvstore_(kv) {}
   virtual ~JobExecutor() = default;
 
-  // Check the arguments about the job.
+  /**
+   * @brief Check the arguments about the job.
+   *
+   * @return
+   */
   virtual bool check() = 0;
 
-  // Prepare the Job info from the arguments.
+  /**
+   * @brief Prepare the Job info from the arguments.
+   *
+   * @return
+   */
   virtual nebula::cpp2::ErrorCode prepare() = 0;
 
-  // The skeleton to run the job.
-  // You should rewrite the executeInternal to trigger the calling.
+  /**
+   * @brief The skeleton to run the job.
+   * You should rewrite the executeInternal to trigger the calling.
+   *
+   * @return
+   */
   virtual nebula::cpp2::ErrorCode execute() = 0;
 
-  // Stop the job when the user cancel it.
+  /**
+   * @brief Stop the job when the user cancel it.
+   *
+   * @return
+   */
   virtual nebula::cpp2::ErrorCode stop() = 0;
 
-  virtual nebula::cpp2::ErrorCode finish(bool) = 0;
+  /**
+   * @brief Called when job finished or failed
+   *
+   * @param ret True means finished and false means failed
+   * @return
+   */
+  virtual nebula::cpp2::ErrorCode finish(bool ret) = 0;
 
+  /**
+   * @brief Called when recover a job
+   *
+   * @return
+   */
   virtual nebula::cpp2::ErrorCode recovery() = 0;
 
+  /**
+   * @brief Set id of the space
+   *
+   * @param spaceId
+   */
   virtual void setSpaceId(GraphSpaceID spaceId) = 0;
 
   virtual bool isMetaJob() = 0;
 
+  /**
+   * @brief Set a callback which will be called when job finished, storage executor don't need it,
+   *
+   * @param func
+   */
   virtual void setFinishCallBack(
       std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> func) {
     UNUSED(func);
   }
 
+  /**
+   * @brief Provide an extra status for some special tasks
+   *
+   * @return
+   */
   virtual nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) = 0;
 
  protected:

@@ -24,7 +24,6 @@ class StorageHttpStatsHandlerTestEnv : public ::testing::Environment {
   void SetUp() override {
     FLAGS_ws_ip = "127.0.0.1";
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     FLAGS_enable_rocksdb_statistics = true;
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpPropertyHandler.XXXXXX");
     cluster_ = std::make_unique<mock::MockCluster>();
@@ -78,27 +77,11 @@ TEST(StorageHttpPropertyHandlerTest, ValidRequest) {
     std::string expect =
         R"([
   {
-    "Engine 0": "96",
-    "Engine 1": "96"
-  }
-])";
-    EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.block-cache-usage"));
-  }
-  {
-    std::string expect =
-        R"([
-  {
-    "Engine 0": "96",
-    "Engine 1": "96"
-  },
-  {
     "Engine 0": "0",
     "Engine 1": "0"
   }
 ])";
-    EXPECT_EQ(expect,
-              request("/rocksdb_property?space=1&property="
-                      "rocksdb.block-cache-usage,rocksdb.is-write-stopped"));
+    EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.is-write-stopped"));
   }
 }
 

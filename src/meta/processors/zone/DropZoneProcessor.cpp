@@ -9,13 +9,13 @@ namespace nebula {
 namespace meta {
 
 void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
     auto code = nebula::error(zoneValueRet);
-    LOG(ERROR) << "Drop Zone Failed, error: " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "Drop Zone Failed, error: " << apache::thrift::util::enumNameSafe(code);
     handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
     onFinished();
     return;
@@ -51,7 +51,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
     auto ret = machineExist(machineKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "The host " << host << " not existed!";
+      LOG(INFO) << "The host " << host << " not existed!";
       code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }
@@ -66,7 +66,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkSpaceReplicaZone() {
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (!nebula::ok(ret)) {
     code = nebula::error(ret);
-    LOG(ERROR) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(code);
     return code;
   }
 
@@ -78,7 +78,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkSpaceReplicaZone() {
     auto spaceZones = properties.get_zone_names();
     size_t replicaFactor = properties.get_replica_factor();
     if (replicaFactor == spaceZones.size()) {
-      LOG(ERROR) << "Space " << spaceId << " replica factor and zone size are the same";
+      LOG(INFO) << "Space " << spaceId << " replica factor and zone size are the same";
       code = nebula::cpp2::ErrorCode::E_CONFLICT;
       break;
     }
@@ -92,7 +92,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkHostPartition(const HostAddr& ad
   auto spaceIterRet = doPrefix(spacePrefix);
   if (!nebula::ok(spaceIterRet)) {
     auto result = nebula::error(spaceIterRet);
-    LOG(ERROR) << "Get Spaces Failed, error " << apache::thrift::util::enumNameSafe(result);
+    LOG(INFO) << "Get Spaces Failed, error " << apache::thrift::util::enumNameSafe(result);
     return result;
   }
 
@@ -104,8 +104,8 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkHostPartition(const HostAddr& ad
     auto partIterRet = doPrefix(partPrefix);
     if (!nebula::ok(partIterRet)) {
       code = nebula::error(partIterRet);
-      LOG(ERROR) << "List part failed in list hosts,  error: "
-                 << apache::thrift::util::enumNameSafe(code);
+      LOG(INFO) << "List part failed in list hosts,  error: "
+                << apache::thrift::util::enumNameSafe(code);
       return code;
     }
     auto& partIter = nebula::value(partIterRet);
@@ -113,7 +113,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkHostPartition(const HostAddr& ad
       auto hosts = MetaKeyUtils::parsePartVal(partIter->val());
       for (auto& host : hosts) {
         if (host == address) {
-          LOG(ERROR) << "Host " << address << " have partition on it";
+          LOG(INFO) << "Host " << address << " have partition on it";
           code = nebula::cpp2::ErrorCode::E_CONFLICT;
           break;
         }

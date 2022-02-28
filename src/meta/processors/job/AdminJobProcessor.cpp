@@ -35,7 +35,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       if (cmd == cpp2::AdminCmd::REBUILD_TAG_INDEX || cmd == cpp2::AdminCmd::REBUILD_EDGE_INDEX ||
           cmd == cpp2::AdminCmd::STATS) {
         if (paras.empty()) {
-          LOG(ERROR) << "Parameter should be not empty";
+          LOG(INFO) << "Parameter should be not empty";
           errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
           break;
         }
@@ -49,8 +49,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         break;
       }
 
-      // Job not exists
+      folly::SharedMutex::WriteHolder holder(LockUtils::lock());
       auto jobId = autoIncrementId();
+      // check if Job not exists
       if (!nebula::ok(jobId)) {
         errorCode = nebula::error(jobId);
         break;
@@ -75,14 +76,14 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     case nebula::meta::cpp2::AdminJobOp::SHOW: {
       static const size_t kShowArgsNum = 2;
       if (req.get_paras().size() != kShowArgsNum) {
-        LOG(ERROR) << "Parameter number not matched";
+        LOG(INFO) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
 
       int iJob = atoi(req.get_paras()[0].c_str());
       if (iJob == 0) {
-        LOG(ERROR) << "Show job should have parameter as the job ID";
+        LOG(INFO) << "Show job should have parameter as the job ID";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
@@ -98,13 +99,13 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     case nebula::meta::cpp2::AdminJobOp::STOP: {
       static const size_t kStopJobArgsNum = 2;
       if (req.get_paras().size() != kStopJobArgsNum) {
-        LOG(ERROR) << "Parameter number not matched";
+        LOG(INFO) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
       int iJob = atoi(req.get_paras()[0].c_str());
       if (iJob == 0) {
-        LOG(ERROR) << "Stop job should have parameter as the job ID";
+        LOG(INFO) << "Stop job should have parameter as the job ID";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }

@@ -18,7 +18,6 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/BalancePlan.h"
@@ -74,7 +73,7 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   std::vector<JobDescription> jds;
@@ -126,7 +125,7 @@ void JobManager::scheduleThread() {
 
     auto jobDescRet = JobDescription::loadJobDescription(opJobId.second, kvStore_);
     if (!nebula::ok(jobDescRet)) {
-      LOG(ERROR) << "[JobManager] load an invalid job from queue " << opJobId.second;
+      LOG(INFO) << "[JobManager] load an invalid job from queue " << opJobId.second;
       continue;  // leader change or archive happened
     }
     auto jobDesc = nebula::value(jobDescRet);
@@ -144,13 +143,13 @@ void JobManager::scheduleThread() {
 
 // @return: true if all task dispatched, else false
 bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
-  std::lock_guard<std::mutex> lk(muJobFinished_);
+  std::lock_guard<std::recursive_mutex> lk(muJobFinished_);
   std::unique_ptr<JobExecutor> je =
       JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
   JobExecutor* jobExec = je.get();
   runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
   if (jobExec == nullptr) {
-    LOG(ERROR) << "unreconized job cmd " << apache::thrift::util::enumNameSafe(jobDesc.getCmd());
+    LOG(INFO) << "unreconized job cmd " << apache::thrift::util::enumNameSafe(jobDesc.getCmd());
     return false;
   }
 
@@ -160,12 +159,12 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   }
 
   if (!jobExec->check()) {
-    LOG(ERROR) << "Job Executor check failed";
+    LOG(INFO) << "Job Executor check failed";
     return false;
   }
 
   if (jobExec->prepare() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Job Executor prepare failed";
+    LOG(INFO) << "Job Executor prepare failed";
     return false;
   }
   if (op == JbOp::RECOVER) {
@@ -174,7 +173,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   if (jobExec->isMetaJob()) {
     jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
       if (status == meta::cpp2::JobStatus::STOPPED) {
-        std::lock_guard<std::mutex> lkg(muJobFinished_);
+        std::lock_guard<std::recursive_mutex> lkg(muJobFinished_);
         cleanJob(jobDesc.getJobId());
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
@@ -183,7 +182,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
     });
   }
   if (jobExec->execute() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Job dispatch failed";
+    LOG(INFO) << "Job dispatch failed";
     return false;
   }
   return true;
@@ -206,10 +205,10 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
   LOG(INFO) << folly::sformat(
       "{}, jobId={}, result={}", __func__, jobId, apache::thrift::util::enumNameSafe(jobStatus));
   // normal job finish may race to job stop
-  std::lock_guard<std::mutex> lk(muJobFinished_);
+  std::lock_guard<std::recursive_mutex> lk(muJobFinished_);
   auto optJobDescRet = JobDescription::loadJobDescription(jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
-    LOG(WARNING) << folly::sformat("can't load job, jobId={}", jobId);
+    LOG(INFO) << folly::sformat("can't load job, jobId={}", jobId);
     if (jobStatus != cpp2::JobStatus::STOPPED) {
       // there is a rare condition, that when job finished,
       // the job description is deleted(default more than a week)
@@ -233,7 +232,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
 
   auto it = runningJobs_.find(jobId);
   if (it == runningJobs_.end()) {
-    LOG(WARNING) << folly::sformat("can't find jobExecutor, jobId={}", jobId);
+    LOG(INFO) << folly::sformat("can't find jobExecutor, jobId={}", jobId);
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
   std::unique_ptr<JobExecutor>& jobExec = it->second;
@@ -277,8 +276,8 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   auto optJobDescRet = JobDescription::loadJobDescription(jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     auto retCode = nebula::error(optJobDescRet);
-    LOG(WARNING) << "LoadJobDesc failed, jobId " << jobId
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "LoadJobDesc failed, jobId " << jobId
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -286,7 +285,7 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   auto jobExec = JobExecutorFactory::createJobExecutor(optJobDesc, kvStore_, adminClient_);
 
   if (!jobExec) {
-    LOG(WARNING) << folly::sformat("createMetaJobExecutor failed(), jobId={}", jobId);
+    LOG(INFO) << folly::sformat("createMetaJobExecutor failed(), jobId={}", jobId);
     return nebula::cpp2::ErrorCode::E_TASK_REPORT_OUT_DATE;
   }
 
@@ -301,8 +300,8 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
     auto spaceIdRet = getSpaceId(spaceName);
     if (!nebula::ok(spaceIdRet)) {
       auto retCode = nebula::error(spaceIdRet);
-      LOG(WARNING) << "Get spaceName " << spaceName
-                   << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get spaceName " << spaceName
+                << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     } else {
       spaceId = nebula::value(spaceIdRet);
       jobExec->setSpaceId(spaceId);
@@ -346,7 +345,7 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
     return it.getJobId() == jobId && it.getTaskId() == taskId;
   });
   if (task == tasks.end()) {
-    LOG(WARNING) << folly::sformat(
+    LOG(INFO) << folly::sformat(
         "report an invalid or outdate task, will ignore this report, job={}, "
         "task={}",
         jobId,
@@ -399,7 +398,7 @@ nebula::cpp2::ErrorCode JobManager::addJob(const JobDescription& jobDesc, AdminC
     // Add job to jobMap
     inFlightJobs_.emplace(jobId, jobDesc);
   } else {
-    LOG(ERROR) << "Add Job Failed";
+    LOG(INFO) << "Add Job Failed";
     if (rc != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       rc = nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
     }
@@ -435,7 +434,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJob
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Fetch Jobs Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Fetch Jobs Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -474,7 +473,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJob
 
   retCode = removeExpiredJobs(std::move(expiredJobKeys));
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Remove Expired Jobs Failed";
+    LOG(INFO) << "Remove Expired Jobs Failed";
     return retCode;
   }
 
@@ -510,8 +509,8 @@ nebula::cpp2::ErrorCode JobManager::removeExpiredJobs(
                              std::move(expiredJobsAndTasks),
                              [&](nebula::cpp2::ErrorCode code) {
                                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-                                 LOG(ERROR) << "kvstore asyncRemoveRange failed: "
-                                            << apache::thrift::util::enumNameSafe(code);
+                                 LOG(INFO) << "kvstore asyncRemoveRange failed: "
+                                           << apache::thrift::util::enumNameSafe(code);
                                }
                                ret = code;
                                baton.post();
@@ -558,7 +557,7 @@ JobManager::showJob(JobID iJob, const std::string& spaceName) {
       }
       auto optJob = nebula::value(optJobRet);
       if (optJob.getParas().back() != spaceName) {
-        LOG(WARNING) << "Show job " << iJob << " not in current space " << spaceName;
+        LOG(INFO) << "Show job " << iJob << " not in current space " << spaceName;
         return nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE;
       }
       ret.first = optJob.toJobDesc();
@@ -591,13 +590,13 @@ nebula::cpp2::ErrorCode JobManager::stopJob(JobID iJob, const std::string& space
   auto optJobDescRet = JobDescription::loadJobDescription(iJob, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     auto retCode = nebula::error(optJobDescRet);
-    LOG(WARNING) << "LoadJobDesc failed, jobId " << iJob
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "LoadJobDesc failed, jobId " << iJob
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   auto optJobDesc = nebula::value(optJobDescRet);
   if (optJobDesc.getParas().back() != spaceName) {
-    LOG(WARNING) << "Stop job " << iJob << " not in space " << spaceName;
+    LOG(INFO) << "Stop job " << iJob << " not in space " << spaceName;
     return nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE;
   }
   return jobFinished(iJob, cpp2::JobStatus::STOPPED);
@@ -615,7 +614,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
     for (; iter->valid(); iter->next()) {
@@ -633,7 +632,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     std::vector<std::string> values;
     auto retCode = kvStore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
     if (retCode.first != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode.first);
+      LOG(INFO) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode.first);
       return retCode.first;
     }
     for (size_t i = 0; i < keys.size(); i++) {
@@ -688,7 +687,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobManager::getSpaceId(const std:
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
-    LOG(ERROR) << "KVStore error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "KVStore error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
@@ -698,7 +697,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkIndexJobRunning() {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Fetch Jobs Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Fetch Jobs Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

@@ -6,14 +6,17 @@
 #ifndef META_DROPSNAPSHOTPROCESSOR_H_
 #define META_DROPSNAPSHOTPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop snapshot for all spaces. It could drop snapshots
+ *        created by CreateBackupProcessor or CreateCheckpointProcessor.
+ *
+ */
 class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropSnapshotProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {

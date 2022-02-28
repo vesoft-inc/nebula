@@ -26,11 +26,14 @@ PASSWORD_LOCK_TIME_IN_SECS ?= 0
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
 test_without_skip = python3 -m pytest -m "not skip"
+test_without_skip_sa = python3 -m pytest -m "not skip and not distonly"
 test_j = $(test_without_skip) -n$(J)
+test_j_sa = $(test_without_skip_sa) -n$(J)
+
 
 install-deps:
-	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
-	pip3 install --user -r $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
+	pip3 install --user -Ur $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
+
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
@@ -73,6 +76,18 @@ up: clean
 		--ca_signed=$(CA_SIGNED) \
 		--containerized=$(CONTAINERIZED)
 
+standalone-up: clean
+	@mkdir -p $(CURR_DIR)/.pytest
+	$(run_test) --cmd=start_standalone \
+		--build_dir=$(BUILD_DIR) \
+		--debug=$(DEBUG) \
+		--multi_graphd=false \
+		--enable_ssl=$(ENABLE_SSL) \
+		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
+		--enable_meta_ssl=$(ENABLE_META_SSL) \
+		--ca_signed=$(CA_SIGNED) \
+		--containerized=$(CONTAINERIZED)
+
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)
 
@@ -90,7 +105,12 @@ test: sess
 
 slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
-	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
+	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_same_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_different_service.py
+
+standalone-tck: jobs
+	$(test_j_sa) tck/steps/test_tck.py
 
 tck: jobs slow-query
 	$(test_j) tck/steps/test_tck.py
@@ -99,6 +119,7 @@ ldbc: currdir
 	$(test_j) tck/steps/test_ldbc.py
 
 test-all: test tck ldbc
+test-standalone-all: standalone-tck ldbc
 
 fail: currdir
 	python3 -m pytest \

@@ -27,10 +27,12 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
   auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
     DataSet v({"Host",
                "Port",
+               "HTTP port",
                "Status",
                "Leader count",
                "Leader distribution",
-               "Partition distribution"});
+               "Partition distribution",
+               "Version"});
 
     std::map<std::string, int64_t> leaderPartsCount;
     std::map<std::string, int64_t> allPartsCount;
@@ -39,6 +41,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     for (const auto &host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
+                     FLAGS_ws_http_port,
                      apache::thrift::util::enumNameSafe(host.get_status())});
       int64_t leaderCount = 0;
       for (const auto &spaceEntry : host.get_leader_parts()) {
@@ -82,6 +85,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       r.emplace_back(leaderCount);
       r.emplace_back(leaders.str());
       r.emplace_back(parts.str());
+      r.emplace_back(host.version_ref().has_value() ? Value(*host.version_ref()) : Value());
       v.emplace_back(std::move(r));
     }  // row loop
     {
@@ -148,7 +152,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
           LOG(ERROR) << resp.status();
           return resp.status();
         }
-        auto value = std::move(resp).value();
+        auto value = std::forward<decltype(resp)>(resp).value();
         if (type == meta::cpp2::ListHostType::ALLOC) {
           return finish(makeTraditionalResult(value));
         }

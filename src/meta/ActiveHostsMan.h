@@ -6,8 +6,6 @@
 #ifndef META_ACTIVEHOSTSMAN_H_
 #define META_ACTIVEHOSTSMAN_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
@@ -50,13 +48,17 @@ struct HostInfo {
     return info;
   }
 
-  /*
+  /**
+   * @brief
    * int8_t           dataVer
    * int64_t          timestamp
    * sizeof(HostRole) hostRole
    * size_t           lenth of gitInfoSha
    * string           gitInfoSha
-   * */
+   *
+   * @param info
+   * @return
+   */
   static std::string encodeV2(const HostInfo& info) {
     std::string encode;
     int8_t dataVer = 2;
@@ -74,6 +76,12 @@ struct HostInfo {
     return encode;
   }
 
+  /**
+   * @brief Parse a serialized value to HostInfo
+   *
+   * @param data
+   * @return
+   */
   static HostInfo decodeV2(const folly::StringPiece& data) {
     HostInfo info;
     size_t offset = sizeof(int8_t);
@@ -107,30 +115,92 @@ class ActiveHostsMan final {
   ~ActiveHostsMan() = default;
 
   using AllLeaders = std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>;
+
+  /**
+   * @brief Save host info and leader info into kvStore
+   * If partition leader info was updated, it will update LastUpdateTime, indicating the MetaClient
+   * update local cache.
+   *
+   * @param kv Where to save
+   * @param hostAddr Which host to save
+   * @param info Information of the host
+   * @param leaderParts Leader info of all parts, null means don't need to update leader info
+   * @return
+   */
   static nebula::cpp2::ErrorCode updateHostInfo(kvstore::KVStore* kv,
                                                 const HostAddr& hostAddr,
                                                 const HostInfo& info,
                                                 const AllLeaders* leaderParts = nullptr);
 
+  /**
+   * @brief Check if the host is registered
+   *
+   * @param kv From where to get
+   * @param hostAddr Which host to register
+   * @return
+   */
   static bool machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr);
 
+  /**
+   * @brief Get all registered host
+   *
+   * @param kv From where to get
+   * @param expiredTTL Ignore hosts who do not send heartbeat within longer than expiredTTL
+   * @param role Which role of the host to find. maybe GRAPH META STORAGE LISTENER AGENT
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHosts(
       kvstore::KVStore* kv, int32_t expiredTTL = 0, cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
+  /**
+   * @brief Get services in the agent host
+   *
+   * @param kv From where to get
+   * @param hostname Hostname or ip
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<HostAddr, cpp2::HostRole>>>
-  getServicesInHost(kvstore::KVStore* kv, std::string hostname);
+  getServicesInHost(kvstore::KVStore* kv, const std::string& hostname);
 
+  /**
+   * @brief Get hosts in the zone
+   *
+   * @param kv From where to get
+   * @param zoneName Name of the zone
+   * @param expiredTTL Ignore hosts who do not send heartbeat within longer than expiredTTL
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsInZone(
       kvstore::KVStore* kv, const std::string& zoneName, int32_t expiredTTL = 0);
 
+  /**
+   * @brief Get hosts in the space
+   *
+   * @param kv From where to get
+   * @param spaceId Id of the space
+   * @param expiredTTL Ignore hosts who do not send heartbeat within longer than expiredTTL
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsWithZones(
       kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL = 0);
 
-  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveAdminHosts(
-      kvstore::KVStore* kv, int32_t expiredTTL = 0, cpp2::HostRole role = cpp2::HostRole::STORAGE);
-
+  /**
+   * @brief Check if a host is alived, by checking if the host send heartbeat within the default
+   * time
+   *
+   * @param kv From where to get the host's information
+   * @param host Which host to check
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, bool> isLived(kvstore::KVStore* kv, const HostAddr& host);
 
+  /**
+   * @brief Get hostInfo for a host
+   *
+   * @param kv From where to get
+   * @param host
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, HostInfo> getHostInfo(kvstore::KVStore* kv,
                                                                 const HostAddr& host);
 

@@ -17,48 +17,59 @@ ChainDeleteEdgesResumeRemoteProcessor::ChainDeleteEdgesResumeRemoteProcessor(Sto
 }
 
 folly::SemiFuture<nebula::cpp2::ErrorCode> ChainDeleteEdgesResumeRemoteProcessor::prepareLocal() {
-  code_ = checkRequest(req_);
-  return code_;
+  rcPrepare_ = checkRequest(req_);
+  return rcPrepare_;
 }
 
 folly::SemiFuture<Code> ChainDeleteEdgesResumeRemoteProcessor::processRemote(Code code) {
   VLOG(1) << txnId_ << " prepareLocal() " << apache::thrift::util::enumNameSafe(code);
-
   return ChainDeleteEdgesLocalProcessor::processRemote(code);
 }
 
 folly::SemiFuture<Code> ChainDeleteEdgesResumeRemoteProcessor::processLocal(Code code) {
   VLOG(1) << txnId_ << " processRemote() " << apache::thrift::util::enumNameSafe(code);
-
-  setErrorCode(code);
-
-  if (code == Code::E_RPC_FAILURE) {
-    return code_;
+  if (code != Code::SUCCEEDED) {
+    return code;
   }
 
-  if (code == Code::SUCCEEDED) {
-    // if there are something wrong other than rpc failure
-    // we need to keep the resume retry(by not remove double prime key)
-    std::vector<std::string> doublePrimeKeys;
-    for (auto& partOfKeys : req_.get_parts()) {
-      std::string key;
-      for (auto& edgeKey : partOfKeys.second) {
-        doublePrimeKeys.emplace_back();
-        doublePrimeKeys.back() = ConsistUtil::doublePrimeTable().append(
-            ConsistUtil::edgeKey(spaceVidLen_, localPartId_, edgeKey));
-      }
+  // if there are something wrong other than rpc failure
+  // we need to keep the resume retry(by not remove double prime key)
+  std::vector<std::string> doublePrimeKeys;
+  for (auto& partOfKeys : req_.get_parts()) {
+    std::string key;
+    for (auto& edgeKey : partOfKeys.second) {
+      doublePrimeKeys.emplace_back();
+      doublePrimeKeys.back() =
+          ConsistUtil::doublePrimeTable(localPartId_)
+              .append(ConsistUtil::edgeKey(spaceVidLen_, localPartId_, edgeKey));
     }
-
-    folly::Baton<true, std::atomic> baton;
-    env_->kvstore_->asyncMultiRemove(
-        spaceId_, localPartId_, std::move(doublePrimeKeys), [this, &baton](auto&& rc) {
-          this->code_ = rc;
-          baton.post();
-        });
-    baton.wait();
   }
 
-  return code_;
+  auto [pro, fut] = folly::makePromiseContract<Code>();
+  env_->kvstore_->asyncMultiRemove(spaceId_,
+                                   localPartId_,
+                                   std::move(doublePrimeKeys),
+                                   [this, p = std::move(pro)](auto&& rc) mutable {
+                                     rcCommit_ = rc;
+                                     p.setValue(rc);
+                                   });
+  return std::move(fut);
+}
+
+void ChainDeleteEdgesResumeRemoteProcessor::finish() {
+  VLOG(1) << " commitLocal() = " << apache::thrift::util::enumNameSafe(rcCommit_);
+  TermID currTerm = 0;
+  std::tie(currTerm, std::ignore) = env_->txnMan_->getTermFromKVStore(spaceId_, localPartId_);
+  if (term_ == currTerm) {
+    if (rcCommit_ != Code::SUCCEEDED || rcRemote_ != Code::SUCCEEDED) {
+      reportFailed(ResumeType::RESUME_REMOTE);
+    }
+  } else {
+    // transaction manager will do the clean.
+  }
+  pushResultCode(rcCommit_, localPartId_);
+  finished_.setValue(rcCommit_);
+  onFinished();
 }
 
 }  // namespace storage

@@ -14,6 +14,8 @@
 namespace nebula {
 namespace graph {
 
+class PlanNodeVisitor;
+
 /**
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
@@ -189,6 +191,12 @@ class PlanNode {
   // Describe plan node
   virtual std::unique_ptr<PlanNodeDescription> explain() const;
 
+  virtual void accept(PlanNodeVisitor* visitor);
+
+  void markDeleted() {
+    deleted_ = true;
+  }
+
   virtual PlanNode* clone() const = 0;
 
   virtual void calcCost();
@@ -238,6 +246,10 @@ class PlanNode {
     return dependencies_;
   }
 
+  auto& dependencies() {
+    return dependencies_;
+  }
+
   const PlanNode* dep(size_t index = 0) const {
     DCHECK_LT(index, dependencies_.size());
     return dependencies_.at(index);
@@ -269,11 +281,28 @@ class PlanNode {
 
   void releaseSymbols();
 
+  void updateSymbols();
+
   static const char* toString(Kind kind);
   std::string toString() const;
 
   double cost() const {
     return cost_;
+  }
+
+  void setLoopLayers(std::size_t c) {
+    loopLayers_ = c;
+  }
+
+  std::size_t loopLayers() const {
+    return loopLayers_;
+  }
+
+  template <typename T>
+  const T* asNode() const {
+    static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
+    DCHECK(dynamic_cast<const T*>(this) != nullptr);
+    return static_cast<const T*>(this);
   }
 
  protected:
@@ -298,6 +327,9 @@ class PlanNode {
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
+  // nested loop layers of current node
+  std::size_t loopLayers_{0};
+  bool deleted_{false};
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);

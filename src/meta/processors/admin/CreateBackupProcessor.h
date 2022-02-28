@@ -6,14 +6,16 @@
 #ifndef META_CREATEBACKUPPROCESSOR_H_
 #define META_CREATEBACKUPPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create backup files in each mtead and storaged services' local.
+ *
+ */
 class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
  public:
   static CreateBackupProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {

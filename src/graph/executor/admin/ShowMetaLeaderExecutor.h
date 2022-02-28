@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_EXECUTOR_ADMIN_SHOWMETALEADEREXECUTOR_H
+#define GRAPH_EXECUTOR_ADMIN_SHOWMETALEADEREXECUTOR_H
 
 #include "graph/executor/Executor.h"
 
@@ -20,3 +21,4 @@ class ShowMetaLeaderExecutor final : public Executor {
 
 }  // namespace graph
 }  // namespace nebula
+#endif

@@ -13,6 +13,7 @@
 
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
+#include "graph/planner/plan/PlanNodeVisitor.h"
 #include "graph/util/ToJson.h"
 
 namespace nebula {
@@ -360,6 +361,10 @@ std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
   return desc;
 }
 
+void PlanNode::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 void PlanNode::releaseSymbols() {
   auto symTbl = qctx_->symTable();
   for (auto in : inputVars_) {
@@ -367,6 +372,15 @@ void PlanNode::releaseSymbols() {
   }
   for (auto out : outputVars_) {
     out && symTbl->deleteWrittenBy(out->name, this);
+  }
+}
+
+void PlanNode::updateSymbols() {
+  auto symTbl = qctx_->symTable();
+  for (auto out : outputVars_) {
+    if (out != nullptr) {
+      symTbl->updateWrittenBy(out->name, out->name, this);
+    }
   }
 }
 

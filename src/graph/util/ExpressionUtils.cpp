@@ -17,6 +17,9 @@
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/PropertyTrackerVisitor.h"
+
+DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
 
 namespace nebula {
 namespace graph {
@@ -126,18 +129,24 @@ bool ExpressionUtils::isEvaluableExpr(const Expression *expr, const QueryContext
 }
 
 // rewrite Attribute to LabelTagProp
-Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
+Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
+    const Expression *expr, const std::unordered_map<std::string, AliasType> &aliasTypeMap) {
   ObjectPool *pool = expr->getObjPool();
 
-  auto matcher = [](const Expression *e) -> bool {
-    if (e->kind() == Expression::Kind::kAttribute) {
-      auto attrExpr = static_cast<const AttributeExpression *>(e);
-      if (attrExpr->left()->kind() == Expression::Kind::kLabelAttribute &&
-          attrExpr->right()->kind() == Expression::Kind::kConstant) {
-        return true;
-      }
+  auto matcher = [&aliasTypeMap](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kAttribute) {
+      return false;
     }
-    return false;
+    auto attrExpr = static_cast<const AttributeExpression *>(e);
+    if (attrExpr->left()->kind() != Expression::Kind::kLabelAttribute) {
+      return false;
+    }
+    auto label = static_cast<const LabelAttributeExpression *>(attrExpr->left())->left()->name();
+    auto iter = aliasTypeMap.find(label);
+    if (iter == aliasTypeMap.end() || iter->second != AliasType::kNode) {
+      return false;
+    }
+    return true;
   };
 
   auto rewriter = [pool](const Expression *e) -> Expression * {
@@ -1221,7 +1230,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
       size -= 1;
     }
     depth += 1;
-    if (depth > ExpressionUtils::kMaxDepth) {
+    if (depth > FLAGS_max_expression_depth) {
       return false;
     }
   }

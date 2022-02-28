@@ -24,6 +24,8 @@
 namespace nebula {
 namespace graph {
 
+// Validate columns of schema.
+// Check validity of columns and fill to thrift structure.
 static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
                               meta::cpp2::Schema &schema) {
   for (auto &spec : columnSpecs) {
@@ -61,6 +63,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
   return Status::OK();
 }
 
+// Validate the schema modification in alter sentence.
 static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
     const std::vector<AlterSchemaOptItem *> &schemaOpts) {
   std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
@@ -97,6 +100,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
   return schemaItems;
 }
 
+// Validate properties of schema, e.g. TTL, comment.
 static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
     const std::vector<SchemaPropItem *> &schemaProps) {
   meta::cpp2::SchemaProp schemaProp;
@@ -131,6 +135,7 @@ static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
   return schemaProp;
 }
 
+// Check duplicate column names.
 static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   std::unordered_set<std::string> uniqueColName;
   for (const auto &spec : specs) {
@@ -496,7 +501,7 @@ Status ShowEdgeIndexStatusValidator::toPlan() {
 }
 
 Status MergeZoneValidator::validateImpl() {
-  return Status::OK();
+  return Status::SemanticError("Merge zone is unsupported");
 }
 
 Status MergeZoneValidator::toPlan() {
@@ -509,7 +514,7 @@ Status MergeZoneValidator::toPlan() {
 }
 
 Status RenameZoneValidator::validateImpl() {
-  return Status::OK();
+  return Status::SemanticError("Rename zone is unsupported");
 }
 
 Status RenameZoneValidator::toPlan() {
@@ -534,7 +539,7 @@ Status DropZoneValidator::toPlan() {
 }
 
 Status DivideZoneValidator::validateImpl() {
-  return Status::OK();
+  return Status::SemanticError("Divide zone is unsupported");
 }
 
 Status DivideZoneValidator::toPlan() {
@@ -558,11 +563,11 @@ Status DescribeZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status ListZonesValidator::validateImpl() {
-  return Status::OK();
+Status ShowZonesValidator::validateImpl() {
+  return Status::SemanticError("Show zones is unsupported");
 }
 
-Status ListZonesValidator::toPlan() {
+Status ShowZonesValidator::toPlan() {
   auto *doNode = ListZones::make(qctx_, nullptr);
   root_ = doNode;
   tail_ = root_;
@@ -570,7 +575,7 @@ Status ListZonesValidator::toPlan() {
 }
 
 Status AddHostsIntoZoneValidator::validateImpl() {
-  return Status::OK();
+  return Status::SemanticError("Add hosts into zone is unsupported");
 }
 
 Status AddHostsIntoZoneValidator::toPlan() {
@@ -582,6 +587,7 @@ Status AddHostsIntoZoneValidator::toPlan() {
   return Status::OK();
 }
 
+// Validate creating test search index.
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
   auto name = *sentence->indexName();

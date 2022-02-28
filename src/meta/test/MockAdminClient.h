@@ -33,24 +33,23 @@ class MockAdminClient : public AdminClient {
                                                              const std::string&,
                                                              const HostAddr&));
   MOCK_METHOD3(dropSnapshot,
-               folly::Future<Status>(const std::set<GraphSpaceID>&,
-                                     const std::string&,
-                                     const HostAddr&));
+               folly::Future<StatusOr<bool>>(const std::set<GraphSpaceID>&,
+                                             const std::string&,
+                                             const HostAddr&));
   MOCK_METHOD3(blockingWrites,
-               folly::Future<Status>(const std::set<GraphSpaceID>&,
-                                     storage::cpp2::EngineSignType,
-                                     const HostAddr&));
-  MOCK_METHOD9(addTask,
-               folly::Future<Status>(cpp2::AdminCmd,
-                                     int32_t,
-                                     int32_t,
-                                     GraphSpaceID,
-                                     const std::vector<HostAddr>&,
-                                     const std::vector<std::string>&,
-                                     std::vector<PartitionID>,
-                                     int,
-                                     cpp2::StatsItem*));
-  MOCK_METHOD3(stopTask, folly::Future<Status>(const std::vector<HostAddr>&, int32_t, int32_t));
+               folly::Future<StatusOr<bool>>(const std::set<GraphSpaceID>&,
+                                             storage::cpp2::EngineSignType,
+                                             const HostAddr&));
+  MOCK_METHOD8(addTask,
+               folly::Future<StatusOr<bool>>(cpp2::AdminCmd,
+                                             int32_t,
+                                             int32_t,
+                                             GraphSpaceID,
+                                             const HostAddr&,
+                                             const std::vector<std::string>&,
+                                             std::vector<PartitionID>,
+                                             int));
+  MOCK_METHOD3(stopTask, folly::Future<StatusOr<bool>>(const HostAddr&, int32_t, int32_t));
 };
 
 }  // namespace meta

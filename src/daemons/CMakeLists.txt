@@ -16,7 +16,6 @@ set(common_deps
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -101,7 +100,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
-        $<TARGET_OBJECTS:meta_v1_thrift_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
@@ -130,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:plan_node_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>
@@ -141,7 +140,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_client_obj>
-        $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
@@ -214,6 +212,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:plan_node_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>
@@ -225,7 +224,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_client_obj>
-        $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
@@ -243,7 +241,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
-        $<TARGET_OBJECTS:meta_v1_thrift_obj>
+        $<TARGET_OBJECTS:meta_v2_thrift_obj>
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES

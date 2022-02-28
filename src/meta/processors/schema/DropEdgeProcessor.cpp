@@ -13,8 +13,8 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-  auto edgeName = req.get_edge_name();
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  const auto& edgeName = req.get_edge_name();
 
   EdgeType edgeType;
   auto indexKey = MetaKeyUtils::indexEdgeKey(spaceId, edgeName);
@@ -28,12 +28,12 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop edge failed :" << edgeName << " not found.";
+        LOG(INFO) << "Drop edge failed :" << edgeName << " not found.";
         retCode = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
       }
     } else {
-      LOG(ERROR) << "Get edgetype failed, edge name " << edgeName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get edgetype failed, edge name " << edgeName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -47,7 +47,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     return;
   }
   if (!nebula::value(indexes).empty()) {
-    LOG(ERROR) << "Drop edge error, index conflict, please delete index first.";
+    LOG(INFO) << "Drop edge error, index conflict, please delete index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -55,8 +55,8 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
-    LOG(ERROR) << "Drop edge error, fulltext index conflict, "
-               << "please delete fulltext index first.";
+    LOG(INFO) << "Drop edge error, fulltext index conflict, "
+              << "please delete fulltext index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -87,7 +87,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::ge
   auto key = MetaKeyUtils::schemaEdgePrefix(id, edgeType);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "Edge schema prefix failed, edgetype " << edgeType;
+    LOG(INFO) << "Edge schema prefix failed, edgetype " << edgeType;
     return nebula::error(iterRet);
   }
 

@@ -42,8 +42,23 @@ void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
       FLAGS_snapshot_part_rate_limit,
       FLAGS_snapshot_batch_size);
 
+  const void* snapshot = store_->GetSnapshot(spaceId, partId);
+  SCOPE_EXIT {
+    if (snapshot != nullptr) {
+      store_->ReleaseSnapshot(spaceId, partId, snapshot);
+    }
+  };
+
   for (const auto& prefix : tables) {
-    if (!accessTable(spaceId, partId, prefix, cb, data, totalCount, totalSize, rateLimiter.get())) {
+    if (!accessTable(spaceId,
+                     partId,
+                     snapshot,
+                     prefix,
+                     cb,
+                     data,
+                     totalCount,
+                     totalSize,
+                     rateLimiter.get())) {
       return;
     }
   }
@@ -54,6 +69,7 @@ void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
 // peers. If send failed, will return false.
 bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
                                         PartitionID partId,
+                                        const void* snapshot,
                                         const std::string& prefix,
                                         raftex::SnapshotCallback& cb,
                                         std::vector<std::string>& data,
@@ -61,10 +77,10 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
                                         int64_t& totalSize,
                                         kvstore::RateLimiter* rateLimiter) {
   std::unique_ptr<KVIterator> iter;
-  auto ret = store_->prefix(spaceId, partId, prefix, &iter);
+  auto ret = store_->prefix(spaceId, partId, prefix, &iter, false, snapshot);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
-              << ", error code:" << static_cast<int32_t>(ret);
+    VLOG(2) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
+            << ", error code:" << static_cast<int32_t>(ret);
     cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
     return false;
   }
@@ -79,7 +95,7 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
         data.clear();
         batchSize = 0;
       } else {
-        LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] send snapshot failed";
+        VLOG(2) << "[spaceId:" << spaceId << ", partId:" << partId << "] send snapshot failed";
         return false;
       }
     }
