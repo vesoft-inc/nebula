@@ -85,8 +85,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   batchHolder->remove(std::move(indexKey));
 
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop Tag " << tagName;

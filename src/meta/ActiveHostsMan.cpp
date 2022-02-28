@@ -66,8 +66,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
 
   if (hasUpdate) {
     auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-    data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                      MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+    LastUpdateTimeMan::update(data, timeInMilliSec);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
@@ -247,6 +246,16 @@ ErrorOr<nebula::cpp2::ErrorCode, HostInfo> ActiveHostsMan::getHostInfo(kvstore::
     return retCode;
   }
   return HostInfo::decode(hostValue);
+}
+
+void LastUpdateTimeMan::update(std::vector<kvstore::KV>& data, const int64_t timeInMilliSec) {
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+}
+
+void LastUpdateTimeMan::update(kvstore::BatchHolder* batchHolder, const int64_t timeInMilliSec) {
+  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
+                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
 }
 
 }  // namespace meta

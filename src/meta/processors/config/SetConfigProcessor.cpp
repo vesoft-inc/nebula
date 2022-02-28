@@ -40,8 +40,7 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
 
     if (!data.empty()) {
       auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-      data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                        MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+      LastUpdateTimeMan::update(data, timeInMilliSec);
       auto ret = doSyncPut(std::move(data));
       handleErrorCode(ret);
       onFinished();

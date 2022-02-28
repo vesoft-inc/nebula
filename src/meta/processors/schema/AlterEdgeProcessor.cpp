@@ -153,8 +153,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
                     MetaKeyUtils::schemaVal(edgeName, schema));
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
   handleErrorCode(result);
   onFinished();

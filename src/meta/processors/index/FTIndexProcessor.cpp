@@ -114,8 +114,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::fulltextIndexKey(name), MetaKeyUtils::fulltextIndexVal(index));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
   handleErrorCode(result);
   onFinished();
@@ -144,8 +143,7 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   batchHolder->remove(std::move(indexKey));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }

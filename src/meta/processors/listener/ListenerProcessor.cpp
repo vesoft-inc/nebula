@@ -56,8 +56,7 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
                       MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
   handleErrorCode(result);
   onFinished();
@@ -99,8 +98,7 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
   }
 
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }

@@ -37,8 +37,7 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::userKey(account), MetaKeyUtils::userVal(password));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
@@ -68,8 +67,7 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(userKey), std::move(userVal));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
@@ -124,8 +122,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 
   LOG(INFO) << "Drop User " << account;
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }
@@ -160,8 +157,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
   data.emplace_back(MetaKeyUtils::roleKey(spaceId, account),
                     MetaKeyUtils::roleVal(roleItem.get_role_type()));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
@@ -212,8 +208,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   batchHolder->remove(std::move(roleKey));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }
@@ -258,8 +253,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(userKey), std::move(userVal));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();

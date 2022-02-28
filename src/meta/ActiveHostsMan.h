@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace meta {
@@ -207,6 +208,18 @@ class ActiveHostsMan final {
 
  protected:
   ActiveHostsMan() = default;
+};
+
+class LastUpdateTimeMan final {
+ public:
+  ~LastUpdateTimeMan() = default;
+
+  static void update(std::vector<kvstore::KV>& data, const int64_t timeInMilliSec);
+
+  static void update(kvstore::BatchHolder* batchHolder, const int64_t timeInMilliSec);
+
+ protected:
+  LastUpdateTimeMan() = default;
 };
 
 }  // namespace meta

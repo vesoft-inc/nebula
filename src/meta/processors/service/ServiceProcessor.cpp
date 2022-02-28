@@ -34,8 +34,7 @@ void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(serviceKey), MetaKeyUtils::serviceVal(req.get_clients()));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
   handleErrorCode(result);
   onFinished();
@@ -63,8 +62,7 @@ void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   batchHolder->remove({std::move(serviceKey)});
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }

@@ -67,8 +67,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
   resp_.id_ref() = to(tagIndexID, EntryType::INDEX);
 
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
 }

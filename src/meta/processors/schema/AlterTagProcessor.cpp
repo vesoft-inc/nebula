@@ -148,8 +148,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
                     MetaKeyUtils::schemaVal(tagName, schema));
   resp_.id_ref() = to(tagId, EntryType::TAG);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto result = doSyncPut(std::move(data));
   handleErrorCode(result);
   onFinished();

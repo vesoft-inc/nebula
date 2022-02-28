@@ -130,8 +130,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   batchHolder->remove(std::move(localIdkey));
 
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  batchHolder->put(MetaKeyUtils::lastUpdateTimeKey(),
-                   MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
   doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop space " << spaceName << ", id " << spaceId;

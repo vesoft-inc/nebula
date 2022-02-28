@@ -97,8 +97,7 @@ void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
 
   LOG(INFO) << "Add Hosts Into Zone " << zoneName;
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();

@@ -155,8 +155,7 @@ class BalanceJobExecutor : public MetaJobExecutor {
   nebula::cpp2::ErrorCode updateLastTime() {
     std::vector<kvstore::KV> data;
     auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-    data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                      MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+    LastUpdateTimeMan::update(data, timeInMilliSec);
 
     folly::Baton<true, std::atomic> baton;
     nebula::cpp2::ErrorCode ret;

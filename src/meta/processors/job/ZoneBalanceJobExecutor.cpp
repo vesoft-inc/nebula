@@ -77,8 +77,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
   properties.zone_names_ref() = std::move(zones);
   std::vector<kvstore::KV> data;
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   data.emplace_back(MetaKeyUtils::spaceKey(spaceInfo_.spaceId_),
                     MetaKeyUtils::spaceVal(properties));
   folly::Baton<true, std::atomic> baton;

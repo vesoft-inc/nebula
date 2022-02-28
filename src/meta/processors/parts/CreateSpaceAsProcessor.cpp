@@ -86,8 +86,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
 
   resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
-                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   rc_ = doSyncPut(std::move(data));
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Update last update time error, " << apache::thrift::util::enumNameSafe(rc_);
