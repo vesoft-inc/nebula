@@ -46,6 +46,7 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
     if (status == meta::cpp2::JobStatus::FINISHED) {
+      folly::SharedMutex::WriteHolder holder(LockUtils::lock());
       nebula::cpp2::ErrorCode ret = updateMeta();
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         status = meta::cpp2::JobStatus::FAILED;

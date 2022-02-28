@@ -22,7 +22,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> 
                           [&ret, &baton](nebula::cpp2::ErrorCode code) {
                             if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
                               ret = code;
-                              LOG(INFO) << "Put data error on meta server";
+                              VLOG(2) << "Put data error on meta server";
                             }
                             baton.post();
                           });
