@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
 
   const auto& prefix = MetaKeyUtils::configKeyPrefix(req.get_module());
   auto iterRet = doPrefix(prefix);
@@ -20,8 +20,8 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
     onFinished();
     return;
   }
-  auto iter = nebula::value(iterRet).get();
 
+  auto iter = nebula::value(iterRet).get();
   std::vector<cpp2::ConfigItem> items;
   while (iter->valid()) {
     auto key = iter->key();

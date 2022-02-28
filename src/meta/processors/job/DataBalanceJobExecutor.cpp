@@ -22,6 +22,7 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
     }
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
     if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
         nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";

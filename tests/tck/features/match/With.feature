@@ -168,12 +168,11 @@ Feature: With clause
       | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     | 34  |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 8  | Project        | 7            |               |
-      | 7  | Filter         | 11           |               |
-      | 11 | TopN           | 4            |               |
-      | 4  | Project        | 3            |               |
-      | 3  | Project        | 2            |               |
-      | 2  | AppendVertices | 1            |               |
+      | 9  | Project        | 8            |               |
+      | 8  | Filter         | 12           |               |
+      | 12 | TopN           | 11           |               |
+      | 11 | Project        | 3            |               |
+      | 3  | AppendVertices | 1            |               |
       | 1  | IndexScan      | 0            |               |
       | 0  | Start          |              |               |
     When executing query:

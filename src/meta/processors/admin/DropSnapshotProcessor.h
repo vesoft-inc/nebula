@@ -6,8 +6,6 @@
 #ifndef META_DROPSNAPSHOTPROCESSOR_H_
 #define META_DROPSNAPSHOTPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
