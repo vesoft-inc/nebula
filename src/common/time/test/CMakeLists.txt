@@ -45,6 +45,9 @@ nebula_add_test(
     SOURCES
         TimeUtilsTest.cpp
     LIBRARIES
+		"${Glog_LIBRARY}"
+        gtest
+    LIBRARIES
         time_utils_obj
         thread_obj
         datatypes_obj
@@ -52,8 +55,6 @@ nebula_add_test(
         fs_obj
         wkt_wkb_io_obj
         datetime_parser_obj
-    LIBRARIES
-        gtest
 )
 
 nebula_add_executable(

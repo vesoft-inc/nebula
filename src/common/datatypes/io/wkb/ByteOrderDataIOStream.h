@@ -10,7 +10,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/geo/io/wkb/ByteOrder.h"
+#include "common/datatypes/io/wkb/ByteOrder.h"
 
 namespace nebula {
 namespace geo {

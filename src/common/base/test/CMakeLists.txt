@@ -5,9 +5,11 @@
 nebula_add_test(
     NAME cord_test
     SOURCES CordTest.cpp
-    LIBRARIES base_obj
-    LIBRARIES gtest
+    LIBRARIES ${Glog_LIBRARY} base_obj
+    LIBRARIES  gtest
 )
+find_package(Threads)
+
 
 nebula_add_test(
     NAME icord_test

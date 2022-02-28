@@ -8,4 +8,5 @@ nebula_add_library(
     StatsManager.cpp
 )
 
+target_link_libraries(stats_obj PUBLIC "${Glog_LIBRARY}" time_obj )
 nebula_add_subdirectory(test)

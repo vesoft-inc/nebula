@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/geo/io/wkt/WKTWriter.h"
+#include "common/datatypes/io/wkt/WKTWriter.h"
 
 namespace nebula {
 namespace geo {

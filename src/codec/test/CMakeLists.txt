@@ -3,6 +3,7 @@ nebula_add_library(
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
 )
+target_link_libraries(codec_test_obj PUBLIC "${Glog_LIBRARY}"  )
 
 set(CODEC_TEST_LIBS
     codec_obj

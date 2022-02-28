@@ -5,7 +5,7 @@
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"

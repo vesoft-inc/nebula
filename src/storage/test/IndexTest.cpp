@@ -17,7 +17,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVEngine.h"

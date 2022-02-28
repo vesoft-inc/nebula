@@ -20,7 +20,7 @@
 #undef YY_DECL
 #define YY_DECL int nebula::geo::WKTScanner::yylex()
 
-#include "common/geo/io/wkt/WKTParser.hpp"
+#include "common/datatypes/io/wkt/WKTParser.hpp"
 
 namespace nebula {
 namespace geo {

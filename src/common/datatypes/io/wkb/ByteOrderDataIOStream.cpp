@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
+#include "common/datatypes/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
 namespace geo {

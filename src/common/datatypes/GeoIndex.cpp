@@ -6,7 +6,7 @@
  *
  */
 
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 
 #include <folly/String.h>
 #include <folly/hash/Hash.h>

@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include "common/geo/GeoFunction.h"
+#include "common/datatypes/GeoFunction.h"
 
 namespace nebula {
 namespace geo {

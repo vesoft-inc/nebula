@@ -8,7 +8,7 @@
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
 #include "common/expression/Expression.h"
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 #include "common/utils/DefaultValueContext.h"
 
 namespace nebula {

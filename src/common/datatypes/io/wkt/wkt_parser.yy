@@ -14,7 +14,7 @@
 #include <sstream>
 #include <string>
 #include <cstddef>
-#include "common/datatypes/Geography.h"
+#include "common/geo/Geography.h"
 
 namespace nebula {
 namespace geo {
@@ -25,7 +25,7 @@ class WKTScanner;
 }
 
 %code {
-    #include "common/geo/io/wkt/WKTScanner.h"
+    #include "common/datatypes/io/wkt/WKTScanner.h"
     static int yylex(nebula::geo::WKTParser::semantic_type* yylval,
                      nebula::geo::WKTParser::location_type *yylloc,
                      nebula::geo::WKTScanner& scanner);

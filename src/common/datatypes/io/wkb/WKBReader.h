@@ -9,8 +9,8 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Geography.h"
-#include "common/geo/io/wkb/ByteOrder.h"
-#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
+#include "common/datatypes/io/wkb/ByteOrder.h"
+#include "common/datatypes/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
 namespace geo {

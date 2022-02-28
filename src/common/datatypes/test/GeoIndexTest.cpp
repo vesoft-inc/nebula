@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 #include "common/base/Base.h"
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 
 namespace nebula {
 namespace geo {

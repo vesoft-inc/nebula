@@ -7,8 +7,8 @@
 
 #include "common/base/Base.h"
 #include "common/datatypes/Geography.h"
-#include "common/geo/io/wkb/WKBReader.h"
-#include "common/geo/io/wkb/WKBWriter.h"
+#include "common/datatypes/io/wkb/WKBReader.h"
+#include "common/datatypes/io/wkb/WKBWriter.h"
 
 namespace nebula {
 namespace geo {

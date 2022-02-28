@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/geo/GeoFunction.h"
+#include "common/datatypes/GeoFunction.h"
 
 #include <s2/mutable_s2shape_index.h>
 #include <s2/s2cap.h>

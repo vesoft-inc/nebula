@@ -23,9 +23,20 @@ add_custom_target(wkt_parser_target DEPENDS ${FLEX_Scanner_OUTPUTS} ${BISON_Pars
 add_flex_bison_dependency(Scanner Parser)
 
 add_compile_options(-Wno-sign-compare -Wno-conversion-null -Wno-pedantic -Wno-extra)
-
 nebula_add_library(
-    wkt_wkb_io_obj SHARED
+    datatypes_obj SHARED
+    ../Date.cpp
+    ../Path.cpp
+    ../Value.cpp
+    ../HostAddr.cpp
+    ../Edge.cpp
+    ../Vertex.cpp
+    ../Map.cpp
+    ../List.cpp
+    ../Set.cpp
+    ../Geography.cpp
+    ../Duration.cpp
+    ../GeoIndex.cpp
     ${FLEX_Scanner_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
     wkt/WKTReader.cpp
@@ -34,6 +45,9 @@ nebula_add_library(
     wkb/WKBWriter.cpp
     wkb/ByteOrderDataIOStream.cpp
 )
+target_link_libraries(datatypes_obj PUBLIC base_obj s2 "${Glog_LIBRARY}" )
+add_library(wkt_wkb_io_obj ALIAS datatypes_obj)
+add_library(geo_index_obj ALIAS datatypes_obj)
 
 nebula_add_subdirectory(wkt)
 nebula_add_subdirectory(wkb)

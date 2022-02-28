@@ -12,7 +12,7 @@
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/geo/GeoIndex.h"
+#include "common/datatypes/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
 namespace nebula {

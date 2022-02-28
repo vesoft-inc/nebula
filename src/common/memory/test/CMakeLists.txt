@@ -5,8 +5,7 @@
 nebula_add_executable(
   NAME sys_info_read_bm
   SOURCES SysInfoReadBenchmark.cpp
-  LIBRARIES
-  LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+  LIBRARIES  follybenchmark ${Glog_LIBRARY} boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(

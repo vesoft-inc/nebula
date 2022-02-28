@@ -6,5 +6,6 @@ nebula_add_library(
     network_obj SHARED
     NetworkUtils.cpp
 )
+target_link_libraries(network_obj PUBLIC "${Glog_LIBRARY}"  fs_obj)
 
 nebula_add_subdirectory(test)

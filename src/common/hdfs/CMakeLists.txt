@@ -7,4 +7,5 @@ nebula_add_library(
     HdfsCommandHelper.cpp
 )
 
+target_link_libraries(hdfs_helper_obj PUBLIC "${Glog_LIBRARY}" process_obj  )
 nebula_add_subdirectory(test)

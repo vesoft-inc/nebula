@@ -10,11 +10,11 @@
 
 #include <cstdint>
 
-#include "common/geo/GeoUtils.h"
-#include "common/geo/io/wkb/WKBReader.h"
-#include "common/geo/io/wkb/WKBWriter.h"
-#include "common/geo/io/wkt/WKTReader.h"
-#include "common/geo/io/wkt/WKTWriter.h"
+#include "common/datatypes/GeoUtils.h"
+#include "common/datatypes/io/wkb/WKBReader.h"
+#include "common/datatypes/io/wkb/WKBWriter.h"
+#include "common/datatypes/io/wkt/WKTReader.h"
+#include "common/datatypes/io/wkt/WKTWriter.h"
 
 namespace nebula {
 

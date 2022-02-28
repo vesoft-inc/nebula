@@ -6,6 +6,7 @@ nebula_add_library(
     IndexKeyUtils.cpp
     OperationKeyUtils.cpp
 )
+target_link_libraries(keyutils_obj PUBLIC "${Glog_LIBRARY}" time_utils_obj   )
 
 nebula_add_library(
     meta_keyutils_obj SHARED

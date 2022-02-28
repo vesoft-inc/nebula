@@ -8,6 +8,5 @@ nebula_add_test(
     LIBRARIES
       datatypes_obj
       base_obj
-      wkt_wkb_io_obj
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )

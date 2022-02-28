@@ -7,7 +7,7 @@
 %option prefix="wkt"
 
 %{
-#include "common/geo/io/wkt/WKTScanner.h"
+#include "common/datatypes/io/wkt/WKTScanner.h"
 #include "WKTParser.hpp"
 #include <stdlib.h>
 

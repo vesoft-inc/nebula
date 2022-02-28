@@ -11,6 +11,7 @@ nebula_add_library(
     file_based_cluster_id_man_obj SHARED
     FileBasedClusterIdMan.cpp
 )
+target_link_libraries(file_based_cluster_id_man_obj PUBLIC ${Glog_LIBRARY})
 target_link_libraries(meta_client_obj PRIVATE meta_obj http_client_obj ws_common_obj)
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

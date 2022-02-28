@@ -88,11 +88,11 @@ macro(nebula_add_library name type)
         wkt_parser_target
         datetime_parser_target
     )
-	install(TARGETS "${name}"
+    install(TARGETS "${name}"
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
-	)
+    )
 endmacro()
 
 nebula_add_subdirectory(src)

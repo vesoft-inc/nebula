@@ -9,8 +9,8 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Geography.h"
-#include "common/geo/io/wkt/WKTParser.hpp"
-#include "common/geo/io/wkt/WKTScanner.h"
+#include "common/datatypes/io/wkt/WKTParser.hpp"
+#include "common/datatypes/io/wkt/WKTScanner.h"
 
 namespace nebula {
 namespace geo {

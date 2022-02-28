@@ -6,8 +6,8 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include "common/geo/io/wkt/WKTReader.h"
-#include "common/geo/io/wkt/WKTWriter.h"
+#include "common/datatypes/io/wkt/WKTReader.h"
+#include "common/datatypes/io/wkt/WKTWriter.h"
 
 namespace nebula {
 namespace geo {
