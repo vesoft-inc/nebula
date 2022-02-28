@@ -22,5 +22,6 @@ nebula_add_library(
     plan_node_visitor_obj SHARED
     PrunePropertiesVisitor.cpp
 )
+target_link_libraries(expr_visitor_obj PUBLIC  "${Glog_LIBRARY}" )
 
 nebula_add_subdirectory(test)

@@ -94,6 +94,7 @@ nebula_add_library(
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
+target_link_libraries(meta_service_handler PUBLIC kvstore_obj)
 
 add_dependencies(
     meta_service_handler

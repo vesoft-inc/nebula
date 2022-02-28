@@ -101,6 +101,7 @@ nebula_add_library(
     storage_local_server_obj SHARED
     GraphStorageLocalServer.cpp
 )
+target_link_libraries(storage_admin_service_handler PUBLIC "${Glog_LIBRARY}" kv_stats_obj)
 
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

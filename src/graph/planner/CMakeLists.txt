@@ -44,3 +44,4 @@ nebula_add_library(
     plan/Mutate.cpp
     plan/Maintain.cpp
 )
+target_link_libraries(plan_obj PUBLIC ${Glog_LIBRARY} idgenerator_obj )

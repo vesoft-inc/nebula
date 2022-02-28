@@ -6,6 +6,6 @@ nebula_add_library(
     process_obj SHARED
     ProcessUtils.cpp
 )
-target_link_libraries(process_obj PUBLIC "${Glog_LIBRARY}"  )
+target_link_libraries(process_obj PUBLIC "${Glog_LIBRARY}"  base_obj )
 
 nebula_add_subdirectory(test)

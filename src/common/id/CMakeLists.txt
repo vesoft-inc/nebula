@@ -12,5 +12,6 @@ nebula_add_library(
     uuid_obj SHARED
     UUID.cpp
 )
+target_link_libraries(snowflake_obj PUBLIC ${Glog_LIBRARY})
 
 nebula_add_subdirectory(test)

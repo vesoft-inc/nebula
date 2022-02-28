@@ -14,7 +14,7 @@
 #include <sstream>
 #include <string>
 #include <cstddef>
-#include "common/geo/Geography.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
 namespace geo {

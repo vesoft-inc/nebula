@@ -12,7 +12,8 @@ nebula_add_library(
     storage_client_base_obj SHARED
     StorageClientBase.cpp
 )
-target_link_libraries(storage_client_obj PRIVATE storage_client_base_obj "${Glog_LIBRARY}")
+target_link_libraries(storage_client_base_obj PUBLIC "${Glog_LIBRARY}")
+target_link_libraries(storage_client_obj PRIVATE storage_client_base_obj "${Glog_LIBRARY}" storage_client_stats_obj)
 
 
 nebula_add_library(

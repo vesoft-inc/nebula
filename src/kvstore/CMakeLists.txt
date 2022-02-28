@@ -16,11 +16,12 @@ nebula_add_library(
     disk_man_obj SHARED
     DiskManager.cpp
 )
-target_link_libraries(kvstore_obj PRIVATE conf_obj)
+target_link_libraries(kvstore_obj PUBLIC conf_obj raftex_obj )
+target_link_libraries(disk_man_obj PUBLIC ${Glog_LIBRARY})
 
+nebula_add_subdirectory(stats)
 nebula_add_subdirectory(raftex)
 nebula_add_subdirectory(wal)
-nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)
 
 #nebula_add_subdirectory(plugins)
