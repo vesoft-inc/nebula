@@ -2313,8 +2313,6 @@ Status MetaClient::authCheckFromCache(const std::string& account,
                        "please update the client.",
                        clientIp.toString()));
   }
-  // clear the key
-  // clientAddrMap_.erase(clientAddrIt);
 
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();

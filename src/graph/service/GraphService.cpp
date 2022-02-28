@@ -24,7 +24,8 @@
 namespace nebula {
 namespace graph {
 
-const int64_t clientAddrTimeout = 60;
+// The default value is 28800 seconds
+const int64_t clientAddrTimeout = FLAGS_client_idle_timeout_secs;
 
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
                           const HostAddr& hostAddr) {
@@ -253,7 +254,8 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
 
   auto ttlTimestamp = time::WallClock::fastNowInSec() + clientAddrTimeout;
-  metaClient_->getClientAddrMap().insert(clientAddr, ttlTimestamp);
+  auto clientAddrMap = &metaClient_->getClientAddrMap();
+  clientAddrMap->insert_or_assign(clientAddr, ttlTimestamp);
   return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
 }
 }  // namespace graph
