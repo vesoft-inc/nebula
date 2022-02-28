@@ -423,6 +423,32 @@ class DropSpaceSentence final : public DropSentence {
   std::unique_ptr<std::string> clusterName_;
 };
 
+class ClearSpaceSentence final : public DropSentence {
+ public:
+  ClearSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
+    spaceName_.reset(spaceName);
+    kind_ = Kind::kClearSpace;
+  }
+
+  void setClusterName(std::string* clusterName) {
+    clusterName_.reset(clusterName);
+  }
+
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
+
+  const std::string* clusterName() const {
+    return clusterName_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> spaceName_;
+  std::unique_ptr<std::string> clusterName_;
+};
+
 class AlterSpaceSentence final : public Sentence {
  public:
   AlterSpaceSentence(std::string* spaceName, meta::cpp2::AlterSpaceOp op)

@@ -34,6 +34,13 @@ std::unique_ptr<PlanNodeDescription> DropSpace::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> ClearSpace::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("spaceName", spaceName_, desc.get());
+  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> DescSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("spaceName", spaceName_, desc.get());

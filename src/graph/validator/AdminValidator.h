@@ -97,6 +97,18 @@ class DropSpaceValidator final : public Validator {
   Status toPlan() override;
 };
 
+class ClearSpaceValidator final : public Validator {
+ public:
+  ClearSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+}
+
 class ShowCreateSpaceValidator final : public Validator {
  public:
   ShowCreateSpaceValidator(Sentence* sentence, QueryContext* context)
