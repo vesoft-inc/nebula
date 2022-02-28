@@ -58,6 +58,8 @@ class HBProcessor : public BaseProcessor<cpp2::HBResp> {
   HBProcessor(kvstore::KVStore* kvstore, const HBCounters* counters, ClusterID clusterId)
       : BaseProcessor<cpp2::HBResp>(kvstore), clusterId_(clusterId), counters_(counters) {}
 
+  void setLeaderInfo();
+
   ClusterID clusterId_{0};
   const HBCounters* counters_{nullptr};
   static std::atomic<int64_t> metaVersion_;
