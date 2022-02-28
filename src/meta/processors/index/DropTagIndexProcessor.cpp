@@ -21,12 +21,12 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop Tag Index Failed, index name " << indexName
-                   << " not exists in Space: " << spaceID;
+        LOG(INFO) << "Drop Tag Index Failed, index name " << indexName
+                  << " not exists in Space: " << spaceID;
       }
     } else {
-      LOG(ERROR) << "Drop Tag Index Failed, index name " << indexName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Drop Tag Index Failed, index name " << indexName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -44,8 +44,8 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    LOG(ERROR) << "Drop Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -53,7 +53,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
 
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id) {
-    LOG(ERROR) << "Drop Tag Index Failed: Index Name " << indexName << " is not TagIndex";
+    LOG(INFO) << "Drop Tag Index Failed: Index Name " << indexName << " is not TagIndex";
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;

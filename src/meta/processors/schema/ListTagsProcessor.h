@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get all tag schemas of all version for given space id.
+ *
+ */
 class ListTagsProcessor : public BaseProcessor<cpp2::ListTagsResp> {
  public:
   /*

@@ -16,7 +16,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq &req) {
   auto prefix = MetaKeyUtils::schemaEdgesPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "List Edges failed, SpaceID: " << spaceId;
+    LOG(INFO) << "List Edges failed, SpaceID: " << spaceId;
     handleErrorCode(nebula::error(ret));
     onFinished();
     return;
