@@ -18,7 +18,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     onFinished();
   };
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto oldSpaceName = req.get_old_space_name();
   auto newSpaceName = req.get_new_space_name();
   auto oldSpaceId = getSpaceId(oldSpaceName);
@@ -26,23 +26,23 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
 
   if (!nebula::ok(oldSpaceId)) {
     rc_ = nebula::error(oldSpaceId);
-    LOG(ERROR) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
-               << "] failed. Old space does not exists. rc = "
-               << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
+              << "] failed. Old space does not exists. rc = "
+              << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   if (nebula::ok(newSpaceId)) {
     rc_ = nebula::cpp2::ErrorCode::E_EXISTED;
-    LOG(ERROR) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
-               << "] failed. New space already exists.";
+    LOG(INFO) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
+              << "] failed. New space already exists.";
     return;
   }
 
   newSpaceId = autoIncrementId();
   if (!nebula::ok(newSpaceId)) {
     rc_ = nebula::error(newSpaceId);
-    LOG(ERROR) << "Create Space Failed : Generate new space id failed";
+    LOG(INFO) << "Create Space Failed : Generate new space id failed";
     return;
   }
 
@@ -53,7 +53,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newSpaceData).begin(), nebula::value(newSpaceData).end());
   } else {
     rc_ = nebula::error(newSpaceData);
-    LOG(ERROR) << "make new space data failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "make new space data failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -62,7 +62,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newTags).begin(), nebula::value(newTags).end());
   } else {
     rc_ = nebula::error(newTags);
-    LOG(ERROR) << "make new tags failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "make new tags failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -71,7 +71,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newEdges).begin(), nebula::value(newEdges).end());
   } else {
     rc_ = nebula::error(newEdges);
-    LOG(ERROR) << "make new edges failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "make new edges failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
@@ -80,20 +80,20 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     data.insert(data.end(), nebula::value(newIndexes).begin(), nebula::value(newIndexes).end());
   } else {
     rc_ = nebula::error(newIndexes);
-    LOG(ERROR) << "make new indexes failed, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "make new indexes failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
   rc_ = doSyncPut(std::move(data));
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "put data error, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "put data error, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   rc_ = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "update last update time error, " << apache::thrift::util::enumNameSafe(rc_);
+    LOG(INFO) << "update last update time error, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
   LOG(INFO) << "created space " << newSpaceName;
@@ -104,7 +104,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   auto oldSpaceKey = MetaKeyUtils::spaceKey(oldSpaceId);
   auto oldSpaceVal = doGet(oldSpaceKey);
   if (!nebula::ok(oldSpaceVal)) {
-    LOG(ERROR) << "Create Space Failed : Generate new space id failed";
+    LOG(INFO) << "Create Space Failed : Generate new space id failed";
     rc_ = nebula::error(oldSpaceVal);
     return rc_;
   }
@@ -132,7 +132,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewTags(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::schemaTagsPrefix(oldSpaceId);
   auto tagPrefix = doPrefix(prefix);
   if (!nebula::ok(tagPrefix)) {
@@ -148,12 +147,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   while (iter->valid()) {
     auto val = iter->val();
 
+    // tag name -> tag id
     auto tagId = MetaKeyUtils::parseTagId(iter->key());
     auto tagNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto tagName = val.subpiece(sizeof(int32_t), tagNameLen).str();
     data.emplace_back(MetaKeyUtils::indexTagKey(newSpaceId, tagName),
                       std::string(reinterpret_cast<const char *>(&tagId), sizeof(tagId)));
 
+    // tag id -> tag schema
     auto tagVer = MetaKeyUtils::parseTagVersion(iter->key());
     auto key = MetaKeyUtils::schemaTagKey(newSpaceId, tagId, tagVer);
     data.emplace_back(std::move(key), val.str());
@@ -164,7 +165,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewEdges(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::schemaEdgesPrefix(oldSpaceId);
   auto edgePrefix = doPrefix(prefix);
   if (!nebula::ok(edgePrefix)) {
@@ -180,12 +180,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   while (iter->valid()) {
     auto val = iter->val();
 
+    // edge name -> edge id
     auto edgeType = MetaKeyUtils::parseEdgeType(iter->key());
     auto edgeNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), edgeNameLen).str();
     data.emplace_back(MetaKeyUtils::indexEdgeKey(newSpaceId, edgeName),
                       std::string(reinterpret_cast<const char *>(&edgeType), sizeof(edgeType)));
 
+    // edge id -> edge schema
     auto ver = MetaKeyUtils::parseEdgeVersion(iter->key());
     auto key = MetaKeyUtils::schemaEdgeKey(newSpaceId, edgeType, ver);
     data.emplace_back(std::move(key), val.str());
@@ -196,7 +198,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewIndexes(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
   auto prefix = MetaKeyUtils::indexPrefix(oldSpaceId);
   auto indexPrefix = doPrefix(prefix);
   if (!nebula::ok(indexPrefix)) {

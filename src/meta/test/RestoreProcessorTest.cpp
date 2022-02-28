@@ -90,10 +90,11 @@ TEST(RestoreProcessorTest, RestoreTest) {
                     MetaKeyUtils::lastUpdateTimeVal(lastUpdateTime));
 
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-    ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+        baton.post();
+      });
   baton.wait();
 
   std::unordered_set<GraphSpaceID> spaces = {id};
@@ -133,10 +134,11 @@ TEST(RestoreProcessorTest, RestoreTest) {
     restoreData.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("password"));
 
     folly::Baton<true, std::atomic> restoreBaton;
-    kvRestore->asyncMultiPut(0, 0, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
-      ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-      restoreBaton.post();
-    });
+    kvRestore->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
+          ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+          restoreBaton.post();
+        });
     restoreBaton.wait();
 
     auto* processor = RestoreProcessor::instance(kvRestore.get());
@@ -294,10 +296,11 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal(hosts));
 
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-    ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+        baton.post();
+      });
   baton.wait();
 
   std::unordered_set<GraphSpaceID> spaces = {id};

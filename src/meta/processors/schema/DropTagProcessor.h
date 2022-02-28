@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop tag schema for all versions. The indexes on it should be dropped before drop the
+ *        edge.
+ *
+ */
 class DropTagProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropTagProcessor* instance(kvstore::KVStore* kvstore) {

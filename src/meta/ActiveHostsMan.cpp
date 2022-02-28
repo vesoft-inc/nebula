@@ -64,7 +64,6 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   bool hasUpdate = !data.empty();
   data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   folly::Baton<true, std::atomic> baton;
   nebula::cpp2::ErrorCode ret;
   kv->asyncMultiPut(
@@ -266,7 +265,6 @@ nebula::cpp2::ErrorCode LastUpdateTimeMan::update(kvstore::KVStore* kv,
   data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
                     MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::lastUpdateTimeLock());
   folly::Baton<true, std::atomic> baton;
   nebula::cpp2::ErrorCode ret;
   kv->asyncMultiPut(

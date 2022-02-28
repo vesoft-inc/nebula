@@ -134,7 +134,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::
 
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
-  folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
   const std::string kIdKey = MetaKeyUtils::idKey();
   int32_t id;
   std::string val;
@@ -186,9 +185,6 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGloba
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdInSpace(
     GraphSpaceID spaceId) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::localIdLock());
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::idLock());
-
   auto localIdkey = MetaKeyUtils::localIdKey(spaceId);
   int32_t id;
   std::string val;
@@ -228,7 +224,6 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto ret = doGet(std::move(spaceKey));
   if (nebula::ok(ret)) {
@@ -617,7 +612,6 @@ ErrorOr<nebula::cpp2::ErrorCode, ZoneID> BaseProcessor<RESP>::getZoneId(
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
                                                            cpp2::ListenerType type) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {

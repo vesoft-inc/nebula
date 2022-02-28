@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::serviceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   auto serviceKey = MetaKeyUtils::serviceKey(type);
@@ -35,7 +35,7 @@ void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
 }
 
 void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::serviceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   auto serviceKey = MetaKeyUtils::serviceKey(type);
@@ -57,7 +57,7 @@ void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
 }
 
 void ListServiceClientsProcessor::process(const cpp2::ListServiceClientsReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::serviceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   std::unordered_map<cpp2::ExternalServiceType, std::vector<cpp2::ServiceClient>> serviceClients;
