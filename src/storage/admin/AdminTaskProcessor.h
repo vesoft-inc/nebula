@@ -18,10 +18,21 @@ namespace storage {
 
 class AdminTaskProcessor {
  public:
+  /**
+   * @brief Construct new instance of the admin task processor.
+   *
+   * @param env Related environment variables for storage.
+   * @return AdminTaskProcessor* AdminTaskProcessor instance.
+   */
   static AdminTaskProcessor* instance(StorageEnv* env) {
     return new AdminTaskProcessor(env);
   }
 
+  /**
+   * @brief Entry point for admin task logic.
+   *
+   * @param req Request for admin task.
+   */
   void process(const cpp2::AddTaskRequest& req);
 
   folly::Future<cpp2::AddTaskResp> getFuture() {
