@@ -74,7 +74,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
   auto authResult = auth(username, password);
   if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
-    ctx->resp().errorMsg = std::make_unique<std::string>(authResult.toString());
+    ctx->resp().errorMsg.reset(new std::string(authResult.toString()));
     ctx->finish();
     stats::StatsManager::addValue(kNumAuthFailedSessions);
     stats::StatsManager::addValue(kNumAuthFailedSessionsBadUserNamePassword);
@@ -97,7 +97,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
       LOG(ERROR) << "Create session for userName: " << user << ", ip: " << cIp
                  << " failed: " << ret.status();
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(new std::string("Get session for sessionId is nullptr"));
+      ctx->resp().errorMsg.reset(new std::string(ret.status().toString()));
       return ctx->finish();
     }
     auto sessionPtr = std::move(ret).value();

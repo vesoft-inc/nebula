@@ -65,6 +65,7 @@ void QueryInstance::execute() {
                  [this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
 }
 
+// Get query from GQLParser, validate and optimize the query
 Status QueryInstance::validateAndOptimize() {
   auto *rctx = qctx()->rctx();
   auto &spaceName = rctx->session()->space().name;
