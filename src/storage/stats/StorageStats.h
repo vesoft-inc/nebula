@@ -16,6 +16,10 @@ extern stats::CounterId kNumEdgesDeleted;
 extern stats::CounterId kNumTagsDeleted;
 extern stats::CounterId kNumVerticesDeleted;
 
+/**
+ * @brief Init storage statistic points for storage/meta client/kv
+ *
+ */
 void initStorageStats();
 
 }  // namespace nebula

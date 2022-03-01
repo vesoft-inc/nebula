@@ -212,8 +212,10 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       // No permission checking for sequential sentence.
       return Status::OK();
     }
-    case Sentence::Kind::kShowQueries:
-    case Sentence::Kind::kKillQuery: {
+    case Sentence::Kind::kKillQuery:
+      // Only GOD could kill all queries, other roles only could kill own queries.
+      return Status::OK();
+    case Sentence::Kind::kShowQueries: {
       return Status::OK();
     }
   }

@@ -133,6 +133,7 @@ class StatsManager final {
                                  std::vector<StatsMethod> methods,
                                  std::vector<std::pair<std::string, double>> percentiles);
 
+  // Dynamically register some stats with label values
   static CounterId counterWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
   static CounterId histoWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
 
@@ -166,6 +167,7 @@ class StatsManager final {
   StatsManager(const StatsManager&) = delete;
   StatsManager(StatsManager&&) = delete;
 
+  // Parse percentiles from the string
   static bool strToPct(folly::StringPiece part, double& pct);
   static void parseStats(const folly::StringPiece stats,
                          std::vector<StatsMethod>& methods,

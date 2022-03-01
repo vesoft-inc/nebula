@@ -12,11 +12,9 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   auto spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
-  auto statsKey = MetaKeyUtils::statsKey(spaceId);
-  std::string val;
-  auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statsKey, &val);
-
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+  auto statsRet = doGet(MetaKeyUtils::statsKey(spaceId));
+  if (!nebula::ok(statsRet)) {
+    auto ret = nebula::error(statsRet);
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       ret = nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND;
       LOG(INFO) << "SpaceId " << spaceId
@@ -29,7 +27,7 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
     onFinished();
     return;
   }
-  auto statsItem = MetaKeyUtils::parseStatsVal(val);
+  auto statsItem = MetaKeyUtils::parseStatsVal(nebula::value(statsRet));
   auto statsJobStatus = statsItem.get_status();
   if (statsJobStatus != cpp2::JobStatus::FINISHED) {
     LOG(INFO) << "SpaceId " << spaceId

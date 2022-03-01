@@ -17,6 +17,10 @@ namespace storage {
 
 using nebula::HttpCode;
 
+/**
+ * @brief ingest from from downloaded file.
+ *
+ */
 class StorageHttpIngestHandler : public proxygen::RequestHandler {
  public:
   StorageHttpIngestHandler() = default;

@@ -15,6 +15,7 @@
 #include "common/base/StatusOr.h"
 #include "common/thread/GenericWorker.h"
 #include "common/thrift/ThriftTypes.h"
+#include "folly/synchronization/Rcu.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -41,6 +42,8 @@ class DiskManager {
   DiskManager(const std::vector<std::string>& dataPaths,
               std::shared_ptr<thread::GenericWorker> bgThread = nullptr);
 
+  ~DiskManager();
+
   /**
    * @brief return canonical data path of given space
    *
@@ -48,7 +51,7 @@ class DiskManager {
    * @return StatusOr<std::vector<std::string>> Canonical path of all which contains the specified
    * space, e.g. {"/DataPath1/nebula/spaceId", "/DataPath2/nebula/spaceId" ... }
    */
-  StatusOr<std::vector<std::string>> path(GraphSpaceID spaceId);
+  StatusOr<std::vector<std::string>> path(GraphSpaceID spaceId) const;
 
   /**
    * @brief Canonical path which contains the specified space and part, e.g.
@@ -60,7 +63,7 @@ class DiskManager {
    * @param partId
    * @return StatusOr<std::string> data path of given partId if found, else return error status
    */
-  StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId);
+  StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId) const;
 
   /**
    * @brief Add a partition to a given path, called when add a partiton in NebulaStore
@@ -90,14 +93,14 @@ class DiskManager {
    * @return true Data path remains enough space
    * @return false Data path does not remain enough space
    */
-  bool hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId);
+  bool hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) const;
 
   /**
    * @brief Get all partitions grouped by data path and spaceId
    *
    * @param diskParts Get all space data path and all partition in the path
    */
-  void getDiskParts(SpaceDiskPartsMap& diskParts);
+  void getDiskParts(SpaceDiskPartsMap& diskParts) const;
 
  private:
   /**
@@ -105,19 +108,21 @@ class DiskManager {
    */
   void refresh();
 
+  struct Paths {
+    // canonical path of data_path flag
+    std::vector<boost::filesystem::path> dataPaths_;
+    // given a space and data path, return all parts in the path
+    std::unordered_map<GraphSpaceID, PartDiskMap> partPath_;
+    // the index in dataPaths_ for a given space + part
+    std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, size_t>> partIndex_;
+  };
+
  private:
   std::shared_ptr<thread::GenericWorker> bgThread_;
 
-  // canonical path of data_path flag
-  std::vector<boost::filesystem::path> dataPaths_;
+  std::atomic<Paths*> paths_;
   // free space available to a non-privileged process, in bytes
   std::vector<std::atomic_uint64_t> freeBytes_;
-
-  // given a space and data path, return all parts in the path
-  std::unordered_map<GraphSpaceID, PartDiskMap> partPath_;
-
-  // the index in dataPaths_ for a given space + part
-  std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, size_t>> partIndex_;
 
   // lock used to protect partPath_ and partIndex_
   std::mutex lock_;

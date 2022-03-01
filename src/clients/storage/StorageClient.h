@@ -6,8 +6,6 @@
 #ifndef CLIENTS_STORAGE_STORAGECLIENT_H
 #define CLIENTS_STORAGE_STORAGECLIENT_H
 
-#include <gtest/gtest_prod.h>
-
 #include "clients/storage/StorageClientBase.h"
 #include "common/base/Base.h"
 #include "common/thrift/ThriftClientManager.h"
