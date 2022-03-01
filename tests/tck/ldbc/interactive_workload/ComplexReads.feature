@@ -6,25 +6,23 @@ Feature: LDBC Interactive Workload - Complex Reads
   Background:
     Given a graph with space named "ldbc_v0_3_3"
 
-  @skip
   Scenario: 1. Friends with certain name
-    # TODO: shortestPath syntax is not supported for now
+    # {"personId":"4398046511333", "firstName":"Jose"}
     When executing query:
       """
-      MATCH p=shortestPath((person:Person)-[path:KNOWS*1..3]-(friend:Person {firstName: "$firstName"}))
-      WHERE id(person) == ""
-      WHERE person <> friend
+      MATCH p=(person:Person)-[:KNOWS*1..3]-(friend:Person {firstName: "Jose"})
+      WHERE id(person) == "4398046511333"
+      AND person <> friend
       WITH friend, length(p) AS distance
-      ORDER BY distance ASC, friend.lastName ASC, toInteger(friend.id) ASC
       LIMIT 20
       MATCH (friend)-[:IS_LOCATED_IN]->(friendCity:Place)
       OPTIONAL MATCH (friend)-[studyAt:STUDY_AT]->(uni:Organisation)-[:IS_LOCATED_IN]->(uniCity:Place)
       WITH
         friend,
         collect(
-          CASE uni.name
+          CASE uni.Organisation.name
             WHEN null THEN null
-            ELSE [uni.name, studyAt.classYear, uniCity.name]
+            ELSE [uni.Organisation.name, studyAt.classYear, uniCity.Place.name]
           END
         ) AS unis,
         friendCity,
@@ -33,38 +31,40 @@ Feature: LDBC Interactive Workload - Complex Reads
       WITH
         friend,
         collect(
-          CASE company.name
+          CASE company.Organisation.name
             WHEN null THEN null
-            ELSE [company.name, workAt.workFrom, companyCountry.name]
+            ELSE [company.Organisation.name, workAt.workFrom, companyCountry.Place.name]
           END
         ) AS companies,
         unis,
         friendCity,
         distance
       RETURN
-        friend.id AS friendId,
-        friend.lastName AS friendLastName,
+        friend.Person.id AS friendId,
+        friend.Person.lastName AS friendLastName,
         distance AS distanceFromPerson,
-        friend.birthday AS friendBirthday,
-        friend.creationDate AS friendCreationDate,
-        friend.gender AS friendGender,
-        friend.browserUsed AS friendBrowserUsed,
-        friend.locationIP AS friendLocationIp,
-        friend.email AS friendEmails,
-        friend.speaks AS friendLanguages,
-        friendCity.name AS friendCityName,
+        friend.Person.birthday AS friendBirthday,
+        friend.Person.creationDate AS friendCreationDate,
+        friend.Person.gender AS friendGender,
+        friend.Person.browserUsed AS friendBrowserUsed,
+        friend.Person.locationIP AS friendLocationIp,
+        friend.Person.email AS friendEmails,
+        friend.Person.speaks AS friendLanguages,
+        friendCity.Place.name AS friendCityName,
         unis AS friendUniversities,
         companies AS friendCompanies
-      ORDER BY distanceFromPerson ASC, friendLastName ASC, toInteger(friendId) ASC
+      ORDER BY distanceFromPerson ASC, friendLastName ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `shortestPath'
+    Then the result should be, in any order:
+      | friendId | friendLastName | distanceFromPerson | friendBirthday | friendCreationDate | friendGender | friendBrowserUsed | friendLocationIp | friendEmails | friendLanguages | friendCityName | friendUniversities | friendCompanies |
 
   Scenario: 2. Recent messages by your friends
+    # {"personId":"10995116278009", "maxDate":"1287230400000"}
     When executing query:
       """
       MATCH (n:Person)-[:KNOWS]-(friend:Person)<-[:HAS_CREATOR]-(message:Message)
-      WHERE id(n) == "" and message.Message.creationDate <= $maxDate
+      WHERE id(n) == "10995116278009" and message.Message.creationDate <= 1287230400000
       RETURN
         friend.Person.id AS personId,
         friend.Person.firstName AS personFirstName,
@@ -81,50 +81,52 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
-  @skip
   Scenario: 3. Friends and friends of friends that have been to given countries
+    # {"personId":"6597069766734","countryXName":"Angola","countryYName":"Colombia","startDate":"1275393600000","endDate":"1277812800000"}
     When executing query:
-      # TODO: WHERE not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX)) not supported now
       """
-      MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(messageX:Message),
-      (messageX)-[:IS_LOCATED_IN]->(countryX:Place)
-      WHERE
-        id(person) == ""
-        AND not(person==friend)
-        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX))
-        AND countryX.name=$countryXName AND messageX.creationDate>=$startDate
-        AND messageX.creationDate<$endDate
-      WITH friend, count(DISTINCT messageX) AS xCount
-      MATCH (friend)<-[:HAS_CREATOR]-(messageY:Message)-[:IS_LOCATED_IN]->(countryY:Place)
-      WHERE
-        countryY.name="$countryYName"
-        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryY))
-        AND messageY.creationDate>="$startDate"
-        AND messageY.creationDate<"$endDate"
-      WITH
-        friend.id AS personId,
-        friend.firstName AS personFirstName,
-        friend.lastName AS personLastName,
-        xCount,
-        count(DISTINCT messageY) AS yCount
-      RETURN
-        personId,
-        personFirstName,
-        personLastName,
-        xCount,
-        yCount,
-        xCount + yCount AS count
-      ORDER BY count DESC, toInteger(personId) ASC
+      MATCH (countryX:Country)
+      WHERE id(countryX) == "Angola"
+      MATCH (countryY:Country)
+      WHERE id(countryY) == "Colombia"
+      MATCH (person:Person)
+      WHERE id(person) == "6597069766734"
+      WITH person, countryX, countryY
+      LIMIT 1
+      MATCH (city:City)-[:IS_PART_OF]->(country:Country)
+      WHERE id(country) IN ["Angola", "Colombia"]
+      WITH person, countryX, countryY, collect(city) AS cities
+      MATCH (person)-[:KNOWS*1..2]-(friend)-[:IS_LOCATED_IN]->(city)
+      WHERE person<>friend AND NOT city IN cities
+      WITH DISTINCT friend, countryX, countryY
+      MATCH (friend)<-[:HAS_CREATOR]-(message),
+            (message)-[:IS_LOCATED_IN]->(country)
+      WHERE "1277812800000" > message.Message.creationDate >= "1275393600000" AND
+            country IN [countryX, countryY]
+      WITH friend,
+           CASE WHEN country==countryX THEN 1 ELSE 0 END AS messageX,
+           CASE WHEN country==countryY THEN 1 ELSE 0 END AS messageY
+      WITH friend, sum(messageX) AS xCount, sum(messageY) AS yCount
+      WHERE xCount>0 AND yCount>0
+      RETURN friend.Person.id AS friendId,
+             friend.Person.firstName AS friendFirstName,
+             friend.Person.lastName AS friendLastName,
+             xCount,
+             yCount,
+             xCount + yCount AS xyCount
+      ORDER BY xyCount DESC, friendId ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | friendId | friendFirstName | friendLastName | xCount | yCount | xyCount |
 
   Scenario: 4. New topics
+    # {"personId":"4398046511333","startDate":"1275350400000","endDate":"1277856000000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS]-(:Person)<-[:HAS_CREATOR]-(post:Post)-[:HAS_TAG]->(`tag`:`Tag`)
-      WHERE id(person) == "" AND post.Post.creationDate >= "$startDate"
-         AND post.Post.creationDate < "$endDate"
+      WHERE id(person) == "4398046511333" AND post.Post.creationDate >= "1275350400000"
+         AND post.Post.creationDate < "1277856000000"
       WITH person, count(post) AS postsOnTag, `tag`
       OPTIONAL MATCH (person)-[:KNOWS]-()<-[:HAS_CREATOR]-(oldPost:Post)-[:HAS_TAG]->(`tag`)
       WHERE oldPost.Post.creationDate < $startDate
@@ -139,10 +141,11 @@ Feature: LDBC Interactive Workload - Complex Reads
       | tagName | postCount |
 
   Scenario: 5. New groups
+    # {"personId":"6597069766734","minDate":"1288612800000"}
     When executing query:
       """
       MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[membership:HAS_MEMBER]-(forum:Forum)
-      WHERE id(person) == "" AND membership.joinDate>"$minDate"
+      WHERE id(person) == "6597069766734" AND membership.joinDate>"1288612800000"
           AND not(person==friend)
       WITH DISTINCT friend, forum
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(forum)
@@ -157,45 +160,46 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | forumId | forumTitle | postCount |
 
-  @skip
   Scenario: 6. Tag co-occurrence
-    # TODO: WHERE (commonPost)-[:HAS_CREATOR]->(friend)
+    # {"personId":"4398046511333","tagName":"Carl_Gustaf_Emil_Mannerheim"}
     When executing query:
       """
       MATCH
-        (person:Person)-[:KNOWS*1..2]-(friend:Person),
-        (friend)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"$tagName"})
-      WHERE id(person) == "" AND not(person==friend)
+        (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"Carl_Gustaf_Emil_Mannerheim"})
+      WHERE id(person) == "4398046511333" AND not(person==friend)
       MATCH (friendPost)-[:HAS_TAG]->(commonTag:`Tag`)
       WHERE not(commonTag==knownTag)
       WITH DISTINCT commonTag, knownTag, friend
       MATCH (commonTag)<-[:HAS_TAG]-(commonPost:Post)-[:HAS_TAG]->(knownTag)
-      WHERE (commonPost)-[:HAS_CREATOR]->(friend)
+      OPTIONAL MATCH p = (commonPost)-[:HAS_CREATOR]->(friend)
+      WITH commonTag, commonPost, p
+      WHERE p IS NOT NULL
       RETURN
-        commonTag.name AS tagName,
+        commonTag.`Tag`.name AS tagName,
         count(commonPost) AS postCount
       ORDER BY postCount DESC, tagName ASC
       LIMIT 10
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | tagName | postCount |
 
-  @skip
   Scenario: 7. Recent likers
-    # TODO: RETURN not((liker)-[:KNOWS]-(person)) AS isNew
+    # personId: 4398046511268
     When executing query:
       """
       MATCH (person:Person)<-[:HAS_CREATOR]-(message:Message)<-[like:LIKES]-(liker:Person)
-      WHERE id(person) == ""
-      WITH liker, message, like.creationDate AS likeTime, person
-      ORDER BY likeTime DESC, toInteger(message.id) ASC
+      WHERE id(person) == "4398046511268"
+      WITH liker, message, like.creationDate AS likeTime, person, toInteger(message.Message.id) AS messageId
+      ORDER BY likeTime DESC, messageId ASC
       WITH
         liker,
         head(collect({msg: message, likeTime: likeTime})) AS latestLike,
         person
+      OPTIONAL MATCH p = (liker)-[:KNOWS]-(person)
       RETURN
-        toInteger(liker.id) AS personId,
-        liker.firstName AS personFirstName,
-        liker.lastName AS personLastName,
+        toInteger(liker.Person.id) AS personId,
+        liker.Person.firstName AS personFirstName,
+        liker.Person.lastName AS personLastName,
         latestLike.likeTime AS likeCreationDate,
         latestLike.msg.id AS messageId,
         CASE exists(latestLike.msg.content)
@@ -203,11 +207,12 @@ Feature: LDBC Interactive Workload - Complex Reads
           ELSE latestLike.msg.imageFile
         END AS messageContent,
         latestLike.msg.creationDate AS messageCreationDate,
-        not((liker)-[:KNOWS]-(person)) AS isNew
+        p IS NULL AS isNew
       ORDER BY likeCreationDate DESC, personId ASC
       LIMIT 20
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | personId | personFirstName | personLastName | likeCreationDate | messageId | messageContent | messageCreationDate | isNew |
 
   Scenario: 8. Recent replies
     When executing query:
@@ -249,36 +254,38 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
-  @skip
   Scenario: 10. Friend recommendation
-    # TODO: WHERE patterns, WITH patterns
+    # personId: 4398046511333, moth:5
     When executing query:
       """
-      MATCH (person:Person)-[:KNOWS*2..2]-(friend:Person)-[:IS_LOCATED_IN]->(city:Place)
-      WHERE id(person) == "" AND
-        ((friend.birthday/100%100 = "$month" AND friend.birthday%100 >= 21) OR
-        (friend.birthday/100%100 = "$nextMonth" AND friend.birthday%100 < 22))
-        AND not(friend=person)
-        AND not((friend)-[:KNOWS]-(person))
+      MATCH (person:Person)-[:KNOWS*2..2]-(friend)-[:IS_LOCATED_IN]->(city:City)
+      WHERE id(person)=="4398046511333" AND
+            NOT friend==person
+      OPTIONAL MATCH p = (friend)-[:KNOWS]-(person)
+      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday, p
+      WHERE  p IS NULL AND
+             ((birthday.month==5 AND birthday.day>=21) OR
+             (birthday.month==(5%12)+1 AND birthday.day<22))
       WITH DISTINCT friend, city, person
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)
-      WITH friend, city, collect(post) AS posts, person
-      WITH
-        friend,
-        city,
-        length(posts) AS postCount,
-        length([p IN posts WHERE (p)-[:HAS_TAG]->(:`Tag`)<-[:HAS_INTEREST]-(person)]) AS commonPostCount
-      RETURN
-        friend.id AS personId,
-        friend.firstName AS personFirstName,
-        friend.lastName AS personLastName,
-        commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
-        friend.gender AS personGender,
-        city.name AS personCityName
-      ORDER BY commonInterestScore DESC, toInteger(personId) ASC
+      OPTIONAL MATCH p = (post)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)
+      WITH friend, city, post, person, p
+      WITH friend, city, collect(post) AS posts, person, collect(p) AS paths
+      WITH friend,
+           city,
+           size(posts) AS postCount,
+           size([p IN paths WHERE p IS NOT NULL ]) AS commonPostCount
+      RETURN friend.Person.id AS personId,
+             friend.Person.firstName AS personFirstName,
+             friend.Person.lastName AS personLastName,
+             commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
+             friend.Person.gender AS personGender,
+             city.City.name AS personCityName
+      ORDER BY commonInterestScore DESC, personId ASC
       LIMIT 10
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | personId | personFirstName | personLastName | commonInterestScore | personGender | personCityName |
 
   Scenario: 11. Job referral
     When executing query:

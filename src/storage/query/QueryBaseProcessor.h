@@ -29,7 +29,10 @@
 namespace nebula {
 namespace storage {
 
-// The PropContext stores the info about property to be returned or filtered
+/**
+ * @brief The PropContext stores the info about property to be returned or filtered
+ *
+ */
 struct PropContext {
  public:
   enum class PropInKeyType {
@@ -58,6 +61,10 @@ struct PropContext {
     }
   }
 
+  /**
+   * @brief Set the prop type in edge key by prop name.
+   *
+   */
   void setPropInKey() {
     if (name_ == kVid) {
       propInKeyType_ = PropContext::PropInKeyType::VID;
@@ -74,6 +81,11 @@ struct PropContext {
     }
   }
 
+  /**
+   * @brief Add statistics info of prop index from request
+   *
+   * @param statInfo
+   */
   void addStat(const std::pair<size_t, cpp2::StatType>* statInfo) {
     hasStat_ = true;
     statIndex_.emplace_back(statInfo->first);

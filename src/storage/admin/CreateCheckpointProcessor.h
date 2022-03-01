@@ -16,10 +16,21 @@ namespace storage {
 
 class CreateCheckpointProcessor {
  public:
+  /**
+   * @brief Construct new instance of CreateCheckpointProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return CreateCheckpointProcessor* CreateCheckpointProcessor instance.
+   */
   static CreateCheckpointProcessor* instance(StorageEnv* env) {
     return new CreateCheckpointProcessor(env);
   }
 
+  /**
+   * @brief Entry point for creating checkpoint.
+   *
+   * @param req Reuqest for creating checkpoint.
+   */
   void process(const cpp2::CreateCPRequest& req);
 
   folly::Future<cpp2::CreateCPResp> getFuture() {

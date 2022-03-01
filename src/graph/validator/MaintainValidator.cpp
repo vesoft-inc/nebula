@@ -22,6 +22,8 @@
 namespace nebula {
 namespace graph {
 
+// Validate columns of schema.
+// Check validity of columns and fill to thrift structure.
 static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
                               meta::cpp2::Schema &schema) {
   for (auto &spec : columnSpecs) {
@@ -59,6 +61,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
   return Status::OK();
 }
 
+// Validate the schema modification in alter sentence.
 static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
     const std::vector<AlterSchemaOptItem *> &schemaOpts) {
   std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
@@ -95,6 +98,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
   return schemaItems;
 }
 
+// Validate properties of schema, e.g. TTL, comment.
 static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
     const std::vector<SchemaPropItem *> &schemaProps) {
   meta::cpp2::SchemaProp schemaProp;
@@ -129,6 +133,7 @@ static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
   return schemaProp;
 }
 
+// Check duplicate column names.
 static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   std::unordered_set<std::string> uniqueColName;
   for (const auto &spec : specs) {
@@ -580,6 +585,7 @@ Status AddHostsIntoZoneValidator::toPlan() {
   return Status::OK();
 }
 
+// Validate creating test search index.
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
   auto name = *sentence->indexName();

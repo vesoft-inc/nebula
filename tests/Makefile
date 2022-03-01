@@ -32,8 +32,8 @@ test_j_sa = $(test_without_skip_sa) -n$(J)
 
 
 install-deps:
-	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
-	pip3 install --user -r $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
+	pip3 install --user -Ur $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
+
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
@@ -105,7 +105,9 @@ test: sess
 
 slow-query: currdir
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
-	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
+	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_same_service.py && \
+	$(test_j) tck/steps/test_kill_permission_via_different_service.py
 
 standalone-tck: jobs
 	$(test_j_sa) tck/steps/test_tck.py

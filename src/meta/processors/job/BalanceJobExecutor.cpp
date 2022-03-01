@@ -54,8 +54,9 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   auto optJob = nebula::value(optJobRet);
   plan_.reset(new BalancePlan(optJob, kvstore_, adminClient_));
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
-    if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
-        nebula::cpp2::ErrorCode::SUCCEEDED) {
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+    auto ret = updateLastTime();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     executorOnFinished_(status);
@@ -69,8 +70,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::finish(bool ret) {
-  UNUSED(ret);
+nebula::cpp2::ErrorCode BalanceJobExecutor::finish(bool) {
   plan_.reset(nullptr);
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

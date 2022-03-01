@@ -111,7 +111,6 @@ class BaseProcessor {
         thriftID.index_id_ref() = static_cast<IndexID>(id);
         break;
       case EntryType::CONFIG:
-      case EntryType::GROUP:
       case EntryType::ZONE:
         break;
     }
@@ -123,15 +122,13 @@ class BaseProcessor {
   }
 
   /**
-   * @brief Batch put data to meta kv store synchronously.
-   *        Note that it has side effect: it will set the code to the resp_,
-   *        and delete the processor instance. So, it could be only used
-   *        in the Processor:process() end.
+   * @brief Put data to kvstore synchronously without side effect.
    *
    * @tparam RESP
-   * @param data kv pairs to put
+   * @param data
+   * @return nebula::cpp2::ErrorCode
    */
-  void doPut(std::vector<kvstore::KV> data);
+  nebula::cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
 
   /**
    * @brief Get the iterator on given meta prefix.
@@ -185,27 +182,6 @@ class BaseProcessor {
    * @param end
    */
   void doRemoveRange(const std::string& start, const std::string& end);
-
-  /**
-   * @brief Range scan in [start, end).
-   *
-   * @tparam RESP
-   * @param start
-   * @param end
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
-   */
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> doScan(const std::string& start,
-                                                                    const std::string& end);
-  /**
-   * @brief Batch remove.
-   *        Note that it has side effect: it will set the code to the resp_,
-   *        and delete the processor instance. So, it could be only used
-   *        in the Processor:process() end.
-   *
-   * @tparam RESP
-   * @param keys
-   */
-  void doMultiRemove(std::vector<std::string> keys);
 
   /**
    * @brief Batch general operation.
@@ -362,41 +338,6 @@ class BaseProcessor {
    */
   ErrorOr<nebula::cpp2::ErrorCode, bool> checkPassword(const std::string& account,
                                                        const std::string& password);
-
-  /**
-   * @brief Put data to kvstore synchronously without side effect.
-   *
-   * @tparam RESP
-   * @param data
-   * @return nebula::cpp2::ErrorCode
-   */
-  nebula::cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
-
-  /**
-   * @brief Put data to the kvstore synchronously. If finished successfully,
-   *        it will update the LastUpdateTime, indicating the metaclient should refresh
-   *        its local schema cache.
-   *        Note that it has side effect: it will set the code to the resp_,
-   *        and delete the processor instance. So, it could be only used
-   *        in the Processor:process() end.
-   *
-   * @tparam RESP
-   * @param data
-   */
-  void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
-
-  /**
-   * @brief Remove data from the kvstore synchronously. If finished successfully,
-   *        it will update the LastUpdateTime, indicating the metaclient should refresh
-   *        its local schema cache.
-   *        Note that it has side effect: it will set the code to the resp_,
-   *        and delete the processor instance. So, it could be only used
-   *        in the Processor:process() end.
-   *
-   * @tparam RESP
-   * @param keys
-   */
-  void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
   /**
    * @brief Check if tag/edge contains index when alter it.

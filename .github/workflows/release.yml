@@ -61,7 +61,7 @@ jobs:
         env:
           FROM_IMAGE: docker://${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}
           TO_IMAGE: docker://docker.io/vesoft/nebula-${{ matrix.service }}
-          CMD: docker run --rm -ti quay.io/containers/skopeo:v1.4.1 copy -a --src-creds ${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }} --dest-creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}
+          CMD: docker run --rm -i quay.io/containers/skopeo:v1.4.1 copy -a --src-creds ${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }} --dest-creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}
         run: |
           ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.tag }}
           ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.majorver }}

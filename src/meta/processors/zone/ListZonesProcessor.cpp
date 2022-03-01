@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {

@@ -27,10 +27,16 @@ Status PropertyTracker::update(const std::string &oldName, const std::string &ne
     return Status::Error("Duplicated property name: %s", oldName.c_str());
   }
   if (hasNodeAlias) {
+    if (vertexPropsMap.find(newName) != vertexPropsMap.end()) {
+      return Status::Error("Property name %s conflicted with %s", newName.c_str(), oldName.c_str());
+    }
     vertexPropsMap[newName] = std::move(it1->second);
     vertexPropsMap.erase(it1);
   }
   if (hasEdgeAlias) {
+    if (edgePropsMap.find(newName) != edgePropsMap.end()) {
+      return Status::Error("Property name %s conflicted with %s", newName.c_str(), oldName.c_str());
+    }
     edgePropsMap[newName] = std::move(it2->second);
     edgePropsMap.erase(it2);
   }

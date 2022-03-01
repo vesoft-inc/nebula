@@ -12,6 +12,9 @@
 
 namespace nebula {
 namespace graph {
+
+// Choose graph space, first from validator context (space created in previous sentence),
+// then from meta data cache.
 Status UseValidator::validateImpl() {
   auto useSentence = static_cast<UseSentence*>(sentence_);
   spaceName_ = useSentence->space();

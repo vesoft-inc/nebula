@@ -19,12 +19,19 @@ class GetTagPropNode : public QueryNode<VertexID> {
 
   GetTagPropNode(RuntimeContext* context,
                  std::vector<TagNode*> tagNodes,
-                 nebula::DataSet* resultDataSet)
-      : context_(context), tagNodes_(std::move(tagNodes)), resultDataSet_(resultDataSet) {
+                 nebula::DataSet* resultDataSet,
+                 std::size_t limit)
+      : context_(context),
+        tagNodes_(std::move(tagNodes)),
+        resultDataSet_(resultDataSet),
+        limit_(limit) {
     name_ = "GetTagPropNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    if (resultDataSet_->size() >= limit_) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
@@ -85,6 +92,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
   RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   nebula::DataSet* resultDataSet_;
+  const std::size_t limit_{std::numeric_limits<std::size_t>::max()};
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
@@ -93,12 +101,19 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
 
   GetEdgePropNode(RuntimeContext* context,
                   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
-                  nebula::DataSet* resultDataSet)
-      : context_(context), edgeNodes_(std::move(edgeNodes)), resultDataSet_(resultDataSet) {
+                  nebula::DataSet* resultDataSet,
+                  std::size_t limit)
+      : context_(context),
+        edgeNodes_(std::move(edgeNodes)),
+        resultDataSet_(resultDataSet),
+        limit_(limit) {
     QueryNode::name_ = "GetEdgePropNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
+    if (resultDataSet_->size() >= limit_) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     auto ret = RelNode::doExecute(partId, edgeKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
@@ -138,6 +153,7 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
   RuntimeContext* context_;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes_;
   nebula::DataSet* resultDataSet_;
+  const std::size_t limit_{std::numeric_limits<std::size_t>::max()};
 };
 
 }  // namespace storage
