@@ -5,6 +5,8 @@
 
 #include "meta/processors/index/DropEdgeIndexProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
@@ -34,12 +36,11 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   }
 
   auto edgeIndexID = nebula::value(edgeIndexIDRet);
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove(MetaKeyUtils::indexIndexKey(spaceID, indexName));
 
-  std::vector<std::string> keys;
-  keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
-  keys.emplace_back(MetaKeyUtils::indexKey(spaceID, edgeIndexID));
-
-  auto indexItemRet = doGet(keys.back());
+  auto indexKey = MetaKeyUtils::indexKey(spaceID, edgeIndexID);
+  auto indexItemRet = doGet(indexKey);
   if (!nebula::ok(indexItemRet)) {
     auto retCode = nebula::error(indexItemRet);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -60,9 +61,14 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     return;
   }
 
+  batchHolder->remove(std::move(indexKey));
   LOG(INFO) << "Drop Edge Index " << indexName;
   resp_.id_ref() = to(edgeIndexID, EntryType::INDEX);
-  doSyncMultiRemoveAndUpdate(std::move(keys));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 }  // namespace meta

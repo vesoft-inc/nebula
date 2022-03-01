@@ -64,7 +64,9 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     return;
   }
 
-  doPut(std::move(data));
+  auto ret = doSyncPut(std::move(data));
+  handleErrorCode(ret);
+  onFinished();
 }
 
 }  // namespace meta

@@ -6,6 +6,7 @@
 #include "meta/processors/index/FTIndexProcessor.h"
 
 #include "common/base/CommonMacro.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace meta {
@@ -109,9 +110,14 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
     }
     it->next();
   }
+
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::fulltextIndexKey(name), MetaKeyUtils::fulltextIndexVal(index));
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
@@ -133,7 +139,13 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     onFinished();
     return;
   }
-  doSyncMultiRemoveAndUpdate({std::move(indexKey)});
+
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove(std::move(indexKey));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {

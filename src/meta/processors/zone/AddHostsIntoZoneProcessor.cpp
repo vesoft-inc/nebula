@@ -96,7 +96,11 @@ void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
   data.emplace_back(std::move(zoneKey), MetaKeyUtils::zoneVal(std::move(zoneHosts)));
 
   LOG(INFO) << "Add Hosts Into Zone " << zoneName;
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto ret = doSyncPut(std::move(data));
+  handleErrorCode(ret);
+  onFinished();
 }
 
 }  // namespace meta

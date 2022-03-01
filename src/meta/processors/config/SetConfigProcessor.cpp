@@ -39,7 +39,11 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     }
 
     if (!data.empty()) {
-      doSyncPutAndUpdate(std::move(data));
+      auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+      LastUpdateTimeMan::update(data, timeInMilliSec);
+      auto ret = doSyncPut(std::move(data));
+      handleErrorCode(ret);
+      onFinished();
       return;
     }
   } while (false);

@@ -6,6 +6,7 @@
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 
 #include "common/fs/FileUtils.h"
+#include "kvstore/LogEncoder.h"
 #include "meta/processors/admin/SnapShot.h"
 
 namespace nebula {
@@ -42,22 +43,15 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     return;
   }
 
-  std::vector<kvstore::KV> data;
   auto peers = peersRet.value();
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   auto dsRet = Snapshot::instance(kvstore_, client_)->dropSnapshot(snapshot, std::move(peers));
   if (dsRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Drop snapshot error on storage engine";
     // Need update the snapshot status to invalid, maybe some storage engine
     // drop done.
-    data.emplace_back(MetaKeyUtils::snapshotKey(snapshot),
-                      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-    auto putRet = doSyncPut(std::move(data));
-    if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Update snapshot status error. snapshot: " << snapshot;
-    }
-    handleErrorCode(putRet);
-    onFinished();
-    return;
+    batchHolder->put(MetaKeyUtils::snapshotKey(snapshot),
+                     MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
   }
 
   auto dmRet = kvstore_->dropCheckpoint(kDefaultSpaceId, snapshot);
@@ -66,18 +60,14 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     LOG(INFO) << "Drop snapshot error on meta engine";
     // Need update the snapshot status to invalid, maybe storage engines drop
     // done.
-    data.emplace_back(MetaKeyUtils::snapshotKey(snapshot),
-                      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-    auto putRet = doSyncPut(std::move(data));
-    if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Update snapshot status error. snapshot: " << snapshot;
-    }
-    handleErrorCode(putRet);
-    onFinished();
-    return;
+    batchHolder->put(MetaKeyUtils::snapshotKey(snapshot),
+                     MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
   }
+
   // Delete metadata of checkpoint
-  doRemove(key);
+  batchHolder->remove(std::move(key));
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
 
