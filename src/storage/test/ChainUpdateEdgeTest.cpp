@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
 #include <folly/Format.h>
 #include <folly/String.h>
 #include <folly/container/Enumerate.h>

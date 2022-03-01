@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get the edge schema with given version or latest version.
+ *
+ */
 class GetEdgeProcessor : public BaseProcessor<cpp2::GetEdgeResp> {
  public:
   static GetEdgeProcessor* instance(kvstore::KVStore* kvstore) {

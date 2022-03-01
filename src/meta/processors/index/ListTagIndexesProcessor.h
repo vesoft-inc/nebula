@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get all tag index items by scaning index prefix and then filter out the
+ *        indexes with tag type.
+ *
+ */
 class ListTagIndexesProcessor : public BaseProcessor<cpp2::ListTagIndexesResp> {
  public:
   static ListTagIndexesProcessor* instance(kvstore::KVStore* kvstore) {

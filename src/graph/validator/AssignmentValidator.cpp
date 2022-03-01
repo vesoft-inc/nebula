@@ -21,6 +21,7 @@ Status AssignmentValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to process assignment in nGQL, e.g. $a = GO FROM <vid_list> OVER <edge_type> YIELD ...
 Status AssignmentValidator::toPlan() {
   root_ = validator_->root();
   auto *var = qctx_->symTable()->newVariable(var_);

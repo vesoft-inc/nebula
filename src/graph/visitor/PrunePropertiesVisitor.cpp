@@ -207,7 +207,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
 
   if (node->vFilter() != nullptr) {
     status_ = extractPropsFromExpr(node->vFilter(), nodeAlias);
-    return;
+    if (!status_.ok()) {
+      return;
+    }
   }
   auto *vertexProps = node->props();
   if (vertexProps != nullptr) {
@@ -250,6 +252,14 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
+void PrunePropertiesVisitor::visit(Dedup *node) {
+  const auto &colNames = qctx_->symTable()->getVar(node->inputVar())->colNames;
+  for (auto &colName : colNames) {
+    propsUsed_.colsSet.insert(colName);
+  }
+  status_ = depsPruneProperties(node->dependencies());
+}
+
 void PrunePropertiesVisitor::visit(BiJoin *node) {
   for (auto *hashKey : node->hashKeys()) {
     status_ = extractPropsFromExpr(hashKey);
@@ -269,6 +279,9 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
 Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
   for (const auto *dep : dependencies) {
     const_cast<PlanNode *>(dep)->accept(this);
+    if (!status_.ok()) {
+      return status_;
+    }
   }
   return Status::OK();
 }

@@ -1168,6 +1168,8 @@ class Dedup final : public SingleInputNode {
     return qctx->objPool()->add(new Dedup(qctx, input));
   }
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   PlanNode* clone() const override;
 
  private:
@@ -1574,7 +1576,7 @@ class AppendVertices final : public GetVertices {
                     nullptr,
                     false,
                     {},
-                    0,
+                    -1,  // means no limit
                     nullptr) {}
 
   void cloneMembers(const AppendVertices& a);

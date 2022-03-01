@@ -27,6 +27,7 @@ Status FetchEdgesValidator::validateImpl() {
   return Status::OK();
 }
 
+// Check validity of edge type specified in sentence
 Status FetchEdgesValidator::validateEdgeName() {
   auto &spaceID = space_.id;
   auto status = qctx_->schemaMng()->toEdgeType(spaceID, edgeName_);
@@ -39,6 +40,8 @@ Status FetchEdgesValidator::validateEdgeName() {
   return Status::OK();
 }
 
+// Check validity of edge key(src, type, rank, dst)
+// from Input/Variable expression specified in sentence
 StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *expr,
                                                            Value::Type type) {
   const auto &kind = expr->kind();
@@ -62,11 +65,12 @@ StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *exp
   return propExpr->sym();
 }
 
+// Check validity of edge key(src, type, rank, dst) from Variable/Constants specified in sentence
 Status FetchEdgesValidator::validateEdgeKey() {
   auto pool = qctx_->objPool();
   auto *sentence = static_cast<FetchEdgesSentence *>(sentence_);
   std::string inputVarName;
-  if (sentence->isRef()) {
+  if (sentence->isRef()) {  // edge keys from Input/Variable
     auto *srcExpr = sentence->ref()->srcid();
     auto result = validateEdgeRef(srcExpr, vidType_);
     NG_RETURN_IF_ERROR(result);
@@ -97,45 +101,48 @@ Status FetchEdgesValidator::validateEdgeKey() {
     fetchCtx_->type = ConstantExpression::make(pool, edgeType_);
     fetchCtx_->inputVarName = std::move(inputVarName);
     return Status::OK();
-  }
+  } else {  // Edge keys from constants
+    DataSet edgeKeys{{kSrc, kRank, kDst}};
+    QueryExpressionContext ctx;
+    auto keys = sentence->keys()->keys();
+    edgeKeys.rows.reserve(keys.size());
+    for (const auto &key : keys) {
+      if (!ExpressionUtils::isEvaluableExpr(key->srcid(), qctx_)) {
+        return Status::SemanticError("`%s' is not evaluable.", key->srcid()->toString().c_str());
+      }
+      auto src = key->srcid()->eval(ctx);
+      if (src.type() != vidType_) {
+        std::stringstream ss;
+        ss << "the src should be type of " << vidType_ << ", but was`" << src.type() << "'";
+        return Status::SemanticError(ss.str());
+      }
+      auto ranking = key->rank();
 
-  DataSet edgeKeys{{kSrc, kRank, kDst}};
-  QueryExpressionContext ctx;
-  auto keys = sentence->keys()->keys();
-  edgeKeys.rows.reserve(keys.size());
-  for (const auto &key : keys) {
-    if (!ExpressionUtils::isEvaluableExpr(key->srcid(), qctx_)) {
-      return Status::SemanticError("`%s' is not evaluable.", key->srcid()->toString().c_str());
+      if (!ExpressionUtils::isEvaluableExpr(key->dstid(), qctx_)) {
+        return Status::SemanticError("`%s' is not evaluable.", key->dstid()->toString().c_str());
+      }
+      auto dst = key->dstid()->eval(ctx);
+      if (dst.type() != vidType_) {
+        std::stringstream ss;
+        ss << "the dst should be type of " << vidType_ << ", but was`" << dst.type() << "'";
+        return Status::SemanticError(ss.str());
+      }
+      edgeKeys.emplace_back(nebula::Row({std::move(src), ranking, std::move(dst)}));
     }
-    auto src = key->srcid()->eval(ctx);
-    if (src.type() != vidType_) {
-      std::stringstream ss;
-      ss << "the src should be type of " << vidType_ << ", but was`" << src.type() << "'";
-      return Status::SemanticError(ss.str());
-    }
-    auto ranking = key->rank();
-
-    if (!ExpressionUtils::isEvaluableExpr(key->dstid(), qctx_)) {
-      return Status::SemanticError("`%s' is not evaluable.", key->dstid()->toString().c_str());
-    }
-    auto dst = key->dstid()->eval(ctx);
-    if (dst.type() != vidType_) {
-      std::stringstream ss;
-      ss << "the dst should be type of " << vidType_ << ", but was`" << dst.type() << "'";
-      return Status::SemanticError(ss.str());
-    }
-    edgeKeys.emplace_back(nebula::Row({std::move(src), ranking, std::move(dst)}));
+    inputVarName = vctx_->anonVarGen()->getVar();
+    qctx_->ectx()->setResult(inputVarName,
+                             ResultBuilder().value(Value(std::move(edgeKeys))).build());
+    fetchCtx_->src = ColumnExpression::make(pool, 0);
+    fetchCtx_->rank = ColumnExpression::make(pool, 1);
+    fetchCtx_->dst = ColumnExpression::make(pool, 2);
+    fetchCtx_->type = ConstantExpression::make(pool, edgeType_);
+    fetchCtx_->inputVarName = std::move(inputVarName);
+    return Status::OK();
   }
-  inputVarName = vctx_->anonVarGen()->getVar();
-  qctx_->ectx()->setResult(inputVarName, ResultBuilder().value(Value(std::move(edgeKeys))).build());
-  fetchCtx_->src = ColumnExpression::make(pool, 0);
-  fetchCtx_->rank = ColumnExpression::make(pool, 1);
-  fetchCtx_->dst = ColumnExpression::make(pool, 2);
-  fetchCtx_->type = ConstantExpression::make(pool, edgeType_);
-  fetchCtx_->inputVarName = std::move(inputVarName);
-  return Status::OK();
 }
 
+// Validate columns of yield clause, rewrites expression to fit its sementic
+// and disable some invalid expression types.
 Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
