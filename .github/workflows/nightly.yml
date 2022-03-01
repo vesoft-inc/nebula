@@ -99,7 +99,7 @@ jobs:
         os:
           - centos7
         compiler:
-          - gcc-9.2
+          - gcc-9.3
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
