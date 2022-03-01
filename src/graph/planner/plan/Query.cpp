@@ -851,5 +851,21 @@ void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
   BiJoin::cloneMembers(l);
 }
 
+std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("kind", "ShortestPath", desc.get());
+  return desc;
+}
+
+PlanNode* ShortestPath::clone() const {
+  auto* shortestPath = ShortestPath::make(qctx_, nullptr, nullptr);
+  shortestPath->cloneMembers(*this);
+  return shortestPath;
+}
+
+void ShortestPath::cloneMembers(const ShortestPath& l) {
+  BinaryInputNode::cloneMembers(l);
+}
+
 }  // namespace graph
 }  // namespace nebula

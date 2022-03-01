@@ -1637,6 +1637,88 @@ class BiInnerJoin final : public BiJoin {
   void cloneMembers(const BiInnerJoin&);
 };
 
+class ShortestPath final : public BinaryInputNode {
+ public:
+  static ShortestPath* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->add(new ShortestPath(qctx, left, right));
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  MatchStepRange* stepRange() const {
+    return range_;
+  }
+
+  storage::cpp2::EdgeDirection edgeDirection() const {
+    return edgeDirection_;
+  }
+
+  const std::vector<EdgeType>& edgeTypes() const {
+    return edgeTypes_;
+  }
+
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  Expression* eFilter() const {
+    return eFilter_;
+  }
+
+  GraphSpaceID space() const {
+    return space_;
+  }
+
+  Expression* src() const {
+    return src_;
+  }
+
+  void setStepRange(MatchStepRange* range) {
+    range_ = range;
+  }
+
+  void setEdgeDirection(Direction direction) {
+    edgeDirection_ = direction;
+  }
+
+  void setEdgeTypes(std::vector<EdgeType> edgeTypes) {
+    edgeTypes_ = std::move(edgeTypes);
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  void setEdgeFilter(Expression* eFilter) {
+    eFilter_ = eFilter;
+  }
+
+  void setSpace(GraphSpaceID space) {
+    space_ = space;
+  }
+
+  void setSrc(Expression* src) {
+    src_ = src;
+  }
+
+ private:
+  ShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right)
+      : BinaryInputNode(qctx, Kind::kShortestPath, left, right) {}
+
+  void cloneMembers(const ShortestPath&);
+
+ private:
+  Expression* src_{nullptr};
+
+  GraphSpaceID space_;
+  MatchStepRange* range_{nullptr};
+  Expression* eFilter_{nullptr};
+  std::vector<EdgeType> edgeTypes_;
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

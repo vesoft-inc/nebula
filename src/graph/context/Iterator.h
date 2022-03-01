@@ -484,6 +484,8 @@ class SequentialIter : public Iterator {
   friend class DataCollectExecutor;
   friend class AppendVerticesExecutor;
   friend class TraverseExecutor;
+  friend class ShortestPathExecutor;
+
   Row&& moveRow() {
     return std::move(*iter_);
   }

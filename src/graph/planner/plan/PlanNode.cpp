@@ -299,6 +299,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "BiInnerJoin";
     case Kind::kBiCartesianProduct:
       return "BiCartesianProduct";
+    case Kind::kShortestPath:
+      return "ShortestPath";
     case Kind::kArgument:
       return "Argument";
       // no default so the compiler will warning when lack

@@ -121,17 +121,26 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   std::unordered_set<std::string> nodeAliasesSeen;
   // TODO: Maybe it is better to rebuild the graph and find all connected components.
   auto& pathInfos = matchClauseCtx->paths;
-  for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
-    auto& nodeInfos = iter->nodeInfos;
-    auto& edgeInfos = iter->edgeInfos;
+  for (auto& pathInfo : pathInfos) {
+    auto& nodeInfos = pathInfo.nodeInfos;
+    auto& edgeInfos = pathInfo.edgeInfos;
     SubPlan subplan;
     size_t startIndex = 0;
     bool startFromEdge = false;
 
-    NG_RETURN_IF_ERROR(findStarts(
-        nodeInfos, edgeInfos, matchClauseCtx, nodeAliasesSeen, startFromEdge, startIndex, subplan));
-    NG_RETURN_IF_ERROR(
-        expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
+    if (pathInfo.isShortPath) {
+      NG_RETURN_IF_ERROR(buildShortestPath(nodeInfos, edgeInfos, matchClauseCtx, subplan));
+    } else {
+      NG_RETURN_IF_ERROR(findStarts(nodeInfos,
+                                    edgeInfos,
+                                    matchClauseCtx,
+                                    nodeAliasesSeen,
+                                    startFromEdge,
+                                    startIndex,
+                                    subplan));
+      NG_RETURN_IF_ERROR(
+          expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
+    }
     NG_RETURN_IF_ERROR(
         connectPathPlan(nodeInfos, matchClauseCtx, subplan, nodeAliasesSeen, matchClausePlan));
   }
@@ -151,14 +160,11 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
   bool foundStart = false;
   std::unordered_set<std::string> allNodeAliasesAvailable;
   allNodeAliasesAvailable.merge(nodeAliasesSeen);
-  std::for_each(matchClauseCtx->aliasesAvailable.begin(),
-                matchClauseCtx->aliasesAvailable.end(),
-                [&allNodeAliasesAvailable](auto& kv) {
-                  if (kv.second == AliasType::kNode) {
-                    allNodeAliasesAvailable.emplace(kv.first);
-                  }
-                });
-
+  for (auto& alias : matchClauseCtx->aliasesAvailable) {
+    if (alias.second == AliasType::kNode) {
+      allNodeAliasesAvailable.emplace(alias.first);
+    }
+  }
   // Find the start plan node
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
@@ -471,17 +477,12 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
                                            std::unordered_set<std::string>& nodeAliasesSeen,
                                            SubPlan& matchClausePlan) {
   std::unordered_set<std::string> intersectedAliases;
-  std::for_each(
-      nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
-        if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
-          intersectedAliases.emplace(info.alias);
-        }
-      });
-  std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
-    if (!info.anonymous) {
-      nodeAliasesSeen.emplace(info.alias);
+  for (auto& nodeInfo : nodeInfos) {
+    if (intersectedAliases.find(nodeInfo.alias) == intersectedAliases.end() ||
+        !nodeInfo.anonymous) {
+      nodeAliasesSeen.emplace(nodeInfo.alias);
     }
-  });
+  }
   if (matchClausePlan.root == nullptr) {
     matchClausePlan = subplan;
   } else {
@@ -494,6 +495,49 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
           matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
     }
   }
+  return Status::OK();
+}
+
+Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeInfos,
+                                             std::vector<EdgeInfo>& edgeInfos,
+                                             MatchClauseContext* matchClauseCtx,
+                                             SubPlan& subplan) {
+  DCHECK_EQ(nodeInfos.size(), 2UL) << "Shortest path can only be used for two nodes.";
+  DCHECK_EQ(nodeInfos[0].tids.size(), 1UL) << "Not supported multiple edge indices seek.";
+  DCHECK_EQ(nodeInfos[1].tids.size(), 1UL) << "Not supported multiple edge indices seek.";
+
+  using IQC = nebula::storage::cpp2::IndexQueryContext;
+  auto spaceId = matchClauseCtx->space.id;
+  auto qtx = matchClauseCtx->qctx;
+
+  std::vector<IndexScan*> scanNodes;
+  scanNodes.reserve(2);
+
+  for (int i = 0; i < 2; i++) {
+    IQC iqctx;
+    iqctx.index_id_ref() = nodeInfos[i].tids[0];
+    auto scanNode =
+        IndexScan::make(qtx, nullptr, spaceId, {iqctx}, {kVid}, false, nodeInfos[i].tids[0]);
+    auto starNode = StartNode::make(qtx);
+    scanNode->setDep(0, starNode);
+    scanNodes.emplace_back(scanNode);
+
+    subplan.tail = starNode;
+  }
+
+  auto edge = edgeInfos.back();
+  bool reversely = true;
+  auto shortestPath = ShortestPath::make(qtx, scanNodes[0], scanNodes[1]);
+  shortestPath->setSpace(spaceId);
+  shortestPath->setLeftVar(scanNodes[0]->outputVar());
+  shortestPath->setRightVar(scanNodes[1]->outputVar());
+  shortestPath->setEdgeProps(genEdgeProps(edge, reversely, qtx, spaceId));
+  shortestPath->setEdgeDirection(edge.direction);
+  shortestPath->setEdgeFilter(genEdgeFilter(edge));
+  shortestPath->setStepRange(edge.range);
+
+  subplan.root = shortestPath;
+
   return Status::OK();
 }
 }  // namespace graph

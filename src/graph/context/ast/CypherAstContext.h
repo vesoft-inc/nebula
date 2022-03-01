@@ -24,6 +24,7 @@ enum class CypherClauseKind : uint8_t {
   kOrderBy,
   kPagination,
   kYield,
+  kShortestPath,
 };
 
 enum class PatternKind : uint8_t {
@@ -132,6 +133,7 @@ struct Path final {
   std::vector<NodeInfo> nodeInfos;
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
+  bool isShortPath{false};
 };
 
 struct MatchClauseContext final : CypherClauseContextBase {
@@ -202,6 +204,7 @@ struct EdgeContext final : PatternContext {
   // initialize start expression in project node
   Expression* initialExpr{nullptr};
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_CYPHERASTCONTEXT_H_

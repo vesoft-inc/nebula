@@ -252,10 +252,19 @@ class MatchPath final {
 
   std::string toString() const;
 
+  void setShortestPath() {
+    is_shortest_path_ = true;
+  }
+
+  bool shortestPath() const {
+    return is_shortest_path_;
+  }
+
  private:
   std::unique_ptr<std::string> alias_;
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
+  bool is_shortest_path_{false};
 };
 
 class MatchPathList final {

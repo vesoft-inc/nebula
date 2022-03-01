@@ -29,6 +29,7 @@ class PlanNode {
     kGetEdges,
     kTraverse,
     kAppendVertices,
+    kShortestPath,
 
     // ------------------
     // TODO(yee): refactor in logical plan

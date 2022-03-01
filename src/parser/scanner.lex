@@ -164,6 +164,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
 "ACROSS"                    { return TokenType::KW_ACROSS; }
+"SHORTESTPATH"              { return TokenType::KW_SHORTESTPATH; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,

@@ -121,6 +121,7 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
   NG_RETURN_IF_ERROR(
       buildEdgeInfo(path, matchClauseCtx.paths.back().edgeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(buildPathExpr(path, matchClauseCtx));
+  matchClauseCtx.paths.back().isShortPath = path->shortestPath();
   return Status::OK();
 }
 
