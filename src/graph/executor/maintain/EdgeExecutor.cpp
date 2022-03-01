@@ -24,7 +24,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
       .via(runner())
       .thenValue([ceNode, spaceId](StatusOr<EdgeType> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
+          LOG(ERROR) << "SpaceId: " << spaceId << ", Create edge '" << ceNode->getName()
                      << "' failed: " << resp.status();
           return resp.status();
         }
@@ -48,7 +48,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
         }
         auto ret = SchemaUtil::toDescSchema(resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
+          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc edge '" << deNode->getName()
                      << "' failed: " << resp.status();
           return ret.status();
         }
@@ -70,7 +70,7 @@ folly::Future<Status> DropEdgeExecutor::execute() {
       .via(runner())
       .thenValue([deNode, spaceId](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop edge `" << deNode->getName()
+          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop edge '" << deNode->getName()
                      << "' failed: " << resp.status();
           return resp.status();
         }
@@ -119,7 +119,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", ShowCreate edge `" << sceNode->getName()
+          LOG(ERROR) << "SpaceId: " << spaceId << ", ShowCreate edge '" << sceNode->getName()
                      << "' failed: " << resp.status();
           return resp.status();
         }
@@ -144,7 +144,7 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, aeNode](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << aeNode->space() << ", Alter edge `" << aeNode->getName()
+          LOG(ERROR) << "SpaceId: " << aeNode->space() << ", Alter edge '" << aeNode->getName()
                      << "' failed: " << resp.status();
           return resp.status();
         }
