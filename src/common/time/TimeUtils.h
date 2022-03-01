@@ -208,7 +208,7 @@ class TimeUtils {
   static UnixTime unixTime() {
     ::timespec ts;
     ::clock_gettime(CLOCK_REALTIME, &ts);
-    return UnixTime{ts.tv_sec, ::lround(ts.tv_nsec % 1000000)};
+    return UnixTime{ts.tv_sec, ::lround(ts.tv_nsec / 1000000)};
   }
 };  // class TimeUtils
 
