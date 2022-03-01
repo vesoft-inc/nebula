@@ -5,7 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
-      - 'v[0-9]+.*'
+      - 'release-**'
 
 concurrency:
   group: ${{ github.head_ref }}

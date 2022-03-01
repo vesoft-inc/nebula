@@ -3,7 +3,7 @@ name: rc
 on:
   push:
     branches:
-      - 'v[0-9]+.*'
+      - 'release-**'
 
 concurrency:
   group: rc

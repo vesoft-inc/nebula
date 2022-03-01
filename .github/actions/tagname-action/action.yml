@@ -15,7 +15,7 @@ runs:
   steps:
     - id: tag
       run: |
-        tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
+        tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev | sed 's/^release-/v/')
         tagnum=$(echo $tag | sed 's/^v//')
         majorver=$(echo $tag | cut -d '.' -f 1)
         echo "::set-output name=tag::$tag"
