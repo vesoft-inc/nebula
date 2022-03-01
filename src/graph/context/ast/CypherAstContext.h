@@ -24,6 +24,7 @@ enum class CypherClauseKind : uint8_t {
   kOrderBy,
   kPagination,
   kYield,
+  kShortestPath,
 };
 
 enum class PatternKind : uint8_t {

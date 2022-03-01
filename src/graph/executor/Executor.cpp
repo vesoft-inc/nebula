@@ -82,6 +82,7 @@
 #include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/ScanEdgesExecutor.h"
 #include "graph/executor/query/ScanVerticesExecutor.h"
+#include "graph/executor/query/ShortestPathExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
 #include "graph/executor/query/TraverseExecutor.h"
@@ -544,6 +545,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kAlterSpace: {
       return pool->add(new AlterSpaceExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kShortestPath: {
+      return pool->add(new ShortestPathExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

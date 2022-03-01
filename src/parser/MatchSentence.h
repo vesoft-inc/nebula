@@ -14,6 +14,259 @@
 
 namespace nebula {
 
+class MatchEdgeTypeList final {
+ public:
+  MatchEdgeTypeList() = default;
+
+  void add(std::string* item) {
+    items_.emplace_back(item);
+  }
+
+  auto items() && {
+    return std::move(items_);
+  }
+
+ private:
+  std::vector<std::unique_ptr<std::string>> items_;
+};
+
+class MatchStepRange final {
+ public:
+  explicit MatchStepRange(size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) {
+    min_ = min;
+    max_ = max;
+  }
+
+  auto min() const {
+    return min_;
+  }
+
+  auto max() const {
+    return max_;
+  }
+
+  std::string toString() const;
+
+ private:
+  size_t min_{1};
+  size_t max_{1};
+};
+
+class MatchEdgeProp final {
+ public:
+  MatchEdgeProp(const std::string& alias,
+                MatchEdgeTypeList* types,
+                MatchStepRange* range,
+                Expression* props = nullptr) {
+    alias_ = alias;
+    range_.reset(range);
+    props_ = static_cast<MapExpression*>(props);
+    if (types != nullptr) {
+      types_ = std::move(*types).items();
+      delete types;
+    }
+  }
+
+  auto get() && {
+    return std::make_tuple(
+        std::move(alias_), std::move(types_), std::move(range_), std::move(props_));
+  }
+
+ private:
+  std::string alias_;
+  std::vector<std::unique_ptr<std::string>> types_;
+  MapExpression* props_{nullptr};
+  std::unique_ptr<MatchStepRange> range_;
+};
+
+class MatchEdge final {
+ public:
+  using Direction = nebula::storage::cpp2::EdgeDirection;
+  MatchEdge(MatchEdgeProp* prop, Direction direction) {
+    if (prop != nullptr) {
+      auto tuple = std::move(*prop).get();
+      alias_ = std::move(std::get<0>(tuple));
+      types_ = std::move(std::get<1>(tuple));
+      range_ = std::move(std::get<2>(tuple));
+      props_ = std::move(std::get<3>(tuple));
+      delete prop;
+    }
+    direction_ = direction;
+  }
+
+  auto direction() const {
+    return direction_;
+  }
+
+  const std::string& alias() const {
+    return alias_;
+  }
+
+  auto& types() const {
+    return types_;
+  }
+
+  const MapExpression* props() const {
+    return props_;
+  }
+
+  auto* range() const {
+    return range_.get();
+  }
+
+  std::string toString() const;
+
+ private:
+  Direction direction_;
+  std::string alias_;
+  std::vector<std::unique_ptr<std::string>> types_;
+  std::unique_ptr<MatchStepRange> range_;
+  MapExpression* props_{nullptr};
+};
+
+class MatchNodeLabel final {
+ public:
+  explicit MatchNodeLabel(std::string* label, Expression* props = nullptr)
+      : label_(label), props_(static_cast<MapExpression*>(props)) {
+    DCHECK(props == nullptr || props->kind() == Expression::Kind::kMap);
+  }
+
+  const std::string* label() const {
+    return label_.get();
+  }
+
+  const MapExpression* props() const {
+    return props_;
+  }
+
+  MapExpression* props() {
+    return props_;
+  }
+
+  std::string toString() const {
+    std::stringstream ss;
+    ss << ":" << *label_;
+    if (props_ != nullptr) {
+      ss << props_->toString();
+    }
+    return ss.str();
+  }
+
+ private:
+  std::unique_ptr<std::string> label_;
+  MapExpression* props_{nullptr};
+};
+
+class MatchNodeLabelList final {
+ public:
+  void add(MatchNodeLabel* label) {
+    labels_.emplace_back(label);
+  }
+
+  const auto& labels() const {
+    return labels_;
+  }
+
+  std::string toString() const {
+    std::stringstream ss;
+    for (const auto& label : labels_) {
+      ss << label->toString();
+    }
+    return ss.str();
+  }
+
+ private:
+  std::vector<std::unique_ptr<MatchNodeLabel>> labels_;
+};
+
+class MatchNode final {
+ public:
+  MatchNode(const std::string& alias, MatchNodeLabelList* labels, Expression* props = nullptr) {
+    alias_ = alias;
+    labels_.reset(labels);
+    props_ = static_cast<MapExpression*>(props);
+  }
+
+  const std::string& alias() const {
+    return alias_;
+  }
+
+  const auto* labels() const {
+    return labels_.get();
+  }
+
+  const MapExpression* props() const {
+    return props_;
+  }
+
+  MapExpression* props() {
+    return props_;
+  }
+
+  std::string toString() const;
+
+ private:
+  std::string alias_;
+  std::unique_ptr<MatchNodeLabelList> labels_;
+  MapExpression* props_{nullptr};
+};
+
+class MatchPath final {
+ public:
+  explicit MatchPath(MatchNode* node) {
+    nodes_.emplace_back(node);
+  }
+
+  void add(MatchEdge* edge, MatchNode* node) {
+    edges_.emplace_back(edge);
+    nodes_.emplace_back(node);
+  }
+
+  void setAlias(std::string* alias) {
+    alias_.reset(alias);
+  }
+
+  const std::string* alias() const {
+    return alias_.get();
+  }
+
+  const auto& nodes() const {
+    return nodes_;
+  }
+
+  const auto& edges() const {
+    return edges_;
+  }
+
+  size_t steps() const {
+    return edges_.size();
+  }
+
+  const MatchNode* node(size_t i) const {
+    return nodes_[i].get();
+  }
+
+  const MatchEdge* edge(size_t i) const {
+    return edges_[i].get();
+  }
+
+  std::string toString() const;
+
+  void setShortestPath() {
+    is_shortest_path_ = true;
+  }
+
+  bool shortestPath() const {
+    return is_shortest_path_;
+  }
+
+ private:
+  std::unique_ptr<std::string> alias_;
+  std::vector<std::unique_ptr<MatchNode>> nodes_;
+  std::vector<std::unique_ptr<MatchEdge>> edges_;
+  bool is_shortest_path_{false};
+};
+
 class MatchPathList final {
  public:
   explicit MatchPathList(MatchPath* path);

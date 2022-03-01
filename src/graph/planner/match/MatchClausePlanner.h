@@ -28,6 +28,11 @@ class MatchClausePlanner final : public CypherClausePlanner {
                          std::unordered_set<std::string>& nodeAliasesSeen,
                          SubPlan& matchClausePlan);
 
+  Status buildShortestPath(const std::vector<NodeInfo>& nodeInfos,
+                           std::vector<EdgeInfo>& edgeInfos,
+                           MatchClauseContext* matchClauseCtx,
+                           SubPlan& subplan);
+
  private:
   Expression* initialExpr_{nullptr};
 };
