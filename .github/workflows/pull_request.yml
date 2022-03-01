@@ -183,11 +183,12 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: coverage
-        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
-            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            pip3 install fastcov
+            fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
-        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
           files: fastcov.info
           fail_ci_if_error: false
@@ -227,7 +228,6 @@ jobs:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - name: Prepare environment
-        id: prepare
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           make init -C tests
