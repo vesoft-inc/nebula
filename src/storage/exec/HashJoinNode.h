@@ -72,19 +72,16 @@ class HashJoinNode : public IterateNode<VertexID> {
             nebula::List list;
             list.reserve(props->size());
             const auto& tagName = tagNode->getTagName();
-            for (const auto& prop : *props) {
-              VLOG(2) << "Collect prop " << prop.name_;
-              auto value = QueryUtils::readVertexProp(
-                  key, context_->vIdLen(), context_->isIntId(), reader, prop);
-              if (!value.ok()) {
-                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setTagProp(tagName, prop.name_, value.value());
-              }
-              if (prop.returned_) {
-                list.emplace_back(std::move(value).value());
-              }
+            auto status = QueryUtils::collectVertexProps(key,
+                                                         context_->vIdLen(),
+                                                         context_->isIntId(),
+                                                         reader,
+                                                         props,
+                                                         list,
+                                                         expCtx_,
+                                                         tagName);
+            if (!status.ok()) {
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
             result.values.emplace_back(std::move(list));
             return nebula::cpp2::ErrorCode::SUCCEEDED;
