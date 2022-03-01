@@ -45,12 +45,8 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
     }
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
-    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-    if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
-        nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
-    }
     if (status == meta::cpp2::JobStatus::FINISHED) {
+      folly::SharedMutex::WriteHolder holder(LockUtils::lock());
       nebula::cpp2::ErrorCode ret = updateMeta();
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         status = meta::cpp2::JobStatus::FAILED;
@@ -65,7 +61,11 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
   std::string spaceKey = MetaKeyUtils::spaceKey(spaceInfo_.spaceId_);
   std::string spaceVal;
-  kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return ret;
+  }
+
   meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
   std::vector<std::string> zones;
   for (std::string& zn : lostZones_) {
@@ -76,10 +76,11 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
   }
   properties.zone_names_ref() = std::move(zones);
   std::vector<kvstore::KV> data;
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
   data.emplace_back(MetaKeyUtils::spaceKey(spaceInfo_.spaceId_),
                     MetaKeyUtils::spaceVal(properties));
   folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   kvstore_->asyncMultiPut(kDefaultSpaceId,
                           kDefaultPartId,
                           std::move(data),
@@ -307,12 +308,12 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
   nebula::cpp2::ErrorCode rc =
       rebalanceActiveZones(&sortedActiveZones, &sortedZoneHosts, &existTasks);
 
-  bool emty = std::find_if(existTasks.begin(),
-                           existTasks.end(),
-                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                             return !p.second.empty();
-                           }) == existTasks.end();
-  if (emty || rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+  bool empty = std::find_if(existTasks.begin(),
+                            existTasks.end(),
+                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                              return !p.second.empty();
+                            }) == existTasks.end();
+  if (empty || rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return Status::Balanced();
   }
   plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));

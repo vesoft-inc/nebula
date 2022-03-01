@@ -205,7 +205,11 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   data.emplace_back(MetaKeyUtils::indexKey(space, edgeIndex), MetaKeyUtils::indexVal(item));
   LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
   resp_.id_ref() = to(edgeIndex, EntryType::INDEX);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

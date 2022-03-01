@@ -152,7 +152,11 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, version),
                     MetaKeyUtils::schemaVal(edgeName, schema));
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

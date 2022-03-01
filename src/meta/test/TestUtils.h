@@ -74,10 +74,19 @@ class TestUtils {
                       cpp2::HostRole role,
                       const std::string& gitInfoSha) {
     auto now = time::WallClock::fastNowInMilliSec();
+    std::vector<kvstore::KV> data;
     for (auto& h : hosts) {
-      auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now, role, gitInfoSha));
+      auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now, role, gitInfoSha), data);
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     }
+    doPut(kv, data);
+  }
+
+  static void doPut(kvstore::KVStore* kv, std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
+    baton.wait();
   }
 
   static int32_t createSomeHosts(kvstore::KVStore* kv,

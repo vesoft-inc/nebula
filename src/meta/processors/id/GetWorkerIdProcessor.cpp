@@ -9,7 +9,8 @@ namespace nebula {
 namespace meta {
 
 void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
-  const string& ipAddr = req.get_host();
+  const std::string& ipAddr = req.get_host();
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto result = doGet(ipAddr);
   if (nebula::ok(result)) {
     int64_t workerId = std::stoi(std::move(nebula::value(result)));
@@ -20,7 +21,6 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     return;
   }
 
-  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto newResult = doGet(kIdKey);
   if (!nebula::ok(newResult)) {
     handleErrorCode(nebula::cpp2::ErrorCode::E_WORKER_ID_FAILED);
@@ -33,7 +33,8 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
 
   // TODO: (jackwener) limit worker, add LOG ERROR
-  doPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
+  auto code = doSyncPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
+  handleErrorCode(code);
   onFinished();
 }
 
