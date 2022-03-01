@@ -4,6 +4,8 @@ nebula_add_library(
     CommonUtils.cpp
 )
 
+target_link_libraries(storage_common_obj PUBLIC "${Glog_LIBRARY}"  )
+
 nebula_add_library(
     storage_admin_service_handler SHARED
     StorageAdminServiceHandler.cpp
@@ -55,6 +57,7 @@ nebula_add_library(
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
 )
+target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}"  )
 
 nebula_add_library(
     internal_storage_service_handler SHARED
@@ -90,6 +93,7 @@ nebula_add_library(
     transaction/ChainDeleteEdgesResumeProcessor.cpp
     transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
+target_link_libraries(storage_transaction_executor PUBLIC "${Glog_LIBRARY}" storage_common_obj  )
 
 nebula_add_library(
     storage_server SHARED
@@ -101,7 +105,7 @@ nebula_add_library(
     storage_local_server_obj SHARED
     GraphStorageLocalServer.cpp
 )
-target_link_libraries(storage_admin_service_handler PUBLIC "${Glog_LIBRARY}" kv_stats_obj)
+target_link_libraries(storage_admin_service_handler PUBLIC "${Glog_LIBRARY}" kv_stats_obj storage_common_obj )
 
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

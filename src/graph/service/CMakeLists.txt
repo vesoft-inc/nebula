@@ -7,6 +7,7 @@ nebula_add_library(
     GraphFlags.cpp
 )
 
+target_link_libraries(graph_flags_obj PUBLIC "${Glog_LIBRARY}" version_obj)
 nebula_add_library(
     service_obj SHARED
     GraphService.cpp
