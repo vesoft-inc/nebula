@@ -494,10 +494,7 @@ bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
 
 bool JobManager::isRunningJob(const JobDescription& jobDesc) {
   auto status = jobDesc.getStatus();
-  if (status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING) {
-    return true;
-  }
-  return false;
+  return status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING;
 }
 
 nebula::cpp2::ErrorCode JobManager::removeExpiredJobs(

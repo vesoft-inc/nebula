@@ -15,7 +15,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   do {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+    folly::SharedMutex::ReadHolder holder(LockUtils::lock());
     if (module != cpp2::ConfigModule::ALL) {
       code = getOneConfig(module, name, items);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

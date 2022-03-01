@@ -104,7 +104,10 @@ TEST(ProcessorTest, CreateBackupTest) {
   // resgister active hosts, same with heartbeat
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
-  ActiveHostsMan::updateHostInfo(kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+  std::vector<kvstore::KV> time;
+  ActiveHostsMan::updateHostInfo(
+      kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), time);
+  TestUtils::doPut(kv.get(), time);
 
   // mock space 1: test_space
   bool ret = false;
@@ -159,11 +162,13 @@ TEST(ProcessorTest, CreateBackupTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts2));
     data.emplace_back(MetaKeyUtils::partKey(id2, partId), MetaKeyUtils::partVal(hosts2));
   }
+
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-    ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+        baton.post();
+      });
   baton.wait();
 
   auto client = std::make_unique<AdminClient>(kv.get());
@@ -188,22 +193,14 @@ TEST(ProcessorTest, CreateBackupTest) {
 
     auto it = std::find_if(metaFiles.cbegin(), metaFiles.cend(), [](auto const& m) {
       auto name = m.substr(m.size() - sizeof("__indexes__.sst") + 1);
-
-      if (name == "__indexes__.sst") {
-        return true;
-      }
-      return false;
+      return name == "__indexes__.sst";
     });
 
     ASSERT_NE(it, metaFiles.cend());
 
     it = std::find_if(metaFiles.cbegin(), metaFiles.cend(), [](auto const& m) {
       auto name = m.substr(m.size() - sizeof("__users__.sst") + 1);
-
-      if (name == "__users__.sst") {
-        return true;
-      }
-      return false;
+      return name == "__users__.sst";
     });
     ASSERT_EQ(it, metaFiles.cend());
 

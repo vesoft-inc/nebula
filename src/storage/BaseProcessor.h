@@ -76,10 +76,6 @@ class BaseProcessor {
 
   void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
 
-  nebula::cpp2::ErrorCode doSyncPut(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    std::vector<kvstore::KV>&& data);
-
   void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string>&& keys);
 
   void doRemoveRange(GraphSpaceID spaceId,

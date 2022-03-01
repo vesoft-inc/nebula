@@ -64,8 +64,8 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
         auto vId = row.values[0].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-          LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                     << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+          LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
           pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           onFinished();
           return;
@@ -92,9 +92,9 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
-          LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                     << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                     << ", dstVid: " << *edgeKey.dst_ref();
+          LOG(INFO) << "Space " << spaceId_ << " vertex length invalid, "
+                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
+                    << ", dstVid: " << *edgeKey.dst_ref();
           pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           onFinished();
           return;
@@ -155,8 +155,8 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
         auto vId = row.values[0].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-          LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                     << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+          LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
           return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         }
 
@@ -177,9 +177,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
-          LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                     << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                     << ", dstVid: " << *edgeKey.dst_ref();
+          LOG(INFO) << "Space " << spaceId_ << " vertex length invalid, "
+                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
+                    << ", dstVid: " << *edgeKey.dst_ref();
           return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         }
 
