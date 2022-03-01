@@ -42,6 +42,6 @@ nebula_add_library(
     ExplainSentence.cpp
     MatchSentence.cpp
 )
-target_link_libraries(parser_obj PUBLIC util_obj)
+target_link_libraries(parser_obj PUBLIC util_obj agg_function_manager_obj function_manager_obj )
 
 nebula_add_subdirectory(test)

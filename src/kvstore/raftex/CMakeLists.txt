@@ -7,5 +7,5 @@ nebula_add_library(
     SnapshotManager.cpp
 )
 
-target_link_libraries(raftex_obj PUBLIC "${Glog_LIBRARY}" base_obj wal_obj kv_stats_obj thrift_obj  ssl_obj)
+target_link_libraries(raftex_obj PUBLIC "${Glog_LIBRARY}" base_obj wal_obj kv_stats_obj thrift_obj stats_obj  ssl_obj)
 nebula_add_subdirectory(test)

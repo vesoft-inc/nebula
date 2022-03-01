@@ -8,3 +8,5 @@ nebula_add_library(
     ClientSession.cpp
 )
 
+target_link_libraries(graph_session_obj PUBLIC "${Glog_LIBRARY}"  graph_stats_obj)
+

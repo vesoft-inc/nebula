@@ -6,5 +6,5 @@ nebula_add_library(
     AdHocIndexManager.cpp
     AdHocSchemaManager.cpp
 )
-target_link_libraries(mock_obj PUBLIC expression_obj meta_obj)
+target_link_libraries(mock_obj PUBLIC expression_obj meta_obj graph_storage_service_handler  meta_service_handler kvstore_obj storage_admin_service_handler )
 
