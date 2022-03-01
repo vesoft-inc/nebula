@@ -34,6 +34,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   void visit(Aggregate *node) override;
   void visit(Traverse *node) override;
   void visit(AppendVertices *node) override;
+  void visit(Dedup *node) override;
   void visit(BiJoin *node) override;
 
  private:

@@ -880,7 +880,12 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       leader_ = HostAddr("", 0);
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
-      res = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
+      // It is nature to return E_RAFT_TERM_OUT_OF_DATE or LEADER_CHANGE
+      // here, but this will make caller believe this append failed
+      // however, this log is replicated to followers(written in WAL)
+      // and those followers may become leader (use that WAL)
+      // which means this log may actully commit succeeded.
+      res = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_APPEND_LOG;
     }
   }
   if (!checkAppendLogResult(res)) {

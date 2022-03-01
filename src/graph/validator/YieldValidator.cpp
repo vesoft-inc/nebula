@@ -18,6 +18,7 @@ YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx) : Validat
   setNoSpaceRequired();
 }
 
+// Check validity of clauses, and disable invalid input/variable.
 Status YieldValidator::validateImpl() {
   if (qctx_->vctx()->spaceChosen()) {
     space_ = vctx_->whichSpace();
@@ -58,6 +59,8 @@ Status YieldValidator::validateImpl() {
   return Status::OK();
 }
 
+// Collect properties of yield expression, check type, fold expression,
+// and set output columns.
 Status YieldValidator::makeOutputColumn(YieldColumn *column) {
   columns_->addColumn(column);
 
@@ -81,6 +84,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
   return Status::OK();
 }
 
+// Create GroupByValidator according to implicit group by in yield sentence.
 Status YieldValidator::makeImplicitGroupByValidator() {
   auto *groupSentence = qctx()->objPool()->add(new GroupBySentence(
       static_cast<YieldSentence *>(sentence_)->yield()->clone().release(), nullptr, nullptr));
@@ -90,6 +94,7 @@ Status YieldValidator::makeImplicitGroupByValidator() {
   return Status::OK();
 }
 
+// Validate implicit group by according to group by validator.
 Status YieldValidator::validateImplicitGroupBy() {
   NG_RETURN_IF_ERROR(groupByValidator_->validateImpl());
   inputs_ = groupByValidator_->inputCols();
@@ -103,6 +108,8 @@ Status YieldValidator::validateImplicitGroupBy() {
   return Status::OK();
 }
 
+// Validate and build output columns.
+// Rewrite '*' to all properties of input/variable.
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   auto columns = clause->columns();
   auto *pool = qctx_->objPool();
@@ -146,6 +153,9 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   return Status::OK();
 }
 
+// Validate filter expression.
+// Disable aggregate expression in filter, collect properties in expression,
+// fold filter expression.
 Status YieldValidator::validateWhere(const WhereClause *where) {
   if (where == nullptr) {
     return Status::OK();
@@ -162,6 +172,7 @@ Status YieldValidator::validateWhere(const WhereClause *where) {
   return Status::OK();
 }
 
+// Generate plan according to input, implicit group by and yield columns.
 Status YieldValidator::toPlan() {
   auto yield = static_cast<const YieldSentence *>(sentence_);
 

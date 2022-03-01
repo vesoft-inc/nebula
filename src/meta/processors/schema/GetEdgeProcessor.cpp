@@ -14,10 +14,10 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   const auto& edgeName = req.get_edge_name();
   auto ver = req.get_version();
 
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::tagAndEdgeLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto edgeTypeRet = getEdgeType(spaceId, edgeName);
   if (!nebula::ok(edgeTypeRet)) {
-    LOG(ERROR) << "Get edge " << edgeName << " failed.";
+    LOG(INFO) << "Get edge " << edgeName << " failed.";
     handleErrorCode(nebula::error(edgeTypeRet));
     onFinished();
     return;
@@ -30,28 +30,28 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(edgePrefix);
     if (!nebula::ok(ret)) {
-      LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
-                 << ", latest version failed.";
+      LOG(INFO) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
+                << ", latest version failed.";
       handleErrorCode(nebula::error(ret));
       onFinished();
       return;
     }
     auto iter = nebula::value(ret).get();
     if (!iter->valid()) {
-      LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
-                 << ", latest version "
-                 << " not found.";
+      LOG(INFO) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
+                << ", latest version "
+                << " not found.";
       handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
       onFinished();
       return;
     }
     schemaValue = iter->val().str();
-  } else {
+  } else {  // Get given version
     auto edgeKey = MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver);
     auto ret = doGet(edgeKey);
     if (!nebula::ok(ret)) {
-      LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version "
-                 << ver << " failed.";
+      LOG(INFO) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version "
+                << ver << " failed.";
       handleErrorCode(nebula::error(ret));
       onFinished();
       return;
@@ -59,7 +59,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     schemaValue = nebula::value(ret);
   }
 
-  VLOG(3) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version " << ver;
+  VLOG(2) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version " << ver;
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   resp_.schema_ref() = MetaKeyUtils::parseSchema(schemaValue);
   onFinished();

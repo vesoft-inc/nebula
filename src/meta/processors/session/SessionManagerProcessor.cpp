@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
   const auto& user = req.get_user();
   auto ret = userExist(user);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -42,7 +42,7 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
 }
 
 void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
   std::vector<kvstore::KV> data;
   std::unordered_map<nebula::SessionID,
                      std::unordered_map<nebula::ExecutionPlanID, cpp2::QueryDesc>>
@@ -108,7 +108,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
 }
 
 void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::sessionLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::sessionLock());
   auto& prefix = MetaKeyUtils::sessionPrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
@@ -134,7 +134,7 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
 }
 
 void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::sessionLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::sessionLock());
   auto sessionId = req.get_session_id();
   auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
   auto ret = doGet(sessionKey);
@@ -156,7 +156,7 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
 }
 
 void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
   auto sessionId = req.get_session_id();
   auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
   auto ret = doGet(sessionKey);
@@ -176,7 +176,7 @@ void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
 }
 
 void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
   auto& killQueries = req.get_kill_queries();
 
   std::vector<kvstore::KV> data;
