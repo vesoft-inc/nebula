@@ -17,10 +17,21 @@ namespace storage {
 
 class StopAdminTaskProcessor {
  public:
+  /**
+   * @brief Construct StopAdminTaskProcessor
+   *
+   * @param env Related environment variables for storage.
+   * @return StopAdminTaskProcessor* StopAdminTaskProcessor instance.
+   */
   static StopAdminTaskProcessor* instance(StorageEnv* env) {
     return new StopAdminTaskProcessor(env);
   }
 
+  /**
+   * @brief Entry point of stopping admin task.
+   *
+   * @param req Reuqest for stopping admin task.
+   */
   void process(const cpp2::StopTaskRequest& req);
 
   folly::Future<cpp2::StopTaskResp> getFuture() {

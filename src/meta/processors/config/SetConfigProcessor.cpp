@@ -16,8 +16,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
   auto name = req.get_item().get_name();
   auto value = req.get_item().get_value();
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-  auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     if (module != cpp2::ConfigModule::ALL) {
       // When we set config of a specified module, check if it exists.

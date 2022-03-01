@@ -9,7 +9,7 @@ namespace nebula {
 namespace meta {
 
 void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));

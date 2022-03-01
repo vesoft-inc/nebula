@@ -10,7 +10,7 @@ namespace meta {
 
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& spaceName = req.get_space_name();
   auto spaceRet = getSpaceId(spaceName);
 
@@ -20,11 +20,11 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop space Failed, space " << spaceName << " not existed.";
+        LOG(INFO) << "Drop space Failed, space " << spaceName << " not existed.";
       }
     } else {
-      LOG(ERROR) << "Drop space Failed, space " << spaceName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Drop space Failed, space " << spaceName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -39,8 +39,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Drop space Failed, space " << spaceName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop space Failed, space " << spaceName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -61,8 +61,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto roleRet = doPrefix(rolePrefix);
   if (!nebula::ok(roleRet)) {
     auto retCode = nebula::error(roleRet);
-    LOG(ERROR) << "Drop space Failed, space " << spaceName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop space Failed, space " << spaceName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -81,8 +81,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto lstRet = doPrefix(rolePrefix);
   if (!nebula::ok(lstRet)) {
     auto retCode = nebula::error(lstRet);
-    LOG(ERROR) << "Drop space Failed, space " << spaceName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop space Failed, space " << spaceName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -103,8 +103,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto ftRet = doPrefix(ftPrefix);
   if (!nebula::ok(ftRet)) {
     auto retCode = nebula::error(ftRet);
-    LOG(ERROR) << "Drop space Failed, space " << spaceName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Drop space Failed, space " << spaceName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

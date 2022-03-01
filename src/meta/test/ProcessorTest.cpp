@@ -2497,7 +2497,6 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     ASSERT_EQ(20, count);
 
     // modify id to 21 for mock some schema
-    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string kId = "__id__";
     int32_t id = 21;
     std::vector<kvstore::KV> data;
