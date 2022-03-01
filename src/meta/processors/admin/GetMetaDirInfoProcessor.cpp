@@ -12,9 +12,7 @@
 namespace nebula {
 namespace meta {
 
-void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq& req) {
-  UNUSED(req);
-
+void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq&) {
   auto datapaths = kvstore_->getDataRoot();
   nebula::cpp2::DirInfo dir;
   dir.data_ref() = datapaths;

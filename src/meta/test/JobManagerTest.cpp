@@ -73,7 +73,7 @@ class JobManagerTest : public ::testing::Test {
   std::unique_ptr<AdminClient> adminClient_{nullptr};
 };
 
-TEST_F(JobManagerTest, addJob) {
+TEST_F(JobManagerTest, AddJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras{"test"};
   JobDescription job(1, cpp2::AdminCmd::COMPACT, paras);
@@ -214,7 +214,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   ASSERT_FALSE(result);
 }
 
-TEST_F(JobManagerTest, loadJobDescription) {
+TEST_F(JobManagerTest, LoadJobDescription) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras{"test_space"};
   JobDescription job1(1, cpp2::AdminCmd::COMPACT, paras);
@@ -238,11 +238,11 @@ TEST_F(JobManagerTest, loadJobDescription) {
   ASSERT_EQ(job1.stopTime_, optJd2.stopTime_);
 }
 
-TEST(JobUtilTest, dummy) {
+TEST(JobUtilTest, Dummy) {
   ASSERT_TRUE(JobUtil::jobPrefix().length() + sizeof(size_t) != JobUtil::currJobKey().length());
 }
 
-TEST_F(JobManagerTest, showJobs) {
+TEST_F(JobManagerTest, ShowJobs) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras1{"test_space"};
   JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
@@ -276,7 +276,7 @@ TEST_F(JobManagerTest, showJobs) {
   ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
 
-TEST_F(JobManagerTest, showJobsFromMultiSpace) {
+TEST_F(JobManagerTest, ShowJobsFromMultiSpace) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras1{"test_space"};
   JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
@@ -309,7 +309,7 @@ HostAddr toHost(std::string strIp) {
   return HostAddr(strIp, 0);
 }
 
-TEST_F(JobManagerTest, showJob) {
+TEST_F(JobManagerTest, ShowJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras{"test_space"};
 
@@ -363,7 +363,7 @@ TEST_F(JobManagerTest, showJob) {
   ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
 }
 
-TEST_F(JobManagerTest, showJobInOtherSpace) {
+TEST_F(JobManagerTest, ShowJobInOtherSpace) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   std::vector<std::string> paras{"test_space"};
 
@@ -395,7 +395,7 @@ TEST_F(JobManagerTest, showJobInOtherSpace) {
   ASSERT_TRUE(!nebula::ok(showResult));
 }
 
-TEST_F(JobManagerTest, recoverJob) {
+TEST_F(JobManagerTest, RecoverJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   // set status to prevent running the job since AdminClient is a injector
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
@@ -411,7 +411,7 @@ TEST_F(JobManagerTest, recoverJob) {
   ASSERT_EQ(nebula::value(nJobRecovered), 1);
 }
 
-TEST(JobDescriptionTest, ctor) {
+TEST(JobDescriptionTest, Ctor) {
   std::vector<std::string> paras1{"test_space"};
   JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
   jd1.setStatus(cpp2::JobStatus::RUNNING);
@@ -419,7 +419,7 @@ TEST(JobDescriptionTest, ctor) {
   LOG(INFO) << "jd1 ctored";
 }
 
-TEST(JobDescriptionTest, ctor2) {
+TEST(JobDescriptionTest, Ctor2) {
   std::vector<std::string> paras1{"test_space"};
   JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
   jd1.setStatus(cpp2::JobStatus::RUNNING);
@@ -432,7 +432,7 @@ TEST(JobDescriptionTest, ctor2) {
   ASSERT_TRUE(nebula::ok(optJobRet));
 }
 
-TEST(JobDescriptionTest, ctor3) {
+TEST(JobDescriptionTest, Ctor3) {
   std::vector<std::string> paras1{"test_space"};
   JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
   jd1.setStatus(cpp2::JobStatus::RUNNING);
@@ -447,7 +447,7 @@ TEST(JobDescriptionTest, ctor3) {
   ASSERT_TRUE(nebula::ok(optJobRet));
 }
 
-TEST(JobDescriptionTest, parseKey) {
+TEST(JobDescriptionTest, ParseKey) {
   int32_t iJob = std::pow(2, 16);
   std::vector<std::string> paras{"test_space"};
   JobDescription jd(iJob, cpp2::AdminCmd::COMPACT, paras);
@@ -460,7 +460,7 @@ TEST(JobDescriptionTest, parseKey) {
   ASSERT_EQ(iJob, parsedKeyId);
 }
 
-TEST(JobDescriptionTest, parseVal) {
+TEST(JobDescriptionTest, ParseVal) {
   int32_t iJob = std::pow(2, 15);
   std::vector<std::string> paras{"nba"};
   JobDescription jd(iJob, cpp2::AdminCmd::FLUSH, paras);
@@ -480,7 +480,7 @@ TEST(JobDescriptionTest, parseVal) {
   ASSERT_EQ(stopTime, std::get<4>(parsedVal));
 }
 
-TEST(TaskDescriptionTest, ctor) {
+TEST(TaskDescriptionTest, Ctor) {
   int32_t iJob = std::pow(2, 4);
   int32_t iTask = 0;
   auto dest = toHost("");
@@ -494,7 +494,7 @@ TEST(TaskDescriptionTest, ctor) {
   ASSERT_EQ(status, td.status_);
 }
 
-TEST(TaskDescriptionTest, parseKey) {
+TEST(TaskDescriptionTest, ParseKey) {
   int32_t iJob = std::pow(2, 5);
   int32_t iTask = 0;
   std::string dest{"127.0.0.1"};
@@ -507,7 +507,7 @@ TEST(TaskDescriptionTest, parseKey) {
   ASSERT_EQ(iTask, std::get<1>(tup));
 }
 
-TEST(TaskDescriptionTest, parseVal) {
+TEST(TaskDescriptionTest, ParseVal) {
   int32_t iJob = std::pow(2, 5);
   int32_t iTask = 0;
   std::string dest{"127.0.0.1"};
@@ -527,7 +527,7 @@ TEST(TaskDescriptionTest, parseVal) {
   ASSERT_EQ(td.stopTime_, std::get<3>(parsedVal));
 }
 
-TEST(TaskDescriptionTest, ctor2) {
+TEST(TaskDescriptionTest, Ctor2) {
   int32_t iJob = std::pow(2, 6);
   int32_t iTask = 0;
   auto dest = toHost("127.0.0.1");

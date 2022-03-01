@@ -18,7 +18,6 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -30,7 +29,6 @@
 #include "webservice/Common.h"
 
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
@@ -402,7 +400,6 @@ bool MetaClient::loadData() {
 
 TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
   TagSchemas tagSchemas;
-  TagID lastTagId = -1;
   for (auto& tagIt : tagItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
@@ -411,12 +408,14 @@ TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
     }
     // handle schema property
     schema->setProp(tagIt.get_schema().get_schema_prop());
-    if (tagIt.get_tag_id() != lastTagId) {
-      // init schema vector, since schema version is zero-based, need to add one
-      tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
-      lastTagId = tagIt.get_tag_id();
+    auto& schemas = tagSchemas[tagIt.get_tag_id()];
+    // Because of the byte order of schema version in meta is not same as numerical order, we have
+    // to check schema version
+    if (schemas.size() <= static_cast<size_t>(schema->getVersion())) {
+      // since schema version is zero-based, need to add one
+      schemas.resize(schema->getVersion() + 1);
     }
-    tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
+    schemas[schema->getVersion()] = std::move(schema);
   }
   return tagSchemas;
 }
@@ -424,7 +423,6 @@ TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
 EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
   EdgeSchemas edgeSchemas;
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
-  EdgeType lastEdgeType = -1;
   for (auto& edgeIt : edgeItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
@@ -433,12 +431,14 @@ EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec
     }
     // handle shcem property
     schema->setProp(edgeIt.get_schema().get_schema_prop());
-    if (edgeIt.get_edge_type() != lastEdgeType) {
-      // init schema vector, since schema version is zero-based, need to add one
-      edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
-      lastEdgeType = edgeIt.get_edge_type();
+    auto& schemas = edgeSchemas[edgeIt.get_edge_type()];
+    // Because of the byte order of schema version in meta is not same as numerical order, we have
+    // to check schema version
+    if (schemas.size() <= static_cast<size_t>(schema->getVersion())) {
+      // since schema version is zero-based, need to add one
+      schemas.resize(schema->getVersion() + 1);
     }
-    edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
+    schemas[schema->getVersion()] = std::move(schema);
   }
   return edgeSchemas;
 }

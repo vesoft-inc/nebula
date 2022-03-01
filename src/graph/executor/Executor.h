@@ -8,6 +8,7 @@
 
 #include <folly/futures/Future.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <set>
 #include <string>
 #include <vector>
@@ -25,7 +26,7 @@ namespace graph {
 class PlanNode;
 class QueryContext;
 
-class Executor : private cpp::NonCopyable, private cpp::NonMovable {
+class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
   static Executor *create(const PlanNode *node, QueryContext *qctx);
@@ -100,6 +101,8 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   folly::Executor *runner() const;
 
   void drop();
+  void drop(const PlanNode *node);
+  void dropBody(const PlanNode *body);
 
   // Store the result of this executor to execution context
   Status finish(Result &&result);

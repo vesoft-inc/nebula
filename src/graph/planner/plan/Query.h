@@ -730,6 +730,8 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
@@ -825,6 +827,8 @@ class Project final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
@@ -1114,6 +1118,8 @@ class Aggregate final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Aggregate(QueryContext* qctx,
             PlanNode* input,
@@ -1161,6 +1167,8 @@ class Dedup final : public SingleInputNode {
   static Dedup* make(QueryContext* qctx, PlanNode* input) {
     return qctx->objPool()->add(new Dedup(qctx, input));
   }
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   PlanNode* clone() const override;
 
@@ -1469,6 +1477,8 @@ class Traverse final : public GetNeighbors {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   Traverse* clone() const override;
 
   MatchStepRange* stepRange() const {
@@ -1526,6 +1536,8 @@ class AppendVertices final : public GetVertices {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   AppendVertices* clone() const override;
 
   Expression* vFilter() const {
@@ -1555,7 +1567,7 @@ class AppendVertices final : public GetVertices {
                     nullptr,
                     false,
                     {},
-                    0,
+                    -1,  // means no limit
                     nullptr) {}
 
   void cloneMembers(const AppendVertices& a);
@@ -1584,6 +1596,8 @@ class BiJoin : public BinaryInputNode {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  protected:
   BiJoin(QueryContext* qctx,

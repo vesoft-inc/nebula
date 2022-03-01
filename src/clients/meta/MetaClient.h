@@ -19,7 +19,6 @@
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
-#include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
 #include "common/meta/GflagsManager.h"
@@ -221,8 +220,8 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
   FRIEND_TEST(MetaClientTest, VerifyClientTest);
-  friend class KillQueryMetaWrapper;
   FRIEND_TEST(ChainAddEdgesTest, AddEdgesLocalTest);
+  friend class KillQueryMetaWrapper;
   friend class storage::MetaClientTestUpdater;
 
  public:

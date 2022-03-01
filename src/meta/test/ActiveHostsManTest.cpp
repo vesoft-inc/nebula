@@ -62,17 +62,21 @@ TEST(ActiveHostsManTest, NormalTest) {
   kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
   baton.wait();
 
+  std::vector<kvstore::KV> times;
   auto now = time::WallClock::fastNowInMilliSec();
   HostInfo info1(now, cpp2::HostRole::STORAGE, gitInfoSha());
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info1);
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), info1);
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), info1);
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info1, times);
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), info1, times);
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), info1, times);
+  TestUtils::doPut(kv.get(), times);
   auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(3, nebula::value(hostsRet).size());
 
   HostInfo info2(now + 2000, cpp2::HostRole::STORAGE, gitInfoSha());
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info2);
+  std::vector<kvstore::KV> time;
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info2, time);
+  TestUtils::doPut(kv.get(), time);
   hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(3, nebula::value(hostsRet).size());
@@ -120,9 +124,11 @@ TEST(ActiveHostsManTest, LeaderTest) {
   auto now = time::WallClock::fastNowInMilliSec();
   HostInfo hInfo1(now, cpp2::HostRole::STORAGE, gitInfoSha());
   HostInfo hInfo2(now + 2000, cpp2::HostRole::STORAGE, gitInfoSha());
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo1);
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), hInfo1);
-  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), hInfo1);
+  std::vector<kvstore::KV> times;
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo1, times);
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), hInfo1, times);
+  ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), hInfo1, times);
+  TestUtils::doPut(kv.get(), times);
   auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(3, nebula::value(hostsRet).size());
@@ -153,7 +159,9 @@ TEST(ActiveHostsManTest, LeaderTest) {
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds;
   leaderIds.emplace(1, std::vector<cpp2::LeaderInfo>{part1, part2});
   leaderIds.emplace(2, std::vector<cpp2::LeaderInfo>{part3});
-  ActiveHostsMan::updateHostInfo(kv.get(), host, hInfo2, &leaderIds);
+  std::vector<kvstore::KV> time;
+  ActiveHostsMan::updateHostInfo(kv.get(), host, hInfo2, time, &leaderIds);
+  TestUtils::doPut(kv.get(), time);
   hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(3, nebula::value(hostsRet).size());
@@ -189,35 +197,6 @@ TEST(ActiveHostsManTest, LeaderTest) {
   hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(1, nebula::value(hostsRet).size());
-}
-
-TEST(LastUpdateTimeManTest, NormalTest) {
-  fs::TempDir rootPath("/tmp/LastUpdateTimeManTest.XXXXXX");
-  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-
-  auto lastUpRet = LastUpdateTimeMan::get(kv.get());
-  ASSERT_FALSE(nebula::ok(lastUpRet));
-  int64_t now = time::WallClock::fastNowInMilliSec();
-
-  LastUpdateTimeMan::update(kv.get(), now);
-  lastUpRet = LastUpdateTimeMan::get(kv.get());
-  ASSERT_TRUE(nebula::ok(lastUpRet));
-  ASSERT_EQ(now, nebula::value(lastUpRet));
-
-  LastUpdateTimeMan::update(kv.get(), now + 100);
-  lastUpRet = LastUpdateTimeMan::get(kv.get());
-  ASSERT_TRUE(nebula::ok(lastUpRet));
-  ASSERT_EQ(now + 100, nebula::value(lastUpRet));
-
-  LastUpdateTimeMan::update(kv.get(), now - 100);
-  {
-    auto key = MetaKeyUtils::lastUpdateTimeKey();
-    std::string val;
-    auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-    ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
-    int64_t lastUpdateTime = *reinterpret_cast<const int64_t*>(val.data());
-    ASSERT_EQ(now - 100, lastUpdateTime);
-  }
 }
 
 }  // namespace meta

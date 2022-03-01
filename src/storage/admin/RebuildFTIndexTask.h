@@ -14,10 +14,18 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Task class to rebuild FT index.
+ *
+ */
 class RebuildFTIndexTask : public AdminTask {
  public:
   RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
-
+  /**
+   * @brief Generate subtasks for rebuilding FT index.
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
  protected:

@@ -15,10 +15,21 @@ namespace nebula {
 namespace storage {
 class DropCheckpointProcessor {
  public:
+  /**
+   * @brief Construct new instance of DropCheckpoint.
+   *
+   * @param env Related environment variables for storage.
+   * @return DropCheckpointProcessor* DropCheckpointProcessor instance.
+   */
   static DropCheckpointProcessor* instance(StorageEnv* env) {
     return new DropCheckpointProcessor(env);
   }
 
+  /**
+   * @brief Entry point for dropping checkpoint.
+   *
+   * @param req Reuqest for dropping checkpoint.
+   */
   void process(const cpp2::DropCPRequest& req);
 
   folly::Future<cpp2::DropCPResp> getFuture() {
