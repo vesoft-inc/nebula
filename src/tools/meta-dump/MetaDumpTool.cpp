@@ -152,7 +152,7 @@ class MetaDumper {
     {
       LOG(INFO) << "------------------------------------------\n\n";
       LOG(INFO) << "Tag info:";
-      prefix = "__tags__";
+      prefix = MetaKeyUtils::schemaTagsPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -166,7 +166,7 @@ class MetaDumper {
     {
       LOG(INFO) << "------------------------------------------\n\n";
       LOG(INFO) << "Edge info:";
-      prefix = "__edges__";
+      prefix = MetaKeyUtils::schemaEdgesPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -180,7 +180,7 @@ class MetaDumper {
     {
       LOG(INFO) << "------------------------------------------\n\n";
       LOG(INFO) << "Index info:";
-      prefix = "__indexes__";
+      prefix = MetaKeyUtils::indexPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -193,7 +193,7 @@ class MetaDumper {
     {
       LOG(INFO) << "------------------------------------------\n\n";
       LOG(INFO) << "Leader info:";
-      prefix = "__leader_terms__";
+      prefix = MetaKeyUtils::leaderPrefix();
       HostAddr host;
       TermID term;
       nebula::cpp2::ErrorCode code;

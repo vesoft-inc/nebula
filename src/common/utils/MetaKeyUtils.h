@@ -183,6 +183,8 @@ class MetaKeyUtils final {
 
   static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
+  static const std::string& schemaEdgesPrefix();
+
   static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
   static EdgeType parseEdgeType(folly::StringPiece key);
@@ -199,6 +201,8 @@ class MetaKeyUtils final {
 
   static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
+  static const std::string& schemaTagsPrefix();
+
   static meta::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
   static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
@@ -206,6 +210,8 @@ class MetaKeyUtils final {
   static std::string indexVal(const meta::cpp2::IndexItem& item);
 
   static std::string indexPrefix(GraphSpaceID spaceId);
+
+  static const std::string& indexPrefix();
 
   static IndexID parseIndexesKeyIndexID(folly::StringPiece key);
 

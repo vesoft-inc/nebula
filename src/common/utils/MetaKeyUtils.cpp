@@ -524,6 +524,10 @@ std::string MetaKeyUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
   return key;
 }
 
+const std::string& MetaKeyUtils::schemaEdgesPrefix() {
+  return kEdgesTable;
+}
+
 std::string MetaKeyUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                         EdgeType edgeType,
                                         SchemaVer version) {
@@ -590,6 +594,10 @@ std::string MetaKeyUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
   return key;
 }
 
+const std::string& MetaKeyUtils::schemaTagsPrefix() {
+  return kTagsTable;
+}
+
 std::string MetaKeyUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
   std::string key;
   key.reserve(kTagsTable.size() + sizeof(GraphSpaceID));
@@ -623,6 +631,10 @@ std::string MetaKeyUtils::indexVal(const nebula::meta::cpp2::IndexItem& item) {
   std::string value;
   apache::thrift::CompactSerializer::serialize(item, &value);
   return value;
+}
+
+const std::string& MetaKeyUtils::indexPrefix() {
+  return kIndexesTable;
 }
 
 std::string MetaKeyUtils::indexPrefix(GraphSpaceID spaceId) {
