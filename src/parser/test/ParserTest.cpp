@@ -2792,6 +2792,11 @@ TEST_F(ParserTest, MatchPathPatternExpression) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query = "MATCH p = (v)-[:like]->(p) WHERE (v)-[:like]->(v) RETURN p";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, HOST) {

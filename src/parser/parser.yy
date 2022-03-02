@@ -324,7 +324,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <match_return> match_return
 %type <expr> match_skip
 %type <expr> match_limit
-%type <strval> match_alias
 %type <match_edge_type_list> match_edge_type_list
 %type <match_edge_type_list> opt_match_edge_type_list
 %type <reading_clause> unwind_clause with_clause match_clause reading_clause
@@ -414,6 +413,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %right NOT
 %nonassoc DUMMY_LOWER_THAN_L_BRACE
 %nonassoc L_BRACE KW_MAP
+%nonassoc DUMMY_LOWER_THAN_R_PAREN
+%nonassoc R_PAREN
 %nonassoc UNARY_PLUS
 %nonassoc UNARY_MINUS
 %nonassoc CASTING
@@ -575,7 +576,7 @@ expression_internal
     : constant_expression {
         $$ = $1;
     }
-    | name_label {
+    | name_label %prec DUMMY_LOWER_THAN_R_PAREN {
         $$ = LabelExpression::make(qctx->objPool(), *$1);
         delete $1;
     }
@@ -1272,7 +1273,7 @@ container_expression
     | set_expression {
         $$ = $1;
     }
-    | map_expression {
+    | map_expression %prec DUMMY_LOWER_THAN_R_PAREN {
         $$ = $1;
     }
     ;
@@ -1759,17 +1760,26 @@ match_path_list
     }
 
 match_node
-    : L_PAREN match_alias R_PAREN {
+    : L_PAREN name_label R_PAREN {
         $$ = new MatchNode(*$2, nullptr, nullptr);
         delete $2;
     }
-    | L_PAREN match_alias match_node_label_list R_PAREN {
+    | L_PAREN name_label match_node_label_list R_PAREN {
         $$ = new MatchNode(*$2, $3, nullptr);
         delete $2;
     }
-    | L_PAREN match_alias map_expression R_PAREN {
+    | L_PAREN name_label map_expression R_PAREN {
         $$ = new MatchNode(*$2, nullptr, $3);
         delete $2;
+    }
+    | L_PAREN R_PAREN %prec DUMMY_LOWER_THAN_L_BRACE {
+        $$ = new MatchNode("", nullptr, nullptr);
+    }
+    | L_PAREN match_node_label_list R_PAREN %prec DUMMY_LOWER_THAN_L_BRACE {
+        $$ = new MatchNode("", $2, nullptr);
+    }
+    | L_PAREN map_expression R_PAREN %prec DUMMY_LOWER_THAN_L_BRACE {
+        $$ = new MatchNode("", nullptr, $2);
     }
     ;
 
@@ -1793,15 +1803,6 @@ match_node_label_list
     }
     ;
 
-match_alias
-    : %empty %prec DUMMY_LOWER_THAN_L_BRACE {
-        $$ = new std::string();
-    }
-    | name_label {
-        $$ = $1;
-    }
-    ;
-
 match_edge
     : MINUS match_edge_prop MINUS {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::BOTH);
@@ -1821,13 +1822,19 @@ match_edge_prop
     : %empty {
         $$ = nullptr;
     }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range R_BRACKET {
+    | L_BRACKET name_label opt_match_edge_type_list match_step_range R_BRACKET {
         $$ = new MatchEdgeProp(*$2, $3, $4, nullptr);
         delete $2;
     }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range map_expression R_BRACKET {
+    | L_BRACKET name_label opt_match_edge_type_list match_step_range map_expression R_BRACKET {
         $$ = new MatchEdgeProp(*$2, $3, $4, $5);
         delete $2;
+    }
+    | L_BRACKET opt_match_edge_type_list match_step_range R_BRACKET {
+        $$ = new MatchEdgeProp("", $2, $3, nullptr);
+    }
+    | L_BRACKET opt_match_edge_type_list match_step_range map_expression R_BRACKET {
+        $$ = new MatchEdgeProp("", $2, $3, $4);
     }
     ;
 

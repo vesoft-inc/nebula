@@ -709,3 +709,12 @@ Feature: Basic match
     Then the result should be, in any order:
       | n                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  # Parser will treat '(v)' as match node instead label expression, so
+  # we can't write expression like this.
+  Scenario: unsupported match node expression
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN (v)
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `)'

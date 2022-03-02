@@ -526,14 +526,14 @@ Feature: Yield Sentence
   Scenario: deduce typecase
     When executing query:
       """
-      yield split('123,456,789', ',') as l| yield [e in $-.l | (int)(e)] as c;
+      yield split('123,456,789', ',') as l| yield [e in $-.l | (int)e] as c;
       """
     Then the result should be, in any order, with relax comparison:
       | c             |
       | [123,456,789] |
     When executing query:
       """
-      yield [e in ['123', '456', '789'] | (int)(e)] as c;
+      yield [e in ['123', '456', '789'] | (int)e] as c;
       """
     Then the result should be, in any order, with relax comparison:
       | c             |
