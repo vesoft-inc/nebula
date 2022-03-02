@@ -101,14 +101,14 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   auto partitionNum = partitionNumRet.value();
   LOG(INFO) << "Start stats task";
   CHECK_NOTNULL(env_->kvstore_);
-  auto vertexPrefix = NebulaKeyUtils::tagPrefix(part);
-  std::unique_ptr<kvstore::KVIterator> vertexIter;
+  auto tagPrefix = NebulaKeyUtils::tagPrefix(part);
+  std::unique_ptr<kvstore::KVIterator> tagIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
 
   // When the storage occurs leader change, continue to read data from the
   // follower instead of reporting an error.
-  auto ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
+  auto ret = env_->kvstore_->prefix(spaceId, part, tagPrefix, &tagIter, true);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Stats task failed";
     return ret;
@@ -134,8 +134,6 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     edgetypeEdges[edge.first] = 0;
   }
 
-  VertexID lastVertexId = "";
-
   // Only stats valid vertex data, no multi version
   // For example
   // Vid  tagId
@@ -144,31 +142,24 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   // 2     3
   // 2     5
   // 3     1
-  while (vertexIter && vertexIter->valid()) {
+  while (tagIter && tagIter->valid()) {
     if (UNLIKELY(canceled_)) {
       LOG(INFO) << "Stats task is canceled";
       return nebula::cpp2::ErrorCode::E_USER_CANCEL;
     }
 
-    auto key = vertexIter->key();
+    auto key = tagIter->key();
     auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
     auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
 
     auto it = tagsVertices.find(tagId);
     if (it == tagsVertices.end()) {
       // Invalid data
-      vertexIter->next();
+      tagIter->next();
       continue;
     }
-
-    if (vId == lastVertexId) {
-      tagsVertices[tagId] += 1;
-    } else {
-      tagsVertices[tagId] += 1;
-      spaceVertices++;
-      lastVertexId = vId;
-    }
-    vertexIter->next();
+    tagsVertices[tagId] += 1;
+    tagIter->next();
   }
 
   // Only stats valid edge data, no multi version
