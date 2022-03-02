@@ -341,6 +341,19 @@ struct DropSpaceReq {
     2: bool   if_exists,
 }
 
+struct ClearSpaceReq {
+    1: binary space_name
+    2: bool   if_exists,
+}
+
+struct ClearSpaceResp {
+    1: common.ErrorCode code,
+    // record which storages failed
+    2: list<common.HostAddr> failed_hosts,
+    // Valid if ret equals E_LEADER_CHANGED.
+    3: common.HostAddr leader,
+}
+
 struct ListSpacesReq {
 }
 
