@@ -23,6 +23,7 @@ Status FetchVerticesValidator::validateImpl() {
   return Status::OK();
 }
 
+// Check validity of tags specified in sentence
 Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   if (nameLabels == nullptr) {
     // all tag
@@ -50,6 +51,8 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   return Status::OK();
 }
 
+// Validate columns of yield clause, rewrites expression to fit its sementic
+// and disable some invalid expression types.
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");

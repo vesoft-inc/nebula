@@ -10,6 +10,8 @@
 
 namespace nebula {
 namespace graph {
+
+// Validator which report error directly.
 class ReportError final : public Validator {
  public:
   ReportError(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
