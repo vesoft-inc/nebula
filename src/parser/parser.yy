@@ -408,9 +408,12 @@ static constexpr size_t kCommentLengthLimit = 256;
 %left KW_AND
 %right KW_NOT
 %left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
+%nonassoc DUMMY_LOWER_THAN_MINUS
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT
+%nonassoc DUMMY_LOWER_THAN_L_BRACE
+%nonassoc L_BRACE KW_MAP
 %nonassoc UNARY_PLUS
 %nonassoc UNARY_MINUS
 %nonassoc CASTING
@@ -1123,7 +1126,7 @@ uuid_expression
     ;
 
 match_path_pattern_expression
-    : match_relationships_pattern {
+    : match_relationships_pattern %prec DUMMY_LOWER_THAN_MINUS {
         $$ = MatchPathPatternExpression::make(qctx->objPool(), std::unique_ptr<MatchPath>($1));
     }
     ;
@@ -1791,7 +1794,7 @@ match_node_label_list
     ;
 
 match_alias
-    : %empty {
+    : %empty %prec DUMMY_LOWER_THAN_L_BRACE {
         $$ = new std::string();
     }
     | name_label {
