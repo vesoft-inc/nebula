@@ -114,10 +114,17 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-  auto status = verifyVersion();
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return false;
+  for (;;) {
+    auto status = verifyVersion();
+    if (status.isLeaderChanged()) {
+      continue;
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+      return false;
+    } else {
+      return true;
+    }
   }
 
   if (!options_.skipConfig_) {
