@@ -47,6 +47,6 @@ nebula_add_library(
     rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
     rule/PushTopNDownIndexScanRule.cpp
 )
-target_link_libraries(optimizer_obj PUBLIC plan_obj expr_visitor_obj plan_node_visitor_obj )
+target_link_libraries(optimizer_obj PUBLIC plan_obj expr_visitor_obj plan_node_visitor_obj util_obj )
 
 nebula_add_subdirectory(test)

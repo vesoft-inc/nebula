@@ -61,6 +61,8 @@ nebula_add_library(
     TestBase.cpp
 )
 
+target_link_libraries(expr_ctx_mock_obj PUBLIC "${Glog_LIBRARY}"  )
+
 nebula_add_test(
     NAME
         expression_test

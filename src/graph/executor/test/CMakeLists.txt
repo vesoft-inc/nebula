@@ -41,12 +41,10 @@ SET(EXEC_QUERY_TEST_OBJS
     parser_obj
     validator_obj
     planner_obj
-    plan_obj
+    util_obj
     scheduler_obj
     executor_obj
-    util_obj
     idgenerator_obj
-    graph_context_obj
     graph_auth_obj
     expr_visitor_obj
     graph_obj
@@ -74,7 +72,6 @@ endif()
 SET(EXEC_QUERY_TEST_LIBS
     ${THRIFT_LIBRARIES}
     gtest
-    wangle
     ${PROXYGEN_LIBRARIES}
 )
 

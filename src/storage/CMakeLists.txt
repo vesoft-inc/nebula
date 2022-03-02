@@ -73,6 +73,8 @@ nebula_add_library(
     http/StorageHttpPropertyHandler.cpp
 )
 
+target_link_libraries(storage_http_handler PUBLIC "${Glog_LIBRARY}")
+
 nebula_add_library(
     storage_transaction_executor SHARED
     transaction/TransactionManager.cpp

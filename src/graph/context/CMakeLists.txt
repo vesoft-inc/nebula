@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    graph_context_obj SHARED
+    graph_context_obj_impl OBJECT
     QueryContext.cpp
     QueryExpressionContext.cpp
     ExecutionContext.cpp
@@ -12,6 +12,6 @@ nebula_add_library(
     Symbols.cpp
 )
 
-target_link_libraries(graph_context_obj PUBLIC ${Glog_LIBRARY} graph_flags_obj memory_obj)
+#target_link_libraries(graph_context_obj PUBLIC ${Glog_LIBRARY} graph_flags_obj memory_obj util_obj )
 
 nebula_add_subdirectory(test)

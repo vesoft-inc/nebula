@@ -13,3 +13,11 @@ nebula_add_subdirectory(stats)
 nebula_add_subdirectory(util)
 nebula_add_subdirectory(validator)
 nebula_add_subdirectory(visitor)
+nebula_add_library(util_obj SHARED
+$<TARGET_OBJECTS:util_obj_impl>
+$<TARGET_OBJECTS:graph_context_obj_impl>
+$<TARGET_OBJECTS:plan_obj_impl>
+)
+target_link_libraries(util_obj PUBLIC ${Glog_LIBRARY} graph_flags_obj memory_obj  ft_es_graph_adapter_obj expression_obj expr_visitor_obj  meta_obj idgenerator_obj )
+add_library(graph_context_obj ALIAS util_obj)
+add_library(plan_obj ALIAS util_obj)
