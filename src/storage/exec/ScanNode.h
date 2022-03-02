@@ -66,11 +66,10 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     const auto rowLimit = limit_;
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();
-    std::string vertexId;
     for (; iter->valid() && static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit;
          iter->next()) {
       auto key = iter->key();
-      vertexId = key.subpiece(vertexPrefix.size(), vIdLen).toString();
+      std::string vertexId = key.subpiece(vertexPrefix.size(), vIdLen).toString();
       collectOneRow(isIntId, vIdLen, vertexId);
       if (static_cast<int64_t>(resultDataSet_->rowSize()) >= rowLimit) {
         break;
