@@ -53,6 +53,8 @@ class ESGraphAdapter final : public FTGraphAdapter {
 
   StatusOr<bool> dropIndex(const HttpClient& client, const std::string& index) const override;
 
+  StatusOr<bool> clearIndex(const HttpClient& client, const std::string& index) const override;
+
   StatusOr<bool> indexExists(const HttpClient& client, const std::string& index) const override;
 
  private:
@@ -88,11 +90,15 @@ class ESGraphAdapter final : public FTGraphAdapter {
 
   bool indexCheck(const std::string& ret) const;
 
+  bool clearCheck(const std::string& ret) const;
+
   std::string createIndexCmd(const HttpClient& client,
                              const std::string& index,
                              const std::string& indexTemplate = "") const noexcept;
 
   std::string dropIndexCmd(const HttpClient& client, const std::string& index) const noexcept;
+
+  std::string clearIndexCmd(const HttpClient& client, const std::string& index) const noexcept;
 
   std::string indexExistsCmd(const HttpClient& client, const std::string& index) const noexcept;
 };

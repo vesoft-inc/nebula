@@ -28,6 +28,9 @@ class FTIndexUtils final {
   static StatusOr<bool> dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
                                     const std::string& index);
 
+  static StatusOr<bool> clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
+                                     const std::string& index);
+
   // Converts TextSearchExpression into a relational expresion that could be pushed down
   static StatusOr<Expression*> rewriteTSFilter(
       ObjectPool* pool,
