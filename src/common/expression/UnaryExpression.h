@@ -75,7 +75,7 @@ class UnaryExpression final : public Expression {
   }
 
  private:
-  explicit UnaryExpression(ObjectPool* pool, Kind kind, Expression* operand = nullptr)
+  UnaryExpression(ObjectPool* pool, Kind kind, Expression* operand = nullptr)
       : Expression(pool, kind), operand_(operand) {}
 
   void writeTo(Encoder& encoder) const override;

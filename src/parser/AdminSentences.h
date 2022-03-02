@@ -703,8 +703,7 @@ class ShowServiceClientsSentence final : public Sentence {
 
 class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInServiceSentence(const meta::cpp2::ExternalServiceType& type,
-                                 ServiceClientList* clients)
+  SignInServiceSentence(const meta::cpp2::ExternalServiceType& type, ServiceClientList* clients)
       : type_(type) {
     kind_ = Kind::kSignInService;
     clients_.reset(clients);
@@ -797,7 +796,7 @@ class ShowQueriesSentence final : public Sentence {
 
 class QueryUniqueIdentifier final {
  public:
-  explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+  QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
       : epId_(epId), sessionId_(sessionId) {}
 
   Expression* sessionId() const {
