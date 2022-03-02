@@ -1228,6 +1228,14 @@ class DataCollect final : public VariableDependencyNode {
     return distinct_;
   }
 
+  void setColType(std::vector<Value::Type>&& colType) {
+    colType_ = std::move(colType);
+  }
+
+  const std::vector<Value::Type>& colType() const {
+    return colType_;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1242,6 +1250,7 @@ class DataCollect final : public VariableDependencyNode {
   DCKind kind_;
   // using for m to n steps
   StepClause step_;
+  std::vector<Value::Type> colType_;
   bool distinct_{false};
 };
 
