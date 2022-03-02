@@ -8,8 +8,7 @@
 namespace nebula {
 namespace meta {
 
-void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
-  UNUSED(req);
+void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
   auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
   if (store == nullptr) {
     onFinished();

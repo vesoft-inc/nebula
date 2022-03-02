@@ -23,8 +23,8 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
     folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-    if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
-        nebula::cpp2::ErrorCode::SUCCEEDED) {
+    auto ret = updateLastTime();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     executorOnFinished_(status);
@@ -167,12 +167,12 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     std::vector<Host*>& hvec = pair.second;
     balanceHostVec(hvec);
   }
-  bool emty = std::find_if(existTasks.begin(),
-                           existTasks.end(),
-                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                             return !p.second.empty();
-                           }) == existTasks.end();
-  if (emty) {
+  bool empty = std::find_if(existTasks.begin(),
+                            existTasks.end(),
+                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                              return !p.second.empty();
+                            }) == existTasks.end();
+  if (empty) {
     return Status::Balanced();
   }
   plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));

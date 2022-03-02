@@ -223,8 +223,7 @@ LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(JobID jobId,
   executor_.reset(new folly::CPUThreadPoolExecutor(1));
 }
 
-nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::finish(bool ret) {
-  UNUSED(ret);
+nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::finish(bool) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

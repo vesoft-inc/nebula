@@ -32,6 +32,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   auto role = req.get_role();
   LOG(INFO) << "Receive heartbeat from " << host
             << ", role = " << apache::thrift::util::enumNameSafe(role);
+
+  std::vector<kvstore::KV> data;
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   if (role == cpp2::HostRole::STORAGE) {
     if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
@@ -59,18 +61,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         for (const auto& [path, partList] : partDiskMap) {
           auto partListVal = MetaKeyUtils::diskPartsVal(partList);
           auto key = MetaKeyUtils::diskPartsKey(host, spaceId, path);
-          std::vector<kvstore::KV> data;
           data.emplace_back(key, partListVal);
-          // doPut() not work, will trigger the asan: use heap memory which is free
-          folly::Baton<true, std::atomic> baton;
-          kvstore_->asyncMultiPut(kDefaultSpaceId,
-                                  kDefaultPartId,
-                                  std::move(data),
-                                  [this, &baton](nebula::cpp2::ErrorCode code) {
-                                    this->handleErrorCode(code);
-                                    baton.post();
-                                  });
-          baton.wait();
         }
       }
     }
@@ -79,9 +70,9 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   // update host info
   HostInfo info(time::WallClock::fastNowInMilliSec(), role, req.get_git_info_sha());
   if (req.leader_partIds_ref().has_value()) {
-    ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info, &*req.leader_partIds_ref());
+    ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info, data, &*req.leader_partIds_ref());
   } else {
-    ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+    ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info, data);
   }
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(ret);
@@ -92,21 +83,22 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   // update host dir info
   if (req.get_role() == cpp2::HostRole::STORAGE || req.get_role() == cpp2::HostRole::GRAPH) {
     if (req.dir_ref().has_value()) {
-      std::vector<kvstore::KV> data;
       LOG(INFO) << folly::sformat("Update host {} dir info, root path: {}, data path size: {}",
                                   host.toString(),
                                   req.get_dir()->get_root(),
                                   req.get_dir()->get_data().size());
       data.emplace_back(std::make_pair(MetaKeyUtils::hostDirKey(host.host, host.port),
                                        MetaKeyUtils::hostDirVal(*req.get_dir())));
-      ret = doSyncPut(data);
     }
   }
 
   // set update time and meta version
-  auto lastUpdateTimeRet = LastUpdateTimeMan::get(kvstore_);
+  auto lastUpdateTimeKey = MetaKeyUtils::lastUpdateTimeKey();
+  auto lastUpdateTimeRet = doGet(lastUpdateTimeKey);
   if (nebula::ok(lastUpdateTimeRet)) {
-    resp_.last_update_time_in_ms_ref() = nebula::value(lastUpdateTimeRet);
+    auto val = nebula::value(lastUpdateTimeRet);
+    int64_t time = *reinterpret_cast<const int64_t*>(val.data());
+    resp_.last_update_time_in_ms_ref() = time;
   } else if (nebula::error(lastUpdateTimeRet) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
     resp_.last_update_time_in_ms_ref() = 0;
   }
@@ -117,7 +109,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   }
 
   resp_.meta_version_ref() = metaVersion_.load();
-
+  ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
 }

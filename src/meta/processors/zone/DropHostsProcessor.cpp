@@ -28,8 +28,6 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   }
 
   std::vector<std::string> data;
-  // std::vector<kvstore::KV> rewriteData;
-
   auto holder = std::make_unique<kvstore::BatchHolder>();
   // Check that partition is not held on the host
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();

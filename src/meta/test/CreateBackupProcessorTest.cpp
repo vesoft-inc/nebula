@@ -104,7 +104,10 @@ TEST(ProcessorTest, CreateBackupTest) {
   // resgister active hosts, same with heartbeat
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
-  ActiveHostsMan::updateHostInfo(kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+  std::vector<kvstore::KV> time;
+  ActiveHostsMan::updateHostInfo(
+      kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), time);
+  TestUtils::doPut(kv.get(), time);
 
   // mock space 1: test_space
   bool ret = false;
