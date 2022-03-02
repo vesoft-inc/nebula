@@ -104,7 +104,7 @@ class LogicalExpression final : public Expression {
   }
 
  private:
-  explicit LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
+  LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
 
   LogicalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : Expression(pool, kind) {

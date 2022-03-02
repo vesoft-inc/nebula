@@ -370,9 +370,9 @@ class MetaClientTestUpdater {
 
 class FakeInternalStorageClient : public InternalStorageClient {
  public:
-  explicit FakeInternalStorageClient(StorageEnv* env,
-                                     std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                                     Code code)
+  FakeInternalStorageClient(StorageEnv* env,
+                            std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+                            Code code)
       : InternalStorageClient(pool, env->metaClient_), env_(env), code_(code) {}
 
   void chainUpdateEdge(cpp2::UpdateEdgeRequest& req,

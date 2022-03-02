@@ -115,7 +115,7 @@ class IndexNode {
   };
   /* build */
   IndexNode(const IndexNode& node);
-  explicit IndexNode(RuntimeContext* context, const std::string& name);
+  IndexNode(RuntimeContext* context, const std::string& name);
   virtual ~IndexNode() = default;
   virtual std::unique_ptr<IndexNode> copy() = 0;
   void addChild(std::unique_ptr<IndexNode> child) {
