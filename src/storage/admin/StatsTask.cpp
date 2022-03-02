@@ -105,6 +105,8 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   std::unique_ptr<kvstore::KVIterator> tagIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
+  auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
+  std::unique_ptr<kvstore::KVIterator> vertexIter;
 
   // When the storage occurs leader change, continue to read data from the
   // follower instead of reporting an error.
@@ -118,7 +120,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     LOG(INFO) << "Stats task failed";
     return ret;
   }
-
+  ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Stats task failed";
+    return ret;
+  }
   std::unordered_map<TagID, int64_t> tagsVertices;
   std::unordered_map<EdgeType, int64_t> edgetypeEdges;
   std::unordered_map<PartitionID, int64_t> positiveRelevancy;
@@ -210,7 +216,10 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     }
     edgeIter->next();
   }
-
+  while (vertexIter && vertexIter->valid()) {
+    spaceVertices++;
+    vertexIter->next();
+  }
   nebula::meta::cpp2::StatsItem statsItem;
 
   // convert tagId/edgeType to tagName/edgeName
