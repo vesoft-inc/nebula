@@ -17,10 +17,14 @@ cpp2::GetPropRequest buildVertexRequest(
     int32_t totalParts,
     const std::vector<VertexID>& vertices,
     const std::vector<std::pair<TagID, std::vector<std::string>>>& tags,
+    Expression* filter = nullptr,
     int64_t limit = -1) {
   std::hash<std::string> hash;
   cpp2::GetPropRequest req;
   req.space_id_ref() = 1;
+  if (filter != nullptr) {
+    req.filter_ref() = Expression::encode(*filter);
+  }
   req.limit_ref() = limit;
   for (const auto& vertex : vertices) {
     PartitionID partId = (hash(vertex) % totalParts) + 1;
@@ -51,9 +55,13 @@ cpp2::GetPropRequest buildEdgeRequest(
     int32_t totalParts,
     const std::vector<cpp2::EdgeKey>& edgeKeys,
     const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges,
+    Expression* filter = nullptr,
     int64_t limit = -1) {
   cpp2::GetPropRequest req;
   req.space_id_ref() = 1;
+  if (filter != nullptr) {
+    req.filter_ref() = Expression::encode(*filter);
+  }
   req.limit_ref() = limit;
   for (const auto& edge : edgeKeys) {
     PartitionID partId = (std::hash<Value>()(edge.get_src()) % totalParts) + 1;
@@ -707,6 +715,95 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
   FLAGS_enable_rocksdb_prefix_filtering = false;
 }
 
+TEST(GetPropTest, FilterTest) {
+  fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  EdgeType serve = 101;
+
+  ObjectPool pool;
+
+  // vertex
+  {
+    LOG(INFO) << "GetVertexPropInValue";
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    // 1.age == 44
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        TagPropertyExpression::make(&pool, std::to_string(player), "age"),
+        ConstantExpression::make(&pool, 44));
+    auto req = buildVertexRequest(totalParts, vertices, tags, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    expected.emplace_back(Row({"Tim Duncan", "Tim Duncan", 44, 19.0}));
+    // Filtered
+    //  expected.emplace_back(Row({"Tony Parker", "Tony Parker", 38, 15.5}));
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  // edge
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    // Filter 101.startYear == 2001
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        EdgePropertyExpression::make(&pool, std::to_string(serve), "startYear"),
+        ConstantExpression::make(&pool, 2001));
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    {
+      nebula::Row row({"Spurs", 2001, 2018});
+      expected.rows.emplace_back(std::move(row));
+    }
+    // Filtered
+    // {
+    // nebula::Row row({"Spurs", 1997, 2016});
+    // expected.rows.emplace_back(std::move(row));
+    // }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+}
+
 TEST(GetPropTest, LimitTest) {
   fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
   mock::MockCluster cluster;
@@ -724,7 +821,7 @@ TEST(GetPropTest, LimitTest) {
     std::vector<VertexID> vertices = {"Tim Duncan"};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
-    auto req = buildVertexRequest(totalParts, vertices, tags, 0);
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 0);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -740,7 +837,7 @@ TEST(GetPropTest, LimitTest) {
     std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
-    auto req = buildVertexRequest(totalParts, vertices, tags, 1);
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 1);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -754,7 +851,7 @@ TEST(GetPropTest, LimitTest) {
     std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
     tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
-    auto req = buildVertexRequest(totalParts, vertices, tags, 3);
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 3);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -788,7 +885,7 @@ TEST(GetPropTest, LimitTest) {
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
     edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, 0);
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 0);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -820,7 +917,7 @@ TEST(GetPropTest, LimitTest) {
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
     edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, 1);
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 1);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -850,7 +947,7 @@ TEST(GetPropTest, LimitTest) {
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
     edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, 3);
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 3);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
     auto fut = processor->getFuture();
