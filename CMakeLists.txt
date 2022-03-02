@@ -51,6 +51,7 @@ include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
 include(IncludeWhatYouUse)
+include(TimeTrace)
 
 add_custom_target(
   clang-format

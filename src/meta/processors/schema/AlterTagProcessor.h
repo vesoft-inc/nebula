@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Alter tag properties. Will get the tag schema with latest version. Then check if there are
+ *        indexes on it.
+ *
+ */
 class AlterTagProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AlterTagProcessor* instance(kvstore::KVStore* kvstore) {

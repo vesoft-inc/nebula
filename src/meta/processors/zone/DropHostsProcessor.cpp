@@ -11,8 +11,7 @@ namespace nebula {
 namespace meta {
 
 void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::WriteHolder lockHolder(LockUtils::lock());
   auto hosts = req.get_hosts();
   if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
     LOG(INFO) << "Hosts have duplicated element";
@@ -29,8 +28,6 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   }
 
   std::vector<std::string> data;
-  // std::vector<kvstore::KV> rewriteData;
-
   auto holder = std::make_unique<kvstore::BatchHolder>();
   // Check that partition is not held on the host
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();

@@ -87,39 +87,36 @@ Feature: LDBC Business Intelligence Workload - Read
     Then the result should be, in order:
       | countryName | month | gender | ageGroup | tagName | messageCount |
 
-  @skip
   Scenario: 3. Tag evolution
-    # TODO: Need an index on tag `Tag`, and fix the expr rewrite bug on toInteger(message1.creationDate)/100000000000%100
     When executing query:
       """
-      WITH
-        2010 AS year1,
-        10 AS month1,
-        2010 + toInteger(10 / 12.0) AS year2,
-        10 % 12 + 1 AS month2
-      MATCH (`tag`:`Tag`)
+      MATCH (`tag`:`Tag`)-[:HAS_TYPE]->(tagClass:TagClass)
+      WHERE id(tagClass) == "MusicalArtist"
+      /* window 1 */
       OPTIONAL MATCH (message1:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message1.creationDate)/10000000000000   == year1
-          AND toInteger(message1.creationDate)/100000000000%100 == month1
-      WITH year2, month2, `tag`, count(message1) AS countMonth1
+      WHERE datetime('2012-06-01') <= message1.Message.creationDate
+            AND message1.Message.creationDate < datetime('2012-06-01') + duration({days: 100})
+      WITH `tag`, count(message1) AS countMonth1
+      /* window 2 */
       OPTIONAL MATCH (message2:Message)-[:HAS_TAG]->(`tag`)
-        WHERE toInteger(message2.creationDate)/10000000000000   == year2
-          AND toInteger(message2.creationDate)/100000000000%100 == month2
+      WHERE datetime('2012-06-01') + duration({days: 100}) <= message2.Message.creationDate
+            AND message2.Message.creationDate < datetime('2012-06-01') + duration({days: 200})
       WITH
         `tag`,
         countMonth1,
         count(message2) AS countMonth2
       RETURN
-        `tag`.name,
+        `tag`.`Tag`.name AS tagName,
         countMonth1,
         countMonth2,
-        abs(countMonth1-countMonth2) AS diff
+        abs(countMonth1 - countMonth2) AS diff
       ORDER BY
         diff DESC,
-        `tag`.name ASC
+        tagName ASC
       LIMIT 100
       """
     Then the result should be, in any order:
+      | tagName | countMonth1 | countMonth2 | diff |
 
   Scenario: 4. Popular topics in a country
     When executing query:
@@ -217,14 +214,14 @@ Feature: LDBC Business Intelligence Workload - Read
       | person1Id | authorityScore |
 
   Scenario: 8. Related topics
-    # NOTICE: I had rewrite the original query
-    # TODO: WHERE NOT (comment)-[:HAS_TAG]->(tag)
     When executing query:
       """
       MATCH
-        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message),
-        (message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
-      WHERE id(`tag`) == "Genghis_Khan" AND NOT `tag` == relatedTag
+        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
+      WHERE id(`tag`) == "Genghis_Khan"
+      OPTIONAL MATCH p = (comment)-[:HAS_TAG]->(`tag`)
+      WITH relatedTag,comment,p
+      WHERE p IS NULL
       RETURN
         relatedTag.`Tag`.name AS relatedTagName,
         count(DISTINCT comment) AS count
@@ -266,68 +263,96 @@ Feature: LDBC Business Intelligence Workload - Read
 
   @skip
   Scenario: 10. Central person for a tag
-    # TODO: 100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
+    # TODO: The execution plan has scan at the last query part. This is not in expectation.
     When executing query:
       """
       MATCH (`tag`:`Tag`)
       WHERE id(`tag`) == "John_Rhys-Davies"
+      /* score */
       OPTIONAL MATCH (`tag`)<-[interest:HAS_INTEREST]-(person:Person)
       WITH `tag`, collect(person) AS interestedPersons
       OPTIONAL MATCH (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
-               WHERE message.creationDate > "20120122000000000"
+               WHERE message.Message.creationDate > 20120122000000000
       WITH `tag`, interestedPersons + collect(person) AS persons
       UNWIND persons AS person
+      /* poor man's disjunct union (should be changed to UNION + post-union processing in the future) */
       WITH DISTINCT `tag`, person
+      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(person)
+      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.Message.creationDate > 20120122000000000
+      WITH `tag`,
+           person,
+           CASE p1
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP1,
+           CASE p2
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP2
       WITH
         `tag`,
         person,
-        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(person) | interest])
-          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.creationDate > $date | message])
-        AS score
+        100 * count(hasP1) + count(hasP2) AS score
       OPTIONAL MATCH (person)-[:KNOWS]-(friend)
+      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(friend)
+      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.Message.creationDate > 2012012200000000
+      WITH person,
+           score,
+           CASE p1
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP1,
+           CASE p2
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP2
       WITH
         person,
         score,
-        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
-          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.creationDate > $date | message])
-        AS friendScore
-      RETURN
-        person.id,
+        100 * count(hasP1) + count(hasP2) AS friendScore
+      WITH
+        person.Person.id AS personId,
         score,
         sum(friendScore) AS friendsScore
+      RETURN
+        personId,
+        score,
+        friendsScore,
+        score + friendsScore AS sumScore
       ORDER BY
-        score + friendsScore DESC,
-        person.id ASC
+        sumScore DESC,
+        personId ASC
       LIMIT 100
       """
     Then a SyntaxError should be raised at runtime:
 
-  @skip
   Scenario: 11. Unrelated replies
-    # TODO: WHERE NOT (message)-[:HAS_TAG]->(:Tag)<-[:HAS_TAG]-(reply)
     When executing query:
       """
       WITH ['also', 'Pope', 'that', 'James', 'Henry', 'one', 'Green'] AS blacklist
       MATCH
-        (country:Country {name: "Germany"})<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-
-        (person:Person)<-[:HAS_CREATOR]-(reply:Comment)-[:REPLY_OF]->(message:Message),
-        (reply)-[:HAS_TAG]->(tag:Tag)
-      WHERE NOT (message)-[:HAS_TAG]->(:Tag)<-[:HAS_TAG]-(reply)
-        AND size([word IN blacklist WHERE reply.content CONTAINS word | word]) = 0
+        (country:Country)<-[:IS_PART_OF]-(:City)<-[:IS_LOCATED_IN]-
+        (person:Person)<-[:HAS_CREATOR]-(reply:`Comment`)-[:REPLY_OF]->(message:Message),
+        (reply)-[:HAS_TAG]->(`tag`:`Tag`)
+      WHERE id(country) == "Germany" AND size([word IN blacklist WHERE reply.Comment.content CONTAINS word | word]) == 0
+      OPTIONAL MATCH p = (message)-[:HAS_TAG]->(:`Tag`)<-[:HAS_TAG]-(reply)
+      WITH person.Person.id AS personId, reply, `tag`.`Tag`.name AS tagName, p
+      WHERE p IS NULL
       OPTIONAL MATCH
         (:Person)-[like:LIKES]->(reply)
       RETURN
-        person.id,
-        tag.name,
+        personId,
+        tagName,
         count(DISTINCT like) AS countLikes,
         count(DISTINCT reply) AS countReplies
       ORDER BY
         countLikes DESC,
-        person.id ASC,
-        tag.name ASC
+        personId ASC,
+        tagName ASC
       LIMIT 100
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in order:
+      | personId | tagName | countLikes | countReplies |
 
   Scenario: 12. Trending posts
     When executing query:
@@ -506,31 +531,31 @@ Feature: LDBC Business Intelligence Workload - Read
       | messageCount | personCount |
 
   Scenario: 19. Stranger’s interaction
-    # NOTICE: A big rewritten, have to test the correctness
     When executing query:
       """
       MATCH
-        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (tagClass1:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum1:Forum)-[:HAS_MEMBER]->(stranger:Person)
-      WHERE id(tagClass) == "MusicalArtist"
+      WHERE id(tagClass1)=="MusicalArtist"
       WITH DISTINCT stranger
       MATCH
-        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (tagClass2:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum2:Forum)-[:HAS_MEMBER]->(stranger)
-      WHERE id(tagClass) == "OfficeHolder"
+      WHERE id(tagClass2)=="OfficeHolder"
       WITH DISTINCT stranger
       MATCH
-        (person:Person)<-[:HAS_CREATOR]-(comment:`Comment`)-[:REPLY_OF*100]->(message:Message)-[:HAS_CREATOR]->(stranger)
-      OPTIONAL MATCH (person)-[knows:KNOWS]-(stranger)
-      OPTIONAL MATCH (message)-[replyOf:REPLY_OF*100]->(:Message)-[hasCreator:HAS_CREATOR]->(stranger)
-      WHERE person.Person.birthday > "19890101"
-        AND person <> stranger
-        AND knows IS NULL
-        AND (replyOf IS NULL OR hasCreator IS NULL)
+        (person:Person)<-[:HAS_CREATOR]-(`comment`:`Comment`)-[:REPLY_OF*]->(message:Message)-[:HAS_CREATOR]->(stranger)
+      WHERE person.Person.birthday > 19890101 AND
+            person <> stranger
+      OPTIONAL MATCH p1 = (person)-[:KNOWS]-(stranger)
+      OPTIONAL MATCH p2       =(message)-[:REPLY_OF*]->(:Message)-[:HAS_CREATOR]->(stranger)
+      WITH person.Person.id AS personId, stranger.Person.id AS strangerId, `comment`.`Comment`.length AS commentLength, p1, p2
+      WHERE p1 IS NULL AND
+            p2 IS NULL
       RETURN
-        person.Person.id AS personId,
-        count(DISTINCT stranger) AS strangersCount,
-        count(comment) AS interactionCount
+        personId,
+        count(DISTINCT strangerId) AS strangersCount,
+        count(commentLength) AS interactionCount
       ORDER BY
         interactionCount DESC,
         personId ASC
