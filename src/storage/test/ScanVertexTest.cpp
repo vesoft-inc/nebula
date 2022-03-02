@@ -77,18 +77,21 @@ void checkResponse(const nebula::DataSet& dataSet,
         auto iter = std::find_if(mock::MockData::players_.begin(),
                                  mock::MockData::players_.end(),
                                  [&](const auto& player) { return player.name_ == vId; });
-        CHECK(iter != mock::MockData::players_.end());
-        std::vector<std::string> returnProps({kVid});
-        returnProps.insert(returnProps.end(), props.begin(), props.end());
-        QueryTestUtils::checkPlayer(returnProps, *iter, row.values);
+        if (iter != mock::MockData::players_.end()) {
+          std::vector<std::string> returnProps({kVid});
+          returnProps.insert(returnProps.end(), props.begin(), props.end());
+          QueryTestUtils::checkPlayer(returnProps, *iter, row.values);
+        }
         break;
       }
       case 2: {
         // tag team
         auto iter = std::find(mock::MockData::teams_.begin(), mock::MockData::teams_.end(), vId);
-        std::vector<std::string> returnProps({kVid});
-        returnProps.insert(returnProps.end(), props.begin(), props.end());
-        QueryTestUtils::checkTeam(returnProps, *iter, row.values);
+        if (iter != mock::MockData::teams_.end()) {
+          std::vector<std::string> returnProps({kVid});
+          returnProps.insert(returnProps.end(), props.begin(), props.end());
+          QueryTestUtils::checkTeam(returnProps, *iter, row.values);
+        }
         break;
       }
       default:
@@ -123,7 +126,7 @@ TEST(ScanVertexTest, PropertyTest) {
       ASSERT_EQ(0, resp.result.failed_parts.size());
       checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     }
-    CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+    CHECK_EQ(mock::MockData::players_.size() + mock::MockData::teams_.size(), totalRowCount);
   }
   {
     LOG(INFO) << "Scan one tag with all properties in one batch";
@@ -152,7 +155,7 @@ TEST(ScanVertexTest, PropertyTest) {
       // all 11 columns in value
       checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     }
-    CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+    CHECK_EQ(mock::MockData::players_.size() + mock::MockData::teams_.size(), totalRowCount);
   }
 }
 
@@ -191,7 +194,7 @@ TEST(ScanVertexTest, CursorTest) {
         }
       }
     }
-    CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+    CHECK_EQ(mock::MockData::players_.size() + mock::MockData::teams_.size(), totalRowCount);
   }
   {
     LOG(INFO) << "Scan one tag with some properties with limit = 1";
@@ -217,7 +220,7 @@ TEST(ScanVertexTest, CursorTest) {
         }
       }
     }
-    CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+    CHECK_EQ(mock::MockData::players_.size() + mock::MockData::teams_.size(), totalRowCount);
   }
 }
 

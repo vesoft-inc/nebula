@@ -44,6 +44,8 @@ class QueryTestUtils {
     std::atomic<size_t> count(vertices.size());
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
+      auto vertexKey = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_);
+      data.push_back({vertexKey, ""});
       TagID tagId = vertex.tId_;
       auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);

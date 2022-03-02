@@ -164,7 +164,8 @@ TEST(DeleteTagsTest, SimpleTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    ASSERT_EQ(0, resp.props_ref()->size());
+    // tag if deleted, but vertex is still exist
+    ASSERT_EQ(1, resp.props_ref()->size());
   }
   {
     auto req = buildLookupRequest(totalParts, "Tim Duncan");
