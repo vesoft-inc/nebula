@@ -33,6 +33,9 @@ class MatchClausePlanner final : public CypherClausePlanner {
                            MatchClauseContext* matchClauseCtx,
                            SubPlan& subplan);
 
+  StatusOr<std::vector<IndexID>> pickTagIndex(MatchClauseContext* matchClauseCtx,
+                                              NodeInfo nodeInfo);
+
  private:
   Expression* initialExpr_{nullptr};
 };

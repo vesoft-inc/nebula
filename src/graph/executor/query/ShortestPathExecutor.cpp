@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
+/* Copyright (c) 2022 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -12,28 +12,6 @@ using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 
-/*
-
-lds = buildRequestDataSet
-rds = buildRequestDataSet
-
-lq.push(lds)
-rq.push(rds)
-
-while(lq, rq) {
-
-  for(int i = 0; i < lq.size(); i++) {
-    ds = lq.front();
-    lq.pop()
-
-    getneighbors(ds, 0)
-    // inside set data and judge
-    //
-  }
-}
-
-*/
-
 namespace nebula {
 namespace graph {
 
@@ -41,68 +19,46 @@ namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  // function: find the path to source/destination
-  // {key: path} key: node, path: the prev node of path to src/dst node
-  std::unordered_map<Value, Paths> prevPathToSrc;
-  std::unordered_map<Value, Paths> prevPathToDst;
-
-  auto leftStatus =
-      buildRequestDataSet(shortestPathNode_->leftInputVar(), leftReqDataSet_, prevPathToSrc);
-  if (!leftStatus.ok()) {
-    return error(std::move(leftStatus));
-  }
-  auto rightStatus =
-      buildRequestDataSet(shortestPathNode_->rightInputVar(), rightReqDataSet_, prevPathToDst);
-  if (!rightStatus.ok()) {
-    return error(std::move(rightStatus));
-  }
-
-  // std::list<DataSet> leftDs;
-  // std::list<DataSet> rightDs;
-
-  // while (!leftDs.empty() && !rightDs.empty()) {
-  //   auto allLeftNeighbors = getNeighbors(leftDs);
-  // }
-
-  std::queue<DataSet> srcQueue;
-  std::queue<DataSet> dstQueue;
-
-  while (!srcQueue.empty() && !dstQueue.empty()) {
-    step += 1;
-    std::queue<DataSet>& q = srcQueue.size() < dstQueue.size() ? srcQueue : dstQueue;
-
-    int i = q.size();
-    while (i != 0) {
-      i -= 1;
-      auto& ds = q.front();
-      q.pop();
-
-      auto neighbors = getNeighbors(ds);
+  for (int i = 0; i < 2; i++) {
+    const string& inputVar =
+        i == 0 ? shortestPathNode_->leftInputVar() : shortestPathNode_->rightInputVar();
+    auto status = buildRequestDataSet(inputVar, dss_[i]);
+    if (!status.ok()) {
+      return error(std::move(status));
     }
   }
-  // std::list<DataSet> ds;
-  // while (!ds.empty()) {
-  //   // get all neighbors
-  //   auto allNeighbors = getNeighbors(reqDs);
-  //   // judge get the end
-  //   // if (FindIntersection(allNeighbors, neighborsFromDst)) {}
-  //   // get the shortest path
-  // }
 
-  buildResult(leftReqDataSet_);
+  while (reqDs_.size() != 0) {
+    // Set left(dss_[0]) or right(dss_[1]) dataset as req dataset, and get neighbors
+    for (int i = 0; i < 2; i++) {
+      step_ += 1;
+      reqDs_ = std::move(dss_[i]);
+      direction_ = i;
+      visiteds_[i].clear();
+
+      auto status = getNeighbors().get();
+      if (!status.ok()) {
+        return error(std::move(status));
+      }
+      dss_[i] = std::move(reqDs_);
+    }
+  }
 
   return Status::OK();
 }
 
 Status ShortestPathExecutor::close() {
   // clear the members
-  leftReqDataSet_.rows.clear();
+  dss_.clear();
+  visiteds_.clear();
+  vidToVertex_.clear();
+  leftPaths_.clear();
+  rightPaths_.clear();
+
   return Executor::close();
 }
 
-Status ShortestPathExecutor::buildRequestDataSet(std::string inputVar,
-                                                 DataSet& ds,
-                                                 std::unordered_map<Value, Paths>& prev) {
+Status ShortestPathExecutor::buildRequestDataSet(std::string inputVar, DataSet& ds) {
   auto inputIter = ectx_->getResult(inputVar).iter();
   SequentialIter* iter = static_cast<SequentialIter*>(inputIter.get());
 
@@ -128,8 +84,8 @@ Status ShortestPathExecutor::buildRequestDataSet(std::string inputVar,
       continue;
     }
     // [from TraverseExecutor] Need copy here, Argument executor may depends on this variable.
-    auto prevPath = *iter->row();
-    buildPrevPath(prev, vid, std::move(prevPath));
+    // auto prevPath = *iter->row();
+    // AddPrevPath(prev, vid, std::move(prevPath));
 
     ds.emplace_back(Row({std::move(vid)}));
   }
@@ -144,8 +100,7 @@ Status ShortestPathExecutor::buildRequestDataSet(std::string inputVar,
   return Status::OK();
 }
 
-folly::Future<StatusOr<std::vector<DataSet>>> ShortestPathExecutor::getNeighbors(DataSet& ds,
-                                                                                 int flag) {
+folly::Future<Status> ShortestPathExecutor::getNeighbors() {
   StorageClient* storageClient = qctx_->getStorageClient();
   storage::StorageClient::CommonRequestParam param(shortestPathNode_->space(),
                                                    qctx()->rctx()->session()->id(),
@@ -154,8 +109,8 @@ folly::Future<StatusOr<std::vector<DataSet>>> ShortestPathExecutor::getNeighbors
 
   return storageClient
       ->getNeighbors(param,
-                     ds.colNames,
-                     std::move(ds.rows),
+                     reqDs_.colNames,
+                     std::move(reqDs_.rows),
                      shortestPathNode_->edgeTypes(),
                      shortestPathNode_->edgeDirection(),
                      nullptr,
@@ -168,21 +123,12 @@ folly::Future<StatusOr<std::vector<DataSet>>> ShortestPathExecutor::getNeighbors
                      -1,
                      nullptr)
       .via(runner())
-      .thenValue([this, flag](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
-        return handleResponse(std::move(resp), flag);
+      .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+        return handleResponse(std::move(resp));
       });
 }
 
-Status ShortestPathExecutor::getAllNeighbors(std::vector<DataSet>& dss) {
-  std::vector<DataSet> result;
-  for (auto& ds : dss) {
-    StatusOr<std::vector<DataSet>> neighborsRet = getNeighbors(ds).get();
-    NG_RETURN_IF_ERROR(neighborsRet.status());
-  }
-}
-
-folly::Future<StatusOr<std::vector<DataSet>>> ShortestPathExecutor::handleResponse(
-    RpcResponse&& resps, int flag) {
+folly::Future<Status> ShortestPathExecutor::handleResponse(RpcResponse&& resps) {
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
   if (!result.ok()) {
     return folly::makeFuture<Status>(std::move(result).status());
@@ -201,72 +147,28 @@ folly::Future<StatusOr<std::vector<DataSet>>> ShortestPathExecutor::handleRespon
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
 
-  return dss;
+  return judge(iter.get());
 }
 
-// // find the dst in the neighbors (the intersection of dst and neighbors)
-// DataSet ShortestPath::FindIntersection() {}
-
-// // get the paths to dst and src from intersection, join both of them and return.
-// std::vector<Path> ShortestPath::GetPaths(std::unordered_set<Value, Path> prevPathToSrc,
-//                                          std::unordered_set<Value, Path> prevPathToDst,
-//                                          std::vector<Value> intersection) {}
-
-Status ShortestPathExecutor::judge(DataSet ds, std::unordered_set<Row> map) {
-  for (Row& row : ds.rows) {
-    if (map.find(row) != map.end()) {
-      return Status::OK();
-    }
-  }
-}
-
-Status ShortestPathExecutor::buildResult(DataSet result) {
-  // This means we are reaching a dead end, return empty.
-  // if (range_ != nullptr && currentStep_ < range_->min()) {
-  //   return finish(ResultBuilder().value(Value(DataSet())).build());
-  // }
-
-  // result.colNames = traverse_->colNames();
-  // result.rows.reserve(cnt_);
-  // for (auto& currentStepPaths : paths_) {
-  //   for (auto& paths : currentStepPaths) {
-  //     std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
-  //   }
-  // }
-
-  return finish(ResultBuilder().value(Value(std::move(result))).build());
-}
-
-Status ShortestPathExecutor::buildInterimPath(GetNeighborsIter* iter, VertexType type) {
+// find the dst in the neighbors (the intersection of dst and neighbors)
+Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
   const auto& spaceInfo = qctx()->rctx()->session()->space();
-  DataSet reqDs;
-  reqDs.colNames = reqDs_.colNames;
-  size_t count = 0;
-
-  const std::unordered_map<Value, Paths>& prev = paths_.back();
-  if (currentStep_ == 1 && zeroStep()) {
-    paths_.emplace_back();
-    NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
-    // If 0..0 case, release memory and return immediately.
-    if (range_ != nullptr && range_->max() == 0) {
-      releasePrevPaths(count);
-      return Status::OK();
-    }
-  }
-  paths_.emplace_back();
-  std::unordered_map<Value, Paths>& current = paths_.back();
-
-  auto* vFilter = traverse_->vFilter();
-  auto* eFilter = traverse_->eFilter();
   QueryExpressionContext ctx(ectx_);
   std::unordered_set<Value> uniqueDst;
+  std::unordered_map<Value, Paths>& prevPaths = direction_ == 0 ? leftPaths_ : rightPaths_;
+
+  // std::unordered_set<Value> result;
+  Value result;
+
+  DataSet reqDs;
+  reqDs.colNames = reqDs_.colNames;
+
+  auto* vFilter = shortestPathNode_->vFilter();
+  auto* eFilter = shortestPathNode_->eFilter();
 
   for (; iter->valid(); iter->next()) {
-    auto& dst = iter->getEdgeProp("*", kDst);
-    if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
-      continue;
-    }
-    if (vFilter != nullptr && currentStep_ == 1) {
+    // TODO: step
+    if (vFilter != nullptr) {
       auto& vFilterVal = vFilter->eval(ctx(iter));
       if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
         continue;
@@ -278,63 +180,95 @@ Status ShortestPathExecutor::buildInterimPath(GetNeighborsIter* iter, VertexType
         continue;
       }
     }
-    auto srcV = iter->getVertex();
-    auto e = iter->getEdge();
-    // Join on dst = src
-    auto pathToSrcFound = prev.find(srcV.getVertex().vid);
-    if (pathToSrcFound == prev.end()) {
-      return Status::Error("Can't find prev paths.");
+    Value srcV = iter->getVertex();
+    if (vidToVertex_.find(srcV.getVertex().vid) == vidToVertex_.end()) {
+      vidToVertex_.emplace(srcV.getVertex().vid, srcV);
+      visiteds_[direction_].emplace(srcV.getVertex().vid);
     }
-    const auto& paths = pathToSrcFound->second;
-    for (auto& prevPath : paths) {
-      if (hasSameEdge(prevPath, e.getEdge())) {
-        continue;
-      }
-      if (uniqueDst.emplace(dst).second) {
-        reqDs.rows.emplace_back(Row({std::move(dst)}));
-      }
-      if (currentStep_ == 1) {
-        Row path;
-        if (traverse_->trackPrevPath()) {
-          path = prevPath;
-        }
-        path.values.emplace_back(srcV);
-        List neighbors;
-        neighbors.values.emplace_back(e);
-        path.values.emplace_back(std::move(neighbors));
-        buildPath(current, dst, std::move(path));
-        ++count;
-      } else {
-        auto path = prevPath;
-        auto& eList = path.values.back().mutableList().values;
-        eList.emplace_back(srcV);
-        eList.emplace_back(e);
-        buildPath(current, dst, std::move(path));
-        ++count;
-      }
-    }  // `prevPath'
-  }    // `iter'
+    Value e = iter->getEdge();
+    auto& dst = iter->getEdgeProp("*", kDst);
+    if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
+      continue;
+    }
+    List path = List(std::vector<Value>{srcV, e});
+    AddPrevPath(prevPaths, dst, std::move(path));
 
-  releasePrevPaths(count);
+    if (uniqueDst.emplace(dst).second) {
+      // Join the left and right;
+      if (visiteds_[1 - direction_].find(dst) != visiteds_[1 - direction_].end()) {
+        // result.emplace(dst);
+        result = std::move(dst);
+        break;
+      }
+      reqDs.rows.emplace_back(Row({std::move(dst)}));
+    }
+  }
+
   reqDs_ = std::move(reqDs);
-  return Status::OK();
+  return buildResult(findPaths(result));
+}
+
+Status ShortestPathExecutor::buildResult(DataSet result) {
+  result.colNames = shortestPathNode_->colNames();
+
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
 // The shortest path from src to dst is like [src]..[node]..[dst].
 // When we find the node, we need to find the path to src and dst.
 // So build the backward paths to src and dst for finding path [node]-> [src] and [dst].
-void ShortestPathExecutor::buildPrevPath(std::unordered_map<Value, Paths>& prevPaths,
-                                         const Value& node,
-                                         Row&& path) {
-  auto pathFound = prevPaths.find(node);
+void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, Paths>& prevPaths,
+                                       const Value& vid,
+                                       Row&& prevPath) {
+  auto pathFound = prevPaths.find(vid);
   if (pathFound == prevPaths.end()) {
     Paths interimPaths;
-    interimPaths.emplace_back(std::move(path));
-    prevPaths.emplace(node, std::move(interimPaths));
+    interimPaths.emplace_back(std::move(prevPath));
+    prevPaths.emplace(vid, std::move(interimPaths));
   } else {
     auto& interimPaths = pathFound->second;
-    interimPaths.emplace_back(std::move(path));
+    interimPaths.emplace_back(std::move(prevPath));
   }
+}
+
+// Find the shortest path by vid
+DataSet ShortestPathExecutor::findPaths(Value nodeVid) {
+  DataSet ds;
+
+  std::deque<Value> deque;
+
+  auto node = vidToVertex_.find(nodeVid);
+  deque.push_front(node->second);
+
+  Value curVid = nodeVid;
+  while (leftPaths_.find(curVid) != leftPaths_.end()) {
+    Paths& prevPaths = leftPaths_.find(curVid)->second;
+    List prevPath = prevPaths[0];
+    deque.push_front(prevPath[1]);  // edge
+    deque.push_front(prevPath[0]);  // vertex
+
+    curVid = prevPath[0].getVertex().vid;
+  }
+
+  curVid = nodeVid;
+  while (rightPaths_.find(curVid) != rightPaths_.end()) {
+    Paths& prevPaths = rightPaths_.find(curVid)->second;
+    List prevPath = prevPaths[0];
+    deque.push_front(prevPath[1]);  // edge
+    deque.push_front(prevPath[0]);  // vertex
+
+    curVid = prevPath[0].getVertex().vid;
+  }
+
+  Row path;
+  path.reserve(deque.size());
+  while (!deque.empty()) {
+    path.emplace_back(deque.front());
+    deque.pop_front();
+  }
+
+  ds.rows.emplace_back(std::move(path));
+  return ds;
 }
 
 }  // namespace graph
