@@ -359,15 +359,18 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 1, 1, 1);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 
@@ -474,15 +477,18 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 6, 3, 3);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 

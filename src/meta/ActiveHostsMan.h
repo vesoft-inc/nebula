@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace meta {
@@ -130,6 +131,7 @@ class ActiveHostsMan final {
   static nebula::cpp2::ErrorCode updateHostInfo(kvstore::KVStore* kv,
                                                 const HostAddr& hostAddr,
                                                 const HostInfo& info,
+                                                std::vector<kvstore::KV>& data,
                                                 const AllLeaders* leaderParts = nullptr);
 
   /**
@@ -212,9 +214,9 @@ class LastUpdateTimeMan final {
  public:
   ~LastUpdateTimeMan() = default;
 
-  static nebula::cpp2::ErrorCode update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
+  static void update(std::vector<kvstore::KV>& data, const int64_t timeInMilliSec);
 
-  static ErrorOr<nebula::cpp2::ErrorCode, int64_t> get(kvstore::KVStore* kv);
+  static void update(kvstore::BatchHolder* batchHolder, const int64_t timeInMilliSec);
 
  protected:
   LastUpdateTimeMan() = default;

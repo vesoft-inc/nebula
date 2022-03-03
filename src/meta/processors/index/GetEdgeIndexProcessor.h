@@ -11,6 +11,12 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get edge index item from meta kv store, including two steps:
+ *        1. Get index id by space id and index name.
+ *        2. Get edge index item by space id and index id.
+ *
+ */
 class GetEdgeIndexProcessor : public BaseProcessor<cpp2::GetEdgeIndexResp> {
  public:
   static GetEdgeIndexProcessor* instance(kvstore::KVStore* kvstore) {

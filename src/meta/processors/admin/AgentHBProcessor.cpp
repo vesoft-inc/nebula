@@ -28,12 +28,15 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
   HostAddr agentAddr((*req.host_ref()).host, (*req.host_ref()).port);
   LOG(INFO) << "Receive heartbeat from " << agentAddr << ", role = AGENT";
 
+  std::vector<kvstore::KV> data;
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     // update agent host info
     HostInfo info(
         time::WallClock::fastNowInMilliSec(), cpp2::HostRole::AGENT, req.get_git_info_sha());
-    ret = ActiveHostsMan::updateHostInfo(kvstore_, agentAddr, info);
+    ret = ActiveHostsMan::updateHostInfo(kvstore_, agentAddr, info, data);
+    ret = doSyncPut(std::move(data));
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << folly::sformat("Put agent {} info failed: {}",
                                   agentAddr.toString(),

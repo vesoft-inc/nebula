@@ -13,7 +13,7 @@ namespace meta {
 nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr& ipv4From,
                                                                  const HostAddr& ipv4To,
                                                                  bool direct) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto iterRet = doPrefix(spacePrefix, direct);
@@ -83,7 +83,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
 nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4From,
                                                             const HostAddr& ipv4To,
                                                             bool direct) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
   const auto& zonePrefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(zonePrefix, direct);
