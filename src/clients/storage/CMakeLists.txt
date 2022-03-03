@@ -20,7 +20,7 @@ nebula_add_library(
     internal_storage_client_obj SHARED
     InternalStorageClient.cpp
 )
-target_link_libraries(internal_storage_client_obj PUBLIC storage_client_stats_obj "${Glog_LIBRARY}")
+target_link_libraries(internal_storage_client_obj PUBLIC storage_client_base_obj  storage_client_stats_obj "${Glog_LIBRARY}")
 
 nebula_add_subdirectory(stats)
 

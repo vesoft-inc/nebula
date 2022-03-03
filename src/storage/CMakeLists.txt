@@ -64,6 +64,7 @@ nebula_add_library(
     InternalStorageServiceHandler.cpp
 )
 
+target_link_libraries(internal_storage_service_handler PUBLIC "${Glog_LIBRARY}")
 nebula_add_library(
     storage_http_handler SHARED
     http/StorageHttpIngestHandler.cpp
@@ -96,12 +97,14 @@ nebula_add_library(
     transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
 target_link_libraries(storage_transaction_executor PUBLIC "${Glog_LIBRARY}" storage_common_obj  )
-target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}" storage_common_obj  storage_stats_obj codec_obj storage_transaction_executor )
+target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}" storage_common_obj  storage_stats_obj codec_obj storage_transaction_executor expression_obj)
 
 nebula_add_library(
     storage_server SHARED
     StorageServer.cpp
 )
+target_link_libraries(storage_server PUBLIC internal_storage_service_handler graph_storage_service_handler meta_client_obj   hdfs_helper_obj storage_http_handler  ws_obj storage_admin_service_handler internal_storage_client_obj log_monitor_obj )
+
 
 
 nebula_add_library(

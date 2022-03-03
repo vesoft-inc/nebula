@@ -31,4 +31,5 @@ nebula_add_library(
     IngestValidator.cpp
 )
 
+target_link_libraries(validator_obj PUBLIC charset_obj "${Glog_LIBRARY}" )
 nebula_add_subdirectory(test)

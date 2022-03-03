@@ -105,7 +105,8 @@ nebula_add_library(
     MetaVersionMan.cpp
 )
 
-target_link_libraries(meta_service_handler PUBLIC kvstore_obj meta_client_obj meta_version_man_obj version_obj meta_keyutils_obj )
+target_link_libraries(meta_service_handler PUBLIC expression_obj  kvstore_obj meta_client_obj meta_version_man_obj version_obj meta_keyutils_obj )
+target_link_libraries(meta_version_man_obj PUBLIC  "${Glog_LIBRARY}")
 add_dependencies(
     meta_version_man_obj
     meta_v2_thrift_obj

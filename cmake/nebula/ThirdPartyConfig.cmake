@@ -130,9 +130,9 @@ set(THRIFT_LIBRARIES
 )
 
 set(PROXYGEN_LIBRARIES
-    wangle
     proxygenhttpserver
     proxygen
+    wangle
     fizz
     sodium
 )

@@ -27,5 +27,7 @@ nebula_add_library(
     PasswordAuthenticator.cpp
     CloudAuthenticator.cpp
 )
+target_link_libraries(graph_auth_obj PUBLIC  glog)
+target_link_libraries(service_obj PUBLIC meta_client_obj graph_session_obj graph_auth_obj)
 
 nebula_add_subdirectory(test)

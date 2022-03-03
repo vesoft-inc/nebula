@@ -702,7 +702,6 @@ nebula_add_executable(
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
-        wangle
         follybenchmark
         boost_regex
 )

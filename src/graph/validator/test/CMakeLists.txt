@@ -7,6 +7,7 @@ nebula_add_library(
     MockSchemaManager.cpp
     MockIndexManager.cpp
 )
+target_link_libraries(mock_schema_obj PUBLIC  "${Glog_LIBRARY}")
 
 set(VALIDATOR_TEST_LIBS
     mock_schema_obj
