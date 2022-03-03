@@ -254,10 +254,10 @@ class EdgeRowList final {
 
 class InsertEdgesSentence final : public Sentence {
  public:
-  explicit InsertEdgesSentence(std::string *edge,
-                               EdgeRowList *rows,
-                               bool ifNotExists,
-                               bool ignoreExistedIndex)
+  InsertEdgesSentence(std::string *edge,
+                      EdgeRowList *rows,
+                      bool ifNotExists,
+                      bool ignoreExistedIndex)
       : Sentence(Kind::kInsertEdges) {
     edge_.reset(edge);
     rows_.reset(rows);

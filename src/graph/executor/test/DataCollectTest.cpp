@@ -166,6 +166,7 @@ TEST_F(DataCollectTest, CollectSubgraph) {
   auto* dc = DataCollect::make(qctx_.get(), DataCollect::DCKind::kSubgraph);
   dc->setInputVars({"input_datasets"});
   dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
+  dc->setColType({Value::Type::VERTEX, Value::Type::EDGE});
 
   auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());
   auto future = dcExe->execute();
@@ -179,8 +180,6 @@ TEST_F(DataCollectTest, CollectSubgraph) {
   auto iter = hist[0].iter();
   auto* gNIter = static_cast<GetNeighborsIter*>(iter.get());
   Row row;
-  std::unordered_set<Value> vids;
-  std::unordered_set<std::tuple<Value, int64_t, int64_t, Value>> edgeKeys;
   List vertices;
   List edges;
   auto originVertices = gNIter->getVertices();
@@ -188,20 +187,14 @@ TEST_F(DataCollectTest, CollectSubgraph) {
     if (!v.isVertex()) {
       continue;
     }
-    if (vids.emplace(v.getVertex().vid).second) {
-      vertices.emplace_back(std::move(v));
-    }
+    vertices.emplace_back(std::move(v));
   }
   auto originEdges = gNIter->getEdges();
   for (auto& e : originEdges.values) {
     if (!e.isEdge()) {
       continue;
     }
-    auto edgeKey =
-        std::make_tuple(e.getEdge().src, e.getEdge().type, e.getEdge().ranking, e.getEdge().dst);
-    if (edgeKeys.emplace(std::move(edgeKey)).second) {
-      edges.emplace_back(std::move(e));
-    }
+    edges.emplace_back(std::move(e));
   }
   row.values.emplace_back(std::move(vertices));
   row.values.emplace_back(std::move(edges));
@@ -243,10 +236,6 @@ TEST_F(DataCollectTest, EmptyResult) {
 
   DataSet expected;
   expected.colNames = {"_vertices", "_edges"};
-  Row row;
-  row.values.emplace_back(Value(List()));
-  row.values.emplace_back(Value(List()));
-  expected.rows.emplace_back(std::move(row));
   EXPECT_EQ(result.value().getDataSet(), expected);
   EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
