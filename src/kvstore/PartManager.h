@@ -64,6 +64,13 @@ class Handler {
   virtual void removeSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
 
   /**
+   * @brief clear space data, but not remove the data dirs.
+   *
+   * @param spaceId space which will be cleared.
+   */
+  void clearSpace(GraphSpaceID spaceId) = 0;
+
+  /**
    * @brief Remove a partition
    *
    * @param spaceId

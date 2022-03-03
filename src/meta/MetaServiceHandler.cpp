@@ -99,6 +99,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropSpace(const cpp2::D
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_clearSpace(
+    const cpp2::ClearSpaceReq& req) {
+  auto* processor = ClearSpaceProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListSpacesResp> MetaServiceHandler::future_listSpaces(
     const cpp2::ListSpacesReq& req) {
   auto* processor = ListSpacesProcessor::instance(kvstore_);

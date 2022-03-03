@@ -568,6 +568,13 @@ class NebulaStore : public KVStore, public Handler {
   void removeSpace(GraphSpaceID spaceId, bool isListener) override;
 
   /**
+   * @brief clear space data, but not remove the data dirs.
+   *
+   * @param spaceId space which will be cleared.
+   */
+  void clearSpace(GraphSpaceID spaceId) override;
+
+  /**
    * @brief Remove a partition, called from part manager
    *
    * @param spaceId

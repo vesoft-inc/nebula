@@ -51,6 +51,12 @@ folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_removePart
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::futuren_clearSpace(
+    const cpp2::RemovePartReq& req) {
+  auto* processor = ClearSpaceProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_memberChange(
     const cpp2::MemberChangeReq& req) {
   auto* processor = MemberChangeProcessor::instance(env_);

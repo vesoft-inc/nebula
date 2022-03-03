@@ -142,6 +142,15 @@ class AdminClient {
                                            const HostAddr& host);
 
   /**
+   * @brief Clear space data in given storage host
+   *
+   * @param spaceId space will to be deleted
+   * @param host storage admin service address
+   * @return folly::Future<Status>
+   */
+  virtual folly::Future<Status> clearSpace(GraphSpaceID spaceId, const HostAddr& host);
+
+  /**
    * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
    *
    * @param spaceId

@@ -346,14 +346,6 @@ struct ClearSpaceReq {
     2: bool   if_exists,
 }
 
-struct ClearSpaceResp {
-    1: common.ErrorCode code,
-    // record which storages failed
-    2: list<common.HostAddr> failed_hosts,
-    // Valid if ret equals E_LEADER_CHANGED.
-    3: common.HostAddr leader,
-}
-
 struct ListSpacesReq {
 }
 
@@ -1153,6 +1145,7 @@ struct VerifyClientVersionReq {
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
+    ExecResp clearSpace(1: ClearSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
     ExecResp alterSpace(1: AlterSpaceReq req);

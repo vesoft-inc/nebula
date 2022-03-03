@@ -29,6 +29,8 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
 
   folly::Future<cpp2::AdminExecResp> future_removePart(const cpp2::RemovePartReq& req) override;
 
+  folly::Future<cpp2::AdminExecResp> futuren_clearSpace(const cpp2::RemovePartReq& req) override;
+
   folly::Future<cpp2::AdminExecResp> future_memberChange(const cpp2::MemberChangeReq& req) override;
 
   folly::Future<cpp2::AdminExecResp> future_checkPeers(const cpp2::CheckPeersReq& req) override;

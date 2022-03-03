@@ -269,6 +269,28 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
       });
 }
 
+folly::Future<Status> AdminClient::clearSpace(GraphSpaceID spaceId, const HostAddr& host) {
+  folly::Promise<Status> pro;
+  auto f = pro.getFuture();
+
+  storage::cpp2::ClearSpaceReq req;
+  req.space_id_ref() = spaceId;
+  getResponseFromHost(
+      Utils::getAdminAddrFromStoreAddr(host),
+      std::move(req),
+      [](auto client, auto request) { return client->future_clearSpace(request); },
+      [](auto&& resp) -> Status {
+        if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return Status::OK();
+        } else {
+          return Status::Error("Remove part failed, code: %s",
+                               apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
+        }
+      },
+      std::move(pro));
+  return f;
+}
+
 folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID partId) {
   storage::cpp2::CheckPeersReq req;
   req.space_id_ref() = spaceId;

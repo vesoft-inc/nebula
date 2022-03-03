@@ -736,6 +736,11 @@ struct RemovePartReq {
 }
 
 
+struct ClearSpaceReq {
+    1: common.GraphSpaceID space_id,
+}
+
+
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
