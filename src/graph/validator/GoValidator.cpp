@@ -133,6 +133,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
   auto& exprProps = goCtx_->exprProps;
 
   for (auto col : yield->columns()) {
+    const auto& colName = col->name();
     auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
     if (vertexExpr != nullptr &&
         static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
@@ -147,7 +148,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
-    outputs_.emplace_back(col->name(), type);
+    outputs_.emplace_back(colName, type);
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   }
 
