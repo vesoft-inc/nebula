@@ -955,7 +955,6 @@ Feature: Integer Vid subgraph
       | relationships |
       | <[edge1]>     |
       | <[edge2]>     |
-      | []            |
     When executing query:
       """
       GET SUBGRAPH WITH PROP FROM hash('Tony Parker') BOTH like YIELD edges as relationships, vertices as nodes
