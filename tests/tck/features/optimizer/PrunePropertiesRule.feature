@@ -130,7 +130,7 @@ Feature: Prune Properties rule
       WITH DISTINCT v, t
       RETURN t
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | t                                  |
       | ("Spurs" :team{name: "Spurs"})     |
       | ("Hornets" :team{name: "Hornets"}) |
@@ -140,7 +140,7 @@ Feature: Prune Properties rule
       WITH DISTINCT v.player.age as age, t
       RETURN t
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | t                                  |
       | ("Spurs" :team{name: "Spurs"})     |
       | ("Hornets" :team{name: "Hornets"}) |
