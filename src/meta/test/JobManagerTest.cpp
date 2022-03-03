@@ -132,7 +132,8 @@ TEST_F(JobManagerTest, StatsJob) {
                                      jobDesc.getParas(),
                                      jobDesc.getStatus(),
                                      jobDesc.getStartTime(),
-                                     jobDesc.getStopTime());
+                                     jobDesc.getStopTime(),
+                                     jobDesc.getErrorCode());
   jobMgr->save(std::move(jobKey), std::move(jobVal));
 
   auto job1Ret =
@@ -374,9 +375,10 @@ TEST_F(JobManagerTest, ShowJob) {
   TaskDescription td1(spaceId, jobId2, task1, host1);
   td1.setStatus(cpp2::JobStatus::RUNNING);
   td1.setStatus(cpp2::JobStatus::FINISHED);
+  td1.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   auto taskKey1 = MetaKeyUtils::taskKey(td1.getSpace(), td1.getJobId(), td1.getTaskId());
-  auto taskVal1 =
-      MetaKeyUtils::taskVal(td1.getHost(), td1.getStatus(), td1.getStartTime(), td1.getStopTime());
+  auto taskVal1 = MetaKeyUtils::taskVal(
+      td1.getHost(), td1.getStatus(), td1.getStartTime(), td1.getStopTime(), td1.getErrorCode());
   jobMgr->save(taskKey1, taskVal1);
 
   int32_t task2 = 1;
@@ -385,8 +387,8 @@ TEST_F(JobManagerTest, ShowJob) {
   td2.setStatus(cpp2::JobStatus::RUNNING);
   td2.setStatus(cpp2::JobStatus::FAILED);
   auto taskKey2 = MetaKeyUtils::taskKey(td2.getSpace(), td2.getJobId(), td2.getTaskId());
-  auto taskVal2 =
-      MetaKeyUtils::taskVal(td2.getHost(), td2.getStatus(), td2.getStartTime(), td2.getStopTime());
+  auto taskVal2 = MetaKeyUtils::taskVal(
+      td2.getHost(), td2.getStatus(), td2.getStartTime(), td2.getStopTime(), td2.getErrorCode());
   jobMgr->save(taskKey2, taskVal2);
 
   LOG(INFO) << "before jobMgr->showJob";
@@ -411,6 +413,7 @@ TEST_F(JobManagerTest, ShowJob) {
   ASSERT_EQ(tasks[0].get_status(), cpp2::JobStatus::FINISHED);
   ASSERT_EQ(tasks[0].get_start_time(), td1.getStartTime());
   ASSERT_EQ(tasks[0].get_stop_time(), td1.getStopTime());
+  ASSERT_EQ(tasks[0].get_code(), td1.getErrorCode());
 
   ASSERT_EQ(tasks[1].get_space_id(), spaceId);
   ASSERT_EQ(tasks[1].get_job_id(), jobId1);
@@ -419,6 +422,7 @@ TEST_F(JobManagerTest, ShowJob) {
   ASSERT_EQ(tasks[1].get_status(), cpp2::JobStatus::FAILED);
   ASSERT_EQ(tasks[1].get_start_time(), td2.getStartTime());
   ASSERT_EQ(tasks[1].get_stop_time(), td2.getStopTime());
+  ASSERT_EQ(tasks[1].get_code(), td2.getErrorCode());
 }
 
 TEST_F(JobManagerTest, ShowJobInOtherSpace) {
@@ -437,9 +441,10 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
   TaskDescription td1(spaceId1, jobId2, task1, host1);
   td1.setStatus(cpp2::JobStatus::RUNNING);
   td1.setStatus(cpp2::JobStatus::FINISHED);
+  td1.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   auto taskKey1 = MetaKeyUtils::taskKey(td1.getSpace(), td1.getJobId(), td1.getTaskId());
-  auto taskVal1 =
-      MetaKeyUtils::taskVal(td1.getHost(), td1.getStatus(), td1.getStartTime(), td1.getStopTime());
+  auto taskVal1 = MetaKeyUtils::taskVal(
+      td1.getHost(), td1.getStatus(), td1.getStartTime(), td1.getStopTime(), td1.getErrorCode());
   jobMgr->save(taskKey1, taskVal1);
 
   int32_t task2 = 1;
@@ -448,8 +453,8 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
   td2.setStatus(cpp2::JobStatus::RUNNING);
   td2.setStatus(cpp2::JobStatus::FAILED);
   auto taskKey2 = MetaKeyUtils::taskKey(td2.getSpace(), td2.getJobId(), td2.getTaskId());
-  auto taskVal2 =
-      MetaKeyUtils::taskVal(td2.getHost(), td2.getStatus(), td2.getStartTime(), td2.getStopTime());
+  auto taskVal2 = MetaKeyUtils::taskVal(
+      td2.getHost(), td2.getStatus(), td2.getStartTime(), td2.getStopTime(), td2.getErrorCode());
   jobMgr->save(taskKey2, taskVal2);
 
   LOG(INFO) << "before jobMgr->showJob";
@@ -470,8 +475,12 @@ TEST_F(JobManagerTest, RecoverJob) {
   for (auto jobId = 0; jobId < nJob; ++jobId) {
     JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH);
     auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
-    auto jobVal = MetaKeyUtils::jobVal(
-        jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+    auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
+                                       jd.getParas(),
+                                       jd.getStatus(),
+                                       jd.getStartTime(),
+                                       jd.getStopTime(),
+                                       jd.getErrorCode());
     jobMgr->save(jobKey, jobVal);
   }
 
@@ -497,8 +506,12 @@ TEST(JobDescriptionTest, Ctor2) {
   LOG(INFO) << "jd1 ctored";
 
   auto jobKey = MetaKeyUtils::jobKey(jd1.getSpace(), jd1.getJobId());
-  auto jobVal = MetaKeyUtils::jobVal(
-      jd1.getJobType(), jd1.getParas(), jd1.getStatus(), jd1.getStartTime(), jd1.getStopTime());
+  auto jobVal = MetaKeyUtils::jobVal(jd1.getJobType(),
+                                     jd1.getParas(),
+                                     jd1.getStatus(),
+                                     jd1.getStartTime(),
+                                     jd1.getStopTime(),
+                                     jd1.getErrorCode());
   auto optJobRet = JobDescription::makeJobDescription(jobKey, jobVal);
   ASSERT_TRUE(nebula::ok(optJobRet));
 }
@@ -523,11 +536,16 @@ TEST(JobDescriptionTest, ParseVal) {
   auto status = cpp2::JobStatus::FINISHED;
   jd.setStatus(cpp2::JobStatus::RUNNING);
   jd.setStatus(status);
+  jd.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   auto startTime = jd.getStartTime();
   auto stopTime = jd.getStopTime();
 
-  auto jobVal = MetaKeyUtils::jobVal(
-      jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+  auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
+                                     jd.getParas(),
+                                     jd.getStatus(),
+                                     jd.getStartTime(),
+                                     jd.getStopTime(),
+                                     jd.getErrorCode());
   auto parsedVal = MetaKeyUtils::parseJobVal(jobVal);
   ASSERT_EQ(cpp2::JobType::FLUSH, std::get<0>(parsedVal));
   auto paras = std::get<1>(parsedVal);
@@ -535,6 +553,7 @@ TEST(JobDescriptionTest, ParseVal) {
   ASSERT_EQ(status, std::get<2>(parsedVal));
   ASSERT_EQ(startTime, std::get<3>(parsedVal));
   ASSERT_EQ(stopTime, std::get<4>(parsedVal));
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, std::get<5>(parsedVal));
 }
 
 TEST(TaskDescriptionTest, Ctor) {
@@ -578,15 +597,17 @@ TEST(TaskDescriptionTest, ParseVal) {
   td.setStatus(cpp2::JobStatus::RUNNING);
   auto status = cpp2::JobStatus::FINISHED;
   td.setStatus(status);
+  td.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
 
-  auto strVal =
-      MetaKeyUtils::taskVal(td.getHost(), td.getStatus(), td.getStartTime(), td.getStopTime());
+  auto strVal = MetaKeyUtils::taskVal(
+      td.getHost(), td.getStatus(), td.getStartTime(), td.getStopTime(), td.getErrorCode());
   auto parsedVal = MetaKeyUtils::parseTaskVal(strVal);
 
   ASSERT_EQ(td.getHost(), std::get<0>(parsedVal));
   ASSERT_EQ(td.getStatus(), std::get<1>(parsedVal));
   ASSERT_EQ(td.getStartTime(), std::get<2>(parsedVal));
   ASSERT_EQ(td.getStopTime(), std::get<3>(parsedVal));
+  ASSERT_EQ(td.getErrorCode(), std::get<4>(parsedVal));
 }
 
 }  // namespace meta

@@ -267,6 +267,7 @@ struct JobDesc {
     5: JobStatus            status,
     6: i64                  start_time,
     7: i64                  stop_time,
+    8: common.ErrorCode     code,
 }
 
 struct TaskDesc {
@@ -277,6 +278,7 @@ struct TaskDesc {
     5: JobStatus            status,
     6: i64                  start_time,
     7: i64                  stop_time,
+    8: common.ErrorCode     code,
 }
 
 struct AdminJobResult {
@@ -517,7 +519,7 @@ struct GetPartsAllocResp {
 
 // get workerid for snowflake
 struct GetWorkerIdReq {
-    1: binary host, 
+    1: binary host,
 }
 
 struct GetWorkerIdResp {

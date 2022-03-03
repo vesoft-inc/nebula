@@ -26,14 +26,16 @@ JobDescription::JobDescription(GraphSpaceID space,
                                std::vector<std::string> paras,
                                Status status,
                                int64_t startTime,
-                               int64_t stopTime)
+                               int64_t stopTime,
+                               nebula::cpp2::ErrorCode errCode)
     : space_(space),
       jobId_(jobId),
       type_(type),
       paras_(std::move(paras)),
       status_(status),
       startTime_(startTime),
-      stopTime_(stopTime) {}
+      stopTime_(stopTime),
+      errCode_(errCode) {}
 
 ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescription(
     folly::StringPiece rawkey, folly::StringPiece rawval) {
@@ -52,8 +54,15 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
     auto status = std::get<2>(tup);
     auto startTime = std::get<3>(tup);
     auto stopTime = std::get<4>(tup);
-    return JobDescription(
-        spaceIdAndJob.first, spaceIdAndJob.second, type, paras, status, startTime, stopTime);
+    auto errCode = std::get<5>(tup);
+    return JobDescription(spaceIdAndJob.first,
+                          spaceIdAndJob.second,
+                          type,
+                          paras,
+                          status,
+                          startTime,
+                          stopTime,
+                          errCode);
   } catch (std::exception& ex) {
     LOG(INFO) << ex.what();
   }
@@ -69,6 +78,7 @@ cpp2::JobDesc JobDescription::toJobDesc() {
   ret.status_ref() = status_;
   ret.start_time_ref() = startTime_;
   ret.stop_time_ref() = stopTime_;
+  ret.code_ref() = errCode_;
   return ret;
 }
 

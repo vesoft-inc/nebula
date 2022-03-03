@@ -92,8 +92,12 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
   for (auto& jd : jds) {
     jd.setStatus(cpp2::JobStatus::QUEUE, true);
     auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
-    auto jobVal = MetaKeyUtils::jobVal(
-        jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+    auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
+                                       jd.getParas(),
+                                       jd.getStatus(),
+                                       jd.getStartTime(),
+                                       jd.getStopTime(),
+                                       jd.getErrorCode());
     save(jobKey, jobVal);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -142,7 +146,8 @@ void JobManager::scheduleThread() {
                                        jobDesc.getParas(),
                                        jobDesc.getStatus(),
                                        jobDesc.getStartTime(),
-                                       jobDesc.getStopTime());
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
     save(jobKey, jobVal);
     spaceRunningJobs_.insert_or_assign(spaceId, true);
     if (!runJobInternal(jobDesc, jobOp)) {
@@ -243,13 +248,37 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
     return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
   }
 
+  // Set the errorcode of the job
+  nebula::cpp2::ErrorCode jobErrCode = nebula::cpp2::ErrorCode::SUCCEEDED;
+  if (jobStatus != cpp2::JobStatus::FINISHED) {
+    // Traverse the tasks and find the first task errorcode unsuccessful
+    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return rc;
+    }
+    for (; iter->valid(); iter->next()) {
+      if (MetaKeyUtils::isJobKey(iter->key())) {
+        continue;
+      }
+      auto tupTaskVal = MetaKeyUtils::parseTaskVal(iter->val());
+      jobErrCode = std::get<4>(tupTaskVal);
+      if (jobErrCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        break;
+      }
+    }
+  }
+  optJobDesc.setErrorCode(jobErrCode);
+
   spaceRunningJobs_.insert_or_assign(spaceId, false);
   auto jobKey = MetaKeyUtils::jobKey(optJobDesc.getSpace(), optJobDesc.getJobId());
   auto jobVal = MetaKeyUtils::jobVal(optJobDesc.getJobType(),
                                      optJobDesc.getParas(),
                                      optJobDesc.getStatus(),
                                      optJobDesc.getStartTime(),
-                                     optJobDesc.getStopTime());
+                                     optJobDesc.getStopTime(),
+                                     optJobDesc.getErrorCode());
   auto rc = save(jobKey, jobVal);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
@@ -280,6 +309,7 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   auto status = code == nebula::cpp2::ErrorCode::SUCCEEDED ? cpp2::JobStatus::FINISHED
                                                            : cpp2::JobStatus::FAILED;
   td.setStatus(status);
+  td.setErrorCode(code);
 
   auto spaceId = req.get_space_id();
   auto jobId = req.get_job_id();
@@ -300,8 +330,8 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   }
 
   auto taskKey = MetaKeyUtils::taskKey(td.getSpace(), td.getJobId(), td.getTaskId());
-  auto taskVal =
-      MetaKeyUtils::taskVal(td.getHost(), td.getStatus(), td.getStartTime(), td.getStopTime());
+  auto taskVal = MetaKeyUtils::taskVal(
+      td.getHost(), td.getStatus(), td.getStartTime(), td.getStopTime(), td.getErrorCode());
   auto rcSave = save(taskKey, taskVal);
   if (rcSave != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rcSave;
@@ -392,7 +422,8 @@ nebula::cpp2::ErrorCode JobManager::addJob(JobDescription& jobDesc, AdminClient*
                                      jobDesc.getParas(),
                                      jobDesc.getStatus(),
                                      jobDesc.getStartTime(),
-                                     jobDesc.getStopTime());
+                                     jobDesc.getStopTime(),
+                                     jobDesc.getErrorCode());
   auto rc = save(jobKey, jobVal);
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     enqueue(spaceId, jobId, JbOp::ADD, jobDesc.getJobType());

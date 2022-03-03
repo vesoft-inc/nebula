@@ -135,7 +135,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                       statsJob.getParas(),
                                       statsJob.getStatus(),
                                       statsJob.getStartTime(),
-                                      statsJob.getStopTime());
+                                      statsJob.getStopTime(),
+                                      statsJob.getErrorCode());
   auto rc = jobMgr->save(std::move(jobKey1), std::move(jobVal1));
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 
@@ -170,7 +171,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                         job11.getParas(),
                                         job11.getStatus(),
                                         job11.getStartTime(),
-                                        job11.getStopTime());
+                                        job11.getStopTime(),
+                                        job11.getErrorCode());
     auto retsav = jobMgr->save(std::move(jobKey2), std::move(jobVal2));
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
@@ -189,7 +191,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                       statsJob.getParas(),
                                       statsJob.getStatus(),
                                       statsJob.getStartTime(),
-                                      statsJob.getStopTime());
+                                      statsJob.getStopTime(),
+                                      statsJob.getErrorCode());
   jobMgr->save(std::move(jobKey3), std::move(jobVal3));
 
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
@@ -245,7 +248,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                       statsJob2.getParas(),
                                       statsJob2.getStatus(),
                                       statsJob2.getStartTime(),
-                                      statsJob2.getStopTime());
+                                      statsJob2.getStopTime(),
+                                      statsJob2.getErrorCode());
   auto rc2 = jobMgr->save(std::move(jobKey4), std::move(jobVal4));
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
   {
@@ -295,7 +299,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                         job21.getParas(),
                                         job21.getStatus(),
                                         job21.getStartTime(),
-                                        job21.getStopTime());
+                                        job21.getStopTime(),
+                                        job21.getErrorCode());
     auto retsav = jobMgr->save(std::move(jobKey5), std::move(jobVal5));
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
@@ -350,7 +355,8 @@ TEST_F(GetStatsTest, StatsJob) {
                                       statsJob2.getParas(),
                                       statsJob2.getStatus(),
                                       statsJob2.getStartTime(),
-                                      statsJob2.getStopTime());
+                                      statsJob2.getStopTime(),
+                                      statsJob2.getErrorCode());
   jobMgr->save(std::move(jobKey6), std::move(jobVal6));
 
   {

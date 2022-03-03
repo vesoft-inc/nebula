@@ -157,8 +157,11 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
   for (auto i = 0U; i != addresses.size(); ++i) {
     TaskDescription task(space_, jobId_, i, addresses[i].first);
     auto taskKey = MetaKeyUtils::taskKey(task.getSpace(), task.getJobId(), task.getTaskId());
-    auto taskVal = MetaKeyUtils::taskVal(
-        task.getHost(), task.getStatus(), task.getStartTime(), task.getStopTime());
+    auto taskVal = MetaKeyUtils::taskVal(task.getHost(),
+                                         task.getStatus(),
+                                         task.getStartTime(),
+                                         task.getStopTime(),
+                                         task.getErrorCode());
     data.emplace_back(std::move(taskKey), std::move(taskVal));
   }
 
