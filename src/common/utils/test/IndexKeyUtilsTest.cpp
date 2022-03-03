@@ -9,8 +9,8 @@
 
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
-#include "common/datatypes/Geography.h"
 #include "common/datatypes/GeoIndex.h"
+#include "common/datatypes/Geography.h"
 #include "common/utils/IndexKeyUtils.h"
 
 namespace nebula {
