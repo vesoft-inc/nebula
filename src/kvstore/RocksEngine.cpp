@@ -22,57 +22,9 @@ namespace kvstore {
 using fs::FileType;
 using fs::FileUtils;
 
-namespace {
-
 /***************************************
  *
- * Implementation of WriteBatch
- *
- **************************************/
-class RocksWriteBatch : public WriteBatch {
- private:
-  rocksdb::WriteBatch batch_;
-
- public:
-  RocksWriteBatch() : batch_(FLAGS_rocksdb_batch_size) {}
-
-  virtual ~RocksWriteBatch() = default;
-
-  nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) override {
-    if (batch_.Put(toSlice(key), toSlice(value)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  nebula::cpp2::ErrorCode remove(folly::StringPiece key) override {
-    if (batch_.Delete(toSlice(key)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  // Remove all keys in the range [start, end)
-  nebula::cpp2::ErrorCode removeRange(folly::StringPiece start, folly::StringPiece end) override {
-    if (batch_.DeleteRange(toSlice(start), toSlice(end)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  rocksdb::WriteBatch* data() {
-    return &batch_;
-  }
-};
-
-}  // Anonymous namespace
-
-/***************************************
- *
- * Implementation of WriteBatch
+ * Implementation of RocksEngine
  *
  **************************************/
 RocksEngine::RocksEngine(GraphSpaceID spaceId,

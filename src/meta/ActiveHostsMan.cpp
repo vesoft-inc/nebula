@@ -94,6 +94,19 @@ ActiveHostsMan::getServicesInHost(kvstore::KVStore* kv, const std::string& hostn
     auto addr = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
 
+    // skip the service not alive
+    int64_t expiredTime =
+        FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor;  // meta/storage/graph
+    if (info.role_ == cpp2::HostRole::AGENT) {
+      expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor;
+    }
+    int64_t threshold = expiredTime * 1000;
+    auto now = time::WallClock::fastNowInMilliSec();
+    if (now - info.lastHBTimeInMilliSec_ >= threshold) {
+      iter->next();
+      continue;
+    }
+
     if (addr.host == hostname) {
       hosts.emplace_back(addr, info.role_);
     }

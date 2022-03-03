@@ -145,7 +145,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     handleErrorCode(ret);
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
     }
     onFinished();
     return;
@@ -159,7 +159,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     handleErrorCode(nebula::error(sret));
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
     }
     onFinished();
     return;
@@ -170,6 +170,10 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   if (!nebula::ok(backupFiles)) {
     LOG(INFO) << "Failed backup meta";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_FAILED);
+    ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
+    }
     onFinished();
     return;
   }
