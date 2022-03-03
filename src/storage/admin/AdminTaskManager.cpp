@@ -69,9 +69,12 @@ void AdminTaskManager::handleUnreportedTasks() {
         if (seqId < 0) {
           continue;
         }
-        JobID jobId = *reinterpret_cast<const JobID*>(key.data() + sizeof(int32_t));
-        TaskID taskId =
-            *reinterpret_cast<const TaskID*>(key.data() + sizeof(int32_t) + sizeof(JobID));
+
+        GraphSpaceID spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + sizeof(int32_t));
+        JobID jobId =
+            *reinterpret_cast<const JobID*>(key.data() + sizeof(int32_t) + sizeof(GraphSpaceID));
+        TaskID taskId = *reinterpret_cast<const TaskID*>(key.data() + sizeof(int32_t) +
+                                                         sizeof(GraphSpaceID) + sizeof(JobID));
         folly::StringPiece val = iter->val();
         folly::StringPiece statsVal(val.data() + sizeof(nebula::cpp2::ErrorCode),
                                     val.size() - sizeof(nebula::cpp2::ErrorCode));
@@ -92,10 +95,10 @@ void AdminTaskManager::handleUnreportedTasks() {
           if (jobStatus == nebula::meta::cpp2::JobStatus::RUNNING && pStats != nullptr) {
             pStats->status_ref() = nebula::meta::cpp2::JobStatus::FAILED;
           }
-          auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
+          auto fut = env_->metaClient_->reportTaskFinish(spaceId, jobId, taskId, errCode, pStats);
           futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));
         } else if (jobStatus != nebula::meta::cpp2::JobStatus::RUNNING) {
-          auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
+          auto fut = env_->metaClient_->reportTaskFinish(spaceId, jobId, taskId, errCode, pStats);
           futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));
         }
       }
@@ -162,7 +165,7 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
     auto handle = it->first;
     if (handle.first == jobId) {
       it->second->cancel();
-      removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
+      removeTaskStatus(it->second->getSpaceId(), it->second->getJobId(), it->second->getTaskId());
       FLOG_INFO("task(%d, %d) cancelled", jobId, handle.second);
     }
     ++it;
@@ -181,7 +184,7 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId)
     ret = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   } else {
     it->second->cancel();
-    removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
+    removeTaskStatus(it->second->getSpaceId(), it->second->getJobId(), it->second->getTaskId());
   }
   return ret;
 }
@@ -207,12 +210,13 @@ void AdminTaskManager::shutdown() {
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
-void AdminTaskManager::saveTaskStatus(JobID jobId,
+void AdminTaskManager::saveTaskStatus(GraphSpaceID spaceId,
+                                      JobID jobId,
                                       TaskID taskId,
                                       nebula::cpp2::ErrorCode rc,
                                       const nebula::meta::cpp2::StatsItem& result) {
   if (env_ == nullptr) return;
-  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, jobId, taskId);
+  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, spaceId, jobId, taskId);
   std::string val;
   val.append(reinterpret_cast<char*>(&rc), sizeof(nebula::cpp2::ErrorCode));
   std::string resVal;
@@ -225,9 +229,9 @@ void AdminTaskManager::saveTaskStatus(JobID jobId,
   }
 }
 
-void AdminTaskManager::removeTaskStatus(JobID jobId, TaskID taskId) {
+void AdminTaskManager::removeTaskStatus(GraphSpaceID spaceId, JobID jobId, TaskID taskId) {
   if (env_ == nullptr) return;
-  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, jobId, taskId);
+  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, spaceId, jobId, taskId);
   env_->adminStore_->remove(key);
 }
 
@@ -346,12 +350,13 @@ void AdminTaskManager::notifyReporting() {
   unreportedCV_.notify_one();
 }
 
-void AdminTaskManager::saveAndNotify(JobID jobId,
+void AdminTaskManager::saveAndNotify(GraphSpaceID spaceId,
+                                     JobID jobId,
                                      TaskID taskId,
                                      nebula::cpp2::ErrorCode rc,
                                      const nebula::meta::cpp2::StatsItem& result) {
   std::unique_lock<std::mutex> lk(unreportedMutex_);
-  saveTaskStatus(jobId, taskId, rc, result);
+  saveTaskStatus(spaceId, jobId, taskId, rc, result);
   ifAnyUnreported_ = true;
   unreportedCV_.notify_one();
 }
@@ -370,7 +375,7 @@ void AdminTaskManager::cancelTasks(GraphSpaceID spaceId) {
   while (it != tasks_.end()) {
     if (it->second->getSpaceId() == spaceId) {
       it->second->cancel();
-      removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
+      removeTaskStatus(spaceId, it->second->getJobId(), it->second->getTaskId());
       FLOG_INFO("cancel task(%d, %d), spaceId: %d", it->first.first, it->first.second, spaceId);
     }
     ++it;

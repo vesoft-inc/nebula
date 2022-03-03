@@ -16,7 +16,8 @@ namespace meta {
  */
 class FlushJobExecutor : public SimpleConcurrentJobExecutor {
  public:
-  FlushJobExecutor(JobID jobId,
+  FlushJobExecutor(GraphSpaceID space,
+                   JobID jobId,
                    kvstore::KVStore* kvstore,
                    AdminClient* adminClient,
                    const std::vector<std::string>& params);

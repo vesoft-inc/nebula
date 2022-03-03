@@ -274,7 +274,7 @@ class NebulaKeyUtils final {
     LOG(FATAL) << msg.str();
   }
 
-  static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
+  static std::string adminTaskKey(int32_t seqId, GraphSpaceID spaceId, JobID jobId, TaskID taskId);
 
   static std::string dataVersionKey();
 

@@ -72,18 +72,20 @@ class AdminTaskManager {
 
   bool isFinished(JobID jobID, TaskID taskID);
 
-  void saveTaskStatus(JobID jobId,
+  void saveTaskStatus(GraphSpaceID spaceId,
+                      JobID jobId,
                       TaskID taskId,
                       nebula::cpp2::ErrorCode rc,
                       const nebula::meta::cpp2::StatsItem& result);
 
-  void removeTaskStatus(JobID jobId, TaskID taskId);
+  void removeTaskStatus(GraphSpaceID spaceId, JobID jobId, TaskID taskId);
 
   void handleUnreportedTasks();
 
   void notifyReporting();
 
-  void saveAndNotify(JobID jobId,
+  void saveAndNotify(GraphSpaceID spaceId,
+                     JobID jobId,
                      TaskID taskId,
                      nebula::cpp2::ErrorCode rc,
                      const nebula::meta::cpp2::StatsItem& result);

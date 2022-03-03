@@ -263,12 +263,16 @@ std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey) {
   return ret;
 }
 
-std::string NebulaKeyUtils::adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId) {
+std::string NebulaKeyUtils::adminTaskKey(int32_t seqId,
+                                         GraphSpaceID spaceId,
+                                         JobID jobId,
+                                         TaskID taskId) {
   std::string key;
-  key.reserve(sizeof(int32_t) + sizeof(JobID) + sizeof(TaskID));
-  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t));
-  key.append(reinterpret_cast<char*>(&jobId), sizeof(JobID));
-  key.append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
+  key.reserve(sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t))
+      .append(reinterpret_cast<char*>(&spaceId), sizeof(GraphSpaceID))
+      .append(reinterpret_cast<char*>(&jobId), sizeof(JobID))
+      .append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
   return key;
 }
 

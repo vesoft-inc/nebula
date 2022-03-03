@@ -133,14 +133,14 @@ bool StorageServer::initWebService() {
 }
 
 std::unique_ptr<kvstore::KVEngine> StorageServer::getAdminStoreInstance() {
-  int32_t vIdLen = NebulaKeyUtils::adminTaskKey(-1, 0, 0).size();
+  int32_t vIdLen = NebulaKeyUtils::adminTaskKey(-1, 0, 0, 0).size();
   std::unique_ptr<kvstore::KVEngine> re(
       new kvstore::RocksEngine(0, vIdLen, dataPaths_[0], walPath_));
   return re;
 }
 
 int32_t StorageServer::getAdminStoreSeqId() {
-  std::string key = NebulaKeyUtils::adminTaskKey(-1, 0, 0);
+  std::string key = NebulaKeyUtils::adminTaskKey(-1, 0, 0, 0);
   std::string val;
   nebula::cpp2::ErrorCode rc = env_->adminStore_->get(key, &val);
   int32_t curSeqId = 1;

@@ -64,7 +64,6 @@ nebula_add_library(
     processors/job/JobStatus.cpp
     processors/job/AdminJobProcessor.cpp
     processors/job/ReportTaskProcessor.cpp
-    processors/job/JobUtils.cpp
     processors/job/StorageJobExecutor.cpp
     processors/job/JobExecutor.cpp
     processors/job/MetaJobExecutor.cpp
