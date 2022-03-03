@@ -18,6 +18,7 @@ nebula_add_library(
     log_str_list_iterator_obj SHARED
     LogStrListIterator.cpp
 )
+target_link_libraries(log_str_list_iterator_obj PUBLIC "${Glog_LIBRARY}"  )
 
 
 nebula_add_subdirectory(test)
