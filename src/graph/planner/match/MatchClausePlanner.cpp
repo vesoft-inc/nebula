@@ -515,7 +515,12 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   for (int i = 0; i < 2; i++) {
     IQC iqctx;
-    iqctx.index_id_ref() = nodeInfos[i].tids[0];
+
+    auto indexIdsRet = pickTagIndex(matchClauseCtx, nodeInfos[i]);
+    NG_RETURN_IF_ERROR(indexIdsRet);
+    std::vector<IndexID> indexIds = indexIdsRet.value();
+    iqctx.index_id_ref() = indexIds[0];
+
     auto scanNode =
         IndexScan::make(qtx, nullptr, spaceId, {iqctx}, {kVid}, false, nodeInfos[i].tids[0]);
     auto starNode = StartNode::make(qtx);
@@ -525,9 +530,16 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
     subplan.tail = starNode;
   }
 
+  // initialize start expression in node
+  auto* pool = matchClauseCtx->qctx->objPool();
+  auto* args = ArgumentList::make(pool);
+  args->addArgument(InputPropertyExpression::make(pool));
+  auto initialExpr = FunctionCallExpression::make(pool, "id", args);
+
   auto edge = edgeInfos.back();
   bool reversely = true;
   auto shortestPath = ShortestPath::make(qtx, scanNodes[0], scanNodes[1]);
+  shortestPath->setSrc(initialExpr);
   shortestPath->setSpace(spaceId);
   shortestPath->setLeftVar(scanNodes[0]->outputVar());
   shortestPath->setRightVar(scanNodes[1]->outputVar());
@@ -540,5 +552,36 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   return Status::OK();
 }
+
+StatusOr<std::vector<IndexID>> MatchClausePlanner::pickTagIndex(MatchClauseContext* matchClauseCtx,
+                                                                NodeInfo nodeInfo) {
+  std::vector<IndexID> indexIds;
+  const auto* qctx = matchClauseCtx->qctx;
+  auto tagIndexesResult = qctx->indexMng()->getTagIndexes(matchClauseCtx->space.id);
+  NG_RETURN_IF_ERROR(tagIndexesResult);
+  auto tagIndexes = std::move(tagIndexesResult).value();
+  indexIds.reserve(1);
+
+  auto tagId = nodeInfo.tids[0];
+  std::shared_ptr<meta::cpp2::IndexItem> candidateIndex{nullptr};
+  for (const auto& index : tagIndexes) {
+    if (index->get_schema_id().get_tag_id() == tagId) {
+      if (candidateIndex == nullptr) {
+        candidateIndex = index;
+      } else {
+        candidateIndex = candidateIndex->get_fields().size() > index->get_fields().size()
+                             ? index
+                             : candidateIndex;
+      }
+    }
+  }
+  if (candidateIndex == nullptr) {
+    return Status::SemanticError("No valid index for label `%s'.", nodeInfo.labels[0].c_str());
+  }
+  indexIds.emplace_back(candidateIndex->get_index_id());
+
+  return indexIds;
+}
+
 }  // namespace graph
 }  // namespace nebula

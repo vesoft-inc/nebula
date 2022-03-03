@@ -1662,6 +1662,10 @@ class ShortestPath final : public BinaryInputNode {
     return edgeProps_.get();
   }
 
+  Expression* vFilter() const {
+    return vFilter_;
+  }
+
   Expression* eFilter() const {
     return eFilter_;
   }
@@ -1690,6 +1694,10 @@ class ShortestPath final : public BinaryInputNode {
     edgeProps_ = std::move(edgeProps);
   }
 
+  void setVertexFilter(Expression* vFilter) {
+    vFilter_ = vFilter;
+  }
+
   void setEdgeFilter(Expression* eFilter) {
     eFilter_ = eFilter;
   }
@@ -1713,6 +1721,7 @@ class ShortestPath final : public BinaryInputNode {
 
   GraphSpaceID space_;
   MatchStepRange* range_{nullptr};
+  Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
   std::vector<EdgeType> edgeTypes_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
