@@ -56,6 +56,8 @@ if(ENABLE_TESTING AND ENABLE_COVERAGE)
     add_compile_options(-O0)
     nebula_add_exe_linker_flag(-coverage)
     nebula_add_exe_linker_flag(-lgcov)
+    nebula_add_shared_linker_flag(-coverage)
+    nebula_add_shared_linker_flag(-lgcov)
 endif()
 
 # TODO(doodle) Add option suggest-override for gnu
