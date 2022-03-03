@@ -115,20 +115,10 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            for (const auto& prop : *props) {
-              if (prop.returned_ || (prop.filtered_ && expCtx_ != nullptr)) {
-                auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
-                if (!value.ok()) {
-                  return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-                }
-                if (prop.filtered_ && expCtx_ != nullptr) {
-                  expCtx_->setTagProp(tagNode->getTagName(), prop.name_, value.value());
-                }
-                if (prop.returned_) {
-                  VLOG(2) << "Collect prop " << prop.name_;
-                  row.emplace_back(std::move(value).value());
-                }
-              }
+            auto status = QueryUtils::collectVertexProps(
+                key, vIdLen, isIntId, reader, props, row, expCtx_, tagNode->getTagName());
+            if (!status.ok()) {
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
