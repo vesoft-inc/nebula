@@ -139,6 +139,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
+    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
@@ -181,6 +182,24 @@ void GoValidator::extractPropExprs(const Expression* expr,
                                  propExprColMap_,
                                  uniqueExpr);
   const_cast<Expression*>(expr)->accept(&visitor);
+}
+
+Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
+  auto pool = qctx_->objPool();
+  const auto& name = expr->toString();
+  if (name == "id($^)" || name == "src(edge)") {
+    return EdgeSrcIdExpression::make(pool, "*");
+  }
+  if (name == "id($$)" || name == "dst(edge)") {
+    return EdgeDstIdExpression::make(pool, "*");
+  }
+  if (name == "rank(edge)") {
+    return EdgeRankExpression::make(pool, "*");
+  }
+  if (name == "type(edge)") {
+    return EdgeTypeExpression::make(pool, "*");
+  }
+  return const_cast<Expression*>(expr);
 }
 
 // Rewrites the property expression to corresponding Variable/Input expression
