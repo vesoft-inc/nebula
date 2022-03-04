@@ -19,16 +19,17 @@ namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  for (int i = 0; i < 2; i++) {
-    const string& inputVar =
-        i == 0 ? shortestPathNode_->leftInputVar() : shortestPathNode_->rightInputVar();
-    auto status = buildRequestDataSet(inputVar, dss_[i]);
-    if (!status.ok()) {
-      return error(std::move(status));
-    }
+  auto status = buildRequestDataSet();
+  if (!status.ok()) {
+    return error(std::move(status));
+  }
+  if (dss_[0].rows.empty() || dss_[1].rows.empty()) {
+    VLOG(1) << "Empty input.";
+    DataSet emptyResult;
+    return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
 
-  while (reqDs_.size() != 0) {
+  do {
     // Set left(dss_[0]) or right(dss_[1]) dataset as req dataset, and get neighbors
     for (int i = 0; i < 2; i++) {
       step_ += 1;
@@ -36,13 +37,13 @@ folly::Future<Status> ShortestPathExecutor::execute() {
       direction_ = i;
       visiteds_[i].clear();
 
-      auto status = getNeighbors().get();
+      status = getNeighbors().get();
       if (!status.ok()) {
         return error(std::move(status));
       }
       dss_[i] = std::move(reqDs_);
     }
-  }
+  } while (reqDs_.size() != 0);
 
   return Status::OK();
 }
@@ -58,45 +59,44 @@ Status ShortestPathExecutor::close() {
   return Executor::close();
 }
 
-Status ShortestPathExecutor::buildRequestDataSet(std::string inputVar, DataSet& ds) {
-  auto inputIter = ectx_->getResult(inputVar).iter();
-  SequentialIter* iter = static_cast<SequentialIter*>(inputIter.get());
+Status ShortestPathExecutor::buildRequestDataSet() {
+  std::vector<std::string> inputVars = {shortestPathNode_->leftInputVar(),
+                                        shortestPathNode_->rightInputVar()};
 
-  ds.colNames = {kVid};
-  ds.rows.reserve(iter->size());
+  for (int i = 0; i < 2; i++) {
+    auto inputVar = inputVars[i];
+    auto& inputResult = ectx_->getResult(inputVar);
+    auto inputIter = inputResult.iter();
+    auto iter = static_cast<SequentialIter*>(inputIter.get());
 
-  std::unordered_set<Value> uniqueSet;
-  uniqueSet.reserve(iter->size());
+    dss_[i].colNames = {kVid};
+    dss_[i].rows.reserve(iter->size());
 
-  const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
-  // TODO: build src for shortestPathNode_
-  auto* src = shortestPathNode_->src();
-  QueryExpressionContext ctx(ectx_);
+    std::unordered_set<Value> uniqueSet;
+    uniqueSet.reserve(iter->size());
 
-  for (; iter->valid(); iter->next()) {
-    auto vid = src->eval(ctx(iter));
-    if (!SchemaUtil::isValidVid(vid, vidType)) {
-      LOG(WARNING) << "Mismatched vid type: " << vid.type()
-                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
-      continue;
+    const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
+    auto* src = shortestPathNode_->src();
+    QueryExpressionContext ctx(ectx_);
+
+    for (; iter->valid(); iter->next()) {
+      auto vid = src->eval(ctx(iter));
+      if (!SchemaUtil::isValidVid(vid, vidType)) {
+        LOG(WARNING) << "Mismatched vid type: " << vid.type()
+                     << ", space vid type: " << SchemaUtil::typeToString(vidType);
+        continue;
+      }
+      if (!uniqueSet.emplace(vid).second) {
+        continue;
+      }
+      // [from TraverseExecutor] Need copy here, Argument executor may depends on this variable.
+      // auto prevPath = *iter->row();
+      // AddPrevPath(prev, vid, std::move(prevPath));
+
+      dss_[i].emplace_back(Row({std::move(vid)}));
     }
-    if (!uniqueSet.emplace(vid).second) {
-      continue;
-    }
-    // [from TraverseExecutor] Need copy here, Argument executor may depends on this variable.
-    // auto prevPath = *iter->row();
-    // AddPrevPath(prev, vid, std::move(prevPath));
-
-    ds.emplace_back(Row({std::move(vid)}));
+    // leftPaths_.emplace_back(std::move(prev));
   }
-  // leftPaths_.emplace_back(std::move(prev));
-
-  if (ds.rows.empty()) {
-    VLOG(1) << "Empty input.";
-    DataSet emptyResult;
-    return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
-  }
-
   return Status::OK();
 }
 

@@ -28,6 +28,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
     dss_.reserve(2);
     for (int i = 0; i < 2; i++) {
       dss_.emplace_back();
+      visiteds_.emplace_back();
     }
   }
 
@@ -38,7 +39,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
  private:
   using Paths = std::vector<Row>;
 
-  Status buildRequestDataSet(std::string inputVar, DataSet& ds);
+  Status buildRequestDataSet();
 
   Status buildResult(DataSet result);
 
