@@ -464,5 +464,12 @@ TEST_F(ExtractFilterExprVisitorTest, TestMultiCanNotPush) {
   }
 }
 
+TEST_F(ExtractFilterExprVisitorTest, TestPushLabelTagPropExpr) {
+  // $-.input.tag.prop can't push down
+  auto expr = LabelTagPropertyExpression::make(
+      pool_.get(), InputPropertyExpression::make(pool_.get(), "input"), "tag", "prop");
+  checkIfEqual(expr, expr->clone(), nullptr, false);
+}
+
 }  // namespace graph
 }  // namespace nebula
