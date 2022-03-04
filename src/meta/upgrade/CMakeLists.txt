@@ -7,6 +7,7 @@ nebula_add_library(
     MetaDataUpgrade.cpp
     v2/MetaServiceUtilsV2.cpp
 )
+target_link_libraries(meta_data_upgrade_obj PUBLIC glog)
 
 add_dependencies(
     meta_data_upgrade_obj
