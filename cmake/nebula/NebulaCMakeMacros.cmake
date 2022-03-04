@@ -37,7 +37,7 @@ macro(nebula_add_test)
         NAME ${nebula_test_NAME}
         SOURCES ${nebula_test_SOURCES}
         OBJECTS ${nebula_test_OBJECTS}
-        LIBRARIES ${nebula_test_LIBRARIES}
+        LIBRARIES ${nebula_test_LIBRARIES} glog
     )
 
     if (${nebula_test_FUZZER})
