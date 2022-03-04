@@ -247,7 +247,10 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kRelIn);
   auto pool = expr->getObjPool();
   auto inExpr = static_cast<RelationalExpression *>(expr->clone());
-  auto containerOperands = getContainerExprOperands(inExpr->right());
+  std::vector<Expression *> containerOperands;
+  if (inExpr->kind() == Expression::Kind::kRelIn) {
+    containerOperands = getContainerExprOperands(inExpr->right());
+  }
 
   auto operandSize = containerOperands.size();
   // container has only 1 element, no need to transform to logical expression
