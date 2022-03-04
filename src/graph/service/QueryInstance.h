@@ -26,7 +26,7 @@ namespace graph {
 
 class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
  public:
-  explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
+  QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
   ~QueryInstance() = default;
 
   void execute();

@@ -16,10 +16,21 @@ namespace nebula {
 namespace storage {
 class SendBlockSignProcessor {
  public:
+  /**
+   * @brief Construct new SendBlockSignProcessor instance.
+   *
+   * @param env Related environment variables for storage.
+   * @return SendBlockSignProcessor* SendBlockSignProcessor instance.
+   */
   static SendBlockSignProcessor* instance(StorageEnv* env) {
     return new SendBlockSignProcessor(env);
   }
 
+  /**
+   * @brief Entry point for sending block sign.
+   *
+   * @param req Reuqest for sending block sign.
+   */
   void process(const cpp2::BlockingSignRequest& req);
 
   folly::Future<cpp2::BlockingSignResp> getFuture() {

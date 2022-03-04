@@ -111,6 +111,9 @@ Status MatchValidator::validateImpl() {
   return Status::OK();
 }
 
+// Validate match pattern
+// \param path The pattern to be validated
+// \param matchClauseCtx the context of current match clause
 Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   matchClauseCtx.paths.emplace_back();
   NG_RETURN_IF_ERROR(
@@ -121,6 +124,7 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
   return Status::OK();
 }
 
+// Build the path expression to collect data of match pattern.
 Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   auto *pathAlias = path->alias();
   if (pathAlias == nullptr) {
@@ -145,6 +149,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &
   return Status::OK();
 }
 
+// Build nodes information by match pattern.
 Status MatchValidator::buildNodeInfo(const MatchPath *path,
                                      std::vector<NodeInfo> &nodeInfos,
                                      std::unordered_map<std::string, AliasType> &aliases) {
@@ -202,6 +207,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
   return Status::OK();
 }
 
+// Build edges information by match pattern.
 Status MatchValidator::buildEdgeInfo(const MatchPath *path,
                                      std::vector<EdgeInfo> &edgeInfos,
                                      std::unordered_map<std::string, AliasType> &aliases) {
@@ -265,6 +271,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
   return Status::OK();
 }
 
+// Validate filter expression.
+// Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
   auto transformRes = ExpressionUtils::filterTransform(filter);
@@ -289,6 +297,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   return Status::OK();
 }
 
+// Build columns according to symbols in match sentence.
 Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
                                                       YieldColumns *columns) const {
   if (queryParts.empty()) {
@@ -354,6 +363,10 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
   return Status::OK();
 }
 
+// Check validity of return clause.
+// Disable return * without symbols, disable invalid expressions, check aggregate expression,
+// rewrite expression to fit semantic, check available aliases, check columns, check limit and
+// order by options.
 Status MatchValidator::validateReturn(MatchReturn *ret,
                                       const std::vector<QueryPart> &queryParts,
                                       ReturnClauseContext &retClauseCtx) const {
@@ -409,6 +422,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   return Status::OK();
 }
 
+// Validate does aliases in expression available.
 Status MatchValidator::validateAliases(
     const std::vector<const Expression *> &exprs,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
@@ -433,6 +447,7 @@ Status MatchValidator::validateAliases(
   return Status::OK();
 }
 
+// Check validity of step number. e.g. match (v)-[e*2..3]->()
 Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   auto min = range->min();
   auto max = range->max();
@@ -443,6 +458,9 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   return Status::OK();
 }
 
+// Check validity of with clause.
+// Build output columns, rewrite expression to fit semantic, check available aliases,
+// check aggregate expression, check columns, check limit and order by options.
 Status MatchValidator::validateWith(const WithClause *with,
                                     const std::vector<QueryPart> &queryParts,
                                     WithClauseContext &withClauseCtx) const {
@@ -521,6 +539,9 @@ Status MatchValidator::validateWith(const WithClause *with,
   return Status::OK();
 }
 
+// Check validity of unwind clause.
+// Check column must has alias, check can't contains aggregate expression, check alias in expression
+// must be available, check defined alias don't defined before.
 Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
                                       UnwindClauseContext &unwindCtx) const {
   if (unwindClause->alias().empty()) {
@@ -549,6 +570,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
+// Convert map attributes of edge defined in pattern to filter expression and keep origin semantic.
+// e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
 StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
   auto *pool = qctx_->objPool();
   DCHECK(map != nullptr);
@@ -582,6 +605,8 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
   return root;
 }
 
+// Convert map attributes of vertex defined in pattern to filter expression and keep origin
+// semantic. e.g. convert match (v{a:1, b:2}) to  v.a == 1 && v.b == 2
 StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                                          const std::string &label) const {
   auto *pool = qctx_->objPool();
@@ -625,6 +650,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
   return root;
 }
 
+// Connect two expression by AND operator.
 /*static*/ Expression *MatchValidator::andConnect(ObjectPool *pool,
                                                   Expression *left,
                                                   Expression *right) {
@@ -637,6 +663,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
   return LogicalExpression::makeAnd(pool, left, right);
 }
 
+// Combine two set of aliases (current and successor), and disable redefined aliases.
 Status MatchValidator::combineAliases(
     std::unordered_map<std::string, AliasType> &curAliases,
     const std::unordered_map<std::string, AliasType> &lastAliases) const {
@@ -649,6 +676,7 @@ Status MatchValidator::combineAliases(
   return Status::OK();
 }
 
+// Check validity of skip/limit numbers.
 Status MatchValidator::validatePagination(const Expression *skipExpr,
                                           const Expression *limitExpr,
                                           PaginationContext &paginationCtx) const {
@@ -687,6 +715,9 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   return Status::OK();
 }
 
+// Check validity of order by options.
+// Disable duplicate columns,
+// check expression of column (only constant expression and label expression)
 Status MatchValidator::validateOrderBy(const OrderFactors *factors,
                                        const YieldColumns *yieldColumns,
                                        OrderByClauseContext &orderByCtx) const {
@@ -721,6 +752,7 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
   return Status::OK();
 }
 
+// Validate group by and fill group by context.
 Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
   auto cols = yieldCtx.yieldColumns->columns();
   auto *pool = qctx_->objPool();
@@ -770,6 +802,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
   return Status::OK();
 }
 
+// Validate yield clause, check normal yield and group by yield.
 Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
   auto cols = yieldCtx.yieldColumns->columns();
   if (cols.empty()) {
@@ -788,6 +821,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
   }
 }
 
+// Check is alias available and get type of alias.
 StatusOr<AliasType> MatchValidator::getAliasType(
     const std::unordered_map<std::string, AliasType> &aliasesAvailable,
     const std::string &name) const {
@@ -798,6 +832,7 @@ StatusOr<AliasType> MatchValidator::getAliasType(
   return iter->second;
 }
 
+// Check is aliases used in expression available(defined).
 Status MatchValidator::checkAlias(
     const Expression *refExpr,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
@@ -913,6 +948,8 @@ Status MatchValidator::checkAlias(
                                refExpr->toString().c_str());
 }
 
+// Validate yield columns.
+// Fill outputs of whole sentence.
 Status MatchValidator::buildOutputs(const YieldColumns *yields) {
   for (auto *col : yields->columns()) {
     auto colName = col->name();

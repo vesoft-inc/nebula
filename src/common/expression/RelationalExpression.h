@@ -124,7 +124,7 @@ class RelationalExpression final : public BinaryExpression {
   }
 
  private:
-  explicit RelationalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+  RelationalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : BinaryExpression(pool, kind, lhs, rhs) {}
 
  private:

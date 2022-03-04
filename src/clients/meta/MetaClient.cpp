@@ -114,12 +114,6 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-  auto status = verifyVersion();
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return false;
-  }
-
   if (!options_.skipConfig_) {
     std::string gflagsJsonPath;
     GflagsManager::getGflagsModule(gflagsModule_);
@@ -135,6 +129,11 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
 
   if (!isRunning_) {
     LOG(ERROR) << "Connect to the MetaServer Failed";
+    return false;
+  }
+  auto status = verifyVersion();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return false;
   }
 

@@ -13,6 +13,7 @@ namespace graph {
 Status OrderByValidator::validateImpl() {
   auto sentence = static_cast<OrderBySentence *>(sentence_);
   auto &factors = sentence->factors();
+  // Check expression type, collect properties, fill index of order by column in input columns.
   for (auto &factor : factors) {
     if (factor->expr()->kind() == Expression::Kind::kInputProperty) {
       auto expr = static_cast<InputPropertyExpression *>(factor->expr());
@@ -40,6 +41,7 @@ Status OrderByValidator::validateImpl() {
     }
   }
 
+  // only one Input/Variable is ok.
   if (!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) {
     return Status::SemanticError("Not support both input and variable.");
   } else if (!exprProps_.inputProps().empty()) {

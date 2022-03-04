@@ -1568,10 +1568,11 @@ void mockSchemas(kvstore::KVStore* kv) {
                        MetaKeyUtils::schemaVal("test_edge", srcsch));
 
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        baton.post();
+      });
   baton.wait();
 }
 
@@ -2163,7 +2164,6 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     ASSERT_EQ(4, count);
 
     // modify id to 5 for mock some schema
-    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string kId = "__id__";
     int32_t id = 5;
     std::vector<kvstore::KV> data;

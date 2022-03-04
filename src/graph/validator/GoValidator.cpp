@@ -32,6 +32,7 @@ Status GoValidator::validateImpl() {
     return Status::SemanticError("$- must be referred in FROM before used in WHERE or YIELD");
   }
 
+  // Only one variable allowed in whole sentence
   if (!exprProps.varProps().empty()) {
     if (goCtx_->from.fromType != kVariable) {
       return Status::SemanticError(
@@ -60,6 +61,8 @@ Status GoValidator::validateImpl() {
   return Status::OK();
 }
 
+// Validate filter expression, rewrites expression to fit sementic,
+// deduce and check the type of expression, collect properties used in filter.
 Status GoValidator::validateWhere(WhereClause* where) {
   if (where == nullptr) {
     return Status::OK();
@@ -87,6 +90,7 @@ Status GoValidator::validateWhere(WhereClause* where) {
   return Status::OK();
 }
 
+// Validate the step sample/limit clause, which specify the sample/limit number for each steps.
 Status GoValidator::validateTruncate(TruncateClause* truncate) {
   if (truncate == nullptr) {
     return Status::OK();
@@ -119,6 +123,8 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
   return Status::OK();
 }
 
+// Validate yield clause, disable the invalid expression types, rewrites expression to fit sementic,
+// check expression type, collect properties used in yield.
 Status GoValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
@@ -156,6 +162,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
   return Status::OK();
 }
 
+// Get all tag IDs in the whole space
 Status GoValidator::extractTagIds() {
   auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
   NG_RETURN_IF_ERROR(tagStatus);
@@ -176,6 +183,8 @@ void GoValidator::extractPropExprs(const Expression* expr,
   const_cast<Expression*>(expr)->accept(&visitor);
 }
 
+// Rewrites the property expression to corresponding Variable/Input expression
+// which get related property from previous plan node.
 Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   auto matcher = [this](const Expression* e) -> bool {
     return propExprColMap_.find(e->toString()) != propExprColMap_.end();
@@ -189,6 +198,9 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+// Build the final output columns, collect the src/edge and dst properties used in the query,
+// collect the input properties used in the query,
+// rewrites output expression to Input/Variable expression to get properties from previous plan node
 Status GoValidator::buildColumns() {
   const auto& exprProps = goCtx_->exprProps;
   const auto& dstTagProps = exprProps.dstTagProps();
