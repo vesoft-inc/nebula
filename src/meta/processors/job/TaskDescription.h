@@ -32,12 +32,12 @@ namespace nebula {
 namespace meta {
 
 class TaskDescription {
-  FRIEND_TEST(TaskDescriptionTest, ctor);
-  FRIEND_TEST(TaskDescriptionTest, parseKey);
-  FRIEND_TEST(TaskDescriptionTest, parseVal);
-  FRIEND_TEST(TaskDescriptionTest, dump);
-  FRIEND_TEST(TaskDescriptionTest, ctor2);
-  FRIEND_TEST(JobManagerTest, showJob);
+  FRIEND_TEST(TaskDescriptionTest, Ctor);
+  FRIEND_TEST(TaskDescriptionTest, ParseKey);
+  FRIEND_TEST(TaskDescriptionTest, ParseVal);
+  FRIEND_TEST(TaskDescriptionTest, Dump);
+  FRIEND_TEST(TaskDescriptionTest, Ctor2);
+  FRIEND_TEST(JobManagerTest, ShowJob);
   friend class JobManager;
 
  public:

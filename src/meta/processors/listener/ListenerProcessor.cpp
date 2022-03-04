@@ -5,6 +5,7 @@
 
 #include "meta/processors/listener/ListenerProcessor.h"
 
+#include "kvstore/LogEncoder.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -54,7 +55,11 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type),
                       MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
@@ -74,7 +79,6 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
     return;
   }
 
-  std::vector<std::string> keys;
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
@@ -86,11 +90,17 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
   }
 
   auto iter = nebula::value(iterRet).get();
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   while (iter->valid()) {
-    keys.emplace_back(iter->key());
+    auto key = iter->key();
+    batchHolder->remove(key.str());
     iter->next();
   }
-  doSyncMultiRemoveAndUpdate(std::move(keys));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {

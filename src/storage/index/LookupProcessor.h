@@ -13,6 +13,10 @@ namespace nebula {
 namespace storage {
 extern ProcessorCounters kLookupCounters;
 
+/**
+ * @brief processor support index based search (lookup match)
+ *        not compatiable with other processor.
+ */
 class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
  public:
   static LookupProcessor* instance(StorageEnv* env,

@@ -16,7 +16,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
   auto prefix = MetaKeyUtils::schemaTagsPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
-    LOG(ERROR) << "List Tags failed, SpaceID: " << spaceId;
+    LOG(INFO) << "List Tags failed, SpaceID: " << spaceId;
     handleErrorCode(nebula::error(ret));
     onFinished();
     return;

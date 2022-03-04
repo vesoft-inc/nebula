@@ -5,6 +5,8 @@
 
 #include "meta/processors/schema/DropEdgeProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
@@ -28,12 +30,12 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop edge failed :" << edgeName << " not found.";
+        LOG(INFO) << "Drop edge failed :" << edgeName << " not found.";
         retCode = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
       }
     } else {
-      LOG(ERROR) << "Get edgetype failed, edge name " << edgeName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get edgetype failed, edge name " << edgeName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -47,7 +49,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     return;
   }
   if (!nebula::value(indexes).empty()) {
-    LOG(ERROR) << "Drop edge error, index conflict, please delete index first.";
+    LOG(INFO) << "Drop edge error, index conflict, please delete index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -55,8 +57,8 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
-    LOG(ERROR) << "Drop edge error, fulltext index conflict, "
-               << "please delete fulltext index first.";
+    LOG(INFO) << "Drop edge error, fulltext index conflict, "
+              << "please delete fulltext index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -76,9 +78,17 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   }
 
   auto keys = nebula::value(ret);
-  keys.emplace_back(std::move(indexKey));
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  for (auto key : keys) {
+    batchHolder->remove(std::move(key));
+  }
+  batchHolder->remove(std::move(indexKey));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop Edge " << edgeName;
-  doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(
@@ -87,7 +97,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::ge
   auto key = MetaKeyUtils::schemaEdgePrefix(id, edgeType);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "Edge schema prefix failed, edgetype " << edgeType;
+    LOG(INFO) << "Edge schema prefix failed, edgetype " << edgeType;
     return nebula::error(iterRet);
   }
 

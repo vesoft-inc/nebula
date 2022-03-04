@@ -27,7 +27,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
       auto ret = doGet(std::move(partKey));
       if (!nebula::ok(ret)) {
         auto retCode = nebula::error(ret);
-        LOG(ERROR) << "Get part failed, error " << apache::thrift::util::enumNameSafe(retCode);
+        LOG(INFO) << "Get part failed, error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -70,7 +70,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     partItems.emplace_back(std::move(partItem));
   }
   if (partItems.size() != partHostsMap.size()) {
-    LOG(ERROR) << "Maybe lost some partitions!";
+    LOG(INFO) << "Maybe lost some partitions!";
   }
   auto retCode = getLeaderDist(partItems);
   if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -88,7 +88,7 @@ ListPartsProcessor::getAllParts() {
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
