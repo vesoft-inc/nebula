@@ -531,10 +531,7 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
   }
 
   // initialize start expression in node
-  auto* pool = matchClauseCtx->qctx->objPool();
-  auto* args = ArgumentList::make(pool);
-  args->addArgument(InputPropertyExpression::make(pool));
-  auto initialExpr = FunctionCallExpression::make(pool, "id", args);
+  auto initialExpr = InputPropertyExpression::make(matchClauseCtx->qctx->objPool(), kVid);
 
   auto edge = edgeInfos.back();
   bool reversely = true;
