@@ -571,8 +571,9 @@ class NebulaStore : public KVStore, public Handler {
    * @brief clear space data, but not remove the data dirs.
    *
    * @param spaceId space which will be cleared.
+   * @return
    */
-  void clearSpace(GraphSpaceID spaceId) override;
+  nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief Remove a partition, called from part manager

@@ -736,11 +736,6 @@ struct RemovePartReq {
 }
 
 
-struct ClearSpaceReq {
-    1: common.GraphSpaceID space_id,
-}
-
-
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
@@ -841,6 +836,14 @@ struct StopTaskResp {
     1: common.ErrorCode                     code,
 }
 
+struct ClearSpaceReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ClearSpaceResp {
+    1: common.ErrorCode code,
+}
+
 service StorageAdminService {
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
@@ -862,6 +865,8 @@ service StorageAdminService {
 
     AddTaskResp   addAdminTask(1: AddTaskRequest req);
     StopTaskResp  stopAdminTask(1: StopTaskRequest req);
+
+    ClearSpaceResp clearSpace(1: ClearSpaceReq req);
 }
 
 

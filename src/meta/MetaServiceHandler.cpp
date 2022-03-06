@@ -7,6 +7,7 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/admin/AgentHBProcessor.h"
+#include "meta/processors/admin/ClearSpaceProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/DropSnapshotProcessor.h"
@@ -101,7 +102,7 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropSpace(const cpp2::D
 
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_clearSpace(
     const cpp2::ClearSpaceReq& req) {
-  auto* processor = ClearSpaceProcessor::instance(kvstore_);
+  auto* processor = ClearSpaceProcessor::instance(kvstore_, adminClient_.get());
   RETURN_FUTURE(processor);
 }
 

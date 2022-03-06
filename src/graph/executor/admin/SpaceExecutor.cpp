@@ -201,7 +201,6 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
       .thenValue([this, csNode, spaceIdRet, ftIndexes](StatusOr<bool> resp) {
         if (!resp.ok()) {
           LOG(ERROR) << "Clear space `" << csNode->getSpaceName() << "' failed: " << resp.status();
-          // @TODO(zhaohaifei)：which storaged failed.
           return resp.status();
         }
         if (!ftIndexes.empty()) {

@@ -269,28 +269,6 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
       });
 }
 
-folly::Future<Status> AdminClient::clearSpace(GraphSpaceID spaceId, const HostAddr& host) {
-  folly::Promise<Status> pro;
-  auto f = pro.getFuture();
-
-  storage::cpp2::ClearSpaceReq req;
-  req.space_id_ref() = spaceId;
-  getResponseFromHost(
-      Utils::getAdminAddrFromStoreAddr(host),
-      std::move(req),
-      [](auto client, auto request) { return client->future_clearSpace(request); },
-      [](auto&& resp) -> Status {
-        if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return Status::OK();
-        } else {
-          return Status::Error("Remove part failed, code: %s",
-                               apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
-        }
-      },
-      std::move(pro));
-  return f;
-}
-
 folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID partId) {
   storage::cpp2::CheckPeersReq req;
   req.space_id_ref() = spaceId;
@@ -355,6 +333,50 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         }
       });
   return fut;
+}
+
+virtual folly::Future<nebula::cpp2::ErrorCode> AdminClient::clearSpace(
+    GraphSpaceID spaceId, const std::vector<HostAddr>& hosts) {
+  folly::Promise<nebula::cpp2::ErrorCode> promise;
+  auto f = promise.getFuture();
+
+  std::vector<folly::Future<StatusOr<nebula::cpp2::ErrorCode>>> futures;
+  for (auto& host : hosts) {
+    folly::Promise<StatusOr<nebula::cpp2::ErrorCode>> pro;
+    futures.emplace_back(pro.getFuture());
+
+    storage::cpp2::ClearSpaceReq req;
+    req.space_id_ref() = spaceId;
+    getResponseFromHost(
+        Utils::getAdminAddrFromStoreAddr(host),
+        std::move(req),
+        [](auto client, auto request) { return client->future_clearSpace(request); },
+        [](auto&& resp) -> nebula::cpp2::ErrorCode { return resp.get_code(); },
+        std::move(pro));
+  }
+
+  folly::collectAll(std::move(futures))
+      .via(ioThreadPool_.get())
+      .thenTry([pro = std::move(promise)](auto&& futureRet) mutable {
+        if (futureRet.hasException()) {
+          pro.setValue(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+        } else {
+          auto vec = std::move(futureRet).value();
+          bool isAllOk = true;
+          for (auto& v : vec) {
+            auto resp = std::move(v).value();
+            if (!resp.ok()) {
+              pro.setValue(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+              isAllOk = false;
+              break;
+            }
+          }
+          if (isAllOk) {
+            p.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+          }
+        }
+      });
+  return f;
 }
 
 template <typename Request, typename RemoteFunc, typename RespGenerator>

@@ -24,7 +24,7 @@ class ClearSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   void process(const cpp2::ClearSpaceReq& req);
 
  private:
-  explicit ClearSpaceProcessor(kvstore::KVStore* kvstore)
+  explicit ClearSpaceProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
       : BaseProcessor<cpp2::ExecResp>(kvstore), adminClient_(adminClient) {}
 
   /**

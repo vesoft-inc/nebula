@@ -67,8 +67,9 @@ class Handler {
    * @brief clear space data, but not remove the data dirs.
    *
    * @param spaceId space which will be cleared.
+   * @return
    */
-  void clearSpace(GraphSpaceID spaceId) = 0;
+  nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) = 0;
 
   /**
    * @brief Remove a partition
