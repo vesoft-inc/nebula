@@ -69,7 +69,7 @@ class Handler {
    * @param spaceId space which will be cleared.
    * @return
    */
-  nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) = 0;
+  virtual nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) = 0;
 
   /**
    * @brief Remove a partition

@@ -335,8 +335,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
   return fut;
 }
 
-virtual folly::Future<nebula::cpp2::ErrorCode> AdminClient::clearSpace(
-    GraphSpaceID spaceId, const std::vector<HostAddr>& hosts) {
+folly::Future<nebula::cpp2::ErrorCode> AdminClient::clearSpace(GraphSpaceID spaceId,
+                                                               const std::vector<HostAddr>& hosts) {
   folly::Promise<nebula::cpp2::ErrorCode> promise;
   auto f = promise.getFuture();
 
@@ -372,7 +372,7 @@ virtual folly::Future<nebula::cpp2::ErrorCode> AdminClient::clearSpace(
             }
           }
           if (isAllOk) {
-            p.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+            pro.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
           }
         }
       });

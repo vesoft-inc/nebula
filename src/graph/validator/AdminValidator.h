@@ -107,7 +107,7 @@ class ClearSpaceValidator final : public Validator {
   Status validateImpl() override;
 
   Status toPlan() override;
-}
+};
 
 class ShowCreateSpaceValidator final : public Validator {
  public:

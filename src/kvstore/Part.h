@@ -196,6 +196,13 @@ class Part : public raftex::RaftPart {
     reset();
   }
 
+  /**
+   * @brief clean up data in listener, called in RaftPart::reset
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode cleanup() override;
+
  private:
   /**
    * Methods inherited from RaftPart
@@ -289,13 +296,6 @@ class Part : public raftex::RaftPart {
   nebula::cpp2::ErrorCode putCommitMsg(WriteBatch* batch,
                                        LogID committedLogId,
                                        TermID committedLogTerm);
-
-  /**
-   * @brief clean up data in listener, called in RaftPart::reset
-   *
-   * @return nebula::cpp2::ErrorCode
-   */
-  nebula::cpp2::ErrorCode cleanup() override;
 
  public:
   struct CallbackOptions {

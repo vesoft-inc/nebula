@@ -306,7 +306,7 @@ bool ESGraphAdapter::indexCheck(const std::string& ret) const {
   return false;
 }
 
-bool bool ESGraphAdapter::clearCheck(const std::string& ret) const {
+bool ESGraphAdapter::clearCheck(const std::string& ret) const {
   try {
     auto root = folly::parseJson(ret);
     if (root.isArray()) {

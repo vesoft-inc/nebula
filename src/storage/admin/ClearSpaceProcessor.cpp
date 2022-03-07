@@ -14,12 +14,12 @@ namespace storage {
 void ClearSpaceProcessor::process(const cpp2::ClearSpaceReq& req) {
   auto spaceId = req.get_space_id();
   if (FLAGS_store_type != "nebula") {
-    this->resp_.code = nebula::cpp2::ErrorCode::E_INVALID_STORE;
+    this->resp_.code_ref() = nebula::cpp2::ErrorCode::E_INVALID_STORE;
     onFinished();
     return;
   }
   auto* store = static_cast<kvstore::NebulaStore*>(env_->kvstore_);
-  this->resp_.code = store->clearSpace(spaceId);
+  this->resp_.code_ref() = store->clearSpace(spaceId);
   onFinished();
 }
 
