@@ -35,6 +35,43 @@ class MetaDumper {
     std::string prefix;
     {
       LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Meta version:";
+      enum class MetaVersion {
+        UNKNOWN = 0,
+        V1 = 1,
+        V2 = 2,
+        V3 = 3,
+      };
+
+      prefix = "__meta_version__";
+      iter->Seek(rocksdb::Slice(prefix));
+      bool found = false;
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto version = *reinterpret_cast<const MetaVersion*>(iter->value().data());
+        found = true;
+        LOG(INFO) << "Meta version=" << static_cast<int>(version);
+        break;
+      }
+
+      if (!found) {
+        prefix = MetaKeyUtils::hostPrefix();
+        iter->Seek(rocksdb::Slice(prefix));
+        while (iter->Valid() && iter->key().starts_with(prefix)) {
+          found = true;
+          auto v1KeySize = prefix.size() + sizeof(int64_t);
+          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
+          LOG(INFO) << "Meta version=" << static_cast<int>(version);
+          iter->Next();
+          break;
+        }
+
+        if (!found) {
+          LOG(INFO) << "Meta version= Unkown";
+        }
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
       LOG(INFO) << "Space info:";
       prefix = MetaKeyUtils::spacePrefix();
       iter->Seek(rocksdb::Slice(prefix));
