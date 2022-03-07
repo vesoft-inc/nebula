@@ -19,10 +19,9 @@
 #include "storage/GraphStorageLocalServer.h"
 #include "storage/admin/AdminTaskManager.h"
 #include "storage/transaction/TransactionManager.h"
+#include "webservice/WebService.h"
 
 namespace nebula {
-
-class WebService;
 
 namespace storage {
 
@@ -33,8 +32,6 @@ class StorageServer final {
                 std::vector<std::string> dataPaths,
                 std::string walPath = "",
                 std::string listenerPath = "");
-
-  ~StorageServer();
 
   // Return false if failed.
   bool start();
@@ -68,6 +65,26 @@ class StorageServer final {
   int32_t getAdminStoreSeqId();
 
   bool initWebService();
+
+  /**
+   * @brief storage thrift server, mainly for graph query
+   */
+#ifndef BUILD_STANDALONE
+  std::unique_ptr<apache::thrift::ThriftServer> getStorageServer();
+#else
+  std::shared_ptr<GraphStorageLocalServer> getStorageServer();
+#endif
+
+  /**
+   * @brief admin thrift server, mainly for meta to control storage
+   */
+  std::unique_ptr<apache::thrift::ThriftServer> getAdminServer();
+
+  /**
+   * @brief internal thrift server, mainly for toss now
+   */
+  std::unique_ptr<apache::thrift::ThriftServer> getInternalServer();
+
   /**
    * @brief used by all thrift client, and kvstore.
    *        default num is 16
@@ -75,20 +92,12 @@ class StorageServer final {
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
-  std::unique_ptr<std::thread> storageThread_;
-  std::unique_ptr<std::thread> adminThread_;
-  std::atomic<ServiceStatus> storageSvcStatus_{STATUS_UNINITIALIZED};
-  std::atomic<ServiceStatus> adminSvcStatus_{STATUS_UNINITIALIZED};
-
 #ifndef BUILD_STANDALONE
   std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
 #else
   std::shared_ptr<GraphStorageLocalServer> storageServer_;
 #endif
   std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
-
-  std::unique_ptr<std::thread> internalStorageThread_;
-  std::atomic<ServiceStatus> internalStorageSvcStatus_{STATUS_UNINITIALIZED};
   std::unique_ptr<apache::thrift::ThriftServer> internalStorageServer_;
 
   std::unique_ptr<nebula::WebService> webSvc_;
