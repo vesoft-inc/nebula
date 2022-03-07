@@ -10,7 +10,7 @@
 
 namespace nebula {
 namespace graph {
-// The ReturnClausePlanner generate plan for return clause.
+// The ReturnClausePlanner generates plan for return clause.
 class ReturnClausePlanner final : public CypherClausePlanner {
  public:
   ReturnClausePlanner() = default;

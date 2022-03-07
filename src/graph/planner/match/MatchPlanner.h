@@ -11,7 +11,7 @@
 
 namespace nebula {
 namespace graph {
-// MatchPlanner generate plans for Match statement based on AstContext.
+// MatchPlanner generates plans for Match statement based on AstContext.
 class MatchPlanner final : public Planner {
  public:
   static std::unique_ptr<MatchPlanner> make() {

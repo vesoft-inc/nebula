@@ -1611,7 +1611,7 @@ class BiLeftJoin final : public BiJoin {
   void cloneMembers(const BiLeftJoin&);
 };
 
-// Lnner join
+// Inner join
 class BiInnerJoin final : public BiJoin {
  public:
   static BiInnerJoin* make(QueryContext* qctx,

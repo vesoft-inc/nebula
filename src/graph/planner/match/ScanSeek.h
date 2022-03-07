@@ -11,8 +11,7 @@
 
 namespace nebula {
 namespace graph {
-// The ScanSeek find if a plan could get the starting vids in
-// filter.
+// The ScanSeek finds if a plan could get the starting vids in filter.
 class ScanSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<ScanSeek> make() {
