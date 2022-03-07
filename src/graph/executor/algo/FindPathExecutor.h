@@ -13,51 +13,48 @@
 namespace nebula {
 namespace graph {
 class FindPathExecutor final : public Executor {
-public:
- FindPathExecutor(const PlanNode* node, QueryContext* qctx) : Executor("FindPath", node, qctx) {}
+ public:
+  FindPathExecutor(const PlanNode* node, QueryContext* qctx) : Executor("FindPath", node, qctx) {}
 
- folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
- using HistoryPath = std::unordered_map<Value, std::unordered_map<Value, std::vector<const Path*>>>;
- using CurrentPath = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
- using HistoryAllPath = std::unordered_map<Value, std::vector<const Path*>>;
- using CurrentAllPath = std::unordered_map<Value, std::vector<Path>>;
+  // key : dstVid, value : map(key : srcVid, value : <path>)
+  using SPInterimsMap = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
+  using APInterimsMap = std::unordered_map<Value, std::vector<Path>>;
 
-private:
-  std::vector<Path> createPaths(const std::vector<const Path*>& paths, const Edge& edge);
+ private:
+  std::vector<Path> createPaths(const std::vector<Path>& paths, const Edge& edge);
   void buildPath(std::vector<Path>& leftPaths, std::vector<Path>& rightPaths, DataSet& ds);
-  bool conjunctPath(CurrentPath& leftPaths, CurrentPath& rightPaths, DataSet& ds);
-  void setNextStepVidFromPath(CurrentPath& leftPaths, CurrentPath& rightPaths);
+  bool conjunctPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths, DataSet& ds);
+  void setNextStepVidFromPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths);
 
   // shortestPath
   void shortestPathInit();
   void shortestPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds);
-  void doShortestPath(Iterator* iter, CurrentPath& currentPath, bool reverse);
-  void updateHistory(CurrentPath& paths, HistoryPath& historyPaths);
+  void doShortestPath(Iterator* iter, SPInterimsMap& currentPath, bool reverse);
 
   // allpath
+  void allPathInit();
   void allPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds);
-  void doAllPath(Iterator* iter, CurrentAllPath& currentPath, bool reverse);
-  void updateAllHistory(CurrentAllPath& paths, HistoryAllPath& historyPaths);
+  void doAllPath(Iterator* iter, APInterimsMap& currentPath, bool reverse);
+  void printPath(SPInterimsMap& paths);
 
-private:
+ private:
   bool noLoop_{false};
   // current step
-  size_t step_{0};
+  size_t step_{1};
   // total steps
   size_t steps_{0};
   std::string terminationVar_;
   std::unordered_multimap<Value, Value> terminationMap_;
-  // key: dst, value: {key: src, value: paths}
-  HistoryPath historyLeftPaths_;
-  HistoryPath historyRightPaths_;
-  CurrentPath prePaths_;
+  SPInterimsMap historyLeftPaths_;
+  SPInterimsMap historyRightPaths_;
+  SPInterimsMap prePaths_;
 
   // allpath
-  HistoryAllPath historyAllLeftPaths_;
-  HistoryAllPath historyAllRightPaths_;
-  CurrentAllPath preAllPaths_;
+  APInterimsMap historyAllLeftPaths_;
+  APInterimsMap historyAllRightPaths_;
+  APInterimsMap preAllPaths_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -403,6 +403,7 @@ SubPlan PathPlanner::loopDepPlan() {
     auto* project = Project::make(qctx, subPlan.root, columns);
     project->setInputVar(pathCtx_->fromVidsVar);
     project->setOutputVar(pathCtx_->fromVidsVar);
+    project->setColNames({nebula::kVid});
     subPlan.root = project;
   }
   subPlan.tail = subPlan.tail == nullptr ? subPlan.root : subPlan.tail;
@@ -413,6 +414,7 @@ SubPlan PathPlanner::loopDepPlan() {
     auto* project = Project::make(qctx, subPlan.root, columns);
     project->setInputVar(pathCtx_->toVidsVar);
     project->setOutputVar(pathCtx_->toVidsVar);
+    project->setColNames({nebula::kVid});
     subPlan.root = project;
   }
   return subPlan;

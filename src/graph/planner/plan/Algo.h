@@ -72,9 +72,9 @@ private:
 private:
   bool shortest_{false};
   bool noLoop_{false};
-  size_t steps_{0};
   std::string leftVidVar_;
   std::string rightVidVar_;
+  size_t steps_{0};
   std::string terminationVar_;
 };
 

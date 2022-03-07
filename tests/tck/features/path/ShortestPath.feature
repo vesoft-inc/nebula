@@ -1,12 +1,12 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: Shortest Path
 
   Background:
     Given a graph with space named "nba"
 
-  @jmq
   Scenario: [1] SinglePair Shortest Path
     When executing query:
       """
@@ -405,8 +405,19 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like BIDIRECT UPTO 3 STEPS YIELD path as p
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | p |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Yao Ming" TO "Manu Ginobili" OVER * BIDIRECT UPTO 3 STEPS YIELD path AS p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                   |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")<-[:serve]-("Manu Ginobili")>           |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:like]-("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:teammate]-("Manu Ginobili")> |
 
   Scenario: [2] Shortest Path BIDIRECT
     When executing query:
