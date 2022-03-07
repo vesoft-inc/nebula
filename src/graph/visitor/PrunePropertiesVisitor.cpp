@@ -252,14 +252,6 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
-void PrunePropertiesVisitor::visit(Dedup *node) {
-  const auto &colNames = qctx_->symTable()->getVar(node->inputVar())->colNames;
-  for (auto &colName : colNames) {
-    propsUsed_.colsSet.insert(colName);
-  }
-  status_ = depsPruneProperties(node->dependencies());
-}
-
 void PrunePropertiesVisitor::visit(BiJoin *node) {
   for (auto *hashKey : node->hashKeys()) {
     status_ = extractPropsFromExpr(hashKey);
