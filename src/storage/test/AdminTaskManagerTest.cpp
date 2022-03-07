@@ -42,12 +42,17 @@ struct HookableTask : public AdminTask {
   HookableTask() {
     fGenSubTasks = [&]() { return subTasks; };
   }
+
   ErrOrSubTasks genSubTasks() override {
     LOG(INFO) << "HookableTask::genSubTasks() subTasks.size()=" << subTasks.size();
     return fGenSubTasks();
   }
 
-  void addSubTask(std::function<nebula::cpp2::ErrorCode()> subTask) {
+  bool check() override {
+    return true;
+  }
+
+  void addSubTask(TaskFunction subTask) {
     subTasks.emplace_back(subTask);
   }
 

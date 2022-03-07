@@ -23,8 +23,6 @@
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaVersionMan.h"
-#include "meta/http/MetaHttpDownloadHandler.h"
-#include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/stats/MetaStats.h"
@@ -160,22 +158,9 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   return kvstore;
 }
 
-nebula::Status initWebService(nebula::WebService* svc,
-                              nebula::kvstore::KVStore* kvstore,
-                              nebula::hdfs::HdfsCommandHelper* helper,
-                              nebula::thread::GenericThreadPool* pool) {
+nebula::Status initWebService(nebula::WebService* svc, nebula::kvstore::KVStore* kvstore) {
   LOG(INFO) << "Starting Meta HTTP Service";
   auto& router = svc->router();
-  router.get("/download-dispatch").handler([kvstore, helper, pool](PathParams&&) {
-    auto handler = new nebula::meta::MetaHttpDownloadHandler();
-    handler->init(kvstore, helper, pool);
-    return handler;
-  });
-  router.get("/ingest-dispatch").handler([kvstore, pool](PathParams&&) {
-    auto handler = new nebula::meta::MetaHttpIngestHandler();
-    handler->init(kvstore, pool);
-    return handler;
-  });
   router.get("/replace").handler([kvstore](PathParams&&) {
     auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
     handler->init(kvstore);

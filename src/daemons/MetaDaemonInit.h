@@ -17,8 +17,5 @@ nebula::ClusterID& metaClusterId();
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
                                                  nebula::HostAddr localhost);
 
-nebula::Status initWebService(nebula::WebService* svc,
-                              nebula::kvstore::KVStore* kvstore,
-                              nebula::hdfs::HdfsCommandHelper* helper,
-                              nebula::thread::GenericThreadPool* pool);
+nebula::Status initWebService(nebula::WebService* svc, nebula::kvstore::KVStore* kvstore);
 #endif
