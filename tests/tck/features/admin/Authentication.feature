@@ -10,6 +10,7 @@ Feature: Test Authentication
       graphd:password_lock_time_in_secs=5
       """
 
+  @distonly
   Scenario: Test login with invalid password
     When executing query:
       """
@@ -62,6 +63,7 @@ Feature: Test Authentication
       Invalid password, remaining attempts: 4
       """
 
+  @distonly
   Scenario: Test login with invalid password multi users
     When executing query:
       """
@@ -116,3 +118,11 @@ Feature: Test Authentication
     Then the execution should be successful
     When login "graphd[0]" with "user1" and "nebula1"
     Then the execution should be successful
+
+  @distonly
+  Scenario: God can't be granted
+    When executing query:
+      """
+      GRANT ROLE User ON test TO root
+      """
+    Then a SemanticError should be raised at runtime: User 'root' is GOD, cannot be granted.

@@ -14,6 +14,9 @@ namespace storage {
 
 extern ProcessorCounters kGetCounters;
 
+/**
+ * @brief this is a simple get() interface when storage run in KV mode.
+ */
 class GetProcessor : public BaseProcessor<cpp2::KVGetResponse> {
  public:
   static GetProcessor* instance(StorageEnv* env,
@@ -24,7 +27,7 @@ class GetProcessor : public BaseProcessor<cpp2::KVGetResponse> {
   void process(const cpp2::KVGetRequest& req);
 
  protected:
-  explicit GetProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  GetProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::KVGetResponse>(env, counters) {}
 };
 

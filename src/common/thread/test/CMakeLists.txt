@@ -11,7 +11,6 @@ nebula_add_test(
         GenericThreadPoolTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         gtest

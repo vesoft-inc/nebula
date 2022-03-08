@@ -19,7 +19,6 @@
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
-#include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
 #include "common/meta/GflagsManager.h"
@@ -185,7 +184,6 @@ struct MetaClientOptions {
   MetaClientOptions(const MetaClientOptions& opt)
       : localHost_(opt.localHost_),
         clusterId_(opt.clusterId_.load()),
-        inStoraged_(opt.inStoraged_),
         serviceName_(opt.serviceName_),
         skipConfig_(opt.skipConfig_),
         role_(opt.role_),
@@ -197,13 +195,12 @@ struct MetaClientOptions {
   HostAddr localHost_{"", 0};
   // Current cluster Id, it is required by storaged only.
   std::atomic<ClusterID> clusterId_{0};
-  // If current client being used in storaged.
-  bool inStoraged_ = false;
   // Current service name, used in StatsManager
   std::string serviceName_ = "";
   // Whether to skip the config manager
   bool skipConfig_ = false;
-  // Host role(graph/meta/storage) using this client
+  // Host role(graph/meta/storage) using this client, and UNKNOWN role will not send heartbeat, used
+  // for tools such as upgrader
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
@@ -223,8 +220,8 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
   FRIEND_TEST(MetaClientTest, VerifyClientTest);
-  friend class KillQueryMetaWrapper;
   FRIEND_TEST(ChainAddEdgesTest, AddEdgesLocalTest);
+  friend class KillQueryMetaWrapper;
   friend class storage::MetaClientTestUpdater;
 
  public:
@@ -370,25 +367,6 @@ class MetaClient {
   folly::Future<StatusOr<bool>> rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
   folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listEdgeIndexStatus(GraphSpaceID spaceId);
-
-  // Operations for custom kv
-  folly::Future<StatusOr<bool>> multiPut(std::string segment,
-                                         std::vector<std::pair<std::string, std::string>> pairs);
-
-  folly::Future<StatusOr<std::string>> get(std::string segment, std::string key);
-
-  folly::Future<StatusOr<std::vector<std::string>>> multiGet(std::string segment,
-                                                             std::vector<std::string> keys);
-
-  folly::Future<StatusOr<std::vector<std::string>>> scan(std::string segment,
-                                                         std::string start,
-                                                         std::string end);
-
-  folly::Future<StatusOr<bool>> remove(std::string segment, std::string key);
-
-  folly::Future<StatusOr<bool>> removeRange(std::string segment,
-                                            std::string start,
-                                            std::string end);
 
   // Operations for users.
   folly::Future<StatusOr<bool>> createUser(std::string account,
@@ -588,14 +566,6 @@ class MetaClient {
   Status checkEdgeIndexed(GraphSpaceID space, IndexID indexID);
 
   const std::vector<HostAddr>& getAddresses();
-
-  folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
-                                                          TagID tagId,
-                                                          const std::string& field);
-
-  folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
-                                                           EdgeType edgeType,
-                                                           const std::string& field);
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 

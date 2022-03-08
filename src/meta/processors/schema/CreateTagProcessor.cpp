@@ -13,28 +13,26 @@ namespace meta {
 void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
-  {
-    // if there is an edge of the same name
-    // TODO: there exists race condition, we should address it in the future
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-    auto conflictRet = getEdgeType(spaceId, tagName);
-    if (nebula::ok(conflictRet)) {
-      LOG(ERROR) << "Failed to create tag `" << tagName
-                 << "': some edge with the same name already exists.";
-      resp_.id_ref() = to(nebula::value(conflictRet), EntryType::TAG);
-      handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+  const auto& tagName = req.get_tag_name();
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+
+  // Check if the edge with same name exists
+  auto conflictRet = getEdgeType(spaceId, tagName);
+  if (nebula::ok(conflictRet)) {
+    LOG(INFO) << "Failed to create tag `" << tagName
+              << "': some edge with the same name already exists.";
+    resp_.id_ref() = to(nebula::value(conflictRet), EntryType::TAG);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    onFinished();
+    return;
+  } else {
+    auto retCode = nebula::error(conflictRet);
+    if (retCode != nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
+      LOG(INFO) << "Failed to create tag " << tagName << " error "
+                << apache::thrift::util::enumNameSafe(retCode);
+      handleErrorCode(retCode);
       onFinished();
       return;
-    } else {
-      auto retCode = nebula::error(conflictRet);
-      if (retCode != nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
-        LOG(ERROR) << "Failed to create tag " << tagName << " error "
-                   << apache::thrift::util::enumNameSafe(retCode);
-        handleErrorCode(retCode);
-        onFinished();
-        return;
-      }
     }
   }
 
@@ -49,13 +47,12 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   schema.columns_ref() = std::move(columns);
   schema.schema_prop_ref() = req.get_schema().get_schema_prop();
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
   auto ret = getTagId(spaceId, tagName);
   if (nebula::ok(ret)) {
     if (req.get_if_not_exists()) {
       handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     } else {
-      LOG(ERROR) << "Create Tag Failed :" << tagName << " has existed";
+      LOG(INFO) << "Create Tag Failed :" << tagName << " has existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
     }
     resp_.id_ref() = to(nebula::value(ret), EntryType::TAG);
@@ -64,8 +61,8 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   } else {
     auto retCode = nebula::error(ret);
     if (retCode != nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND) {
-      LOG(ERROR) << "Failed to create tag " << tagName << " error "
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Failed to create tag " << tagName << " error "
+                << apache::thrift::util::enumNameSafe(retCode);
       handleErrorCode(retCode);
       onFinished();
       return;
@@ -74,7 +71,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
 
   auto tagRet = autoIncrementIdInSpace(spaceId);
   if (!nebula::ok(tagRet)) {
-    LOG(ERROR) << "Create tag failed : Get tag id failed.";
+    LOG(INFO) << "Create tag failed : Get tag id failed.";
     handleErrorCode(nebula::error(tagRet));
     onFinished();
     return;
@@ -90,7 +87,11 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
 
   resp_.id_ref() = to(tagId, EntryType::TAG);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

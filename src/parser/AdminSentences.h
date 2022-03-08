@@ -154,22 +154,6 @@ class ShowCollationSentence final : public Sentence {
   std::string toString() const override;
 };
 
-class ShowGroupsSentence final : public Sentence {
- public:
-  ShowGroupsSentence() {
-    kind_ = Kind::kShowGroups;
-  }
-  std::string toString() const override;
-};
-
-class ShowZonesSentence final : public Sentence {
- public:
-  ShowZonesSentence() {
-    kind_ = Kind::kShowZones;
-  }
-  std::string toString() const override;
-};
-
 class SpaceOptItem final {
  public:
   using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
@@ -719,8 +703,7 @@ class ShowServiceClientsSentence final : public Sentence {
 
 class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInServiceSentence(const meta::cpp2::ExternalServiceType& type,
-                                 ServiceClientList* clients)
+  SignInServiceSentence(const meta::cpp2::ExternalServiceType& type, ServiceClientList* clients)
       : type_(type) {
     kind_ = Kind::kSignInService;
     clients_.reset(clients);
@@ -813,7 +796,7 @@ class ShowQueriesSentence final : public Sentence {
 
 class QueryUniqueIdentifier final {
  public:
-  explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+  QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
       : epId_(epId), sessionId_(sessionId) {}
 
   Expression* sessionId() const {

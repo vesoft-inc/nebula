@@ -18,18 +18,18 @@ namespace nebula {
 namespace meta {
 
 class JobDescription {
-  FRIEND_TEST(JobDescriptionTest, parseKey);
-  FRIEND_TEST(JobDescriptionTest, parseVal);
-  FRIEND_TEST(JobManagerTest, buildJobDescription);
-  FRIEND_TEST(JobManagerTest, addJob);
+  FRIEND_TEST(JobDescriptionTest, ParseKey);
+  FRIEND_TEST(JobDescriptionTest, ParseVal);
+  FRIEND_TEST(JobManagerTest, BuildJobDescription);
+  FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
-  FRIEND_TEST(JobManagerTest, loadJobDescription);
-  FRIEND_TEST(JobManagerTest, showJobs);
-  FRIEND_TEST(JobManagerTest, showJob);
-  FRIEND_TEST(JobManagerTest, showJobsFromMultiSpace);
-  FRIEND_TEST(JobManagerTest, showJobInOtherSpace);
-  FRIEND_TEST(JobManagerTest, backupJob);
-  FRIEND_TEST(JobManagerTest, recoverJob);
+  FRIEND_TEST(JobManagerTest, LoadJobDescription);
+  FRIEND_TEST(JobManagerTest, ShowJobs);
+  FRIEND_TEST(JobManagerTest, ShowJob);
+  FRIEND_TEST(JobManagerTest, ShowJobsFromMultiSpace);
+  FRIEND_TEST(JobManagerTest, ShowJobInOtherSpace);
+  FRIEND_TEST(JobManagerTest, BackupJob);
+  FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
@@ -45,9 +45,13 @@ class JobDescription {
                  int64_t startTime = 0,
                  int64_t stopTime = 0);
 
-  /*
-   * return the JobDescription if both key & val is valid
-   * */
+  /**
+   * @brief Return the JobDescription if both key & val is valid
+   *
+   * @param key
+   * @param val
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> makeJobDescription(
       folly::StringPiece key, folly::StringPiece val);
 
@@ -55,65 +59,92 @@ class JobDescription {
     return id_;
   }
 
-  /*
-   * return the command for this job. (e.g. compact, flush ...)
-   * */
+  /**
+   * @brief Return the command for this job. (e.g. compact, flush ...)
+   *
+   * @return
+   */
   cpp2::AdminCmd getCmd() const {
     return cmd_;
   }
 
-  /*
-   * return the paras for this job. (e.g. space name for compact/flush)
-   * */
+  /**
+   * @brief Return the paras for this job. (e.g. space name for compact/flush)
+   *
+   * @return
+   */
   std::vector<std::string> getParas() const {
     return paras_;
   }
 
-  /*
-   * return the status (e.g. Queue, running, finished, failed, stopped);
-   * */
+  /**
+   * @brief Return the status (e.g. Queue, running, finished, failed, stopped);
+   *
+   * @return
+   */
   Status getStatus() const {
     return status_;
   }
 
-  /*
-   * return the key write to kv store
-   * */
+  /**
+   * @brief Return the key write to kv store
+   *
+   * @return
+   */
   std::string jobKey() const;
 
-  /*
-   * return the val write to kv store
-   * */
+  /**
+   * @brief Return the val write to kv store
+   *
+   * @return
+   */
   std::string jobVal() const;
 
-  /*
-   * return the key write to kv store, while calling "backup job"
-   * */
+  /**
+   * @brief Return the key write to kv store, while calling "backup job"
+   *
+   * @return
+   */
   std::string archiveKey();
 
-  /*
-   * set the internal status
-   * will check if newStatus is later than curr Status
+  /**
+   * @brief
+   * Set the internal status
+   * Will check if newStatus is later than curr Status
    * e.g. set running to a finished job is forbidden
    *
-   * will set start time if newStatus is running
-   * will set stop time if newStatus is finished / failed / stopped
-   * */
+   * Will set start time if newStatus is running
+   * Will set stop time if newStatus is finished / failed / stopped
+   *
+   * @param newStatus
+   * @param force Set status fored and ignore checking
+   * @return
+   */
   bool setStatus(Status newStatus, bool force = false);
 
-  /*
-   * get a existed job from kvstore, return folly::none if there isn't
-   * */
+  /**
+   * @brief
+   * Get a existed job from kvstore, return folly::none if there isn't
+   *
+   * @param iJob Id of the job we would load
+   * @param kv Where we load the job from
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> loadJobDescription(
       JobID iJob, nebula::kvstore::KVStore* kv);
 
-  /*
-   * compose a key write to kvstore, according to the given job id
-   * */
+  /**
+   * @brief
+   * Compose a key write to kvstore, according to the given job id
+   *
+   * @param iJob
+   * @return
+   */
   static std::string makeJobKey(JobID iJob);
 
-  /*
-   * write out all job details in human readable strings
+  /**
+   * @brief
+   * Write out all job details in human readable strings
    * if a job is
    * =====================================================================================
    * | Job Id(TaskId) | Command(Dest) | Status   | Start Time        | Stop Time
@@ -122,26 +153,39 @@ class JobDescription {
    * | 27             | flush nba     | finished | 12/09/19 11:09:40 | 12/09/19
    * 11:09:40 |
    * -------------------------------------------------------------------------------------
-   * then, the vector should be
+   * Then, the vector should be
    * {27, flush nba, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
-   * */
+   *
+   * @return
+   */
   cpp2::JobDesc toJobDesc();
 
-  /*
-   * decode key from kvstore, return job id
-   * */
+  /**
+   * @brief Decode key from kvstore, return job id
+   *
+   * @param rawKey
+   * @return
+   */
   static int32_t parseKey(const folly::StringPiece& rawKey);
 
-  /*
-   * decode val from kvstore, return
+  /**
+   * @brief
+   * Decode val from kvstore, return
    * {command, paras, status, start time, stop time}
-   * */
+   *
+   * @param rawVal
+   * @return
+   */
   static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> parseVal(
       const folly::StringPiece& rawVal);
 
-  /*
-   * check if the given rawKey is a valid JobKey
-   * */
+  /**
+   * @brief
+   * Check if the given rawKey is a valid JobKey
+   *
+   * @param rawKey
+   * @return
+   */
   static bool isJobKey(const folly::StringPiece& rawKey);
 
   bool operator==(const JobDescription& that) const {
@@ -154,10 +198,15 @@ class JobDescription {
 
  private:
   static bool isSupportedValue(const folly::StringPiece& val);
-  /*
-   * decode val if it stored in data ver.1, return
+
+  /**
+   * @brief
+   * Decode val if it stored in data ver.1, return
    * {command, paras, status, start time, stop time}
-   * */
+   *
+   * @param rawVal
+   * @return
+   */
   static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> decodeValV1(
       const folly::StringPiece& rawVal);
 

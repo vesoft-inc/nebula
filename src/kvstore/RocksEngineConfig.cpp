@@ -50,6 +50,10 @@ DEFINE_int64(rocksdb_block_cache,
              1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
+DEFINE_bool(disable_page_cache,
+            false,
+            "Disable page cache to better control memory used by rocksdb.");
+
 DEFINE_int32(rocksdb_row_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 
 DEFINE_int32(cache_bucket_exp, 8, "Total buckets number is 1 << cache_bucket_exp");
@@ -123,9 +127,9 @@ DEFINE_bool(rocksdb_enable_kv_separation,
             "Whether or not to enable BlobDB (RocksDB key-value separation support)");
 
 DEFINE_uint64(rocksdb_kv_separation_threshold,
-              0,
-              "RocksDB key value separation threshold. Values at or above this threshold will be "
-              "written to blob files during flush or compaction."
+              100,
+              "RocksDB key value separation threshold in bytes. Values at or above this threshold "
+              "will be written to blob files during flush or compaction."
               "This value is only effective when enable_kv_separation is true.");
 
 DEFINE_string(rocksdb_blob_compression,
@@ -271,6 +275,10 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
   s = initRocksdbKVSeparation(baseOpts);
   if (!s.ok()) {
     return s;
+  }
+
+  if (FLAGS_disable_page_cache) {
+    baseOpts.use_direct_reads = true;
   }
 
   if (FLAGS_num_compaction_threads > 0) {

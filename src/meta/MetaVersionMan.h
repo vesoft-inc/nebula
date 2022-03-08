@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -27,20 +28,22 @@ class MetaVersionMan final {
  public:
   MetaVersionMan() = delete;
 
+  /**
+   * @brief Get meta version
+   *
+   * @param kv
+   * @return
+   */
   static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
 
-  static bool setMetaVersionToKV(kvstore::KVStore* kv, MetaVersion version);
+  static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
 
-  static Status updateMetaV1ToV2(kvstore::KVStore* kv);
-
-  static Status updateMetaV2ToV3(kvstore::KVStore* kv);
+  static Status updateMetaV2ToV3(kvstore::KVEngine* engine);
 
  private:
   static MetaVersion getVersionByHost(kvstore::KVStore* kv);
 
-  static Status doUpgradeV1ToV2(kvstore::KVStore* kv);
-
-  static Status doUpgradeV2ToV3(kvstore::KVStore* kv);
+  static Status doUpgradeV2ToV3(kvstore::KVEngine* engine);
 };
 
 }  // namespace meta

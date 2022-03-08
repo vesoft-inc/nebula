@@ -10,6 +10,11 @@
 
 namespace nebula {
 namespace meta {
+
+/**
+ * @brief Alter space properties, only support altering zones now.
+ *
+ */
 class AlterSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AlterSpaceProcessor* instance(kvstore::KVStore* kvstore) {

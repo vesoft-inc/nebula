@@ -28,7 +28,7 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
   future.wait();
   if (!future.value().ok()) {
-    LOG(ERROR) << future.value().toString();
+    LOG(INFO) << future.value().toString();
     rc = nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
   }
   return rc;

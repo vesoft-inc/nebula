@@ -10,7 +10,6 @@
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/BalanceJobExecutor.h"
@@ -33,7 +32,7 @@ ErrOrHosts StorageJobExecutor::getTargetHost(GraphSpaceID spaceId) {
   const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Fetch Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Fetch Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -59,8 +58,8 @@ ErrOrHosts StorageJobExecutor::getLeaderHost(GraphSpaceID space) {
   std::unique_ptr<kvstore::KVIterator> leaderIter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get space " << space
-               << "'s part failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get space " << space
+              << "'s part failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
@@ -90,8 +89,8 @@ ErrOrHosts StorageJobExecutor::getListenerHost(GraphSpaceID space, cpp2::Listene
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get space " << space
-               << "'s listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
+    LOG(INFO) << "Get space " << space
+              << "'s listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
 
@@ -110,7 +109,7 @@ ErrOrHosts StorageJobExecutor::getListenerHost(GraphSpaceID space, cpp2::Listene
     auto host = MetaKeyUtils::deserializeHostAddr(iter->val());
     auto part = MetaKeyUtils::parseListenerPart(iter->key());
     if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
-      LOG(ERROR) << "Invalid host : " << network::NetworkUtils::toHostsStr({host});
+      LOG(INFO) << "Invalid host : " << network::NetworkUtils::toHostsStr({host});
       return nebula::cpp2::ErrorCode::E_INVALID_HOST;
     }
     auto it = std::find_if(
@@ -146,7 +145,7 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
   }
 
   if (!nebula::ok(addressesRet)) {
-    LOG(ERROR) << "Can't get hosts";
+    LOG(INFO) << "Can't get hosts";
     return nebula::error(addressesRet);
   }
 
@@ -166,28 +165,27 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
         });
     baton.wait();
     if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
+      LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
       return rc;
     }
   }
 
   std::vector<folly::SemiFuture<Status>> futures;
   for (auto& address : addresses) {
-    // transform to the admin host
-    auto h = Utils::getAdminAddrFromStoreAddr(address.first);
-    futures.emplace_back(executeInternal(std::move(h), std::move(address.second)));
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    futures.emplace_back(executeInternal(std::move(address.first), std::move(address.second)));
   }
 
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
   auto tries = folly::collectAll(std::move(futures)).get();
   for (auto& t : tries) {
     if (t.hasException()) {
-      LOG(ERROR) << t.exception().what();
+      LOG(INFO) << t.exception().what();
       rc = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
       continue;
     }
     if (!t.value().ok()) {
-      LOG(ERROR) << t.value().toString();
+      LOG(INFO) << t.value().toString();
       rc = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
       continue;
     }

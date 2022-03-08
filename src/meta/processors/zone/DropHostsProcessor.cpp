@@ -11,26 +11,23 @@ namespace nebula {
 namespace meta {
 
 void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::WriteHolder lockHolder(LockUtils::lock());
   auto hosts = req.get_hosts();
   if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
-    LOG(ERROR) << "Hosts have duplicated element";
+    LOG(INFO) << "Hosts have duplicated element";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
   if (hosts.empty()) {
-    LOG(ERROR) << "Hosts is empty";
+    LOG(INFO) << "Hosts is empty";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
   std::vector<std::string> data;
-  // std::vector<kvstore::KV> rewriteData;
-
   auto holder = std::make_unique<kvstore::BatchHolder>();
   // Check that partition is not held on the host
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
@@ -43,8 +40,8 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     auto ret = doGet(spaceKey);
     if (!nebula::ok(ret)) {
       code = nebula::error(ret);
-      LOG(ERROR) << "Get Space " << spaceId
-                 << " error: " << apache::thrift::util::enumNameSafe(code);
+      LOG(INFO) << "Get Space " << spaceId
+                << " error: " << apache::thrift::util::enumNameSafe(code);
       break;
     }
 
@@ -55,7 +52,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
       auto partHosts = MetaKeyUtils::parsePartVal(partIter->val());
       for (auto& h : partHosts) {
         if (std::find(hosts.begin(), hosts.end(), h) != hosts.end()) {
-          LOG(ERROR) << h << " is related with partition";
+          LOG(INFO) << h << " is related with partition";
           code = nebula::cpp2::ErrorCode::E_CONFLICT;
           break;
         }
@@ -76,7 +73,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -94,7 +91,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
       LOG(INFO) << "Drop zone " << zoneName;
       code = checkRelatedSpaceAndCollect(zoneName, holder.get());
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Check related space failed";
+        LOG(INFO) << "Check related space failed";
         break;
       }
 
@@ -127,7 +124,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
     auto ret = machineExist(machineKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "The machine " << host << " not existed!";
+      LOG(INFO) << "The machine " << host << " not existed!";
       code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }
@@ -136,11 +133,10 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     auto hostKey = MetaKeyUtils::hostKey(host.host, host.port);
     ret = hostExist(hostKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "The host " << host << " not existed!";
-      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
-      break;
+      LOG(INFO) << "The host " << host << " not existed!";
+    } else {
+      holder->remove(std::move(hostKey));
     }
-    holder->remove(std::move(hostKey));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -160,7 +156,7 @@ nebula::cpp2::ErrorCode DropHostsProcessor::checkRelatedSpaceAndCollect(
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   }
 
@@ -173,7 +169,7 @@ nebula::cpp2::ErrorCode DropHostsProcessor::checkRelatedSpaceAndCollect(
     auto it = std::find(zones.begin(), zones.end(), zoneName);
     if (it != zones.end()) {
       if (zones.size() == replicaFactor) {
-        LOG(ERROR) << "Zone size is same with replica factor";
+        LOG(INFO) << "Zone size is same with replica factor";
         return nebula::cpp2::ErrorCode::E_CONFLICT;
       } else {
         zones.erase(it);

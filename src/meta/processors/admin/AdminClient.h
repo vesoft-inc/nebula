@@ -20,7 +20,6 @@ namespace meta {
 
 using HostLeaderMap =
     std::unordered_map<HostAddr, std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
-using HandleResultOpt = folly::Optional<std::function<void(storage::cpp2::AdminExecResp&&)>>;
 
 static const HostAddr kRandomPeer("", 0);
 
@@ -43,92 +42,265 @@ class AdminClient {
     return ioThreadPool_.get();
   }
 
+  /**
+   * @brief If it is a partition with only one replica, return succeed if src is the only host.
+   *        If it is a partition with multiple replicas:
+   *            1. If src is not the leader, return succeed
+   *            2. If src is the leader, try to transfer to another peer specified by dst
+   *
+   * @param spaceId
+   * @param partId
+   * @param leader
+   * @param dst
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                             PartitionID partId,
-                                            const HostAddr& leader,
+                                            const HostAddr& src,
                                             const HostAddr& dst = kRandomPeer);
 
+  /**
+   * @brief Open a new partition on specified host. The rpc will be sent to the new partition peer,
+   *        letting it know the other peers.
+   *
+   * @param spaceId
+   * @param partId
+   * @param host
+   * @param asLearner Whether the partition start only as raft learner
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> addPart(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const HostAddr& host,
                                         bool asLearner);
 
+  /**
+   * @brief Add a learner for given partition. The rpc will be sent to
+   *        the partition leader, writting the add event as a log.
+   *
+   * @param spaceId
+   * @param partId
+   * @param learner
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> addLearner(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& learner);
 
+  /**
+   * @brief Waiting for give partition peer catching data
+   *
+   * @param spaceId
+   * @param partId
+   * @param target partition peer address
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
                                                       PartitionID partId,
                                                       const HostAddr& target);
 
   /**
-   * Add/Remove one peer for raft group (spaceId, partId).
-   * "added" should be true if we want to add one peer, otherwise it is false.
-   * */
+   * @brief Add/Remove one peer for partition (spaceId, partId). The rpc will be sent to the
+   *        partition leader. "added" should be true if we want to add one peer, otherwise it is
+   *        false.
+   *
+   * @param spaceId
+   * @param partId
+   * @param peer
+   * @param added
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> memberChange(GraphSpaceID spaceId,
                                              PartitionID partId,
                                              const HostAddr& peer,
                                              bool added);
 
+  /**
+   * @brief Update partition peers info in meta kvstore, remove peer 'src', add peer 'dst'
+   *
+   * @param spaceId
+   * @param partId
+   * @param src
+   * @param dst
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> updateMeta(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           const HostAddr& leader,
+                                           const HostAddr& src,
                                            const HostAddr& dst);
 
+  /**
+   * @brief Remove partition peer in given storage host
+   *
+   * @param spaceId
+   * @param partId
+   * @param host storage admin service address
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> removePart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host);
 
+  /**
+   * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
+   *
+   * @param spaceId
+   * @param partId
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> checkPeers(GraphSpaceID spaceId, PartitionID partId);
 
+  /**
+   * @brief Get the all partitions' leader distribution
+   *
+   * @param result
+   * @return folly::Future<Status>
+   */
   virtual folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
+  // used for snapshot and backup
+  /**
+   * @brief Create snapshots for given spaces in given host with specified snapshot name
+   *
+   * @param spaceIds spaces to create snapshot
+   * @param name snapshot name
+   * @param host storage host
+   * @return folly::Future<StatusOr<cpp2::HostBackupInfo>>
+   */
   virtual folly::Future<StatusOr<cpp2::HostBackupInfo>> createSnapshot(
       const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host);
 
-  virtual folly::Future<Status> dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
-                                             const std::string& name,
-                                             const HostAddr& host);
+  /**
+   * @brief Drop snapshots of given spaces in given host with specified snapshot name
+   *
+   * @param spaceIds spaces to drop
+   * @param name snapshot name
+   * @param host storage host
+   * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
+   */
+  virtual folly::Future<StatusOr<bool>> dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
+                                                     const std::string& name,
+                                                     const HostAddr& host);
 
-  virtual folly::Future<Status> blockingWrites(const std::set<GraphSpaceID>& spaceIds,
-                                               storage::cpp2::EngineSignType sign,
-                                               const HostAddr& host);
+  /**
+   * @brief Blocking/Allowing writings to given spaces in specified storage host
+   *
+   * @param spaceIds
+   * @param sign BLOCK_ON: blocking, BLOCK_OFF: allowing
+   * @param host
+   * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
+   */
+  virtual folly::Future<StatusOr<bool>> blockingWrites(const std::set<GraphSpaceID>& spaceIds,
+                                                       storage::cpp2::EngineSignType sign,
+                                                       const HostAddr& host);
 
-  virtual folly::Future<Status> addTask(cpp2::AdminCmd cmd,
-                                        int32_t jobId,
-                                        int32_t taskId,
-                                        GraphSpaceID spaceId,
-                                        const std::vector<HostAddr>& specificHosts,
-                                        const std::vector<std::string>& taskSpecficParas,
-                                        std::vector<PartitionID> parts,
-                                        int concurrency,
-                                        cpp2::StatsItem* statsResult = nullptr);
+  /**
+   * @brief Add storage admin task to given storage host
+   *
+   * @param cmd
+   * @param jobId
+   * @param taskId
+   * @param spaceId
+   * @param host Target host to add task
+   * @param taskSpecficParas
+   * @param parts
+   * @param concurrency
+   * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
+   */
+  virtual folly::Future<StatusOr<bool>> addTask(cpp2::AdminCmd cmd,
+                                                int32_t jobId,
+                                                int32_t taskId,
+                                                GraphSpaceID spaceId,
+                                                const HostAddr& host,
+                                                const std::vector<std::string>& taskSpecficParas,
+                                                std::vector<PartitionID> parts,
+                                                int concurrency);
 
-  virtual folly::Future<Status> stopTask(const std::vector<HostAddr>& target,
-                                         int32_t jobId,
-                                         int32_t taskId);
+  /**
+   * @brief Stop stoarge admin task in given storage host
+   *
+   * @param host Target storage host to stop job
+   * @param jobId
+   * @param taskId
+   * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
+   */
+  virtual folly::Future<StatusOr<bool>> stopTask(const HostAddr& host,
+                                                 int32_t jobId,
+                                                 int32_t taskId);
 
  private:
+  /**
+   * @brief Send the rpc request to a storage node, the operation is only related to one partition
+   *
+   * @tparam Request RPC request type
+   * @tparam RemoteFunc Client's RPC function
+   * @tparam RespGenerator The result generator based on RPC response
+   * @param host Admin ip:port of storage node
+   * @param req RPC request
+   * @param remoteFunc Client's RPC function
+   * @param respGen The result generator based on RPC response
+   * @return folly::Future<Status>
+   */
   template <class Request, class RemoteFunc, class RespGenerator>
-  folly::Future<Status> getResponse(const HostAddr& host,
-                                    Request req,
-                                    RemoteFunc remoteFunc,
-                                    RespGenerator respGen);
+  folly::Future<Status> getResponseFromPart(const HostAddr& host,
+                                            Request req,
+                                            RemoteFunc remoteFunc,
+                                            RespGenerator respGen);
 
+  /**
+   * @brief Send the rpc request to a storage node, the operation is only realted to the spaces,
+   *        does not have affect on a partition. It may also return extra infomations, so return
+   *        StatusOr<Response> is necessary
+   *
+   * @tparam Request RPC request type
+   * @tparam RemoteFunc Client's RPC function
+   * @tparam RespGenerator The result generator based on RPC response
+   * @tparam RpcResponse RPC response
+   * @tparam Response The result type
+   * @param host Admin ip:port of storage node
+   * @param req RPC request
+   * @param remoteFunc Client's RPC function
+   * @param respGen The result generator based on RPC response
+   * @param pro The promise of result
+   */
+  template <class Request,
+            class RemoteFunc,
+            class RespGenerator,
+            class RpcResponse = typename std::result_of<
+                RemoteFunc(std::shared_ptr<storage::cpp2::StorageAdminServiceAsyncClient>,
+                           Request)>::type::value_type,
+            class Response = typename std::result_of<RespGenerator(RpcResponse)>::type>
+  void getResponseFromHost(const HostAddr& host,
+                           Request req,
+                           RemoteFunc remoteFunc,
+                           RespGenerator respGen,
+                           folly::Promise<StatusOr<Response>> pro);
+
+  /**
+   * @brief Send the rpc request to a storage node, the operation is only related to one partition
+   *        and **it need to be exuecuted on leader**
+   *
+   * @tparam Request RPC request type
+   * @tparam RemoteFunc Client's RPC function
+   * @param host Admin ip:port of storage nodes which has the partition
+   * @param index The index of storage node in `hosts`, the rpc will be sent to the node
+   * @param req RPC request
+   * @param remoteFunc Client's RPC function
+   * @param retry Current retry times
+   * @param pro Promise of result
+   * @param retryLimit Max retry times
+   */
   template <typename Request, typename RemoteFunc>
-  void getResponse(std::vector<HostAddr> hosts,
-                   int32_t index,
-                   Request req,
-                   RemoteFunc remoteFunc,
-                   int32_t retry,
-                   folly::Promise<Status> pro,
-                   int32_t retryLimit,
-                   HandleResultOpt respGen = folly::none);
+  void getResponseFromLeader(std::vector<HostAddr> hosts,
+                             int32_t index,
+                             Request req,
+                             RemoteFunc remoteFunc,
+                             int32_t retry,
+                             folly::Promise<Status> pro,
+                             int32_t retryLimit);
 
-  void getLeaderDist(const HostAddr& host,
-                     folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>>&& pro,
-                     int32_t retry,
-                     int32_t retryLimit);
+  folly::Future<StatusOr<std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>> getLeaderDist(
+      const HostAddr& host);
 
   Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 

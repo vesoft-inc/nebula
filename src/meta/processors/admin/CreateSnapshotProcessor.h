@@ -6,14 +6,16 @@
 #ifndef META_CREATESNAPSHOTPROCESSOR_H_
 #define META_CREATESNAPSHOTPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create snapshot for all spaces, will deprecated when backup ready
+ *
+ */
 class CreateSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateSnapshotProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
@@ -21,6 +23,11 @@ class CreateSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
   }
   void process(const cpp2::CreateSnapshotReq& req);
 
+  /**
+   * @brief Cancel write blocking when create snapshot failed
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode cancelWriteBlocking();
 
  private:

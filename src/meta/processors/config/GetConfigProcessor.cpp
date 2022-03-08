@@ -15,7 +15,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   do {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+    folly::SharedMutex::ReadHolder holder(LockUtils::lock());
     if (module != cpp2::ConfigModule::ALL) {
       code = getOneConfig(module, name, items);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -50,8 +50,8 @@ nebula::cpp2::ErrorCode GetConfigProcessor::getOneConfig(const cpp2::ConfigModul
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_CONFIG_NOT_FOUND;
     }
-    LOG(ERROR) << "Get config " << name
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get config " << name
+              << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

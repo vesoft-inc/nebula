@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_BASEPROCESSOR_INL_H
+#define STORAGE_BASEPROCESSOR_INL_H
 
 #include "storage/BaseProcessor.h"
 
@@ -117,23 +118,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
-nebula::cpp2::ErrorCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
-                                                       PartitionID partId,
-                                                       std::vector<kvstore::KV>&& data) {
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  env_->kvstore_->asyncMultiPut(
-      spaceId, partId, std::move(data), [&ret, &baton](nebula::cpp2::ErrorCode code) {
-        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-          ret = code;
-        }
-        baton.post();
-      });
-  baton.wait();
-  return ret;
-}
-
-template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    std::vector<std::string>&& keys) {
@@ -215,3 +199,4 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
 
 }  // namespace storage
 }  // namespace nebula
+#endif

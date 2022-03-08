@@ -47,7 +47,7 @@ struct Variable {
   std::unordered_set<PlanNode*> writtenBy;
 
   // the count of use the variable
-  std::atomic<uint64_t> userCount;
+  std::atomic<uint64_t> userCount{0};
 };
 
 class SymbolTable final {

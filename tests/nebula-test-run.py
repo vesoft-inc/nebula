@@ -152,6 +152,52 @@ def start_nebula(nb, configs):
         f.write(json.dumps(data))
     print('Start nebula successfully')
 
+def start_standalone(nb, configs):
+    if configs.address is not None and configs.address != "":
+        print('test remote nebula graph, address is {}'.format(configs.address))
+        if len(configs.address.split(':')) != 2:
+            raise Exception('Invalid address, address is {}'.format(configs.address))
+        address, port = configs.address.split(':')
+        ports = [int(port)]
+    else:
+        print('Start standalone version')
+        nb.install_standalone()
+        address = "localhost"
+        ports = nb.start_standalone()
+
+    is_graph_ssl = opt_is(configs.enable_ssl, "true") or opt_is(
+        configs.enable_graph_ssl, "true"
+    )
+    ca_signed = opt_is(configs.enable_ssl, "true")
+    # Load csv data
+    pool = get_conn_pool(address, ports[0], get_ssl_config(is_graph_ssl, ca_signed))
+    sess = pool.get_session(configs.user, configs.password)
+
+    if not os.path.exists(TMP_DIR):
+        os.mkdir(TMP_DIR)
+
+    with open(SPACE_TMP_PATH, "w") as f:
+        spaces = []
+        folder = os.path.join(CURR_PATH, "data")
+        for space in os.listdir(folder):
+            if not os.path.exists(os.path.join(folder, space, "config.yaml")):
+                continue
+            data_dir = os.path.join(folder, space)
+            space_desc = load_csv_data(sess, data_dir, space)
+            spaces.append(space_desc.__dict__)
+        f.write(json.dumps(spaces))
+
+    with open(NB_TMP_PATH, "w") as f:
+        data = {
+            "ip": "localhost",
+            "port": ports,
+            "work_dir": nb.work_dir,
+            "enable_ssl": configs.enable_ssl,
+            "enable_graph_ssl": configs.enable_graph_ssl,
+            "ca_signed": configs.ca_signed,
+        }
+        f.write(json.dumps(data))
+    print('Start standalone successfully')
 
 def stop_nebula(nb, configs=None):
     if configs.address is not None and configs.address != "":
@@ -174,11 +220,18 @@ if __name__ == "__main__":
         parser = init_parser()
         (configs, opts) = parser.parse_args()
 
+        if opt_is(configs.cmd, "start_standalone"):
+            graphd_inst = 1
+            is_standalone = True
+        else:
+            graphd_inst = 2
+            is_standalone = False
+
         # Setup nebula graph service
         nebula_svc = NebulaService(
             configs.build_dir,
             NEBULA_HOME,
-            graphd_num=2,
+            graphd_num=graphd_inst,
             storaged_num=1,
             debug_log=opt_is(configs.debug, "true"),
             ca_signed=opt_is(configs.ca_signed, "true"),
@@ -186,12 +239,15 @@ if __name__ == "__main__":
             enable_graph_ssl=configs.enable_graph_ssl,
             enable_meta_ssl=configs.enable_meta_ssl,
             containerized=configs.containerized,
+            use_standalone=is_standalone
         )
 
         if opt_is(configs.cmd, "start"):
             start_nebula(nebula_svc, configs)
         elif opt_is(configs.cmd, "stop"):
             stop_nebula(nebula_svc, configs)
+        elif opt_is(configs.cmd, "start_standalone"):
+            start_standalone(nebula_svc, configs)
         else:
             raise ValueError(f"Invalid parser args: {configs.cmd}")
     except Exception as x:

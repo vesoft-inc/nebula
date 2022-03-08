@@ -955,7 +955,6 @@ Feature: subgraph
       | b         |
       | <[edge1]> |
       | <[edge2]> |
-      | []        |
     When executing query:
       """
       GET SUBGRAPH WITH PROP FROM 'Tony Parker' BOTH like YIELD edges as a, vertices as b
@@ -1033,28 +1032,3 @@ Feature: subgraph
     Then the result should be, in any order, with relax comparison:
       | nodes     | relationships |
       | [("Tom")] | []            |
-      | []        | []            |
-
-  Scenario: Get subgraph in a space which doesn't have edge schema
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(20) |
-    And having executed:
-      """
-      CREATE TAG IF NOT EXISTS person(name string);
-      """
-    When try to execute query:
-      """
-      INSERT VERTEX person VALUES "Tom":("Tom")
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      GET SUBGRAPH 1 STEPS FROM "Tom" YIELD vertices as nodes, edges as relationships
-      """
-    Then the result should be, in any order, with relax comparison:
-      | nodes     | relationships |
-      | [("Tom")] | []            |
-      | []        | []            |

@@ -22,6 +22,9 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
 
 void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
   spaceId_ = req.get_space_id();
+  // Negative number means no limit
+  const auto rawLimit = req.limit_ref().value_or(-1);
+  limit_ = rawLimit < 0 ? std::numeric_limits<int64_t>::max() : rawLimit;
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (auto& p : req.get_parts()) {
@@ -61,8 +64,8 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
         auto vId = row.values[0].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-          LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                     << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+          LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
           pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           onFinished();
           return;
@@ -89,9 +92,9 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
-          LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                     << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                     << ", dstVid: " << *edgeKey.dst_ref();
+          LOG(INFO) << "Space " << spaceId_ << " vertex length invalid, "
+                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
+                    << ", dstVid: " << *edgeKey.dst_ref();
           pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           onFinished();
           return;
@@ -152,8 +155,8 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
         auto vId = row.values[0].getStr();
 
         if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-          LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                     << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+          LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
           return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         }
 
@@ -174,9 +177,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
 
         if (!NebulaKeyUtils::isValidVidLen(
                 spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
-          LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                     << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                     << ", dstVid: " << *edgeKey.dst_ref();
+          LOG(INFO) << "Space " << spaceId_ << " vertex length invalid, "
+                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
+                    << ", dstVid: " << *edgeKey.dst_ref();
           return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         }
 
@@ -199,7 +202,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
     tags.emplace_back(tag.get());
     plan.addNode(std::move(tag));
   }
-  auto output = std::make_unique<GetTagPropNode>(context, tags, result);
+  auto output = std::make_unique<GetTagPropNode>(context, tags, result, filter_, limit_);
   for (auto* tag : tags) {
     output->addDependency(tag);
   }
@@ -216,7 +219,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* conte
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
-  auto output = std::make_unique<GetEdgePropNode>(context, edges, result);
+  auto output = std::make_unique<GetEdgePropNode>(context, edges, result, filter_, limit_);
   for (auto* edge : edges) {
     output->addDependency(edge);
   }
@@ -248,14 +251,28 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildTagContext(req);
+    code = buildTagContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
   } else {
     code = getSpaceEdgeSchema();
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildEdgeContext(req);
+    code = buildEdgeContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
   }
+  code = buildFilter(req, [](const cpp2::GetPropRequest& r) -> const std::string* {
+    if (r.filter_ref().has_value()) {
+      return r.get_filter();
+    } else {
+      return nullptr;
+    }
+  });
+  return code;
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {

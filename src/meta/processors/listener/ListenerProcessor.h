@@ -11,6 +11,13 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Add typed listeners for given space, assign one listener for each part round robin.
+ *        Notice that in each space, listeners could be only added once now.
+ *        But, of course, you could remove them and re-add new ones.
+ *        It will use heartbeat to instruct the relative storaged to add listeners physically.
+ *
+ */
 class AddListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AddListenerProcessor* instance(kvstore::KVStore* kvstore) {
@@ -24,6 +31,10 @@ class AddListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief Remove added listener information. Return failed if not found.
+ *
+ */
 class RemoveListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RemoveListenerProcessor* instance(kvstore::KVStore* kvstore) {
@@ -37,6 +48,11 @@ class RemoveListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
+/**
+ * @brief List all listeners for given spaces and listener type.
+ *        And will fill the listener ative state.
+ *
+ */
 class ListListenerProcessor : public BaseProcessor<cpp2::ListListenerResp> {
  public:
   static ListListenerProcessor* instance(kvstore::KVStore* kvstore) {

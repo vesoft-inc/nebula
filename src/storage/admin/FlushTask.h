@@ -14,10 +14,18 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Task class to handle storage flush task.
+ *
+ */
 class FlushTask : public AdminTask {
  public:
   FlushTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
-
+  /**
+   * @brief Generage subtasks for flushing.
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 };
 

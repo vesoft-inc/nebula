@@ -23,31 +23,40 @@ namespace meta {
 
 meta::MetaHttpReplaceHostHandler* gHandler = nullptr;
 kvstore::KVStore* gKVStore = nullptr;
-std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore);
+std::set<std::string> gHosts;
+std::set<std::string> dumpHosts(kvstore::KVStore* kvstore);
 
 class MetaHttpReplaceHandlerTestEnv : public ::testing::Environment {
  public:
   void SetUp() override {
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     LOG(INFO) << "Starting web service...";
-
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpReplaceHandler.XXXXXX");
     kv_ = MockCluster::initMetaKV(rootPath_->path());
-    TestUtils::createSomeHosts(kv_.get());
-    TestUtils::assembleSpace(kv_.get(), 1, 1, 1);
-
     gKVStore = kv_.get();
 
+    LOG(INFO) << "Prepare data...";
+    HostAddr host0("0", 0), host1("1", 1), host2("2", 2), host3("3", 3);
+    gHosts.insert(host0.host);
+    gHosts.insert(host1.host);
+    gHosts.insert(host2.host);
+    gHosts.insert(host3.host);
+
+    TestUtils::createSomeHosts(gKVStore, {host0, host1, host2, host3});
+    // Notice: it will add part1~4 to hosts host0~3, host0~3 are generated in the function which is
+    // a little wired.
+    TestUtils::assembleSpace(gKVStore, 1, 4, 1, 4);
+    ZoneInfo zoneInfo = {{"zone_0", {host0, host1}}, {"zone_1", {host2, host3}}};
+    TestUtils::assembleZone(gKVStore, zoneInfo);
+
+    LOG(INFO) << "Setup webservice with replace handler...";
     webSvc_ = std::make_unique<WebService>();
     auto& router = webSvc_->router();
-
     router.get("/replace").handler([&](nebula::web::PathParams&&) {
       gHandler = new meta::MetaHttpReplaceHostHandler();
       gHandler->init(gKVStore);
       return gHandler;
     });
-
     auto status = webSvc_->start();
     ASSERT_TRUE(status.ok()) << status;
   }
@@ -56,6 +65,10 @@ class MetaHttpReplaceHandlerTestEnv : public ::testing::Environment {
     kv_.reset();
     rootPath_.reset();
     webSvc_.reset();
+
+    gHandler = nullptr;
+    gKVStore = nullptr;
+    gHosts.clear();
     LOG(INFO) << "Web service stopped";
   }
 
@@ -71,24 +84,26 @@ StatusOr<std::string> silentCurl(const std::string& path) {
 }
 
 TEST(MetaHttpReplaceHandlerTest, FooTest) {
-  std::vector<std::string> dump = dumpKVStore(gKVStore);
+  auto dump = dumpHosts(gKVStore);
   for (auto& row : dump) {
     LOG(INFO) << "host=" << row;
   }
 
-  std::string sFrom{"0.0.0.0"};
+  std::string sFrom{"0"};
   std::string sTo{"66.66.66.66"};
 
-  std::vector<std::string> beforeUpdate{sFrom};
-  std::vector<std::string> afterUpdate{sTo};
+  std::set<std::string> beforeUpdate(gHosts);
+  std::set<std::string> afterUpdate(gHosts);
+  afterUpdate.erase(sFrom);
+  afterUpdate.insert(sTo);
 
   {
     // no [from]
     static const char* tmp = "http://127.0.0.1:%d/replace?to=%s";
     auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sTo.c_str());
     silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
-    EXPECT_TRUE(result == beforeUpdate);
+    auto result = dumpHosts(gKVStore);
+    EXPECT_EQ(result, beforeUpdate);
   }
 
   {
@@ -96,37 +111,17 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
     static const char* tmp = "http://127.0.0.1:%d/replace?&from=%s";
     auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.c_str());
     silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
-    EXPECT_TRUE(result == beforeUpdate);
-  }
-
-  {
-    // invalid [from]
-    std::string invalidAddr = "10.10.10";
-    const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, invalidAddr.c_str(), sTo.c_str());
-    silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
-    EXPECT_TRUE(result == beforeUpdate);
-  }
-
-  {
-    // invalid [to]
-    std::string invalidAddr = "10.10.10";
-    const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.c_str(), invalidAddr.c_str());
-    silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
-    EXPECT_TRUE(result == beforeUpdate);
+    auto result = dumpHosts(gKVStore);
+    EXPECT_EQ(result, beforeUpdate);
   }
 
   {
     // valid [from] but not exist
-    std::string notExistFrom = "1.1.1.1";
+    std::string notExistFrom = "10.10.10.10";
     const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
     auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, notExistFrom.c_str(), sTo.c_str());
     silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
+    auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, beforeUpdate);
     LOG(INFO) << "valid [from] but not exist";
     for (auto& r : result) {
@@ -139,15 +134,13 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
     static const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
     auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.c_str(), sTo.c_str());
     silentCurl(url);
-    auto result = dumpKVStore(gKVStore);
+    auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, afterUpdate);
   }
 }
 
-std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
-  LOG(INFO) << __func__ << " enter";
-  std::vector<std::string> ret;
-  // Get all spaces
+std::set<std::string> dumpHosts(kvstore::KVStore* kvstore) {
+  // Get all hosts from all partition
   std::vector<GraphSpaceID> allSpaceId;
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -159,21 +152,33 @@ std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
     iter->next();
   }
 
-  LOG(INFO) << "allSpaceId.size()=" << allSpaceId.size();
+  std::set<std::string> hosts;
   for (const auto& spaceId : allSpaceId) {
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
     while (iter->valid()) {
-      auto hostAddrs = MetaKeyUtils::parsePartVal(iter->val());
-      LOG(INFO) << "hostAddrs.size()=" << hostAddrs.size();
-      for (auto& hostAddr : hostAddrs) {
-        ret.emplace_back(hostAddr.host);
+      auto addrs = MetaKeyUtils::parsePartVal(iter->val());
+      for (auto& addr : addrs) {
+        hosts.insert(addr.host);
       }
       iter->next();
     }
   }
-  return ret;
+
+  // Get all hosts from all zone
+  const auto& zonePrefix = MetaKeyUtils::zonePrefix();
+  kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, zonePrefix, &iter);
+  EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
+  while (iter->valid()) {
+    auto addrs = MetaKeyUtils::parseZoneHosts(iter->val());
+    for (auto& addr : addrs) {
+      hosts.insert(addr.host);
+    }
+    iter->next();
+  }
+
+  return hosts;
 }
 
 }  // namespace meta

@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
 #include <folly/Format.h>
 #include <folly/String.h>
 #include <folly/container/Enumerate.h>
@@ -222,6 +221,9 @@ TEST(ChainDeleteEdgesTest, DISABLED_Test5) {
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
+  UPCLT iClient(FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED));
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient.get());
+
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
   delProc->process(delReq);
@@ -231,16 +233,13 @@ TEST(ChainDeleteEdgesTest, DISABLED_Test5) {
   LOG(INFO) << "after del(), edge num = " << num;
   EXPECT_EQ(num, 167);
 
-  env->txnMan_->scanAll();
-  auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
-  FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  ChainResumeProcessor resumeProc(env);
-  resumeProc.process();
-  // std::this_thread::sleep_for(std::chrono::milliseconds());
+  for (PartitionID i = 1; i <= partNum; ++i) {
+    env->txnMan_->scanPrimes(mockSpaceId, i, 1);
+  }
+  env->txnMan_->stop();
+  env->txnMan_->join();
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
-
-  delete iClient;
 }
 
 // add some edges, then delete all of them, not execute local commit
@@ -277,6 +276,9 @@ TEST(ChainDeleteEdgesTest, Test6) {
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   delProc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
 
+  UPCLT iClient(FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED));
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient.get());
+
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
   delProc->process(delReq);
@@ -286,16 +288,18 @@ TEST(ChainDeleteEdgesTest, Test6) {
   LOG(INFO) << "after del(), edge num = " << num;
   EXPECT_EQ(num, 167);
 
-  env->txnMan_->scanAll();
-  auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
-  FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  ChainResumeProcessor resumeProc(env);
-  resumeProc.process();
+  for (PartitionID i = 1; i <= partNum; ++i) {
+    env->txnMan_->scanPrimes(mockSpaceId, i);
+  }
+  // ChainResumeProcessor resumeProc(env);
+  // resumeProc.process();
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  sleep(1);
+  env->txnMan_->stop();
+  env->txnMan_->join();
+
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  delete iClient;
 }
 
 // add some edges, delete one of them, rpc failure
@@ -332,6 +336,9 @@ TEST(ChainDeleteEdgesTest, Test7) {
   auto delReq = delProc->makeDelRequest(addReq, limit);
   delProc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
+  UPCLT iClient(FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED));
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient.get());
+
   LOG(INFO) << "Run DeleteEdgesReq...";
   auto futDel = delProc->getFuture();
   delProc->process(delReq);
@@ -341,20 +348,16 @@ TEST(ChainDeleteEdgesTest, Test7) {
   LOG(INFO) << "after del(), edge num = " << num;
   EXPECT_EQ(num, 166);
 
-  env->txnMan_->scanAll();
-  auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
-  FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  ChainResumeProcessor resumeProc(env);
-  resumeProc.process();
+  env->txnMan_->stop();
+  env->txnMan_->join();
+
   LOG(INFO) << "after recover()";
+
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 166);
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  delete iClient;
 }
 
-// add some edges, then one all of them, rpc failure
+// add some edges, delete all, rpc failure
 TEST(ChainDeleteEdgesTest, Test8) {
   fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
   mock::MockCluster cluster;
@@ -397,16 +400,18 @@ TEST(ChainDeleteEdgesTest, Test8) {
   LOG(INFO) << "after del(), edge num = " << num;
   EXPECT_EQ(num, 0);
 
-  env->txnMan_->scanAll();
-  auto* iClient = FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED);
-  FakeInternalStorageClient::hookInternalStorageClient(env, iClient);
-  ChainResumeProcessor resumeProc(env);
-  resumeProc.process();
+  // for (PartitionID i = 1; i <= partNum; ++i) {
+  //   env->txnMan_->scanPrimes(mockSpaceId, i);
+  // }
+  UPCLT iClient(FakeInternalStorageClient::instance(env, nebula::cpp2::ErrorCode::SUCCEEDED));
+  FakeInternalStorageClient::hookInternalStorageClient(env, iClient.get());
+  // ChainResumeProcessor resumeProc(env);
+  // resumeProc.process();
+
+  env->txnMan_->stop();
+  env->txnMan_->join();
   num = util.checkNumOfKey(env, mockSpaceId, edgeKeys);
   EXPECT_EQ(num, 0);
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  delete iClient;
 }
 
 }  // namespace storage
@@ -414,6 +419,7 @@ TEST(ChainDeleteEdgesTest, Test8) {
 
 int main(int argc, char** argv) {
   FLAGS_trace_toss = true;
+  FLAGS_v = 1;
 
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, false);

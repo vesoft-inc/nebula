@@ -14,7 +14,7 @@ namespace storage {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildFTIndexTask::genSubTasks() {
   std::vector<AdminSubTask> tasks;
-  VLOG(3) << "Begin rebuild fulltext indexes, space : " << *ctx_.parameters_.space_id_ref();
+  VLOG(1) << "Begin rebuild fulltext indexes, space : " << *ctx_.parameters_.space_id_ref();
   auto parts = *ctx_.parameters_.parts_ref();
   auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
   auto listenerRet = store->spaceListener(*ctx_.parameters_.space_id_ref());
@@ -40,11 +40,11 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildFTIndexTask::
       return nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND;
     }
     if (!listener->isRunning()) {
-      LOG(ERROR) << "listener not ready, may be starting or waiting snapshot";
+      LOG(WARNING) << "listener not ready, may be starting or waiting snapshot";
       // TODO : add ErrorCode for listener not ready.
       return nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND;
     }
-    VLOG(3) << folly::sformat("Processing fulltext rebuild subtask, space={}, part={}",
+    VLOG(1) << folly::sformat("Processing fulltext rebuild subtask, space={}, part={}",
                               *ctx_.parameters_.space_id_ref(),
                               part);
     std::function<nebula::cpp2::ErrorCode()> task =

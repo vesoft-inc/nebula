@@ -6,6 +6,7 @@ nebula_add_library(
     expr_visitor_obj OBJECT
     ExprVisitorImpl.cpp
     DeducePropsVisitor.cpp
+    PropertyTrackerVisitor.cpp
     DeduceTypeVisitor.cpp
     ExtractPropExprVisitor.cpp
     ExtractFilterExprVisitor.cpp
@@ -15,6 +16,11 @@ nebula_add_library(
     FindVisitor.cpp
     VidExtractVisitor.cpp
     EvaluableExprVisitor.cpp
+)
+
+nebula_add_library(
+    plan_node_visitor_obj OBJECT
+    PrunePropertiesVisitor.cpp
 )
 
 nebula_add_subdirectory(test)

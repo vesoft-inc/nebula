@@ -699,3 +699,13 @@ Feature: Basic match
     Then the result should be, in any order:
       | v                                                                                                          |
       | ("Tim Duncan":bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+
+  Scenario: Sequential sentence
+    When executing query:
+      """
+      USE nba;
+      MATCH (n:player) WHERE id(n) == "Boris Diaw" RETURN n;
+      """
+    Then the result should be, in any order:
+      | n                                                   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |

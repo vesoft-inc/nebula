@@ -347,6 +347,7 @@ struct Value {
   Value toBool() const;
   Value toFloat() const;
   Value toInt() const;
+  Value toSet() const;
 
   Value lessThan(const Value& v) const;
 

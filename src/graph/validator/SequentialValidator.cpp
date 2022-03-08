@@ -14,6 +14,9 @@ DECLARE_uint32(max_allowed_statements);
 
 namespace nebula {
 namespace graph {
+
+// Validator of sequential sentences which combine multiple sentences, e.g. GO ...; GO ...;
+// Call validator of sub-sentences.
 Status SequentialValidator::validateImpl() {
   Status status;
   if (sentence_->kind() != Sentence::Kind::kSequential) {
@@ -41,6 +44,7 @@ Status SequentialValidator::validateImpl() {
   return Status::OK();
 }
 
+// Get first sentence in nested sentence.
 const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) const {
   if (sentence->kind() != Sentence::Kind::kPipe) {
     return sentence;
@@ -48,5 +52,6 @@ const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) 
   auto pipe = static_cast<const PipedSentence*>(sentence);
   return getFirstSentence(pipe->left());
 }
+
 }  // namespace graph
 }  // namespace nebula

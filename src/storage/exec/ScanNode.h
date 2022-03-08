@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_EXEC_SCANNODE_H
+#define STORAGE_EXEC_SCANNODE_H
 
 #include "common/base/Base.h"
 #include "storage/exec/GetPropNode.h"
@@ -12,10 +13,6 @@ namespace nebula {
 namespace storage {
 
 using Cursor = std::string;
-
-inline bool vTrue(const Value& v) {
-  return v.isBool() && v.getBool();
-}
 
 // Node to scan vertices of one partition
 class ScanVertexPropNode : public QueryNode<Cursor> {
@@ -153,7 +150,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         }
       }
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-          (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+          (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
         resultDataSet_->rows.emplace_back(std::move(row));
       }
       expCtx_->clear();
@@ -294,7 +291,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
       }
     }
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-        (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+        (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
       resultDataSet_->rows.emplace_back(std::move(row));
     }
     expCtx_->clear();
@@ -318,3 +315,4 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

@@ -11,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Executor for compact job, always called by job manager
+ */
 class CompactJobExecutor : public SimpleConcurrentJobExecutor {
  public:
   CompactJobExecutor(JobID jobId,
@@ -18,6 +21,13 @@ class CompactJobExecutor : public SimpleConcurrentJobExecutor {
                      AdminClient* adminClient,
                      const std::vector<std::string>& params);
 
+  /**
+   * @brief
+   *
+   * @param address the host that task command send to
+   * @param parts parts that the host contains
+   * @return
+   */
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
 };

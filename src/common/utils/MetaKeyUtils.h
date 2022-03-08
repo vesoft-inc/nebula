@@ -57,7 +57,6 @@ enum class EntryType : int8_t {
   EDGE = 0x03,
   INDEX = 0x04,
   CONFIG = 0x05,
-  GROUP = 0x06,
   ZONE = 0x07,
 };
 
@@ -183,6 +182,8 @@ class MetaKeyUtils final {
 
   static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
+  static const std::string& schemaEdgesPrefix();
+
   static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
   static EdgeType parseEdgeType(folly::StringPiece key);
@@ -199,6 +200,8 @@ class MetaKeyUtils final {
 
   static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
+  static const std::string& schemaTagsPrefix();
+
   static meta::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
   static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
@@ -206,6 +209,8 @@ class MetaKeyUtils final {
   static std::string indexVal(const meta::cpp2::IndexItem& item);
 
   static std::string indexPrefix(GraphSpaceID spaceId);
+
+  static const std::string& indexPrefix();
 
   static IndexID parseIndexesKeyIndexID(folly::StringPiece key);
 
@@ -239,11 +244,7 @@ class MetaKeyUtils final {
 
   static std::string indexIndexKey(GraphSpaceID spaceId, const std::string& name);
 
-  static std::string indexGroupKey(const std::string& name);
-
   static std::string indexZoneKey(const std::string& name);
-
-  static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
   static std::string userPrefix();
 

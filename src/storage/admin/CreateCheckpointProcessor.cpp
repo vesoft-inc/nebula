@@ -17,14 +17,12 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
   for (auto& spaceId : spaceIdList) {
     auto ckRet = env_->kvstore_->createCheckpoint(spaceId, name);
     if (!ok(ckRet) && error(ckRet) == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-      LOG(ERROR) << folly::sformat("Space {} to create backup is not found", spaceId);
+      LOG(INFO) << folly::sformat("Space {} to create backup is not found", spaceId);
       continue;
     }
 
     if (!ok(ckRet)) {
-      cpp2::PartitionResult thriftRet;
-      thriftRet.code_ref() = error(ckRet);
-      codes_.emplace_back(std::move(thriftRet));
+      resp_.code_ref() = error(ckRet);
       onFinished();
       return;
     }
@@ -33,8 +31,14 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
     ckInfoList.insert(ckInfoList.end(), spaceCkList.begin(), spaceCkList.end());
   }
 
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   resp_.info_ref() = ckInfoList;
   onFinished();
+}
+
+void CreateCheckpointProcessor::onFinished() {
+  this->promise_.setValue(std::move(resp_));
+  delete this;
 }
 
 }  // namespace storage

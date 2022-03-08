@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_STATS_STORAGESTATS_H
+#define STORAGE_STATS_STORAGESTATS_H
 
 #include "common/stats/StatsManager.h"
 
@@ -15,6 +16,11 @@ extern stats::CounterId kNumEdgesDeleted;
 extern stats::CounterId kNumTagsDeleted;
 extern stats::CounterId kNumVerticesDeleted;
 
+/**
+ * @brief Init storage statistic points for storage/meta client/kv
+ *
+ */
 void initStorageStats();
 
 }  // namespace nebula
+#endif

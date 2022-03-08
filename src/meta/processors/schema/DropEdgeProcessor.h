@@ -11,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop edge schema for all versions. The indexes on it should be dropped before drop the
+ *        edge.
+ *
+ */
 class DropEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropEdgeProcessor* instance(kvstore::KVStore* kvstore) {

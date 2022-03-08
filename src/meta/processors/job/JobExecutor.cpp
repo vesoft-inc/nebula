@@ -10,7 +10,6 @@
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/CompactJobExecutor.h"
@@ -37,8 +36,8 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobExecutor::getSpaceIdFromName(
   std::string val;
   auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get space failed, space name: " << spaceName
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get space failed, space name: " << spaceName
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return *reinterpret_cast<const GraphSpaceID*>(val.c_str());

@@ -127,7 +127,7 @@ bool StorageServer::initWebService() {
 #ifndef BUILD_STANDALONE
   auto status = webSvc_->start();
 #else
-  auto status = webSvc_->start(FLAGS_ws_storage_http_port, FLAGS_ws_storage_h2_port);
+  auto status = webSvc_->start(FLAGS_ws_storage_http_port);
 #endif
   return status.ok();
 }
@@ -397,6 +397,7 @@ void StorageServer::stop() {
 
   if (txnMan_) {
     txnMan_->stop();
+    txnMan_->join();
   }
   if (taskMgr_) {
     taskMgr_->shutdown();
