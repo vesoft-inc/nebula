@@ -36,7 +36,7 @@ bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
     return false;
   }
 
-  VidExtractVisitor vidExtractVisitor;
+  VidExtractVisitor vidExtractVisitor(matchClauseCtx->qctx);
   matchClauseCtx->where->filter->accept(&vidExtractVisitor);
   auto vidResult = vidExtractVisitor.moveVidPattern();
   if (vidResult.spec != VidExtractVisitor::VidPattern::Special::kInUsed) {

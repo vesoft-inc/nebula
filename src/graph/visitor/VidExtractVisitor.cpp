@@ -2,6 +2,7 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
+#include "graph/context/QueryContext.h"
 
 #include "graph/visitor/VidExtractVisitor.h"
 
@@ -153,7 +154,7 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
         expr->right()->kind() != Expression::Kind::kList ||
-        !ExpressionUtils::isEvaluableExpr(expr->right())) {
+        !ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
       vidPattern_ = VidPattern{};
       return;
     }
