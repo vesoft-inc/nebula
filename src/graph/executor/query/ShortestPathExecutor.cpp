@@ -33,6 +33,10 @@ folly::Future<Status> ShortestPathExecutor::execute() {
     // Set left(dss_[0]) or right(dss_[1]) dataset as req dataset, and get neighbors
     for (int i = 0; i < 2; i++) {
       step_ += 1;
+      if (step_ > shortestPathNode_->stepRange()->max()) {
+        DataSet emptyResult;
+        return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
+      }
       reqDs_ = std::move(dss_[i]);
       direction_ = i;
       visiteds_[i].clear();
@@ -147,7 +151,7 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(RpcResponse&& resps) 
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
 
-  return judge(iter.get());
+  return folly::makeFuture<Status>(judge(iter.get()));
 }
 
 // find the dst in the neighbors (the intersection of dst and neighbors)
@@ -203,7 +207,9 @@ Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
       reqDs.rows.emplace_back(Row({std::move(dst)}));
     }
   }
-
+  if (result.empty()) {
+    return Status::OK();
+  }
   reqDs_ = std::move(reqDs);
   return buildResult(findPaths(result));
 }
@@ -232,6 +238,7 @@ void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, Paths>& prevPat
 }
 
 // Find the shortest path by vid
+// Todo: move()
 DataSet ShortestPathExecutor::findPaths(Value nodeVid) {
   DataSet ds;
 
@@ -254,20 +261,24 @@ DataSet ShortestPathExecutor::findPaths(Value nodeVid) {
   while (rightPaths_.find(curVid) != rightPaths_.end()) {
     Paths& prevPaths = rightPaths_.find(curVid)->second;
     List prevPath = prevPaths[0];
-    deque.push_front(prevPath[1]);  // edge
-    deque.push_front(prevPath[0]);  // vertex
+    deque.push_back(prevPath[1]);  // edge
+    deque.push_back(prevPath[0]);  // vertex
 
     curVid = prevPath[0].getVertex().vid;
   }
 
-  Row path;
-  path.reserve(deque.size());
-  while (!deque.empty()) {
-    path.emplace_back(deque.front());
-    deque.pop_front();
-  }
+  Value src = std::move(deque.front());
+  deque.pop_front();
+  Value dst = std::move(deque.back());
+  deque.pop_back();
 
-  ds.rows.emplace_back(std::move(path));
+  List list;
+  list.reserve(deque.size());
+  std::move(begin(deque), end(deque), back_inserter(list.values));
+
+  Row path = Row({src, std::move(list), dst});
+  ds.rows.emplace_back(path);
+
   return ds;
 }
 

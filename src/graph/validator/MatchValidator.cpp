@@ -557,8 +557,8 @@ Status MatchValidator::validateWith(const WithClause *with,
 }
 
 // Check validity of unwind clause.
-// Check column must has alias, check can't contains aggregate expression, check alias in expression
-// must be available, check defined alias don't defined before.
+// Check column must has alias, check can't contains aggregate expression, check alias in
+// expression must be available, check defined alias don't defined before.
 Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
                                       UnwindClauseContext &unwindCtx) {
   if (unwindClause->alias().empty()) {
@@ -590,8 +590,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-// Convert map attributes of edge defined in pattern to filter expression and keep origin semantic.
-// e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
+// Convert map attributes of edge defined in pattern to filter expression and keep origin
+// semantic. e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
 StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
   auto *pool = qctx_->objPool();
   DCHECK(map != nullptr);

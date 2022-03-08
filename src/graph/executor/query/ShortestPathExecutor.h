@@ -54,7 +54,8 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   DataSet findPaths(Value nodeVid);
 
  private:
-  int step_{0};
+  size_t step_{0};
+
   // 0: src->dst, 1: dst->src
   int direction_{0};
 

@@ -9,6 +9,7 @@
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"

@@ -1685,8 +1685,11 @@ class RollUpApply : public BinaryInputNode {
 
 class ShortestPath final : public BinaryInputNode {
  public:
-  static ShortestPath* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
-    return qctx->objPool()->add(new ShortestPath(qctx, left, right));
+  static ShortestPath* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            GraphSpaceID space) {
+    return qctx->objPool()->add(new ShortestPath(qctx, left, right, space));
   }
 
   PlanNode* clone() const override;
@@ -1706,6 +1709,10 @@ class ShortestPath final : public BinaryInputNode {
 
   const std::vector<EdgeProp>* edgeProps() const {
     return edgeProps_.get();
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
   }
 
   Expression* vFilter() const {
@@ -1736,6 +1743,10 @@ class ShortestPath final : public BinaryInputNode {
     edgeTypes_ = std::move(edgeTypes);
   }
 
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
   void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
     edgeProps_ = std::move(edgeProps);
   }
@@ -1748,29 +1759,25 @@ class ShortestPath final : public BinaryInputNode {
     eFilter_ = eFilter;
   }
 
-  void setSpace(GraphSpaceID space) {
-    space_ = space;
-  }
-
   void setSrc(Expression* src) {
     src_ = src;
   }
 
  private:
-  ShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right)
-      : BinaryInputNode(qctx, Kind::kShortestPath, left, right) {}
+  ShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, GraphSpaceID space)
+      : BinaryInputNode(qctx, Kind::kShortestPath, left, right), space_(space) {}
 
   void cloneMembers(const ShortestPath&);
 
  private:
   Expression* src_{nullptr};
-
   GraphSpaceID space_;
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
   std::vector<EdgeType> edgeTypes_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_;
   storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
 };
 
