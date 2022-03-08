@@ -149,16 +149,16 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
     if (!ret.ok()) {
       LOG(ERROR) << "Get session for sessionId: " << sessionId << " failed: " << ret.status();
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg = std::make_unique<std::string>(folly::stringPrintf(
-          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str()));
+      ctx->resp().errorMsg.reset(new std::string(folly::stringPrintf(
+          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str())));
       return ctx->finish();
     }
     auto sessionPtr = std::move(ret).value();
     if (sessionPtr == nullptr) {
       LOG(ERROR) << "Get session for sessionId: " << sessionId << " is nullptr";
       ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg = std::make_unique<std::string>(
-          folly::stringPrintf("SessionId[%ld] does not exist", sessionId));
+      ctx->resp().errorMsg.reset(
+          new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumQueries);
