@@ -32,6 +32,6 @@ nebula_add_library(
     ListComprehensionExpression.cpp
     ReduceExpression.cpp
 )
-target_link_libraries(expression_obj PUBLIC "${Glog_LIBRARY}"  )
+target_link_libraries(expression_obj PUBLIC "${Glog_LIBRARY}" folly )
 
 nebula_add_subdirectory(test)

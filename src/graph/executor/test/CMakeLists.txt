@@ -3,7 +3,6 @@
 # This source code is licensed under Apache 2.0 License.
 
 SET(EXEC_QUERY_TEST_OBJS
-    ws_obj
     expression_obj
     network_obj
     process_obj

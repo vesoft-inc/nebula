@@ -28,7 +28,7 @@ if(Bzip2_INCLUDE_DIR AND Bzip2_LIBRARY AND Bzip2_BIN)
 endif()
 
 if(NOT Bzip2_FOUND)
-    message(FATAL_ERROR "Bzip2 doesn't exist")
+ #   message(FATAL_ERROR "Bzip2 doesn't exist")
 endif()
 
 

@@ -45,7 +45,7 @@ nebula_add_library(
     wkb/WKBWriter.cpp
     wkb/ByteOrderDataIOStream.cpp
 )
-target_link_libraries(datatypes_obj PUBLIC base_obj s2 "${Glog_LIBRARY}" )
+target_link_libraries(datatypes_obj PUBLIC async concurrency thriftcpp2  transport  thriftfrozen2 rpcmetadata thrift-core thriftprotocol thriftmetadata storage_thrift_obj common_thrift_obj meta_thrift_obj base_obj s2 "${Glog_LIBRARY}" fmt )
 add_library(wkt_wkb_io_obj ALIAS datatypes_obj)
 add_library(geo_index_obj ALIAS datatypes_obj)
 

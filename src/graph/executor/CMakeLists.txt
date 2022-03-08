@@ -86,7 +86,8 @@ nebula_add_library(
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp
 )
-target_link_libraries(executor_obj PUBLIC storage_client_obj graph_stats_obj ws_obj
+target_link_libraries(executor_obj PUBLIC storage_client_obj graph_stats_obj
+ws_obj
     wangle
     fizz
     sodium

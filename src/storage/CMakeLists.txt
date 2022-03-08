@@ -56,6 +56,23 @@ nebula_add_library(
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
+    transaction/TransactionManager.cpp
+    transaction/ConsistUtil.cpp
+    transaction/ChainUpdateEdgeLocalProcessor.cpp
+    transaction/ChainUpdateEdgeRemoteProcessor.cpp
+    transaction/ChainAddEdgesGroupProcessor.cpp
+    transaction/ChainAddEdgesLocalProcessor.cpp
+    transaction/ChainAddEdgesRemoteProcessor.cpp
+    transaction/ChainResumeAddPrimeProcessor.cpp
+    transaction/ChainResumeAddDoublePrimeProcessor.cpp
+    transaction/ChainResumeUpdatePrimeProcessor.cpp
+    transaction/ChainResumeUpdateDoublePrimeProcessor.cpp
+    transaction/ChainProcessorFactory.cpp
+    transaction/ChainDeleteEdgesGroupProcessor.cpp
+    transaction/ChainDeleteEdgesLocalProcessor.cpp
+    transaction/ChainDeleteEdgesRemoteProcessor.cpp
+    transaction/ChainDeleteEdgesResumeProcessor.cpp
+    transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
 nebula_add_subdirectory(stats)
 
@@ -76,28 +93,8 @@ nebula_add_library(
 
 target_link_libraries(storage_http_handler PUBLIC "${Glog_LIBRARY}")
 
-nebula_add_library(
-    storage_transaction_executor SHARED
-    transaction/TransactionManager.cpp
-    transaction/ConsistUtil.cpp
-    transaction/ChainUpdateEdgeLocalProcessor.cpp
-    transaction/ChainUpdateEdgeRemoteProcessor.cpp
-    transaction/ChainAddEdgesGroupProcessor.cpp
-    transaction/ChainAddEdgesLocalProcessor.cpp
-    transaction/ChainAddEdgesRemoteProcessor.cpp
-    transaction/ChainResumeAddPrimeProcessor.cpp
-    transaction/ChainResumeAddDoublePrimeProcessor.cpp
-    transaction/ChainResumeUpdatePrimeProcessor.cpp
-    transaction/ChainResumeUpdateDoublePrimeProcessor.cpp
-    transaction/ChainProcessorFactory.cpp
-    transaction/ChainDeleteEdgesGroupProcessor.cpp
-    transaction/ChainDeleteEdgesLocalProcessor.cpp
-    transaction/ChainDeleteEdgesRemoteProcessor.cpp
-    transaction/ChainDeleteEdgesResumeProcessor.cpp
-    transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
-)
-target_link_libraries(storage_transaction_executor PUBLIC "${Glog_LIBRARY}" storage_common_obj  )
-target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}" storage_common_obj  storage_stats_obj codec_obj storage_transaction_executor expression_obj)
+target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}" storage_common_obj  storage_stats_obj codec_obj expression_obj)
+add_library(storage_transaction_executor ALIAS   graph_storage_service_handler )
 
 nebula_add_library(
     storage_server SHARED

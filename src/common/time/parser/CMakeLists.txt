@@ -24,11 +24,19 @@ add_flex_bison_dependency(Scanner Parser)
 
 add_compile_options(-Wno-sign-compare -Wno-conversion-null -Wno-pedantic -Wno-extra)
 
+
+
 nebula_add_library(
     datetime_parser_obj SHARED
+    ../TimeUtils.cpp
+    ../TimezoneInfo.cpp
+    ../TimeConversion.cpp
     ${FLEX_Scanner_OUTPUTS}
     ${BISON_Parser_OUTPUTS}
     DatetimeReader.cpp
 )
+
+target_link_libraries(datetime_parser_obj PUBLIC glog fmt)
+add_library(time_utils_obj ALIAS datetime_parser_obj)
 
 nebula_add_subdirectory(test)

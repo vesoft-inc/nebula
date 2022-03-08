@@ -9,15 +9,6 @@ nebula_add_library(
     WallClock.cpp
 )
 
-nebula_add_library(
-    time_utils_obj SHARED
-    TimeUtils.cpp
-    TimezoneInfo.cpp
-    TimeConversion.cpp
-)
-
-target_link_libraries(time_utils_obj PUBLIC "${Glog_LIBRARY}" datetime_parser_obj )
-
 
 nebula_add_subdirectory(parser)
 
