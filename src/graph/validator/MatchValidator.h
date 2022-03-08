@@ -27,6 +27,8 @@ class MatchValidator final : public Validator {
 
   Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
+  Status validateShortestPath(const MatchPath *path);
+
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
   Status validateReturn(MatchReturn *ret,

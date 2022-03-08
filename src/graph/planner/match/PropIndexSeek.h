@@ -26,6 +26,9 @@ class PropIndexSeek final : public StartVidFinder {
 
   StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
+  static folly::Optional<Expression*> buildFilter(MatchClauseContext* matchClauseCtx,
+                                                  NodeInfo* nodeInfo);
+
  private:
   PropIndexSeek() = default;
 };

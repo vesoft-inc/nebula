@@ -122,6 +122,26 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
       buildEdgeInfo(path, matchClauseCtx.paths.back().edgeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(buildPathExpr(path, matchClauseCtx));
   matchClauseCtx.paths.back().isShortPath = path->shortestPath();
+  NG_RETURN_IF_ERROR(validateShortestPath(path));
+  return Status::OK();
+}
+
+Status MatchValidator::validateShortestPath(const MatchPath *path) {
+  // It isn't short path pattern, skip validation.
+  if (!path->shortestPath()) {
+    return Status::OK();
+  }
+
+  if (path->edges().size() != 1 || path->nodes().size() != 2) {
+    return Status::Error(
+        "shortestPath(...) can only support single pattern like [vertex]-[edge]-[vertex]");
+  }
+
+  if (path->edges()[0]->range()->min() != 0 && path->edges()[0]->range()->min() != 1) {
+    return Status::Error(
+        "shortestPath(...) does not support a minimal length different from 0 or 1");
+  }
+
   return Status::OK();
 }
 
@@ -544,8 +564,8 @@ Status MatchValidator::validateWith(const WithClause *with,
 }
 
 // Check validity of unwind clause.
-// Check column must has alias, check can't contains aggregate expression, check alias in expression
-// must be available, check defined alias don't defined before.
+// Check column must has alias, check can't contains aggregate expression, check alias in
+// expression must be available, check defined alias don't defined before.
 Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
                                       UnwindClauseContext &unwindCtx) const {
   if (unwindClause->alias().empty()) {
@@ -574,8 +594,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-// Convert map attributes of edge defined in pattern to filter expression and keep origin semantic.
-// e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
+// Convert map attributes of edge defined in pattern to filter expression and keep origin
+// semantic. e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
 StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
   auto *pool = qctx_->objPool();
   DCHECK(map != nullptr);

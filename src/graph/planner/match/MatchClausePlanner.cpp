@@ -7,6 +7,7 @@
 
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
@@ -515,19 +516,27 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   for (int i = 0; i < 2; i++) {
     IQC iqctx;
+    NodeInfo nodeInfo = nodeInfos[i];
 
-    auto indexIdsRet = pickTagIndex(matchClauseCtx, nodeInfos[i]);
-    NG_RETURN_IF_ERROR(indexIdsRet);
-    std::vector<IndexID> indexIds = indexIdsRet.value();
-    iqctx.index_id_ref() = indexIds[0];
+    // auto indexIdsRet = pickTagIndex(matchClauseCtx, nodeInfo);
+    // NG_RETURN_IF_ERROR(indexIdsRet);
+    // std::vector<IndexID> indexIds = indexIdsRet.value();
+    // iqctx.index_id_ref() = indexIds[0];
+
+    auto filter_opt = PropIndexSeek::buildFilter(matchClauseCtx, &nodeInfo);
+    if (filter_opt.has_value()) {
+      iqctx.filter_ref() = Expression::encode(*filter_opt.value());
+    }
 
     auto scanNode =
         IndexScan::make(qtx, nullptr, spaceId, {iqctx}, {kVid}, false, nodeInfos[i].tids[0]);
-    auto starNode = StartNode::make(qtx);
-    scanNode->setDep(0, starNode);
+    scanNode->setColNames({kVid});
+
+    auto startNode = StartNode::make(qtx);
+    scanNode->setDep(0, startNode);
     scanNodes.emplace_back(scanNode);
 
-    subplan.tail = starNode;
+    subplan.tail = startNode;
   }
 
   // initialize start expression in node
@@ -535,15 +544,17 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   auto edge = edgeInfos.back();
   bool reversely = true;
-  auto shortestPath = ShortestPath::make(qtx, scanNodes[0], scanNodes[1]);
+  auto shortestPath = ShortestPath::make(qtx, scanNodes[0], scanNodes[1], spaceId);
   shortestPath->setSrc(initialExpr);
-  shortestPath->setSpace(spaceId);
   shortestPath->setLeftVar(scanNodes[0]->outputVar());
   shortestPath->setRightVar(scanNodes[1]->outputVar());
   shortestPath->setEdgeProps(genEdgeProps(edge, reversely, qtx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
   shortestPath->setEdgeFilter(genEdgeFilter(edge));
   shortestPath->setStepRange(edge.range);
+
+  std::vector<std::string> cols = {nodeInfos[0].alias, edgeInfos[0].alias, nodeInfos[1].alias};
+  shortestPath->setColNames(cols);
 
   subplan.root = shortestPath;
 
