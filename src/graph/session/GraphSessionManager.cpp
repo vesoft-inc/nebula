@@ -125,7 +125,8 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
     clientIp.c_str(), userName.c_str(), maxSessions, "max_sessions_per_ip_per_user");
   }
   auto createCB = [this,
-                   userName = userName, clientIp = clientIp](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
+                   userName = userName, 
+                   clientIp = clientIp](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
     if (!resp.ok()) {
       LOG(ERROR) << "Create session failed:" << resp.status();
       return Status::Error("Create session failed: %s", resp.status().toString().c_str());
