@@ -112,6 +112,7 @@ function _build_graph {
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=${install_prefix} \
           -DENABLE_TESTING=OFF \
+          -DENABLE_CONSOLE_COMPILATION=ON \
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           -DENABLE_PACKAGE_TAR=${package_tar} \
