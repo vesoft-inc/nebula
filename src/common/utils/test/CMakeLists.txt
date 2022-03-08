@@ -13,6 +13,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -33,6 +38,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -56,6 +66,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -78,7 +93,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}

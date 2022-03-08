@@ -227,7 +227,7 @@ class StatusOr final {
   }
 
   // Type conversion operator, i.e. alias of `ok()'
-  explicit operator bool() const {
+  operator bool() const {
     return ok();
   }
 

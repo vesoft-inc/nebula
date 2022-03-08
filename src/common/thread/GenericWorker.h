@@ -8,6 +8,8 @@
 #include <folly/Unit.h>
 #include <folly/futures/Future.h>
 
+#include <boost/core/noncopyable.hpp>
+
 #include "common/base/Base.h"
 #include "common/cpp/helpers.h"
 #include "common/thread/NamedThread.h"
@@ -31,7 +33,7 @@ struct event_base;
 namespace nebula {
 namespace thread {
 
-class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class GenericWorker final : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   friend class GenericThreadPool;
 

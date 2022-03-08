@@ -41,36 +41,45 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
 
   folly::Future<storage::cpp2::CreateCPResp> future_createCheckpoint(
       const storage::cpp2::CreateCPRequest& req) override {
-    UNUSED(req);
     folly::Promise<storage::cpp2::CreateCPResp> pro;
     auto f = pro.getFuture();
     storage::cpp2::CreateCPResp resp;
     storage::cpp2::ResponseCommon result;
-    std::vector<storage::cpp2::PartitionResult> partRetCode;
     std::unordered_map<nebula::cpp2::PartitionID, nebula::cpp2::LogInfo> info;
     nebula::cpp2::LogInfo logInfo;
     logInfo.log_id_ref() = logId;
     logInfo.term_id_ref() = termId;
     info.emplace(1, std::move(logInfo));
-    result.failed_parts_ref() = partRetCode;
-    resp.result_ref() = result;
     nebula::cpp2::CheckpointInfo cpInfo;
     cpInfo.path_ref() = "snapshot_path";
     cpInfo.parts_ref() = std::move(info);
     cpInfo.space_id_ref() = req.get_space_ids()[0];
     resp.info_ref() = {cpInfo};
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     pro.setValue(std::move(resp));
     return f;
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_dropCheckpoint(
+  folly::Future<storage::cpp2::DropCPResp> future_dropCheckpoint(
       const storage::cpp2::DropCPRequest& req) override {
-    RETURN_OK(req);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::DropCPResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::DropCPResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    pro.setValue(std::move(resp));
+    return f;
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_blockingWrites(
+  folly::Future<storage::cpp2::BlockingSignResp> future_blockingWrites(
       const storage::cpp2::BlockingSignRequest& req) override {
-    RETURN_OK(req);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::BlockingSignResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::BlockingSignResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    pro.setValue(std::move(resp));
+    return f;
   }
 };
 
@@ -95,7 +104,10 @@ TEST(ProcessorTest, CreateBackupTest) {
   // resgister active hosts, same with heartbeat
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
-  ActiveHostsMan::updateHostInfo(kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+  std::vector<kvstore::KV> time;
+  ActiveHostsMan::updateHostInfo(
+      kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), time);
+  TestUtils::doPut(kv.get(), time);
 
   // mock space 1: test_space
   bool ret = false;
@@ -150,11 +162,13 @@ TEST(ProcessorTest, CreateBackupTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts2));
     data.emplace_back(MetaKeyUtils::partKey(id2, partId), MetaKeyUtils::partVal(hosts2));
   }
+
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-    ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+        baton.post();
+      });
   baton.wait();
 
   auto client = std::make_unique<AdminClient>(kv.get());
@@ -179,22 +193,14 @@ TEST(ProcessorTest, CreateBackupTest) {
 
     auto it = std::find_if(metaFiles.cbegin(), metaFiles.cend(), [](auto const& m) {
       auto name = m.substr(m.size() - sizeof("__indexes__.sst") + 1);
-
-      if (name == "__indexes__.sst") {
-        return true;
-      }
-      return false;
+      return name == "__indexes__.sst";
     });
 
     ASSERT_NE(it, metaFiles.cend());
 
     it = std::find_if(metaFiles.cbegin(), metaFiles.cend(), [](auto const& m) {
       auto name = m.substr(m.size() - sizeof("__users__.sst") + 1);
-
-      if (name == "__users__.sst") {
-        return true;
-      }
-      return false;
+      return name == "__users__.sst";
     });
     ASSERT_EQ(it, metaFiles.cend());
 

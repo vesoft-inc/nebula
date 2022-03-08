@@ -7,6 +7,7 @@
 #define COMMON_STATS_STATSMANAGER_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
 
@@ -132,6 +133,7 @@ class StatsManager final {
                                  std::vector<StatsMethod> methods,
                                  std::vector<std::pair<std::string, double>> percentiles);
 
+  // Dynamically register some stats with label values
   static CounterId counterWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
   static CounterId histoWithLabels(const CounterId& id, const std::vector<LabelPair>& labels);
 
@@ -165,6 +167,7 @@ class StatsManager final {
   StatsManager(const StatsManager&) = delete;
   StatsManager(StatsManager&&) = delete;
 
+  // Parse percentiles from the string
   static bool strToPct(folly::StringPiece part, double& pct);
   static void parseStats(const folly::StringPiece stats,
                          std::vector<StatsMethod>& methods,
@@ -206,8 +209,8 @@ class StatsManager final {
   std::unordered_map<std::string, CounterInfo> nameMap_;
 
   // All time series stats
-  std::unordered_map<std::string,
-                     std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>>
+  folly::ConcurrentHashMap<std::string,
+                           std::pair<std::unique_ptr<std::mutex>, std::unique_ptr<StatsType>>>
       stats_;
 
   // All histogram stats

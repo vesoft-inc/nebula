@@ -38,6 +38,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat", Value::Type::STRING},
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
+    {"coalesce", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -182,6 +183,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
       TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+    {"toset",
+     {TypeSignature({Value::Type::LIST}, Value::Type::SET),
+      TypeSignature({Value::Type::SET}, Value::Type::SET)}},
     {"hash",
      {TypeSignature({Value::Type::INT}, Value::Type::INT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
@@ -280,10 +284,6 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
     {"last",
-     {
-         TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
-     }},
-    {"coalesce",
      {
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
@@ -1083,7 +1083,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
-      return time::WallClock::fastNowInSec();
+      return ::time(NULL);
     };
   }
   {
@@ -1430,6 +1430,13 @@ FunctionManager::FunctionManager() {
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
   }
   {
+    auto &attr = functions_["toset"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
+  }
+  {
     auto &attr = functions_["lpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
@@ -1758,7 +1765,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
       if (args.empty()) {
-        return time::WallClock::fastNowInSec();
+        return ::time(NULL);
       }
       auto status = time::TimeUtils::toTimestamp(args[0].get());
       if (!status.ok()) {
@@ -2092,29 +2099,15 @@ FunctionManager::FunctionManager() {
   {
     auto &attr = functions_["coalesce"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
-          if (list.values.empty()) {
-            return Value::kNullValue;
-          }
-          for (auto &i : list.values) {
-            if (i != Value::kNullValue) {
-              return i;
-            }
-          }
-          return Value::kNullValue;
-        }
-        default: {
-          return Value::kNullBadType;
+      for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].get().type() != Value::Type::NULLVALUE) {
+          return args[i].get();
         }
       }
+      return Value::kNullValue;
     };
   }
   {

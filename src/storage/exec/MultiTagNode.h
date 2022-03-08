@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_MULTITAGNODE_H
+#define STORAGE_EXEC_MULTITAGNODE_H
 
 #include "common/base/Base.h"
 #include "storage/context/StorageExpressionContext.h"
@@ -116,3 +117,4 @@ class MultiTagNode : public IterateNode<VertexID> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

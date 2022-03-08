@@ -730,6 +730,8 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
@@ -825,6 +827,8 @@ class Project final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
@@ -1114,6 +1118,8 @@ class Aggregate final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Aggregate(QueryContext* qctx,
             PlanNode* input,
@@ -1220,6 +1226,14 @@ class DataCollect final : public VariableDependencyNode {
     return distinct_;
   }
 
+  void setColType(std::vector<Value::Type>&& colType) {
+    colType_ = std::move(colType);
+  }
+
+  const std::vector<Value::Type>& colType() const {
+    return colType_;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1234,6 +1248,7 @@ class DataCollect final : public VariableDependencyNode {
   DCKind kind_;
   // using for m to n steps
   StepClause step_;
+  std::vector<Value::Type> colType_;
   bool distinct_{false};
 };
 
@@ -1469,6 +1484,8 @@ class Traverse final : public GetNeighbors {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   Traverse* clone() const override;
 
   MatchStepRange* stepRange() const {
@@ -1526,6 +1543,8 @@ class AppendVertices final : public GetVertices {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   AppendVertices* clone() const override;
 
   Expression* vFilter() const {
@@ -1555,7 +1574,7 @@ class AppendVertices final : public GetVertices {
                     nullptr,
                     false,
                     {},
-                    0,
+                    -1,  // means no limit
                     nullptr) {}
 
   void cloneMembers(const AppendVertices& a);
@@ -1584,6 +1603,8 @@ class BiJoin : public BinaryInputNode {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  protected:
   BiJoin(QueryContext* qctx,

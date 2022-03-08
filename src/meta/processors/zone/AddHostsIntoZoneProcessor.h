@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Add hosts into a given zone which is existing or a new one
+ * The hosts should be unregistered hosts
+ */
 class AddHostsIntoZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AddHostsIntoZoneProcessor* instance(kvstore::KVStore* kvstore) {

@@ -87,3 +87,34 @@ Feature: TypeConversion Expression
       YIELD [toInteger(true), toInteger(false)] AS yield_toInteger
       """
     Then a SemanticError should be raised at runtime: Type error `toInteger(true)'
+
+  Scenario: toSet
+    When executing query:
+      """
+      RETURN toSet(list[1,2,3,1,2]) AS list2set
+      """
+    Then the result should be, in any order:
+      | list2set  |
+      | {3, 1, 2} |
+    When executing query:
+      """
+      RETURN toSet(set{1,2,3,1,2}) AS set2set
+      """
+    Then the result should be, in any order:
+      | set2set   |
+      | {3, 1, 2} |
+    When executing query:
+      """
+      RETURN toSet(true) AS bool2set
+      """
+    Then a SemanticError should be raised at runtime: `toSet(true)' is not a valid expression : Parameter's type error
+    When executing query:
+      """
+      RETURN toSet(1) AS int2set
+      """
+    Then a SemanticError should be raised at runtime: `toSet(1)' is not a valid expression : Parameter's type error
+    When executing query:
+      """
+      RETURN toSet(3.4) AS float2set
+      """
+    Then a SemanticError should be raised at runtime: `toSet(3.4)' is not a valid expression : Parameter's type error

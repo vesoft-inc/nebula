@@ -163,6 +163,13 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  // load the time zone data
+  status = nebula::time::Timezone::init();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
   // Initialize the global timezone, it's only used for datetime type compute
   // won't affect the process timezone.
   status = nebula::time::Timezone::initializeGlobalTimezone();
@@ -285,7 +292,7 @@ int main(int argc, char *argv[]) {
     nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
     LOG(INFO) << "Starting Graph HTTP Service";
     auto webSvc = std::make_unique<nebula::WebService>();
-    status = webSvc->start(FLAGS_ws_http_port, FLAGS_ws_h2_port);
+    status = webSvc->start(FLAGS_ws_http_port);
     if (!status.ok()) {
       LOG(WARNING) << "Failed to start graph HTTP service";
       return;

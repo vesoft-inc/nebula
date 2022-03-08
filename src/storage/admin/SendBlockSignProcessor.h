@@ -14,16 +14,37 @@
 
 namespace nebula {
 namespace storage {
-class SendBlockSignProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class SendBlockSignProcessor {
  public:
+  /**
+   * @brief Construct new SendBlockSignProcessor instance.
+   *
+   * @param env Related environment variables for storage.
+   * @return SendBlockSignProcessor* SendBlockSignProcessor instance.
+   */
   static SendBlockSignProcessor* instance(StorageEnv* env) {
     return new SendBlockSignProcessor(env);
   }
 
+  /**
+   * @brief Entry point for sending block sign.
+   *
+   * @param req Reuqest for sending block sign.
+   */
   void process(const cpp2::BlockingSignRequest& req);
 
+  folly::Future<cpp2::BlockingSignResp> getFuture() {
+    return promise_.getFuture();
+  }
+
  private:
-  explicit SendBlockSignProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit SendBlockSignProcessor(StorageEnv* env) : env_(env) {}
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::BlockingSignResp> promise_;
+  cpp2::BlockingSignResp resp_;
 };
 }  // namespace storage
 }  // namespace nebula

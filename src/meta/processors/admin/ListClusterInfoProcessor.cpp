@@ -8,8 +8,7 @@
 namespace nebula {
 namespace meta {
 
-void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
-  UNUSED(req);
+void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
   auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
   if (store == nullptr) {
     onFinished();
@@ -26,11 +25,12 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   std::unordered_map<std::string, std::vector<cpp2::ServiceInfo>> hostServices;
 
   // non-meta services, may include inactive services
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& hostPrefix = MetaKeyUtils::hostPrefix();
   auto iterRet = doPrefix(hostPrefix);
   if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "get host prefix failed:"
-               << apache::thrift::util::enumNameSafe(nebula::error(iterRet));
+    LOG(INFO) << "get host prefix failed: "
+              << apache::thrift::util::enumNameSafe(nebula::error(iterRet));
     handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
     onFinished();
     return;
@@ -49,10 +49,10 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
       auto dirKey = MetaKeyUtils::hostDirKey(addr.host, addr.port);
       auto dirRet = doGet(dirKey);
       if (!nebula::ok(dirRet)) {
-        LOG(ERROR) << folly::sformat("Get host {} dir info for {} failed: {}",
-                                     addr.toString(),
-                                     apache::thrift::util::enumNameSafe(info.role_),
-                                     apache::thrift::util::enumNameSafe(nebula::error(dirRet)));
+        LOG(INFO) << folly::sformat("Get host {} dir info for {} failed: {}",
+                                    addr.toString(),
+                                    apache::thrift::util::enumNameSafe(info.role_),
+                                    apache::thrift::util::enumNameSafe(nebula::error(dirRet)));
         handleErrorCode(nebula::error(dirRet));
         onFinished();
         return;
@@ -71,7 +71,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   auto partRet = kvstore_->part(kDefaultSpaceId, kDefaultPartId);
   if (!nebula::ok(partRet)) {
     auto code = nebula::error(partRet);
-    LOG(ERROR) << "get meta part store failed, error: " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "get meta part store failed, error: " << apache::thrift::util::enumNameSafe(code);
     handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
     onFinished();
     return;
@@ -98,14 +98,14 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
       }
     }
     if (agentCount < 1) {
-      LOG(ERROR) << folly::sformat("There are {} agent count is host {}", agentCount, host);
+      LOG(INFO) << folly::sformat("There are {} agent count is host {}", agentCount, host);
       handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE);
       onFinished();
       return;
     }
 
     if (services.size() <= 1) {
-      LOG(ERROR) << "There is no other service than agent in host: " << host;
+      LOG(INFO) << "There is no other service than agent in host: " << host;
       continue;
     }
   }

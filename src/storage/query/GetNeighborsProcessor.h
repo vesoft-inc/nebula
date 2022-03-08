@@ -17,11 +17,23 @@ namespace storage {
 
 extern ProcessorCounters kGetNeighborsCounters;
 
+/**
+ * @brief Processor to get neighbors.
+ *
+ */
 class GetNeighborsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::GetNeighborsResponse> {
   FRIEND_TEST(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan);
 
  public:
+  /**
+   * @brief Consturct instance of GetNeighborsProcessor
+   *
+   * @param env Related environment variables for storage.
+   * @param counters Statistic counter pointer for getting neighbors.
+   * @param executor Expected executor for this processor, running directly if nullptr.
+   * @return GetNeighborsProcessor* Consturcted instance.
+   */
   static GetNeighborsProcessor* instance(StorageEnv* env,
                                          const ProcessorCounters* counters = &kGetNeighborsCounters,
                                          folly::Executor* executor = nullptr) {
@@ -59,9 +71,6 @@ class GetNeighborsProcessor
 
   // add PropContext of stat
   nebula::cpp2::ErrorCode handleEdgeStatProps(const std::vector<cpp2::StatProp>& statProps);
-
-  nebula::cpp2::ErrorCode checkStatType(const meta::SchemaProviderIf::Field* field,
-                                        cpp2::StatType statType);
 
   void runInSingleThread(const cpp2::GetNeighborsRequest& req, int64_t limit, bool random);
   void runInMultipleThread(const cpp2::GetNeighborsRequest& req, int64_t limit, bool random);

@@ -15,16 +15,39 @@
 namespace nebula {
 namespace storage {
 
-class StopAdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class StopAdminTaskProcessor {
  public:
+  /**
+   * @brief Construct StopAdminTaskProcessor
+   *
+   * @param env Related environment variables for storage.
+   * @return StopAdminTaskProcessor* StopAdminTaskProcessor instance.
+   */
   static StopAdminTaskProcessor* instance(StorageEnv* env) {
     return new StopAdminTaskProcessor(env);
   }
 
-  void process(const cpp2::StopAdminTaskRequest& req);
+  /**
+   * @brief Entry point of stopping admin task.
+   *
+   * @param req Reuqest for stopping admin task.
+   */
+  void process(const cpp2::StopTaskRequest& req);
+
+  folly::Future<cpp2::StopTaskResp> getFuture() {
+    return promise_.getFuture();
+  }
 
  private:
-  explicit StopAdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit StopAdminTaskProcessor(StorageEnv* env) : env_(env) {
+    UNUSED(env_);
+  }
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::StopTaskResp> promise_;
+  cpp2::StopTaskResp resp_;
 };
 
 }  // namespace storage

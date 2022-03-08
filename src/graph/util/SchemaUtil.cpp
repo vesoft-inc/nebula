@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/SchemaUtil.h"
 
@@ -55,19 +54,19 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem *> &schemaProp
 
 // static
 std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProvider(
-    ObjectPool *pool, const SchemaVer ver, const meta::cpp2::Schema &schema) {
+    const SchemaVer ver, const meta::cpp2::Schema &schema) {
   auto schemaPtr = std::make_shared<meta::NebulaSchemaProvider>(ver);
   for (auto col : schema.get_columns()) {
     bool hasDef = col.default_value_ref().has_value();
-    Expression *defaultValueExpr = nullptr;
+    std::string exprStr;
     if (hasDef) {
-      defaultValueExpr = Expression::decode(pool, *col.default_value_ref());
+      exprStr = *col.default_value_ref();
     }
     schemaPtr->addField(col.get_name(),
                         col.get_type().get_type(),
                         col.type.type_length_ref().value_or(0),
                         col.nullable_ref().value_or(false),
-                        hasDef ? defaultValueExpr : nullptr,
+                        exprStr,
                         col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
   }
   return schemaPtr;

@@ -31,6 +31,11 @@ struct HBCounters final {
 };
 extern HBCounters kHBCounters;
 
+/**
+ * @brief storaged/graphd/listener report info to metad periodically,
+ *        and update host alive info.
+ *
+ */
 class HBProcessor : public BaseProcessor<cpp2::HBResp> {
   FRIEND_TEST(HBProcessorTest, HBTest);
   FRIEND_TEST(MetaClientTest, HeartbeatTest);

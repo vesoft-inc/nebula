@@ -127,7 +127,7 @@ bool StorageServer::initWebService() {
 #ifndef BUILD_STANDALONE
   auto status = webSvc_->start();
 #else
-  auto status = webSvc_->start(FLAGS_ws_storage_http_port, FLAGS_ws_storage_h2_port);
+  auto status = webSvc_->start(FLAGS_ws_storage_http_port);
 #endif
   return status.ok();
 }
@@ -197,6 +197,9 @@ bool StorageServer::start() {
 
   LOG(INFO) << "Init kvstore";
   kvstore_ = getStoreInstance();
+
+  LOG(INFO) << "Init LogMonitor";
+  logMonitor_ = std::make_unique<LogMonitor>();
 
   if (nullptr == kvstore_) {
     LOG(ERROR) << "Init kvstore failed";
@@ -394,6 +397,7 @@ void StorageServer::stop() {
 
   if (txnMan_) {
     txnMan_->stop();
+    txnMan_->join();
   }
   if (taskMgr_) {
     taskMgr_->shutdown();

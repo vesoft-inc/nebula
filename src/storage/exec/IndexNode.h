@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXNODE_H
+#define STORAGE_EXEC_INDEXNODE_H
 #include "common/base/ErrorOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/time/Duration.h"
@@ -69,6 +70,9 @@ struct InitContext {
   std::vector<std::string> returnColumns;
   // The index of name in `returncolumns`
   Map<std::string, size_t> retColMap;
+  // The columns in statColumns
+  // TODO(nivras) need refactor this, put statColumns in returnColumns
+  Set<std::string> statColumns;
 };
 
 class IndexNode {
@@ -111,7 +115,7 @@ class IndexNode {
   };
   /* build */
   IndexNode(const IndexNode& node);
-  explicit IndexNode(RuntimeContext* context, const std::string& name);
+  IndexNode(RuntimeContext* context, const std::string& name);
   virtual ~IndexNode() = default;
   virtual std::unique_ptr<IndexNode> copy() = 0;
   void addChild(std::unique_ptr<IndexNode> child) {
@@ -208,3 +212,4 @@ inline const time::Duration& IndexNode::duration() {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

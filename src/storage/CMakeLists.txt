@@ -21,6 +21,7 @@ nebula_add_library(
     admin/RebuildEdgeIndexTask.cpp
     admin/RebuildFTIndexTask.cpp
     admin/StatsTask.cpp
+    admin/GetLeaderProcessor.cpp
 )
 
 nebula_add_library(
@@ -44,6 +45,7 @@ nebula_add_library(
     exec/IndexDedupNode.cpp
     exec/IndexEdgeScanNode.cpp
     exec/IndexLimitNode.cpp
+    exec/IndexAggregateNode.cpp
     exec/IndexProjectionNode.cpp
     exec/IndexScanNode.cpp
     exec/IndexSelectionNode.cpp
@@ -74,14 +76,13 @@ nebula_add_library(
     transaction/ConsistUtil.cpp
     transaction/ChainUpdateEdgeLocalProcessor.cpp
     transaction/ChainUpdateEdgeRemoteProcessor.cpp
-    transaction/ChainResumeProcessor.cpp
     transaction/ChainAddEdgesGroupProcessor.cpp
     transaction/ChainAddEdgesLocalProcessor.cpp
     transaction/ChainAddEdgesRemoteProcessor.cpp
-    transaction/ResumeAddEdgeProcessor.cpp
-    transaction/ResumeAddEdgeRemoteProcessor.cpp
-    transaction/ResumeUpdateProcessor.cpp
-    transaction/ResumeUpdateRemoteProcessor.cpp
+    transaction/ChainResumeAddPrimeProcessor.cpp
+    transaction/ChainResumeAddDoublePrimeProcessor.cpp
+    transaction/ChainResumeUpdatePrimeProcessor.cpp
+    transaction/ChainResumeUpdateDoublePrimeProcessor.cpp
     transaction/ChainProcessorFactory.cpp
     transaction/ChainDeleteEdgesGroupProcessor.cpp
     transaction/ChainDeleteEdgesLocalProcessor.cpp

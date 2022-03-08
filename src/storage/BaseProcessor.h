@@ -76,10 +76,6 @@ class BaseProcessor {
 
   void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
 
-  nebula::cpp2::ErrorCode doSyncPut(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    std::vector<kvstore::KV>&& data);
-
   void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string>&& keys);
 
   void doRemoveRange(GraphSpaceID spaceId,
@@ -100,6 +96,9 @@ class BaseProcessor {
   void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId);
 
   void handleAsync(GraphSpaceID spaceId, PartitionID partId, nebula::cpp2::ErrorCode code);
+
+  nebula::cpp2::ErrorCode checkStatType(const meta::SchemaProviderIf::Field& field,
+                                        cpp2::StatType statType);
 
   StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                      const std::vector<std::string>& propNames,

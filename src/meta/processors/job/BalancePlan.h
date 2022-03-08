@@ -16,6 +16,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief A balance plan contains some balance tasks, and could parallel run the tasks across parts
+ */
 class BalancePlan {
   friend class DataBalanceJobExecutor;
   FRIEND_TEST(BalanceTest, BalancePlanTest);
@@ -40,6 +43,11 @@ class BalancePlan {
         tasks_(plan.tasks_),
         finishedTaskNum_(plan.finishedTaskNum_) {}
 
+  /**
+   * @brief Add a task
+   *
+   * @param task
+   */
   void addTask(BalanceTask task) {
     tasks_.emplace_back(std::move(task));
   }
@@ -47,12 +55,13 @@ class BalancePlan {
   void invoke();
 
   /**
+   * @brief
    * TODO(heng): How to rollback if the some tasks failed.
    * For the tasks before UPDATE_META, they will go back to the original state
    * before balance. For the tasks after UPDATE_META, they will go on until
    * succeeded. NOTES: update_meta should be an atomic operation. There is no
    * middle state inside.
-   * */
+   */
   void rollback() {}
 
   meta::cpp2::JobStatus status() {
@@ -63,6 +72,11 @@ class BalancePlan {
     jobDescription_.setStatus(status);
   }
 
+  /**
+   * @brief Save balance tasks into kvStore
+   *
+   * @return
+   */
   nebula::cpp2::ErrorCode saveInStore();
 
   JobID id() const {
@@ -82,18 +96,54 @@ class BalancePlan {
     stopped_ = true;
   }
 
+  /**
+   * @brief Load balance tasks from kvStore for rerun, rerun stopped or failed tasks if resume
+   *
+   * @param resume
+   * @return
+   */
   nebula::cpp2::ErrorCode recovery(bool resume = true);
 
+  /**
+   * @brief Dispatch tasks to buckets for parallel execution
+   */
   void dispatchTasks();
 
+  /**
+   * @brief Load balance tasks from kvStore
+   *
+   * @param jobId The job that balance tasks belong to
+   * @param kv The kvStore
+   * @param client Client to make raft operation
+   * @param resume If rerun the failed or stopped tasks
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> getBalanceTasks(
       JobID jobId, kvstore::KVStore* kv, AdminClient* client, bool resume = true);
 
+  /**
+   * @brief Load balance tasks and convert to cpp2::BalanceTask to make them serializable
+   *
+   * @param jobId
+   * @param kv
+   * @param client
+   * @return
+   */
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> show(JobID jobId,
                                                                                kvstore::KVStore* kv,
                                                                                AdminClient* client);
 
+  /**
+   * @brief Set a callback function, which would be called when job finished
+   *
+   * @param func
+   */
   void setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func);
+
+  template <typename InputIterator>
+  void insertTask(InputIterator first, InputIterator last) {
+    tasks_.insert(tasks_.end(), first, last);
+  }
 
  private:
   JobDescription jobDescription_;

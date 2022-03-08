@@ -5,6 +5,7 @@
 
 #include "meta/processors/listener/ListenerProcessor.h"
 
+#include "kvstore/LogEncoder.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -16,15 +17,16 @@ namespace meta {
 void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
   const auto& hosts = req.get_hosts();
   auto ret = listenerExist(space, type);
   if (ret != nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND) {
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Add listener failed, listener already exists.";
+      LOG(INFO) << "Add listener failed, listener already exists.";
       ret = nebula::cpp2::ErrorCode::E_EXISTED;
     } else {
-      LOG(ERROR) << "Add listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
+      LOG(INFO) << "Add listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
     }
     handleErrorCode(ret);
     onFinished();
@@ -32,13 +34,11 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
   }
 
   // TODO : (sky) if type is elasticsearch, need check text search service.
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List parts failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List parts failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -55,54 +55,63 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type),
                       MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
   auto ret = listenerExist(space, type);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     if (ret == nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND) {
-      LOG(ERROR) << "Remove listener failed, listener not exists.";
+      LOG(INFO) << "Remove listener failed, listener not exists.";
     } else {
-      LOG(ERROR) << "Remove listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
+      LOG(INFO) << "Remove listener failed, error: " << apache::thrift::util::enumNameSafe(ret);
     }
     handleErrorCode(ret);
     onFinished();
     return;
   }
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
-  std::vector<std::string> keys;
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Remove listener failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Remove listener failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
 
   auto iter = nebula::value(iterRet).get();
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   while (iter->valid()) {
-    keys.emplace_back(iter->key());
+    auto key = iter->key();
+    batchHolder->remove(key.str());
     iter->next();
   }
-  doSyncMultiRemoveAndUpdate(std::move(keys));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& prefix = MetaKeyUtils::listenerPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "List listener failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "List listener failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

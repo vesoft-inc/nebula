@@ -6,6 +6,8 @@
 #ifndef GRAPH_SERVICE_QUERYINSTANCE_H_
 #define GRAPH_SERVICE_QUERYINSTANCE_H_
 
+#include <boost/core/noncopyable.hpp>
+
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "graph/context/QueryContext.h"
@@ -22,9 +24,9 @@
 namespace nebula {
 namespace graph {
 
-class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
+class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
  public:
-  explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
+  QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
   ~QueryInstance() = default;
 
   void execute();

@@ -31,6 +31,7 @@ ExplainValidator::ExplainValidator(Sentence* sentence, QueryContext* context)
   }
 }
 
+// Check validity of format type string, and convert to lower case
 static StatusOr<std::string> toExplainFormatType(const std::string& formatType) {
   if (formatType.empty()) {
     return kAllowedFmtType.front();

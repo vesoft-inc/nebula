@@ -25,6 +25,7 @@ project("Nebula Graph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
+option(ENABLE_CONSOLE_COMPILATION "Enable nebula-console compilation" OFF)
 option(ENABLE_PACKAGE_TAR "Enable package artifacts to tar." OFF)
 option(ENABLE_CREATE_GIT_HOOKS "Enable create git hooks." ON)
 option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable include-what-you-use find  nouse include files" OFF)
@@ -52,6 +53,7 @@ include(GitInfoConfig)
 include(NebulaCustomTargets)
 include(IncludeWhatYouUse)
 include(BreakPadConfig)
+include(TimeTrace)
 
 add_custom_target(
   clang-format

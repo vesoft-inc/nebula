@@ -11,21 +11,20 @@ namespace nebula {
 namespace meta {
 
 void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
 
   auto zones = req.get_zones();
 
   // Confirm that the parameter is not empty.
   if (zones.empty()) {
-    LOG(ERROR) << "Zones is empty";
+    LOG(INFO) << "Zones is empty";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
   if (zones.size() == 1) {
-    LOG(ERROR) << "Only one zone is no need to merge";
+    LOG(INFO) << "Only one zone is no need to merge";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
@@ -33,7 +32,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
 
   // Confirm that there are no duplicates in the parameters.
   if (std::unique(zones.begin(), zones.end()) != zones.end()) {
-    LOG(ERROR) << "Zones have duplicated element";
+    LOG(INFO) << "Zones have duplicated element";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
@@ -47,7 +46,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto zoneValueRet = doGet(std::move(zoneKey));
     if (!nebula::ok(zoneValueRet)) {
       code = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
-      LOG(ERROR) << "Zone " << zone << " not existed";
+      LOG(INFO) << "Zone " << zone << " not existed";
       break;
     }
   }
@@ -63,7 +62,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   auto ret = doPrefix(spacePrefix);
   if (!nebula::ok(ret)) {
     code = nebula::error(ret);
-    LOG(ERROR) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(code);
     handleErrorCode(code);
     onFinished();
     return;
@@ -87,7 +86,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
                           std::back_inserter(intersectionZones));
 
     if (spaceZones.size() - intersectionZones.size() + 1 < replicaFactor) {
-      LOG(ERROR) << "Merge Zone will cause replica number not enough";
+      LOG(INFO) << "Merge Zone will cause replica number not enough";
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
       break;
     }
@@ -95,7 +94,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto hostPartsRet = assembleHostParts(spaceId);
     if (!nebula::ok(hostPartsRet)) {
       code = nebula::error(hostPartsRet);
-      LOG(ERROR) << "Assemble host parts failed: " << apache::thrift::util::enumNameSafe(code);
+      LOG(INFO) << "Assemble host parts failed: " << apache::thrift::util::enumNameSafe(code);
       break;
     }
 
@@ -108,7 +107,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
       for (auto& host : hosts) {
         auto hp = hostParts.find(host);
         if (hp == hostParts.end()) {
-          LOG(ERROR) << "Host " << host << " not found";
+          LOG(INFO) << "Host " << host << " not found";
           code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
           break;
         }
@@ -117,7 +116,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
         for (auto part : parts) {
           auto it = std::find(totalParts.begin(), totalParts.end(), part);
           if (it != totalParts.end()) {
-            LOG(ERROR) << "Part " << part << " have exist";
+            LOG(INFO) << "Part " << part << " have exist";
             code = nebula::cpp2::ErrorCode::E_CONFLICT;
             break;
           }
@@ -133,7 +132,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   }  // space
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Check parts failed, error " << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "Check parts failed, error " << apache::thrift::util::enumNameSafe(code);
     handleErrorCode(code);
     onFinished();
     return;
@@ -169,6 +168,17 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   // Write the merged zone into meta service
   auto key = MetaKeyUtils::zoneKey(zoneName);
   std::vector<HostAddr> zoneHosts;
+  auto valueRet = doGet(key);
+  if (nebula::ok(valueRet)) {
+    auto it = std::find(zones.begin(), zones.end(), zoneName);
+    if (it == zones.end()) {
+      LOG(INFO) << "The target zone should exist in merge zone list";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
+  }
+
   for (auto& zone : zones) {
     auto zoneKey = MetaKeyUtils::zoneKey(zone);
     auto zoneValueRet = doGet(std::move(zoneKey));
@@ -194,7 +204,7 @@ ErrorOr<nebula::cpp2::ErrorCode, HostParts> MergeZoneProcessor::assembleHostPart
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
-    LOG(ERROR) << "Get active hosts failed";
+    LOG(INFO) << "Get active hosts failed";
     return nebula::error(activeHostsRet);
   }
 
@@ -207,8 +217,8 @@ ErrorOr<nebula::cpp2::ErrorCode, HostParts> MergeZoneProcessor::assembleHostPart
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " "
-               << apache::thrift::util::enumNameSafe(code);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId << " "
+              << apache::thrift::util::enumNameSafe(code);
     return code;
   }
 

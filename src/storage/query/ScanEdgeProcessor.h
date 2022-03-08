@@ -16,16 +16,38 @@ namespace storage {
 
 extern ProcessorCounters kScanEdgeCounters;
 
+/**
+ * @brief Processor class to scan edges.
+ *
+ */
 class ScanEdgeProcessor : public QueryBaseProcessor<cpp2::ScanEdgeRequest, cpp2::ScanResponse> {
  public:
+  /**
+   * @brief Generate new processor instance for edge scan.
+   *
+   * @param env Related environment variables for storage.
+   * @param counters Statistic counter pointer for edge scan.
+   * @param executor Expected executor for this processor, running directly if nullptr.
+   * @return ScanEdgeProcessor* ScanEdgeProcessor instance.
+   */
   static ScanEdgeProcessor* instance(StorageEnv* env,
                                      const ProcessorCounters* counters = &kScanEdgeCounters,
                                      folly::Executor* executor = nullptr) {
     return new ScanEdgeProcessor(env, counters, executor);
   }
 
+  /**
+   * @brief Entry point of edge scan.
+   *
+   * @param req Reuqest for edge scan.
+   */
   void process(const cpp2::ScanEdgeRequest& req) override;
 
+  /**
+   * @brief Logic part of edge scan.
+   *
+   * @param req Reuqest for edge scan.
+   */
   void doProcess(const cpp2::ScanEdgeRequest& req);
 
  private:

@@ -8,6 +8,8 @@
 
 #include "graph/executor/Executor.h"
 
+DECLARE_int32(ws_http_port);
+
 namespace nebula {
 namespace graph {
 

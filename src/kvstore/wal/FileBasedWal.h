@@ -50,6 +50,16 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
 
  public:
   // A factory method to create a new WAL
+  /**
+   * @brief Build the file based wal
+   *
+   * @param dir Directory to save wal
+   * @param info Wal info
+   * @param policy Wal config
+   * @param preProcessor The pre-process fuction
+   * @param diskMan Disk manager to monitor remaining spaces
+   * @return std::shared_ptr<FileBasedWal>
+   */
   static std::shared_ptr<FileBasedWal> getWal(
       const folly::StringPiece dir,
       FileBasedWalInfo info,
@@ -57,73 +67,114 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
       PreProcessor preProcessor,
       std::shared_ptr<kvstore::DiskManager> diskMan = nullptr);
 
+  /**
+   * @brief Destroy the file based wal
+   */
   virtual ~FileBasedWal();
 
-  // Signal all WAL holders to stop using this WAL
-  void stop() {
-    stopped_ = true;
-  }
-  bool isStopped() const {
-    return stopped_.load();
-  }
-
-  // Return the ID of the first log message in the WAL
+  /**
+   * @brief Return the ID of the first log message in the WAL
+   */
   LogID firstLogId() const override {
     return firstLogId_;
   }
 
-  // Return the ID of the last log message in the WAL
+  /**
+   * @brief Return the ID of the last log message in the WAL
+   */
   LogID lastLogId() const override {
     return lastLogId_;
   }
 
-  // Return the term when the the last log is received
+  /**
+   * @brief Return the term of the last log message in the WAL
+   */
   TermID lastLogTerm() const override {
     return lastLogTerm_;
   }
 
-  // Return the term of specified logId, if not exist，return -1
+  /**
+   * @brief Return the term of specified logId, if not exist，return -1
+   */
   TermID getLogTerm(LogID id) override;
 
-  // Append one log messages to the WAL
-  // This method **IS NOT** thread-safe
-  // we **DO NOT** expect multiple threads will append logs simultaneously
+  /**
+   * @brief Append one log messages to the WAL. This method **IS NOT** thread-safe. We **DO NOT**
+   * expect multiple threads will append logs simultaneously
+   *
+   * @param id Log id to append
+   * @param term Log term to append
+   * @param cluster Cluster id in log to append
+   * @param msg Log messgage to append
+   * @return Wheter append succeed
+   */
   bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) override;
 
-  // Append a list of log messages to the WAL
-  // This method **IS NOT** thread-safe
-  // we **DO NOT** expect multiple threads will append logs
-  // simultaneously
+  //
+  /**
+   * @brief Append a list of log messages to the WAL. This method **IS NOT** thread-safe. We **DO
+   * NOT** expect multiple threads will append logs simultaneously
+   *
+   * @param iter Log iterator to append
+   * @return Wheter append succeed
+   */
   bool appendLogs(LogIterator& iter) override;
 
-  // Rollback to the given ID, all logs after the ID will be discarded
-  // This method **IS NOT** thread-safe
-  // we **EXPECT** the thread rolling back logs is the same one
-  // appending logs
+  /**
+   * @brief Rollback to the given ID, all logs after the ID will be discarded. This method **IS
+   * NOT** thread-safe. We **EXPECT** the thread rolling back logs is the same one appending logs
+   *
+   * @param id The log id to rollback
+   * @return Whether rollback succeed
+   */
   bool rollbackToLog(LogID id) override;
 
-  // Reset the WAL
-  // This method is *NOT* thread safe
+  /**
+   * @brief Reset the WAL. This method is *NOT* thread safe
+   *
+   * @return Whether reset succeed
+   */
   bool reset() override;
 
+  /**
+   * @brief Clean time expired wal by ttl
+   */
   void cleanWAL() override;
 
+  /**
+   * @brief Clean wal by given log id
+   */
   void cleanWAL(LogID id) override;
 
-  // Scan [firstLogId, lastLogId]
-  // This method IS thread-safe
+  /**
+   * @brief Scan the wal in range [firstLogId, lastLogId]. This method is thread-safe
+   *
+   * @param firstLogId Start log id, inclusive
+   * @param lastLogId End log id, inclusive
+   * @return std::unique_ptr<LogIterator>
+   */
   std::unique_ptr<LogIterator> iterator(LogID firstLogId, LogID lastLogId) override;
 
-  /** It is not thread-safe */
+  /**
+   * @brief Hard link the wal files to a new path
+   *
+   * @param newPath New wal path
+   * @return Whether link succeed
+   */
   bool linkCurrentWAL(const char* newPath) override;
 
-  // Iterates through all wal file info in reversed order
-  // (from the latest to the earliest)
-  // The iteration finishes when the functor returns false or reaches
-  // the end
-  // The method returns the number of wal file info being accessed
+  /**
+   * @brief Iterates through all wal file info in reversed order (from the latest to the earliest).
+   * The iteration finishes when the functor returns false or reaches the end.
+   *
+   * @param fn The function to process wal info
+   * @return size_t The num of wal file info being accessed
+   */
   size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
+  /**
+   * @brief Return the log buffer in memory
+   */
   std::shared_ptr<AtomicLogBuffer> buffer() {
     return logBuffer_;
   }
@@ -134,27 +185,64 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * Private methods
    *
    **************************************/
-  // Callers **SHOULD NEVER** use this constructor directly
-  // Callers should use static method getWal() instead
+  /**
+   * @brief Construct a new file based wal. Callers **SHOULD NEVER** use this constructor directly.
+   * Callers should use static method getWal() instead
+   *
+   * @param dir Directory to save wal
+   * @param info Wal info
+   * @param policy Wal config
+   * @param preProcessor The pre-process fuction
+   * @param diskMan Disk manager to monitor remaining spaces
+   */
   FileBasedWal(const folly::StringPiece dir,
                FileBasedWalInfo info,
                FileBasedWalPolicy policy,
                PreProcessor preProcessor,
                std::shared_ptr<kvstore::DiskManager> diskMan);
 
-  // Scan all WAL files
+  /**
+   * @brief Scan all WAL files
+   */
   void scanAllWalFiles();
 
+  /**
+   * @brief Scan the last wal file by each wal log
+   *
+   * @param info Wal file info
+   * @param firstId The first log id in the last wal file
+   */
   void scanLastWal(WalFileInfoPtr info, LogID firstId);
 
-  // Close down the current wal file
+  /**
+   * @brief Close down the current wal file
+   */
   void closeCurrFile();
-  // Prepare a new wal file starting from the given log id
+
+  /**
+   * @brief Prepare a new wal file starting from the given log id
+   *
+   * @param startLogId The first log id of new wal file
+   */
   void prepareNewFile(LogID startLogId);
-  // Rollback to logId in given file
+
+  /**
+   * @brief Rollback to logId in given file
+   *
+   * @param info The wal file to rollback
+   * @param logId The wal log id, it should be the last log id in file after rollback
+   */
   void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
-  // Implementation of appendLog()
+  /**
+   * @brief The actaul implementation of appendLog()
+   *
+   * @param id Log id to append
+   * @param term Log term to append
+   * @param cluster Cluster id in log to append
+   * @param msg Log messgage to append
+   * @return Wheter append succeed
+   */
   bool appendLogInternal(LogID id, TermID term, ClusterID cluster, std::string msg);
 
  private:
@@ -169,8 +257,6 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   std::string idStr_;
   GraphSpaceID spaceId_;
   PartitionID partId_;
-
-  std::atomic<bool> stopped_{false};
 
   const FileBasedWalPolicy policy_;
   LogID firstLogId_{0};

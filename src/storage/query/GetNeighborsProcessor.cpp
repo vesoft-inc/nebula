@@ -87,8 +87,8 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
       auto vId = row.values[0].getStr();
 
       if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-        LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                   << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+        LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                  << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
         pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         onFinished();
         return;
@@ -161,8 +161,8 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
           auto vId = row.values[0].getStr();
 
           if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-            LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                       << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+            LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                      << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
             return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           }
 
@@ -430,7 +430,7 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
             VLOG(1) << "Can't find related prop " << propName << " on edge " << edgeName;
             return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
           }
-          auto ret = checkStatType(field, statProp.get_stat());
+          auto ret = checkStatType(*field, statProp.get_stat());
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
           }
@@ -456,32 +456,6 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
   }
   resultDataSet_.colNames[1] = std::move(colName);
 
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
-    const meta::SchemaProviderIf::Field* field, cpp2::StatType statType) {
-  // todo(doodle): how to deal with nullable fields? For now, null add anything
-  // is null, if there is even one null, the result will be invalid
-  auto fType = field->type();
-  switch (statType) {
-    case cpp2::StatType::SUM:
-    case cpp2::StatType::AVG:
-    case cpp2::StatType::MIN:
-    case cpp2::StatType::MAX: {
-      if (fType == nebula::cpp2::PropertyType::INT64 ||
-          fType == nebula::cpp2::PropertyType::INT32 ||
-          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
-          fType == nebula::cpp2::PropertyType::FLOAT ||
-          fType == nebula::cpp2::PropertyType::DOUBLE) {
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
-      }
-      return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;
-    }
-    case cpp2::StatType::COUNT: {
-      break;
-    }
-  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

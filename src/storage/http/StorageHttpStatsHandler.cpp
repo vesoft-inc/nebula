@@ -20,6 +20,7 @@ void StorageHttpStatsHandler::onError(ProxygenError err) noexcept {
   delete this;
 }
 
+// Export the stats of rocksdb
 folly::dynamic StorageHttpStatsHandler::getStats() const {
   auto stats = folly::dynamic::array();
   std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();

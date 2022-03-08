@@ -13,6 +13,12 @@ namespace meta {
 
 using Hosts = std::vector<HostAddr>;
 
+/**
+ * @brief Create a space:
+ *        1. Validate all the given space parameters.
+ *        2. Pick a group of hosts for each partition according to the hosts loading.
+ *
+ */
 class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateSpaceProcessor* instance(kvstore::KVStore* kvstore) {
@@ -25,11 +31,26 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  // Get the host with the least load in the zone
-  StatusOr<Hosts> pickHostsWithZone(const std::vector<std::string>& zones,
-                                    const std::unordered_map<std::string, Hosts>& zoneHosts);
+  /**
+   * @brief Pick one least load host from each given zone, which is used to lay one partition
+   *        replica.
+   *        Note that the two pick* functions are for only one partition instead of all partitions.
+   *
+   * @param zones
+   * @param zoneHosts
+   * @return StatusOr<Hosts>
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, Hosts> pickHostsWithZone(
+      const std::vector<std::string>& zones,
+      const std::unordered_map<std::string, Hosts>& zoneHosts);
 
-  // Get the zones with the least load
+  /**
+   * @brief Get replica factor count of zones for an partition according to current loading.
+   *        We calculate loading only by partition's count now.
+   *
+   * @param replicaFactor space replicate factor
+   * @return StatusOr<std::vector<std::string>>
+   */
   StatusOr<std::vector<std::string>> pickLightLoadZones(int32_t replicaFactor);
 
  private:

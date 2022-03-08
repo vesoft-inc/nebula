@@ -18,7 +18,6 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -30,7 +29,6 @@
 #include "webservice/Common.h"
 
 DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
 
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
@@ -94,15 +92,19 @@ MetaClient::~MetaClient() {
 }
 
 bool MetaClient::isMetadReady() {
-  auto ret = heartbeat().get();
-  if (!ret.ok()) {
-    LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-    return ready_;
-  } else if (options_.role_ == cpp2::HostRole::STORAGE &&
-             metaServerVersion_ != EXPECT_META_VERSION) {
-    LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
-               << metaServerVersion_;
-    return ready_;
+  // UNKNOWN is reserved for tools such as upgrader, in that case the ip/port is not set. We do
+  // not send heartbeat to meta to avoid writing error host info (e.g. Host("", 0))
+  if (options_.role_ != cpp2::HostRole::UNKNOWN) {
+    auto ret = heartbeat().get();
+    if (!ret.ok()) {
+      LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+      return ready_;
+    } else if (options_.role_ == cpp2::HostRole::STORAGE &&
+               metaServerVersion_ != EXPECT_META_VERSION) {
+      LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
+                 << metaServerVersion_;
+      return ready_;
+    }
   }
 
   // ready_ will be set in loadData
@@ -112,12 +114,6 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-  auto status = verifyVersion();
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return false;
-  }
-
   if (!options_.skipConfig_) {
     std::string gflagsJsonPath;
     GflagsManager::getGflagsModule(gflagsModule_);
@@ -133,6 +129,11 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
 
   if (!isRunning_) {
     LOG(ERROR) << "Connect to the MetaServer Failed";
+    return false;
+  }
+  auto status = verifyVersion();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return false;
   }
 
@@ -364,8 +365,8 @@ bool MetaClient::loadData() {
     GraphSpaceID spaceId = spaceInfo.first;
     std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
     std::shared_ptr<SpaceInfoCache> infoDeepCopy = std::make_shared<SpaceInfoCache>(*info);
-    infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_, &infoDeepCopy->pool_);
-    infoDeepCopy->edgeSchemas_ = buildEdgeSchemas(infoDeepCopy->edgeItemVec_, &infoDeepCopy->pool_);
+    infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_);
+    infoDeepCopy->edgeSchemas_ = buildEdgeSchemas(infoDeepCopy->edgeItemVec_);
     infoDeepCopy->tagIndexes_ = buildIndexes(infoDeepCopy->tagIndexItemVec_);
     infoDeepCopy->edgeIndexes_ = buildIndexes(infoDeepCopy->edgeIndexItemVec_);
     newMetaData->localCache_[spaceId] = infoDeepCopy;
@@ -396,76 +397,64 @@ bool MetaClient::loadData() {
   return true;
 }
 
-TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool) {
+TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
   TagSchemas tagSchemas;
-  TagID lastTagId = -1;
   for (auto& tagIt : tagItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
     for (const auto& colIt : tagIt.get_schema().get_columns()) {
-      addSchemaField(schema.get(), colIt, pool);
+      addSchemaField(schema.get(), colIt);
     }
     // handle schema property
     schema->setProp(tagIt.get_schema().get_schema_prop());
-    if (tagIt.get_tag_id() != lastTagId) {
-      // init schema vector, since schema version is zero-based, need to add one
-      tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
-      lastTagId = tagIt.get_tag_id();
+    auto& schemas = tagSchemas[tagIt.get_tag_id()];
+    // Because of the byte order of schema version in meta is not same as numerical order, we have
+    // to check schema version
+    if (schemas.size() <= static_cast<size_t>(schema->getVersion())) {
+      // since schema version is zero-based, need to add one
+      schemas.resize(schema->getVersion() + 1);
     }
-    tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
+    schemas[schema->getVersion()] = std::move(schema);
   }
   return tagSchemas;
 }
 
-EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec,
-                                         ObjectPool* pool) {
+EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
   EdgeSchemas edgeSchemas;
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
-  EdgeType lastEdgeType = -1;
   for (auto& edgeIt : edgeItemVec) {
     // meta will return the different version from new to old
     auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
     for (const auto& col : edgeIt.get_schema().get_columns()) {
-      MetaClient::addSchemaField(schema.get(), col, pool);
+      MetaClient::addSchemaField(schema.get(), col);
     }
     // handle shcem property
     schema->setProp(edgeIt.get_schema().get_schema_prop());
-    if (edgeIt.get_edge_type() != lastEdgeType) {
-      // init schema vector, since schema version is zero-based, need to add one
-      edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
-      lastEdgeType = edgeIt.get_edge_type();
+    auto& schemas = edgeSchemas[edgeIt.get_edge_type()];
+    // Because of the byte order of schema version in meta is not same as numerical order, we have
+    // to check schema version
+    if (schemas.size() <= static_cast<size_t>(schema->getVersion())) {
+      // since schema version is zero-based, need to add one
+      schemas.resize(schema->getVersion() + 1);
     }
-    edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
+    schemas[schema->getVersion()] = std::move(schema);
   }
   return edgeSchemas;
 }
 
-void MetaClient::addSchemaField(NebulaSchemaProvider* schema,
-                                const cpp2::ColumnDef& col,
-                                ObjectPool* pool) {
+void MetaClient::addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col) {
   bool hasDef = col.default_value_ref().has_value();
   auto& colType = col.get_type();
   size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
   cpp2::GeoShape geoShape =
       colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
   bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
-  Expression* defaultValueExpr = nullptr;
+  std::string encoded;
   if (hasDef) {
-    auto encoded = *col.get_default_value();
-    defaultValueExpr = Expression::decode(pool, folly::StringPiece(encoded.data(), encoded.size()));
-
-    if (defaultValueExpr == nullptr) {
-      LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
-      hasDef = false;
-    }
+    encoded = *col.get_default_value();
   }
 
-  schema->addField(col.get_name(),
-                   colType.get_type(),
-                   len,
-                   nullable,
-                   hasDef ? defaultValueExpr : nullptr,
-                   geoShape);
+  schema->addField(col.get_name(), colType.get_type(), len, nullable, encoded, geoShape);
 }
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
@@ -493,9 +482,9 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   auto edgeItemVec = edgeRet.value();
   allEdgeMap[spaceId] = {};
   spaceInfoCache->tagItemVec_ = tagItemVec;
-  spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec, &spaceInfoCache->pool_);
+  spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec);
   spaceInfoCache->edgeItemVec_ = edgeItemVec;
-  spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec, &spaceInfoCache->pool_);
+  spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec);
 
   for (auto& tagIt : tagItemVec) {
     tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.get_tag_name()), tagIt.get_tag_id());
@@ -859,10 +848,12 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Invalid param!");
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
+    case nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH:
+      return Status::Error("Zone not enough!");
+    case nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY:
+      return Status::Error("Zone is empty!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
       return Status::Error("Store failure!");
-    case nebula::cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL:
-      return Status::Error("Store segment illegal!");
     case nebula::cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
       return Status::Error("Bad balance plan!");
     case nebula::cpp2::ErrorCode::E_BALANCED:
@@ -1414,134 +1405,6 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
     return Status::Error("SpaceId `%d'  is nonexistent", space);
   }
   return it->second;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::multiPut(
-    std::string segment, std::vector<std::pair<std::string, std::string>> pairs) {
-  if (!nebula::meta::checkSegment(segment) || pairs.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::MultiPutReq req;
-  std::vector<nebula::KeyValue> data;
-  data.reserve(pairs.size());
-
-  for (auto& element : pairs) {
-    data.emplace_back(std::move(element));
-  }
-  req.segment_ref() = std::move(segment);
-  req.pairs_ref() = std::move(data);
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_multiPut(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::string>> MetaClient::get(std::string segment, std::string key) {
-  if (!nebula::meta::checkSegment(segment) || key.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::GetReq req;
-  req.segment_ref() = std::move(segment);
-  req.key_ref() = std::move(key);
-  folly::Promise<StatusOr<std::string>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_get(request); },
-      [](cpp2::GetResp&& resp) -> std::string { return resp.get_value(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<std::string>>> MetaClient::multiGet(
-    std::string segment, std::vector<std::string> keys) {
-  if (!nebula::meta::checkSegment(segment) || keys.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::MultiGetReq req;
-  req.segment_ref() = std::move(segment);
-  req.keys_ref() = std::move(keys);
-  folly::Promise<StatusOr<std::vector<std::string>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_multiGet(request); },
-      [](cpp2::MultiGetResp&& resp) -> std::vector<std::string> { return resp.get_values(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<std::string>>> MetaClient::scan(std::string segment,
-                                                                   std::string start,
-                                                                   std::string end) {
-  if (!nebula::meta::checkSegment(segment) || start.empty() || end.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::ScanReq req;
-  req.segment_ref() = std::move(segment);
-  req.start_ref() = std::move(start);
-  req.end_ref() = std::move(end);
-  folly::Promise<StatusOr<std::vector<std::string>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_scan(request); },
-      [](cpp2::ScanResp&& resp) -> std::vector<std::string> { return resp.get_values(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::remove(std::string segment, std::string key) {
-  if (!nebula::meta::checkSegment(segment) || key.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::RemoveReq req;
-  req.segment_ref() = std::move(segment);
-  req.key_ref() = std::move(key);
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_remove(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::removeRange(std::string segment,
-                                                      std::string start,
-                                                      std::string end) {
-  if (!nebula::meta::checkSegment(segment) || start.empty() || end.empty()) {
-    return Status::Error("arguments invalid!");
-  }
-
-  cpp2::RemoveRangeReq req;
-  req.segment_ref() = std::move(segment);
-  req.start_ref() = std::move(start);
-  req.end_ref() = std::move(end);
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_removeRange(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
 }
 
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
@@ -2783,50 +2646,6 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(st
       std::move(req),
       [](auto client, auto request) { return client->future_getUserRoles(request); },
       [](cpp2::ListRolesResp&& resp) -> decltype(auto) { return std::move(resp).get_roles(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
-                                                                    TagID tagId,
-                                                                    const std::string& field) {
-  cpp2::GetReq req;
-  static std::string defaultKey = "__default__";
-  req.segment_ref() = defaultKey;
-  std::string key;
-  key.reserve(64);
-  key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
-  key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
-  key.append(field);
-  req.key_ref() = std::move(key);
-  folly::Promise<StatusOr<std::string>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_get(request); },
-      [](cpp2::GetResp&& resp) -> std::string { return resp.get_value(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
-                                                                     EdgeType edgeType,
-                                                                     const std::string& field) {
-  cpp2::GetReq req;
-  static std::string defaultKey = "__default__";
-  req.segment_ref() = defaultKey;
-  std::string key;
-  key.reserve(64);
-  key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
-  key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
-  key.append(field);
-  req.key_ref() = std::move(key);
-  folly::Promise<StatusOr<std::string>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_get(request); },
-      [](cpp2::GetResp&& resp) -> std::string { return resp.get_value(); },
       std::move(promise));
   return future;
 }

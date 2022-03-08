@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
+#define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
 #include <folly/Try.h>
 
@@ -240,16 +241,18 @@ void StorageClientBase<ClientType, ClientManagerType>::getResponseImpl(
     DCHECK(!!ioThreadPool_);
     evb = ioThreadPool_->getEventBase();
   }
+  auto reqPtr = std::make_shared<std::pair<HostAddr, Request>>(std::move(request.first),
+                                                               std::move(request.second));
   folly::via(
       evb,
-      [evb, request = std::move(request), remoteFunc = std::move(remoteFunc), pro, this]() mutable {
-        auto host = request.first;
+      [evb, request = std::move(reqPtr), remoteFunc = std::move(remoteFunc), pro, this]() mutable {
+        auto host = request->first;
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
-        auto spaceId = request.second.get_space_id();
-        auto partsId = getReqPartsId(request.second);
-        remoteFunc(client.get(), request.second)
+        auto spaceId = request->second.get_space_id();
+        auto partsId = getReqPartsId(request->second);
+        remoteFunc(client.get(), request->second)
             .via(evb)
-            .thenValue([spaceId, pro, this](Response&& resp) mutable {
+            .thenValue([spaceId, pro, request, this](Response&& resp) mutable {
               auto& result = resp.get_result();
               for (auto& code : result.get_failed_parts()) {
                 VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
@@ -377,3 +380,4 @@ StorageClientBase<ClientType, ClientManagerType>::getHostPartsWithCursor(
 
 }  // namespace storage
 }  // namespace nebula
+#endif

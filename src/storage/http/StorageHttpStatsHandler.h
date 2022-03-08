@@ -12,6 +12,10 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief get some stat from http request
+ *
+ */
 class StorageHttpStatsHandler : public nebula::GetStatsHandler {
  public:
   StorageHttpStatsHandler() = default;
