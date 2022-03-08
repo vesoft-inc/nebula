@@ -28,6 +28,7 @@ class FTIndexUtils final {
   static StatusOr<bool> dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
                                     const std::string& index);
 
+  // Clears the full-text index data, but keeps the index schema
   static StatusOr<bool> clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
                                      const std::string& index);
 

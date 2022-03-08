@@ -342,7 +342,7 @@ struct DropSpaceReq {
 }
 
 struct ClearSpaceReq {
-    1: binary space_name
+    1: binary space_name,
     2: bool   if_exists,
 }
 

@@ -181,7 +181,7 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
 
   auto *csNode = asNode<ClearSpace>(node());
 
-  // prepare text search index before drop meta data.
+  // prepare text search index.
   std::vector<std::string> ftIndexes;
   auto spaceIdRet = qctx()->getMetaClient()->getSpaceIdByNameFromCache(csNode->getSpaceName());
   if (spaceIdRet.ok()) {

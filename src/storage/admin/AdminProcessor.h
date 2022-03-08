@@ -216,25 +216,6 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit RemovePartProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
-class ClearSpaceProcessor : public BaseProcessor<cpp2::AdminExecResp> {
- public:
-  static ClearSpaceProcessor* instance(StorageEnv* env) {
-    return new ClearSpaceProcessor(env);
-  }
-
-  void process(const cpp2::ClearSpaceReq& req) {
-    auto spaceId = req.get_space_id();
-  }
-  if (FLAGS_store_type != "nebula") {
-    this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_STORE, partId);
-    onFinished();
-    return;
-  }
-  auto* store = static_cast<kvstore::NebulaStore*>(env_->kvstore_);
-  store->clearSpace(spaceId);
-  onFinished();
-};
-
 /**
  * @brief Processor class to handle member change.
  *

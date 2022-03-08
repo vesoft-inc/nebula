@@ -313,7 +313,6 @@ bool ESGraphAdapter::clearCheck(const std::string& ret) const {
       return false;
     }
     auto result = root.find("failures");
-    // @TODO(zhaohaifei):GDB check!!!!!
     if (result != root.items().end() && result->second.isArray() && result->second.size() == 0) {
       return true;
     }

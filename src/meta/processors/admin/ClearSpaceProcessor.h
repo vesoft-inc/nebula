@@ -30,6 +30,7 @@ class ClearSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   /**
    * @brief Get all parts' distribution information.
    *
+   * @param spaceId
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
    *         std::vector<HostAddr>>> map for part id -> peer hosts.
    */

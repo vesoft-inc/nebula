@@ -153,7 +153,7 @@ class AdminClient {
   /**
    * @brief Clear space data in all corresponding storage hosts.
    *
-   * @param spaceId space which will to be cleared
+   * @param spaceId space which will be cleared
    * @param hosts storage admin service addresses
    * @return folly::Future<nebula::cpp2::ErrorCode>
    */

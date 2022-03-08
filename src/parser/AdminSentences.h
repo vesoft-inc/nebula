@@ -423,6 +423,7 @@ class DropSpaceSentence final : public DropSentence {
   std::unique_ptr<std::string> clusterName_;
 };
 
+// clear space data and index data, but keep space schema and index schema.
 class ClearSpaceSentence final : public DropSentence {
  public:
   ClearSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
