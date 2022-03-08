@@ -6,7 +6,8 @@ Feature: Lookup_In
   # Lookup ... WHERE xxx IN xxx causes service crash
   # Fix https://github.com/vesoft-inc/nebula/issues/3983
   Scenario: lookup in where prop has no index
-    Given a graph with space named "nba"
+    Given an empty graph
+    And load "nba" csv data to a new space
     When executing query:
       """
       DROP TAG INDEX IF EXISTS player_age_index
@@ -36,3 +37,4 @@ Feature: Lookup_In
       | "Dirk Nowitzki" | 40         |
       | "Luka Doncic"   | 20         |
       | "Kobe Bryant"   | 40         |
+    Then drop the used space
