@@ -90,8 +90,8 @@ class ExpressionUtils {
   // Rewrite Logical AND expr that contains Logical OR expr to Logical OR expr using distributive
   // law
   // Examples:
-  // A and (B or C)  => (A and B) or (A and C) (A or B) and (C or D)  =>  (A and C) or
-  // (A and D) or (B and C) or (B or D)
+  // A and (B or C)  => (A and B) or (A and C)
+  // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
   static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
 
   // Returns the operands of container expressions
