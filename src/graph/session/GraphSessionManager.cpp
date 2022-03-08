@@ -114,15 +114,17 @@ std::vector<meta::cpp2::Session> GraphSessionManager::getSessionFromLocalCache()
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::createSession(
     const std::string userName, const std::string clientIp, folly::Executor* runner) {
   // check the number of sessions per user per ip
-  auto key = userName + clientIp;
+  std::string key = userName + clientIp;
   auto maxSessions = FLAGS_max_sessions_per_ip_per_user;
   auto uiscFindPtr = userIpSessionCount_.find(key);
-  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 && uiscFindPtr->second.get()->get() + 1 > maxSessions) {
-    return Status::Error("Create Session failed: Too many sessions created from %s by user %s. the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf", 
+  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 
+      && uiscFindPtr->second.get()->get() > maxSessions - 1) {
+    return Status::Error("Create Session failed: Too many sessions created from %s by user %s. "
+                  "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf", 
     clientIp.c_str(), userName.c_str(), maxSessions, "max_sessions_per_ip_per_user");
   }
   auto createCB = [this,
-                   userName = userName, key = key](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
+                   userName = userName, clientIp = clientIp](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
     if (!resp.ok()) {
       LOG(ERROR) << "Create session failed:" << resp.status();
       return Status::Error("Create session failed: %s", resp.status().toString().c_str());
@@ -140,7 +142,8 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
         if (!ret.second) {
           return Status::Error("Insert session to local cache failed.");
         }
-        bool addResp = addSessionCount(key);
+        std::string sessionKey = userName + clientIp;
+        bool addResp = addSessionCount(sessionKey);
         if (!addResp) {
           return Status::Error("Insert userIpSessionCount to local cache failed.");
         }
@@ -321,7 +324,7 @@ Status GraphSessionManager::init() {
   return Status::OK();
 }
 
-bool GraphSessionManager::addSessionCount(std::string key) {
+bool GraphSessionManager::addSessionCount(std::string& key) {
   auto countFindPtr = userIpSessionCount_.find(key);
   if (countFindPtr != userIpSessionCount_.end()) {
     countFindPtr->second.get()->fetch_add(1);
@@ -334,15 +337,16 @@ bool GraphSessionManager::addSessionCount(std::string key) {
   return true;
 }
 
-void GraphSessionManager::subSessionCount(std::string key) {
+bool GraphSessionManager::subSessionCount(std::string& key) {
   auto countFindPtr = userIpSessionCount_.find(key);
   if (countFindPtr == userIpSessionCount_.end()) {
-    return ;
+    return false;
   }
   auto count = countFindPtr->second.get()->fetch_sub(1);
   if (count <= 0) {
     userIpSessionCount_.erase(countFindPtr);
   }
+  return true;
 }
 }  // namespace graph
 }  // namespace nebula
