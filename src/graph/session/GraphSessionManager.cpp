@@ -82,7 +82,6 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
         if (!ret.second) {
           return Status::Error("Insert session to local cache failed.");
         }
-        
         std::string key = session.get_user_name() + session.get_client_ip();
         bool addResp = addSessionCount(key);
         if (!addResp) {
@@ -118,14 +117,14 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
   std::string key = userName + clientIp;
   auto maxSessions = FLAGS_max_sessions_per_ip_per_user;
   auto uiscFindPtr = userIpSessionCount_.find(key);
-  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 
-      && uiscFindPtr->second.get()->get() > maxSessions - 1) {
+  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0
+    && uiscFindPtr->second.get()->get() > maxSessions - 1) {
     return Status::Error("Create Session failed: Too many sessions created from %s by user %s. "
-                  "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf", 
+                  "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf",
     clientIp.c_str(), userName.c_str(), maxSessions, "max_sessions_per_ip_per_user");
   }
   auto createCB = [this,
-                   userName = userName, 
+                   userName = userName,
                    clientIp = clientIp](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
     if (!resp.ok()) {
       LOG(ERROR) << "Create session failed:" << resp.status();
@@ -178,7 +177,6 @@ void GraphSessionManager::removeSession(SessionID id) {
   auto sessionCopy = iter->second->getSession();
   std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
   activeSessions_.erase(iter);
-  
   // delete session count from cache
   subSessionCount(key);
 }
