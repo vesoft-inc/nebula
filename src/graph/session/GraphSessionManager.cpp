@@ -117,15 +117,18 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
   std::string key = userName + clientIp;
   auto maxSessions = FLAGS_max_sessions_per_ip_per_user;
   auto uiscFindPtr = userIpSessionCount_.find(key);
-  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0
-    && uiscFindPtr->second.get()->get() > maxSessions - 1) {
-    return Status::Error("Create Session failed: Too many sessions created from %s by user %s. "
-                  "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf",
-    clientIp.c_str(), userName.c_str(), maxSessions, "max_sessions_per_ip_per_user");
+  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 &&
+      uiscFindPtr->second.get()->get() > maxSessions - 1) {
+    return Status::Error(
+        "Create Session failed: Too many sessions created from %s by user %s. "
+        "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf",
+        clientIp.c_str(),
+        userName.c_str(),
+        maxSessions,
+        "max_sessions_per_ip_per_user");
   }
-  auto createCB = [this,
-                   userName = userName,
-                   clientIp = clientIp](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
+  auto createCB = [this, userName = userName, clientIp = clientIp](
+                      auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
     if (!resp.ok()) {
       LOG(ERROR) << "Create session failed:" << resp.status();
       return Status::Error("Create session failed: %s", resp.status().toString().c_str());
