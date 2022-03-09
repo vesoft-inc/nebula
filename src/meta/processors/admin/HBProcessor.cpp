@@ -39,6 +39,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
       LOG(INFO) << "Machine " << host << " is not registed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
+      setLeaderInfo();
       onFinished();
       return;
     }
@@ -112,6 +113,15 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
+}
+
+void HBProcessor::setLeaderInfo() {
+  auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
+  if (ok(leaderRet)) {
+    resp_.leader_ref() = toThriftHost(nebula::value(leaderRet));
+  } else {
+    resp_.code_ref() = nebula::error(leaderRet);
+  }
 }
 
 }  // namespace meta
