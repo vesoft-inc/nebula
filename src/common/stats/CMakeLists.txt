@@ -7,5 +7,12 @@ nebula_add_library(
     OBJECT
     StatsManager.cpp
 )
-
+nebula_add_library(
+    metrics_obj
+    OBJECT
+    Metrics.cpp
+    Histogram.cpp
+    Counter.cpp
+    Gauge.cpp
+)
 nebula_add_subdirectory(test)

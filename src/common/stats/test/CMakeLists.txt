@@ -65,3 +65,17 @@ nebula_add_executable(
     LIBRARIES
         follybenchmark boost_regex
 )
+nebula_add_executable(
+    NAME 
+        metrics_bm
+    SOURCES
+        MetricsBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:metrics_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    LIBRARIES
+        follybenchmark boost_regex
+)
