@@ -197,11 +197,14 @@ class Part : public raftex::RaftPart {
   }
 
   /**
-   * @brief clean up data in listener, called in RaftPart::reset
+   * @brief clean up data safely
    *
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode cleanup() override;
+  nebula::cpp2::ErrorCode cleanupSafely() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    return cleanup();
+  }
 
  private:
   /**
@@ -296,6 +299,13 @@ class Part : public raftex::RaftPart {
   nebula::cpp2::ErrorCode putCommitMsg(WriteBatch* batch,
                                        LogID committedLogId,
                                        TermID committedLogTerm);
+
+  /**
+   * @brief clean up data in listener, called in RaftPart::reset
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode cleanup() override;
 
  public:
   struct CallbackOptions {
