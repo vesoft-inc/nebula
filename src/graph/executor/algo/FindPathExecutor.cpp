@@ -41,11 +41,13 @@ void FindPathExecutor::shortestPathInit() {
 void FindPathExecutor::allPathInit() {
   auto* path = asNode<FindPath>(node());
   auto iter = ectx_->getResult(path->rightVidVar()).iter();
+  APInterimsMap rightPath;
   for (; iter->valid(); iter->next()) {
     const auto& vid = iter->getColumn(0);
     std::vector<Path> temp({Path(Vertex(vid, {}), {})});
-    preAllPaths_[vid].emplace(vid, std::move(temp));
+    rightPath[vid].emplace(vid, std::move(temp));
   }
+  historyAllRightPaths_.emplace_back(std::move(rightPath));
 }
 
 std::vector<Path> FindPathExecutor::createPaths(const std::vector<Path>& paths, const Edge& edge) {
@@ -140,6 +142,17 @@ bool FindPathExecutor::conjunctPath(SPInterimsMap& leftPaths,
   return false;
 }
 
+void FindPathExecutor::conjunctPath(APInterimsMap& leftPaths,
+                                    APInterimsMap& rightPaths,
+                                    DataSet& ds) {
+  for (auto& leftPath : leftPaths) {
+    auto find = rightPaths.find(leftPath.first);
+    if (find == rightPaths.end()) {
+      continue;
+    }
+  }
+}
+
 void FindPathExecutor::doShortestPath(Iterator* iter, SPInterimsMap& currentPaths, bool reverse) {
   auto& historyPath = reverse ? historyRightPaths_ : historyLeftPaths_;
   for (; iter->valid(); iter->next()) {
@@ -153,7 +166,7 @@ void FindPathExecutor::doShortestPath(Iterator* iter, SPInterimsMap& currentPath
 
     auto findHistorySrc = historyPath.find(src);
     if (findHistorySrc == historyPath.end()) {
-      // src must be startVid
+      // first step
       Path path;
       path.src = Vertex(src, {});
       path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
@@ -172,7 +185,6 @@ void FindPathExecutor::doShortestPath(Iterator* iter, SPInterimsMap& currentPath
       std::vector<Path> start({Path(Vertex(src, {}), {})});
       historyPath[src].emplace(src, std::move(start));
     } else {
-      // not the first step
       auto& srcPaths = findHistorySrc->second;
       auto findHistoryDst = historyPath.find(dst);
       if (findHistoryDst == historyPath.end()) {
@@ -244,19 +256,54 @@ void FindPathExecutor::shortestPath(Iterator* leftIter, Iterator* rightIter, Dat
   }
 }
 
-void FindPathExecutor::doAllPath(Iterator* iter, CurrentAllPath& currentPath, bool reverse) {
-  const auto& historyPath = reverse ? historyAllRightPaths_ : historyAllLeftPaths_;
-  UNUSED(historyPath);
-  UNUSED(iter);
-  UNUSED(currentPath);
-  return;
+void FindPathExecutor::doAllPath(Iterator* iter, APInterimsMap& currentPaths, bool reverse) {
+  if (step_ == 1) {
+    for (; iter->valid(); iter->next()) {
+      auto edgeVal = iter->getEdge();
+      if (UNLIKELY(!edgeVal.isEdge())) {
+        continue;
+      }
+      auto& edge = edgeVal.getEdge();
+      auto& src = edge.src;
+      auto& dst = edge.dst;
+      if (noLoop_ && src == dst) {
+        continue;
+      }
+      Path path;
+      path.src = Vertex(src, {});
+      path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
+      currentPaths[dst].emplace_back(std::move(path));
+    }
+    return;
+  }
+  auto& historyPaths = reverse ? historyAllRightPaths_[step_] : historyAllLeftPaths_[step_ - 1];
+  for (; iter->valid(); iter->next()) {
+    auto edgeVal = iter->getEdge();
+    if (UNLIKELY(!edgeVal.isEdge())) {
+      continue;
+    }
+    auto& edge = edgeVal.getEdge();
+    auto& src = edge.src;
+    auto& dst = edge.dst;
+    for (const auto& histPath : historyPaths) {
+      Path path = histPath;
+      path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
+      if (path.hasDuplicateEdges()) {
+        continue;
+      }
+      if (noLoop_ && path.hasDuplicateVertices()) {
+        continue;
+      }
+      currentPaths[dst].emplace_back(std::move(path));
+    }
+  }
 }
 
 void FindPathExecutor::allPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds) {
   APInterimsMap leftPaths, rightPaths;
   doAllPath(leftIter, leftPaths, false);
 
-  conjunctPath(leftPaths, preAllPaths_, ds);
+  conjunctPath(leftPaths, historyAllRightPaths_[step_ - 1], ds);
 
   if (step_ * 2 <= steps_) {
     doAllPath(rightIter, rightPaths, true);
@@ -264,8 +311,6 @@ void FindPathExecutor::allPath(Iterator* leftIter, Iterator* rightIter, DataSet&
   }
 
   setNextStepVidFromPath(leftPaths, rightPaths);
-  preAllPaths_ = rightPaths;
-  // update history
 }
 
 folly::Future<Status> FindPathExecutor::execute() {

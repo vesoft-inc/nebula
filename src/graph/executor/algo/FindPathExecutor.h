@@ -18,14 +18,16 @@ class FindPathExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  // key : dstVid, value : map(key : srcVid, value : <path>)
+  // shortestPath  key : dstVid, value : map(key : srcVid, value : <path>)
   using SPInterimsMap = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
+  // allPath  key : dstVid, value: <path>
   using APInterimsMap = std::unordered_map<Value, std::vector<Path>>;
 
  private:
   std::vector<Path> createPaths(const std::vector<Path>& paths, const Edge& edge);
   void buildPath(std::vector<Path>& leftPaths, std::vector<Path>& rightPaths, DataSet& ds);
   bool conjunctPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths, DataSet& ds);
+  void conjunctPath(APInterimsMap& leftPaths, APInterimsMap& rightPaths, DataSet& ds);
   void setNextStepVidFromPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths);
 
   // shortestPath
@@ -52,9 +54,8 @@ class FindPathExecutor final : public Executor {
   SPInterimsMap prePaths_;
 
   // allpath
-  APInterimsMap historyAllLeftPaths_;
-  APInterimsMap historyAllRightPaths_;
-  APInterimsMap preAllPaths_;
+  std::vector<APInterimsMap> historyAllLeftPaths_;
+  std::vector<APInterimsMap> historyAllRightPaths_;
 };
 }  // namespace graph
 }  // namespace nebula
