@@ -31,10 +31,49 @@ class MetaDumper {
     if (!iter) {
       return Status::Error("Init iterator failed");
     }
+
     std::string prefix;
     {
-      LOG(INFO) << "Space info";
-      prefix = "__spaces__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Meta version:";
+      enum class MetaVersion {
+        UNKNOWN = 0,
+        V1 = 1,
+        V2 = 2,
+        V3 = 3,
+      };
+
+      prefix = "__meta_version__";
+      iter->Seek(rocksdb::Slice(prefix));
+      bool found = false;
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto version = *reinterpret_cast<const MetaVersion*>(iter->value().data());
+        found = true;
+        LOG(INFO) << "Meta version=" << static_cast<int>(version);
+        break;
+      }
+
+      if (!found) {
+        prefix = MetaKeyUtils::hostPrefix();
+        iter->Seek(rocksdb::Slice(prefix));
+        while (iter->Valid() && iter->key().starts_with(prefix)) {
+          found = true;
+          auto v1KeySize = prefix.size() + sizeof(int64_t);
+          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
+          LOG(INFO) << "Meta version=" << static_cast<int>(version);
+          iter->Next();
+          break;
+        }
+
+        if (!found) {
+          LOG(INFO) << "Meta version= Unkown";
+        }
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Space info:";
+      prefix = MetaKeyUtils::spacePrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -52,8 +91,9 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Partition info";
-      prefix = "__parts__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Partition info::";
+      prefix = MetaKeyUtils::partPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -71,8 +111,21 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Host info";
-      prefix = "__hosts__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Registered machine info:";
+      prefix = MetaKeyUtils::machinePrefix();
+      iter->Seek(rocksdb::Slice(prefix));
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+        auto machine = MetaKeyUtils::parseMachineKey(key);
+        LOG(INFO) << folly::sformat("registered machine: {}", machine.toString());
+        iter->Next();
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Host info:";
+      prefix = MetaKeyUtils::hostPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -87,8 +140,56 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Tag info";
-      prefix = "__tags__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Host directories info:";
+      prefix = MetaKeyUtils::hostDirPrefix();
+      iter->Seek(rocksdb::Slice(prefix));
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
+        auto addr = MetaKeyUtils::parseHostDirKey(key);
+        auto dir = MetaKeyUtils::parseHostDir(val);
+
+        std::string dataDirs = "";
+        for (auto d : dir.get_data()) {
+          dataDirs += d + ", ";
+        }
+        LOG(INFO) << folly::sformat("host addr: {}, data dirs: {}, root dir: {}",
+                                    addr.toString(),
+                                    dataDirs,
+                                    dir.get_root());
+        iter->Next();
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Disk partitions info:";
+      prefix = MetaKeyUtils::diskPartsPrefix();
+      iter->Seek(rocksdb::Slice(prefix));
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
+        auto addr = MetaKeyUtils::parseDiskPartsHost(key);
+        auto spaceId = MetaKeyUtils::parseDiskPartsSpace(key);
+        auto diskPath = MetaKeyUtils::parseDiskPartsPath(key);
+        auto parts = MetaKeyUtils::parseDiskPartsVal(val);
+
+        std::string partsStr = "";
+        for (auto p : parts.get_part_list()) {
+          partsStr += (std::to_string(p) + ", ");
+        }
+        LOG(INFO) << folly::sformat("host addr: {}, data dir: {}, space id: {}, parts: {}",
+                                    addr.toString(),
+                                    diskPath,
+                                    spaceId,
+                                    partsStr);
+        iter->Next();
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Tag info:";
+      prefix = MetaKeyUtils::schemaTagsPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -100,8 +201,9 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Edge info";
-      prefix = "__edges__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Edge info:";
+      prefix = MetaKeyUtils::schemaEdgesPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -113,8 +215,9 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Index info";
-      prefix = "__indexes__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Index info:";
+      prefix = MetaKeyUtils::indexPrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -125,8 +228,9 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Leader info";
-      prefix = "__leader_terms__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Leader info:";
+      prefix = MetaKeyUtils::leaderPrefix();
       HostAddr host;
       TermID term;
       nebula::cpp2::ErrorCode code;
@@ -152,8 +256,9 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Zone info";
-      prefix = "__zones__";
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Zone info:";
+      prefix = MetaKeyUtils::zonePrefix();
       iter->Seek(rocksdb::Slice(prefix));
       while (iter->Valid() && iter->key().starts_with(prefix)) {
         auto key = folly::StringPiece(iter->key().data(), iter->key().size());
