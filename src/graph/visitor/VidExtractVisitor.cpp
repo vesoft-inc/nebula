@@ -189,7 +189,8 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        expr->right()->kind() != Expression::Kind::kConstant) {
+        (expr->right()->kind() != Expression::Kind::kConstant &&
+         expr->right()->kind() != Expression::Kind::kVar)) {
       vidPattern_ = VidPattern{};
       return;
     }
@@ -199,14 +200,28 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       vidPattern_ = VidPattern{};
       return;
     }
-    const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
-    if (!SchemaUtil::isValidVid(constExpr->value())) {
-      vidPattern_ = VidPattern{};
-      return;
+    if (expr->right()->kind() == Expression::Kind::kConstant) {
+      const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
+      if (!SchemaUtil::isValidVid(constExpr->value())) {
+        vidPattern_ = VidPattern{};
+        return;
+      }
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                              {{fCallExpr->args()->args().front()->toString(),
+                                {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
+    } else if (expr->right()->kind() == Expression::Kind::kVar &&
+               ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+      auto rValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
+      if (SchemaUtil::isValidVid(rValue)) {
+        vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                    {{fCallExpr->args()->args().front()->toString(),
+                      {VidPattern::Vids::Kind::kIn, List({rValue})}}}};
+        return;
+      } else {
+        vidPattern_ = VidPattern{};
+        return;
+      }
     }
-    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
-                             {{fCallExpr->args()->args().front()->toString(),
-                               {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
   } else {
     if (ExpressionUtils::isPropertyExpr(expr->left())) {
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
