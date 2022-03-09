@@ -21,6 +21,7 @@ class ESGraphAdapter final : public FTGraphAdapter {
   FRIEND_TEST(FulltextPluginTest, ESFuzzyTest);
   FRIEND_TEST(FulltextPluginTest, ESCreateIndexTest);
   FRIEND_TEST(FulltextPluginTest, ESDropIndexTest);
+  FRIEND_TEST(FulltextPluginTest, ESClearIndexTest);
 
  public:
   static std::unique_ptr<FTGraphAdapter> kAdapter;
