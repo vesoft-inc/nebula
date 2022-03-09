@@ -73,17 +73,24 @@ class BaseProcessor {
     delete this;
   }
 
-  void handleErrorCode(nebula::cpp2::ErrorCode code,
-                       GraphSpaceID spaceId = kDefaultSpaceId,
-                       PartitionID partId = kDefaultPartId) {
+  /**
+   * @brief Set error code and handle leader changed.
+   *
+   * @param code
+   */
+  void handleErrorCode(nebula::cpp2::ErrorCode code) {
     resp_.code_ref() = code;
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      handleLeaderChanged(spaceId, partId);
+      handleLeaderChanged();
     }
   }
 
-  void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
-    auto leaderRet = kvstore_->partLeader(spaceId, partId);
+  /**
+   * @brief Set leader address to reponse.
+   *
+   */
+  void handleLeaderChanged() {
+    auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
     if (ok(leaderRet)) {
       resp_.leader_ref() = toThriftHost(nebula::value(leaderRet));
     } else {
