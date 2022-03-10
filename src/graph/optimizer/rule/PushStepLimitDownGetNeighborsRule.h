@@ -33,11 +33,11 @@ namespace opt {
 
   After:
 
-  +--------+--------+
-  |      Limit      |
-  |    (limit=3)    |
-  +--------+--------+
-           |
+ +----------+----------+
+ |        Limit        |
+ |(SubscriptExpression)|
+ +----------+----------+
+            |
  +----------+----------+
  |     GetNeighbors    |
  |(SubscriptExpression)|
