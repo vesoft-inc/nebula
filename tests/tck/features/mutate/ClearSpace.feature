@@ -76,10 +76,10 @@ Feature: Clear space test
       """
     Then the execution should be successful
     And the result should be, in any order, with relax comparison:
-      |   Type   |   Name     |  Count  |
-      |   "Tag"  |  "player"  |   11    |
-      |  "Space" | "vertices" |   11    |
-      |  "Space" |  "edges"   |    0    |
+      | Type    | Name       | Count |
+      | "Tag"   | "player"   | 11    |
+      | "Space" | "vertices" | 11    |
+      | "Space" | "edges"    | 0     |
     When executing query:
       """
       CLEAR SPACE IF EXISTS clear_space;
@@ -97,7 +97,7 @@ Feature: Clear space test
       """
     Then the execution should be successful
     And the result should be, in any order, with relax comparison:
-      |   Type   |   Name     |  Count  |
-      |   "Tag"  |  "player"  |    0    |
-      |  "Space" | "vertices" |    0    |
-      |  "Space" |  "edges"   |    0    |
+      | Type    | Name       | Count |
+      | "Tag"   | "player"   | 0     |
+      | "Space" | "vertices" | 0     |
+      | "Space" | "edges"    | 0     |
