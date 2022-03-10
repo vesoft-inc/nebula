@@ -41,13 +41,10 @@ void FindPathExecutor::shortestPathInit() {
 void FindPathExecutor::allPathInit() {
   auto* path = asNode<FindPath>(node());
   auto iter = ectx_->getResult(path->rightVidVar()).iter();
-  APInterimsMap rightPath;
   for (; iter->valid(); iter->next()) {
     const auto& vid = iter->getColumn(0);
-    std::vector<Path> temp({Path(Vertex(vid, {}), {})});
-    rightPath[vid].emplace(vid, std::move(temp));
+    preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
   }
-  historyAllRightPaths_.emplace_back(std::move(rightPath));
 }
 
 std::vector<Path> FindPathExecutor::createPaths(const std::vector<Path>& paths, const Edge& edge) {
@@ -78,6 +75,25 @@ void FindPathExecutor::buildPath(std::vector<Path>& leftPaths,
 }
 
 void FindPathExecutor::setNextStepVidFromPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths) {
+  auto* findPath = asNode<FindPath>(node());
+  auto leftVidVar = findPath->leftVidVar();
+  auto rightVidVar = findPath->rightVidVar();
+  DataSet leftDs, rightDs;
+  for (const auto& path : leftPaths) {
+    Row row;
+    row.values.emplace_back(path.first);
+    leftDs.rows.emplace_back(std::move(row));
+  }
+  ectx_->setResult(leftVidVar, ResultBuilder().value(std::move(leftDs)).build());
+  for (const auto& path : rightPaths) {
+    Row row;
+    row.values.emplace_back(path.first);
+    rightDs.rows.emplace_back(std::move(row));
+  }
+  ectx_->setResult(rightVidVar, ResultBuilder().value(std::move(rightDs)).build());
+}
+
+void FindPathExecutor::setNextStepVidFromPath(Interims& leftPaths, Interims& rightPaths) {
   auto* findPath = asNode<FindPath>(node());
   auto leftVidVar = findPath->leftVidVar();
   auto rightVidVar = findPath->rightVidVar();
@@ -140,17 +156,6 @@ bool FindPathExecutor::conjunctPath(SPInterimsMap& leftPaths,
     return true;
   }
   return false;
-}
-
-void FindPathExecutor::conjunctPath(APInterimsMap& leftPaths,
-                                    APInterimsMap& rightPaths,
-                                    DataSet& ds) {
-  for (auto& leftPath : leftPaths) {
-    auto find = rightPaths.find(leftPath.first);
-    if (find == rightPaths.end()) {
-      continue;
-    }
-  }
 }
 
 void FindPathExecutor::doShortestPath(Iterator* iter, SPInterimsMap& currentPaths, bool reverse) {
@@ -256,7 +261,7 @@ void FindPathExecutor::shortestPath(Iterator* leftIter, Iterator* rightIter, Dat
   }
 }
 
-void FindPathExecutor::doAllPath(Iterator* iter, APInterimsMap& currentPaths, bool reverse) {
+void FindPathExecutor::doAllPath(Iterator* iter, Interims& currentPaths, bool reverse) {
   if (step_ == 1) {
     for (; iter->valid(); iter->next()) {
       auto edgeVal = iter->getEdge();
@@ -276,7 +281,7 @@ void FindPathExecutor::doAllPath(Iterator* iter, APInterimsMap& currentPaths, bo
     }
     return;
   }
-  auto& historyPaths = reverse ? historyAllRightPaths_[step_] : historyAllLeftPaths_[step_ - 1];
+  auto& historyPaths = reverse ? preRightPaths_ : preLeftPaths_;
   for (; iter->valid(); iter->next()) {
     auto edgeVal = iter->getEdge();
     if (UNLIKELY(!edgeVal.isEdge())) {
@@ -285,13 +290,13 @@ void FindPathExecutor::doAllPath(Iterator* iter, APInterimsMap& currentPaths, bo
     auto& edge = edgeVal.getEdge();
     auto& src = edge.src;
     auto& dst = edge.dst;
-    for (const auto& histPath : historyPaths) {
+    for (const auto& histPath : historyPaths[src]) {
       Path path = histPath;
       path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
       if (path.hasDuplicateEdges()) {
         continue;
       }
-      if (noLoop_ && path.hasDuplicateVertices()) {
+      if (noDuplicateVid_ && path.hasDuplicateVertices()) {
         continue;
       }
       currentPaths[dst].emplace_back(std::move(path));
@@ -300,10 +305,12 @@ void FindPathExecutor::doAllPath(Iterator* iter, APInterimsMap& currentPaths, bo
 }
 
 void FindPathExecutor::allPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds) {
-  APInterimsMap leftPaths, rightPaths;
+  Interims leftPaths, rightPaths;
   doAllPath(leftIter, leftPaths, false);
 
-  conjunctPath(leftPaths, historyAllRightPaths_[step_ - 1], ds);
+  if (conjunctPath(leftPaths, preRightPaths_, ds)) {
+    return;
+  }
 
   if (step_ * 2 <= steps_) {
     doAllPath(rightIter, rightPaths, true);
@@ -311,6 +318,9 @@ void FindPathExecutor::allPath(Iterator* leftIter, Iterator* rightIter, DataSet&
   }
 
   setNextStepVidFromPath(leftPaths, rightPaths);
+  // update history
+  preLeftPaths_.swap(leftPaths);
+  preRightPaths_.swap(rightPaths);
 }
 
 folly::Future<Status> FindPathExecutor::execute() {
@@ -318,23 +328,29 @@ folly::Future<Status> FindPathExecutor::execute() {
   auto* findPath = asNode<FindPath>(node());
   steps_ = findPath->steps();
   noLoop_ = findPath->noLoop();
+  shortest_ = findPath->isShortest();
+  noDuplicateVid_ = noLoop_ || shortest_;
   terminationVar_ = findPath->terminationVar();
   auto leftIter = ectx_->getResult(findPath->leftInputVar()).iter();
   auto rightIter = ectx_->getResult(findPath->rightInputVar()).iter();
   DCHECK(!!leftIter && !!rightIter);
   DataSet ds;
   ds.colNames = node()->colNames();
-  if (findPath->isShortest()) {
-    if (step_ == 1) {
-      shortestPathInit();
-    }
-    shortestPath(leftIter.get(), rightIter.get(), ds);
-  } else {
-    if (step_ == 1) {
-      allPathInit();
-    }
-    allPath(leftIter.get(), rightIter.get(), ds);
+  // if (findPath->isShortest()) {
+  //   if (step_ == 1) {
+  //     shortestPathInit();
+  //   }
+  //   shortestPath(leftIter.get(), rightIter.get(), ds);
+  // } else {
+  //   if (step_ == 1) {
+  //     allPathInit();
+  //   }
+  //   allPath(leftIter.get(), rightIter.get(), ds);
+  // }
+  if (step_ == 1) {
+    init();
   }
+  allPath(leftIter.get(), rightIter.get(), ds);
   step_++;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
@@ -346,6 +362,94 @@ void FindPathExecutor::printPath(SPInterimsMap& paths) {
       auto& src = srcPath.first;
       for (auto& path : srcPath.second) {
         VLOG(1) << "Path is src: " << src << " dst: " << dst << " path: " << path;
+      }
+    }
+  }
+}
+
+bool FindPathExecutor::conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds) {
+  for (auto& leftPath : leftPaths) {
+    auto find = rightPaths.find(leftPath.first);
+    if (find == rightPaths.end()) {
+      continue;
+    }
+    for (const auto& lPath : leftPath.second) {
+      const auto& srcVid = lPath.src.vid;
+      for (const auto& rPath : find->second) {
+        const auto& dstVid = rPath.src.vid;
+        if (shortest_) {
+          auto range = termination_.equal_range(srcVid);
+          for (auto iter = range.first; iter != range.second; ++iter) {
+            if (iter->second.first == dstVid) {
+              VLOG(1) << "Find Common Vid : " << find->first;
+              auto forwardPath = lPath;
+              auto backwardPath = rPath;
+              backwardPath.reverse();
+              forwardPath.append(std::move(backwardPath));
+              Row row;
+              row.values.emplace_back(std::move(forwardPath));
+              ds.rows.emplace_back(std::move(row));
+              iter->second.second = false;
+            }
+          }
+        } else {
+          auto forwardPath = lPath;
+          auto backwardPath = rPath;
+          backwardPath.reverse();
+          forwardPath.append(std::move(backwardPath));
+          if (forwardPath.hasDuplicateEdges()) {
+            continue;
+          }
+          if (noDuplicateVid_ && forwardPath.hasDuplicateVertices()) {
+            continue;
+          }
+          Row row;
+          row.values.emplace_back(std::move(forwardPath));
+          ds.rows.emplace_back(std::move(row));
+        }
+      }
+    }
+  }
+  if (shortest_) {
+    for (auto iter = termination_.begin(); iter != termination_.end();) {
+      if (!iter->second.second) {
+        iter = termination_.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+    if (termination_.empty()) {
+      ectx_->setValue(terminationVar_, true);
+      return true;
+    }
+  }
+  return false;
+}
+
+void FindPathExecutor::init() {
+  auto* path = asNode<FindPath>(node());
+  auto lIter = ectx_->getResult(path->leftVidVar()).iter();
+  auto rIter = ectx_->getResult(path->rightVidVar()).iter();
+  std::set<Value> rightVids;
+  for (; rIter->valid(); rIter->next()) {
+    auto& vid = rIter->getColumn(0);
+    rightVids.emplace(vid);
+  }
+  for (auto& vid : rightVids) {
+    preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
+  }
+
+  if (shortest_) {
+    std::set<Value> leftVids;
+    for (; lIter->valid(); lIter->next()) {
+      auto& vid = lIter->getColumn(0);
+      leftVids.emplace(vid);
+    }
+    for (const auto& leftVid : leftVids) {
+      for (const auto& rightVid : rightVids) {
+        if (leftVid != rightVid) {
+          termination_.insert({leftVid, {rightVid, true}});
+        }
       }
     }
   }
