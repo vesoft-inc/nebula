@@ -14,10 +14,9 @@ void FindPathExecutor::init() {
   std::set<Value> rightVids;
   for (; rIter->valid(); rIter->next()) {
     auto& vid = rIter->getColumn(0);
-    rightVids.emplace(vid);
-  }
-  for (auto& vid : rightVids) {
-    preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
+    if (rightVids.emplace(vid).second) {
+      preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
+    }
   }
 
   if (shortest_) {
@@ -29,7 +28,7 @@ void FindPathExecutor::init() {
     for (const auto& leftVid : leftVids) {
       for (const auto& rightVid : rightVids) {
         if (leftVid != rightVid) {
-          termination_.insert({leftVid, {rightVid, true}});
+          terminationMap_.insert({leftVid, {rightVid, true}});
         }
       }
     }
@@ -57,10 +56,9 @@ bool FindPathExecutor::conjunctPath(Interims& leftPaths, Interims& rightPaths, D
       for (const auto& rPath : find->second) {
         const auto& dstVid = rPath.src.vid;
         if (shortest_) {
-          auto range = termination_.equal_range(srcVid);
+          auto range = terminationMap_.equal_range(srcVid);
           for (auto iter = range.first; iter != range.second; ++iter) {
             if (iter->second.first == dstVid) {
-              VLOG(1) << "Find Common Vid : " << find->first;
               auto forwardPath = lPath;
               auto backwardPath = rPath;
               backwardPath.reverse();
@@ -90,14 +88,14 @@ bool FindPathExecutor::conjunctPath(Interims& leftPaths, Interims& rightPaths, D
     }
   }
   if (shortest_) {
-    for (auto iter = termination_.begin(); iter != termination_.end();) {
+    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
       if (!iter->second.second) {
-        iter = termination_.erase(iter);
+        iter = terminationMap_.erase(iter);
       } else {
         ++iter;
       }
     }
-    if (termination_.empty()) {
+    if (terminationMap_.empty()) {
       ectx_->setValue(terminationVar_, true);
       return true;
     }
@@ -150,13 +148,12 @@ void FindPathExecutor::buildPath(Iterator* iter, Interims& currentPaths, bool re
 
 folly::Future<Status> FindPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* findPath = asNode<FindPath>(node());
-  steps_ = findPath->steps();
-  noLoop_ = findPath->noLoop();
-  shortest_ = findPath->isShortest();
-  terminationVar_ = findPath->terminationVar();
-  auto leftIter = ectx_->getResult(findPath->leftInputVar()).iter();
-  auto rightIter = ectx_->getResult(findPath->rightInputVar()).iter();
+  auto* path = asNode<FindPath>(node());
+  noLoop_ = path->noLoop();
+  shortest_ = path->isShortest();
+  terminationVar_ = path->terminationVar();
+  auto leftIter = ectx_->getResult(path->leftInputVar()).iter();
+  auto rightIter = ectx_->getResult(path->rightInputVar()).iter();
   DCHECK(!!leftIter && !!rightIter);
   DataSet ds;
   ds.colNames = node()->colNames();
@@ -172,13 +169,13 @@ folly::Future<Status> FindPathExecutor::execute() {
     return finish(ResultBuilder().value(Value(std::move(ds))).build());
   }
 
-  if (step_ * 2 <= steps_) {
+  if (step_ * 2 <= path->steps()) {
     buildPath(rightIter.get(), rightPaths, true);
     conjunctPath(leftPaths, rightPaths, ds);
   }
 
-  auto leftVidVar = findPath->leftVidVar();
-  auto rightVidVar = findPath->rightVidVar();
+  auto leftVidVar = path->leftVidVar();
+  auto rightVidVar = path->rightVidVar();
   setNextStepVidFromPath(leftPaths, leftVidVar);
   setNextStepVidFromPath(rightPaths, rightVidVar);
   // update history

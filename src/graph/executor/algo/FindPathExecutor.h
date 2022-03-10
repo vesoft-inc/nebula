@@ -18,7 +18,7 @@ class FindPathExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  // key : dstVid, value: <path>
+  // key : dst, value: <path>
   using Interims = std::unordered_map<Value, std::vector<Path>>;
 
  private:
@@ -32,10 +32,8 @@ class FindPathExecutor final : public Executor {
   bool noLoop_{false};
   // current step
   size_t step_{1};
-  // total steps
-  size_t steps_{0};
   std::string terminationVar_;
-  std::unordered_multimap<Value, std::pair<Value, bool>> termination_;
+  std::unordered_multimap<Value, std::pair<Value, bool>> terminationMap_;
 
   Interims preLeftPaths_;
   Interims preRightPaths_;
