@@ -220,7 +220,8 @@ class NebulaStore : public KVStore, public Handler {
                               PartitionID partId,
                               const std::string& key,
                               std::string* value,
-                              bool canReadFromFollower = false) override;
+                              bool canReadFromFollower = false,
+                              const void* snapshot = nullptr) override;
 
   /**
    * @brief Read a list of keys
