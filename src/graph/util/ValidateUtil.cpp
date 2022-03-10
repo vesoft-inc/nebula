@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/ValidateUtil.h"
 
@@ -47,7 +46,7 @@ Status ValidateUtil::validateOver(QueryContext* qctx, const OverClause* clause, 
     if (edges.empty()) {
       return Status::SemanticError("No edge type found in space `%s'", space.name.c_str());
     }
-    for (auto edge : edges) {
+    for (const auto& edge : edges) {
       auto edgeType = schemaMng->toEdgeType(space.id, edge);
       if (!edgeType.ok()) {
         return Status::SemanticError(
@@ -57,7 +56,7 @@ Status ValidateUtil::validateOver(QueryContext* qctx, const OverClause* clause, 
     }
     over.allEdges = std::move(edges);
     over.isOverAll = true;
-  } else {
+  } else {  // Over specific edges
     auto edges = clause->edges();
     for (auto* edge : edges) {
       auto edgeName = *edge->edge();

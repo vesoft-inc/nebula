@@ -290,14 +290,14 @@ class FetchVerticesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  explicit FetchVerticesSentence(Expression* ref, YieldClause* clause) {
+  FetchVerticesSentence(Expression* ref, YieldClause* clause) {
     kind_ = Kind::kFetchVertices;
     tags_ = std::make_unique<NameLabelList>();
     vertices_.reset(new VerticesClause(ref));
     yieldClause_.reset(clause);
   }
 
-  explicit FetchVerticesSentence(VertexIDList* vidList, YieldClause* clause) {
+  FetchVerticesSentence(VertexIDList* vidList, YieldClause* clause) {
     kind_ = Kind::kFetchVertices;
     tags_ = std::make_unique<NameLabelList>();
     vertices_.reset(new VerticesClause(vidList));
@@ -474,7 +474,7 @@ class FindPathSentence final : public Sentence {
 
 class LimitSentence final : public Sentence {
  public:
-  explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
+  LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
     kind_ = Kind::kLimit;
   }
 

@@ -25,9 +25,9 @@ struct ColumnStat {
 class IndexAggregateNode : public IndexNode {
  public:
   IndexAggregateNode(const IndexAggregateNode& node);
-  explicit IndexAggregateNode(RuntimeContext* context,
-                              const std::vector<std::pair<std::string, cpp2::StatType>>& statInfos,
-                              size_t returnColumnsCount);
+  IndexAggregateNode(RuntimeContext* context,
+                     const std::vector<std::pair<std::string, cpp2::StatType>>& statInfos,
+                     size_t returnColumnsCount);
 
   nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   void initStatValue();
