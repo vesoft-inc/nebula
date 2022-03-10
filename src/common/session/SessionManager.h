@@ -22,20 +22,21 @@
 namespace nebula {
 
 class SessionCount {
-  private:
-      std::atomic<int32_t> count_ = 1;
-  public:
-    int fetch_add(int step) {
-      count_.fetch_add(step, std::memory_order_release);
-      return count_;
-    }
-    int fetch_sub(int step) {
-      count_.fetch_sub(step, std::memory_order_release);
-      return count_;
-    }
-    int get() {
-        return count_;
-    }
+ private:
+  std::atomic<int32_t> count_ = 1;
+
+ public:
+  int fetch_add(int step) {
+    count_.fetch_add(step, std::memory_order_release);
+    return count_;
+  }
+  int fetch_sub(int step) {
+    count_.fetch_sub(step, std::memory_order_release);
+    return count_;
+  }
+  int get() {
+    return count_;
+  }
 };
 
 template <class SessionType>
