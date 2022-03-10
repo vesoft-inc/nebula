@@ -12,7 +12,7 @@ namespace nebula {
 namespace opt {
 
 /*
-  Push down the limit to storage layer
+  Embedding limit to [[ScanVertices]]
   Required conditions:
    1. Match the pattern
    2. All filters of [[AppendVertices]] must be nullptr
