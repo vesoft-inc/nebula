@@ -14,6 +14,7 @@
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"

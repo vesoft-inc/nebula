@@ -891,15 +891,11 @@ PlanNode* RollUpApply::clone() const {
 }
 
 std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
-  auto desc = BinaryInputNode::explain();
-
-  addDescription("src", src_ ? src_->toString() : "", desc.get());
-
+  auto desc = SingleInputNode::explain();
   addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
-
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("edgeTypes", folly::toJson(util::toJson(edgeTypes_)), desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
@@ -910,16 +906,16 @@ std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
 }
 
 PlanNode* ShortestPath::clone() const {
-  auto* shortestPath = ShortestPath::make(qctx_, nullptr, nullptr, space_);
+  auto* shortestPath = ShortestPath::make(qctx_, nullptr, space_);
   shortestPath->cloneMembers(*this);
   return shortestPath;
 }
 
 void ShortestPath::cloneMembers(const ShortestPath& g) {
-  BinaryInputNode::cloneMembers(g);
+  SingleInputNode::cloneMembers(g);
 
   setStepRange(g.range_);
-  setSrc(g.src_->clone());
+  setSrcs(std::vector<Expression*>{g.srcs_[0]->clone(), g.srcs_[1]->clone()});
   setEdgeTypes(g.edgeTypes_);
   setEdgeDirection(g.edgeDirection_);
   if (g.vFilter_ != nullptr) {

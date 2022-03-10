@@ -1683,13 +1683,10 @@ class RollUpApply : public BinaryInputNode {
   InputPropertyExpression* collectCol_;
 }
 
-class ShortestPath final : public BinaryInputNode {
+class ShortestPath final : public SingleInputNode {
  public:
-  static ShortestPath* make(QueryContext* qctx,
-                            PlanNode* left,
-                            PlanNode* right,
-                            GraphSpaceID space) {
-    return qctx->objPool()->add(new ShortestPath(qctx, left, right, space));
+  static ShortestPath* make(QueryContext* qctx, PlanNode* node, GraphSpaceID space) {
+    return qctx->objPool()->add(new ShortestPath(qctx, node, space));
   }
 
   PlanNode* clone() const override;
@@ -1727,8 +1724,8 @@ class ShortestPath final : public BinaryInputNode {
     return space_;
   }
 
-  Expression* src() const {
-    return src_;
+  std::vector<Expression*> srcs() const {
+    return srcs_;
   }
 
   void setStepRange(MatchStepRange* range) {
@@ -1759,18 +1756,18 @@ class ShortestPath final : public BinaryInputNode {
     eFilter_ = eFilter;
   }
 
-  void setSrc(Expression* src) {
-    src_ = src;
+  void setSrcs(std::vector<Expression*>&& srcs) {
+    srcs_ = srcs;
   }
 
  private:
-  ShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, GraphSpaceID space)
-      : BinaryInputNode(qctx, Kind::kShortestPath, left, right), space_(space) {}
+  ShortestPath(QueryContext* qctx, PlanNode* node, GraphSpaceID space)
+      : SingleInputNode(qctx, Kind::kShortestPath, node), space_(space) {}
 
   void cloneMembers(const ShortestPath&);
 
  private:
-  Expression* src_{nullptr};
+  std::vector<Expression*> srcs_;
   GraphSpaceID space_;
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
