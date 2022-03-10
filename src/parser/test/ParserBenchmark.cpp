@@ -140,44 +140,46 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-/*           Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz, 20core 40thread
-
-                                Non-Thread-Local
+/*
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+Address sizes:       46 bits physical, 57 bits virtual
+CPU(s):              128
+On-line CPU(s) list: 0-127
+Thread(s) per core:  2
+Core(s) per socket:  32
+Socket(s):           2
+NUMA node(s):        2
+Vendor ID:           GenuineIntel
+CPU family:          6
+Model:               106
+Model name:          Intel(R) Xeon(R) Platinum 8352Y CPU @ 2.20GHz
 ============================================================================
-src/parser/test/ParserBenchmark.cpp             relative  time/iter  iters/s
+/home/shylock.huang/nebula-tmp/src/parser/test/ParserBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
-SimpleQuery(1_thread)                                      892.36ns    1.12M
-SimpleQuery(2_thread)                             67.21%     1.33us  753.21K
-SimpleQuery(4_thread)                             41.68%     2.14us  467.11K
-SimpleQuery(8_thread)                             19.62%     4.55us  219.92K
-SimpleQuery(16_thread)                             9.62%     9.28us  107.76K
-SimpleQuery(32_thread)                             5.32%    16.76us   59.66K
-SimpleQuery(48_thread)                             3.98%    22.43us   44.58K
+SimpleQuery(1_thread)                                        1.70us  587.21K
+SimpleQuery(2_thread)                             96.72%     1.76us  567.92K
+SimpleQuery(4_thread)                             97.35%     1.75us  571.67K
+SimpleQuery(8_thread)                             96.84%     1.76us  568.66K
+SimpleQuery(16_thread)                            95.77%     1.78us  562.36K
+SimpleQuery(32_thread)                            53.77%     3.17us  315.74K
+SimpleQuery(48_thread)                            49.68%     3.43us  291.73K
 ----------------------------------------------------------------------------
-ComplexQuery(1_thread)                                       6.40us  156.16K
-ComplexQuery(2_thread)                           100.48%     6.37us  156.91K
-ComplexQuery(4_thread)                            92.96%     6.89us  145.16K
-ComplexQuery(8_thread)                            82.83%     7.73us  129.36K
-ComplexQuery(16_thread)                           61.58%    10.40us   96.16K
-ComplexQuery(32_thread)                           35.98%    17.80us   56.19K
-ComplexQuery(48_thread)                           26.24%    24.41us   40.97K
-============================================================================
-                                Thread-Local(Reentrant)
-============================================================================
-SimpleQuery(1_thread)                                      496.38ns    2.01M
-SimpleQuery(2_thread)                             91.86%   540.35ns    1.85M
-SimpleQuery(4_thread)                             89.51%   554.53ns    1.80M
-SimpleQuery(8_thread)                             89.86%   552.42ns    1.81M
-SimpleQuery(16_thread)                            58.34%   850.83ns    1.18M
-SimpleQuery(32_thread)                            56.01%   886.22ns    1.13M
-SimpleQuery(48_thread)                            39.20%     1.27us  789.64K
+ComplexQuery(1_thread)                                       9.94us  100.57K
+ComplexQuery(2_thread)                            98.73%    10.07us   99.30K
+ComplexQuery(4_thread)                           101.62%     9.78us  102.21K
+ComplexQuery(8_thread)                            90.47%    10.99us   90.99K
+ComplexQuery(16_thread)                           97.32%    10.22us   97.87K
+ComplexQuery(32_thread)                           69.31%    14.34us   69.71K
+ComplexQuery(48_thread)                           61.30%    16.22us   61.66K
 ----------------------------------------------------------------------------
-ComplexQuery(1_thread)                                       5.15us  194.04K
-ComplexQuery(2_thread)                            93.48%     5.51us  181.38K
-ComplexQuery(4_thread)                            94.62%     5.45us  183.59K
-ComplexQuery(8_thread)                            92.52%     5.57us  179.53K
-ComplexQuery(16_thread)                           79.93%     6.45us  155.09K
-ComplexQuery(32_thread)                           60.09%     8.58us  116.60K
-ComplexQuery(48_thread)                           44.15%    11.67us   85.67K
+MatchConflictQuery(1_thread)                                 3.88us  257.41K
+MatchConflictQuery(2_thread)                      99.74%     3.90us  256.73K
+MatchConflictQuery(4_thread)                      96.16%     4.04us  247.52K
+MatchConflictQuery(8_thread)                      79.93%     4.86us  205.74K
+MatchConflictQuery(16_thread)                     79.57%     4.88us  204.81K
+MatchConflictQuery(32_thread)                     56.12%     6.92us  144.47K
+MatchConflictQuery(48_thread)                     50.41%     7.71us  129.75K
 ============================================================================
 */
