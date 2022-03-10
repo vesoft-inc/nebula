@@ -816,12 +816,11 @@ struct ListClusterInfoReq {
 }
 
 struct AddTaskRequest {
-    // rebuild index / flush / compact / statis
+    // Task distributed to storage to execute, e.g. flush, compact, stats, etc.
     1: meta.AdminCmd                        cmd
     2: i32                                  job_id
     3: i32                                  task_id
     4: TaskPara                             para
-    5: optional i32                         concurrency
 }
 
 struct AddTaskResp {

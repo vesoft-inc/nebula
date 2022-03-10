@@ -9,6 +9,7 @@
 #include "common/stats/StatsManager.h"
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
@@ -28,8 +29,19 @@ class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
   AdminJobProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
       : BaseProcessor<cpp2::AdminJobResp>(kvstore), adminClient_(adminClient) {}
 
+ private:
+  /**
+   * @brief Check whether the parameters are legal, then construct the job and join the queue.
+   *
+   * @param req
+   * @param result
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode addJobProcess(const cpp2::AdminJobReq& req, cpp2::AdminJobResult& result);
+
  protected:
   AdminClient* adminClient_{nullptr};
+  JobManager* jobMgr_{nullptr};
 };
 
 }  // namespace meta
