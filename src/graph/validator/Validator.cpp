@@ -436,6 +436,7 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
+// TODO(Aiee) Move to validateUtil
 // Validate and build start vids.
 // Check vid type, construct expression to access vid.
 Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {

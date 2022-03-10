@@ -65,7 +65,6 @@ struct TaskContext {
   nebula::storage::cpp2::TaskPara parameters_;
   TaskPriority pri_{TaskPriority::MID};
   CallBack onFinish_;
-  size_t concurrentReq_{INT_MAX};
 };
 
 /**
@@ -156,26 +155,6 @@ class AdminTask {
    */
   virtual GraphSpaceID getSpaceId() {
     return ctx_.parameters_.get_space_id();
-  }
-
-  /**
-   * @brief Set the Concurrent Request
-   *
-   * @param concurrentReq Number of concurrent requests.
-   */
-  virtual void setConcurrentReq(int concurrentReq) {
-    if (concurrentReq > 0) {
-      ctx_.concurrentReq_ = concurrentReq;
-    }
-  }
-
-  /**
-   * @brief Get the Concurrent Requests number.
-   *
-   * @return size_t Concurrent requests number.
-   */
-  virtual size_t getConcurrentReq() {
-    return ctx_.concurrentReq_;
   }
 
   /**

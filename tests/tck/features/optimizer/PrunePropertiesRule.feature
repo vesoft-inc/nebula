@@ -124,6 +124,26 @@ Feature: Prune Properties rule
       | ("Kyle Anderson" :player{age: 25, name: "Kyle Anderson"})   | 25  |
       | ("Damian Lillard" :player{age: 28, name: "Damian Lillard"}) | 28  |
       | ("Damian Lillard" :player{age: 28, name: "Damian Lillard"}) | 28  |
+    When executing query:
+      """
+      MATCH (v:player{name: "Tony Parker"})-[:serve]->(t:team)
+      WITH DISTINCT v, t
+      RETURN t
+      """
+    Then the result should be, in any order:
+      | t                                  |
+      | ("Spurs" :team{name: "Spurs"})     |
+      | ("Hornets" :team{name: "Hornets"}) |
+    When executing query:
+      """
+      MATCH (v:player{name: "Tony Parker"})-[:serve]->(t:team)
+      WITH DISTINCT v.player.age as age, t
+      RETURN t
+      """
+    Then the result should be, in any order:
+      | t                                  |
+      | ("Spurs" :team{name: "Spurs"})     |
+      | ("Hornets" :team{name: "Hornets"}) |
 
   Scenario: Multi Path Patterns
     When profiling query:

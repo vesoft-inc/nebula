@@ -196,10 +196,15 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   JobManager() = default;
 
   void scheduleThread();
-  void scheduleThreadOld();
 
+  /**
+   * @brief Dispatch all tasks of one job
+   *
+   * @param jobDesc
+   * @param op
+   * @return true if all task dispatched, else false.
+   */
   bool runJobInternal(const JobDescription& jobDesc, JbOp op);
-  bool runJobInternalOld(const JobDescription& jobDesc);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 

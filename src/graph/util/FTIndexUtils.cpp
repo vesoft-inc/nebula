@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/FTIndexUtils.h"
 
@@ -114,13 +113,7 @@ StatusOr<std::vector<std::string>> FTIndexUtils::textSearch(
     const std::string& index,
     const std::vector<nebula::plugin::HttpClient>& tsClients) {
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
-  // if (*tsExpr->arg()->from() != from_) {
-  //     return Status::SemanticError("Schema name error : %s",
-  //     tsExpr->arg()->from()->c_str());
-  // }
-  // auto index =
-  // plugin::IndexTraits::indexName(*space_.spaceDesc.space_name_ref(),
-  // isEdge_);
+
   nebula::plugin::DocItem doc(index, tsExpr->arg()->prop(), tsExpr->arg()->val());
   nebula::plugin::LimitItem limit(tsExpr->arg()->timeout(), tsExpr->arg()->limit());
   std::vector<std::string> result;
