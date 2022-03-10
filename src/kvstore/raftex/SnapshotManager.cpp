@@ -34,19 +34,13 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
     auto spaceId = part->spaceId_;
     auto partId = part->partId_;
     auto termId = part->term_;
-    // TODO(heng):  maybe the committedLogId is less than the real one in the
-    // snapshot. It will not loss the data, but maybe some record will be
-    // committed twice.
-    auto commitLogIdAndTerm = part->lastCommittedLogId();
     const auto& localhost = part->address();
-    std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-    VLOG(1) << part->idStr_ << "Begin to send the snapshot to the host " << dst
-            << ", commitLogId = " << commitLogIdAndTerm.first
-            << ", commitLogTerm = " << commitLogIdAndTerm.second;
     accessAllRowsInSnapshot(
         spaceId,
         partId,
-        [&, this, p = std::move(p)](const std::vector<std::string>& data,
+        [&, this, p = std::move(p)](LogID commitLogId,
+                                    TermID commitLogTerm,
+                                    const std::vector<std::string>& data,
                                     int64_t totalCount,
                                     int64_t totalSize,
                                     SnapshotStatus status) mutable -> bool {
@@ -60,8 +54,8 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
             auto f = send(spaceId,
                           partId,
                           termId,
-                          commitLogIdAndTerm.first,
-                          commitLogIdAndTerm.second,
+                          commitLogId,
+                          commitLogTerm,
                           localhost,
                           data,
                           totalSize,
@@ -77,7 +71,7 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
                 if (status == SnapshotStatus::DONE) {
                   VLOG(1) << part->idStr_ << "Finished, totalCount " << totalCount << ", totalSize "
                           << totalSize;
-                  p.setValue(commitLogIdAndTerm);
+                  p.setValue(std::make_pair(commitLogId, commitLogTerm));
                 }
                 return true;
               } else {

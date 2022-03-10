@@ -175,8 +175,13 @@ nebula::cpp2::ErrorCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch
   return nebula::cpp2::ErrorCode::E_UNKNOWN;
 }
 
-nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key, std::string* value) {
+nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key,
+                                         std::string* value,
+                                         const void* snapshot) {
   rocksdb::ReadOptions options;
+  if (UNLIKELY(snapshot != nullptr)) {
+    options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
+  }
   rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
   if (status.ok()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -240,7 +245,7 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
                                                          const void* snapshot,
                                                          std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  if (snapshot != nullptr) {
+  if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
   options.prefix_same_as_start = true;
