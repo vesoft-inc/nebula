@@ -36,8 +36,11 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.7'
+      - name: Set github sha outputs
+        id: github_sha
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
       - name: package
-        run: ./package/package.sh -v nightly-${{ github.head_ref }}.${{ github.sha }}
+        run: ./package/package.sh -v nightly-${{ steps.github_sha.outputs.sha_short }}
       - name: output some vars
         id: vars
         env:
