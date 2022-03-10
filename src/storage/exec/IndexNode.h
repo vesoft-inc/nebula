@@ -157,7 +157,7 @@ class IndexNode {
   virtual ~IndexNode() = default;
 
   /**
-   * @brief deep copy the node and children.
+   * @brief deep copy the node without children
    *
    * Every derived class should implement copy() by itself.
    *
