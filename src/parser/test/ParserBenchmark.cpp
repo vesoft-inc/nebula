@@ -15,6 +15,8 @@ auto complexQuery =
     "GO 2 STEPS FROM 123456789 OVER myedge "
     "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 AND "
     "alias.prop5 == alias.prop6 YIELD 1+1+1+1+1+1+1+1 AS first, 2 AS second";
+auto matchConflictQuery =
+    "MATCH (a)-[r:like*2..3]->(b:team) WHERE a.prop1 = b.prop2 AND (a)-(b) RETURN a, b";
 
 size_t SimpleQuery(size_t iters, size_t nrThreads) {
   constexpr size_t ops = 500000UL;
@@ -66,6 +68,31 @@ size_t ComplexQuery(size_t iters, size_t nrThreads) {
   return iters * ops;
 }
 
+size_t MatchConflictQuery(size_t iters, size_t nrThreads) {
+  constexpr size_t ops = 500000UL;
+
+  auto parse = [&]() {
+    auto n = iters * ops;
+    for (auto i = 0UL; i < n; i++) {
+      auto qctx = std::make_unique<nebula::graph::QueryContext>();
+      // static thread_local GQLParser parser;
+      GQLParser parser(qctx.get());
+      auto result = parser.parse(matchConflictQuery);
+      folly::doNotOptimizeAway(result);
+    }
+  };
+
+  std::vector<std::thread> workers;
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers.emplace_back(parse);
+  }
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers[i].join();
+  }
+
+  return iters * ops;
+}
+
 BENCHMARK_NAMED_PARAM_MULTI(SimpleQuery, 1_thread, 1)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SimpleQuery, 2_thread, 2)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(SimpleQuery, 4_thread, 4)
@@ -83,6 +110,16 @@ BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 8_thread, 8)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 16_thread, 16)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 32_thread, 32)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 48_thread, 48)
+
+BENCHMARK_DRAW_LINE();
+
+BENCHMARK_NAMED_PARAM_MULTI(MatchConflictQuery, 1_thread, 1)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 2_thread, 2)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 4_thread, 4)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 8_thread, 8)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 16_thread, 16)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 32_thread, 32)
+BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MatchConflictQuery, 48_thread, 48)
 
 int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
