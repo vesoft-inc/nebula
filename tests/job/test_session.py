@@ -257,7 +257,6 @@ class TestSession(NebulaTestSuite):
             flag = False
         except Exception as e:
             flag = True
-            assert e.message.startswith("Create Session failed: Too many sessions created")
 
         # get new session success from session_user2
         try:
