@@ -10,7 +10,7 @@
 
 namespace nebula {
 namespace graph {
-// ArgumentFinder finds if a pattern use a named alias that has already been declared
+// ArgumentFinder finds if a pattern uses a named alias that has already been declared
 // in former patterns.
 class ArgumentFinder final : public StartVidFinder {
  public:

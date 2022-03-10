@@ -812,7 +812,7 @@ class Project final : public SingleInputNode {
   YieldColumns* cols_{nullptr};
 };
 
-// Thansform a list to column.
+// Thansforms a list to column.
 class Unwind final : public SingleInputNode {
  public:
   static Unwind* make(QueryContext* qctx,
