@@ -18,48 +18,25 @@ class FindPathExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  // shortestPath  key : dstVid, value : map(key : srcVid, value : <path>)
-  using SPInterimsMap = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
-  // allPath  key : dstVid, value: <path>
+  // key : dstVid, value: <path>
   using Interims = std::unordered_map<Value, std::vector<Path>>;
 
  private:
-  std::vector<Path> createPaths(const std::vector<Path>& paths, const Edge& edge);
-  void buildPath(std::vector<Path>& leftPaths, std::vector<Path>& rightPaths, DataSet& ds);
-  bool conjunctPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths, DataSet& ds);
-  bool conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
-  void setNextStepVidFromPath(Interims& leftPaths, Interims& rightPaths);
-  void setNextStepVidFromPath(SPInterimsMap& leftPaths, SPInterimsMap& rightPaths);
-
-  // shortestPath
-  void shortestPathInit();
-  void shortestPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds);
-  void doShortestPath(Iterator* iter, SPInterimsMap& currentPath, bool reverse);
-
-  // allpath
-  void allPathInit();
-  void allPath(Iterator* leftIter, Iterator* rightIter, DataSet& ds);
-  void doAllPath(Iterator* iter, Interims& currentPath, bool reverse);
-  void printPath(SPInterimsMap& paths);
-
   void init();
+  bool conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
+  void setNextStepVidFromPath(Interims& paths, const std::string& var);
+  void buildPath(Iterator* iter, Interims& currentPath, bool reverse);
 
  private:
   bool shortest_{false};
   bool noLoop_{false};
-  bool noDuplicateVid_{false};
   // current step
   size_t step_{1};
   // total steps
   size_t steps_{0};
   std::string terminationVar_;
-  std::unordered_multimap<Value, Value> terminationMap_;
   std::unordered_multimap<Value, std::pair<Value, bool>> termination_;
-  SPInterimsMap historyLeftPaths_;
-  SPInterimsMap historyRightPaths_;
-  SPInterimsMap prePaths_;
 
-  // allpath
   Interims preLeftPaths_;
   Interims preRightPaths_;
 };
