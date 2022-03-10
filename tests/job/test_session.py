@@ -257,7 +257,9 @@ class TestSession(NebulaTestSuite):
             flag = False
         except Exception as e:
             flag = True
-            assert e.message == "Auth failed: b'Too many sessions for user {}'".format("session_user1")
+            assert e.message == ("Create Session failed: Too many sessions created from 127.0.0.1 by user {}. " + \
+            "the threshold is 1. You can change it by modifying 'max_sessions_per_ip_per_user' in nebula-graphd.conf")\
+            .format("session_user1")
 
         # get new session success from session_user2
         try:
