@@ -34,17 +34,7 @@ class PathPlanner final : public Planner {
 
   Expression* shortestPathLoopCondition(uint32_t steps, const std::string& endVar);
 
-  SubPlan singlePairPlan(PlanNode* dep);
-
-  SubPlan multiPairPlan(PlanNode* dep);
-
-  SubPlan allPairPlan(PlanNode* dep);
-
-  PlanNode* singlePairPath(PlanNode* dep, bool reverse);
-
-  PlanNode* multiPairPath(PlanNode* dep, bool reverse);
-
-  PlanNode* allPairPath(PlanNode* dep, bool reverse);
+  Expression* allPathLoopCondition(uint32_t steps);
 
   PlanNode* buildPathProp(PlanNode* dep);
 
@@ -63,11 +53,6 @@ class PathPlanner final : public Planner {
 
   void buildStart(Starts& starts, std::string& startVidsVar, bool reverse);
 
-  Expression* singlePairLoopCondition(uint32_t steps, const std::string& pathVar);
-
-  Expression* multiPairLoopCondition(uint32_t steps, const std::string& pathVar);
-
-  Expression* allPairLoopCondition(uint32_t steps);
 
   /*
    *  find path from $-.src to $-.dst
@@ -78,24 +63,6 @@ class PathPlanner final : public Planner {
    *  same as find path from <vid> to $-.dst OR find path from $-.src to <vid>
    */
   SubPlan buildRuntimeVidPlan();
-
-  /*
-   * When the number of steps is odd
-   * For example: A->B start: A,  end: B
-   * we start to expand from the starting point and the ending point at the same
-   * time expand from start is pathA : A->B expand from to is pathB : B->A When
-   * conjunct paths we should determine whether the end B and end point of pathA
-   * are equal first then determine whether the end point of pathB and the end
-   * point of pathA are equal so we should build path(B) and path(A)
-   */
-  PlanNode* allPairStartVidDataSet(PlanNode* dep, const std::string& input);
-
-  // refer to allPairStartVidDataSet
-  PlanNode* multiPairStartVidDataSet(PlanNode* dep, const std::string& input);
-
-  SubPlan multiPairLoopDepPlan();
-
-  SubPlan allPairLoopDepPlan();
 
  private:
   PathPlanner() = default;
