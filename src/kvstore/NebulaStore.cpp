@@ -578,7 +578,8 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          const std::string& key,
                                          std::string* value,
-                                         bool canReadFromFollower) {
+                                         bool canReadFromFollower,
+                                         const void* snapshot) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {
     return error(ret);
@@ -588,7 +589,7 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
     return part->isLeader() ? nebula::cpp2::ErrorCode::E_LEADER_LEASE_FAILED
                             : nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  return part->engine()->get(key, value);
+  return part->engine()->get(key, value, snapshot);
 }
 
 const void* NebulaStore::GetSnapshot(GraphSpaceID spaceId,

@@ -117,7 +117,9 @@ class KVEngine {
    * @param value Pointer of value
    * @return nebula::cpp2::ErrorCode
    */
-  virtual nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) = 0;
+  virtual nebula::cpp2::ErrorCode get(const std::string& key,
+                                      std::string* value,
+                                      const void* snapshot = nullptr) = 0;
 
   /**
    * @brief Read a list of keys

@@ -12,11 +12,11 @@
 
 #include "common/base/Base.h"
 #include "common/base/CollectNSucceeded.h"
-#include "common/base/SlowOpTracker.h"
 #include "common/network/NetworkUtils.h"
 #include "common/stats/StatsManager.h"
 #include "common/thread/NamedThread.h"
 #include "common/thrift/ThriftClientManager.h"
+#include "common/time/ScopedTimer.h"
 #include "common/time/WallClock.h"
 #include "common/utils/LogStrListIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
@@ -741,18 +741,18 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     prevLogTerm = lastLogTerm_;
     committed = committedLogId_;
     // Step 1: Write WAL
-    SlowOpTracker tracker;
-    if (!wal_->appendLogs(iter)) {
-      VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to write into WAL";
-      res = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
-      lastLogId_ = wal_->lastLogId();
-      lastLogTerm_ = wal_->lastLogTerm();
-      break;
+    {
+      SCOPED_TIMER(&execTime_);
+      if (!wal_->appendLogs(iter)) {
+        VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to write into WAL";
+        res = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
+        lastLogId_ = wal_->lastLogId();
+        lastLogTerm_ = wal_->lastLogTerm();
+        break;
+      }
     }
+    stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
     lastId = wal_->lastLogId();
-    if (tracker.slow()) {
-      tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId + 1));
-    }
     VLOG(4) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
             << "] to WAL";
   } while (false);
@@ -797,7 +797,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                                << iter.firstLogId() << ", " << lastLogId << "] to all peer hosts";
 
   lastMsgSentDur_.reset();
-  SlowOpTracker tracker;
+  auto beforeAppendLogUs = time::WallClock::fastNowInMicroSec();
   collectNSucceeded(gen::from(hosts) |
                         gen::map([self = shared_from_this(),
                                   eb,
@@ -830,13 +830,11 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
              prevLogId,
              prevLogTerm,
              pHosts = std::move(hosts),
-             tracker](folly::Try<AppendLogResponses>&& result) mutable {
+             beforeAppendLogUs](folly::Try<AppendLogResponses>&& result) mutable {
         VLOG(4) << self->idStr_ << "Received enough response";
         CHECK(!result.hasException());
-        if (tracker.slow()) {
-          tracker.output(self->idStr_,
-                         folly::stringPrintf("Total send logs: %ld", lastLogId - prevLogId + 1));
-        }
+        stats::StatsManager::addValue(kReplicateLogLatencyUs,
+                                      time::WallClock::fastNowInMicroSec() - beforeAppendLogUs);
         self->processAppendLogResponses(*result,
                                         eb,
                                         std::move(it),
@@ -918,7 +916,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
 
     {
       auto walIt = wal_->iterator(committedId + 1, lastLogId);
-      SlowOpTracker tracker;
       // Step 3: Commit the batch
       auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true);
       if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -937,10 +934,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         }
       } else {
         LOG(FATAL) << idStr_ << "Failed to commit logs";
-      }
-      if (tracker.slow()) {
-        tracker.output(idStr_,
-                       folly::stringPrintf("Total commit: %ld", committedLogId_ - committedId));
       }
       VLOG(4) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
               << lastLogId;
@@ -1190,6 +1183,7 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
 
   auto proposedTerm = voteReq.get_term();
   auto resps = ElectionResponses();
+  stats::StatsManager::addValue(kNumStartElect);
   if (hosts.empty()) {
     auto ret = handleElectionResponses(resps, hosts, proposedTerm, isPreVote);
     inElection_ = false;
@@ -1467,7 +1461,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // Reset the last message time
   lastMsgRecvDur_.reset();
   isBlindFollower_ = false;
-  stats::StatsManager::addValue(kNumRaftVotes);
+  stats::StatsManager::addValue(kNumGrantVotes);
   return;
 }
 
@@ -1590,7 +1584,13 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
     RaftLogIterator logIter(firstId, std::move(logEntries));
-    if (wal_->appendLogs(logIter)) {
+    bool result = false;
+    {
+      SCOPED_TIMER(&execTime_);
+      result = wal_->appendLogs(logIter);
+    }
+    stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
+    if (result) {
       CHECK_EQ(lastId, wal_->lastLogId());
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
