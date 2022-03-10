@@ -5,6 +5,7 @@
 
 #include "graph/planner/match/MatchClausePlanner.h"
 
+#include "common/expression/ColumnExpression.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/match/PropIndexSeek.h"
@@ -12,6 +13,7 @@
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
@@ -516,16 +518,12 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   for (int i = 0; i < 2; i++) {
     IQC iqctx;
-    NodeInfo nodeInfo = nodeInfos[i];
+    const NodeInfo& nodeInfo = nodeInfos[i];
 
-    // auto indexIdsRet = pickTagIndex(matchClauseCtx, nodeInfo);
-    // NG_RETURN_IF_ERROR(indexIdsRet);
-    // std::vector<IndexID> indexIds = indexIdsRet.value();
-    // iqctx.index_id_ref() = indexIds[0];
-
-    auto filter_opt = PropIndexSeek::buildFilter(matchClauseCtx, &nodeInfo);
-    if (filter_opt.has_value()) {
-      iqctx.filter_ref() = Expression::encode(*filter_opt.value());
+    if (!nodeInfo.labelProps.empty() && nodeInfo.labelProps.back() != nullptr) {
+      auto filterInPattern = MatchSolver::makeIndexFilter(
+          nodeInfo.labels.back(), nodeInfo.labelProps.back(), matchClauseCtx->qctx);
+      iqctx.filter_ref() = Expression::encode(*filterInPattern);
     }
 
     auto scanNode =
@@ -539,15 +537,16 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
     subplan.tail = startNode;
   }
 
-  // initialize start expression in node
-  auto initialExpr = InputPropertyExpression::make(matchClauseCtx->qctx->objPool(), kVid);
+  BiCartesianProduct* cartesianProduct = BiCartesianProduct::make(qtx, scanNodes[0], scanNodes[1]);
+
+  std::vector<Expression*> srcs = {ColumnExpression::make(matchClauseCtx->qctx->objPool(), 0),
+                                   ColumnExpression::make(matchClauseCtx->qctx->objPool(), 1)};
 
   auto edge = edgeInfos.back();
   bool reversely = true;
-  auto shortestPath = ShortestPath::make(qtx, scanNodes[0], scanNodes[1], spaceId);
-  shortestPath->setSrc(initialExpr);
-  shortestPath->setLeftVar(scanNodes[0]->outputVar());
-  shortestPath->setRightVar(scanNodes[1]->outputVar());
+  auto shortestPath = ShortestPath::make(qtx, cartesianProduct, spaceId);
+  shortestPath->setSrcs(std::move(srcs));
+  shortestPath->setInputVar(cartesianProduct->outputVar());
   shortestPath->setEdgeProps(genEdgeProps(edge, reversely, qtx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
   shortestPath->setEdgeFilter(genEdgeFilter(edge));

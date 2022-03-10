@@ -41,7 +41,11 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   Status buildRequestDataSet();
 
-  Status buildResult(DataSet result);
+  void setInterimState(int direction);
+
+  void resetPairState();
+
+  Status buildResult();
 
   folly::Future<Status> getNeighbors();
 
@@ -51,19 +55,18 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   void AddPrevPath(std::unordered_map<Value, Paths>& prevPaths, const Value& vid, Row&& prevPath);
 
-  DataSet findPaths(Value nodeVid);
+  void findPaths(Value nodeVid);
 
  private:
   size_t step_{0};
+  const ShortestPath* shortestPathNode_{nullptr};
+
+  std::vector<std::pair<Value, Value>> cartesian_;
+
+  DataSet resultDs_;
 
   // 0: src->dst, 1: dst->src
   int direction_{0};
-
-  // The dataset param of getNeighbors()
-  DataSet reqDs_;
-
-  const ShortestPath* shortestPathNode_{nullptr};
-
   // size == 2, left dataset and right dataset;
   std::vector<DataSet> dss_;
 
