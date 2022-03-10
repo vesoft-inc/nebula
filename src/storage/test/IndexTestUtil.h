@@ -76,10 +76,14 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
   void ReleaseSnapshot(GraphSpaceID, PartitionID, const void*) override {}
   // Read a single key
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
-                              PartitionID,
+                              PartitionID partId,
                               const std::string& key,
                               std::string* value,
-                              bool) override {
+                              bool canReadFromFollower = false,
+                              const void* snapshot = nullptr) override {
+    UNUSED(canReadFromFollower);
+    UNUSED(partId);
+    UNUSED(snapshot);
     CHECK_EQ(spaceId, spaceId_);
     auto iter = kv_.lower_bound(key);
     if (iter != kv_.end() && iter->first == key) {
@@ -129,6 +133,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     (*iter) = std::move(mockIter);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
+
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::string& prefix,

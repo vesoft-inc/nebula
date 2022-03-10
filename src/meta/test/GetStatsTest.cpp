@@ -383,7 +383,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   JobCallBack cb1(jobMgr, jobId1, 0, 100);
   JobCallBack cb2(jobMgr, 2, 0, 200);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(2)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2));
@@ -502,7 +502,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   JobCallBack cb2(jobMgr, jobId, 1, 200);
   JobCallBack cb3(jobMgr, jobId, 2, 300);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(3)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2))
