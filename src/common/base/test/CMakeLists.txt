@@ -80,13 +80,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME slow_op_tracker_test
-    SOURCES SlowOpTrackerTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:time_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
     NAME lru_test
     SOURCES ConcurrentLRUCacheTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj>

@@ -92,7 +92,12 @@ class AdminTaskManager {
   meta::MetaClient* metaClient_{nullptr};
 
  private:
+  /**
+   * @brief Schedule tasks in the queue
+   *
+   */
   void schedule();
+
   void runSubTask(TaskHandle handle);
 
  private:
