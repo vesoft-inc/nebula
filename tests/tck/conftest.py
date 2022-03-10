@@ -893,17 +893,3 @@ def replace_result_with_cluster_info(result, class_fixture_variables):
         except:
             raise
     return result
-
-####################### clear space begin ##########################
-
-
-@given("a session to nebula graph")
-def one_session():
-    pass
-
-
-@given("Given a space")
-def given_a_space():
-    pass
-
-####################### clear space end ###########################
