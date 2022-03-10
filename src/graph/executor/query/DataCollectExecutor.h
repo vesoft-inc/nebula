@@ -40,11 +40,7 @@ class DataCollectExecutor final : public Executor {
 
   Status collectMToN(const std::vector<std::string>& vars, const StepClause& mToN, bool distinct);
 
-  Status collectBFSShortest(const std::vector<std::string>& vars);
-
   Status collectAllPaths(const std::vector<std::string>& vars);
-
-  Status collectMultiplePairShortestPath(const std::vector<std::string>& vars);
 
   Status collectPathProp(const std::vector<std::string>& vars);
 

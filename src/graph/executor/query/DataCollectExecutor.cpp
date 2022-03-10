@@ -36,17 +36,8 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
       NG_RETURN_IF_ERROR(collectMToN(vars, dc->step(), dc->distinct()));
       break;
     }
-    case DataCollect::DCKind::kBFSShortest: {
-      NG_RETURN_IF_ERROR(collectBFSShortest(vars));
-      break;
-    }
-    case DataCollect::DCKind::kFindPath:
-    case DataCollect::DCKind::kAllPath: {
+    case DataCollect::DCKind::kFindPath: {
       NG_RETURN_IF_ERROR(collectAllPaths(vars));
-      break;
-    }
-    case DataCollect::DCKind::kMultiplePairShortest: {
-      NG_RETURN_IF_ERROR(collectMultiplePairShortestPath(vars));
       break;
     }
     case DataCollect::DCKind::kPathProp: {
@@ -184,12 +175,6 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
   return Status::OK();
 }
 
-Status DataCollectExecutor::collectBFSShortest(const std::vector<std::string>& vars) {
-  // Will rewrite this method once we implement returning the props for the
-  // path.
-  return rowBasedMove(vars);
-}
-
 Status DataCollectExecutor::collectAllPaths(const std::vector<std::string>& vars) {
   DataSet ds;
   ds.colNames = std::move(colNames_);
@@ -208,68 +193,6 @@ Status DataCollectExecutor::collectAllPaths(const std::vector<std::string>& vars
         std::stringstream msg;
         msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
         return Status::Error(msg.str());
-      }
-    }
-  }
-  result_.setDataSet(std::move(ds));
-  return Status::OK();
-}
-
-Status DataCollectExecutor::collectMultiplePairShortestPath(const std::vector<std::string>& vars) {
-  DataSet ds;
-  ds.colNames = std::move(colNames_);
-  DCHECK(!ds.colNames.empty());
-
-  // src : {dst : <cost, {path}>}
-  std::unordered_map<Value, std::unordered_map<Value, std::pair<Value, std::vector<Path>>>>
-      shortestPath;
-
-  for (auto& var : vars) {
-    auto& hist = ectx_->getHistory(var);
-    for (auto& result : hist) {
-      auto iter = result.iter();
-      if (!iter->isSequentialIter()) {
-        std::stringstream msg;
-        msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
-        return Status::Error(msg.str());
-      }
-      auto* seqIter = static_cast<SequentialIter*>(iter.get());
-      for (; seqIter->valid(); seqIter->next()) {
-        auto& pathVal = seqIter->getColumn(kPathStr);
-        auto cost = seqIter->getColumn(kCostStr);
-        if (!pathVal.isPath()) {
-          return Status::Error("Type error `%s', should be PATH", pathVal.typeName().c_str());
-        }
-        auto& path = pathVal.getPath();
-        auto& src = path.src.vid;
-        auto& dst = path.steps.back().dst.vid;
-        if (shortestPath.find(src) == shortestPath.end() ||
-            shortestPath[src].find(dst) == shortestPath[src].end()) {
-          auto& dstHist = shortestPath[src];
-          std::vector<Path> tempPaths = {std::move(path)};
-          dstHist.emplace(dst, std::make_pair(cost, std::move(tempPaths)));
-        } else {
-          auto oldCost = shortestPath[src][dst].first;
-          if (cost < oldCost) {
-            std::vector<Path> tempPaths = {std::move(path)};
-            shortestPath[src][dst].second.swap(tempPaths);
-          } else if (cost == oldCost) {
-            shortestPath[src][dst].second.emplace_back(std::move(path));
-          } else {
-            continue;
-          }
-        }
-      }
-    }
-  }
-
-  // collect result
-  for (auto& srcPath : shortestPath) {
-    for (auto& dstPath : srcPath.second) {
-      for (auto& path : dstPath.second.second) {
-        Row row;
-        row.values.emplace_back(std::move(path));
-        ds.rows.emplace_back(std::move(row));
       }
     }
   }

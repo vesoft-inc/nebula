@@ -49,12 +49,8 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
 #include "graph/executor/admin/ZoneExecutor.h"
-#include "graph/executor/algo/BFSShortestPathExecutor.h"
 #include "graph/executor/algo/FindPathExecutor.h"
 #include "graph/executor/algo/CartesianProductExecutor.h"
-#include "graph/executor/algo/ConjunctPathExecutor.h"
-#include "graph/executor/algo/ProduceAllPathsExecutor.h"
-#include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
@@ -448,18 +444,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kShowCollation: {
       return pool->add(new ShowCollationExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBFSShortest: {
-      return pool->add(new BFSShortestPathExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kProduceSemiShortestPath: {
-      return pool->add(new ProduceSemiShortestPathExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kConjunctPath: {
-      return pool->add(new ConjunctPathExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kProduceAllPaths: {
-      return pool->add(new ProduceAllPathsExecutor(node, qctx));
     }
     case PlanNode::Kind::kFindPath: {
       return pool->add(new FindPathExecutor(node, qctx));
