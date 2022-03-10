@@ -27,6 +27,7 @@ Status GetSubgraphValidator::validateImpl() {
   return Status::OK();
 }
 
+// Validate in-bound edge types
 Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   if (in != nullptr) {
@@ -49,6 +50,7 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
   return Status::OK();
 }
 
+// Validate out-bound edge types
 Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   if (out != nullptr) {
@@ -70,12 +72,15 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
   return Status::OK();
 }
 
+// Validate bidirectional(in-bound and out-bound) edge types
 Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
+  auto& biEdgeTypes = subgraphCtx_->biDirectEdgeTypes;
   if (out != nullptr) {
     auto space = vctx_->whichSpace();
     auto edges = out->edges();
-    edgeTypes.reserve(edgeTypes.size() + edges.size());
+    edgeTypes.reserve(edgeTypes.size() + edges.size() * 2);
+    biEdgeTypes.reserve(edges.size() * 2);
     for (auto* e : out->edges()) {
       if (e->alias() != nullptr) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
@@ -86,42 +91,40 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
 
       auto v = et.value();
       edgeTypes.emplace(v);
-      v = -v;
-      edgeTypes.emplace(v);
+      edgeTypes.emplace(-v);
+      biEdgeTypes.emplace(v);
+      biEdgeTypes.emplace(-v);
     }
   }
   return Status::OK();
 }
 
+// Validate yield clause, which only supports YIELD vertices or edges
 Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
   }
   auto size = yield->columns().size();
   outputs_.reserve(size);
-  auto pool = qctx_->objPool();
-  YieldColumns* newCols = pool->add(new YieldColumns());
-
+  std::vector<Value::Type> colType;
   for (const auto& col : yield->columns()) {
     const std::string& colStr = col->expr()->toString();
     if (colStr == "VERTICES") {
       subgraphCtx_->getVertexProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTICES"), col->name());
-      newCols->addColumn(newCol);
+      colType.emplace_back(Value::Type::VERTEX);
     } else if (colStr == "EDGES") {
       if (subgraphCtx_->steps.steps() == 0) {
         return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
       }
       subgraphCtx_->getEdgeProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGES"), col->name());
-      newCols->addColumn(newCol);
+      colType.emplace_back(Value::Type::EDGE);
     } else {
       return Status::SemanticError("Get Subgraph only support YIELD vertices OR edges");
     }
     outputs_.emplace_back(col->name(), Value::Type::LIST);
   }
-  subgraphCtx_->yieldExpr = newCols;
   subgraphCtx_->colNames = getOutColNames();
+  subgraphCtx_->colType = std::move(colType);
   return Status::OK();
 }
 

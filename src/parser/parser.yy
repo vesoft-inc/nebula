@@ -341,7 +341,7 @@ using namespace nebula;
 %type <service_client_item> service_client_item
 %type <service_client_list> service_client_list
 
-%type <intval> legal_integer unary_integer rank port job_concurrency
+%type <intval> legal_integer unary_integer rank port
 
 %type <strval>         comment_prop_assignment comment_prop opt_comment_prop
 %type <col_property>   column_property
@@ -3249,28 +3249,19 @@ ingest_sentence
     ;
 
 admin_job_sentence
-    : KW_SUBMIT KW_JOB KW_COMPACT job_concurrency {
+    : KW_SUBMIT KW_JOB KW_COMPACT {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::COMPACT);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
-    | KW_SUBMIT KW_JOB KW_FLUSH job_concurrency {
+    | KW_SUBMIT KW_JOB KW_FLUSH {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::FLUSH);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
-    | KW_SUBMIT KW_JOB KW_STATS job_concurrency {
+    | KW_SUBMIT KW_JOB KW_STATS {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::STATS);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {
@@ -3336,15 +3327,6 @@ admin_job_sentence
          }
          delete nl;
          $$ = sentence;
-    }
-    ;
-
-job_concurrency
-    : %empty {
-        $$ = 0;
-    }
-    | legal_integer {
-        $$ = $1;
     }
     ;
 

@@ -10,6 +10,7 @@
 namespace nebula {
 namespace graph {
 
+// Plan to ingest SST file in server side
 Status IngestValidator::toPlan() {
   auto *doNode = Ingest::make(qctx_, nullptr);
   root_ = doNode;

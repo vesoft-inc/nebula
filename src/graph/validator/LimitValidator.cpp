@@ -10,6 +10,7 @@
 
 namespace nebula {
 namespace graph {
+// Validate limit number
 Status LimitValidator::validateImpl() {
   auto limitSentence = static_cast<LimitSentence *>(sentence_);
   offset_ = limitSentence->offset();

@@ -204,7 +204,6 @@ class AdminClient {
    * @param host Target host to add task
    * @param taskSpecficParas
    * @param parts
-   * @param concurrency
    * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
    */
   virtual folly::Future<StatusOr<bool>> addTask(cpp2::AdminCmd cmd,
@@ -213,8 +212,7 @@ class AdminClient {
                                                 GraphSpaceID spaceId,
                                                 const HostAddr& host,
                                                 const std::vector<std::string>& taskSpecficParas,
-                                                std::vector<PartitionID> parts,
-                                                int concurrency);
+                                                std::vector<PartitionID> parts);
 
   /**
    * @brief Stop stoarge admin task in given storage host

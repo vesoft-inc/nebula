@@ -5,11 +5,13 @@
 
 #include "meta/processors/zone/DropZoneProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
 void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
@@ -27,8 +29,9 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     onFinished();
     return;
   }
-  std::vector<std::string> keys;
-  keys.emplace_back(MetaKeyUtils::zoneKey(zoneName));
+
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove(MetaKeyUtils::zoneKey(zoneName));
   LOG(INFO) << "Drop Zone " << zoneName;
 
   // Drop zone associated hosts
@@ -55,9 +58,13 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
       code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }
-    keys.emplace_back(std::move(machineKey));
+    batchHolder->remove(std::move(machineKey));
   }
-  doSyncMultiRemoveAndUpdate(std::move(keys));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 nebula::cpp2::ErrorCode DropZoneProcessor::checkSpaceReplicaZone() {

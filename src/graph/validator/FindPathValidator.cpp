@@ -30,6 +30,8 @@ Status FindPathValidator::validateImpl() {
   return Status::OK();
 }
 
+// Check validity of filter expression, rewrites expression to fit its sementic,
+// disable some invalid expression types, collect properties used in filter.
 Status FindPathValidator::validateWhere(WhereClause* where) {
   if (where == nullptr) {
     return Status::OK();
@@ -62,6 +64,7 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
   return Status::OK();
 }
 
+// Check validity of yield columns
 Status FindPathValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");

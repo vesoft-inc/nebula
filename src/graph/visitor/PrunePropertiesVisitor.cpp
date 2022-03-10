@@ -207,7 +207,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
 
   if (node->vFilter() != nullptr) {
     status_ = extractPropsFromExpr(node->vFilter(), nodeAlias);
-    return;
+    if (!status_.ok()) {
+      return;
+    }
   }
   auto *vertexProps = node->props();
   if (vertexProps != nullptr) {
@@ -269,6 +271,9 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
 Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
   for (const auto *dep : dependencies) {
     const_cast<PlanNode *>(dep)->accept(this);
+    if (!status_.ok()) {
+      return status_;
+    }
   }
   return Status::OK();
 }

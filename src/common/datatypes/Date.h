@@ -219,7 +219,7 @@ struct DateTime {
     sec = 0;
     microsec = 0;
   }
-  explicit DateTime(const Date& date, const Time& time) {
+  DateTime(const Date& date, const Time& time) {
     year = date.year;
     month = date.month;
     day = date.day;

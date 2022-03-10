@@ -37,6 +37,9 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.7'
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
@@ -99,8 +102,7 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          # platforms: linux/amd64,linux/arm64
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}

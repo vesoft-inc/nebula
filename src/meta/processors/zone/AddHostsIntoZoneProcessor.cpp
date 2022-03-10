@@ -9,8 +9,7 @@ namespace nebula {
 namespace meta {
 
 void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
-  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
-  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto hosts = req.get_hosts();
 
   // Confirm that there are no duplicates in the parameters.
@@ -97,7 +96,11 @@ void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
   data.emplace_back(std::move(zoneKey), MetaKeyUtils::zoneVal(std::move(zoneHosts)));
 
   LOG(INFO) << "Add Hosts Into Zone " << zoneName;
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto ret = doSyncPut(std::move(data));
+  handleErrorCode(ret);
+  onFinished();
 }
 
 }  // namespace meta

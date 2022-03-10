@@ -359,15 +359,18 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 1, 1, 1);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 
@@ -380,7 +383,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   JobCallBack cb1(jobMgr, jobId1, 0, 100);
   JobCallBack cb2(jobMgr, 2, 0, 200);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(2)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2));
@@ -474,15 +477,18 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 6, 3, 3);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 
@@ -496,7 +502,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   JobCallBack cb2(jobMgr, jobId, 1, 200);
   JobCallBack cb3(jobMgr, jobId, 2, 300);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(3)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2))

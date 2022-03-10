@@ -60,11 +60,11 @@ class MatchReturnItems final {
 
 class MatchReturn final {
  public:
-  explicit MatchReturn(MatchReturnItems* returnItems = nullptr,
-                       OrderFactors* orderFactors = nullptr,
-                       Expression* skip = nullptr,
-                       Expression* limit = nullptr,
-                       bool distinct = false) {
+  MatchReturn(MatchReturnItems* returnItems = nullptr,
+              OrderFactors* orderFactors = nullptr,
+              Expression* skip = nullptr,
+              Expression* limit = nullptr,
+              bool distinct = false) {
     returnItems_.reset(returnItems);
     orderFactors_.reset(orderFactors);
     skip_ = skip;

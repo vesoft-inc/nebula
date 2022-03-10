@@ -19,8 +19,7 @@ folly::Future<Status> RebuildEdgeJobExecutor::executeInternal(HostAddr&& address
                 space_,
                 std::move(address),
                 taskParameters_,
-                std::move(parts),
-                concurrency_)
+                std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();

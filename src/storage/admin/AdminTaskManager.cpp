@@ -29,7 +29,7 @@ bool AdminTaskManager::init() {
             [this](GraphSpaceID spaceId) { this->waitCancelTasks(spaceId); });
   }
   if (!bgThread_->start()) {
-    LOG(ERROR) << "background thread start failed";
+    LOG(WARNING) << "background thread start failed";
     return false;
   }
 
@@ -150,10 +150,7 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
   auto ret = tasks_.insert(handle, task).second;
   DCHECK(ret);
   taskQueue_.add(handle);
-  LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
-                                   task->getJobId(),
-                                   task->getTaskId(),
-                                   task->getConcurrentReq());
+  LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d)", task->getJobId(), task->getTaskId());
 }
 
 nebula::cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
@@ -234,7 +231,6 @@ void AdminTaskManager::removeTaskStatus(JobID jobId, TaskID taskId) {
   env_->adminStore_->remove(key);
 }
 
-// schedule
 void AdminTaskManager::schedule() {
   std::chrono::milliseconds interval{20};  // 20ms
   while (!shutdown_.load(std::memory_order_acquire)) {
@@ -253,7 +249,7 @@ void AdminTaskManager::schedule() {
     LOG(INFO) << folly::stringPrintf("dequeue task(%d, %d)", handle.first, handle.second);
     auto it = tasks_.find(handle);
     if (it == tasks_.end()) {
-      LOG(ERROR) << folly::stringPrintf(
+      LOG(INFO) << folly::stringPrintf(
           "trying to exec non-exist task(%d, %d)", handle.first, handle.second);
       continue;
     }
@@ -269,10 +265,9 @@ void AdminTaskManager::schedule() {
     task->running_ = true;
     auto errOrSubTasks = task->genSubTasks();
     if (!nebula::ok(errOrSubTasks)) {
-      LOG(ERROR) << folly::sformat(
-          "job {}, genSubTask failed, err={}",
-          task->getJobId(),
-          apache::thrift::util::enumNameSafe(nebula::error(errOrSubTasks)));
+      LOG(INFO) << folly::sformat("job {}, genSubTask failed, err={}",
+                                  task->getJobId(),
+                                  apache::thrift::util::enumNameSafe(nebula::error(errOrSubTasks)));
       task->finish(nebula::error(errOrSubTasks));
       tasks_.erase(handle);
       continue;
@@ -284,8 +279,7 @@ void AdminTaskManager::schedule() {
     }
 
     auto subTaskConcurrency =
-        std::min(task->getConcurrentReq(), static_cast<size_t>(FLAGS_max_concurrent_subtasks));
-    subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
+        std::min(static_cast<size_t>(FLAGS_max_concurrent_subtasks), subTasks.size());
     task->unFinishedSubTask_ = subTasks.size();
 
     if (0 == subTasks.size()) {
@@ -321,10 +315,10 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
       try {
         rc = subTask->invoke();
       } catch (std::exception& ex) {
-        LOG(ERROR) << folly::sformat(
+        LOG(INFO) << folly::sformat(
             "task({}, {}) invoke() throw exception: {}", handle.first, handle.second, ex.what());
       } catch (...) {
-        LOG(ERROR) << folly::sformat(
+        LOG(INFO) << folly::sformat(
             "task({}, {}) invoke() throw unknown exception", handle.first, handle.second);
       }
       task->subTaskFinish(rc);

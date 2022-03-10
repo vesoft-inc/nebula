@@ -401,7 +401,7 @@ class BoundClause final {
  public:
   enum BoundType : uint8_t { IN, OUT, BOTH };
 
-  explicit BoundClause(OverEdges *edges, BoundType type) {
+  BoundClause(OverEdges *edges, BoundType type) {
     overEdges_.reset(edges);
     boundType_ = type;
   }
