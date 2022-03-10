@@ -308,26 +308,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          commitTransLeader(newLeader);
-        } else {
-          VLOG(1) << idStr_ << "Skip commit stale transfer leader " << newLeader
-                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                  << ts;
-        }
+        commitTransLeader(newLeader);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          commitRemovePeer(peer);
-        } else {
-          VLOG(1) << idStr_ << "Skip commit stale remove peer " << peer
-                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                  << ts;
-        }
+        commitRemovePeer(peer);
         break;
       }
       default: {
@@ -405,51 +391,26 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
     switch (log[sizeof(int64_t)]) {
       case OP_ADD_LEARNER: {
         auto learner = decodeHost(OP_ADD_LEARNER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          VLOG(1) << idStr_ << "preprocess add learner " << learner;
-          addLearner(learner);
-        } else {
-          VLOG(1) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
-                  << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess add learner " << learner;
+        addLearner(learner);
         break;
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          VLOG(1) << idStr_ << "preprocess trans leader " << newLeader;
-          preProcessTransLeader(newLeader);
-        } else {
-          VLOG(1) << idStr_ << "Skip stale transfer leader " << newLeader
-                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                  << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
+        preProcessTransLeader(newLeader);
         break;
       }
       case OP_ADD_PEER: {
         auto peer = decodeHost(OP_ADD_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          VLOG(1) << idStr_ << "preprocess add peer " << peer;
-          addPeer(peer);
-        } else {
-          VLOG(1) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
-                  << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess add peer " << peer;
+        addPeer(peer);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          VLOG(1) << idStr_ << "preprocess remove peer " << peer;
-          preProcessRemovePeer(peer);
-        } else {
-          VLOG(1) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
-                  << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
+        preProcessRemovePeer(peer);
         break;
       }
       default: {
