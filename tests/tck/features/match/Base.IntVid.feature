@@ -589,3 +589,12 @@ Feature: Basic match
     Then the result should be, in any order:
       | v                                                                                                          |
       | ("Tim Duncan":bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+
+  Scenario: parse match node vs parenthesized expression
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == hash('Boris Diaw') RETURN (v)
+      """
+    Then the result should be, in any order:
+      | v                                                   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |

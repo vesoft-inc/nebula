@@ -626,7 +626,7 @@ TEST(Scanner, LexColumnCount) {
   ASSERT_EQ(type, TokenType::INTEGER);
   type = scanner.yylex(&yylval, &yyloc);
   ASSERT_EQ(type, TokenType::DOT_DOT);
-  ASSERT_EQ(yyloc.begin.column, 2);
+  ASSERT_EQ(yyloc.begin.column, 1);
 }
 
 }  // namespace nebula

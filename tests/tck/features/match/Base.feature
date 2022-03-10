@@ -709,3 +709,12 @@ Feature: Basic match
     Then the result should be, in any order:
       | n                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  Scenario: parse match node vs parenthesized expression
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Boris Diaw' RETURN (v)
+      """
+    Then the result should be, in any order:
+      | v                                                   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
