@@ -717,8 +717,7 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
     GraphSpaceID spaceId,
     const HostAddr& host,
     const std::vector<std::string>& taskSpecificParas,
-    std::vector<PartitionID> parts,
-    int concurrency) {
+    std::vector<PartitionID> parts) {
   folly::Promise<StatusOr<bool>> pro;
   auto f = pro.getFuture();
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
@@ -727,7 +726,6 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   req.cmd_ref() = cmd;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
-  req.concurrency_ref() = concurrency;
 
   storage::cpp2::TaskPara para;
   para.space_id_ref() = spaceId;

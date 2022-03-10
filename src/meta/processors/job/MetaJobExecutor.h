@@ -80,7 +80,6 @@ class MetaJobExecutor : public JobExecutor {
   AdminClient* adminClient_{nullptr};
   GraphSpaceID space_;
   std::vector<std::string> paras_;
-  int32_t concurrency_{INT_MAX};
   volatile bool stopped_{false};
   std::mutex muInterrupt_;
   std::condition_variable condInterrupt_;
