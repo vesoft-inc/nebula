@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/IndexUtil.h"
 
@@ -9,19 +8,6 @@
 
 namespace nebula {
 namespace graph {
-
-Status IndexUtil::validateColumns(const std::vector<std::string> &fields) {
-  std::unordered_set<std::string> fieldSet(fields.begin(), fields.end());
-  if (fieldSet.size() != fields.size()) {
-    return Status::Error("Found duplicate column field");
-  }
-
-  if (fields.empty()) {
-    return Status::Error("Column is empty");
-  }
-
-  return Status::OK();
-}
 
 // static
 Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &params,
