@@ -10,10 +10,12 @@
 
 namespace nebula {
 namespace opt {
+
 /*
   Push down the limit to storage layer
   Required conditions:
    1. Match the pattern
+   2. All filters of [[AppendVertices]] must be nullptr
   Benefits:
    1. Limit data early to optimize performance
 
@@ -26,7 +28,11 @@ namespace opt {
   +--------+--------+
            |
  +---------+---------+
- |    IndexScan      |
+ |   AppendVertices  |
+ +---------+---------+
+           |
+ +---------+---------+
+ |    ScanVertices   |
  +---------+---------+
 
   After:
@@ -37,7 +43,11 @@ namespace opt {
   +--------+--------+
            |
  +---------+---------+
- |     IndexScan     |
+ |   AppendVertices  |
+ +---------+---------+
+           |
+ +---------+---------+
+ |    ScanVertices   |
  |     (limit=3)     |
  +---------+---------+
 

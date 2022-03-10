@@ -12,7 +12,7 @@ namespace nebula {
 namespace opt {
 
 /*
-  Push down [[Limit]]]
+  Push [[Limit]] down [[Project]]
   Required conditions:
    1. Match the pattern
   Benefits:
