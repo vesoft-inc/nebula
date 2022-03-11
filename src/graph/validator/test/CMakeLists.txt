@@ -73,6 +73,7 @@ nebula_add_test(
     SOURCES
         ACLValidatorTest.cpp
         FetchVerticesTest.cpp
+        FindPathValidatorTest.cpp
         FetchEdgesTest.cpp
         MockSchemaManagerTest.cpp
         QueryValidatorTest.cpp
@@ -81,7 +82,6 @@ nebula_add_test(
         MutateValidatorTest.cpp
         YieldValidatorTest.cpp
         GetSubgraphValidatorTest.cpp
-        FindPathValidatorTest.cpp
         ValidatorTestBase.cpp
         ExplainValidatorTest.cpp
         GroupByValidatorTest.cpp

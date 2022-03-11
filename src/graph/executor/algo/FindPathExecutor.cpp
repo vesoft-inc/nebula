@@ -35,14 +35,15 @@ void FindPathExecutor::init() {
   }
 }
 
-void FindPathExecutor::setNextStepVidFromPath(Interims& paths, const string& var) {
-  DataSet Ds;
+void FindPathExecutor::setNextStepVid(Interims& paths, const string& var) {
+  DataSet ds;
+  ds.colNames = {nebula::kVid};
   for (const auto& path : paths) {
     Row row;
     row.values.emplace_back(path.first);
-    Ds.rows.emplace_back(std::move(row));
+    ds.rows.emplace_back(std::move(row));
   }
-  ectx_->setResult(var, ResultBuilder().value(std::move(Ds)).build());
+  ectx_->setResult(var, ResultBuilder().value(std::move(ds)).build());
 }
 
 bool FindPathExecutor::conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds) {
@@ -174,10 +175,8 @@ folly::Future<Status> FindPathExecutor::execute() {
     conjunctPath(leftPaths, rightPaths, ds);
   }
 
-  auto leftVidVar = path->leftVidVar();
-  auto rightVidVar = path->rightVidVar();
-  setNextStepVidFromPath(leftPaths, leftVidVar);
-  setNextStepVidFromPath(rightPaths, rightVidVar);
+  setNextStepVid(leftPaths, path->leftVidVar());
+  setNextStepVid(rightPaths, path->rightVidVar());
   // update history
   preLeftPaths_.swap(leftPaths);
   preRightPaths_.swap(rightPaths);

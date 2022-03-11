@@ -1,18 +1,18 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
+//
 
 #include <gtest/gtest.h>
 
 #include "graph/context/QueryContext.h"
-#include "graph/executor/algo/ConjunctPathExecutor.h"
+#include "graph/executor/algo/FindPathExecutor.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 
 namespace nebula {
 namespace graph {
-class ConjunctPathTest : public testing::Test {
+class FindPathTest : public testing::Test {
  protected:
   Path createPath(const std::string& src, const std::vector<std::string>& steps, int type) {
     Path path;
