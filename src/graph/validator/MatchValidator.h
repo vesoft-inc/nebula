@@ -98,6 +98,10 @@ class MatchValidator final : public Validator {
   static Status validateMatchPathExpr(
       const Expression *expr, const std::unordered_map<std::string, AliasType> &availableAliases);
 
+  static Status checkMatchPathExpr(
+      const MatchPathPatternExpression *expr,
+      const std::unordered_map<std::string, AliasType> &availableAliases);
+
  private:
   std::unique_ptr<CypherContext> cypherCtx_;
 };

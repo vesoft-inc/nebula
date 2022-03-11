@@ -974,44 +974,54 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
 /*static*/ Status MatchValidator::validateMatchPathExpr(
     const Expression *expr, const std::unordered_map<std::string, AliasType> &availableAliases) {
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
+  // Check variables
   for (const auto &matchPathExpr : matchPathExprs) {
-    const auto *matchPathExprImpl = static_cast<const MatchPathPatternExpression *>(matchPathExpr);
-    const auto &matchPath = matchPathExprImpl->matchPath();
-    if (matchPath.alias() != nullptr) {
-      const auto find = availableAliases.find(*matchPath.alias());
+    DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(
+        static_cast<const MatchPathPatternExpression *>(matchPathExpr), availableAliases));
+  }
+  // Build path alias
+  return Status::OK();
+}
+
+/*static*/ Status MatchValidator::checkMatchPathExpr(
+    const MatchPathPatternExpression *expr,
+    const std::unordered_map<std::string, AliasType> &availableAliases) {
+  const auto &matchPath = expr->matchPath();
+  if (matchPath.alias() != nullptr) {
+    const auto find = availableAliases.find(*matchPath.alias());
+    if (find == availableAliases.end()) {
+      return Status::SemanticError(
+          "PatternExpression are not allowed to introduce new variables: `%s'.",
+          matchPath.alias()->c_str());
+    }
+    if (find->second != AliasType::kPath) {
+      return Status::SemanticError("Alias `%s' should be Path.", matchPath.alias()->c_str());
+    }
+  }
+  for (const auto &node : matchPath.nodes()) {
+    if (!node->alias().empty()) {
+      const auto find = availableAliases.find(node->alias());
       if (find == availableAliases.end()) {
         return Status::SemanticError(
             "PatternExpression are not allowed to introduce new variables: `%s'.",
-            matchPath.alias()->c_str());
+            node->alias().c_str());
       }
-      if (find->second != AliasType::kPath) {
-        return Status::SemanticError("Alias `%s' should be Path.", matchPath.alias()->c_str());
-      }
-    }
-    for (const auto &node : matchPath.nodes()) {
-      if (!node->alias().empty()) {
-        const auto find = availableAliases.find(node->alias());
-        if (find == availableAliases.end()) {
-          return Status::SemanticError(
-              "PatternExpression are not allowed to introduce new variables: `%s'.",
-              node->alias().c_str());
-        }
-        if (find->second != AliasType::kNode) {
-          return Status::SemanticError("Alias `%s' should be Node.", node->alias().c_str());
-        }
+      if (find->second != AliasType::kNode) {
+        return Status::SemanticError("Alias `%s' should be Node.", node->alias().c_str());
       }
     }
-    for (const auto &edge : matchPath.edges()) {
-      if (!edge->alias().empty()) {
-        const auto find = availableAliases.find(edge->alias());
-        if (find == availableAliases.end()) {
-          return Status::SemanticError(
-              "PatternExpression are not allowed to introduce new variables: `%s'.",
-              edge->alias().c_str());
-        }
-        if (find->second != AliasType::kEdge) {
-          return Status::SemanticError("Alias `%s' should be Edge.", edge->alias().c_str());
-        }
+  }
+  for (const auto &edge : matchPath.edges()) {
+    if (!edge->alias().empty()) {
+      const auto find = availableAliases.find(edge->alias());
+      if (find == availableAliases.end()) {
+        return Status::SemanticError(
+            "PatternExpression are not allowed to introduce new variables: `%s'.",
+            edge->alias().c_str());
+      }
+      if (find->second != AliasType::kEdge) {
+        return Status::SemanticError("Alias `%s' should be Edge.", edge->alias().c_str());
       }
     }
   }
