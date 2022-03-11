@@ -112,7 +112,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
   raftex::cpp2::SendSnapshotRequest req;
   req.space_ref() = spaceId;
   req.part_ref() = partId;
-  req.term_ref() = termId;
+  req.current_term_ref() = termId;
   req.committed_log_id_ref() = committedLogId;
   req.committed_log_term_ref() = committedLogTerm;
   req.leader_addr_ref() = localhost.host;

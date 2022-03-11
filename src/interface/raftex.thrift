@@ -83,7 +83,7 @@ struct AppendLogResponse {
 struct SendSnapshotRequest {
     1: GraphSpaceID space;
     2: PartitionID  part;
-    3: TermID       term;
+    3: TermID       current_term;
     4: LogID        committed_log_id;
     5: TermID       committed_log_term;
     6: string       leader_addr;
@@ -117,6 +117,7 @@ struct HeartbeatResponse {
 
 struct SendSnapshotResponse {
     1: common.ErrorCode error_code;
+    2: TermID           current_term;
 }
 
 struct GetStateRequest {
