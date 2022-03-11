@@ -139,6 +139,11 @@ class Listener : public raftex::RaftPart {
   }
 
   /**
+   * @brief clean wal that before lastApplyLogId_
+   */
+  void cleanWal() override;
+
+  /**
    * @brief clean up data in listener, called in RaftPart::reset
    *
    * @return nebula::cpp2::ErrorCode

@@ -558,7 +558,7 @@ TEST(FileBasedWal, CleanWalBeforeIdTest) {
     CHECK_LE(wal->firstLogId(), logToKeep);
     CHECK(!wal->walFiles_.empty());
     CHECK_LE(wal->walFiles_.begin()->second->firstId(), logToKeep);
-    CHECK_GE(wal->walFiles_.begin()->second->lastId(), logToKeep);
+    CHECK_GE(wal->walFiles_.rbegin()->second->lastId(), logToKeep);
     logToKeep += folly::Random::rand64(10);
   }
   CHECK_EQ(1000, wal->lastLogId());

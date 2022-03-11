@@ -350,6 +350,11 @@ void RaftPart::stop() {
   VLOG(1) << idStr_ << "Partition has been stopped";
 }
 
+void RaftPart::cleanWal() {
+  std::lock_guard<std::mutex> g(raftLock_);
+  wal()->cleanWAL(committedLogId_);
+}
+
 nebula::cpp2::ErrorCode RaftPart::canAppendLogs() {
   DCHECK(!raftLock_.try_lock());
   if (UNLIKELY(status_ != Status::RUNNING)) {

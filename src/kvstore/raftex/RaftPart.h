@@ -161,6 +161,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   }
 
   /**
+   * @brief clean wal that before commitLogId
+   */
+  virtual void cleanWal();
+
+  /**
    * @brief Return the wal
    */
   std::shared_ptr<wal::FileBasedWal> wal() const {

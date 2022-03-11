@@ -123,6 +123,11 @@ bool Listener::preProcessLog(LogID logId,
   return true;
 }
 
+void Listener::cleanWal() {
+  std::lock_guard<std::mutex> g(raftLock_);
+  wal()->cleanWAL(lastApplyLogId_);
+}
+
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Listener::commitLogs(
     std::unique_ptr<LogIterator> iter, bool) {
   LogID lastId = kNoCommitLogId;

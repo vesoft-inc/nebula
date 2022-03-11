@@ -1151,7 +1151,7 @@ void NebulaStore::cleanWAL() {
       auto& part = partEntry.second;
       if (part->needToCleanWal()) {
         // clean wal by expired time
-        part->wal()->cleanWAL();
+        part->cleanWal();
       }
     }
   }
@@ -1159,8 +1159,8 @@ void NebulaStore::cleanWAL() {
     for (const auto& partEntry : spaceEntry.second->listeners_) {
       for (const auto& typeEntry : partEntry.second) {
         const auto& listener = typeEntry.second;
-        // clean wal by log id
-        listener->wal()->cleanWAL(listener->getApplyId());
+        // clean wal by commit log id
+        listener->cleanWal();
       }
     }
   }
