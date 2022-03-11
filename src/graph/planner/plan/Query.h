@@ -1700,12 +1700,12 @@ class ShortestPath final : public SingleInputNode {
     return edgeDirection_;
   }
 
-  const std::vector<EdgeType>& edgeTypes() const {
-    return edgeTypes_;
-  }
-
   const std::vector<EdgeProp>* edgeProps() const {
     return edgeProps_.get();
+  }
+
+  const std::vector<EdgeProp>* reverseEdgeProps() const {
+    return reverseEdgeProps_.get();
   }
 
   const std::vector<VertexProp>* vertexProps() const {
@@ -1728,6 +1728,10 @@ class ShortestPath final : public SingleInputNode {
     return srcs_;
   }
 
+  bool single() const {
+    return single_;
+  }
+
   void setStepRange(MatchStepRange* range) {
     range_ = range;
   }
@@ -1736,16 +1740,16 @@ class ShortestPath final : public SingleInputNode {
     edgeDirection_ = direction;
   }
 
-  void setEdgeTypes(std::vector<EdgeType> edgeTypes) {
-    edgeTypes_ = std::move(edgeTypes);
-  }
-
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
     vertexProps_ = std::move(vertexProps);
   }
 
   void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
     edgeProps_ = std::move(edgeProps);
+  }
+
+  void setReverseEdgeProps(std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps) {
+    reverseEdgeProps_ = std::move(reverseEdgeProps);
   }
 
   void setVertexFilter(Expression* vFilter) {
@@ -1760,6 +1764,10 @@ class ShortestPath final : public SingleInputNode {
     srcs_ = srcs;
   }
 
+  void setSingle(bool single) {
+    single_ = single;
+  }
+
  private:
   ShortestPath(QueryContext* qctx, PlanNode* node, GraphSpaceID space)
       : SingleInputNode(qctx, Kind::kShortestPath, node), space_(space) {}
@@ -1767,13 +1775,14 @@ class ShortestPath final : public SingleInputNode {
   void cloneMembers(const ShortestPath&);
 
  private:
+  bool single_;
   std::vector<Expression*> srcs_;
   GraphSpaceID space_;
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
-  std::vector<EdgeType> edgeTypes_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
   std::unique_ptr<std::vector<VertexProp>> vertexProps_;
   storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
 };

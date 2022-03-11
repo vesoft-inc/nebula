@@ -25,10 +25,13 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   ShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("ShortestPath", node, qctx) {
     shortestPathNode_ = asNode<ShortestPath>(node);
+    single_ = shortestPathNode_->single();
     dss_.reserve(2);
+    allPrevPaths_.reserve(2);
     for (int i = 0; i < 2; i++) {
       dss_.emplace_back();
       visiteds_.emplace_back();
+      allPrevPaths_.emplace_back();
     }
   }
 
@@ -57,7 +60,15 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   void findPaths(Value nodeVid);
 
+  bool sameEdge(const Value& src, const Edge& edge);
+
+  std::vector<List> getPathsFromMap(Value vid, int direction);
+
  private:
+  bool single_{true};
+
+  bool break_{false};
+
   size_t step_{0};
   const ShortestPath* shortestPathNode_{nullptr};
 
@@ -77,8 +88,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   // function: find the path to source/destination
   // {key: path} key: node, path: the prev node of path to src/dst node
-  std::unordered_map<Value, Paths> leftPaths_;
-  std::unordered_map<Value, Paths> rightPaths_;
+  std::vector<std::unordered_map<Value, Paths>> allPrevPaths_;
 };
 
 }  // namespace graph

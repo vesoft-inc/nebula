@@ -31,7 +31,8 @@ class MatchClausePlanner final : public CypherClausePlanner {
   Status buildShortestPath(const std::vector<NodeInfo>& nodeInfos,
                            std::vector<EdgeInfo>& edgeInfos,
                            MatchClauseContext* matchClauseCtx,
-                           SubPlan& subplan);
+                           SubPlan& subplan,
+                           bool single);
 
   StatusOr<std::vector<IndexID>> pickTagIndex(MatchClauseContext* matchClauseCtx,
                                               NodeInfo nodeInfo);
