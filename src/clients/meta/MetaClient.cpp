@@ -2298,6 +2298,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
   if (!ready_) {
     return Status::Error("Meta Service not ready");
   }
+
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto iter = metadata.userPasswordMap_.find(account);
@@ -2467,6 +2468,11 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       req.disk_parts_ref() = diskParts;
     }
   }
+
+  // TTL for clientAddrMap
+  // If multiple connections are created but do not authenticate, the clientAddrMap_ will keep
+  // growing. This is to clear the clientAddrMap_ regularly.
+  clearClientAddrMap();
 
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
@@ -3618,6 +3624,22 @@ Status MetaClient::verifyVersion() {
     return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
   }
   return Status::OK();
+}
+
+void MetaClient::clearClientAddrMap() {
+  if (clientAddrMap_.size() == 0) {
+    return;
+  }
+
+  auto curTimestamp = time::WallClock::fastNowInSec();
+  for (auto it = clientAddrMap_.cbegin(); it != clientAddrMap_.cend();) {
+    // The clientAddr is expired
+    if (it->second < curTimestamp) {
+      it = clientAddrMap_.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 }  // namespace meta
 }  // namespace nebula
