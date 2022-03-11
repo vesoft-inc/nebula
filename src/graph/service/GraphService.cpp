@@ -215,9 +215,23 @@ Status GraphService::auth(const std::string& username,
   }
 
   if (FLAGS_auth_type == "password") {
+    auto metaClient = queryEngine_->metaClient();
+    // TODO(Aiee) This is a walkaround to address the problem that using a lower version(< v2.6.0)
+    // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
+    //
+    // Only the clients since v2.6.0 will call verifyVersion(), thus we could determine whether the
+    // client version is lower than v2.6.0
+    auto clientAddrIt = metaClient->getClientAddrMap().find(clientIp);
+    if (clientAddrIt == metaClient->getClientAddrMap().end()) {
+      return Status::Error(
+          folly::sformat("The version of the client sending request from {} is lower than v2.6.0, "
+                         "please update the client.",
+                         clientIp.toString()));
+    }
+
+    // Auth with PasswordAuthenticator
     auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
-    return authenticator->auth(
-        username, proxygen::md5Encode(folly::StringPiece(password)), clientIp);
+    return authenticator->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
   } else if (FLAGS_auth_type == "cloud") {
     // Cloud user and native user will be mixed.
     // Since cloud user and native user has the same transport protocol,

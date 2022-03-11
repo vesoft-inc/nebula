@@ -13,16 +13,7 @@ PasswordAuthenticator::PasswordAuthenticator(meta::MetaClient* client) {
 }
 
 Status PasswordAuthenticator::auth(const std::string& user, const std::string& password) {
-  UNUSED(user);
-  UNUSED(password);
-  return Status::Error(
-      "Should not be called, this interface is implemented to override the parent class");
-}
-
-Status PasswordAuthenticator::auth(const std::string& user,
-                                   const std::string& password,
-                                   const HostAddr& clientIp) {
-  return metaClient_->authCheckFromCache(user, password, clientIp);
+  return metaClient_->authCheckFromCache(user, password);
 }
 
 }  // namespace graph
