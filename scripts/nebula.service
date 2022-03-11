@@ -141,6 +141,8 @@ function start_daemon {
     local command="${executable} --flagfile ${config}"
     INFO "Starting ${daemon_name}..."
     eval ${command}
+    local port=$(get_port_from_config ${config})
+    wait_for_port_listening ${port} 20 || WARN "Timed out waiting for ${daemon_name} to finish starting, but it may still be running"
     INFO "Done"
 }
 

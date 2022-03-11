@@ -100,6 +100,19 @@ function wait_for_exit {
     done
 }
 
+# To wait for a port to be listened on
+# args: <port number> <seconds to wait>
+function wait_for_port_listening {
+    local port=${1}
+    local seconds=${2}
+    is_port_listened_on ${port} || return 0
+    while [[ ${seconds} > 0 ]]; do
+        sleep 0.1
+        is_port_listened_on ${port} || return 0
+        seconds=$(echo "${seconds} - 0.1" | bc -l)
+    done
+}
+
 # To read a config item's value from the config file
 # args: <config file> <config item name>
 function get_item_from_config {
