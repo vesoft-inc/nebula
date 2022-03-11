@@ -94,6 +94,10 @@ class MatchValidator final : public Validator {
 
   StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
 
+  // Check undefined variable in match path expression
+  static Status validateMatchPathExpr(
+      const Expression *expr, const std::unordered_map<std::string, AliasType> &availableAliases);
+
  private:
   std::unique_ptr<CypherContext> cypherCtx_;
 };

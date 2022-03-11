@@ -46,6 +46,10 @@ class MatchPathPatternExpression final : public Expression {
     return prop_;
   }
 
+  const MatchPath& matchPath() const {
+    return *matchPath_;
+  }
+
  private:
   explicit MatchPathPatternExpression(ObjectPool* pool, std::unique_ptr<MatchPath>&& matchPath)
       : Expression(pool, Kind::kMatchPathPattern), matchPath_(std::move(matchPath)) {}

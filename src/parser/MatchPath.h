@@ -122,12 +122,14 @@ class MatchEdge final {
     me.direction_ = direction_;
     me.alias_ = alias_;
     for (const auto& type : types_) {
-      me.types_.emplace_back(std::make_unique<std::string>(*type));
+      me.types_.emplace_back(std::make_unique<std::string>(*DCHECK_NOTNULL(type)));
     }
     if (range_ != nullptr) {
       me.range_ = std::make_unique<MatchStepRange>(*range_);
     }
-    me.props_ = props_;
+    if (props_ != nullptr) {
+      me.props_ = static_cast<MapExpression*>(props_->clone());
+    }
     return me;
   }
 
@@ -173,7 +175,9 @@ class MatchNodeLabel final {
     if (label_ != nullptr) {
       mnl.label_ = std::make_unique<std::string>(*label_);
     }
-    mnl.props_ = props_;
+    if (props_ != nullptr) {
+      mnl.props_ = static_cast<MapExpression*>(props_->clone());
+    }
     return mnl;
   }
 
@@ -245,7 +249,9 @@ class MatchNode final {
     if (labels_ != nullptr) {
       me.labels_ = std::make_unique<MatchNodeLabelList>(labels_->clone());
     }
-    me.props_ = props_;
+    if (props_ != nullptr) {
+      me.props_ = static_cast<MapExpression*>(props_->clone());
+    }
     return me;
   }
 
@@ -298,12 +304,12 @@ class MatchPath final {
   std::string toString() const;
 
   MatchPath clone() const {
-    auto path = MatchPath();
+    auto path = MatchPath(new MatchNode(nodes_[0]->clone()));
     if (alias_ != nullptr) {
       path.setAlias(new std::string(*alias_));
     }
-    for (std::size_t i = 0; i < nodes_.size(); ++i) {
-      path.add(new MatchEdge(edges_[i]->clone()), new MatchNode(nodes_[i]->clone()));
+    for (std::size_t i = 0; i < edges_.size(); ++i) {
+      path.add(new MatchEdge(edges_[i]->clone()), new MatchNode(nodes_[i + 1]->clone()));
     }
     return path;
   }

@@ -287,8 +287,9 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
   auto type = typeStatus.value();
+  // Allow implcit convertion from LIST to BOOL
   if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
-      type != Value::Type::__EMPTY__) {
+      type != Value::Type::__EMPTY__ && type != Value::Type::LIST) {
     std::stringstream ss;
     ss << "`" << filter->toString() << "', expected Boolean, "
        << "but was `" << type << "'";
@@ -296,6 +297,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   }
 
   NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter}, whereClauseCtx.aliasesAvailable));
+  NG_RETURN_IF_ERROR(validateMatchPathExpr(whereClauseCtx.filter, whereClauseCtx.aliasesAvailable));
 
   return Status::OK();
 }
@@ -570,6 +572,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
 
+  NG_RETURN_IF_ERROR(validateMatchPathExpr(unwindCtx.unwindExpr, unwindCtx.aliasesAvailable));
+
   return Status::OK();
 }
 
@@ -794,6 +798,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
       yieldCtx.groupKeys_.emplace_back(colExpr);
     }
 
+    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable));
+
     yieldCtx.groupItems_.emplace_back(colExpr);
 
     yieldCtx.projCols_->addColumn(
@@ -815,6 +821,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
   yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
   if (!yieldCtx.hasAgg_) {
     for (auto &col : yieldCtx.yieldColumns->columns()) {
+      NG_RETURN_IF_ERROR(validateMatchPathExpr(col->expr(), yieldCtx.aliasesAvailable));
       yieldCtx.projCols_->addColumn(col->clone().release());
       yieldCtx.projOutputColumnNames_.emplace_back(col->name());
     }
@@ -960,6 +967,53 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(colName, type);
+  }
+  return Status::OK();
+}
+
+/*static*/ Status MatchValidator::validateMatchPathExpr(
+    const Expression *expr, const std::unordered_map<std::string, AliasType> &availableAliases) {
+  auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
+  for (const auto &matchPathExpr : matchPathExprs) {
+    const auto *matchPathExprImpl = static_cast<const MatchPathPatternExpression *>(matchPathExpr);
+    const auto &matchPath = matchPathExprImpl->matchPath();
+    if (matchPath.alias() != nullptr) {
+      const auto find = availableAliases.find(*matchPath.alias());
+      if (find == availableAliases.end()) {
+        return Status::SemanticError(
+            "PatternExpression are not allowed to introduce new variables: `%s'.",
+            matchPath.alias()->c_str());
+      }
+      if (find->second != AliasType::kPath) {
+        return Status::SemanticError("Alias `%s' should be Path.", matchPath.alias()->c_str());
+      }
+    }
+    for (const auto &node : matchPath.nodes()) {
+      if (!node->alias().empty()) {
+        const auto find = availableAliases.find(node->alias());
+        if (find == availableAliases.end()) {
+          return Status::SemanticError(
+              "PatternExpression are not allowed to introduce new variables: `%s'.",
+              node->alias().c_str());
+        }
+        if (find->second != AliasType::kNode) {
+          return Status::SemanticError("Alias `%s' should be Node.", node->alias().c_str());
+        }
+      }
+    }
+    for (const auto &edge : matchPath.edges()) {
+      if (!edge->alias().empty()) {
+        const auto find = availableAliases.find(edge->alias());
+        if (find == availableAliases.end()) {
+          return Status::SemanticError(
+              "PatternExpression are not allowed to introduce new variables: `%s'.",
+              edge->alias().c_str());
+        }
+        if (find->second != AliasType::kEdge) {
+          return Status::SemanticError("Alias `%s' should be Edge.", edge->alias().c_str());
+        }
+      }
+    }
   }
   return Status::OK();
 }
