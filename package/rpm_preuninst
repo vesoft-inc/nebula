@@ -1,0 +1,9 @@
+#!/bin/bash
+
+daemons=(storaged metad graphd)
+for daemon in ${daemons[@]}
+do
+    if [[ ! -f $RPM_INSTALL_PREFIX/scripts/nebula.service ]] ; then
+        $RPM_INSTALL_PREFIX/scripts/nebula.service stop ${daemon}
+    fi
+done

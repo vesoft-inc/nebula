@@ -1,0 +1,10 @@
+#!/bin/bash
+
+install_dir=/usr/local/nebula
+daemons=(storaged metad graphd)
+for daemon in ${daemons[@]}
+do
+    if [[ ! -f $install_dir/scripts/nebula.service ]] ; then
+        $install_dir/scripts/nebula.service stop ${daemon}
+    fi
+done
