@@ -893,3 +893,29 @@ def replace_result_with_cluster_info(result, class_fixture_variables):
         except:
             raise
     return result
+
+
+@pytest.fixture()
+def execute_response():
+    return dict()
+
+
+@when(parse("connect to nebula service with user[u:{user}, p:{password}]"))
+def conncet_to_service_with_user(conn_pool, user, password, class_fixture_variables):
+    sess = conn_pool.get_session(user, password)
+    class_fixture_variables["sessions"].append(sess)
+
+
+@when("executing clear space")
+def executing_clear_space(class_fixture_variables, execute_response):
+    session_cnt = len(class_fixture_variables["sessions"])
+    last_sess = class_fixture_variables["sessions"][session_cnt - 1]
+    resp = last_sess.execute(" CLEAR SPACE IF EXISTS clear_space")
+    execute_response["resp"] = resp
+
+
+@then("the result should be failed")
+def result_failed(execute_response):
+    assert execute_response["resp"].is_succeeded() == False
+    assert execute_response["resp"].error_msg(
+    ) == "PermissionError: No permission to write space."

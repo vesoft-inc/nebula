@@ -101,3 +101,13 @@ Feature: Clear space test
       | "Tag"   | "player"   | 0     |
       | "Space" | "vertices" | 0     |
       | "Space" | "edges"    | 0     |
+    # permission test
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS clear_space_user WITH PASSWORD 'nebula';
+      GRANT ROLE ADMIN ON clear_space TO clear_space_user;
+      """
+    Then the execution should be successful
+    When connect to nebula service with user[u:clear_space_user, p:nebula]
+    And executing clear space
+    Then the result should be failed
