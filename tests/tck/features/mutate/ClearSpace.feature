@@ -107,6 +107,7 @@ Feature: Clear space test
       CREATE USER IF NOT EXISTS clear_space_user WITH PASSWORD 'nebula';
       GRANT ROLE ADMIN ON clear_space TO clear_space_user;
       """
+    And wait 2 seconds
     Then the execution should be successful
     When connect to nebula service with user[u:clear_space_user, p:nebula]
     And executing clear space
