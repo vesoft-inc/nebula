@@ -121,14 +121,14 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
   NG_RETURN_IF_ERROR(
       buildEdgeInfo(path, matchClauseCtx.paths.back().edgeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(buildPathExpr(path, matchClauseCtx));
-  matchClauseCtx.paths.back().isShortPath = path->shortestPath();
+  matchClauseCtx.paths.back().shortestPath = path->shortestPath();
   NG_RETURN_IF_ERROR(validateShortestPath(path));
   return Status::OK();
 }
 
 Status MatchValidator::validateShortestPath(const MatchPath *path) {
   // It isn't short path pattern, skip validation.
-  if (!path->shortestPath()) {
+  if (!path->shortestPath().first) {
     return Status::OK();
   }
 
@@ -478,6 +478,9 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   if (min > max) {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
+  }
+  if (max == std::numeric_limits<size_t>::max()) {
+    return Status::SemanticError("Cannot set maximum hop for variable length relationships");
   }
   return Status::OK();
 }

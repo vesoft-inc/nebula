@@ -121,6 +121,7 @@ reserved_key_words = [
     'KW_DURATION',
     'KW_ACROSS',
     "KW_SHORTESTPATH",
+    "KW_ALLSHORTESTPATHS",
 ]
 
 

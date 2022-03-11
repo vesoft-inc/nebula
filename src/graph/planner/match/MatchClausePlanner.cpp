@@ -131,8 +131,9 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     size_t startIndex = 0;
     bool startFromEdge = false;
 
-    if (pathInfo.isShortPath) {
-      NG_RETURN_IF_ERROR(buildShortestPath(nodeInfos, edgeInfos, matchClauseCtx, subplan));
+    if (pathInfo.shortestPath.first) {
+      NG_RETURN_IF_ERROR(buildShortestPath(
+          nodeInfos, edgeInfos, matchClauseCtx, subplan, pathInfo.shortestPath.second));
     } else {
       NG_RETURN_IF_ERROR(findStarts(nodeInfos,
                                     edgeInfos,
@@ -504,7 +505,8 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
 Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeInfos,
                                              std::vector<EdgeInfo>& edgeInfos,
                                              MatchClauseContext* matchClauseCtx,
-                                             SubPlan& subplan) {
+                                             SubPlan& subplan,
+                                             bool single) {
   DCHECK_EQ(nodeInfos.size(), 2UL) << "Shortest path can only be used for two nodes.";
   DCHECK_EQ(nodeInfos[0].tids.size(), 1UL) << "Not supported multiple edge indices seek.";
   DCHECK_EQ(nodeInfos[1].tids.size(), 1UL) << "Not supported multiple edge indices seek.";
@@ -518,16 +520,15 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
 
   for (int i = 0; i < 2; i++) {
     IQC iqctx;
-    const NodeInfo& nodeInfo = nodeInfos[i];
+    auto nodeInfo = nodeInfos[i];
 
-    if (!nodeInfo.labelProps.empty() && nodeInfo.labelProps.back() != nullptr) {
-      auto filterInPattern = MatchSolver::makeIndexFilter(
-          nodeInfo.labels.back(), nodeInfo.labelProps.back(), matchClauseCtx->qctx);
-      iqctx.filter_ref() = Expression::encode(*filterInPattern);
+    auto filterOpt = PropIndexSeek::buildFilter(matchClauseCtx, &nodeInfo);
+    if (filterOpt.has_value()) {
+      iqctx.filter_ref() = Expression::encode(*filterOpt.value());
     }
 
     auto scanNode =
-        IndexScan::make(qtx, nullptr, spaceId, {iqctx}, {kVid}, false, nodeInfos[i].tids[0]);
+        IndexScan::make(qtx, nullptr, spaceId, {iqctx}, {kVid}, false, nodeInfo.tids[0]);
     scanNode->setColNames({kVid});
 
     auto startNode = StartNode::make(qtx);
@@ -543,11 +544,13 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
                                    ColumnExpression::make(matchClauseCtx->qctx->objPool(), 1)};
 
   auto edge = edgeInfos.back();
-  bool reversely = true;
+  bool reversely = false;
   auto shortestPath = ShortestPath::make(qtx, cartesianProduct, spaceId);
+  shortestPath->setSingle(single);
   shortestPath->setSrcs(std::move(srcs));
   shortestPath->setInputVar(cartesianProduct->outputVar());
   shortestPath->setEdgeProps(genEdgeProps(edge, reversely, qtx, spaceId));
+  shortestPath->setReverseEdgeProps(genEdgeProps(edge, !reversely, qtx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
   shortestPath->setEdgeFilter(genEdgeFilter(edge));
   shortestPath->setStepRange(edge.range);

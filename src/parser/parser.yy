@@ -209,7 +209,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
-%token KW_SHORTESTPATH
+%token KW_SHORTESTPATH KW_ALLSHORTESTPATHS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -1717,6 +1717,10 @@ match_path_pattern
     | KW_SHORTESTPATH L_PAREN match_path_pattern R_PAREN {
         $$ = $3;
         $$->setShortestPath();
+    }
+    | KW_ALLSHORTESTPATHS L_PAREN match_path_pattern R_PAREN {
+        $$ = $3;
+        $$->setAllShortestPaths();
     }
     ;
 

@@ -25,6 +25,7 @@ enum class CypherClauseKind : uint8_t {
   kPagination,
   kYield,
   kShortestPath,
+  kAllShortestPaths,
 };
 
 enum class PatternKind : uint8_t {
@@ -133,7 +134,7 @@ struct Path final {
   std::vector<NodeInfo> nodeInfos;
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
-  bool isShortPath{false};
+  std::pair<bool, bool> shortestPath{false, false};
 };
 
 struct MatchClauseContext final : CypherClauseContextBase {
