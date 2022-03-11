@@ -738,11 +738,12 @@ void MetaClient::getResponse(Request req,
               }
 
               auto&& resp = t.value();
-              if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
+              auto code = resp.get_code();
+              if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
                 return;
-              } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+              } else if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                 updateLeader(resp.get_leader());
                 if (retry < retryLimit) {
                   evb->runAfterDelay(
@@ -765,7 +766,7 @@ void MetaClient::getResponse(Request req,
                       FLAGS_meta_client_retry_interval_secs * 1000);
                   return;
                 }
-              } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
+              } else if (code == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
                 pro.setValue(respGen(std::move(resp)));
                 return;
               } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
