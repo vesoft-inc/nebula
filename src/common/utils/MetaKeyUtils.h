@@ -10,6 +10,7 @@
 #include "common/base/Status.h"
 #include "common/datatypes/HostAddr.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/KVStore.h"
 
 namespace nebula {
 
@@ -190,11 +191,15 @@ class MetaKeyUtils final {
 
   static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
+  static SchemaVer getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
+
   static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
 
   static TagID parseTagId(folly::StringPiece key);
 
   static SchemaVer parseTagVersion(folly::StringPiece key);
+
+  static SchemaVer getLatestTagScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
 
   static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 
