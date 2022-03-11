@@ -48,7 +48,7 @@ else()
     add_compile_options(-fomit-frame-pointer)
 endif()
 
-    add_compile_options(-fPIC)
+add_compile_options(-fPIC)
 
 if(ENABLE_TESTING AND ENABLE_COVERAGE)
     add_compile_options(--coverage)

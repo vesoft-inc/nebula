@@ -4,6 +4,7 @@
  */
 
 #include <folly/Benchmark.h>
+#include <gflags/gflags.h>
 #include <sys/sysinfo.h>
 
 #include <cstdio>
