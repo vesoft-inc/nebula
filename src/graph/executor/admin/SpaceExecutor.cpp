@@ -198,7 +198,7 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
       ->getMetaClient()
       ->clearSpace(csNode->getSpaceName(), csNode->getIfExists())
       .via(runner())
-      .thenValue([this, csNode, spaceIdRet, ftIndexes](StatusOr<bool> resp) {
+      .thenValue([this, csNode, spaceIdRet, ftIndexes = std::move(ftIndexes)](StatusOr<bool> resp) {
         if (!resp.ok()) {
           LOG(ERROR) << "Clear space `" << csNode->getSpaceName() << "' failed: " << resp.status();
           return resp.status();
