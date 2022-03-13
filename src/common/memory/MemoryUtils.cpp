@@ -5,13 +5,10 @@
 
 #include "common/memory/MemoryUtils.h"
 
-#include <folly/String.h>
 #include <gflags/gflags.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <fstream>
-#include <regex>
 
 #include "common/fs/FileUtils.h"
 
@@ -42,7 +39,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     uint64_t cacheSize = 0;
     for (; iter.valid(); ++iter) {
       auto& sm = iter.matched();
-      cacheSize += std::stoul(sm[2].str(), NULL);
+      cacheSize += std::stoul(sm[2].str(), nullptr);
     }
 
     std::string limitPath =
@@ -64,7 +61,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     std::vector<uint64_t> memorySize;
     for (; iter.valid(); ++iter) {
       auto& sm = iter.matched();
-      memorySize.emplace_back(std::stoul(sm[2].str(), NULL) << 10);
+      memorySize.emplace_back(std::stoul(sm[2].str(), nullptr) << 10);
     }
     std::sort(memorySize.begin(), memorySize.end());
     if (memorySize.size() >= 2u) {
