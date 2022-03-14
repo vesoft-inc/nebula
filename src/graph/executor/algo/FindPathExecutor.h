@@ -10,30 +10,35 @@
 // FindPath has two inputs.  GetNeighbors(From) & GetNeighbors(To)
 // There are two Main functions
 // First : Get the next vid for GetNeighbors to expand
-// Second: Delete previously visited edges and save the result(iter) to the variable `resultVar`
+// Second: Extract edges from GetNeighbors to form path, concatenate the path(From) and the path(To)
+//         into a complete path
 //
+// Since FromVid & ToVid are expanded at the same time
+// the paths(From) need to be spliced ​​with the path(To) of the previous step,
+// and then spliced ​​with the current path(To)
+//
+// Functions:
+// `init`: initialize preRightPaths_ & terminationMap_
+//
+// `buildPath`: extract edges from GetNeighbors to form path (use previous paths)
+//
+// `conjunctPath`: concatenate the path(From) and the path(To) into a complete path
+//
+// `setNextStepVid`: set the vid that needs to be expanded in the next step
+
 // Member:
-// `preLeftPaths_` : is hash table
-//    KEY   : the VID of the visited destination Vertex
-//    VALUE : the number of steps to visit the KEY (starting vertex is 0)
-// since each vertex will only be visited once, if it is a one-way edge expansion, there will be no
-// duplicate edges. we only need to focus on the case of two-way expansion
+// `preLeftPaths_` : is hash table (only keep the previous step)
+//    KEY   : the VID of the vertex
+//    VALUE : all paths(the destination is KEY)
 //
-// How to delete edges:
-//  determine whether a loop is formed by the number of steps. If the destination vid has been
-//  visited, and the number of steps of the destination vid differs by 2 from the current steps, it
-//  is judged that a loop is formed, the edge needs to be deleted
+// `preRightPaths_` : same as preLeftPaths_
 //
-// For example: Topology is below
-// a->c, a->b, b->a, b->c
-// statement: get subgraph from 'a' both edge yield vertices as nodes, edges as relationships
-// first steps :  a->b, a->c, a<-b, all edges need to save
-// second steps:  b->a, b<-a, b->c, c<-a
-// since it is a two-way expansion, the negative edge has already been visited,
-// so b<-a & c<-a are deleted
-// b->a : the number of steps of the destination vid `a` is 0, and the current steps is 2. it can be
-// determined that a loop is formed, so this edge also needs to be deleted.
-// b->c : determined by the number of steps that no loop is formed, so keep it
+// `terminationMap_` is hash table, cartesian product of From & To vid, In shortest path scenarios,
+//  when a pair of paths is found, the pair of data is deleted, and when it is empty, the expansion
+//  is terminated
+//
+// `terminationVar_`: when terminationMap_ is empty, then all paths are found, set it to true and
+//  the loop will terminate
 namespace nebula {
 namespace graph {
 class FindPathExecutor final : public Executor {

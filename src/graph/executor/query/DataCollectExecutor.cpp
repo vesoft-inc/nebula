@@ -37,7 +37,7 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
       break;
     }
     case DataCollect::DCKind::kFindPath: {
-      NG_RETURN_IF_ERROR(collectAllPaths(vars));
+      NG_RETURN_IF_ERROR(collectPaths(vars));
       break;
     }
     case DataCollect::DCKind::kPathProp: {
@@ -175,7 +175,7 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
   return Status::OK();
 }
 
-Status DataCollectExecutor::collectAllPaths(const std::vector<std::string>& vars) {
+Status DataCollectExecutor::collectPaths(const std::vector<std::string>& vars) {
   DataSet ds;
   ds.colNames = std::move(colNames_);
   DCHECK(!ds.colNames.empty());
