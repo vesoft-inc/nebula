@@ -111,7 +111,6 @@ Status OptGroup::explore(const OptRule *rule) {
 }
 
 Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
-  // The maximum number of iterations of a rule
   auto maxRound = kMaxExplorationRound;
   while (!isExplored(rule)) {
     if (0 >= maxRound--) {
