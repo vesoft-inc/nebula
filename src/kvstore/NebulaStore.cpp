@@ -39,12 +39,12 @@ NebulaStore::~NebulaStore() {
   raftService_->stop();
   LOG(INFO) << "Waiting for the raft service stop...";
   raftService_->waitUntilStop();
-  spaces_.clear();
-  spaceListeners_.clear();
   bgWorkers_->stop();
   bgWorkers_->wait();
   storeWorker_->stop();
   storeWorker_->wait();
+  spaces_.clear();
+  spaceListeners_.clear();
   LOG(INFO) << "~NebulaStore()";
 }
 
@@ -437,6 +437,13 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
   if (!isListener) {
     auto spaceIt = this->spaces_.find(spaceId);
     if (spaceIt != this->spaces_.end()) {
+      for (auto& [partId, part] : spaceIt->second->parts_) {
+        // before calling removeSpace, meta client would call removePart to remove all parts in
+        // meta cache, which do not contain learners, so we remove them here
+        if (part->isLearner()) {
+          removePart(spaceId, partId, false);
+        }
+      }
       auto& engines = spaceIt->second->engines_;
       for (auto& engine : engines) {
         auto parts = engine->allParts();
@@ -490,8 +497,11 @@ nebula::cpp2::ErrorCode NebulaStore::clearSpace(GraphSpaceID spaceId) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
-  folly::RWSpinLock::WriteHolder wh(&lock_);
+void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock) {
+  folly::RWSpinLock::WriteHolder wh(nullptr);
+  if (needLock) {
+    wh.reset(&lock_);
+  }
   auto spaceIt = this->spaces_.find(spaceId);
   if (spaceIt != this->spaces_.end()) {
     auto partIt = spaceIt->second->parts_.find(partId);
