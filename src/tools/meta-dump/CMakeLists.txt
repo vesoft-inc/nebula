@@ -53,7 +53,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
-        $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
