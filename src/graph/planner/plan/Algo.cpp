@@ -1,10 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/planner/plan/Algo.h"
-
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
@@ -18,7 +16,6 @@ std::unique_ptr<PlanNodeDescription> FindPath::explain() const {
   addDescription("steps", util::toJson(steps_), desc.get());
   return desc;
 }
-
 
 std::unique_ptr<PlanNodeDescription> CartesianProduct::explain() const {
   auto desc = SingleDependencyNode::explain();

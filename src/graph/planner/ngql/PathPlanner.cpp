@@ -1,7 +1,7 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
+
 #include "graph/planner/ngql/PathPlanner.h"
 
 #include "graph/planner/plan/Algo.h"
@@ -121,7 +121,6 @@ SubPlan PathPlanner::buildRuntimeVidPlan() {
   }
   return subPlan;
 }
-
 
 SubPlan PathPlanner::loopDepPlan() {
   auto* qctx = pathCtx_->qctx;
@@ -368,10 +367,8 @@ PlanNode* PathPlanner::buildPathProp(PlanNode* dep) {
 StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   pathCtx_ = static_cast<PathContext*>(astCtx);
   auto qctx = pathCtx_->qctx;
-  auto& from = pathCtx_->from;
-  auto& to = pathCtx_->to;
-  buildStart(from, pathCtx_->fromVidsVar, false);
-  buildStart(to, pathCtx_->toVidsVar, true);
+  buildStart(pathCtx_->from, pathCtx_->fromVidsVar, false);
+  buildStart(pathCtx_->to, pathCtx_->toVidsVar, true);
 
   auto* startNode = StartNode::make(qctx);
   auto* pt = PassThroughNode::make(qctx, startNode);
@@ -380,7 +377,6 @@ StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   if (pathCtx_->withProp) {
     subPlan.root = buildPathProp(subPlan.root);
   }
-
   return subPlan;
 }
 

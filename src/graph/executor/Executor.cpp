@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/Executor.h"
 
@@ -49,8 +48,8 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
 #include "graph/executor/admin/ZoneExecutor.h"
-#include "graph/executor/algo/FindPathExecutor.h"
 #include "graph/executor/algo/CartesianProductExecutor.h"
+#include "graph/executor/algo/FindPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"

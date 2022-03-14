@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_PLANNER_PLAN_ALGO_H_
 #define GRAPH_PLANNER_PLAN_ALGO_H_
@@ -13,7 +12,7 @@ namespace nebula {
 namespace graph {
 
 class FindPath : public BinaryInputNode {
-public:
+ public:
   static FindPath* make(QueryContext* qctx,
                         PlanNode* left,
                         PlanNode* right,
@@ -61,7 +60,7 @@ public:
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-private:
+ private:
   FindPath(
       QueryContext* qctx, PlanNode* left, PlanNode* right, bool shortest, bool noLoop, size_t steps)
       : BinaryInputNode(qctx, Kind::kFindPath, left, right),
@@ -69,7 +68,7 @@ private:
         noLoop_(noLoop),
         steps_(steps) {}
 
-private:
+ private:
   bool shortest_{false};
   bool noLoop_{false};
   std::string leftVidVar_;
