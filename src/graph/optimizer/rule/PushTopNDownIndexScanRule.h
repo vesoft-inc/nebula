@@ -13,6 +13,45 @@
 namespace nebula {
 namespace opt {
 
+/*
+  Embedding TopN factors into Storage layer
+  Required conditions:
+   1. Match the pattern
+  Benefits:
+   1. Limit data early to optimize performance
+
+  Tranformation:
+  Before:
+
+  +----------+----------+
+  |        TopN         |
+  +----------+----------+
+             |
+  +----------+----------+
+  |       Project       |
+  +----------+----------+
+             |
+   +---------+---------+
+   |  kIndexScanKinds  |
+   +---------+---------+
+
+  After:
+
+  +----------+----------+
+  |        TopN         |
+  +----------+----------+
+             |
+  +----------+----------+
+  |       Project       |
+  +----------+----------+
+             |
+   +---------+---------+
+   |  kIndexScanKinds  |
+   | (limit_=limitRows)|
+   |(orderBy_=orderBys)|
+   +---------+---------+
+
+*/
 class PushTopNDownIndexScanRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
