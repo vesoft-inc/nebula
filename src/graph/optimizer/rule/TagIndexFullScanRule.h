@@ -11,6 +11,7 @@
 namespace nebula {
 namespace opt {
 
+// Apply the transformation of base class(IndexFullScanBaseRule::transform)
 class TagIndexFullScanRule final : public IndexFullScanBaseRule {
  public:
   const Pattern& pattern() const override;
