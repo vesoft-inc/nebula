@@ -11,38 +11,36 @@
 namespace nebula {
 namespace opt {
 
-/*
-  Embedding limit to [[GetNeighbors]]
-  Required conditions:
-   1. Match the pattern
-  Benefits:
-   1. Limit data early to optimize performance
+//  Embedding limit to [[GetNeighbors]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |    GetNeighbors   |
+// +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |    GetNeighbors   |
+// |     (limit=3)     |
+// +---------+---------+
 
-  Tranformation:
-  Before:
-
-  +--------+--------+
-  |      Limit      |
-  |    (limit=3)    |
-  +--------+--------+
-           |
- +---------+---------+
- |    GetNeighbors   |
- +---------+---------+
-
-  After:
-
-  +--------+--------+
-  |      Limit      |
-  |    (limit=3)    |
-  +--------+--------+
-           |
- +---------+---------+
- |    GetNeighbors   |
- |     (limit=3)     |
- +---------+---------+
-
-*/
 class PushLimitDownGetNeighborsRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

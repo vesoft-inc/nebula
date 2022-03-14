@@ -11,38 +11,36 @@
 namespace nebula {
 namespace opt {
 
-/*
-  Push [[Limit]] down [[Project]]
-  Required conditions:
-   1. Match the pattern
-  Benefits:
-   1. Limit data early to optimize performance
+//  Push [[Limit]] down [[Project]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |      Project      |
+// +---------+---------+
+//
+//  After:
+//
+//
+// +---------+---------+
+// |      Project      |
+// +---------+---------+
+//           |
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
 
-  Tranformation:
-  Before:
-
-  +--------+--------+
-  |      Limit      |
-  |    (limit=3)    |
-  +--------+--------+
-           |
- +---------+---------+
- |      Project      |
- +---------+---------+
-
-  After:
-
-
- +---------+---------+
- |      Project      |
- +---------+---------+
-           |
-  +--------+--------+
-  |      Limit      |
-  |    (limit=3)    |
-  +--------+--------+
-
-*/
 class PushLimitDownProjectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

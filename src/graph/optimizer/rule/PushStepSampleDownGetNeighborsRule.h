@@ -11,39 +11,37 @@
 namespace nebula {
 namespace opt {
 
-/*
-  Embedding limit to [[GetNeighbors]]
-  Required conditions:
-   1. Match the pattern
-  Benefits:
-   1. Limit data early to optimize performance
-  Query example:
-   GO 2 STEPS FROM "Tim Duncan" over like YIELD like._dst SAMPLE [2,3]
-  Tranformation:
-  Before:
+//  Embedding limit to [[GetNeighbors]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//  Query example:
+//   GO 2 STEPS FROM "Tim Duncan" over like YIELD like._dst SAMPLE [2,3]
+//  Tranformation:
+//  Before:
+//
+//  +----------+----------+
+//  |        Sample       |
+//  |(SubscriptExpression)|
+//  +----------+----------+
+//             |
+//   +---------+---------+
+//   |    GetNeighbors   |
+//   +---------+---------+
+//
+//  After:
+//
+// +----------+----------+
+// |        Sample       |
+// |(SubscriptExpression)|
+// +----------+----------+
+//            |
+// +----------+----------+
+// |     GetNeighbors    |
+// |(SubscriptExpression)|
+// +----------+----------+
 
-  +----------+----------+
-  |        Sample       |
-  |(SubscriptExpression)|
-  +----------+----------+
-             |
-   +---------+---------+
-   |    GetNeighbors   |
-   +---------+---------+
-
-  After:
-
- +----------+----------+
- |        Sample       |
- |(SubscriptExpression)|
- +----------+----------+
-            |
- +----------+----------+
- |     GetNeighbors    |
- |(SubscriptExpression)|
- +----------+----------+
-
-*/
 class PushStepSampleDownGetNeighborsRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
