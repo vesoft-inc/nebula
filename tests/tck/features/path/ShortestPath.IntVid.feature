@@ -406,6 +406,17 @@ Feature: Integer Vid Shortest Path
       """
     Then the result should be, in any order:
       | p |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM hash("Yao Ming") TO hash("Manu Ginobili") OVER * BIDIRECT UPTO 3 STEPS YIELD path AS p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                   |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")<-[:serve]-("Manu Ginobili")>           |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:like]-("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:teammate]-("Manu Ginobili")> |
 
   Scenario: Integer Vid [2] Shortest Path BIDIRECT
     When executing query:
