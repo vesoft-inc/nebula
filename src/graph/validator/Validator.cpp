@@ -256,6 +256,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<KillQueryValidator>(sentence, context);
     case Sentence::Kind::kAlterSpace:
       return std::make_unique<AlterSpaceValidator>(sentence, context);
+    case Sentence::Kind::kClearSpace:
+      return std::make_unique<ClearSpaceValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing

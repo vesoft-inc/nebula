@@ -120,22 +120,26 @@ def wait_indexes_ready(sess):
 def graph_spaces():
     return dict(result_set=None)
 
+
 @given(parse('parameters: {parameters}'))
 def preload_parameters(
     parameters
 ):
     try:
         paramMap = json.loads(parameters)
-        for (k,v) in paramMap.items():
-            params[k]=value(v)
+        for (k, v) in paramMap.items():
+            params[k] = value(v)
     except:
         raise ValueError("preload parameters failed!")
+
 
 @then("clear the used parameters")
 def clear_parameters():
     params = {}
 
 # construct python-type to nebula.Value
+
+
 def value(any):
     v = Value()
     if (isinstance(any, bool)):
@@ -151,8 +155,10 @@ def value(any):
     elif (isinstance(any, dict)):
         v.set_mVal(map2NMap(any))
     else:
-        raise TypeError("Do not support convert "+str(type(any))+" to nebula.Value")
+        raise TypeError("Do not support convert " +
+                        str(type(any))+" to nebula.Value")
     return v
+
 
 def list2Nlist(list):
     nlist = NList()
@@ -161,12 +167,14 @@ def list2Nlist(list):
         nlist.values.append(value(item))
     return nlist
 
+
 def map2NMap(map):
     nmap = NMap()
-    nmap.kvs={}
-    for k,v in map.items():
-        nmap.kvs[k]=value(v)
+    nmap.kvs = {}
+    for k, v in map.items():
+        nmap.kvs[k] = value(v)
     return nmap
+
 
 @given(parse('a graph with space named "{space}"'))
 def preload_space(
@@ -245,7 +253,8 @@ def new_space(request, session, graph_spaces):
 
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
-    data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
+    data_dir = os.path.join(
+        DATA_DIR, normalize_outline_scenario(request, data))
     space_desc = load_csv_data(
         session,
         data_dir,
@@ -348,6 +357,7 @@ def given_nebulacluster_with_param(
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
 
+
 @when(parse('login "{graph}" with "{user}" and "{password}"'))
 def when_login_graphd(graph, user, password, class_fixture_variables, pytestconfig):
     index = parse_service_index(graph)
@@ -367,6 +377,8 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
 
 # This is a workaround to test login retry because nebula-python treats
 # authentication failure as exception instead of error.
+
+
 @when(parse('login "{graph}" with "{user}" and "{password}" should fail:\n{msg}'))
 def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
     index = parse_service_index(graph)
@@ -384,10 +396,12 @@ def when_login_graphd_fail(graph, user, password, class_fixture_variables, msg):
     except:
         raise
 
+
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
+
 
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
 def executing_query(username, password, conn_pool_to_first_graph_service, query, graph_spaces, request):
@@ -395,6 +409,7 @@ def executing_query(username, password, conn_pool_to_first_graph_service, query,
     ngql = combine_query(query)
     exec_query(request, ngql, sess, graph_spaces)
     sess.release()
+
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
@@ -749,7 +764,8 @@ def check_plan(plan, graph_spaces):
     idx = column_names.index('dependencies')
     rows = expect.get("rows", [])
     for i, row in enumerate(rows):
-        row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
+        row[idx] = [int(cell.strip())
+                    for cell in row[idx].split(",") if len(cell) > 0]
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
@@ -877,3 +893,29 @@ def replace_result_with_cluster_info(result, class_fixture_variables):
         except:
             raise
     return result
+
+
+@pytest.fixture()
+def execute_response():
+    return dict()
+
+
+@when(parse("connect to nebula service with user[u:{user}, p:{password}]"))
+def conncet_to_service_with_user(conn_pool, user, password, class_fixture_variables):
+    sess = conn_pool.get_session(user, password)
+    class_fixture_variables["sessions"].append(sess)
+
+
+@when("executing clear space")
+def executing_clear_space(class_fixture_variables, execute_response):
+    session_cnt = len(class_fixture_variables["sessions"])
+    last_sess = class_fixture_variables["sessions"][session_cnt - 1]
+    resp = last_sess.execute(" CLEAR SPACE IF EXISTS clear_space")
+    execute_response["resp"] = resp
+
+
+@then("the result should be failed")
+def result_failed(execute_response):
+    assert execute_response["resp"].is_succeeded() == False
+    assert execute_response["resp"].error_msg(
+    ) == "PermissionError: No permission to write space."
