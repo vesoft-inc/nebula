@@ -40,6 +40,7 @@ bool GraphServer::start() {
     return false;
   }
 
+  // Init worker id for snowflake generating unique id
   nebula::Snowflake::initWorkerId(interface->metaClient_.get());
 
   graphThread_ = std::make_unique<std::thread>([&] {
@@ -90,6 +91,7 @@ void GraphServer::notifyStop() {
   }
 }
 
+// Stop the server.
 void GraphServer::stop() {
   if (serverStatus_.load() == ServiceStatus::STATUS_STOPPED) {
     LOG(INFO) << "The graph server has been stopped";
