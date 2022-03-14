@@ -7,6 +7,7 @@
 
 #include "storage/admin/AdminProcessor.h"
 #include "storage/admin/AdminTaskProcessor.h"
+#include "storage/admin/ClearSpaceProcessor.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/GetLeaderProcessor.h"
@@ -96,6 +97,12 @@ folly::Future<cpp2::AddTaskResp> StorageAdminServiceHandler::future_addAdminTask
 folly::Future<cpp2::StopTaskResp> StorageAdminServiceHandler::future_stopAdminTask(
     const cpp2::StopTaskRequest& req) {
   auto* processor = StopAdminTaskProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ClearSpaceResp> StorageAdminServiceHandler::future_clearSpace(
+    const cpp2::ClearSpaceReq& req) {
+  auto* processor = ClearSpaceProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 

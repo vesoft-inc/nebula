@@ -529,6 +529,32 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+template <typename RESP>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+BaseProcessor<RESP>::getAllParts(GraphSpaceID spaceId) {
+  std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
+
+  const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
+  auto ret = doPrefix(prefix);
+  if (!nebula::ok(ret)) {
+    auto retCode = nebula::error(ret);
+    LOG(ERROR) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  auto iter = nebula::value(ret).get();
+  while (iter->valid()) {
+    auto key = iter->key();
+    PartitionID partId;
+    memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
+    partHostsMap.emplace(partId, std::move(partHosts));
+    iter->next();
+  }
+
+  return partHostsMap;
+}
+
 }  // namespace meta
 }  // namespace nebula
 #endif

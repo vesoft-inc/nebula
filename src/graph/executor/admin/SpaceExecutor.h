@@ -45,6 +45,14 @@ class DropSpaceExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
+class ClearSpaceExecutor final : public Executor {
+ public:
+  ClearSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ClearSpaceExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
 class ShowSpacesExecutor final : public Executor {
  public:
   ShowSpacesExecutor(const PlanNode *node, QueryContext *qctx)
