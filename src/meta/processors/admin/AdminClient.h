@@ -151,6 +151,16 @@ class AdminClient {
   virtual folly::Future<Status> checkPeers(GraphSpaceID spaceId, PartitionID partId);
 
   /**
+   * @brief Clear space data in all corresponding storage hosts.
+   *
+   * @param spaceId space which will be cleared
+   * @param hosts storage admin service addresses
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
+  virtual folly::Future<nebula::cpp2::ErrorCode> clearSpace(GraphSpaceID spaceId,
+                                                            const std::vector<HostAddr>& hosts);
+
+  /**
    * @brief Get the all partitions' leader distribution
    *
    * @param result

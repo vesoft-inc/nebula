@@ -1239,6 +1239,22 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool
   return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::clearSpace(std::string name, const bool ifExists) {
+  cpp2::ClearSpaceReq req;
+  req.space_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_clearSpace(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
 folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2::ListHostType tp) {
   cpp2::ListHostsReq req;
   req.type_ref() = tp;
