@@ -19,7 +19,7 @@ class DeDupNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
 
-  explicit DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
+  DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
       : resultSet_(resultSet), pos_(pos) {
     IterateNode<T>::name_ = "DedupNode";
   }

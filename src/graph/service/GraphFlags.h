@@ -45,7 +45,7 @@ DECLARE_uint32(failed_login_attempts);
 // The deault value is 0. A value of 0 disables the option.
 DECLARE_uint32(password_lock_time_in_secs);
 
-// optimizer
+// Optimizer
 DECLARE_bool(enable_optimizer);
 
 DECLARE_int64(max_allowed_connections);

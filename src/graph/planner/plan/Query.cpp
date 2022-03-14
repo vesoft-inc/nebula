@@ -544,10 +544,6 @@ Dedup::Dedup(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::
   copyInputColNames(input);
 }
 
-void Dedup::accept(PlanNodeVisitor* visitor) {
-  visitor->visit(this);
-}
-
 PlanNode* Dedup::clone() const {
   auto* newDedup = Dedup::make(qctx_, nullptr);
   newDedup->cloneMembers(*this);

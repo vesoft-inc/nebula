@@ -163,7 +163,7 @@ class ClientSession final {
  private:
   ClientSession() = default;
 
-  explicit ClientSession(meta::cpp2::Session&& session, meta::MetaClient* metaClient);
+  ClientSession(meta::cpp2::Session&& session, meta::MetaClient* metaClient);
 
  private:
   SpaceInfo space_;  // The space that the session is using.

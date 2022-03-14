@@ -12,6 +12,16 @@ namespace meta {
 
 using Hosts = std::vector<HostAddr>;
 
+/**
+ * @brief Create a new space, copying schema and partition topology from an existing space,
+ * including:
+ *        - space properties
+ *        - partition hosts distribution
+ *        - tags
+ *        - edges
+ *        - indexes
+ *
+ */
 class CreateSpaceAsProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateSpaceAsProcessor* instance(kvstore::KVStore* kvstore) {

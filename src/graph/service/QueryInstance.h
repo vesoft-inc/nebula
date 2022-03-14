@@ -26,9 +26,10 @@ namespace graph {
 
 class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
  public:
-  explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
+  QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
   ~QueryInstance() = default;
 
+  // Entrance of the Validate, Optimize, Schedule, Execute process
   void execute();
 
   QueryContext* qctx() const {
@@ -51,7 +52,7 @@ class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
   void onError(Status);
 
   Status validateAndOptimize();
-  // return true if continue to execute
+  // Return true if continue to execute
   bool explainOrContinue();
   void addSlowQueryStats(uint64_t latency, const std::string& spaceName) const;
   void fillRespData(ExecutionResponse* resp);

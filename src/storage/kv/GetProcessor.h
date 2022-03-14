@@ -27,7 +27,7 @@ class GetProcessor : public BaseProcessor<cpp2::KVGetResponse> {
   void process(const cpp2::KVGetRequest& req);
 
  protected:
-  explicit GetProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  GetProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::KVGetResponse>(env, counters) {}
 };
 

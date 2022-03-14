@@ -8,8 +8,7 @@
 namespace nebula {
 namespace meta {
 
-void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
-  UNUSED(req);
+void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
   auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
   if (store == nullptr) {
     onFinished();
@@ -26,10 +25,11 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   std::unordered_map<std::string, std::vector<cpp2::ServiceInfo>> hostServices;
 
   // non-meta services, may include inactive services
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& hostPrefix = MetaKeyUtils::hostPrefix();
   auto iterRet = doPrefix(hostPrefix);
   if (!nebula::ok(iterRet)) {
-    LOG(INFO) << "get host prefix failed:"
+    LOG(INFO) << "get host prefix failed: "
               << apache::thrift::util::enumNameSafe(nebula::error(iterRet));
     handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
     onFinished();

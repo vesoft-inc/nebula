@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get partitions distribution and terms for given space, used for meta client loading data.
+ *
+ */
 class GetPartsAllocProcessor : public BaseProcessor<cpp2::GetPartsAllocResp> {
  public:
   static GetPartsAllocProcessor* instance(kvstore::KVStore* kvstore) {
@@ -23,6 +27,12 @@ class GetPartsAllocProcessor : public BaseProcessor<cpp2::GetPartsAllocResp> {
   explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetPartsAllocResp>(kvstore) {}
 
+  /**
+   * @brief Get leader peer's term for each partition
+   *
+   * @param space space id
+   * @return std::unordered_map<PartitionID, TermID>
+   */
   std::unordered_map<PartitionID, TermID> getTerm(GraphSpaceID space);
 };
 

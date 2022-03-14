@@ -28,11 +28,10 @@ namespace graph {
  * Special operation : kShow, kChangePassword
  */
 
-// static
-Status PermissionCheck::permissionCheck(ClientSession *session,
-                                        Sentence *sentence,
-                                        ValidateContext *vctx,
-                                        GraphSpaceID targetSpace) {
+/* static */ Status PermissionCheck::permissionCheck(ClientSession *session,
+                                                     Sentence *sentence,
+                                                     ValidateContext *vctx,
+                                                     GraphSpaceID targetSpace) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
@@ -165,7 +164,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowMetaLeader:
     case Sentence::Kind::kShowHosts: {
       /**
-       * all roles can be show for above operations.
+       * All roles can be show for above operations.
        */
       return Status::OK();
     }
@@ -206,14 +205,16 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       return Status::OK();
     }
     case Sentence::Kind::kExplain:
-      // everyone could explain
+      // Everyone could explain
       return Status::OK();
     case Sentence::Kind::kSequential: {
       // No permission checking for sequential sentence.
       return Status::OK();
     }
-    case Sentence::Kind::kShowQueries:
-    case Sentence::Kind::kKillQuery: {
+    case Sentence::Kind::kKillQuery:
+      // Only GOD could kill all queries, other roles only could kill own queries.
+      return Status::OK();
+    case Sentence::Kind::kShowQueries: {
       return Status::OK();
     }
   }

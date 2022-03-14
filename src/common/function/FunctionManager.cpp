@@ -1083,7 +1083,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
-      return time::WallClock::fastNowInSec();
+      return ::time(NULL);
     };
   }
   {
@@ -1765,7 +1765,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
       if (args.empty()) {
-        return time::WallClock::fastNowInSec();
+        return ::time(NULL);
       }
       auto status = time::TimeUtils::toTimestamp(args[0].get());
       if (!status.ok()) {

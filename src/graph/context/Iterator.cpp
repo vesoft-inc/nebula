@@ -275,6 +275,29 @@ void GetNeighborsIter::next() {
   }
 }
 
+size_t GetNeighborsIter::size() const {
+  size_t count = 0;
+  for (const auto& dsIdx : dsIndices_) {
+    for (const auto& row : dsIdx.ds->rows) {
+      for (const auto& edgeIdx : dsIdx.edgePropsMap) {
+        const auto& cell = row[edgeIdx.second.colIdx];
+        if (LIKELY(cell.isList())) {
+          count += cell.getList().size();
+        }
+      }
+    }
+  }
+  return count;
+}
+
+size_t GetNeighborsIter::numRows() const {
+  size_t count = 0;
+  for (const auto& dsIdx : dsIndices_) {
+    count += dsIdx.ds->size();
+  }
+  return count;
+}
+
 void GetNeighborsIter::erase() {
   DCHECK_GE(bitIdx_, 0);
   DCHECK_LT(bitIdx_, bitset_.size());
@@ -441,6 +464,7 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
 
 List GetNeighborsIter::getVertices() {
   List vertices;
+  vertices.reserve(numRows());
   valid_ = true;
   colIdx_ = -2;
   for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
@@ -512,6 +536,7 @@ Value GetNeighborsIter::getEdge() const {
 
 List GetNeighborsIter::getEdges() {
   List edges;
+  edges.reserve(size());
   for (; valid(); next()) {
     auto edge = getEdge();
     if (edge.isEdge()) {

@@ -29,18 +29,16 @@ extern stats::CounterId kNumRunningJobs;
 class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
   friend class GetStatsTest;
-  FRIEND_TEST(JobManagerTest, reserveJobId);
-  FRIEND_TEST(JobManagerTest, buildJobDescription);
-  FRIEND_TEST(JobManagerTest, addJob);
+  FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, JobPriority);
   FRIEND_TEST(JobManagerTest, JobDeduplication);
-  FRIEND_TEST(JobManagerTest, loadJobDescription);
-  FRIEND_TEST(JobManagerTest, showJobs);
-  FRIEND_TEST(JobManagerTest, showJobsFromMultiSpace);
-  FRIEND_TEST(JobManagerTest, showJob);
-  FRIEND_TEST(JobManagerTest, showJobInOtherSpace);
-  FRIEND_TEST(JobManagerTest, recoverJob);
+  FRIEND_TEST(JobManagerTest, LoadJobDescription);
+  FRIEND_TEST(JobManagerTest, ShowJobs);
+  FRIEND_TEST(JobManagerTest, ShowJobsFromMultiSpace);
+  FRIEND_TEST(JobManagerTest, ShowJob);
+  FRIEND_TEST(JobManagerTest, ShowJobInOtherSpace);
+  FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
@@ -198,10 +196,15 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   JobManager() = default;
 
   void scheduleThread();
-  void scheduleThreadOld();
 
+  /**
+   * @brief Dispatch all tasks of one job
+   *
+   * @param jobDesc
+   * @param op
+   * @return true if all task dispatched, else false.
+   */
   bool runJobInternal(const JobDescription& jobDesc, JbOp op);
-  bool runJobInternalOld(const JobDescription& jobDesc);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 

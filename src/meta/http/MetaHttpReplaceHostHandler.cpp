@@ -106,7 +106,7 @@ void MetaHttpReplaceHostHandler::onError(ProxygenError error) noexcept {
 }
 
 bool MetaHttpReplaceHostHandler::replaceHostInPart(std::string ipv4From, std::string ipv4To) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
@@ -163,7 +163,7 @@ bool MetaHttpReplaceHostHandler::replaceHostInPart(std::string ipv4From, std::st
 }
 
 bool MetaHttpReplaceHostHandler::replaceHostInZone(std::string ipv4From, std::string ipv4To) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const auto& zonePrefix = MetaKeyUtils::zonePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, zonePrefix, &iter);

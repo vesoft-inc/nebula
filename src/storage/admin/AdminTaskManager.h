@@ -20,6 +20,10 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Class to manage admin task status.
+ *
+ */
 class AdminTaskManager {
   FRIEND_TEST(TaskManagerTest, happy_path);
   FRIEND_TEST(TaskManagerTest, gen_sub_task_failed);
@@ -33,6 +37,12 @@ class AdminTaskManager {
 
   AdminTaskManager() = default;
   explicit AdminTaskManager(storage::StorageEnv* env = nullptr) : env_(env) {}
+  /**
+   * @brief Construct new instance of AdminTaskManager
+   *
+   * @param env Related environment variables for storage.
+   * @return AdminTaskManager* AdminTaskManager instance.
+   */
   static AdminTaskManager* instance(storage::StorageEnv* env = nullptr) {
     static AdminTaskManager sAdminTaskManager(env);
     return &sAdminTaskManager;
@@ -82,7 +92,12 @@ class AdminTaskManager {
   meta::MetaClient* metaClient_{nullptr};
 
  private:
+  /**
+   * @brief Schedule tasks in the queue
+   *
+   */
   void schedule();
+
   void runSubTask(TaskHandle handle);
 
  private:
