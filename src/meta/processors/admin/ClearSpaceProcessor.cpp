@@ -78,30 +78,5 @@ void ClearSpaceProcessor::process(const cpp2::ClearSpaceReq& req) {
   return;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
-ClearSpaceProcessor::getAllParts(GraphSpaceID spaceId) {
-  std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
-
-  const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
-  auto ret = doPrefix(prefix);
-  if (!nebula::ok(ret)) {
-    auto retCode = nebula::error(ret);
-    LOG(ERROR) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  auto iter = nebula::value(ret).get();
-  while (iter->valid()) {
-    auto key = iter->key();
-    PartitionID partId;
-    memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
-    partHostsMap.emplace(partId, std::move(partHosts));
-    iter->next();
-  }
-
-  return partHostsMap;
-}
-
 }  // namespace meta
 }  // namespace nebula

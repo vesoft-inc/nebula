@@ -27,16 +27,6 @@ class ClearSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit ClearSpaceProcessor(kvstore::KVStore* kvstore, AdminClient* adminClient)
       : BaseProcessor<cpp2::ExecResp>(kvstore), adminClient_(adminClient) {}
 
-  /**
-   * @brief Get all parts' distribution information.
-   *
-   * @param spaceId
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
-   *         std::vector<HostAddr>>> map for part id -> peer hosts.
-   */
-  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
-  getAllParts(GraphSpaceID spaceId);
-
  private:
   AdminClient* adminClient_{nullptr};
 };
