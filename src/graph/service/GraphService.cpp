@@ -224,7 +224,7 @@ Status GraphService::auth(const std::string& username,
     auto clientAddrIt = metaClient->getClientAddrMap().find(clientIp);
     if (clientAddrIt == metaClient->getClientAddrMap().end()) {
       return Status::Error(
-          folly::sformat("The version of the client sending request from {} is lower than v2.6.0, "
+          folly::sformat("The version of the client sending request from {} is too low, "
                          "please update the client.",
                          clientIp.toString()));
     }
