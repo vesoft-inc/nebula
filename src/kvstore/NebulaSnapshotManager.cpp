@@ -29,32 +29,61 @@ NebulaSnapshotManager::NebulaSnapshotManager(NebulaStore* kv) : store_(kv) {
 void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                                     PartitionID partId,
                                                     raftex::SnapshotCallback cb) {
-  auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
-  CHECK_NOTNULL(store_);
-  auto tables = NebulaKeyUtils::snapshotPrefix(partId);
+  static constexpr LogID kInvalidLogId = -1;
+  static constexpr TermID kInvalidLogTerm = -1;
   std::vector<std::string> data;
   int64_t totalSize = 0;
   int64_t totalCount = 0;
-  LOG(INFO) << folly::sformat(
-      "Space {} Part {} start send snapshot, rate limited to {}, batch size is {}",
-      spaceId,
-      partId,
-      FLAGS_snapshot_part_rate_limit,
-      FLAGS_snapshot_batch_size);
-
-  const void* snapshot = store_->GetSnapshot(spaceId, partId);
+  CHECK_NOTNULL(store_);
+  auto partRet = store_->part(spaceId, partId);
+  if (!ok(partRet)) {
+    LOG(INFO) << folly::sformat("Failed to find space {} part {]", spaceId, partId);
+    cb(kInvalidLogId, kInvalidLogTerm, data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
+    return;
+  }
+  // Create a rocksdb snapshot
+  auto snapshot = store_->GetSnapshot(spaceId, partId);
   SCOPE_EXIT {
     if (snapshot != nullptr) {
       store_->ReleaseSnapshot(spaceId, partId, snapshot);
     }
   };
+  auto part = nebula::value(partRet);
+  // Get the commit log id and commit log term of specified partition
+  std::string val;
+  auto commitRet = part->engine()->get(NebulaKeyUtils::systemCommitKey(partId), &val, snapshot);
+  if (commitRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << folly::sformat(
+        "Cannot fetch the commit log id and term of space {} part {}", spaceId, partId);
+    cb(kInvalidLogId, kInvalidLogTerm, data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
+    return;
+  }
+  CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
+  LogID commitLogId;
+  TermID commitLogTerm;
+  memcpy(reinterpret_cast<void*>(&commitLogId), val.data(), sizeof(LogID));
+  memcpy(reinterpret_cast<void*>(&commitLogTerm), val.data() + sizeof(LogID), sizeof(TermID));
 
+  LOG(INFO) << folly::sformat(
+      "Space {} Part {} start send snapshot of commitLogId {} commitLogTerm {}, rate limited to "
+      "{}, batch size is {}",
+      spaceId,
+      partId,
+      commitLogId,
+      commitLogTerm,
+      FLAGS_snapshot_part_rate_limit,
+      FLAGS_snapshot_batch_size);
+
+  auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
+  auto tables = NebulaKeyUtils::snapshotPrefix(partId);
   for (const auto& prefix : tables) {
     if (!accessTable(spaceId,
                      partId,
                      snapshot,
                      prefix,
                      cb,
+                     commitLogId,
+                     commitLogTerm,
                      data,
                      totalCount,
                      totalSize,
@@ -62,7 +91,7 @@ void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
       return;
     }
   }
-  cb(data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
+  cb(commitLogId, commitLogTerm, data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
 }
 
 // Promise is set in callback. Access part of the data, and try to send to
@@ -72,6 +101,8 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
                                         const void* snapshot,
                                         const std::string& prefix,
                                         raftex::SnapshotCallback& cb,
+                                        LogID commitLogId,
+                                        TermID commitLogTerm,
                                         std::vector<std::string>& data,
                                         int64_t& totalCount,
                                         int64_t& totalSize,
@@ -81,7 +112,7 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(2) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
             << ", error code:" << static_cast<int32_t>(ret);
-    cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
+    cb(commitLogId, commitLogTerm, data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
     return false;
   }
   data.reserve(kReserveNum);
@@ -91,7 +122,12 @@ bool NebulaSnapshotManager::accessTable(GraphSpaceID spaceId,
       rateLimiter->consume(static_cast<double>(batchSize),                        // toConsume
                            static_cast<double>(FLAGS_snapshot_part_rate_limit),   // rate
                            static_cast<double>(FLAGS_snapshot_part_rate_limit));  // burstSize
-      if (cb(data, totalCount, totalSize, raftex::SnapshotStatus::IN_PROGRESS)) {
+      if (cb(commitLogId,
+             commitLogTerm,
+             data,
+             totalCount,
+             totalSize,
+             raftex::SnapshotStatus::IN_PROGRESS)) {
         data.clear();
         batchSize = 0;
       } else {

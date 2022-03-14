@@ -24,7 +24,7 @@ class GraphServer {
 
   void stop();
 
-  // used for signal handler to set an internal stop flag
+  // Used for signal handler to set an internal stop flag
   void notifyStop();
 
   void waitUntilStop();
