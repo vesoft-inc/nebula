@@ -10,8 +10,8 @@ namespace graph {
 
 /**
  * Read space : kUse, kDescribeSpace
- * Write space : kCreateSpace, kDropSpace, kCreateSnapshot, kDropSnapshot
- *               kBalance, kAdmin, kConfig, kIngest, kDownload
+ * Write space : kCreateSpace, kDropSpace, kClearSpace, kCreateSnapshot,
+ *               kDropSnapshot, kBalance, kAdmin, kConfig, kIngest, kDownload
  * Read schema : kDescribeTag, kDescribeEdge,
  *               kDescribeTagIndex, kDescribeEdgeIndex
  * Write schema : kCreateTag, kAlterTag, kCreateEdge,
@@ -53,6 +53,7 @@ namespace graph {
     case Sentence::Kind::kAlterSpace:
     case Sentence::Kind::kCreateSpaceAs:
     case Sentence::Kind::kDropSpace:
+    case Sentence::Kind::kClearSpace:
     case Sentence::Kind::kCreateSnapshot:
     case Sentence::Kind::kDropSnapshot:
     case Sentence::Kind::kAddHosts:
