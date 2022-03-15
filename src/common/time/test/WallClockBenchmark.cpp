@@ -16,7 +16,7 @@ using nebula::time::WallClock;
 BENCHMARK(gettimeofday_get_msec, iters) {
   for (uint32_t i = 0; i < iters; i++) {
     struct timeval tp;
-    gettimeofday(&tp, NULL);
+    gettimeofday(&tp, nullptr);
     auto ts = tp.tv_sec * 1000 + tp.tv_usec / 1000;
     folly::doNotOptimizeAway(ts);
   }
@@ -46,7 +46,7 @@ BENCHMARK_DRAW_LINE();
 BENCHMARK(gettimeofday_get_sec, iters) {
   for (uint32_t i = 0; i < iters; i++) {
     struct timeval tp;
-    gettimeofday(&tp, NULL);
+    gettimeofday(&tp, nullptr);
     auto ts = tp.tv_sec;
     folly::doNotOptimizeAway(ts);
   }

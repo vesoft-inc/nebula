@@ -30,15 +30,6 @@ class ListPartsProcessor : public BaseProcessor<cpp2::ListPartsResp> {
       : BaseProcessor<cpp2::ListPartsResp>(kvstore) {}
 
   /**
-   * @brief Get all parts' distribution information.
-   *
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
-   *         std::vector<HostAddr>>> map for part id -> peer hosts.
-   */
-  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
-  getAllParts();
-
-  /**
    * @brief Fill the given partItems with leader distribution.
    *
    * @param partItems

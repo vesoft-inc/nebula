@@ -21,6 +21,7 @@ class ESGraphAdapter final : public FTGraphAdapter {
   FRIEND_TEST(FulltextPluginTest, ESFuzzyTest);
   FRIEND_TEST(FulltextPluginTest, ESCreateIndexTest);
   FRIEND_TEST(FulltextPluginTest, ESDropIndexTest);
+  FRIEND_TEST(FulltextPluginTest, ESClearIndexTest);
 
  public:
   static std::unique_ptr<FTGraphAdapter> kAdapter;
@@ -52,6 +53,11 @@ class ESGraphAdapter final : public FTGraphAdapter {
                              const std::string& indexTemplate = "") const override;
 
   StatusOr<bool> dropIndex(const HttpClient& client, const std::string& index) const override;
+
+  // Clear the fulltext index data on es and keep the index schema.
+  // client: es client
+  // index: fulltext index name
+  StatusOr<bool> clearIndex(const HttpClient& client, const std::string& index) const override;
 
   StatusOr<bool> indexExists(const HttpClient& client, const std::string& index) const override;
 
@@ -88,11 +94,19 @@ class ESGraphAdapter final : public FTGraphAdapter {
 
   bool indexCheck(const std::string& ret) const;
 
+  // check the result
+  bool clearCheck(const std::string& ret) const;
+
   std::string createIndexCmd(const HttpClient& client,
                              const std::string& index,
                              const std::string& indexTemplate = "") const noexcept;
 
   std::string dropIndexCmd(const HttpClient& client, const std::string& index) const noexcept;
+
+  // Encapsulates the clearIndex command.
+  // client: es client
+  // index: fulltext index name
+  std::string clearIndexCmd(const HttpClient& client, const std::string& index) const noexcept;
 
   std::string indexExistsCmd(const HttpClient& client, const std::string& index) const noexcept;
 };

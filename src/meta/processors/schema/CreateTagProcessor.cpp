@@ -87,7 +87,11 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
   LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
 
   resp_.id_ref() = to(tagId, EntryType::TAG);
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

@@ -18,12 +18,27 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Processor class to handle leader transfer.
+ *
+ */
 class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of TransLeaderProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return TransLeaderProcessor* TransLeaderProcessor instance.
+   */
   static TransLeaderProcessor* instance(StorageEnv* env) {
     return new TransLeaderProcessor(env);
   }
 
+  /**
+   * @brief Entry point for trans leader.
+   *
+   * @param req  Reuqest for trans leader.
+   */
   void process(const cpp2::TransLeaderReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
     LOG(INFO) << "Receive transfer leader for space " << req.get_space_id() << ", part "
@@ -33,7 +48,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     auto partId = req.get_part_id();
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;
@@ -49,7 +64,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     auto* partManager = env_->kvstore_->partManager();
     auto status = partManager->partMeta(spaceId, partId);
     if (!status.ok()) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(nebula::cpp2::ErrorCode::E_PART_NOT_FOUND, partId);
       onFinished();
       return;
@@ -77,7 +92,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
           while (retry-- > 0) {
             auto leaderRet = env_->kvstore_->partLeader(spaceId, partId);
             if (!ok(leaderRet)) {
-              LOG(ERROR) << "Space " << spaceId << " Part " << partId << " leader not found";
+              LOG(INFO) << "Space " << spaceId << " Part " << partId << " leader not found";
               this->pushResultCode(error(leaderRet), partId);
               onFinished();
               return;
@@ -105,8 +120,8 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
           onFinished();
         });
       } else {
-        LOG(ERROR) << "Space " << spaceId << " part " << partId
-                   << " failed transfer leader, error: " << static_cast<int32_t>(code);
+        LOG(INFO) << "Space " << spaceId << " part " << partId
+                  << " failed transfer leader, error: " << static_cast<int32_t>(code);
         this->pushResultCode(code, partId);
         onFinished();
         return;
@@ -118,12 +133,27 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit TransLeaderProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor class to handle adding partitions.
+ *
+ */
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of AddPartProcessor
+   *
+   * @param env Related environment variables for storage.
+   * @return AddPartProcessor* AddPartProcessor instance.
+   */
   static AddPartProcessor* instance(StorageEnv* env) {
     return new AddPartProcessor(env);
   }
 
+  /**
+   * @brief Entry point for adding partitions.
+   *
+   * @param req Request for adding partitions.
+   */
   void process(const cpp2::AddPartReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
@@ -154,10 +184,21 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of RemovePartProcess.
+   *
+   * @param env Related environment variables for storage.
+   * @return RemovePartProcessor* RemovePartProcessor instance.
+   */
   static RemovePartProcessor* instance(StorageEnv* env) {
     return new RemovePartProcessor(env);
   }
 
+  /**
+   * @brief Entry point for removing part.
+   *
+   * @param req Reuqest for removing part.
+   */
   void process(const cpp2::RemovePartReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
@@ -175,12 +216,27 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit RemovePartProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor class to handle member change.
+ *
+ */
 class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of MemberChangeProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return MemberChangeProcessor* MemberChangeProcessor instance.
+   */
   static MemberChangeProcessor* instance(StorageEnv* env) {
     return new MemberChangeProcessor(env);
   }
 
+  /**
+   * @brief Entry point to handle member change.
+   *
+   * @param req Request for member change.
+   */
   void process(const cpp2::MemberChangeReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
     auto spaceId = req.get_space_id();
@@ -189,7 +245,7 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
               << ", add/remove " << (req.get_add() ? "add" : "remove");
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;
@@ -214,19 +270,34 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit MemberChangeProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor class to handle adding leader.
+ *
+ */
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of AddLearnerProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return AddLearnerProcessor* AddLearnerProcessor instance.
+   */
   static AddLearnerProcessor* instance(StorageEnv* env) {
     return new AddLearnerProcessor(env);
   }
 
+  /**
+   * @brief Entry point for adding learner.
+   *
+   * @param req Reuqest for adding learner.
+   */
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
     LOG(INFO) << "Receive add learner for space " << spaceId << ", part " << partId;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
+      LOG(INFO) << "Space: " << spaceId << " Part: " << partId << " not found";
       this->pushResultCode(error(ret), partId);
       onFinished();
       return;
@@ -244,14 +315,29 @@ class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   explicit AddLearnerProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor class to handle waiting data catching up.
+ *
+ */
 class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of WaitingForCatchUpDataProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return WaitingForCatchUpDataProcessor* WaitingForCatchUpDataProcessor instance.
+   */
   static WaitingForCatchUpDataProcessor* instance(StorageEnv* env) {
     return new WaitingForCatchUpDataProcessor(env);
   }
 
   ~WaitingForCatchUpDataProcessor() {}
 
+  /**
+   * @brief Entry point to wait data catching up data for space.
+   *
+   * @param req Reuqest for waiting data catching up.
+   */
   void process(const cpp2::CatchUpDataReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
@@ -306,12 +392,27 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
       : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
+/**
+ * @brief Processor to check peer status.
+ *
+ */
 class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
+  /**
+   * @brief Construct new instance of CheckPeersProcessor.
+   *
+   * @param env Related environment variables for storage.
+   * @return CheckPeersProcessor* CheckPeersProcessor instance.
+   */
   static CheckPeersProcessor* instance(StorageEnv* env) {
     return new CheckPeersProcessor(env);
   }
 
+  /**
+   * @brief Entry point for checking peers status.
+   *
+   * @param req Request for check peers status.
+   */
   void process(const cpp2::CheckPeersReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();

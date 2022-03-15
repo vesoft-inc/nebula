@@ -48,6 +48,8 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
 
   folly::Future<cpp2::StopTaskResp> future_stopAdminTask(const cpp2::StopTaskRequest& req) override;
 
+  folly::Future<cpp2::ClearSpaceResp> future_clearSpace(const cpp2::ClearSpaceReq& req) override;
+
  private:
   StorageEnv* env_{nullptr};
 };

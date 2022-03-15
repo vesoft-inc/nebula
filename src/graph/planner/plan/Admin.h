@@ -216,6 +216,37 @@ class DropSpace final : public SingleDependencyNode {
   bool ifExists_;
 };
 
+class ClearSpace final : public SingleDependencyNode {
+ public:
+  static ClearSpace* make(QueryContext* qctx,
+                          PlanNode* input,
+                          std::string spaceName,
+                          bool ifExists) {
+    return qctx->objPool()->add(new ClearSpace(qctx, input, std::move(spaceName), ifExists));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  const std::string& getSpaceName() const {
+    return spaceName_;
+  }
+
+  bool getIfExists() const {
+    return ifExists_;
+  }
+
+ private:
+  ClearSpace(QueryContext* qctx, PlanNode* input, std::string spaceName, bool ifExists)
+      : SingleDependencyNode(qctx, Kind::kClearSpace, input) {
+    spaceName_ = std::move(spaceName);
+    ifExists_ = ifExists;
+  }
+
+ private:
+  std::string spaceName_;
+  bool ifExists_;
+};
+
 class AlterSpace final : public SingleDependencyNode {
  public:
   static AlterSpace* make(QueryContext* qctx,

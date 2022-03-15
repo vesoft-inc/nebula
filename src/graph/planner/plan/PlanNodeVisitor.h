@@ -22,7 +22,6 @@ class PlanNodeVisitor {
   virtual void visit(Aggregate *node) = 0;
   virtual void visit(Traverse *node) = 0;
   virtual void visit(AppendVertices *node) = 0;
-  virtual void visit(Dedup *node) = 0;
   virtual void visit(BiJoin *node) = 0;
 };
 

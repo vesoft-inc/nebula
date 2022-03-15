@@ -61,17 +61,9 @@ void ExtractFilterExprVisitor::visit(InputPropertyExpression *) {
 }
 
 void ExtractFilterExprVisitor::visit(LabelTagPropertyExpression *) {
-  switch (pushType_) {
-    case PushType::kGetNeighbors:
-      canBePushed_ = false;
-      break;
-    case PushType::kGetVertices:
-      canBePushed_ = true;
-      break;
-    case PushType::kGetEdges:
-      canBePushed_ = false;
-      break;
-  }
+  // Storage don't support this expression
+  // Convert it to tag/vertex related property expression for before push-down
+  canBePushed_ = false;
 }
 
 void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {

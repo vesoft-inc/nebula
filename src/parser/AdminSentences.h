@@ -423,6 +423,33 @@ class DropSpaceSentence final : public DropSentence {
   std::unique_ptr<std::string> clusterName_;
 };
 
+// clear space data and index data, but keep space schema and index schema.
+class ClearSpaceSentence final : public DropSentence {
+ public:
+  ClearSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
+    spaceName_.reset(spaceName);
+    kind_ = Kind::kClearSpace;
+  }
+
+  void setClusterName(std::string* clusterName) {
+    clusterName_.reset(clusterName);
+  }
+
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
+
+  const std::string* clusterName() const {
+    return clusterName_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> spaceName_;
+  std::unique_ptr<std::string> clusterName_;
+};
+
 class AlterSpaceSentence final : public Sentence {
  public:
   AlterSpaceSentence(std::string* spaceName, meta::cpp2::AlterSpaceOp op)
@@ -703,8 +730,7 @@ class ShowServiceClientsSentence final : public Sentence {
 
 class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInServiceSentence(const meta::cpp2::ExternalServiceType& type,
-                                 ServiceClientList* clients)
+  SignInServiceSentence(const meta::cpp2::ExternalServiceType& type, ServiceClientList* clients)
       : type_(type) {
     kind_ = Kind::kSignInService;
     clients_.reset(clients);
@@ -797,7 +823,7 @@ class ShowQueriesSentence final : public Sentence {
 
 class QueryUniqueIdentifier final {
  public:
-  explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+  QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
       : epId_(epId), sessionId_(sessionId) {}
 
   Expression* sessionId() const {

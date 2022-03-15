@@ -5,8 +5,6 @@
 
 #include <folly/Benchmark.h>
 
-#include <memory>
-
 #include "common/base/ObjectPool.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/expression/ConstantExpression.h"

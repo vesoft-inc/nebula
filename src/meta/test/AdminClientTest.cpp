@@ -384,8 +384,10 @@ TEST(AdminClientTest, SnapshotTest) {
   HostAddr host(localIp, rpcServer->port_);
   HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
   TestUtils::createSomeHosts(kv.get(), {storageHost});
+  std::vector<kvstore::KV> times;
   ActiveHostsMan::updateHostInfo(
-      kv.get(), storageHost, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
+      kv.get(), storageHost, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), times);
+  TestUtils::doPut(kv.get(), times);
   auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(1, nebula::value(hostsRet).size());
