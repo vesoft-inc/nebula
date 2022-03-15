@@ -26,11 +26,11 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
       : StorageAccessExecutor("ShortestPath", node, qctx) {
     shortestPathNode_ = asNode<ShortestPath>(node);
     single_ = shortestPathNode_->single();
+    range_ = {shortestPathNode_->stepRange()->min(), shortestPathNode_->stepRange()->max()};
     dss_.reserve(2);
     allPrevPaths_.reserve(2);
     for (int i = 0; i < 2; i++) {
       dss_.emplace_back();
-      visiteds_.emplace_back();
       allPrevPaths_.emplace_back();
     }
   }
@@ -64,12 +64,15 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   std::vector<List> getPathsFromMap(Value vid, int direction);
 
+  std::vector<List> filterPathLen(std::vector<List>& paths, int direction);
+
  private:
   bool single_{true};
 
   bool break_{false};
 
   size_t step_{0};
+  std::pair<size_t, size_t> range_;
   const ShortestPath* shortestPathNode_{nullptr};
 
   std::vector<std::pair<Value, Value>> cartesian_;
@@ -80,8 +83,6 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   int direction_{0};
   // size == 2, left dataset and right dataset;
   std::vector<DataSet> dss_;
-
-  std::vector<std::unordered_set<Value>> visiteds_;
 
   // vid -> Node
   std::unordered_map<Value, Value> vidToVertex_;
