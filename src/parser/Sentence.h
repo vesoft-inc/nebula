@@ -133,6 +133,7 @@ class Sentence {
     kKillQuery,
     kShowMetaLeader,
     kAlterSpace,
+    kClearSpace,
   };
 
   Kind kind() const {
