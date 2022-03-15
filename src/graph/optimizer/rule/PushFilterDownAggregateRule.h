@@ -11,6 +11,34 @@
 namespace nebula {
 namespace opt {
 
+//  Push the [[Filter]] down [[Aggregate]]
+//  Required conditions:
+//   1. Match the pattern
+//   2. Filter contains only non-aggregated items
+//  Benefits:
+//   1. Filter data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+------+
+//  |    Filter   |
+//  +------+------+
+//         |
+//  +------+------+
+//  |  Aggregate  |
+//  +------+------+
+//
+//  After:
+//
+//  +------+------+
+//  |  Aggregate  |
+//  +------+------+
+//         |
+//  +------+------+
+//  |    Filter   |
+//  +------+------+
+
 class PushFilterDownAggregateRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
