@@ -48,7 +48,7 @@ void copyData(kvstore::KVStore* kv,
 void genTempData(int32_t spaceId, int jobId, kvstore::KVStore* kv) {
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
-  copyData(kv, 0, 0, statsKey, tempKey);
+  copyData(kv, kDefaultSpaceId, kDefaultPartId, statsKey, tempKey);
 }
 
 struct JobCallBack {
@@ -174,7 +174,7 @@ TEST_F(GetStatsTest, StatsJob) {
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
 
-  copyData(kv_.get(), 0, 0, statsKey, tempKey);
+  copyData(kv_.get(), kDefaultSpaceId, kDefaultPartId, statsKey, tempKey);
   jobMgr->jobFinished(jobId, cpp2::JobStatus::FINISHED);
   {
     auto job2Ret = JobDescription::loadJobDescription(statsJob.id_, kv_.get());
@@ -304,7 +304,7 @@ TEST_F(GetStatsTest, StatsJob) {
   auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
-  copyData(kv_.get(), 0, 0, statsKey2, tempKey2);
+  copyData(kv_.get(), kDefaultSpaceId, kDefaultPartId, statsKey2, tempKey2);
   jobMgr->jobFinished(jobId2, cpp2::JobStatus::FINISHED);
 
   ASSERT_TRUE(result2);

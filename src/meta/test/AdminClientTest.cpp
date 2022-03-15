@@ -161,24 +161,24 @@ TEST(AdminClientTest, SimpleTest) {
   {
     LOG(INFO) << "Test transLeader...";
     folly::Baton<true, std::atomic> baton;
-    client->transLeader(0, 0, {localIp, rpcServer->port_}, HostAddr("1", 1))
+    client
+        ->transLeader(
+            kDefaultSpaceId, kDefaultPartId, {localIp, rpcServer->port_}, HostAddr("1", 1))
         .thenValue([&baton](auto&&) { baton.post(); });
     baton.wait();
   }
   {
     LOG(INFO) << "Test addPart...";
     folly::Baton<true, std::atomic> baton;
-    client->addPart(0, 0, {localIp, rpcServer->port_}, true).thenValue([&baton](auto&&) {
-      baton.post();
-    });
+    client->addPart(kDefaultSpaceId, kDefaultPartId, {localIp, rpcServer->port_}, true)
+        .thenValue([&baton](auto&&) { baton.post(); });
     baton.wait();
   }
   {
     LOG(INFO) << "Test removePart...";
     folly::Baton<true, std::atomic> baton;
-    client->removePart(0, 0, {localIp, rpcServer->port_}).thenValue([&baton](auto&&) {
-      baton.post();
-    });
+    client->removePart(kDefaultSpaceId, kDefaultPartId, {localIp, rpcServer->port_})
+        .thenValue([&baton](auto&&) { baton.post(); });
     baton.wait();
   }
 }

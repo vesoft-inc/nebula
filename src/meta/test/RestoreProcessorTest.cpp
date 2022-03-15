@@ -343,10 +343,11 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     restoreData.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("password"));
 
     folly::Baton<true, std::atomic> restoreBaton;
-    kvRestore->asyncMultiPut(0, 0, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
-      ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-      restoreBaton.post();
-    });
+    kvRestore->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
+          ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
+          restoreBaton.post();
+        });
     restoreBaton.wait();
 
     auto* processor = RestoreProcessor::instance(kvRestore.get());

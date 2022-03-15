@@ -48,19 +48,24 @@ TEST(BalanceTest, BalanceTaskTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   {
     StrictMock<MockAdminClient> client;
-    EXPECT_CALL(client, checkPeers(0, 0)).Times(2);
-    EXPECT_CALL(client, transLeader(0, 0, src, _)).Times(1);
-    EXPECT_CALL(client, addPart(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, addLearner(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, src, false)).Times(1);
-    EXPECT_CALL(client, updateMeta(0, 0, src, dst)).Times(1);
-    EXPECT_CALL(client, removePart(0, 0, src)).Times(1);
+    EXPECT_CALL(client, checkPeers(kDefaultSpaceId, kDefaultPartId)).Times(2);
+    EXPECT_CALL(client, transLeader(kDefaultSpaceId, kDefaultPartId, src, _)).Times(1);
+    EXPECT_CALL(client, addPart(kDefaultSpaceId, kDefaultPartId, dst, true)).Times(1);
+    EXPECT_CALL(client, addLearner(kDefaultSpaceId, kDefaultPartId, dst)).Times(1);
+    EXPECT_CALL(client, waitingForCatchUpData(kDefaultSpaceId, kDefaultPartId, dst)).Times(1);
+    EXPECT_CALL(client, memberChange(kDefaultSpaceId, kDefaultPartId, dst, true)).Times(1);
+    EXPECT_CALL(client, memberChange(kDefaultSpaceId, kDefaultPartId, src, false)).Times(1);
+    EXPECT_CALL(client, updateMeta(kDefaultSpaceId, kDefaultPartId, src, dst)).Times(1);
+    EXPECT_CALL(client, removePart(kDefaultSpaceId, kDefaultPartId, src)).Times(1);
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(
-        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
+    BalanceTask task(testJobId.fetch_add(1, std::memory_order_relaxed),
+                     kDefaultSpaceId,
+                     kDefaultPartId,
+                     src,
+                     dst,
+                     kv,
+                     &client);
     task.onFinished_ = [&]() {
       LOG(INFO) << "Task finished!";
       EXPECT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
@@ -78,8 +83,13 @@ TEST(BalanceTest, BalanceTaskTest) {
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(
-        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
+    BalanceTask task(testJobId.fetch_add(1, std::memory_order_relaxed),
+                     kDefaultSpaceId,
+                     kDefaultPartId,
+                     src,
+                     dst,
+                     kv,
+                     &client);
     task.onFinished_ = []() { LOG(FATAL) << "We should not reach here!"; };
     task.onError_ = [&]() {
       LOG(INFO) << "Error happens!";
@@ -740,10 +750,11 @@ JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::JobType jobType) {
   std::vector<nebula::kvstore::KV> data;
   data.emplace_back(jd.jobKey(), jd.jobVal());
   folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    baton.post();
-  });
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        baton.post();
+      });
   baton.wait();
   return jd;
 }

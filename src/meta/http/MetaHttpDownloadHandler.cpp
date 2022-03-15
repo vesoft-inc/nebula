@@ -134,7 +134,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
 
   std::unique_ptr<kvstore::KVIterator> iter;
   auto prefix = MetaKeyUtils::partPrefix(spaceID_);
-  auto ret = kvstore_->prefix(0, 0, prefix, &iter);
+  auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Fetch Parts Failed";
     return false;
