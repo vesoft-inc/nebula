@@ -75,6 +75,7 @@ reserved_key_words = [
     'KW_ADD',
     'KW_CREATE',
     'KW_DROP',
+    'KW_CLEAR',
     'KW_REMOVE',
     'KW_IF',
     'KW_NOT',
@@ -133,7 +134,8 @@ def get_unreserved_keyword(file_path):
         if flag == 1:
             if line.strip() == ';':
                 break
-            unreserved_key_words.append(re.sub('\\s+[:|]\\s+(\\w+)\\s+.*', '\\1', line).strip())
+            unreserved_key_words.append(
+                re.sub('\\s+[:|]\\s+(\\w+)\\s+.*', '\\1', line).strip())
             continue
 
     parser_file.close()
@@ -141,17 +143,19 @@ def get_unreserved_keyword(file_path):
 
 
 if __name__ == '__main__':
-    cmd = 'git diff --diff-filter=ACMRTUXB HEAD -p ' + SCANNER_FILE_PATH + '|grep "^+"|grep -v "^+++"|grep "KW_"'
+    cmd = 'git diff --diff-filter=ACMRTUXB HEAD -p ' + \
+        SCANNER_FILE_PATH + '|grep "^+"|grep -v "^+++"|grep "KW_"'
     content = os.popen(cmd)
-    keywords=[]
-    for line in  content.readlines():
-        keyword = re.sub('.*(KW_\\w+)\s*;.*','\\1',line.strip())
+    keywords = []
+    for line in content.readlines():
+        keyword = re.sub('.*(KW_\\w+)\s*;.*', '\\1', line.strip())
         keywords.append(keyword)
 
     if len(keywords) == 0:
         exit(0)
     unreserved_key_words = get_unreserved_keyword(PARSER_FILE_PATH)
-    new_key_words = [word for word in keywords if word not in reserved_key_words]
+    new_key_words = [
+        word for word in keywords if word not in reserved_key_words]
     if len(new_key_words) == 0:
         exit(0)
     result = [word for word in new_key_words if word not in unreserved_key_words]

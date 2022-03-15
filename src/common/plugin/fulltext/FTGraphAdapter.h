@@ -47,6 +47,9 @@ class FTGraphAdapter {
 
   virtual StatusOr<bool> dropIndex(const HttpClient& client, const std::string& index) const = 0;
 
+  // Clear the fulltext index data and keep the index schema.
+  virtual StatusOr<bool> clearIndex(const HttpClient& client, const std::string& index) const = 0;
+
   virtual StatusOr<bool> indexExists(const HttpClient& client, const std::string& index) const = 0;
 };
 }  // namespace plugin

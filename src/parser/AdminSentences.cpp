@@ -124,6 +124,10 @@ std::string DropSpaceSentence::toString() const {
   return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
 }
 
+std::string ClearSpaceSentence::toString() const {
+  return folly::stringPrintf("CLEAR SPACE %s", spaceName_.get()->c_str());
+}
+
 std::string AlterSpaceSentence::toString() const {
   std::string zones = paras_.front();
   for (size_t i = 1; i < paras_.size(); i++) {
