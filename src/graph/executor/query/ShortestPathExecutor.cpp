@@ -29,7 +29,7 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   }
 
   for (auto& pair : cartesian_) {
-    // TODO: step 0
+    // TODO: handle step 0
     if (pair.first == pair.second) {
       return folly::makeFuture<Status>(Status::Error("Source and destination cannot be the same"));
     }
@@ -39,7 +39,7 @@ folly::Future<Status> ShortestPathExecutor::execute() {
     resetPairState();
     step_ = 0;
     do {
-      // Set left(dss_[0]) or right(dss_[1]) dataset as req dataset, and get neighbors
+      // Set left(vids_[0]) or right(vids_[1]) as req dataset, and get neighbors
       for (int i = 0; i < 2; i++) {
         if (step_ > shortestPathNode_->stepRange()->max()) {
           vids_[0].rows.clear();
@@ -51,6 +51,7 @@ folly::Future<Status> ShortestPathExecutor::execute() {
           return error(std::move(status));
         }
         setInterimState(1 - i);
+        // The `break_` is used to break the loop of current pair(src-dst)
         if (break_) {
           vids_[direction_].rows.clear();  // For break while()
           break;
@@ -67,6 +68,7 @@ void ShortestPathExecutor::setInterimState(int direction) {
   step_ += 1;
 }
 
+// Reset the state for new pair(src-dst)
 void ShortestPathExecutor::resetPairState() {
   step_ = 0;
   allPrevPaths_[0].clear();
@@ -76,16 +78,19 @@ void ShortestPathExecutor::resetPairState() {
 }
 
 Status ShortestPathExecutor::close() {
+  // TODO: clear memory. vector clear() is just set empty, not free memory
   // clear the members
   vids_[0].clear();
   vids_[1].clear();
   vidToVertex_.clear();
   allPrevPaths_[0].clear();
   allPrevPaths_[1].clear();
+  cartesian_.clear();
 
   return Executor::close();
 }
 
+// Build the init vid set for each pair(src-dst)
 Status ShortestPathExecutor::buildRequestDataSet() {
   auto inputVar = shortestPathNode_->inputVar();
   const Result& inputResult = ectx_->getResult(inputVar);
@@ -173,12 +178,12 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(RpcResponse&& resps) 
   return folly::makeFuture<Status>(judge(iter.get()));
 }
 
-// find the dst in the neighbors (the intersection of dst and neighbors)
+// Find the dst in the neighbors (the intersection of dst and neighbors)
 Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   QueryExpressionContext ctx(ectx_);
-  std::unordered_map<Value, PrevNodeEdge>& prevPaths = allPrevPaths_[direction_];
-  std::unordered_map<Value, PrevNodeEdge>& otherPrevPaths = allPrevPaths_[1 - direction_];
+  std::unordered_map<Value, PrevVertexEdge>& prevPaths = allPrevPaths_[direction_];
+  std::unordered_map<Value, PrevVertexEdge>& otherPrevPaths = allPrevPaths_[1 - direction_];
 
   DataSet reqDs;
   reqDs.colNames = vids_[direction_].colNames;
@@ -250,15 +255,16 @@ Status ShortestPathExecutor::buildResult() {
   return finish(ResultBuilder().value(Value(std::move(resultDs_))).build());
 }
 
-// The shortest path from src to dst is like [src]..[node]..[dst].
-// When we find the node, we need to find the path to src and dst.
-// So build the backward paths to src and dst for finding path [node]-> [src] and [dst].
-void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, PrevNodeEdge>& prevPaths,
+// The shortest path from src to dst is like [src]..[middle vertex]..[dst].
+// When we find the vertex, we need to find the path to src and dst.
+// So build the backward paths to src and dst for finding path [vertex]-> [src] and [dst].
+// PrevPath is prev hop [vertex] -> [PrevVertex Edge]
+void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, PrevVertexEdge>& prevPaths,
                                        const Value& vid,
                                        Row&& prevPath) {
   auto pathFound = prevPaths.find(vid);
   if (pathFound == prevPaths.end()) {
-    PrevNodeEdge interimPaths;
+    PrevVertexEdge interimPaths;
     interimPaths.emplace_back(std::move(prevPath));
     prevPaths.emplace(vid, std::move(interimPaths));
   } else {
@@ -340,7 +346,7 @@ std::vector<List> ShortestPathExecutor::getPathsFromMap(Value vid, int direction
   }
 
   std::vector<List> paths;
-  PrevNodeEdge& prevPaths = prevPathsSet.find(vid)->second;
+  PrevVertexEdge& prevPaths = prevPathsSet.find(vid)->second;
 
   for (auto& prevPath : prevPaths) {
     Value e = prevPath[1];

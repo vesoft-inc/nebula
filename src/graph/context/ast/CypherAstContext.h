@@ -134,6 +134,7 @@ struct Path final {
   std::vector<NodeInfo> nodeInfos;
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
+  // First is `shortest` flag, second is `single` flag
   std::pair<bool, bool> shortestPath{false, false};
 };
 

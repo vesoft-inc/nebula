@@ -269,7 +269,7 @@ class MatchPath final {
   std::unique_ptr<std::string> alias_;
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
-  // first: shortest, second: single/all
+  // First is `shortest` flag, second is `single` flag
   std::pair<bool, bool> shortestPath_{false, false};
 };
 

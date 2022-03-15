@@ -5,7 +5,6 @@
 
 #include "graph/planner/match/MatchClausePlanner.h"
 
-#include "common/expression/ColumnExpression.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/match/PropIndexSeek.h"
