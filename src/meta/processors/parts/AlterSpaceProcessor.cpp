@@ -70,19 +70,9 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   properties.zone_names_ref() = newZones;
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
-  folly::Baton<true, std::atomic> baton;
-  nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Put data error on meta server";
-                            }
-                            baton.post();
-                          });
-  baton.wait();
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto ret = doSyncPut(std::move(data));
   return ret;
 }
 
