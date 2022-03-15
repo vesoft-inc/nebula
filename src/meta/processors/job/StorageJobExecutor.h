@@ -106,7 +106,6 @@ class StorageJobExecutor : public JobExecutor {
   GraphSpaceID space_;
   std::vector<std::string> paras_;
   TargetHosts toHost_{TargetHosts::DEFAULT};
-  int32_t concurrency_{INT_MAX};
   volatile bool stopped_{false};
   std::mutex muInterrupt_;
   std::condition_variable condInterrupt_;

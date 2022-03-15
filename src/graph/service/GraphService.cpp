@@ -24,6 +24,9 @@
 namespace nebula {
 namespace graph {
 
+// The default value is 28800 seconds
+const int64_t clientAddrTimeout = FLAGS_client_idle_timeout_secs;
+
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
                           const HostAddr& hostAddr) {
   auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
@@ -41,7 +44,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
 
-  // load data try 3 time
+  // Load data try 3 time
   bool loadDataOk = metaClient_->waitForMetadReady(3);
   if (!loadDataOk) {
     // Resort to retrying in the background
@@ -69,8 +72,10 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 
   auto ctx = std::make_unique<RequestContext<AuthResponse>>();
   auto future = ctx->future();
-  // check username and password failed
-  auto authResult = auth(username, password);
+  // Check username and password failed
+  // Check whether the client has called verifyClientVersion()
+  auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
+  auto authResult = auth(username, password, clientAddr);
   if (!authResult.ok()) {
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
     ctx->resp().errorMsg.reset(new std::string(authResult.toString()));
@@ -202,22 +207,42 @@ folly::Future<std::string> GraphService::future_executeJsonWithParameter(
   });
 }
 
-Status GraphService::auth(const std::string& username, const std::string& password) {
+Status GraphService::auth(const std::string& username,
+                          const std::string& password,
+                          const HostAddr& clientIp) {
+  auto metaClient = queryEngine_->metaClient();
+
+  // TODO(Aiee) This is a walkaround to address the problem that using a lower version(< v2.6.0)
+  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
+  //
+  // Only the clients since v2.6.0 will call verifyVersion(), thus we could determine whether the
+  // client version is lower than v2.6.0
+  auto clientAddrIt = metaClient->getClientAddrMap().find(clientIp);
+  if (clientAddrIt == metaClient->getClientAddrMap().end()) {
+    return Status::Error(
+        folly::sformat("The version of the client sending request from {} is lower than v2.6.0, "
+                       "please update the client.",
+                       clientIp.toString()));
+  }
+
+  // Skip authentication if FLAGS_enable_authorize is false
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
 
+  // Authenticate via diffrent auth types
   if (FLAGS_auth_type == "password") {
-    auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
+    // Auth with PasswordAuthenticator
+    auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient);
     return authenticator->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
   } else if (FLAGS_auth_type == "cloud") {
     // Cloud user and native user will be mixed.
     // Since cloud user and native user has the same transport protocol,
     // There is no way to identify which one is in the graph layer，
     // let's check the native user's password first, then cloud user.
-    auto pwdAuth = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
+    auto pwdAuth = std::make_unique<PasswordAuthenticator>(metaClient);
     return pwdAuth->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
-    auto cloudAuth = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
+    auto cloudAuth = std::make_unique<CloudAuthenticator>(metaClient);
     return cloudAuth->auth(username, password);
   }
   LOG(WARNING) << "Unknown auth type: " << FLAGS_auth_type;
@@ -230,6 +255,7 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   folly::splitTo<std::string>(
       ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
   cpp2::VerifyClientVersionResp resp;
+
   if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
     resp.error_msg_ref() = folly::stringPrintf(
@@ -239,6 +265,14 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   } else {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
+
+  // The client sent request has a version >= v2.6.0, mark the address as valid
+  auto* peer = getRequestContext()->getPeerAddress();
+  auto clientAddr = HostAddr(peer->getAddressStr(), peer->getPort());
+
+  auto ttlTimestamp = time::WallClock::fastNowInSec() + clientAddrTimeout;
+  auto clientAddrMap = &metaClient_->getClientAddrMap();
+  clientAddrMap->insert_or_assign(clientAddr, ttlTimestamp);
   return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
 }
 }  // namespace graph

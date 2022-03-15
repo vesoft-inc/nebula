@@ -96,6 +96,7 @@ class PlanNode {
     kShowCreateTag,
     kShowCreateEdge,
     kDropSpace,
+    kClearSpace,
     kDropTag,
     kDropEdge,
     kAlterSpace,

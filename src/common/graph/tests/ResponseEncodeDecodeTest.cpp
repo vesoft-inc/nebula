@@ -89,6 +89,26 @@ TEST(ResponseEncodeDecodeTest, Basic) {
 }
 
 TEST(ResponseEncodeDecodeTest, ToJson) {
+  // PlanNodeDescription
+  {
+    // Dummy data
+    PlanNodeDescription pnd;
+    pnd.name = "name";
+    pnd.id = 100;
+    pnd.outputVar = "outputVar";
+    pnd.description = nullptr;
+    pnd.profiles = nullptr;
+    pnd.branchInfo = nullptr;
+    pnd.dependencies = nullptr;
+
+    folly::dynamic jsonObj = pnd.toJson();
+    folly::dynamic expect = folly::dynamic::object();
+    expect.insert("name", "name");
+    expect.insert("id", 100);
+    expect.insert("outputVar", "outputVar");
+
+    ASSERT_EQ(jsonObj, expect);
+  }
   // plan description
   {
     std::vector<PlanDescription> pds;
