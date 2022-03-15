@@ -1,10 +1,9 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/GetPropExecutor.h"
-
+// full table scan edge, but must have limit parameter
 namespace nebula {
 namespace graph {
 class ScanEdgesExecutor final : public GetPropExecutor {

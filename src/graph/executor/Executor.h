@@ -1,24 +1,18 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
 #define GRAPH_EXECUTOR_EXECUTOR_H_
 
 #include <folly/futures/Future.h>
-
 #include <boost/core/noncopyable.hpp>
-#include <set>
-#include <string>
-#include <vector>
 
-#include "common/base/Status.h"
 #include "common/cpp/helpers.h"
-#include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
+#include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {

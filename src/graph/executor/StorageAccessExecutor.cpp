@@ -1,12 +1,10 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/StorageAccessExecutor.h"
 
 #include <folly/Format.h>
-
 #include "graph/context/Iterator.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/util/SchemaUtil.h"

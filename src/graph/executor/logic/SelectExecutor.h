@@ -1,13 +1,13 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_LOGIC_SELECTEXECUTOR_H_
 #define GRAPH_EXECUTOR_LOGIC_SELECTEXECUTOR_H_
 
 #include "graph/executor/Executor.h"
-
+// like IF ELSE logic in c language
+// when the condition_ is true, execute the then operator, otherwise execute the else operator
 namespace nebula {
 namespace graph {
 

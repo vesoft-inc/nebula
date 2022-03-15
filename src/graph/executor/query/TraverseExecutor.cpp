@@ -1,17 +1,9 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/TraverseExecutor.h"
-
-#include <sstream>
-
 #include "clients/storage/StorageClient.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Vertex.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 

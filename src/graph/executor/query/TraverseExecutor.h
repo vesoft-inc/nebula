@@ -1,21 +1,27 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 #define EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 
-#include <vector>
-
-#include "clients/storage/StorageClient.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
-#include "common/datatypes/Vertex.h"
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
-
+// Subgraph receive result from GetNeighbors
+// There are two Main functions
+// First : Extract the deduplicated destination VID from GetNeighbors
+// Second: Delete previously visited edges and save the result(iter) to the variable `resultVar`
+//
+// Member:
+// `paths_` : a list of hash table
+//    KEY in the hash table   : the VID of the visited destination Vertex
+//    VALUE in the hash table : the number of steps to visit the KEY (starting vertex is 0)
+// since each vertex will only be visited once, if it is a one-way edge expansion, there will be no
+// duplicate edges. we only need to focus on the case of two-way expansion
+//
+// How to delete edges:
+//  is judged that a loop is formed, the edge needs to be deleted
 namespace nebula {
 namespace graph {
 

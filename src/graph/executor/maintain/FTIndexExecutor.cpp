@@ -1,11 +1,8 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/maintain/FTIndexExecutor.h"
-
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/util/FTIndexUtils.h"
 #include "interface/gen-cpp2/meta_types.h"

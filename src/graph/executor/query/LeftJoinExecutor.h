@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_QUERY_LEFTJOINEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_LEFTJOINEXECUTOR_H_
@@ -42,10 +41,8 @@ class LeftJoinExecutor : public JoinExecutor {
   size_t rightColSize_{0};
 };
 
-/**
- * No diffrence with left join in processing data, but the dependencies would be executed in
- * paralell.
- */
+// No diffrence with left join in processing data, but the dependencies would be executed in
+// paralell.
 class BiLeftJoinExecutor final : public LeftJoinExecutor {
  public:
   BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx);

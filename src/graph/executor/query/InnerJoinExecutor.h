@@ -1,13 +1,11 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
 
 #include "graph/executor/query/JoinExecutor.h"
-
 namespace nebula {
 namespace graph {
 
@@ -43,10 +41,8 @@ class InnerJoinExecutor : public JoinExecutor {
   bool exchange_{false};
 };
 
-/**
- * No diffrence with inner join in processing data, but the dependencies would be executed in
- * paralell.
- */
+// No diffrence with inner join in processing data, but the dependencies would be executed in
+// paralell.
 class BiInnerJoinExecutor final : public InnerJoinExecutor {
  public:
   BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);

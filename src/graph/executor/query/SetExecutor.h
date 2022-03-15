@@ -1,21 +1,13 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
-
-#include <memory>
-
 #include "graph/executor/Executor.h"
-
 namespace nebula {
-
 class Iterator;
-
 namespace graph {
-
 class SetExecutor : public Executor {
  public:
   Status checkInputDataSets();

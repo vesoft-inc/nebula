@@ -4,8 +4,6 @@
  */
 
 #include "graph/executor/query/DataCollectExecutor.h"
-
-#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {

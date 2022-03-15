@@ -1,19 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/logic/LoopExecutor.h"
-
-#include <folly/String.h>
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
-#include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/common_types.h"
 
-using folly::stringPrintf;
 
 namespace nebula {
 namespace graph {
