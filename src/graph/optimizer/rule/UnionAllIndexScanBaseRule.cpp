@@ -135,6 +135,12 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
 
       // Reconstruct AND expr using distributive law
       transformedExpr = graph::ExpressionUtils::rewriteLogicalAndToLogicalOr(transformedExpr);
+
+      // If there is no OR expr in the transformedExpr, only one index scan should be done.
+      // OptimizeTagIndexScanByFilterRule should be applied
+      if (!graph::ExpressionUtils::findAny(transformedExpr, {Expression::Kind::kLogicalOr})) {
+        return TransformResult::noTransform();
+      }
       break;
     }
 

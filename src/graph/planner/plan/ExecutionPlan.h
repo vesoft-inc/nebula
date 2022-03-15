@@ -23,6 +23,7 @@ struct SubPlan {
   PlanNode* tail{nullptr};
 };
 
+// An ExecutionPlan is a Directed Cyclic Graph which composed by PlanNodes.
 class ExecutionPlan final {
  public:
   explicit ExecutionPlan(PlanNode* root = nullptr);

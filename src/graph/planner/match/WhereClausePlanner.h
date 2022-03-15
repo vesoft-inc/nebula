@@ -10,9 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The WhereClausePlanner was designed to generate plan for where clause.
- */
+// The WhereClausePlanner generates plan for where clause.
 class WhereClausePlanner final : public CypherClausePlanner {
  public:
   explicit WhereClausePlanner(bool needStableFilter = false)
