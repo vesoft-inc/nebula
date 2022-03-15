@@ -28,8 +28,8 @@ template <typename T>
 class StoragePlan;
 
 /**
- * @brief RelNode is shortcut for relational algebra node, each RelNode has an execute method, which
- * will be invoked in dag when all its dependencies have finished
+ * @brief RelNode is the abbreviation for relational algebra node, each RelNode has an execute
+ * method, which will be invoked in DAG when all its dependencies have finished
  *
  * @tparam T is input data type of plan
  */
@@ -40,6 +40,9 @@ class RelNode {
  public:
   /**
    * @brief start execution with `input` and `partId`
+   *
+   * `execute` function is a warpper of `doExecute`. It add some hook before and after `doExecute`.
+   * And derived class only need override `doExecute`.
    *
    *
    */
