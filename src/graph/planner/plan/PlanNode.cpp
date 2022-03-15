@@ -169,6 +169,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowCreateEdgeIndex";
     case Kind::kDropSpace:
       return "DropSpace";
+    case Kind::kClearSpace:
+      return "ClearSpace";
     case Kind::kDropTag:
       return "DropTag";
     case Kind::kDropEdge:

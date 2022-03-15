@@ -341,6 +341,11 @@ struct DropSpaceReq {
     2: bool   if_exists,
 }
 
+struct ClearSpaceReq {
+    1: binary space_name,
+    2: bool   if_exists,
+}
+
 struct ListSpacesReq {
 }
 
@@ -1140,6 +1145,7 @@ struct VerifyClientVersionReq {
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
+    ExecResp clearSpace(1: ClearSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
     ExecResp alterSpace(1: AlterSpaceReq req);
