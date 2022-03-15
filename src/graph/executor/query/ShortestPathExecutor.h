@@ -40,7 +40,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   Status close() override;
 
  private:
-  using PrevNodeEdge = std::vector<Row>;
+  using PrevVertexEdge = std::vector<Row>;
 
   Status buildRequestDataSet();
 
@@ -56,7 +56,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   Status judge(GetNeighborsIter* iter);
 
-  void AddPrevPath(std::unordered_map<Value, PrevNodeEdge>& prevPaths,
+  void AddPrevPath(std::unordered_map<Value, PrevVertexEdge>& prevPaths,
                    const Value& vid,
                    Row&& prevPath);
 
@@ -69,14 +69,17 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   std::vector<List> filterPathLen(std::vector<List>& paths, int direction);
 
  private:
-  bool single_{true};
+  // current step
+  size_t step_{0};
 
   bool break_{false};
 
-  size_t step_{0};
   std::pair<size_t, size_t> range_;
+  bool single_{true};
+
   const ShortestPath* shortestPathNode_{nullptr};
 
+  // Get shortest path for each item in cartesian_
   std::vector<std::pair<Value, Value>> cartesian_;
 
   DataSet resultDs_;
@@ -91,7 +94,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   // function: find the path to source/destination
   // {key: prev} key: node, pre: the prev node and prev edge
-  std::vector<std::unordered_map<Value, PrevNodeEdge>> allPrevPaths_;
+  std::vector<std::unordered_map<Value, PrevVertexEdge>> allPrevPaths_;
 };
 
 }  // namespace graph
