@@ -704,7 +704,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
       [this](AtomicOp opCB) -> std::optional<std::string> {
         CHECK(opCB != nullptr);
         auto opRet = opCB();
-        if (!opRet.hasValue()) {
+        if (!opRet.has_value()) {
           // Failed
           sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
         }
