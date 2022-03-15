@@ -244,28 +244,42 @@ class TestSession(NebulaTestSuite):
         assert resp.error_msg.find(b'Session not existed!') > 0
 
     def test_out_of_max_sessions_per_ip_per_user(self):
-        resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = 1')
+        resp = self.execute('SHOW SESSIONS')
+        self.check_resp_succeeded(resp)
+        sessions = len(resp.rows())
+
+        i = 0
+        session_user1_count = 0
+        while (i < sessions):
+            row = resp.rows()[i]
+            if (row.values[1].get_sVal() == b'session_user1'):
+                session_user1_count += 1
+            i += 1
+
+        session_limit = max(3, sessions)
+        resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = {}'.format(session_limit))
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
-        flag = True
         # get new session failed for user session_user1
         try:
+            i = 0
+            while (i < session_limit - session_user1_count):
+                self.client_pool.get_session("session_user1", "123456")
+                i += 1
             self.client_pool.get_session("session_user1", "123456")
-            self.check_resp_succeeded(resp)
-            self.client_pool.get_session("session_user1", "123456")
-            flag = False
+            assert False
         except Exception as e:
-            flag = True
+            assert True
 
         # get new session success from session_user2
         try:
             self.client_pool.get_session("session_user2", "123456")
             self.check_resp_succeeded(resp)
-            assert True and flag
+            assert True
         except Exception as e:
             assert False, e.message
-
+        
         resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = 300')
         self.check_resp_succeeded(resp)
         time.sleep(3)
