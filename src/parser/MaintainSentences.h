@@ -242,9 +242,13 @@ class SchemaPropItem final {
   std::string toString() const;
 
  private:
-  int64_t asInt() { return std::get<int64_t>(propValue_); }
+  int64_t asInt() {
+    return std::get<int64_t>(propValue_);
+  }
 
-  const std::string &asString() { return std::get<std::string>(propValue_); }
+  const std::string &asString() {
+    return std::get<std::string>(propValue_);
+  }
 
   bool asBool() {
     switch (propValue_.index()) {
@@ -260,11 +264,17 @@ class SchemaPropItem final {
     return false;
   }
 
-  bool isInt() { return propValue_.index() == 0; }
+  bool isInt() {
+    return propValue_.index() == 0;
+  }
 
-  bool isBool() { return propValue_.index() == 1; }
+  bool isBool() {
+    return propValue_.index() == 1;
+  }
 
-  bool isString() { return propValue_.index() == 2; }
+  bool isString() {
+    return propValue_.index() == 2;
+  }
 
  private:
   Value propValue_;

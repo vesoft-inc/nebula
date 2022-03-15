@@ -189,20 +189,28 @@ class SpaceOptItem final {
   }
 
   int64_t asInt() const {
-    return boost::get<int64_t>(optValue_);
+    return std::get<int64_t>(optValue_);
   }
 
-  const std::string& asString() const { return std::get<std::string>(optValue_); }
+  const std::string& asString() const {
+    return std::get<std::string>(optValue_);
+  }
 
   const meta::cpp2::ColumnTypeDef& asTypeDef() const {
     return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
-  bool isInt() const { return optValue_.index() == 0; }
+  bool isInt() const {
+    return optValue_.index() == 0;
+  }
 
-  bool isString() const { return optValue_.index() == 1; }
+  bool isString() const {
+    return optValue_.index() == 1;
+  }
 
-  bool isTypeDef() const { return optValue_.index() == 2; }
+  bool isTypeDef() const {
+    return optValue_.index() == 2;
+  }
 
   int64_t getPartitionNum() const {
     if (isInt()) {

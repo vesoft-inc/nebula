@@ -701,7 +701,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
       firstId,
       termId,
       std::move(swappedOutLogs),
-                        [this](AtomicOp opCB) -> std::optional<std::string> {
+      [this](AtomicOp opCB) -> std::optional<std::string> {
         CHECK(opCB != nullptr);
         auto opRet = opCB();
         if (!opRet.hasValue()) {
@@ -964,9 +964,9 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
           iter = AppendLogsIterator(firstLogId,
                                     currTerm,
                                     std::move(logs_),
-              [this](AtomicOp op) -> std::optional<std::string> {
+                                    [this](AtomicOp op) -> std::optional<std::string> {
                                       auto opRet = op();
-                if (!opRet.has_value()) {
+                                      if (!opRet.has_value()) {
                                         // Failed
                                         sendingPromise_.setOneSingleValue(
                                             nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
