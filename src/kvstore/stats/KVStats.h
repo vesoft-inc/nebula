@@ -14,8 +14,13 @@ namespace nebula {
 // Raft related stats
 extern stats::CounterId kCommitLogLatencyUs;
 extern stats::CounterId kCommitSnapshotLatencyUs;
+extern stats::CounterId kAppendWalLatencyUs;
+extern stats::CounterId kReplicateLogLatencyUs;
+extern stats::CounterId kAppendLogLatencyUs;
 extern stats::CounterId kTransferLeaderLatencyUs;
-extern stats::CounterId kNumRaftVotes;
+extern stats::CounterId kNumStartElect;
+extern stats::CounterId kNumGrantVotes;
+extern stats::CounterId kNumSendSnapshot;
 
 void initKVStats();
 
