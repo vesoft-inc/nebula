@@ -435,6 +435,16 @@ class BaseProcessor {
                                                            const HostAddr& ipv4To,
                                                            bool direct = false);
 
+  /**
+   * @brief Get all parts' distribution information of a space.
+   *
+   * @param spaceId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
+   *         std::vector<HostAddr>>> map for part id -> peer hosts.
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+  getAllParts(GraphSpaceID spaceId);
+
  protected:
   kvstore::KVStore* kvstore_ = nullptr;
   RESP resp_;
