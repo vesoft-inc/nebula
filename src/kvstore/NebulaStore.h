@@ -220,7 +220,8 @@ class NebulaStore : public KVStore, public Handler {
                               PartitionID partId,
                               const std::string& key,
                               std::string* value,
-                              bool canReadFromFollower = false) override;
+                              bool canReadFromFollower = false,
+                              const void* snapshot = nullptr) override;
 
   /**
    * @brief Read a list of keys
@@ -565,6 +566,14 @@ class NebulaStore : public KVStore, public Handler {
    * @param isListener Whether the space is listener
    */
   void removeSpace(GraphSpaceID spaceId, bool isListener) override;
+
+  /**
+   * @brief clear space data, but not remove the data dirs.
+   *
+   * @param spaceId space which will be cleared.
+   * @return
+   */
+  nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief Remove a partition, called from part manager

@@ -37,7 +37,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     }
   } else {
     // Show all parts
-    auto ret = getAllParts();
+    auto ret = getAllParts(spaceId_);
     if (!nebula::ok(ret)) {
       handleErrorCode(nebula::error(ret));
       onFinished();
@@ -78,31 +78,6 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
   }
   handleErrorCode(retCode);
   onFinished();
-}
-
-ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
-ListPartsProcessor::getAllParts() {
-  std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
-
-  const auto& prefix = MetaKeyUtils::partPrefix(spaceId_);
-  auto ret = doPrefix(prefix);
-  if (!nebula::ok(ret)) {
-    auto retCode = nebula::error(ret);
-    LOG(INFO) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  auto iter = nebula::value(ret).get();
-  while (iter->valid()) {
-    auto key = iter->key();
-    PartitionID partId;
-    memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
-    partHostsMap.emplace(partId, std::move(partHosts));
-    iter->next();
-  }
-
-  return partHostsMap;
 }
 
 nebula::cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {

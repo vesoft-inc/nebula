@@ -10,7 +10,10 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/network/NetworkUtils.h"
+#include "common/stats/StatsManager.h"
+#include "common/time/WallClock.h"
 #include "kvstore/raftex/RaftPart.h"
+#include "kvstore/stats/KVStats.h"
 #include "kvstore/wal/FileBasedWal.h"
 
 DEFINE_uint32(max_appendlog_batch_size,
@@ -158,9 +161,12 @@ void Host::setResponse(const cpp2::AppendLogResponse& r) {
 
 void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req) {
   using TransportException = apache::thrift::transport::TTransportException;
+  auto beforeRpcUs = time::WallClock::fastNowInMicroSec();
   sendAppendLogRequest(eb, req)
       .via(eb)
-      .thenValue([eb, self = shared_from_this()](cpp2::AppendLogResponse&& resp) {
+      .thenValue([eb, beforeRpcUs, self = shared_from_this()](cpp2::AppendLogResponse&& resp) {
+        stats::StatsManager::addValue(kAppendLogLatencyUs,
+                                      time::WallClock::fastNowInMicroSec() - beforeRpcUs);
         VLOG_IF(1, FLAGS_trace_raft)
             << self->idStr_ << "AppendLogResponse "
             << "code " << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ", currTerm "
@@ -333,6 +339,7 @@ nebula::cpp2::ErrorCode Host::startSendSnapshot() {
             << ", firstLogId in wal = " << part_->wal()->firstLogId()
             << ", lastLogId in wal = " << part_->wal()->lastLogId();
     sendingSnapshot_ = true;
+    stats::StatsManager::addValue(kNumSendSnapshot);
     part_->snapshot_->sendSnapshot(part_, addr_)
         .thenValue([self = shared_from_this()](auto&& status) {
           std::lock_guard<std::mutex> g(self->lock_);

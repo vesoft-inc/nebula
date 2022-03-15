@@ -108,6 +108,7 @@ class KVStore {
   virtual const void* GetSnapshot(GraphSpaceID spaceId,
                                   PartitionID partID,
                                   bool canReadFromFollower = false) = 0;
+
   /**
    * @brief Release snapshot.
    *
@@ -131,7 +132,8 @@ class KVStore {
                                       PartitionID partId,
                                       const std::string& key,
                                       std::string* value,
-                                      bool canReadFromFollower = false) = 0;
+                                      bool canReadFromFollower = false,
+                                      const void* snapshot = nullptr) = 0;
 
   /**
    * @brief Read a list of keys

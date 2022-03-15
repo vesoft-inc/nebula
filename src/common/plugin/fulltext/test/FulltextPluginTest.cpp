@@ -64,6 +64,17 @@ TEST(FulltextPluginTest, ESDropIndexTest) {
   ASSERT_EQ(expected, ret);
 }
 
+TEST(FulltextPluginTest, ESClearIndexTest) {
+  HostAddr localHost_{"127.0.0.1", 9200};
+  HttpClient client(localHost_);
+  auto ret = ESGraphAdapter().clearIndexCmd(client, "test_index");
+  auto expected =
+      "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\""
+      " -XPOST -k \"http://127.0.0.1:9200/test_index/_delete_by_query?refresh&slices=5\""
+      " -d '{\"query\": {\"match_all\":{}}}'";
+  ASSERT_EQ(expected, ret);
+}
+
 TEST(FulltextPluginTest, ESPutTest) {
   HostAddr localHost_{"127.0.0.1", 9200};
   HttpClient hc(localHost_);
