@@ -150,10 +150,7 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
   auto ret = tasks_.insert(handle, task).second;
   DCHECK(ret);
   taskQueue_.add(handle);
-  LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
-                                   task->getJobId(),
-                                   task->getTaskId(),
-                                   task->getConcurrentReq());
+  LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d)", task->getJobId(), task->getTaskId());
 }
 
 nebula::cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
@@ -234,7 +231,6 @@ void AdminTaskManager::removeTaskStatus(JobID jobId, TaskID taskId) {
   env_->adminStore_->remove(key);
 }
 
-// schedule
 void AdminTaskManager::schedule() {
   std::chrono::milliseconds interval{20};  // 20ms
   while (!shutdown_.load(std::memory_order_acquire)) {
@@ -283,8 +279,7 @@ void AdminTaskManager::schedule() {
     }
 
     auto subTaskConcurrency =
-        std::min(task->getConcurrentReq(), static_cast<size_t>(FLAGS_max_concurrent_subtasks));
-    subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
+        std::min(static_cast<size_t>(FLAGS_max_concurrent_subtasks), subTasks.size());
     task->unFinishedSubTask_ = subTasks.size();
 
     if (0 == subTasks.size()) {

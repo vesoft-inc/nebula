@@ -174,7 +174,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
@@ -336,7 +336,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <service_client_item> service_client_item
 %type <service_client_list> service_client_list
 
-%type <intval> legal_integer unary_integer rank port job_concurrency
+%type <intval> legal_integer unary_integer rank port
 
 %type <strval>         comment_prop_assignment comment_prop opt_comment_prop
 %type <col_property>   column_property
@@ -356,7 +356,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <query_unique_identifier> query_unique_identifier
 
 %type <sentence> maintain_sentence
-%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence alter_space_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence clear_space_sentence alter_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
@@ -3234,28 +3234,19 @@ ingest_sentence
     ;
 
 admin_job_sentence
-    : KW_SUBMIT KW_JOB KW_COMPACT job_concurrency {
+    : KW_SUBMIT KW_JOB KW_COMPACT {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::COMPACT);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
-    | KW_SUBMIT KW_JOB KW_FLUSH job_concurrency {
+    | KW_SUBMIT KW_JOB KW_FLUSH {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::FLUSH);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
-    | KW_SUBMIT KW_JOB KW_STATS job_concurrency {
+    | KW_SUBMIT KW_JOB KW_STATS {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::STATS);
-        if ($4 != 0) {
-            sentence->addPara(std::to_string($4));
-        }
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {
@@ -3321,15 +3312,6 @@ admin_job_sentence
          }
          delete nl;
          $$ = sentence;
-    }
-    ;
-
-job_concurrency
-    : %empty {
-        $$ = 0;
-    }
-    | legal_integer {
-        $$ = $1;
     }
     ;
 
@@ -3625,6 +3607,12 @@ drop_space_sentence
     }
     ;
 
+clear_space_sentence
+    : KW_CLEAR KW_SPACE opt_if_exists name_label {
+        $$ = new ClearSpaceSentence($4, $3);
+    }
+    ;
+
 //  User manager sentences.
 
 create_user_sentence
@@ -3869,6 +3857,7 @@ maintain_sentence
     | describe_space_sentence { $$ = $1; }
     | alter_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
+    | clear_space_sentence { $$ = $1; }
     | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }

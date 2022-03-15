@@ -55,7 +55,6 @@ std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> GflagsManager
       {"heartbeat_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
       {"agent_heartbeat_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
       {"meta_client_retry_times", {cpp2::ConfigMode::MUTABLE, false}},
-      {"slow_op_threshold_ms", {cpp2::ConfigMode::MUTABLE, false}},
       {"wal_ttl", {cpp2::ConfigMode::MUTABLE, false}},
       {"clean_wal_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
       {"custom_filter_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},

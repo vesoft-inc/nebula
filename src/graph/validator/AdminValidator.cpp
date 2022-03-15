@@ -216,6 +216,18 @@ Status DropSpaceValidator::toPlan() {
   return Status::OK();
 }
 
+Status ClearSpaceValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status ClearSpaceValidator::toPlan() {
+  auto sentence = static_cast<ClearSpaceSentence *>(sentence_);
+  auto *doNode = ClearSpace::make(qctx_, nullptr, *sentence->spaceName(), sentence->isIfExists());
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
 // Show the sentence to create this space. It's created from options of space, so maybe is different
 // from the origin sentence to create this space.
 Status ShowCreateSpaceValidator::validateImpl() {

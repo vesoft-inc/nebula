@@ -124,6 +124,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "ADD"                       { return TokenType::KW_ADD; }
 "CREATE"                    { return TokenType::KW_CREATE;}
 "DROP"                      { return TokenType::KW_DROP; }
+"CLEAR"                     { return TokenType::KW_CLEAR; } 
 "REMOVE"                    { return TokenType::KW_REMOVE; }
 "IF"                        { return TokenType::KW_IF; }
 "NOT"                       { return TokenType::KW_NOT; }

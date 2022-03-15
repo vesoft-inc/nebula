@@ -30,6 +30,7 @@ class AdminJobValidator final : public Validator {
     switch (sentence_->getOp()) {
       case meta::cpp2::AdminJobOp::ADD:
         switch (sentence_->getCmd()) {
+          // All jobs are space-level, except for the jobs that need to be refactored.
           case meta::cpp2::AdminCmd::REBUILD_TAG_INDEX:
           case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
           case meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
@@ -40,7 +41,8 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::AdminCmd::LEADER_BALANCE:
           case meta::cpp2::AdminCmd::ZONE_BALANCE:
             return true;
-          // TODO: Also space related, but not available in CreateJobExecutor now.
+          // TODO: download and ingest need to be refactored to use the rpc protocol.
+          // Currently they are using their own validator
           case meta::cpp2::AdminCmd::DOWNLOAD:
           case meta::cpp2::AdminCmd::INGEST:
           case meta::cpp2::AdminCmd::UNKNOWN:

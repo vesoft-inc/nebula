@@ -19,7 +19,7 @@ SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(JobID jobId,
 
 bool SimpleConcurrentJobExecutor::check() {
   auto parasNum = paras_.size();
-  return parasNum == 1 || parasNum == 2;
+  return parasNum == 1;
 }
 
 nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
@@ -37,9 +37,6 @@ nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
     return nebula::error(errOrHost);
   }
 
-  if (paras_.size() > 1) {
-    concurrency_ = std::atoi(paras_[0].c_str());
-  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

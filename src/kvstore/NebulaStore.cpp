@@ -427,6 +427,24 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
   }
 }
 
+nebula::cpp2::ErrorCode NebulaStore::clearSpace(GraphSpaceID spaceId) {
+  folly::RWSpinLock::ReadHolder rh(&lock_);
+  auto spaceIt = this->spaces_.find(spaceId);
+  if (spaceIt != this->spaces_.end()) {
+    for (auto& part : spaceIt->second->parts_) {
+      auto ret = part.second->cleanupSafely();
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "partition clear failed. space: " << spaceId << ", part: " << part.first;
+        return ret;
+      }
+    }
+  } else {
+    return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+  }
+  LOG(INFO) << "Space " << spaceId << " has been cleared!";
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = this->spaces_.find(spaceId);
@@ -578,7 +596,8 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          const std::string& key,
                                          std::string* value,
-                                         bool canReadFromFollower) {
+                                         bool canReadFromFollower,
+                                         const void* snapshot) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {
     return error(ret);
@@ -588,7 +607,7 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
     return part->isLeader() ? nebula::cpp2::ErrorCode::E_LEADER_LEASE_FAILED
                             : nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  return part->engine()->get(key, value);
+  return part->engine()->get(key, value, snapshot);
 }
 
 const void* NebulaStore::GetSnapshot(GraphSpaceID spaceId,
