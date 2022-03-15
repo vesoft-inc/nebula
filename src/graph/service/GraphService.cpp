@@ -257,11 +257,15 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
   cpp2::VerifyClientVersionResp resp;
 
   if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
+    std::string uniqueWhiteList;
+    std::for_each(whiteList.begin(), whiteList.end(), [&uniqueWhiteList](auto& version) {
+      uniqueWhiteList.append(version);
+    });
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
     resp.error_msg_ref() = folly::stringPrintf(
         "Graph client version(%s) is not accepted, current graph client white list: %s.",
         req.get_version().c_str(),
-        FLAGS_client_white_list.c_str());
+        uniqueWhiteList.c_str());
   } else {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
