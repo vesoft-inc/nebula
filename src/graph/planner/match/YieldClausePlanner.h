@@ -10,10 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The YieldClausePlanner was designed to generate plan for yield clause in
- * cypher
- */
+// The YieldClausePlanner generates plan for yield clause
 class YieldClausePlanner final : public CypherClausePlanner {
  public:
   YieldClausePlanner() = default;
