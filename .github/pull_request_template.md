@@ -1,29 +1,42 @@
-#### What type of PR is this?
+<!--
+Thanks for your contribution!
+In order to review PR more efficiently, please add information according to the template.
+-->
+
+## What type of PR is this?
 - [ ] bug
 - [ ] feature
+- [ ] enhancement
 
-#### Which issue(s) this PR fixes:
-close #xxx   
-（If it is requirement, issue(s) number must be listed.）
+## What problem(s) does this PR solve?
+#### Issue(s) number: 
 
-#### What this PR does / why we need it?
-
-  
-#### Special notes for your reviewer, ex. impact of this fix, etc:
+#### Description:
 
 
-#### Additional context:
-
-
-#### Checklist：
-- [ ] Documentation affected （If need to modify document, please label it.)
-- [ ] Incompatible （If it is incompatile, please describle it and label it.）
-- [ ] Need to cherry pick （If need to cherry pick to some branchs, please label the destination version(s).)
-- [ ] Performance regression: Consumes more CPU
-- [ ] Performance regression: Consumes more Memory
+## How do you solve it?
 
 
 
-#### Release notes：
-Please confirm whether to reflect in release notes and how to describe:
->                                                                 `
+## Special notes for your reviewer, ex. impact of this fix, design document, etc:
+
+
+
+## Checklist:
+Tests:
+- [ ] Unit test(positive and negative cases)
+- [ ] Function test
+- [ ] Performance test
+- [ ] N/A
+
+Affects:
+- [ ] Documentation affected (Please add the label if documentation needs to be modified.)
+- [ ] Incompatibility (If it breaks the compatibility, please describe it and add the label.）
+- [ ] If it's needed to cherry-pick (If cherry-pick to some branches is required, please label the destination version(s).)
+- [ ] Performance impacted: Consumes more CPU/Memory
+
+
+## Release notes:
+
+Please confirm whether to be reflected in release notes and how to describe:
+> ex. Fixed the bug .....

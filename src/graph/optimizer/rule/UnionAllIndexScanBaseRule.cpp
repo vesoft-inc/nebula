@@ -1,13 +1,10 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/UnionAllIndexScanBaseRule.h"
 
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
@@ -16,7 +13,6 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;
@@ -94,8 +90,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   auto filter = static_cast<const Filter*>(matched.planNode());
   auto node = matched.planNode({0, 0});
   auto scan = static_cast<const IndexScan*>(node);
-
-  auto metaClient = ctx->qctx()->getMetaClient();
+  auto* qctx = ctx->qctx();
+  auto metaClient = qctx->getMetaClient();
   auto status = node->kind() == graph::PlanNode::Kind::kTagIndexFullScan
                     ? metaClient->getTagIndexesFromCache(scan->space())
                     : metaClient->getEdgeIndexesFromCache(scan->space());
@@ -174,8 +170,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
     idxCtxs.emplace_back(std::move(ictx));
   }
 
-  auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  auto scanNode = IndexScan::make(qctx, nullptr);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   scanNode->setOutputVar(filter->outputVar());
   scanNode->setColNames(filter->colNames());

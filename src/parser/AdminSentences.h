@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -17,7 +16,9 @@ class ConfigRowItem;
 
 class ShowHostsSentence : public Sentence {
  public:
-  ShowHostsSentence() { kind_ = Kind::kShowHosts; }
+  ShowHostsSentence() {
+    kind_ = Kind::kShowHosts;
+  }
 
   explicit ShowHostsSentence(meta::cpp2::ListHostType type) : type_(type) {
     kind_ = Kind::kShowHosts;
@@ -25,7 +26,9 @@ class ShowHostsSentence : public Sentence {
 
   std::string toString() const override;
 
-  meta::cpp2::ListHostType getType() const { return type_; }
+  meta::cpp2::ListHostType getType() const {
+    return type_;
+  }
 
  private:
   meta::cpp2::ListHostType type_;
@@ -33,14 +36,18 @@ class ShowHostsSentence : public Sentence {
 
 class ShowMetaLeaderSentence : public Sentence {
  public:
-  ShowMetaLeaderSentence() { kind_ = Kind::kShowMetaLeader; }
+  ShowMetaLeaderSentence() {
+    kind_ = Kind::kShowMetaLeader;
+  }
 
   std::string toString() const override;
 };
 
 class ShowSpacesSentence : public Sentence {
  public:
-  ShowSpacesSentence() { kind_ = Kind::kShowSpaces; }
+  ShowSpacesSentence() {
+    kind_ = Kind::kShowSpaces;
+  }
   std::string toString() const override;
 };
 
@@ -52,7 +59,9 @@ class ShowCreateSpaceSentence : public Sentence {
   }
   std::string toString() const override;
 
-  const std::string* spaceName() const { return name_.get(); }
+  const std::string* spaceName() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -60,14 +69,18 @@ class ShowCreateSpaceSentence : public Sentence {
 
 class ShowPartsSentence : public Sentence {
  public:
-  ShowPartsSentence() { kind_ = Kind::kShowParts; }
+  ShowPartsSentence() {
+    kind_ = Kind::kShowParts;
+  }
 
   explicit ShowPartsSentence(std::vector<int32_t>* list) {
     list_.reset(list);
     kind_ = Kind::kShowParts;
   }
 
-  std::vector<int32_t>* getList() const { return list_.get(); }
+  std::vector<int32_t>* getList() const {
+    return list_.get();
+  }
 
   std::string toString() const override;
 
@@ -77,8 +90,27 @@ class ShowPartsSentence : public Sentence {
 
 class ShowUsersSentence : public Sentence {
  public:
-  ShowUsersSentence() { kind_ = Kind::kShowUsers; }
+  ShowUsersSentence() {
+    kind_ = Kind::kShowUsers;
+  }
   std::string toString() const override;
+};
+
+class DescribeUserSentence : public Sentence {
+ public:
+  explicit DescribeUserSentence(std::string* account) {
+    account_.reset(account);
+    kind_ = Kind::kDescribeUser;
+  }
+
+  std::string toString() const override;
+
+  const std::string* account() const {
+    return account_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> account_;
 };
 
 class ShowRolesSentence : public Sentence {
@@ -90,7 +122,9 @@ class ShowRolesSentence : public Sentence {
 
   std::string toString() const override;
 
-  const std::string* name() const { return name_.get(); }
+  const std::string* name() const {
+    return name_.get();
+  }
 
  private:
   std::unique_ptr<std::string> name_;
@@ -98,31 +132,25 @@ class ShowRolesSentence : public Sentence {
 
 class ShowSnapshotsSentence : public Sentence {
  public:
-  ShowSnapshotsSentence() { kind_ = Kind::kShowSnapshots; }
+  ShowSnapshotsSentence() {
+    kind_ = Kind::kShowSnapshots;
+  }
   std::string toString() const override;
 };
 
 class ShowCharsetSentence final : public Sentence {
  public:
-  ShowCharsetSentence() { kind_ = Kind::kShowCharset; }
+  ShowCharsetSentence() {
+    kind_ = Kind::kShowCharset;
+  }
   std::string toString() const override;
 };
 
 class ShowCollationSentence final : public Sentence {
  public:
-  ShowCollationSentence() { kind_ = Kind::kShowCollation; }
-  std::string toString() const override;
-};
-
-class ShowGroupsSentence final : public Sentence {
- public:
-  ShowGroupsSentence() { kind_ = Kind::kShowGroups; }
-  std::string toString() const override;
-};
-
-class ShowZonesSentence final : public Sentence {
- public:
-  ShowZonesSentence() { kind_ = Kind::kShowZones; }
+  ShowCollationSentence() {
+    kind_ = Kind::kShowCollation;
+  }
   std::string toString() const override;
 };
 
@@ -160,7 +188,9 @@ class SpaceOptItem final {
     optValue_ = val ? 1 : 0;
   }
 
-  int64_t asInt() const { return std::get<int64_t>(optValue_); }
+  int64_t asInt() const {
+    return boost::get<int64_t>(optValue_);
+  }
 
   const std::string& asString() const { return std::get<std::string>(optValue_); }
 
@@ -198,7 +228,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.set_type(meta::cpp2::PropertyType::UNKNOWN);
+      unknownTypeDef.type_ref() = nebula::cpp2::PropertyType::UNKNOWN;
       return unknownTypeDef;
     }
   }
@@ -216,7 +246,7 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "collate value illage.";
+      LOG(ERROR) << "collate value illegal.";
       return "";
     }
   }
@@ -225,12 +255,14 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "group name value illage.";
+      LOG(ERROR) << "group name value illegal.";
       return "";
     }
   }
 
-  OptionType getOptType() const { return optType_; }
+  OptionType getOptType() const {
+    return optType_;
+  }
 
   bool getAtomicEdge() const {
     if (isInt()) {
@@ -241,7 +273,9 @@ class SpaceOptItem final {
     }
   }
 
-  bool isVidType() { return optType_ == OptionType::VID_TYPE; }
+  bool isVidType() {
+    return optType_ == OptionType::VID_TYPE;
+  }
 
   std::string toString() const;
 
@@ -252,7 +286,9 @@ class SpaceOptItem final {
 
 class SpaceOptList final {
  public:
-  void addOpt(SpaceOptItem* item) { items_.emplace_back(item); }
+  void addOpt(SpaceOptItem* item) {
+    items_.emplace_back(item);
+  }
 
   std::vector<SpaceOptItem*> getOpts() const {
     std::vector<SpaceOptItem*> result;
@@ -285,19 +321,33 @@ class CreateSpaceSentence final : public CreateSentence {
     kind_ = Kind::kCreateSpace;
   }
 
-  const std::string* spaceName() const { return spaceName_.get(); }
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
 
-  const std::string* groupName() const { return groupName_.get(); }
+  const ZoneNameList* zoneNames() const {
+    return zoneNames_.get();
+  }
 
-  void setOpts(SpaceOptList* spaceOpts) { spaceOpts_.reset(spaceOpts); }
+  void setOpts(SpaceOptList* spaceOpts) {
+    spaceOpts_.reset(spaceOpts);
+  }
 
-  void setGroupName(std::string* name) { groupName_.reset(name); }
+  void setZoneNames(ZoneNameList* names) {
+    zoneNames_.reset(names);
+  }
 
-  const SpaceOptList* spaceOpts() const { return spaceOpts_.get(); }
+  const SpaceOptList* spaceOpts() const {
+    return spaceOpts_.get();
+  }
 
-  void setComment(std::string* name) { comment_.reset(name); }
+  void setComment(std::string* name) {
+    comment_.reset(name);
+  }
 
-  const std::string* comment() const { return comment_.get(); }
+  const std::string* comment() const {
+    return comment_.get();
+  }
 
   std::vector<SpaceOptItem*> getOpts() {
     if (spaceOpts_ == nullptr) {
@@ -310,7 +360,7 @@ class CreateSpaceSentence final : public CreateSentence {
 
  private:
   std::unique_ptr<std::string> spaceName_;
-  std::unique_ptr<std::string> groupName_;
+  std::unique_ptr<ZoneNameList> zoneNames_;
   std::unique_ptr<SpaceOptList> spaceOpts_;
   std::unique_ptr<std::string> comment_;
 };
@@ -324,9 +374,13 @@ class CreateSpaceAsSentence final : public CreateSentence {
     kind_ = Kind::kCreateSpaceAs;
   }
 
-  std::string getOldSpaceName() const { return *oldSpaceName_; }
+  std::string getOldSpaceName() const {
+    return *oldSpaceName_;
+  }
 
-  std::string getNewSpaceName() const { return *newSpaceName_; }
+  std::string getNewSpaceName() const {
+    return *newSpaceName_;
+  }
 
   std::string toString() const override;
 
@@ -342,17 +396,80 @@ class DropSpaceSentence final : public DropSentence {
     kind_ = Kind::kDropSpace;
   }
 
-  void setClusterName(std::string* clusterName) { clusterName_.reset(clusterName); }
+  void setClusterName(std::string* clusterName) {
+    clusterName_.reset(clusterName);
+  }
 
-  const std::string* spaceName() const { return spaceName_.get(); }
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
 
-  const std::string* clusterName() const { return clusterName_.get(); }
+  const std::string* clusterName() const {
+    return clusterName_.get();
+  }
 
   std::string toString() const override;
 
  private:
   std::unique_ptr<std::string> spaceName_;
   std::unique_ptr<std::string> clusterName_;
+};
+
+// clear space data and index data, but keep space schema and index schema.
+class ClearSpaceSentence final : public DropSentence {
+ public:
+  ClearSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
+    spaceName_.reset(spaceName);
+    kind_ = Kind::kClearSpace;
+  }
+
+  void setClusterName(std::string* clusterName) {
+    clusterName_.reset(clusterName);
+  }
+
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
+
+  const std::string* clusterName() const {
+    return clusterName_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> spaceName_;
+  std::unique_ptr<std::string> clusterName_;
+};
+
+class AlterSpaceSentence final : public Sentence {
+ public:
+  AlterSpaceSentence(std::string* spaceName, meta::cpp2::AlterSpaceOp op)
+      : op_(op), spaceName_(spaceName) {
+    kind_ = Kind::kAlterSpace;
+  }
+  void addPara(const std::string& para) {
+    paras_.push_back(para);
+  }
+
+  std::string spaceName() const {
+    return *spaceName_;
+  }
+
+  const std::vector<std::string>& paras() const {
+    return paras_;
+  }
+
+  meta::cpp2::AlterSpaceOp alterSpaceOp() const {
+    return op_;
+  }
+
+  std::string toString() const override;
+
+ private:
+  meta::cpp2::AlterSpaceOp op_;
+  std::unique_ptr<std::string> spaceName_;
+  std::vector<std::string> paras_;
 };
 
 class DescribeSpaceSentence final : public Sentence {
@@ -362,7 +479,9 @@ class DescribeSpaceSentence final : public Sentence {
     kind_ = Kind::kDescribeSpace;
   }
 
-  const std::string* spaceName() const { return spaceName_.get(); }
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
 
   std::string toString() const override;
 
@@ -372,7 +491,9 @@ class DescribeSpaceSentence final : public Sentence {
 
 class ConfigRowItem {
  public:
-  explicit ConfigRowItem(meta::cpp2::ConfigModule module) { module_ = module; }
+  explicit ConfigRowItem(meta::cpp2::ConfigModule module) {
+    module_ = module;
+  }
 
   ConfigRowItem(meta::cpp2::ConfigModule module, std::string* name, Expression* value) {
     module_ = module;
@@ -391,13 +512,21 @@ class ConfigRowItem {
     updateItems_.reset(items);
   }
 
-  meta::cpp2::ConfigModule getModule() const { return module_; }
+  meta::cpp2::ConfigModule getModule() const {
+    return module_;
+  }
 
-  const std::string* getName() const { return name_.get(); }
+  const std::string* getName() const {
+    return name_.get();
+  }
 
-  Expression* getValue() const { return value_; }
+  Expression* getValue() const {
+    return value_;
+  }
 
-  const UpdateList* getUpdateItems() const { return updateItems_.get(); }
+  const UpdateList* getUpdateItems() const {
+    return updateItems_.get();
+  }
 
   std::string toString() const;
 
@@ -410,12 +539,14 @@ class ConfigRowItem {
 
 class ConfigBaseSentence : public Sentence {
  public:
-  explicit ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
+  ConfigBaseSentence(Kind kind, ConfigRowItem* item) {
     kind_ = kind;
     configItem_.reset(item);
   }
 
-  ConfigRowItem* configItem() { return configItem_.get(); }
+  ConfigRowItem* configItem() {
+    return configItem_.get();
+  }
 
  protected:
   std::unique_ptr<ConfigRowItem> configItem_;
@@ -443,52 +574,11 @@ class GetConfigSentence final : public ConfigBaseSentence {
   std::string toString() const override;
 };
 
-class BalanceSentence final : public Sentence {
- public:
-  enum class SubType : uint32_t {
-    kUnknown,
-    kLeader,
-    kData,
-    kDataStop,
-    kDataReset,
-    kShowBalancePlan,
-  };
-
-  // TODO: add more subtype for balance
-  explicit BalanceSentence(SubType subType) {
-    kind_ = Kind::kBalance;
-    subType_ = std::move(subType);
-  }
-
-  explicit BalanceSentence(int64_t id) {
-    kind_ = Kind::kBalance;
-    subType_ = SubType::kShowBalancePlan;
-    balanceId_ = id;
-  }
-
-  BalanceSentence(SubType subType, HostList* hostDel) {
-    kind_ = Kind::kBalance;
-    subType_ = std::move(subType);
-    hostDel_.reset(hostDel);
-  }
-
-  std::string toString() const override;
-
-  SubType subType() const { return subType_; }
-
-  int64_t balanceId() const { return balanceId_; }
-
-  HostList* hostDel() const { return hostDel_.get(); }
-
- private:
-  SubType subType_{SubType::kUnknown};
-  int64_t balanceId_{0};
-  std::unique_ptr<HostList> hostDel_;
-};
-
 class CreateSnapshotSentence final : public Sentence {
  public:
-  CreateSnapshotSentence() { kind_ = Kind::kCreateSnapshot; }
+  CreateSnapshotSentence() {
+    kind_ = Kind::kCreateSnapshot;
+  }
 
   std::string toString() const override;
 };
@@ -500,7 +590,9 @@ class DropSnapshotSentence final : public Sentence {
     name_.reset(name);
   }
 
-  const std::string* name() { return name_.get(); }
+  const std::string* name() {
+    return name_.get();
+  }
 
   std::string toString() const override;
 
@@ -516,9 +608,13 @@ class AddListenerSentence final : public Sentence {
     listeners_.reset(hosts);
   }
 
-  meta::cpp2::ListenerType type() const { return type_; }
+  meta::cpp2::ListenerType type() const {
+    return type_;
+  }
 
-  HostList* listeners() const { return listeners_.get(); }
+  HostList* listeners() const {
+    return listeners_.get();
+  }
 
   std::string toString() const override;
 
@@ -534,7 +630,9 @@ class RemoveListenerSentence final : public Sentence {
     type_ = type;
   }
 
-  meta::cpp2::ListenerType type() const { return type_; }
+  meta::cpp2::ListenerType type() const {
+    return type_;
+  }
 
   std::string toString() const override;
 
@@ -544,7 +642,9 @@ class RemoveListenerSentence final : public Sentence {
 
 class ShowListenerSentence final : public Sentence {
  public:
-  ShowListenerSentence() { kind_ = Kind::kShowListener; }
+  ShowListenerSentence() {
+    kind_ = Kind::kShowListener;
+  }
 
   std::string toString() const override;
 };
@@ -576,19 +676,23 @@ class AdminJobSentence final : public Sentence {
 
 class ShowStatsSentence final : public Sentence {
  public:
-  ShowStatsSentence() { kind_ = Kind::kShowStats; }
+  ShowStatsSentence() {
+    kind_ = Kind::kShowStats;
+  }
 
   std::string toString() const override;
 };
 
-class TSClientList final {
+class ServiceClientList final {
  public:
-  void addClient(nebula::meta::cpp2::FTClient* client) { clients_.emplace_back(client); }
+  void addClient(nebula::meta::cpp2::ServiceClient* client) {
+    clients_.emplace_back(client);
+  }
 
   std::string toString() const;
 
-  std::vector<nebula::meta::cpp2::FTClient> clients() const {
-    std::vector<nebula::meta::cpp2::FTClient> result;
+  std::vector<nebula::meta::cpp2::ServiceClient> clients() const {
+    std::vector<nebula::meta::cpp2::ServiceClient> result;
     result.reserve(clients_.size());
     for (auto& client : clients_) {
       result.emplace_back(*client);
@@ -597,56 +701,99 @@ class TSClientList final {
   }
 
  private:
-  std::vector<std::unique_ptr<nebula::meta::cpp2::FTClient>> clients_;
+  std::vector<std::unique_ptr<nebula::meta::cpp2::ServiceClient>> clients_;
 };
 
-class ShowTSClientsSentence final : public Sentence {
+class ShowServiceClientsSentence final : public Sentence {
  public:
-  ShowTSClientsSentence() { kind_ = Kind::kShowTSClients; }
+  explicit ShowServiceClientsSentence(const meta::cpp2::ExternalServiceType& type) : type_(type) {
+    kind_ = Kind::kShowServiceClients;
+  }
+
   std::string toString() const override;
+
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignInTextServiceSentence final : public Sentence {
+class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInTextServiceSentence(TSClientList* clients) {
-    kind_ = Kind::kSignInTSService;
+  SignInServiceSentence(const meta::cpp2::ExternalServiceType& type, ServiceClientList* clients)
+      : type_(type) {
+    kind_ = Kind::kSignInService;
     clients_.reset(clients);
   }
 
   std::string toString() const override;
 
-  TSClientList* clients() const { return clients_.get(); }
+  ServiceClientList* clients() const {
+    return clients_.get();
+  }
+
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
 
  private:
-  std::unique_ptr<TSClientList> clients_;
+  std::unique_ptr<ServiceClientList> clients_;
+  meta::cpp2::ExternalServiceType type_;
 };
 
-class SignOutTextServiceSentence final : public Sentence {
+class SignOutServiceSentence final : public Sentence {
  public:
-  SignOutTextServiceSentence() { kind_ = Kind::kSignOutTSService; }
+  explicit SignOutServiceSentence(const meta::cpp2::ExternalServiceType& type) : type_(type) {
+    kind_ = Kind::kSignOutService;
+  }
 
   std::string toString() const override;
+
+  meta::cpp2::ExternalServiceType getType() {
+    return type_;
+  }
+
+ private:
+  meta::cpp2::ExternalServiceType type_;
 };
 
 class ShowSessionsSentence final : public Sentence {
  public:
-  ShowSessionsSentence() { kind_ = Kind::kShowSessions; }
+  ShowSessionsSentence() {
+    kind_ = Kind::kShowSessions;
+  }
 
   explicit ShowSessionsSentence(SessionID sessionId) {
     kind_ = Kind::kShowSessions;
     sessionId_ = sessionId;
-    setSeesionId_ = true;
+    setSessionId_ = true;
   }
 
-  bool isSetSessionID() const { return setSeesionId_; }
+  explicit ShowSessionsSentence(bool isLocalCommand) {
+    kind_ = Kind::kShowSessions;
+    isLocalCommand_ = isLocalCommand;
+  }
 
-  SessionID getSessionID() const { return sessionId_; }
+  bool isSetSessionID() const {
+    return setSessionId_;
+  }
+
+  bool isLocalCommand() const {
+    return isLocalCommand_;
+  }
+
+  SessionID getSessionID() const {
+    return sessionId_;
+  }
 
   std::string toString() const override;
 
  private:
   SessionID sessionId_{0};
-  bool setSeesionId_{false};
+  bool setSessionId_{false};
+  bool isLocalCommand_{false};
 };
 
 class ShowQueriesSentence final : public Sentence {
@@ -656,7 +803,9 @@ class ShowQueriesSentence final : public Sentence {
     isAll_ = isAll;
   }
 
-  bool isAll() const { return isAll_; }
+  bool isAll() const {
+    return isAll_;
+  }
 
   std::string toString() const override;
 
@@ -666,16 +815,24 @@ class ShowQueriesSentence final : public Sentence {
 
 class QueryUniqueIdentifier final {
  public:
-  explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+  QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
       : epId_(epId), sessionId_(sessionId) {}
 
-  Expression* sessionId() const { return sessionId_; }
+  Expression* sessionId() const {
+    return sessionId_;
+  }
 
-  Expression* epId() const { return epId_; }
+  Expression* epId() const {
+    return epId_;
+  }
 
-  void setSession() { isSetSession_ = true; }
+  void setSession() {
+    isSetSession_ = true;
+  }
 
-  bool isSetSession() const { return isSetSession_; }
+  bool isSetSession() const {
+    return isSetSession_;
+  }
 
  private:
   Expression* epId_{nullptr};
@@ -690,14 +847,20 @@ class KillQuerySentence final : public Sentence {
     identifier_.reset(identifier);
   }
 
-  Expression* sessionId() const { return identifier_->sessionId(); }
+  Expression* sessionId() const {
+    return identifier_->sessionId();
+  }
 
-  Expression* epId() const { return identifier_->epId(); }
+  Expression* epId() const {
+    return identifier_->epId();
+  }
 
   std::string toString() const override;
 
  private:
-  bool isSetSession() const { return identifier_->isSetSession(); }
+  bool isSetSession() const {
+    return identifier_->isSetSession();
+  }
 
   std::unique_ptr<QueryUniqueIdentifier> identifier_;
 };

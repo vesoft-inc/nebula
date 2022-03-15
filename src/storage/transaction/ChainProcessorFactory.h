@@ -1,10 +1,10 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
+#define STORAGE_TRANSACTION_CHAINPROCESSORFACTORY_H
 
 #include "storage/CommonUtils.h"
 #include "storage/transaction/ChainBaseProcessor.h"
@@ -15,8 +15,17 @@ namespace storage {
 
 class ChainProcessorFactory {
  public:
-  static ChainBaseProcessor* makeProcessor(StorageEnv* env, const ResumeOptions& options);
+  static ChainBaseProcessor* makeProcessor(StorageEnv* env,
+                                           TermID termId,
+                                           const ResumeOptions& options);
+
+  static ChainBaseProcessor* make(StorageEnv* env,
+                                  GraphSpaceID spaceId,
+                                  TermID termId,
+                                  const std::string& edgeKey,
+                                  ResumeType type);
 };
 
 }  // namespace storage
 }  // namespace nebula
+#endif

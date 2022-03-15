@@ -1,19 +1,21 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_RESTOREPROCESSOR_H_
 #define META_RESTOREPROCESSOR_H_
-
-#include <gtest/gtest_prod.h>
 
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Rebuild the host relative info after ingesting the table backup data to
+ *        the new cluster metad KV store.
+ *
+ */
 class RestoreProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static RestoreProcessor* instance(kvstore::KVStore* kvstore) {

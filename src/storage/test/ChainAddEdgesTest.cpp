@@ -1,10 +1,8 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#include <folly/Benchmark.h>
 #include <folly/Format.h>
 #include <folly/String.h>
 #include <folly/container/Enumerate.h>
@@ -19,7 +17,7 @@
 #include "storage/test/ChainTestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 
 namespace nebula {
@@ -28,6 +26,7 @@ namespace storage {
 constexpr int32_t mockSpaceId = 1;
 constexpr int32_t mockPartNum = 1;
 constexpr int32_t fackTerm = 1;
+constexpr auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
 
 // make sure test class works well
 TEST(ChainAddEdgesTest, TestUtilsTest) {
@@ -35,27 +34,27 @@ TEST(ChainAddEdgesTest, TestUtilsTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* processor = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
-  processor->rcPrepareLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
-  processor->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
-  processor->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
+  proc->setPrepareCode(suc);
+  proc->setRemoteCode(suc);
+  proc->setCommitCode(suc);
 
   LOG(INFO) << "Build AddEdgesRequest...";
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
 
   LOG(INFO) << "Test AddEdgesProcessor...";
-  auto fut = processor->getFuture();
-  processor->process(req);
+  auto fut = proc->getFuture();
+  proc->process(req);
   auto resp = std::move(fut).get();
-  EXPECT_EQ(0, resp.result.failed_parts.size());
 
   LOG(INFO) << "Check data in kv store...";
   // The number of data in serve is 334
+  EXPECT_EQ(0, resp.result.failed_parts.size());
   checkAddEdgesData(req, env, 0, 0);
 }
 
@@ -64,12 +63,12 @@ TEST(ChainAddEdgesTest, prepareLocalSucceedTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
-  proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+  proc->setRemoteCode(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
 
   LOG(INFO) << "Build AddEdgesRequest...";
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
@@ -92,10 +91,10 @@ TEST(ChainAddEdgesTest, processRemoteSucceededTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -123,12 +122,12 @@ TEST(ChainAddEdgesTest, processRemoteFailedTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
-  proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_OUTDATED_TERM;
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
+  proc->setRemoteCode(nebula::cpp2::ErrorCode::E_OUTDATED_TERM);
 
   LOG(INFO) << "Build AddEdgesRequest...";
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
@@ -137,7 +136,7 @@ TEST(ChainAddEdgesTest, processRemoteFailedTest) {
   auto fut = proc->getFuture();
   proc->process(req);
   auto resp = std::move(fut).get();
-  EXPECT_EQ(1, resp.result.failed_parts.size());
+  EXPECT_EQ(0, resp.result.failed_parts.size());
 
   ChainTestUtils util;
   // none of really edge key should be inserted
@@ -152,13 +151,13 @@ TEST(ChainAddEdgesTest, processRemoteUnknownTest) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
   MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
 
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
-  proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+  proc->setRemoteCode(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
 
   LOG(INFO) << "Build AddEdgesRequest...";
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
@@ -167,39 +166,22 @@ TEST(ChainAddEdgesTest, processRemoteUnknownTest) {
   auto fut = proc->getFuture();
   proc->process(req);
   auto resp = std::move(fut).get();
-  EXPECT_EQ(0, resp.result.failed_parts.size());
 
   ChainTestUtils util;
   // none of really edge key should be inserted
+  EXPECT_EQ(0, resp.result.failed_parts.size());
   EXPECT_EQ(334, numOfKey(req, util.genKey, env));
   // prime key should be deleted
   EXPECT_EQ(0, numOfKey(req, util.genPrime, env));
   EXPECT_EQ(334, numOfKey(req, util.genDoublePrime, env));
 }
 
-// make a reversed request, make sure it can be added successfully
-TEST(ChainAddEdgesTest, processRemoteTest) {
-  fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.initStorageKV(rootPath.path());
-  auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
-
-  env->metaClient_ = mClient.get();
-  MetaClientTestUpdater::addPartTerm(env->metaClient_, mockSpaceId, mockPartNum, fackTerm);
-
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
-  LOG(INFO) << "Build AddEdgesRequest...";
-  cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
-
-  auto reversedRequest = proc->reverseRequestForward(req);
-  delete proc;
-}
-
 }  // namespace storage
 }  // namespace nebula
 
 int main(int argc, char** argv) {
+  FLAGS_trace_toss = true;
+  FLAGS_v = 1;
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, false);
   google::SetStderrLogging(google::INFO);

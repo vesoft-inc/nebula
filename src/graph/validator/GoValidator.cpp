@@ -1,12 +1,10 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GoValidator.h"
 
-#include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
@@ -16,10 +14,6 @@
 namespace nebula {
 namespace graph {
 
-static const char* COLNAME_EDGE = "EDGE";
-static const char* SRC_VERTEX = "$^";
-static const char* DST_VERTEX = "$$";
-
 Status GoValidator::validateImpl() {
   auto* goSentence = static_cast<GoSentence*>(sentence_);
   goCtx_ = getContext<GoContext>();
@@ -28,6 +22,7 @@ Status GoValidator::validateImpl() {
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(goSentence->stepClause(), goCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(goSentence->fromClause(), goCtx_->from));
   NG_RETURN_IF_ERROR(ValidateUtil::validateOver(qctx_, goSentence->overClause(), goCtx_->over));
+  NG_RETURN_IF_ERROR(extractTagIds());
   NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
   NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
   NG_RETURN_IF_ERROR(validateTruncate(goSentence->truncateClause()));
@@ -37,9 +32,24 @@ Status GoValidator::validateImpl() {
     return Status::SemanticError("$- must be referred in FROM before used in WHERE or YIELD");
   }
 
-  if (!exprProps.varProps().empty() && goCtx_->from.fromType != kVariable) {
-    return Status::SemanticError(
-        "A variable must be referred in FROM before used in WHERE or YIELD");
+  // Only one variable allowed in whole sentence
+  if (!exprProps.varProps().empty()) {
+    if (goCtx_->from.fromType != kVariable) {
+      return Status::SemanticError(
+          "A variable must be referred in FROM before used in WHERE or YIELD");
+    }
+    auto varPropsMap = exprProps.varProps();
+    std::vector<std::string> keys;
+    for (const auto& elem : varPropsMap) {
+      keys.emplace_back(elem.first);
+    }
+    if (keys.size() > 1) {
+      return Status::SemanticError("Multiple variable property is not supported in WHERE or YIELD");
+    }
+    if (keys.front() != goCtx_->from.userDefinedVarName) {
+      return Status::SemanticError(
+          "A variable must be referred in FROM before used in WHERE or YIELD");
+    }
   }
 
   if ((!exprProps.inputProps().empty() && !exprProps.varProps().empty()) ||
@@ -51,16 +61,14 @@ Status GoValidator::validateImpl() {
   return Status::OK();
 }
 
+// Validate filter expression, rewrites expression to fit sementic,
+// deduce and check the type of expression, collect properties used in filter.
 Status GoValidator::validateWhere(WhereClause* where) {
   if (where == nullptr) {
     return Status::OK();
   }
 
   auto expr = where->filter();
-  if (graph::ExpressionUtils::findAny(expr, {Expression::Kind::kAggregate})) {
-    return Status::SemanticError("`%s', not support aggregate function in where sentence.",
-                                 expr->toString().c_str());
-  }
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto foldRes = ExpressionUtils::foldConstantExpr(where->filter());
   NG_RETURN_IF_ERROR(foldRes);
@@ -77,11 +85,12 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
-  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps));
+  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   goCtx_->filter = filter;
   return Status::OK();
 }
 
+// Validate the step sample/limit clause, which specify the sample/limit number for each steps.
 Status GoValidator::validateTruncate(TruncateClause* truncate) {
   if (truncate == nullptr) {
     return Status::OK();
@@ -114,61 +123,34 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
   return Status::OK();
 }
 
+// Validate yield clause, disable the invalid expression types, rewrites expression to fit sementic,
+// check expression type, collect properties used in yield.
 Status GoValidator::validateYield(YieldClause* yield) {
+  if (yield == nullptr) {
+    return Status::SemanticError("Missing yield clause.");
+  }
   goCtx_->distinct = yield->isDistinct();
-  const auto& over = goCtx_->over;
-  auto* pool = qctx_->objPool();
   auto& exprProps = goCtx_->exprProps;
 
-  auto cols = yield->columns();
-  if (cols.empty() && over.isOverAll) {
-    DCHECK(!over.allEdges.empty());
-    auto* newCols = pool->add(new YieldColumns());
-    for (const auto& e : over.allEdges) {
-      auto* col = new YieldColumn(EdgeDstIdExpression::make(pool, e));
-      newCols->addColumn(col);
-      outputs_.emplace_back(col->name(), vidType_);
-      NG_RETURN_IF_ERROR(deduceProps(col->expr(), exprProps));
-    }
-    goCtx_->yieldExpr = newCols;
-    goCtx_->colNames = getOutColNames();
-    return Status::OK();
-  }
-
-  for (auto col : cols) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kPathBuild})) {
+  for (auto col : yield->columns()) {
+    auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
+    if (vertexExpr != nullptr &&
+        static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
-    }
-
-    const auto& vertexExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kVertex});
-    for (const auto* expr : vertexExprs) {
-      const auto& colName = static_cast<const VertexExpression*>(expr)->name();
-      if (colName == SRC_VERTEX) {
-        NG_RETURN_IF_ERROR(extractVertexProp(exprProps, true));
-      } else if (colName == DST_VERTEX) {
-        NG_RETURN_IF_ERROR(extractVertexProp(exprProps, false));
-      } else {
-        return Status::SemanticError("`%s' is not support in go sentence.",
-                                     col->toString().c_str());
-      }
     }
 
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto* colExpr = col->expr();
-    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {
-      extractEdgeProp(exprProps);
-    }
-
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(col->name(), type);
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   }
 
+  const auto& over = goCtx_->over;
   for (const auto& e : exprProps.edgeProps()) {
     auto found = std::find(over.edgeTypes.begin(), over.edgeTypes.end(), e.first);
     if (found == over.edgeTypes.end()) {
@@ -180,46 +162,29 @@ Status GoValidator::validateYield(YieldClause* yield) {
   return Status::OK();
 }
 
-Status GoValidator::extractVertexProp(ExpressionProps& exprProps, bool isSrc) {
-  const auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
+// Get all tag IDs in the whole space
+Status GoValidator::extractTagIds() {
+  auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
   NG_RETURN_IF_ERROR(tagStatus);
   for (const auto& tag : tagStatus.value()) {
-    auto tagID = tag.first;
-    const auto& tagSchema = tag.second;
-    if (isSrc) {
-      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
-        exprProps.insertSrcTagProp(tagID, tagSchema->getFieldName(i));
-      }
-    } else {
-      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
-        exprProps.insertDstTagProp(tagID, tagSchema->getFieldName(i));
-      }
-    }
+    tagIds_.emplace_back(tag.first);
   }
   return Status::OK();
 }
 
-Status GoValidator::extractEdgeProp(ExpressionProps& exprProps) {
-  const auto& edgeTypes = goCtx_->over.edgeTypes;
-  for (const auto& edgeType : edgeTypes) {
-    const auto& edgeSchema = qctx_->schemaMng()->getEdgeSchema(space_.id, std::abs(edgeType));
-    exprProps.insertEdgeProp(edgeType, kType);
-    exprProps.insertEdgeProp(edgeType, kSrc);
-    exprProps.insertEdgeProp(edgeType, kDst);
-    exprProps.insertEdgeProp(edgeType, kRank);
-    for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-      exprProps.insertEdgeProp(edgeType, edgeSchema->getFieldName(i));
-    }
-  }
-  return Status::OK();
-}
-
-void GoValidator::extractPropExprs(const Expression* expr) {
-  ExtractPropExprVisitor visitor(
-      vctx_, goCtx_->srcEdgePropsExpr, goCtx_->dstPropsExpr, inputPropCols_, propExprColMap_);
+void GoValidator::extractPropExprs(const Expression* expr,
+                                   std::unordered_set<std::string>& uniqueExpr) {
+  ExtractPropExprVisitor visitor(vctx_,
+                                 goCtx_->srcEdgePropsExpr,
+                                 goCtx_->dstPropsExpr,
+                                 inputPropCols_,
+                                 propExprColMap_,
+                                 uniqueExpr);
   const_cast<Expression*>(expr)->accept(&visitor);
 }
 
+// Rewrites the property expression to corresponding Variable/Input expression
+// which get related property from previous plan node.
 Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   auto matcher = [this](const Expression* e) -> bool {
     return propExprColMap_.find(e->toString()) != propExprColMap_.end();
@@ -233,6 +198,9 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+// Build the final output columns, collect the src/edge and dst properties used in the query,
+// collect the input properties used in the query,
+// rewrites output expression to Input/Variable expression to get properties from previous plan node
 Status GoValidator::buildColumns() {
   const auto& exprProps = goCtx_->exprProps;
   const auto& dstTagProps = exprProps.dstTagProps();
@@ -258,42 +226,17 @@ Status GoValidator::buildColumns() {
     inputPropCols_ = pool->add(new YieldColumns());
   }
 
+  std::unordered_set<std::string> uniqueEdgeVertexExpr;
   auto filter = goCtx_->filter;
   if (filter != nullptr) {
-    extractPropExprs(filter);
-    auto newFilter = filter->clone();
-    goCtx_->filter = rewrite2VarProp(newFilter);
+    extractPropExprs(filter, uniqueEdgeVertexExpr);
+    goCtx_->filter = rewrite2VarProp(filter);
   }
 
-  std::unordered_set<std::string> existExpr;
   auto* newYieldExpr = pool->add(new YieldColumns());
   for (auto* col : goCtx_->yieldExpr->columns()) {
-    const auto& vertexExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kVertex});
-    auto existEdge = ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge});
-    if (!existEdge && vertexExprs.empty()) {
-      extractPropExprs(col->expr());
-      newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
-    } else {
-      if (existEdge) {
-        if (existExpr.emplace(COLNAME_EDGE).second) {
-          goCtx_->srcEdgePropsExpr->addColumn(
-              new YieldColumn(EdgeExpression::make(pool), COLNAME_EDGE));
-        }
-      }
-      for (const auto* expr : vertexExprs) {
-        const auto& colName = static_cast<const VertexExpression*>(expr)->name();
-        if (existExpr.emplace(colName).second) {
-          if (colName == SRC_VERTEX) {
-            goCtx_->srcEdgePropsExpr->addColumn(
-                new YieldColumn(VertexExpression::make(pool), SRC_VERTEX));
-          } else {
-            goCtx_->dstPropsExpr->addColumn(
-                new YieldColumn(VertexExpression::make(pool), DST_VERTEX));
-          }
-        }
-      }
-      newYieldExpr->addColumn(col->clone().release());
-    }
+    extractPropExprs(col->expr(), uniqueEdgeVertexExpr);
+    newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
   }
   goCtx_->yieldExpr = newYieldExpr;
   return Status::OK();

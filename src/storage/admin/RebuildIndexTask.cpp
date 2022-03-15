@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildIndexTask.h"
@@ -20,8 +19,8 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
   // Rebuild index rate is limited to FLAGS_rebuild_index_part_rate_limit * SubTaskConcurrency. As
   // for default configuration in a 3 replica cluster, send rate is 512Kb for a partition. From a
   // global perspective, the leaders are distributed evenly, so both send and recv traffic will be
-  // 1Mb (512 * 2 peers). Muliplied by the subtasks concurrency, the total send/recv traffic will be
-  // 10Mb, which is non-trival.
+  // 1Mb (512 * 2 peers). Multiplied by the subtasks concurrency, the total send/recv traffic will
+  // be 10Mb, which is non-trival.
   LOG(INFO) << "Rebuild index task is rate limited to " << FLAGS_rebuild_index_part_rate_limit
             << " for each subtask by default";
 }
@@ -32,21 +31,21 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   auto parts = *ctx_.parameters_.parts_ref();
 
   IndexItems items;
-  if (!ctx_.parameters_.task_specfic_paras_ref().has_value() ||
-      (*ctx_.parameters_.task_specfic_paras_ref()).empty()) {
+  if (!ctx_.parameters_.task_specific_paras_ref().has_value() ||
+      (*ctx_.parameters_.task_specific_paras_ref()).empty()) {
     auto itemsRet = getIndexes(space_);
     if (!itemsRet.ok()) {
-      LOG(ERROR) << "Indexes not found";
+      LOG(INFO) << "Indexes not found";
       return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
 
     items = std::move(itemsRet).value();
   } else {
-    for (const auto& index : *ctx_.parameters_.task_specfic_paras_ref()) {
+    for (const auto& index : *ctx_.parameters_.task_specific_paras_ref()) {
       auto indexID = folly::to<IndexID>(index);
       auto indexRet = getIndex(space_, indexID);
       if (!indexRet.ok()) {
-        LOG(ERROR) << "Index not found: " << indexID;
+        LOG(INFO) << "Index not found: " << indexID;
         return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
       }
       items.emplace_back(indexRet.value());
@@ -54,14 +53,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   }
 
   if (items.empty()) {
-    LOG(ERROR) << "Index is empty";
+    LOG(INFO) << "Index is empty";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   std::vector<AdminSubTask> tasks;
   for (auto it = env_->rebuildIndexGuard_->cbegin(); it != env_->rebuildIndexGuard_->cend(); ++it) {
     if (std::get<0>(it->first) == space_ && it->second != IndexState::FINISHED) {
-      LOG(ERROR) << "This space is building index";
+      LOG(INFO) << "This space is building index";
       return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
     }
   }
@@ -79,10 +78,10 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
                                                  PartitionID part,
                                                  const IndexItems& items) {
   auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
-  // TaskMananger will make sure that there won't be cocurrent invoke of a given part
+  // TaskManager will make sure that there won't be cocurrent invoke of a given part
   auto result = removeLegacyLogs(space, part);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
+    LOG(INFO) << "Remove legacy logs at part: " << part << " failed";
     return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
   } else {
     VLOG(1) << "Remove legacy logs at part: " << part << " successful";
@@ -96,7 +95,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   LOG(INFO) << "Start building index";
   result = buildIndexGlobal(space, part, items, rateLimiter.get());
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Building index failed";
+    LOG(INFO) << "Building index failed";
     return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
   } else {
     LOG(INFO) << folly::sformat("Building index successful, space={}, part={}", space, part);
@@ -105,7 +104,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   LOG(INFO) << folly::sformat("Processing operation logs, space={}, part={}", space, part);
   result = buildIndexOnOperations(space, part, rateLimiter.get());
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << folly::sformat(
+    LOG(INFO) << folly::sformat(
         "Building index with operation logs failed, space={}, part={}", space, part);
     return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
   }
@@ -119,15 +118,20 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
     GraphSpaceID space, PartitionID part, kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   while (true) {
+    if (UNLIKELY(canceled_)) {
+      LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     std::unique_ptr<kvstore::KVIterator> operationIter;
     auto operationPrefix = OperationKeyUtils::operationPrefix(part);
     auto operationRet = env_->kvstore_->prefix(space, part, operationPrefix, &operationIter);
     if (operationRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Processing Part " << part << " Failed";
+      LOG(INFO) << "Processing Part " << part << " Failed";
       return operationRet;
     }
 
@@ -138,14 +142,14 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
       auto opVal = operationIter->val();
       // replay operation record
       if (OperationKeyUtils::isModifyOperation(opKey)) {
-        VLOG(3) << "Processing Modify Operation " << opKey;
+        VLOG(1) << "Processing Modify Operation " << opKey;
         auto key = OperationKeyUtils::getOperationKey(opKey);
         batchHolder->put(std::move(key), opVal.str());
       } else if (OperationKeyUtils::isDeleteOperation(opKey)) {
-        VLOG(3) << "Processing Delete Operation " << opVal;
+        VLOG(1) << "Processing Delete Operation " << opVal;
         batchHolder->remove(opVal.str());
       } else {
-        LOG(ERROR) << "Unknow Operation Type";
+        LOG(INFO) << "Unknow Operation Type";
         return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
       }
 
@@ -153,7 +157,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
       if (batchHolder->size() > FLAGS_rebuild_index_batch_size) {
         auto ret = writeOperation(space, part, batchHolder.get(), rateLimiter);
         if (nebula::cpp2::ErrorCode::SUCCEEDED != ret) {
-          LOG(ERROR) << "Write Operation Failed";
+          LOG(INFO) << "Write Operation Failed";
           return ret;
         }
       }
@@ -162,7 +166,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
 
     auto ret = writeOperation(space, part, batchHolder.get(), rateLimiter);
     if (nebula::cpp2::ErrorCode::SUCCEEDED != ret) {
-      LOG(ERROR) << "Write Operation Failed";
+      LOG(INFO) << "Write Operation Failed";
       return ret;
     }
 
@@ -183,7 +187,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
         int32_t currentRequestNum;
         do {
           currentRequestNum = env_->onFlyingRequest_.load();
-          VLOG(3) << "On Flying Request: " << currentRequestNum;
+          VLOG(1) << "On Flying Request: " << currentRequestNum;
           usleep(100);
         } while (currentRequestNum != 0);
       } else {
@@ -204,7 +208,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::removeLegacyLogs(GraphSpaceID space, P
                                    NebulaKeyUtils::lastKey(operationPrefix, sizeof(int64_t)),
                                    [&result, &baton](nebula::cpp2::ErrorCode code) {
                                      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-                                       LOG(ERROR) << "Modify the index failed";
+                                       LOG(INFO) << "Modify the index failed";
                                        result = code;
                                      }
                                      baton.post();

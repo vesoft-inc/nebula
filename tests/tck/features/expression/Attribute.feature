@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Attribute
 
   Background:
@@ -66,18 +65,18 @@ Feature: Attribute
       | UNKNOWN_PROP |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name       |
-      | "Tim Duncan" |
+      | v.player.name |
+      | "Tim Duncan"  |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.Name
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.Name
       """
     Then the result should be, in any order:
-      | v.Name       |
-      | UNKNOWN_PROP |
+      | v.player.Name |
+      | NULL          |
     When executing query:
       """
       MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.likeness
@@ -126,11 +125,11 @@ Feature: Attribute
       | UNKNOWN_PROP    |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.not_exists_attr
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.not_exists_attr
       """
     Then the result should be, in any order:
-      | v.not_exists_attr |
-      | UNKNOWN_PROP      |
+      | v.player.not_exists_attr |
+      | NULL                     |
     When executing query:
       """
       MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.not_exists_attr
@@ -152,4 +151,11 @@ Feature: Attribute
       """
     Then the result should be, in any order:
       | v.name.not_exists_attr |
-      | BAD_TYPE               |
+      | NULL                   |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name.test
+      """
+    Then the result should be, in any order:
+      | v.player.name.test |
+      | BAD_TYPE           |

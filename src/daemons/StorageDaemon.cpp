@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/ssl/Init.h>
@@ -9,10 +8,13 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "storage/StorageServer.h"
+#include "storage/stats/StorageStats.h"
 #include "version/Version.h"
 
 DEFINE_string(local_ip, "", "IP address which is used to identify this server");
@@ -43,14 +45,11 @@ using nebula::Status;
 using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
-static void signalHandler(int sig);
-static Status setupSignalHandler();
-extern Status setupLogging();
+static void signalHandler(nebula::storage::StorageServer *storageServer, int sig);
+static Status setupSignalHandler(nebula::storage::StorageServer *storageServer);
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
-
-std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -60,7 +59,7 @@ int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
@@ -80,6 +79,9 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // Init stats
+  nebula::initStorageStats();
 
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
@@ -133,16 +135,30 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::string> paths;
   folly::split(",", FLAGS_data_path, paths, true);
-  std::transform(paths.begin(), paths.end(), paths.begin(), [](auto &p) {
-    return folly::trimWhitespace(p).str();
-  });
+  // make the paths absolute
+  std::transform(
+      paths.begin(), paths.end(), paths.begin(), [](const std::string &p) -> std::string {
+        auto path = folly::trimWhitespace(p).str();
+        path = boost::filesystem::absolute(path).string();
+        LOG(INFO) << "data path= " << path;
+        return path;
+      });
   if (paths.empty()) {
     LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
     return EXIT_FAILURE;
   }
 
+  auto storageServer = std::make_unique<nebula::storage::StorageServer>(
+      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
   // Setup the signal handlers
-  status = setupSignalHandler();
+  status = setupSignalHandler(storageServer.get());
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
+  // load the time zone data
+  status = nebula::time::Timezone::init();
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
@@ -156,32 +172,31 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  gStorageServer = std::make_unique<nebula::storage::StorageServer>(
-      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
-  if (!gStorageServer->start()) {
+  if (!storageServer->start()) {
     LOG(ERROR) << "Storage server start failed";
-    gStorageServer->stop();
+    storageServer->stop();
     return EXIT_FAILURE;
   }
 
-  gStorageServer->waitUntilStop();
+  storageServer->waitUntilStop();
   LOG(INFO) << "The storage Daemon stopped";
   return EXIT_SUCCESS;
 }
 
-Status setupSignalHandler() {
+Status setupSignalHandler(nebula::storage::StorageServer *storageServer) {
   return nebula::SignalHandler::install(
-      {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo *info) { signalHandler(info->sig()); });
+      {SIGINT, SIGTERM}, [storageServer](nebula::SignalHandler::GeneralSignalInfo *info) {
+        signalHandler(storageServer, info->sig());
+      });
 }
 
-void signalHandler(int sig) {
+void signalHandler(nebula::storage::StorageServer *storageServer, int sig) {
   switch (sig) {
     case SIGINT:
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-      if (gStorageServer) {
-        gStorageServer->stop();
+      if (storageServer) {
+        storageServer->notifyStop();
       }
       break;
     default:

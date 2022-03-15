@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2019 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import pytest
 import time
@@ -12,10 +11,10 @@ import datetime
 from pathlib import Path
 from typing import Pattern, Set
 
-from nebula2.common import ttypes as CommonTtypes
-# from nebula2.gclient.net import ConnectionPool
-# from nebula2.Config import Config
-from nebula2.graph import ttypes
+from nebula3.common import ttypes as CommonTtypes
+# from nebula3.gclient.net import ConnectionPool
+# from nebula3.Config import Config
+from nebula3.graph import ttypes
 from tests.common.configs import get_delay_time
 from tests.common.utils import (
     compare_value,

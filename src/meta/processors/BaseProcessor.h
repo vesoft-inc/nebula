@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_BASEPROCESSOR_H_
@@ -21,14 +20,13 @@
 #include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-using FieldType = std::pair<std::string, cpp2::PropertyType>;
+using FieldType = std::pair<std::string, nebula::cpp2::PropertyType>;
 using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID)              \
@@ -39,14 +37,9 @@ using SignType = storage::cpp2::EngineSignType;
     return;                                             \
   }
 
-/**
- * Check segment is consist of numbers and letters and should not empty.
- * */
-#define CHECK_SEGMENT(segment)                                         \
-  if (!MetaCommon::checkSegment(segment)) {                            \
-    handleErrorCode(nebula::cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
-    onFinished();                                                      \
-    return;                                                            \
+#define CHECK_CODE_AND_BREAK()                      \
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) { \
+    break;                                          \
   }
 
 template <typename RESP>
@@ -56,32 +49,42 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   /**
-   * Destroy current instance when finished.
-   * */
+   * @brief Destroy current instance when finished.
+   *
+   */
   virtual void onFinished() {
     promise_.setValue(std::move(resp_));
     delete this;
   }
 
-  void handleErrorCode(nebula::cpp2::ErrorCode code,
-                       GraphSpaceID spaceId = kDefaultSpaceId,
-                       PartitionID partId = kDefaultPartId) {
-    resp_.set_code(code);
+  /**
+   * @brief Set error code and handle leader changed.
+   *
+   * @param code
+   */
+  void handleErrorCode(nebula::cpp2::ErrorCode code) {
+    resp_.code_ref() = code;
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      handleLeaderChanged(spaceId, partId);
+      handleLeaderChanged();
     }
   }
 
-  void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
-    auto leaderRet = kvstore_->partLeader(spaceId, partId);
+  /**
+   * @brief Set leader address to reponse.
+   *
+   */
+  void handleLeaderChanged() {
+    auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
     if (ok(leaderRet)) {
-      resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+      resp_.leader_ref() = toThriftHost(nebula::value(leaderRet));
     } else {
-      resp_.set_code(nebula::error(leaderRet));
+      resp_.code_ref() = nebula::error(leaderRet);
     }
   }
 
@@ -90,173 +93,357 @@ class BaseProcessor {
     cpp2::ID thriftID;
     switch (type) {
       case EntryType::SPACE:
-        thriftID.set_space_id(static_cast<GraphSpaceID>(id));
+        thriftID.space_id_ref() = static_cast<GraphSpaceID>(id);
         break;
       case EntryType::TAG:
-        thriftID.set_tag_id(static_cast<TagID>(id));
+        thriftID.tag_id_ref() = static_cast<TagID>(id);
         break;
       case EntryType::EDGE:
-        thriftID.set_edge_type(static_cast<EdgeType>(id));
+        thriftID.edge_type_ref() = static_cast<EdgeType>(id);
         break;
       case EntryType::INDEX:
-        thriftID.set_index_id(static_cast<IndexID>(id));
+        thriftID.index_id_ref() = static_cast<IndexID>(id);
         break;
       case EntryType::CONFIG:
-      case EntryType::GROUP:
       case EntryType::ZONE:
         break;
     }
     return thriftID;
   }
 
-  HostAddr toThriftHost(const HostAddr& host) { return host; }
+  HostAddr toThriftHost(const HostAddr& host) {
+    return host;
+  }
 
   /**
-   * General put function.
-   * */
-  void doPut(std::vector<kvstore::KV> data);
+   * @brief Put data to kvstore synchronously without side effect.
+   *
+   * @tparam RESP
+   * @param data
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
 
+  /**
+   * @brief Get the iterator on given meta prefix.
+   *
+   * @tparam RESP
+   * @param key
+   * @param canReadFromFollower read from follower's local
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>> doPrefix(
-      const std::string& key);
+      const std::string& key, bool canReadFromFollower = false);
 
   /**
-   * General get function.
-   * */
+   * @brief Get the given key's value
+   *
+   * @tparam RESP
+   * @param key
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::string>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::string> doGet(const std::string& key);
 
   /**
-   * General multi get function.
-   * */
+   * @brief Multiple get for given keys.
+   *
+   * @tparam RESP
+   * @param keys
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> doMultiGet(
       const std::vector<std::string>& keys);
 
   /**
-   * General remove function.
-   * */
+   * @brief Remove given keys from kv store.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param key
+   */
   void doRemove(const std::string& key);
 
   /**
-   * Remove keys from start to end, doesn't contain end.
-   * */
+   * @brief Range remove.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param start
+   * @param end
+   */
   void doRemoveRange(const std::string& start, const std::string& end);
 
   /**
-   * Scan keys from start to end, doesn't contain end.
-   * */
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> doScan(const std::string& start,
-                                                                    const std::string& end);
-  /**
-   * General multi remove function.
-   **/
-  void doMultiRemove(std::vector<std::string> keys);
+   * @brief Batch general operation.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param batchOp
+   */
+  void doBatchOperation(std::string batchOp);
 
   /**
-   * Get all hosts
-   * */
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
-
-  /**
-   * Get one auto-increment Id.
-   * */
+   * @brief Increment global auto-incremental id and then return it.
+   *        Note that it has side effect: it will set the code to the resp_.
+   *
+   * @tparam RESP
+   * @return ErrorOr<nebula::cpp2::ErrorCode, int32_t>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();
 
   /**
-   * Get the current available global id
-   **/
-  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGolbalId();
+   * @brief Get global incremental id without incrementing it.
+   *
+   * @tparam RESP
+   * @return ErrorOr<nebula::cpp2::ErrorCode, int32_t>
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGlobalId();
 
   /**
-   * Get one auto-increment Id in spaceId.
-   * */
+   * @brief Increment space auto-incremental id and then return it.
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, int32_t>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementIdInSpace(GraphSpaceID spaceId);
 
   /**
-   * Check spaceId exist or not.
-   * */
+   * @brief Check if given space exist or not.
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @return SUCCEEDED means exist, E_SPACE_NOT_FOUND means not, others means error.
+   */
   nebula::cpp2::ErrorCode spaceExist(GraphSpaceID spaceId);
 
   /**
-   * Check user exist or not.
-   **/
+   * @brief Check if given user exist or not.
+   *
+   * @tparam RESP
+   * @param account
+   * @return SUCCEEDED means exist, E_USER_NOT_FOUND means not, others means error.
+   */
   nebula::cpp2::ErrorCode userExist(const std::string& account);
 
   /**
-   * Check host has been registered or not.
-   * */
+   * @brief Check if given machine exist.
+   *
+   * @tparam RESP
+   * @param machineKey
+   * @return SUCCEEDED means exist, E_NOT_FOUND means not, others means error.
+   */
+  nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
+
+  /**
+   * @brief Check if given host exist.
+   *
+   * @tparam RESP
+   * @param hostKey
+   * @return SUCCEEDED means exist, E_NOT_FOUND means not, others means error.
+   */
   nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
 
   /**
-   * Return the spaceId for name.
-   * */
+   * @brief Check the hosts not exist in all zones.
+   *
+   * @tparam RESP
+   * @param hosts
+   * @return nebula::cpp1::ErrorCode
+   */
+  nebula::cpp2::ErrorCode includeByZone(const std::vector<HostAddr>& hosts);
+
+  /**
+   * @brief Get space id by space name
+   *
+   * @tparam RESP
+   * @param name
+   * @return ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
   /**
-   * Return the tagId for name.
+   * @brief Get tag id by space id and tag name
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param name tag name
+   * @return ErrorOr<nebula::cpp2::ErrorCode, TagID>
    */
   ErrorOr<nebula::cpp2::ErrorCode, TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
   /**
-   * Fetch the latest version tag's schema.
+   * @brief Fetch the latest version tag's schema by space id and tag id
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param tagId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema>
    */
   ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> getLatestTagSchema(GraphSpaceID spaceId,
                                                                     const TagID tagId);
 
   /**
-   * Return the edgeType for name.
+   * @brief Get edge type by space id and edge name
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param name edge name
+   * @return ErrorOr<nebula::cpp2::ErrorCode, EdgeType>
    */
   ErrorOr<nebula::cpp2::ErrorCode, EdgeType> getEdgeType(GraphSpaceID spaceId,
                                                          const std::string& name);
 
   /**
-   * Fetch the latest version edge's schema.
+   * @brief Fetch the latest version edge's schema by space id and tag id
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param edgeType
+   * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema>
    */
   ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> getLatestEdgeSchema(GraphSpaceID spaceId,
                                                                      const EdgeType edgeType);
 
+  /**
+   * @brief Get index id by space id and index name
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param indexName
+   * @return ErrorOr<nebula::cpp2::ErrorCode, IndexID>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, IndexID> getIndexID(GraphSpaceID spaceId,
                                                        const std::string& indexName);
 
+  /**
+   * @brief Check if password identical or not.
+   *
+   * @tparam RESP
+   * @param account
+   * @param password
+   * @return ErrorOr<nebula::cpp2::ErrorCode, bool>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, bool> checkPassword(const std::string& account,
                                                        const std::string& password);
 
-  nebula::cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
-
-  void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
-
-  void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
-
   /**
-   * Check the edge or tag contains indexes when alter it.
-   **/
+   * @brief Check if tag/edge contains index when alter it.
+   *
+   * @tparam RESP
+   * @param items
+   * @param alterItems
+   * @return ErrorCode::E_CONFLICT if contains
+   */
   nebula::cpp2::ErrorCode indexCheck(const std::vector<cpp2::IndexItem>& items,
                                      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
+  /**
+   * @brief Check if tag/edge containes full text index when alter it.
+   *
+   * @tparam RESP
+   * @param cols
+   * @param alterItems
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode ftIndexCheck(const std::vector<std::string>& cols,
                                        const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
+  /**
+   * @brief List all tag/edge index for given space and tag/edge id.
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param tagOrEdge tag id or edge id
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> getIndexes(GraphSpaceID spaceId,
                                                                             int32_t tagOrEdge);
 
+  /**
+   * @brief Get all full text indexes for given space and tag/edge id.
+   *
+   * @tparam RESP
+   * @param spaceId
+   * @param tagOrEdge
+   * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> getFTIndex(GraphSpaceID spaceId,
                                                              int32_t tagOrEdge);
 
+  /**
+   * @brief Check if index on given fields alredy exist.
+   *
+   * @tparam RESP
+   * @param fields
+   * @param item
+   * @return true
+   * @return false
+   */
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
 
-  ErrorOr<nebula::cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
-
+  /**
+   * @brief Get zone id by zone name
+   *
+   * @tparam RESP
+   * @param zoneName
+   * @return ErrorOr<nebula::cpp2::ErrorCode, ZoneID>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 
+  /**
+   * @brief Check if given space exist given type's listener.
+   *
+   * @tparam RESP
+   * @param space
+   * @param type
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode listenerExist(GraphSpaceID space, cpp2::ListenerType type);
 
-  // A direct value of true means that data will not be written to follow via
-  // the raft protocol, but will be written directly to local disk
+  /**
+   * @brief Used in BR, after restore meta data, it will replace partition info from
+   *        current ip to backup ip.
+   *
+   * @param ipv4From
+   * @param ipv4To
+   * @param direct A direct value of true means that data will not be written to follow via
+   *               the raft protocol, but will be written directly to local disk
+   * @return ErrorOr<nebula::cpp2::ErrorCode, bool>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, bool> replaceHostInPartition(const HostAddr& ipv4From,
                                                                 const HostAddr& ipv4To,
                                                                 bool direct = false);
 
+  /**
+   * @brief Used in BR, after restore meta data, it will replace Zone info from
+   *        current ip to backup ip.
+   *
+   * @param ipv4From
+   * @param ipv4To
+   * @param direct A direct value of true means that data will not be written to follow via
+   *               the raft protocol, but will be written directly to local disk
+   * @return ErrorOr<nebula::cpp2::ErrorCode, bool>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, bool> replaceHostInZone(const HostAddr& ipv4From,
                                                            const HostAddr& ipv4To,
                                                            bool direct = false);
+
+  /**
+   * @brief Get all parts' distribution information of a space.
+   *
+   * @param spaceId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
+   *         std::vector<HostAddr>>> map for part id -> peer hosts.
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+  getAllParts(GraphSpaceID spaceId);
 
  protected:
   kvstore::KVStore* kvstore_ = nullptr;

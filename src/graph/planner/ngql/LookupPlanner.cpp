@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/ngql/LookupPlanner.h"
@@ -38,6 +37,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                       lookupCtx->idxReturnCols,
                                                       lookupCtx->schemaId,
                                                       lookupCtx->isEmptyResultSet);
+    edgeIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
     plan.tail = edgeIndexFullScan;
     plan.root = edgeIndexFullScan;
   } else {
@@ -49,6 +49,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                     lookupCtx->idxReturnCols,
                                                     lookupCtx->schemaId,
                                                     lookupCtx->isEmptyResultSet);
+    tagIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
     plan.tail = tagIndexFullScan;
     plan.root = tagIndexFullScan;
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_ALTERTAGPROCESSOR_H_
@@ -12,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Alter tag properties. Will get the tag schema with latest version. Then check if there are
+ *        indexes on it.
+ *
+ */
 class AlterTagProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static AlterTagProcessor* instance(kvstore::KVStore* kvstore) {

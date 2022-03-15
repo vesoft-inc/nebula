@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
@@ -9,6 +8,7 @@
 
 #include <folly/futures/Future.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <set>
 #include <string>
 #include <vector>
@@ -26,7 +26,7 @@ namespace graph {
 class PlanNode;
 class QueryContext;
 
-class Executor : private cpp::NonCopyable, private cpp::NonMovable {
+class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
   static Executor *create(const PlanNode *node, QueryContext *qctx);
@@ -46,17 +46,29 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 
   Status checkMemoryWatermark();
 
-  QueryContext *qctx() const { return qctx_; }
+  QueryContext *qctx() const {
+    return qctx_;
+  }
 
-  int64_t id() const { return id_; }
+  int64_t id() const {
+    return id_;
+  }
 
-  const std::string &name() const { return name_; }
+  const std::string &name() const {
+    return name_;
+  }
 
-  const PlanNode *node() const { return node_; }
+  const PlanNode *node() const {
+    return node_;
+  }
 
-  const std::set<Executor *> &depends() const { return depends_; }
+  const std::set<Executor *> &depends() const {
+    return depends_;
+  }
 
-  const std::set<Executor *> &successors() const { return successors_; }
+  const std::set<Executor *> &successors() const {
+    return successors_;
+  }
 
   Executor *dependsOn(Executor *dep) {
     depends_.emplace(dep);
@@ -89,6 +101,8 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   folly::Executor *runner() const;
 
   void drop();
+  void drop(const PlanNode *node);
+  void dropBody(const PlanNode *body);
 
   // Store the result of this executor to execution context
   Status finish(Result &&result);

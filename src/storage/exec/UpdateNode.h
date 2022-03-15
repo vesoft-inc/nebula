@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_UPDATENODE_H_
@@ -55,7 +54,9 @@ class UpdateNode : public RelNode<T> {
   nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
                                                 const std::string& name) {
     if (field->hasDefault()) {
-      auto expr = field->defaultValue()->clone();
+      ObjectPool pool;
+      auto& exprStr = field->defaultValue();
+      auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
       props_[field->name()] = Expression::eval(expr, *expCtx_);
     } else if (field->nullable()) {
       props_[name] = Value::kNullValue;
@@ -270,7 +271,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       expCtx_->setTagProp(tagName_, p.first, p.second);
     }
 
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -332,7 +333,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        LOG(ERROR) << "Add field faild ";
+        LOG(ERROR) << "Add field failed ";
         return std::nullopt;
       }
     }
@@ -341,7 +342,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Add field faild ";
+      LOG(ERROR) << "Add field failed ";
       return std::nullopt;
     }
 
@@ -413,6 +414,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       }
     }
     // step 3, insert new vertex data
+    batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
     batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
   }
@@ -421,7 +423,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
                                      const VertexID& vId,
                                      RowReader* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
       return {};
     }
@@ -656,7 +658,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        VLOG(1) << "Add field faild ";
+        VLOG(1) << "Add field failed ";
         return std::nullopt;
       }
     }
@@ -665,7 +667,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      VLOG(1) << "Add field faild ";
+      VLOG(1) << "Add field failed ";
       return std::nullopt;
     }
 
@@ -752,7 +754,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
                                      RowReader* reader,
                                      const cpp2::EdgeKey& edgeKey,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+    auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
       return {};
     }

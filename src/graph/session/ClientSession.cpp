@@ -1,13 +1,13 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/session/ClientSession.h"
 
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/context/QueryContext.h"
+#include "graph/stats/GraphStats.h"
 
 namespace nebula {
 namespace graph {
@@ -25,7 +25,7 @@ std::shared_ptr<ClientSession> ClientSession::create(meta::cpp2::Session&& sessi
 void ClientSession::charge() {
   folly::RWSpinLock::WriteHolder wHolder(rwSpinLock_);
   idleDuration_.reset();
-  session_.set_update_time(time::WallClock::fastNowInMicroSec());
+  session_.update_time_ref() = time::WallClock::fastNowInMicroSec();
 }
 
 uint64_t ClientSession::idleSeconds() {
@@ -36,10 +36,10 @@ uint64_t ClientSession::idleSeconds() {
 void ClientSession::addQuery(QueryContext* qctx) {
   auto epId = qctx->plan()->id();
   meta::cpp2::QueryDesc queryDesc;
-  queryDesc.set_start_time(time::WallClock::fastNowInMicroSec());
-  queryDesc.set_status(meta::cpp2::QueryStatus::RUNNING);
-  queryDesc.set_query(qctx->rctx()->query());
-  queryDesc.set_graph_addr(session_.get_graph_addr());
+  queryDesc.start_time_ref() = time::WallClock::fastNowInMicroSec();
+  queryDesc.status_ref() = meta::cpp2::QueryStatus::RUNNING;
+  queryDesc.query_ref() = qctx->rctx()->query();
+  queryDesc.graph_addr_ref() = session_.get_graph_addr();
   VLOG(1) << "Add query: " << qctx->rctx()->query() << ", epId: " << epId;
 
   folly::RWSpinLock::WriteHolder wHolder(rwSpinLock_);
@@ -76,13 +76,18 @@ void ClientSession::markQueryKilled(nebula::ExecutionPlanID epId) {
     return;
   }
   context->second->markKilled();
+  stats::StatsManager::addValue(kNumKilledQueries);
+  if (FLAGS_enable_space_level_metrics && space_.name != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumKilledQueries, {{"space", space_.name}}));
+  }
   VLOG(1) << "Mark query killed in local cache, epId: " << epId;
 
   auto query = session_.queries_ref()->find(epId);
   if (query == session_.queries_ref()->end()) {
     return;
   }
-  query->second.set_status(meta::cpp2::QueryStatus::KILLING);
+  query->second.status_ref() = meta::cpp2::QueryStatus::KILLING;
   VLOG(1) << "Mark query killed in meta, epId: " << epId;
 }
 
@@ -91,6 +96,12 @@ void ClientSession::markAllQueryKilled() {
   for (auto& context : contexts_) {
     context.second->markKilled();
     session_.queries_ref()->clear();
+  }
+  stats::StatsManager::addValue(kNumKilledQueries, contexts_.size());
+  if (FLAGS_enable_space_level_metrics && space_.name != "") {
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumKilledQueries, {{"space", space_.name}}),
+        contexts_.size());
   }
 }
 }  // namespace graph

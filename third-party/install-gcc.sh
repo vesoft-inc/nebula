@@ -2,14 +2,13 @@
 
 # Copyright (c) 2019 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 # Usage: install-gcc.sh --prefix=/opt/nebula/toolset
 
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
-if [ ! x$shell = x"bash" ]
+if [ ! x$shell = x"bash" ] && [[ x$shell != x"qemu-aarch64"* ]]
 then
     bash $0 $@
     exit $?
@@ -20,7 +19,7 @@ fi
     exit 1
 }
 
-version=7.5.0
+version=9.3.0
 url_base=https://oss-cdn.nebula-graph.com.cn/toolset
 this_dir=$(dirname $(readlink -f $0))
 
@@ -36,7 +35,7 @@ this_distro=$(lsb_release -si)
 this_libc_version=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
 
 hash wget &>/dev/null || {
-    echo "'wget' not fould, please install it first" 1>&2
+    echo "'wget' not found, please install it first" 1>&2
     exit 1
 }
 

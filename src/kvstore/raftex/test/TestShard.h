@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_TEST_TESTSHARD_H_
@@ -66,16 +65,21 @@ class TestShard : public RaftPart {
     return std::make_pair(committedLogId_, term_);
   }
 
-  std::shared_ptr<RaftexService> getService() const { return service_; }
+  std::shared_ptr<RaftexService> getService() const {
+    return service_;
+  }
 
-  size_t index() const { return idx_; }
+  size_t index() const {
+    return idx_;
+  }
 
   void onLostLeadership(TermID term) override;
   void onElected(TermID term) override;
   void onLeaderReady(TermID term) override;
   void onDiscoverNewLeader(HostAddr) override {}
 
-  nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
+  std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
+                                                                bool wait) override;
 
   bool preProcessLog(LogID, TermID, ClusterID, const std::string& log) override {
     if (!log.empty()) {
@@ -117,7 +121,7 @@ class TestShard : public RaftPart {
                                              TermID committedLogTerm,
                                              bool finished) override;
 
-  void cleanup() override;
+  nebula::cpp2::ErrorCode cleanup() override;
 
   size_t getNumLogs() const;
   bool getLogMsg(size_t index, folly::StringPiece& msg);
@@ -144,7 +148,9 @@ class NebulaSnapshotManager : public SnapshotManager {
     CHECK_NOTNULL(service);
   }
 
-  ~NebulaSnapshotManager() { LOG(INFO) << "~NebulaSnapshotManager()"; }
+  ~NebulaSnapshotManager() {
+    LOG(INFO) << "~NebulaSnapshotManager()";
+  }
 
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,
@@ -154,13 +160,19 @@ class NebulaSnapshotManager : public SnapshotManager {
     int64_t totalCount = 0;
     int64_t totalSize = 0;
     std::vector<std::string> data;
+    auto commitLogIdAndTerm = part->lastCommittedLogId();
     folly::RWSpinLock::ReadHolder rh(&part->lock_);
     for (auto& row : part->data_) {
       if (data.size() > 100) {
         LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
                   << ", total count sended " << totalCount << ", total size sended " << totalSize
                   << ", finished false";
-        cb(data, totalCount, totalSize, SnapshotStatus::IN_PROGRESS);
+        cb(commitLogIdAndTerm.first,
+           commitLogIdAndTerm.second,
+           data,
+           totalCount,
+           totalSize,
+           SnapshotStatus::IN_PROGRESS);
         data.clear();
       }
       auto encoded = encodeSnapshotRow(row.first, row.second);
@@ -171,7 +183,12 @@ class NebulaSnapshotManager : public SnapshotManager {
     LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
               << ", total count sended " << totalCount << ", total size sended " << totalSize
               << ", finished true";
-    cb(data, totalCount, totalSize, SnapshotStatus::DONE);
+    cb(commitLogIdAndTerm.first,
+       commitLogIdAndTerm.second,
+       data,
+       totalCount,
+       totalSize,
+       SnapshotStatus::DONE);
   }
 
   RaftexService* service_;

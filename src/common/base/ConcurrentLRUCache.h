@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_CONCURRENTLRUCACHE_H_
@@ -59,7 +58,9 @@ class ConcurrentLRUCache final {
     return buckets_[bucketIndex(key, hint)].putIfAbsent(std::move(key), std::move(val));
   }
 
-  void evict(const K& key, int32_t hint = -1) { buckets_[bucketIndex(key, hint)].evict(key); }
+  void evict(const K& key, int32_t hint = -1) {
+    buckets_[bucketIndex(key, hint)].evict(key);
+  }
 
   void clear() {
     for (uint32_t i = 0; i < bucketsNum_; i++) {
@@ -160,7 +161,7 @@ class ConcurrentLRUCache final {
 /**
     It is copied from boost::compute::detail::LRU.
     The differences:
-    1. Add methed evict(const K& key);
+    1. Add method evict(const K& key);
     2. Instead std::map with std::unordered_map
     3. Update the code style.
     4. Add stats
@@ -180,13 +181,21 @@ class LRU {
 
   ~LRU() = default;
 
-  size_t size() const { return map_.size(); }
+  size_t size() const {
+    return map_.size();
+  }
 
-  size_t capacity() const { return capacity_; }
+  size_t capacity() const {
+    return capacity_;
+  }
 
-  bool empty() const { return map_.empty(); }
+  bool empty() const {
+    return map_.empty();
+  }
 
-  bool contains(const key_type& key) { return map_.find(key) != map_.end(); }
+  bool contains(const key_type& key) {
+    return map_.find(key) != map_.end();
+  }
 
   void insert(key_type&& key, value_type&& value) {
     typename map_type::iterator it = map_.find(key);
@@ -251,11 +260,17 @@ class LRU {
     evicts_ = 0;
   }
 
-  uint64_t total() { return total_; }
+  uint64_t total() {
+    return total_;
+  }
 
-  uint64_t hits() { return hits_; }
+  uint64_t hits() {
+    return hits_;
+  }
 
-  uint64_t evicts() { return evicts_; }
+  uint64_t evicts() {
+    return evicts_;
+  }
 
  private:
   void evict() {

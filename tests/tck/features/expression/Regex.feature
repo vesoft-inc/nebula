@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Regular Expression
 
   Background:
@@ -105,8 +104,8 @@ Feature: Regular Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name =~ "T\\w+\\s?.*"
-      RETURN v.name AS name
+      WHERE v.player.name =~ "T\\w+\\s?.*"
+      RETURN v.player.name AS name
       """
     Then the result should be, in any order:
       | name             |
@@ -117,9 +116,9 @@ Feature: Regular Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name STARTS WITH "Tony"
-      RETURN v.name, v.name =~ "T\\w+\\s?.*" AS b
+      WHERE v.player.name STARTS WITH "Tony"
+      RETURN v.player.name, v.player.name =~ "T\\w+\\s?.*" AS b
       """
     Then the result should be, in any order:
-      | v.name        | b    |
+      | v.player.name | b    |
       | "Tony Parker" | true |

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GroupByValidator.h"
@@ -303,33 +302,32 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
     EXPECT_EQ(std::string(result.message()), "SemanticError: Group `SUM($-.age)' invalid");
   }
   {
-    // yield without group by
     std::string query =
         "GO FROM \"1\" OVER like YIELD $^.person.age AS age, "
         "COUNT(like._dst) AS id ";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `COUNT(like._dst) AS id' is not support in go sentence.");
+              "SyntaxError: Invalid use of aggregating function in yield clause. near "
+              "`$^.person.age AS age, COUNT(like._dst) AS id'");
   }
   {
-    // yield without group by
     std::string query =
         "GO FROM \"1\" OVER like YIELD $^.person.age AS age, "
         "COUNT(like._dst)+1 AS id ";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `(COUNT(like._dst)+1) AS id' is not support in go sentence.");
+              "SyntaxError: Invalid use of aggregating function in yield clause. near "
+              "`$^.person.age AS age, COUNT(like._dst)+1 AS id'");
   }
   {
-    // yield without group by
     std::string query =
         "GO FROM \"1\" OVER like WHERE count(*) + 1 >3 "
         "YIELD $^.person.age AS age, "
         "COUNT(like._dst)+1 AS id ";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `((count(*)+1)>3)', "
-              "not support aggregate function in where sentence.");
+    EXPECT_EQ(
+        std::string(result.message()),
+        "SyntaxError: Invalid use of aggregating function in where clause. near `count(*) + 1 >3'");
   }
   {
     // yield col not in group output

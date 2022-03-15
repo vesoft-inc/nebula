@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_LOGIC_SELECTEXECUTOR_H_
@@ -18,17 +17,32 @@ class SelectExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  void setThenBody(Executor* then) { then_ = DCHECK_NOTNULL(then); }
+  void setThenBody(Executor* then) {
+    then_ = DCHECK_NOTNULL(then);
+  }
 
-  void setElseBody(Executor* els) { else_ = DCHECK_NOTNULL(els); }
+  void setElseBody(Executor* els) {
+    else_ = DCHECK_NOTNULL(els);
+  }
 
-  Executor* thenBody() const { return then_; }
+  Executor* thenBody() const {
+    return then_;
+  }
 
-  Executor* elseBody() const { return else_; }
+  Executor* elseBody() const {
+    return else_;
+  }
+
+  bool condition() const {
+    return condition_;
+  }
 
  private:
   Executor* then_;
   Executor* else_;
+
+  // mark condition value
+  bool condition_{false};
 };
 
 }  // namespace graph

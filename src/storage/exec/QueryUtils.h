@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_QUERYUTILS_H_
@@ -11,6 +10,7 @@
 #include "common/expression/Expression.h"
 #include "common/utils/DefaultValueContext.h"
 #include "storage/CommonUtils.h"
+#include "storage/context/StorageExpressionContext.h"
 #include "storage/query/QueryBaseProcessor.h"
 
 namespace nebula {
@@ -18,6 +18,10 @@ namespace storage {
 
 class QueryUtils final {
  public:
+  static inline bool vTrue(const Value& v) {
+    return v.isBool() && v.getBool();
+  }
+
   enum class ReturnColType : uint16_t {
     kVid,
     kTag,
@@ -58,7 +62,9 @@ class QueryUtils final {
         VLOG(1) << "Fail to read prop " << propName;
         if (field->hasDefault()) {
           DefaultValueContext expCtx;
-          auto expr = field->defaultValue()->clone();
+          ObjectPool pool;
+          auto& exprStr = field->defaultValue();
+          auto expr = Expression::decode(&pool, folly::StringPiece(exprStr.data(), exprStr.size()));
           return Expression::eval(expr, expCtx);
         } else if (field->nullable()) {
           return NullType::__NULL__;
@@ -71,7 +77,7 @@ class QueryUtils final {
       }
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
-    if (field->type() == meta::cpp2::PropertyType::FIXED_STRING) {
+    if (field->type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       const auto& fixedStr = value.getStr();
       return fixedStr.substr(0, fixedStr.find_first_of('\0'));
     }
@@ -164,15 +170,21 @@ class QueryUtils final {
                                    bool isIntId,
                                    RowReader* reader,
                                    const std::vector<PropContext>* props,
-                                   nebula::List& list) {
+                                   nebula::List& list,
+                                   StorageExpressionContext* expCtx = nullptr,
+                                   const std::string& tagName = "") {
     for (const auto& prop : *props) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+        continue;
+      }
+      auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+      NG_RETURN_IF_ERROR(value);
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
-        auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
-        if (!value.ok()) {
-          return value.status();
-        }
-        list.emplace_back(std::move(value).value());
+        list.emplace_back(value.value());
+      }
+      if (prop.filtered_ && expCtx != nullptr) {
+        expCtx->setTagProp(tagName, prop.name_, std::move(value).value());
       }
     }
     return Status::OK();
@@ -183,15 +195,21 @@ class QueryUtils final {
                                  bool isIntId,
                                  RowReader* reader,
                                  const std::vector<PropContext>* props,
-                                 nebula::List& list) {
+                                 nebula::List& list,
+                                 StorageExpressionContext* expCtx = nullptr,
+                                 const std::string& edgeName = "") {
     for (const auto& prop : *props) {
+      if (!(prop.returned_ || (prop.filtered_ && expCtx != nullptr))) {
+        continue;
+      }
+      auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
+      NG_RETURN_IF_ERROR(value);
       if (prop.returned_) {
         VLOG(2) << "Collect prop " << prop.name_;
-        auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
-        if (!value.ok()) {
-          return value.status();
-        }
-        list.emplace_back(std::move(value).value());
+        list.emplace_back(value.value());
+      }
+      if (prop.filtered_ && expCtx != nullptr) {
+        expCtx->setEdgeProp(edgeName, prop.name_, std::move(value).value());
       }
     }
     return Status::OK();

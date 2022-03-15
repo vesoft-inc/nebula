@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/test/ValidatorTestBase.h"
@@ -196,7 +195,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
 //   V
 //   E
 // this will traversal sub-tree [D->E] twice but not matter the Equal result
-// TODO(shylock) maybe need check the toplogy of `Select` and `Loop`
+// TODO(shylock) maybe need check the topology of `Select` and `Loop`
 /*static*/ Status ValidatorTestBase::Eq(const PlanNode *l, const PlanNode *r) {
   auto result = EqSelf(l, r);
   if (!result.ok()) {

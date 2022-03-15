@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <folly/Benchmark.h>
 
@@ -15,9 +14,7 @@ auto simpleQuery = "USE myspace";
 auto complexQuery =
     "GO 2 STEPS FROM 123456789 OVER myedge "
     "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 AND "
-    "alias.prop5 == alias.prop6 YIELD 1 AS first, 2 AS second";
-
-auto qctx = std::make_unique<nebula::graph::QueryContext>();
+    "alias.prop5 == alias.prop6 YIELD 1+1+1+1+1+1+1+1 AS first, 2 AS second";
 
 size_t SimpleQuery(size_t iters, size_t nrThreads) {
   constexpr size_t ops = 500000UL;
@@ -25,6 +22,7 @@ size_t SimpleQuery(size_t iters, size_t nrThreads) {
   auto parse = [&]() {
     auto n = iters * ops;
     for (auto i = 0UL; i < n; i++) {
+      auto qctx = std::make_unique<nebula::graph::QueryContext>();
       // static thread_local GQLParser parser;
       GQLParser parser(qctx.get());
       auto result = parser.parse(simpleQuery);
@@ -49,6 +47,7 @@ size_t ComplexQuery(size_t iters, size_t nrThreads) {
   auto parse = [&]() {
     auto n = iters * ops;
     for (auto i = 0UL; i < n; i++) {
+      auto qctx = std::make_unique<nebula::graph::QueryContext>();
       // static thread_local GQLParser parser;
       GQLParser parser(qctx.get());
       auto result = parser.parse(complexQuery);
@@ -88,11 +87,13 @@ BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 48_thread, 48)
 int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   {
+    auto qctx = std::make_unique<nebula::graph::QueryContext>();
     GQLParser parser(qctx.get());
     auto result = parser.parse(simpleQuery);
     CHECK(result.ok()) << result.status();
   }
   {
+    auto qctx = std::make_unique<nebula::graph::QueryContext>();
     GQLParser parser(qctx.get());
     auto result = parser.parse(complexQuery);
     CHECK(result.ok()) << result.status();

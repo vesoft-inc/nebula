@@ -1,16 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
 
-#include "clients/storage/GeneralStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
@@ -34,7 +34,7 @@ void checkResult(StorageRpcResponse<storage::cpp2::KVGetResponse>& resp, size_t 
 TEST(KVClientTest, SimpleTest) {
   GraphSpaceID spaceId = 1;
   fs::TempDir metaPath("/tmp/KVTest.meta.XXXXXX");
-  fs::TempDir stoagePath("/tmp/KVTest.stoage.XXXXXX");
+  fs::TempDir storagePath("/tmp/KVTest.storage.XXXXXX");
   mock::MockCluster cluster;
   std::string storageName{"127.0.0.1"};
   auto storagePort = network::NetworkUtils::getAvailablePort();
@@ -43,11 +43,21 @@ TEST(KVClientTest, SimpleTest) {
   cluster.startMeta(metaPath.path());
   meta::MetaClientOptions options;
   options.localHost_ = storageAddr;
-  options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient(options);
-  cluster.startStorage(storageAddr, stoagePath.path(), true);
+  auto* metaClient = cluster.metaClient_.get();
+  {
+    LOG(INFO) << "registed " << storageAddr;
+    std::vector<HostAddr> hosts = {storageAddr};
+    auto result = metaClient->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    std::vector<HostAddr> hosts = {storageAddr};
+    nebula::meta::TestUtils::registerHB(cluster.metaKV_.get(), hosts);
+  }
 
-  auto client = cluster.initGeneralStorageClient();
+  cluster.startStorage(storageAddr, storagePath.path());
+  auto client = cluster.initGraphStorageClient();
   // kv interface test
   {
     std::vector<nebula::KeyValue> pairs;

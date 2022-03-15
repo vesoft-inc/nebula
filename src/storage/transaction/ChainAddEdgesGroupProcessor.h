@@ -1,10 +1,10 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINADDEDGESGROUPPROCESSOR_H
+#define STORAGE_TRANSACTION_CHAINADDEDGESGROUPPROCESSOR_H
 
 #include "storage/BaseProcessor.h"
 #include "storage/transaction/ChainBaseProcessor.h"
@@ -32,3 +32,4 @@ class ChainAddEdgesGroupProcessor : public BaseProcessor<cpp2::ExecResponse> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

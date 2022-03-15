@@ -22,6 +22,8 @@
 --stderr_log_file=storaged-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
 --stderrthreshold=2
+# Wether logging files' name contain time stamp.
+--timestamp_in_logfile_name=true
 
 ########## networking ##########
 # Comma separated Meta server addresses
@@ -36,8 +38,6 @@
 --ws_ip=0.0.0.0
 # HTTP service port
 --ws_http_port=19779
-# HTTP2 service port
---ws_h2_port=19780
 # heartbeat with meta service
 --heartbeat_interval_secs=10
 
@@ -94,6 +94,16 @@
 --enable_rocksdb_prefix_filtering=true
 # Whether or not to enable rocksdb's whole key bloom filter, disabled by default.
 --enable_rocksdb_whole_key_filtering=false
+
+############## Key-Value separation ##############
+# Whether or not to enable BlobDB (RocksDB key-value separation support)
+--rocksdb_enable_kv_separation=false
+# RocksDB key value separation threshold in bytes. Values at or above this threshold will be written to blob files during flush or compaction.
+--rocksdb_kv_separation_threshold=100
+# Compression algorithm for blobs, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
+--rocksdb_blob_compression=lz4
+# Whether to garbage collect blobs during compaction
+--rocksdb_enable_blob_garbage_collection=true
 
 ############## rocksdb Options ##############
 # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_test(
     NAME
@@ -38,6 +37,21 @@ nebula_add_test(
         hb_processor_test
     SOURCES
         HBProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        agent_hb_processor_test
+    SOURCES
+        AgentHBProcessorTest.cpp
     OBJECTS
         ${meta_test_deps}
     LIBRARIES
@@ -198,21 +212,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        group_zone_test
-    SOURCES
-        GroupZoneTest.cpp
-    OBJECTS
-        ${meta_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         create_backup_test
     SOURCES
         CreateBackupProcessorTest.cpp
@@ -246,6 +245,21 @@ nebula_add_test(
         list_meta_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        verify_client_version_test
+    SOURCES
+        VerifyClientVersionTest.cpp
     OBJECTS
         ${meta_test_deps}
     LIBRARIES

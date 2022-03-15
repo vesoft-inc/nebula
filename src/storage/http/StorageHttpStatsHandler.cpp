@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/http/StorageHttpStatsHandler.h"
@@ -21,6 +20,7 @@ void StorageHttpStatsHandler::onError(ProxygenError err) noexcept {
   delete this;
 }
 
+// Export the stats of rocksdb
 folly::dynamic StorageHttpStatsHandler::getStats() const {
   auto stats = folly::dynamic::array();
   std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();

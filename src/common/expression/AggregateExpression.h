@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_AGGREGATEEXPRESSION_H_
@@ -43,29 +42,47 @@ class AggregateExpression final : public Expression {
     return AggregateExpression::make(pool_, name_, argCopy, distinct_);
   }
 
-  const std::string& name() const { return name_; }
+  const std::string& name() const {
+    return name_;
+  }
 
-  const Expression* arg() const { return arg_; }
+  const Expression* arg() const {
+    return arg_;
+  }
 
-  Expression* arg() { return arg_; }
+  Expression* arg() {
+    return arg_;
+  }
 
-  void setArg(Expression* arg) { arg_ = arg; }
+  void setArg(Expression* arg) {
+    arg_ = arg;
+  }
 
-  bool distinct() { return distinct_; }
+  bool distinct() {
+    return distinct_;
+  }
 
-  void setDistinct(bool dist) { distinct_ = dist; }
+  void setDistinct(bool dist) {
+    distinct_ = dist;
+  }
 
-  const AggData* aggData() const { return aggData_; }
+  const AggData* aggData() const {
+    return aggData_;
+  }
 
-  AggData* aggData() { return aggData_; }
+  AggData* aggData() {
+    return aggData_;
+  }
 
-  void setAggData(AggData* agg_data) { aggData_ = agg_data; }
+  void setAggData(AggData* agg_data) {
+    aggData_ = agg_data;
+  }
 
  private:
-  explicit AggregateExpression(ObjectPool* pool,
-                               const std::string& name = "",
-                               Expression* arg = nullptr,
-                               bool distinct = false)
+  AggregateExpression(ObjectPool* pool,
+                      const std::string& name = "",
+                      Expression* arg = nullptr,
+                      bool distinct = false)
       : Expression(pool, Kind::kAggregate), name_(name), distinct_(distinct) {
     arg_ = arg;
     auto aggFuncResult = AggFunctionManager::get(name_);

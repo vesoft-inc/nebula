@@ -2,12 +2,11 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 
-from nebula2.common import ttypes
+from nebula3.common import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -573,7 +572,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -590,7 +589,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -607,7 +606,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -624,7 +623,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -641,7 +640,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
 

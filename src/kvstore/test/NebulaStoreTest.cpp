@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -40,8 +39,8 @@ void dump(const std::vector<T>& v) {
 }
 
 std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getHandlers() {
-  auto handlersPool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      1, true /*stats*/);
+  auto handlersPool =
+      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   handlersPool->setNamePrefix("executor");
   handlersPool->start();
   return handlersPool;
@@ -437,7 +436,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   };
 
   LOG(INFO) << "Transfer leader to first copy";
-  // all parttition tranfer leaders to first replica
+  // all partition transfer leaders to first replica
   GraphSpaceID spaceId = 0;
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;
@@ -761,6 +760,78 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   }
 }
 
+TEST(NebulaStoreTest, ReadSnapshotTest) {
+  auto partMan = std::make_unique<MemPartManager>();
+  auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+  // space id : 1 , part id : 0
+  partMan->partsMap_[1][0] = PartHosts();
+
+  VLOG(1) << "Total space num is " << partMan->partsMap_.size()
+          << ", total local partitions num is " << partMan->parts(HostAddr("", 0)).size();
+
+  fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+  std::vector<std::string> paths;
+  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+
+  KVOptions options;
+  options.dataPaths_ = std::move(paths);
+  options.partMan_ = std::move(partMan);
+  HostAddr local = {"", 0};
+  auto store =
+      std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+  store->init();
+  sleep(FLAGS_raft_heartbeat_interval_secs);
+  // put kv
+  {
+    std::vector<std::pair<std::string, std::string>> expected, result;
+    auto atomic = [&]() -> std::string {
+      std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+      for (auto i = 0; i < 20; i++) {
+        auto key = folly::stringPrintf("key_%d", i);
+        auto val = folly::stringPrintf("val_%d", i);
+        batchHolder->put(key.data(), val.data());
+        expected.emplace_back(std::move(key), std::move(val));
+      }
+      return encodeBatchValue(batchHolder->getBatch());
+    };
+
+    folly::Baton<true, std::atomic> baton;
+    auto callback = [&](nebula::cpp2::ErrorCode code) {
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton.post();
+    };
+    store->asyncAtomicOp(1, 0, atomic, callback);
+    baton.wait();
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    std::string prefix("key");
+    const void* snapshot = store->GetSnapshot(1, 0);
+    SCOPE_EXIT {
+      store->ReleaseSnapshot(1, 0, snapshot);
+    };
+    std::vector<KV> data;
+    for (auto i = 20; i < 40; i++) {
+      auto key = folly::stringPrintf("key_%d", i);
+      auto val = folly::stringPrintf("val_%d", i);
+      data.emplace_back(key, val);
+    }
+    folly::Baton<true, std::atomic> baton2;
+    store->asyncMultiPut(1, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton2.post();
+    });
+    baton2.wait();
+    auto ret = store->prefix(1, 0, prefix, &iter, false, snapshot);
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+    while (iter->valid()) {
+      result.emplace_back(iter->key(), iter->val());
+      iter->next();
+    }
+    std::sort(expected.begin(), expected.end());
+    EXPECT_EQ(expected, result);
+  }
+}
+
 TEST(NebulaStoreTest, AtomicOpBatchTest) {
   auto partMan = std::make_unique<MemPartManager>();
   auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
@@ -951,7 +1022,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     if (insertData) {
       std::vector<KV> data;
       for (auto tagId = 0; tagId < 10; tagId++) {
-        data.emplace_back(NebulaKeyUtils::vertexKey(vIdLen, partId, "vertex", tagId),
+        data.emplace_back(NebulaKeyUtils::tagKey(vIdLen, partId, "vertex", tagId),
                           folly::stringPrintf("val_%d", tagId));
       }
       folly::Baton<true, std::atomic> baton;
@@ -963,7 +1034,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     }
 
     {
-      std::string prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, "vertex");
+      std::string prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, "vertex");
       std::unique_ptr<KVIterator> iter;
       auto code = store->prefix(spaceId, partId, prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);

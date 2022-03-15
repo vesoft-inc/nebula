@@ -1,11 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
 #define COMMON_UTILS_INDEXKEYUTILS_H_
+
+#include <cmath>
+#include <cstdint>
 
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
@@ -13,10 +15,9 @@
 #include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
-
 namespace nebula {
 
-using PropertyType = nebula::meta::cpp2::PropertyType;
+using PropertyType = nebula::cpp2::PropertyType;
 
 /**
  * This class supply some utils for index in kvstore.
@@ -51,6 +52,8 @@ class IndexKeyUtils final {
         return Value::Type::DATETIME;
       case PropertyType::GEOGRAPHY:
         return Value::Type::GEOGRAPHY;
+      case PropertyType::DURATION:
+        return Value::Type::DURATION;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -143,7 +146,7 @@ class IndexKeyUtils final {
         return "";
       }
       default:
-        LOG(ERROR) << "Unsupported default value type";
+        LOG(FATAL) << "Unsupported default value type";
     }
     return "";
   }
@@ -183,7 +186,15 @@ class IndexKeyUtils final {
     return raw;
   }
 
-  static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
+  static uint64_t decodeUint64(const folly::StringPiece& raw) {
+    auto val = *reinterpret_cast<const uint64_t*>(raw.data());
+    val = folly::Endian::big(val);
+    return val;
+  }
+
+  static std::string encodeRank(EdgeRanking rank) {
+    return IndexKeyUtils::encodeInt64(rank);
+  }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
     return IndexKeyUtils::decodeInt64(raw);
@@ -198,39 +209,39 @@ class IndexKeyUtils final {
    */
 
   static std::string encodeDouble(double v) {
-    if (v < 0) {
-      /**
-       *   TODO : now, the -(std::numeric_limits<double>::min())
-       *   have a problem of precision overflow. current return value is -nan.
-       */
-      auto* c1 = reinterpret_cast<const char*>(&v);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      v = *reinterpret_cast<const double*>(c2);
+    if (std::isnan(v)) {
+      return std::string(sizeof(double), '\xFF');
+    } else if (v >= 0) {
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      c[0] |= 0x80;
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
+    } else {
+      int64_t* x = reinterpret_cast<int64_t*>(&v);
+      *x = ~(*x);
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
     }
-    auto val = folly::Endian::big(v);
-    auto* c = reinterpret_cast<char*>(&val);
-    c[0] ^= 0x80;
-    std::string raw;
-    raw.reserve(sizeof(double));
-    raw.append(c, sizeof(double));
-    return raw;
   }
 
   static double decodeDouble(const folly::StringPiece& raw) {
-    char* v = const_cast<char*>(raw.data());
-    v[0] ^= 0x80;
-    auto val = *reinterpret_cast<const double*>(v);
+    int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto* c1 = reinterpret_cast<const char*>(&val);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      val = *reinterpret_cast<const double*>(c2);
+      val &= 0x7fffffffffffffff;
+    } else {
+      val = ~val;
     }
-    return val;
+    double ret;
+    ::memcpy(&ret, &val, 8);
+    return ret;
   }
 
   static std::string encodeTime(const nebula::Time& t) {
@@ -300,17 +311,23 @@ class IndexKeyUtils final {
     return buf;
   }
 
-  static std::vector<std::string> encodeGeography(const nebula::Geography& gg) {
-    // TODO(jie): Get index params from meta to construct RegionCoverParams
-    geo::RegionCoverParams rc;
-    // TODO(jie): Get schema meta to know if it's point only
-    geo::GeoIndex geoIndex(rc, false);
+  static std::vector<std::string> encodeGeography(const nebula::Geography& gg,
+                                                  const geo::RegionCoverParams& rc) {
+    geo::GeoIndex geoIndex(rc);
     auto cellIds = geoIndex.indexCells(gg);
     std::vector<std::string> bufs;
+    bufs.reserve(cellIds.size());
     for (auto cellId : cellIds) {
       bufs.emplace_back(encodeUint64(cellId));
     }
     return bufs;
+  }
+
+  // NOTE(jie): The decoded data is not the original Geography data, but the uint64 type S2CellID.
+  // decodeValue() should not call this function, it should turn for the data table instead.
+  // It's only used for tests.
+  static uint64_t decodeGeography(const folly::StringPiece& raw) {
+    return decodeUint64(raw);
   }
 
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
@@ -457,7 +474,7 @@ class IndexKeyUtils final {
   }
 
   static VertexIDSlice getIndexVertexID(size_t vIdLen, const folly::StringPiece& rawKey) {
-    CHECK_GE(rawKey.size(), kVertexIndexLen + vIdLen);
+    CHECK_GE(rawKey.size(), kTagIndexLen + vIdLen);
     auto offset = rawKey.size() - vIdLen;
     return rawKey.subpiece(offset, vIdLen);
   }
@@ -494,8 +511,8 @@ class IndexKeyUtils final {
   /**
    * Generate vertex|edge index key for kv store
    **/
-  static std::vector<std::string> encodeValues(
-      std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static std::vector<std::string> encodeValues(std::vector<Value>&& values,
+                                               const meta::cpp2::IndexItem* indexItem);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
@@ -528,10 +545,16 @@ class IndexKeyUtils final {
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
   static StatusOr<std::vector<std::string>> collectIndexValues(
-      RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+      RowReader* reader,
+      const meta::cpp2::IndexItem* indexItem,
+      const meta::SchemaProviderIf* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
+
+  static StatusOr<Value> readValueWithLatestSche(RowReader* reader,
+                                                 const std::string propName,
+                                                 const meta::SchemaProviderIf* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };

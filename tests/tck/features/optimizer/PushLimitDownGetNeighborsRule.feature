@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Limit down rule
 
   Background:
@@ -10,7 +9,7 @@ Feature: Push Limit down rule
   Scenario: push limit down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY |
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst |
       Limit 2
       """
     Then the result should be, in any order:
@@ -19,7 +18,6 @@ Feature: Push Limit down rule
       | "Luka Doncic"     |
     And the execution plan should be:
       | id | name         | dependencies | operator info  |
-      | 4  | DataCollect  | 5            |                |
       | 5  | Project      | 6            |                |
       | 6  | Limit        | 7            |                |
       | 7  | GetNeighbors | 0            | {"limit": "2"} |
@@ -40,7 +38,6 @@ Feature: Push Limit down rule
       | 1998       |
     And the execution plan should be:
       | id | name         | dependencies | operator info  |
-      | 0  | DataCollect  | 1            |                |
       | 1  | Project      | 2            |                |
       | 2  | Limit        | 3            |                |
       | 3  | GetNeighbors | 4            | {"limit": "7"} |

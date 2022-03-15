@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TEST_MOCKADMINCLIENT_H_
@@ -30,24 +29,26 @@ class MockAdminClient : public AdminClient {
   MOCK_METHOD2(checkPeers, folly::Future<Status>(GraphSpaceID, PartitionID));
   MOCK_METHOD1(getLeaderDist, folly::Future<Status>(HostLeaderMap*));
   MOCK_METHOD3(createSnapshot,
-               folly::Future<StatusOr<cpp2::BackupInfo>>(GraphSpaceID,
-                                                         const std::string&,
-                                                         const HostAddr&));
+               folly::Future<StatusOr<cpp2::HostBackupInfo>>(const std::set<GraphSpaceID>&,
+                                                             const std::string&,
+                                                             const HostAddr&));
   MOCK_METHOD3(dropSnapshot,
-               folly::Future<Status>(GraphSpaceID, const std::string&, const HostAddr&));
+               folly::Future<StatusOr<bool>>(const std::set<GraphSpaceID>&,
+                                             const std::string&,
+                                             const HostAddr&));
   MOCK_METHOD3(blockingWrites,
-               folly::Future<Status>(GraphSpaceID, storage::cpp2::EngineSignType, const HostAddr&));
-  MOCK_METHOD9(addTask,
-               folly::Future<Status>(cpp2::AdminCmd,
-                                     int32_t,
-                                     int32_t,
-                                     GraphSpaceID,
-                                     const std::vector<HostAddr>&,
-                                     const std::vector<std::string>&,
-                                     std::vector<PartitionID>,
-                                     int,
-                                     cpp2::StatsItem*));
-  MOCK_METHOD3(stopTask, folly::Future<Status>(const std::vector<HostAddr>&, int32_t, int32_t));
+               folly::Future<StatusOr<bool>>(const std::set<GraphSpaceID>&,
+                                             storage::cpp2::EngineSignType,
+                                             const HostAddr&));
+  MOCK_METHOD7(addTask,
+               folly::Future<StatusOr<bool>>(cpp2::AdminCmd,
+                                             int32_t,
+                                             int32_t,
+                                             GraphSpaceID,
+                                             const HostAddr&,
+                                             const std::vector<std::string>&,
+                                             std::vector<PartitionID>));
+  MOCK_METHOD3(stopTask, folly::Future<StatusOr<bool>>(const HostAddr&, int32_t, int32_t));
 };
 
 }  // namespace meta

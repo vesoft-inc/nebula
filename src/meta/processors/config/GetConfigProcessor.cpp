@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/GetConfigProcessor.h"
@@ -16,7 +15,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
   do {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+    folly::SharedMutex::ReadHolder holder(LockUtils::lock());
     if (module != cpp2::ConfigModule::ALL) {
       code = getOneConfig(module, name, items);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -35,7 +34,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
   } while (false);
 
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    resp_.set_items(std::move(items));
+    resp_.items_ref() = std::move(items);
   }
   handleErrorCode(code);
   onFinished();
@@ -51,14 +50,14 @@ nebula::cpp2::ErrorCode GetConfigProcessor::getOneConfig(const cpp2::ConfigModul
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_CONFIG_NOT_FOUND;
     }
-    LOG(ERROR) << "Get config " << name
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get config " << name
+              << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
   cpp2::ConfigItem item = MetaKeyUtils::parseConfigValue(nebula::value(ret));
-  item.set_module(module);
-  item.set_name(name);
+  item.module_ref() = module;
+  item.name_ref() = name;
   items.emplace_back(std::move(item));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

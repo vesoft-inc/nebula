@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/OptGroup.h"
@@ -24,7 +23,9 @@ using nebula::graph::SingleDependencyNode;
 namespace nebula {
 namespace opt {
 
-OptGroup *OptGroup::create(OptContext *ctx) { return ctx->objPool()->add(new OptGroup(ctx)); }
+OptGroup *OptGroup::create(OptContext *ctx) {
+  return ctx->objPool()->add(new OptGroup(ctx));
+}
 
 void OptGroup::setUnexplored(const OptRule *rule) {
   auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
@@ -36,12 +37,15 @@ void OptGroup::setUnexplored(const OptRule *rule) {
   }
 }
 
-OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) { DCHECK(ctx != nullptr); }
+OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
+  DCHECK(ctx != nullptr);
+}
 
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   DCHECK(groupNode != nullptr);
   DCHECK(groupNode->group() == this);
   groupNodes_.emplace_back(groupNode);
+  groupNode->node()->updateSymbols();
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
@@ -131,7 +135,9 @@ std::pair<double, const OptGroupNode *> OptGroup::findMinCostGroupNode() const {
   return std::make_pair(minCost, minGroupNode);
 }
 
-double OptGroup::getCost() const { return findMinCostGroupNode().first; }
+double OptGroup::getCost() const {
+  return findMinCostGroupNode().first;
+}
 
 const PlanNode *OptGroup::getPlan() const {
   const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
@@ -182,7 +188,9 @@ Status OptGroupNode::explore(const OptRule *rule) {
   return Status::OK();
 }
 
-double OptGroupNode::getCost() const { return node_->cost(); }
+double OptGroupNode::getCost() const {
+  return node_->cost();
+}
 
 const PlanNode *OptGroupNode::getPlan() const {
   if (node_->kind() == PlanNode::Kind::kSelect) {

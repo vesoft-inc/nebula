@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/LookupValidator.h"
@@ -32,21 +31,28 @@ const LookupSentence* LookupValidator::sentence() const {
   return static_cast<LookupSentence*>(sentence_);
 }
 
-int32_t LookupValidator::schemaId() const { return DCHECK_NOTNULL(lookupCtx_)->schemaId; }
+int32_t LookupValidator::schemaId() const {
+  return DCHECK_NOTNULL(lookupCtx_)->schemaId;
+}
 
-GraphSpaceID LookupValidator::spaceId() const { return DCHECK_NOTNULL(lookupCtx_)->space.id; }
+GraphSpaceID LookupValidator::spaceId() const {
+  return DCHECK_NOTNULL(lookupCtx_)->space.id;
+}
 
-AstContext* LookupValidator::getAstContext() { return lookupCtx_.get(); }
+AstContext* LookupValidator::getAstContext() {
+  return lookupCtx_.get();
+}
 
 Status LookupValidator::validateImpl() {
   lookupCtx_ = getContext<LookupContext>();
 
   NG_RETURN_IF_ERROR(validateFrom());
-  NG_RETURN_IF_ERROR(validateFilter());
+  NG_RETURN_IF_ERROR(validateWhere());
   NG_RETURN_IF_ERROR(validateYield());
   return Status::OK();
 }
 
+// Validate specified schema(tag or edge) from sentence
 Status LookupValidator::validateFrom() {
   auto spaceId = lookupCtx_->space.id;
   auto from = sentence()->from();
@@ -54,22 +60,11 @@ Status LookupValidator::validateFrom() {
   NG_RETURN_IF_ERROR(ret);
   lookupCtx_->isEdge = ret.value().first;
   lookupCtx_->schemaId = ret.value().second;
+  schemaIds_.emplace_back(ret.value().second);
   return Status::OK();
 }
 
-Status LookupValidator::extractSchemaProp() {
-  shared_ptr<const NebulaSchemaProvider> schema;
-  NG_RETURN_IF_ERROR(getSchemaProvider(&schema));
-  for (std::size_t i = 0; i < schema->getNumFields(); ++i) {
-    const auto& propName = schema->getFieldName(i);
-    auto iter = std::find(idxReturnCols_.begin(), idxReturnCols_.end(), propName);
-    if (iter == idxReturnCols_.end()) {
-      idxReturnCols_.emplace_back(propName);
-    }
-  }
-  return Status::OK();
-}
-
+// Build the return properties and the final output column names
 void LookupValidator::extractExprProps() {
   auto addProps = [this](const std::set<folly::StringPiece>& propNames) {
     for (const auto& propName : propNames) {
@@ -100,16 +95,15 @@ void LookupValidator::extractExprProps() {
   lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
 }
 
+// Validate yield clause when lookup on edge.
+// Disable invalid expressions, check schema name, rewrites expression to fit semantic,
+// check type and collect properties.
 Status LookupValidator::validateYieldEdge() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
@@ -125,21 +119,20 @@ Status LookupValidator::validateYieldEdge() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
   }
   return Status::OK();
 }
 
+// Validate yield clause when lookup on tag.
+// Disable invalid expressions, check schema name, rewrites expression to fit semantic,
+// check type and collect properties.
 Status LookupValidator::validateYieldTag() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
@@ -155,42 +148,28 @@ Status LookupValidator::validateYieldTag() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
   }
   return Status::OK();
 }
 
+// Validate yield clause.
 Status LookupValidator::validateYield() {
-  auto pool = qctx_->objPool();
-  auto* newCols = pool->add(new YieldColumns());
-  lookupCtx_->yieldExpr = newCols;
-  if (lookupCtx_->isEdge) {
-    idxReturnCols_.emplace_back(kSrc);
-    idxReturnCols_.emplace_back(kDst);
-    idxReturnCols_.emplace_back(kRank);
-    idxReturnCols_.emplace_back(kType);
-    outputs_.emplace_back(kSrcVID, vidType_);
-    outputs_.emplace_back(kDstVID, vidType_);
-    outputs_.emplace_back(kRanking, Value::Type::INT);
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kSrcVID));
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 1), kDstVID));
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 2), kRanking));
-  } else {
-    idxReturnCols_.emplace_back(kVid);
-    outputs_.emplace_back(kVertexID, vidType_);
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kVertexID));
-  }
-
   auto yieldClause = sentence()->yieldClause();
   if (yieldClause == nullptr) {
-    extractExprProps();
-    return Status::OK();
+    return Status::SemanticError("Missing yield clause.");
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
+  lookupCtx_->yieldExpr = qctx_->objPool()->add(new YieldColumns());
 
   if (lookupCtx_->isEdge) {
+    idxReturnCols_.emplace_back(nebula::kSrc);
+    idxReturnCols_.emplace_back(nebula::kDst);
+    idxReturnCols_.emplace_back(nebula::kRank);
+    idxReturnCols_.emplace_back(nebula::kType);
     NG_RETURN_IF_ERROR(validateYieldEdge());
   } else {
+    idxReturnCols_.emplace_back(nebula::kVid);
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
@@ -203,7 +182,9 @@ Status LookupValidator::validateYield() {
   return Status::OK();
 }
 
-Status LookupValidator::validateFilter() {
+// Validate filter expression.
+// Check text search filter or normal filter, collect properties in filter.
+Status LookupValidator::validateWhere() {
   auto whereClause = sentence()->whereClause();
   if (whereClause == nullptr) {
     return Status::OK();
@@ -224,10 +205,14 @@ Status LookupValidator::validateFilter() {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
-    // Make sure the type of the rewritted filter expr is right
+    // Make sure the type of the rewritten filter expr is right
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
-  NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
+  if (lookupCtx_->isEdge) {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, nullptr, &schemaIds_));
+  } else {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, &schemaIds_));
+  }
   return Status::OK();
 }
 
@@ -246,6 +231,7 @@ StatusOr<Expression*> LookupValidator::handleLogicalExprOperands(LogicalExpressi
   return lExpr;
 }
 
+// Check could filter expression convert to Geo/Index Search.
 StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
   // TODO: Support IN expression push down
   if (ExpressionUtils::isGeoIndexAcceleratedPredicate(expr)) {
@@ -280,6 +266,7 @@ StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
   }
 }
 
+// Check whether relational expression could convert to Index Search.
 Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
   auto* left = expr->left();
   auto* right = expr->right();
@@ -293,7 +280,7 @@ Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
 
   return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
 }
-
+// Check whether geo predicate expression could convert to Geo Index Search.
 Status LookupValidator::checkGeoPredicate(const Expression* expr) const {
   auto checkFunc = [](const FunctionCallExpression* funcExpr) -> Status {
     if (funcExpr->args()->numArgs() < 2) {
@@ -331,6 +318,9 @@ Status LookupValidator::checkGeoPredicate(const Expression* expr) const {
   return Status::OK();
 }
 
+// Rewrite relational expression.
+// Put property expression to left, check schema validity, fold expression,
+// rewrite attribute expression to fit semantic.
 StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
   // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
   // so that LabelAttributeExpr is always on the left
@@ -365,6 +355,9 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
   return expr;
 }
 
+// Rewrite expression of geo search.
+// Put geo expression to left, check validity of geo search, check schema validity, fold expression,
+// rewrite attribute expression to fit semantic.
 StatusOr<Expression*> LookupValidator::rewriteGeoPredicate(Expression* expr) {
   // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
   // so that LabelAttributeExpr is always on the left
@@ -431,18 +424,22 @@ StatusOr<Expression*> LookupValidator::rewriteGeoPredicate(Expression* expr) {
   return geoFuncExpr;
 }
 
+// Check does constant expression could compare to given property.
+// \param expr constant expression
+// \param prop property name
+// \param kind relational expression kind
 StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
                                                       const std::string& prop,
                                                       const ExprKind kind) {
   auto* pool = expr->getObjPool();
-  if (!ExpressionUtils::isEvaluableExpr(expr)) {
+  if (!ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
     return Status::SemanticError("'%s' is not an evaluable expression.", expr->toString().c_str());
   }
   auto schemaMgr = qctx_->schemaMng();
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);
@@ -470,7 +467,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
   // Check prop type
   if (v.type() != SchemaUtil::propTypeToValueType(type)) {
-    // allow diffrent types in the IN expression, such as "abc" IN ["abc"]
+    // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
     }
@@ -478,6 +475,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   return expr;
 }
 
+// Check does test search contains properties search in test search expression
 StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
   auto metaClient = qctx_->getMetaClient();
   auto tsi = metaClient->getFTIndexBySpaceSchemaFromCache(spaceId(), schemaId());
@@ -499,6 +497,7 @@ StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
   return tsName;
 }
 
+// Reverse position of operands in relational expression and keep the origin semantic.
 // Transform (A > B) to (B < A)
 Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
   auto kind = expr->kind();
@@ -532,6 +531,7 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
   return RelationalExpression::makeKind(pool, reversedKind, right->clone(), left->clone());
 }
 
+// reverse geo predicates operands and keep the origin semantic
 Expression* LookupValidator::reverseGeoPredicate(Expression* expr) {
   if (expr->isRelExpr()) {
     auto* relExpr = static_cast<RelationalExpression*>(expr);
@@ -561,6 +561,8 @@ Expression* LookupValidator::reverseGeoPredicate(Expression* expr) {
   }
 }
 
+// Get schema info by schema name in sentence
+// \param provider output schema info
 Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>* provider) const {
   auto from = sentence()->from();
   auto schemaMgr = qctx_->schemaMng();
@@ -578,6 +580,7 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
+// Generate text search filter, check validity and rewrite
 StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
   auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
   NG_RETURN_IF_ERROR(tsRet);

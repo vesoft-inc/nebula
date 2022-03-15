@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_COMMON_H_
@@ -18,15 +17,23 @@
 namespace nebula {
 namespace kvstore {
 
+/**
+ * @brief Wrapper of rocksdb compaction filter function
+ */
 class KVFilter {
  public:
   KVFilter() = default;
   virtual ~KVFilter() = default;
 
   /**
-   * Remove the key in background compaction if return true, otherwise return
-   * false.
-   * */
+   * @brief Whether remove the key during compaction
+   *
+   * @param spaceId
+   * @param key
+   * @param val
+   * @return true Key will not be removed
+   * @return false Key will be removed
+   */
   virtual bool filter(GraphSpaceID spaceId,
                       const folly::StringPiece& key,
                       const folly::StringPiece& val) const = 0;
@@ -36,6 +43,9 @@ using KV = std::pair<std::string, std::string>;
 using KVCallback = folly::Function<void(nebula::cpp2::ErrorCode code)>;
 using NewLeaderCallback = folly::Function<void(HostAddr nLeader)>;
 
+/**
+ * @brief folly::StringPiece to rocksdb::Slice
+ */
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
   return rocksdb::Slice(str.begin(), str.size());
 }

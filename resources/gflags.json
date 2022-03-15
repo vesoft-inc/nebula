@@ -4,7 +4,6 @@
         "v",
         "heartbeat_interval_secs",
         "meta_client_retry_times",
-        "slow_op_threshhold_ms",
         "clean_wal_interval_secs",
         "wal_ttl",
         "clean_wal_interval_secs",
@@ -23,3 +22,4 @@
         "rocksdb_block_based_table_options"
     ]
 }
+

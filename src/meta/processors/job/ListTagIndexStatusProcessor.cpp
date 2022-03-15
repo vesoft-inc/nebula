@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/ListTagIndexStatusProcessor.h"
@@ -15,7 +14,7 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -70,11 +69,11 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
   }
   for (auto& kv : tmp) {
     cpp2::IndexStatus status;
-    status.set_name(std::move(kv.first));
-    status.set_status(apache::thrift::util::enumNameSafe(kv.second));
+    status.name_ref() = std::move(kv.first);
+    status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
     statuses.emplace_back(std::move(status));
   }
-  resp_.set_statuses(std::move(statuses));
+  resp_.statuses_ref() = std::move(statuses);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

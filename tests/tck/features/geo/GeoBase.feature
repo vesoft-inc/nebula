@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Geo base
 
   Background:
@@ -82,12 +81,12 @@ Feature: Geo base
       """
       CREATE EDGE test_2(geo geography DEFAULT ST_GeogFromText("LINESTRING(0 1, 2xxxx"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(point) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(linestring) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
@@ -186,52 +185,52 @@ Feature: Geo base
       FETCH PROP ON any_shape "101","102","103" YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "101"    | "POINT(3 8)"                    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POINT(3 8)"                    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       FETCH PROP ON only_point "201","202","203" YIELD ST_ASText(only_point.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_point.geo) |
-      | "201"    | "POINT(3 8)"              |
+      | ST_ASText(only_point.geo) |
+      | "POINT(3 8)"              |
     When executing query:
       """
       FETCH PROP ON only_linestring "301","302","303" YIELD ST_ASText(only_linestring.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_linestring.geo) |
-      | "302"    | "LINESTRING(3 8, 4.7 73.23)"   |
+      | ST_ASText(only_linestring.geo) |
+      | "LINESTRING(3 8, 4.7 73.23)"   |
     When executing query:
       """
       FETCH PROP ON only_polygon "401","402","403" YIELD ST_ASText(only_polygon.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_polygon.geo)     |
-      | "403"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(only_polygon.geo)     |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       FETCH PROP ON any_shape_edge "201"->"302" YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | any_shape_edge._src | any_shape_edge._dst | any_shape_edge._rank | ST_ASText(any_shape_edge.geo)   |
-      | "201"               | "302"               | 0                    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape_edge.geo)   |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     # Create index on geo column
     When executing query:
       """
-      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo);
+      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo) with (s2_max_level=30, s2_max_cells=8) comment "test";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_point_geo_index ON only_point(geo);
+      CREATE TAG INDEX only_point_geo_index ON only_point(geo) comment "test2";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo);
+      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo) with (s2_max_cells=12) comment "test3";
       """
     Then the execution should be successful
     When executing query:
@@ -241,10 +240,18 @@ Feature: Geo base
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo);
+      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo) with (s2_max_level=23);
       """
     Then the execution should be successful
     And wait 3 seconds
+    # Show create tag index
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX any_shape_geo_index;
+      """
+    Then the result should be, in any order:
+      | Tag Index Name        | Create Tag Index                                                                                                                 |
+      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) WITH (s2_max_level = 30, s2_max_cells = 8) comment \"test\"" |
     # Rebuild the geo index
     When submit a job:
       """
@@ -277,10 +284,10 @@ Feature: Geo base
       LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     And the execution plan should be:
       | id | name             | dependencies | operator info |
       | 2  | Project          | 3            |               |
@@ -291,36 +298,36 @@ Feature: Geo base
       LOOKUP ON only_point YIELD ST_ASText(only_point.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_point.geo) |
-      | "201"    | "POINT(3 8)"              |
+      | ST_ASText(only_point.geo) |
+      | "POINT(3 8)"              |
     When executing query:
       """
       LOOKUP ON only_linestring YIELD ST_ASText(only_linestring.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_linestring.geo) |
-      | "302"    | "LINESTRING(3 8, 4.7 73.23)"   |
+      | ST_ASText(only_linestring.geo) |
+      | "LINESTRING(3 8, 4.7 73.23)"   |
     When executing query:
       """
       LOOKUP ON only_polygon YIELD ST_ASText(only_polygon.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_polygon.geo)     |
-      | "403"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(only_polygon.geo)     |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       LOOKUP ON any_shape_edge YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | ST_ASText(any_shape_edge.geo)   |
-      | "201"  | "302"  | 0       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape_edge.geo)   |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     # Match with geo index
     When executing query:
       """
-      MATCH (v:any_shape) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)                |
+      | ST_ASText(v.any_shape.geo)      |
       | "POINT(3 8)"                    |
       | "LINESTRING(3 8, 4.7 73.23)"    |
       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
@@ -350,80 +357,80 @@ Feature: Geo base
       INSERT EDGE any_shape_edge(geo) VALUES "108"->"408":(ST_GeogFromText("POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))"));
       """
     Then the execution should be successful
-    # Lookup on geo index agagin
+    # Lookup on geo index again
     When executing query:
       """
-      LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);
+      LOOKUP ON any_shape YIELD id(vertex) as id, ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | id    | ST_ASText(any_shape.geo)        |
+      | "101" | "POINT(3 8)"                    |
+      | "102" | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "103" | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "108" | "POINT(72.3 84.6)"              |
     When executing query:
       """
-      LOOKUP ON only_point YIELD ST_ASText(only_point.geo);
+      LOOKUP ON only_point YIELD id(vertex)  as id, ST_ASText(only_point.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_point.geo) |
-      | "201"    | "POINT(3 8)"              |
-      | "208"    | "POINT(0.01 0.01)"        |
+      | id    | ST_ASText(only_point.geo) |
+      | "201" | "POINT(3 8)"              |
+      | "208" | "POINT(0.01 0.01)"        |
     When executing query:
       """
-      LOOKUP ON only_linestring YIELD ST_ASText(only_linestring.geo);
+      LOOKUP ON only_linestring YIELD id(vertex) as id, ST_ASText(only_linestring.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_linestring.geo)   |
-      | "302"    | "LINESTRING(3 8, 4.7 73.23)"     |
-      | "308"    | "LINESTRING(9 9, 8 8, 7 7, 9 9)" |
+      | id    | ST_ASText(only_linestring.geo)   |
+      | "302" | "LINESTRING(3 8, 4.7 73.23)"     |
+      | "308" | "LINESTRING(9 9, 8 8, 7 7, 9 9)" |
     When executing query:
       """
-      LOOKUP ON only_polygon YIELD ST_ASText(only_polygon.geo);
+      LOOKUP ON only_polygon YIELD id(vertex) as id, ST_ASText(only_polygon.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(only_polygon.geo)     |
-      | "403"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "408"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | id    | ST_ASText(only_polygon.geo)     |
+      | "403" | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "408" | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
-      LOOKUP ON any_shape_edge YIELD ST_ASText(any_shape_edge.geo);
+      LOOKUP ON any_shape_edge YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | ST_ASText(any_shape_edge.geo)                                              |
-      | "108"  | "408"  | 0       | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
-      | "201"  | "302"  | 0       | "POLYGON((0 1, 1 2, 2 3, 0 1))"                                            |
+      | src   | dst   | rank | ST_ASText(any_shape_edge.geo)                                              |
+      | "108" | "408" | 0    | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
+      | "201" | "302" | 0    | "POLYGON((0 1, 1 2, 2 3, 0 1))"                                            |
     # Lookup and Yield geo functions
     When executing query:
       """
-      LOOKUP ON any_shape YIELD S2_CellIdFromPoint(any_shape.geo);
+      LOOKUP ON any_shape YIELD id(vertex) as id, S2_CellIdFromPoint(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | S2_CellIdFromPoint(any_shape.geo) |
-      | "101"    | 1166542697063163289               |
-      | "102"    | BAD_DATA                          |
-      | "103"    | BAD_DATA                          |
-      | "108"    | 4987215245349669805               |
+      | id    | S2_CellIdFromPoint(any_shape.geo) |
+      | "101" | 1166542697063163289               |
+      | "102" | BAD_DATA                          |
+      | "103" | BAD_DATA                          |
+      | "108" | 4987215245349669805               |
     When executing query:
       """
-      LOOKUP ON any_shape YIELD S2_CoveringCellIds(any_shape.geo);
+      LOOKUP ON any_shape YIELD id(vertex) as id, S2_CoveringCellIds(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | S2_CoveringCellIds(any_shape.geo)                                                                                                                                        |
-      | "101"    | [1166542697063163289]                                                                                                                                                    |
-      | "102"    | [1167558203395801088, 1279022294173220864, 1315051091192184832, 1351079888211148800, 5039527983027585024, 5062045981164437504, 5174635971848699904, 5183643171103440896] |
-      | "103"    | [1152391494368201343, 1153466862374223872, 1153554823304445952, 1153836298281156608, 1153959443583467520, 1154240918560178176, 1160503736791990272, 1160591697722212352] |
-      | "108"    | [4987215245349669805]                                                                                                                                                    |
+      | id    | S2_CoveringCellIds(any_shape.geo)                                                                                                                                        |
+      | "101" | [1166542697063163289]                                                                                                                                                    |
+      | "102" | [1167558203395801088, 1279022294173220864, 1315051091192184832, 1351079888211148800, 5039527983027585024, 5062045981164437504, 5174635971848699904, 5183643171103440896] |
+      | "103" | [1152391494368201343, 1153466862374223872, 1153554823304445952, 1153836298281156608, 1153959443583467520, 1154240918560178176, 1160503736791990272, 1160591697722212352] |
+      | "108" | [4987215245349669805]                                                                                                                                                    |
     # Lookup with geo predicates which could be index accelerated
     # ST_Intersects
     When profiling query:
       """
-      LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, ST_GeogFromText('POINT(3 8)')) YIELD ST_ASText(any_shape.geo);
+      LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, ST_GeogFromText('POINT(3 8)')) YIELD id(vertex) as id, ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | id    | ST_ASText(any_shape.geo)     |
+      | "101" | "POINT(3 8)"                 |
+      | "102" | "LINESTRING(3 8, 4.7 73.23)" |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -434,29 +441,29 @@ Feature: Geo base
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, ST_GeogFromText('POINT(0 1)')) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, ST_GeogFromText('POINT(4.7 73.23)')) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, ST_Point(72.3, 84.6)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo) |
-      | "108"    | "POINT(72.3 84.6)"       |
+      | ST_ASText(any_shape.geo) |
+      | "POINT(72.3 84.6)"       |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Intersects(ST_Point(72.3, 84.6), any_shape.geo) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo) |
-      | "108"    | "POINT(72.3 84.6)"       |
+      | ST_ASText(any_shape.geo) |
+      | "POINT(72.3 84.6)"       |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, any_shape.geo) YIELD ST_ASText(any_shape.geo);
@@ -475,10 +482,10 @@ Feature: Geo base
     # Match with geo predicate
     When executing query:
       """
-      MATCH (v:any_shape) WHERE ST_Intersects(v.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) WHERE ST_Intersects(v.any_shape.geo, ST_GeogFromText('POINT(3 8)')) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
-      | ST_ASText(v.geo)             |
+      | ST_ASText(v.any_shape.geo)   |
       | "POINT(3 8)"                 |
       | "LINESTRING(3 8, 4.7 73.23)" |
     # ST_Distance
@@ -487,65 +494,65 @@ Feature: Geo base
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) < 1.0 YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) <= 1.0 YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) <= 8909524.383934561 YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) < 8909524.383934561 YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) < 8909524.383934563 YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE 8909524.383934560 > ST_Distance(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE 8909524.3839345630 >= ST_Distance(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8)) > 1.0 YIELD ST_ASText(any_shape.geo);
@@ -562,58 +569,58 @@ Feature: Geo base
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 8909524.383934561) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "POINT(3 8)"                    |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "POINT(3 8)"                    |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100.0) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     # ST_Covers
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Covers(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Covers(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "POINT(3 8)"                 |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "POINT(3 8)"                 |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Covers(ST_GeogFromText('POLYGON((-0.7 3.8,3.6 3.2,1.8 -0.8,-3.4 2.4,-0.7 3.8))'), any_shape.geo) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_CoveredBy(any_shape.geo, ST_GeogFromText('POLYGON((-0.7 3.8,3.6 3.2,1.8 -0.8,-3.4 2.4,-0.7 3.8))')) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | ST_ASText(any_shape.geo)        |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
     # Update vertex with index
     When executing query:
       """
@@ -625,26 +632,26 @@ Feature: Geo base
       FETCH PROP ON any_shape "101" YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo) |
-      | "101"    | "LINESTRING(3 8, 6 16)"  |
+      | ST_ASText(any_shape.geo) |
+      | "LINESTRING(3 8, 6 16)"  |
     When executing query:
       """
       LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "101"    | "LINESTRING(3 8, 6 16)"         |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "LINESTRING(3 8, 6 16)"         |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100.0) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "101"    | "LINESTRING(3 8, 6 16)"      |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "LINESTRING(3 8, 6 16)"      |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     # Update edge with index
     When executing query:
       """
@@ -656,28 +663,28 @@ Feature: Geo base
       FETCH PROP ON any_shape_edge "201"->"302" YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | any_shape_edge._src | any_shape_edge._dst | any_shape_edge._rank | ST_ASText(any_shape_edge.geo) |
-      | "201"               | "302"               | 0                    | "POINT(-1 -1)"                |
+      | ST_ASText(any_shape_edge.geo) |
+      | "POINT(-1 -1)"                |
     When executing query:
       """
       LOOKUP ON any_shape_edge YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | ST_ASText(any_shape_edge.geo)                                              |
-      | "108"  | "408"  | 0       | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
-      | "201"  | "302"  | 0       | "POINT(-1 -1)"                                                             |
+      | ST_ASText(any_shape_edge.geo)                                              |
+      | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
+      | "POINT(-1 -1)"                                                             |
     When executing query:
       """
       LOOKUP ON any_shape_edge WHERE ST_Intersects(any_shape_edge.geo, ST_Point(-1, -1)) YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | ST_ASText(any_shape_edge.geo)                                              |
-      | "108"  | "408"  | 0       | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
-      | "201"  | "302"  | 0       | "POINT(-1 -1)"                                                             |
+      | ST_ASText(any_shape_edge.geo)                                              |
+      | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
+      | "POINT(-1 -1)"                                                             |
     # Delete vertex with index
     When executing query:
       """
-      DELETE VERTEX "101";
+      DELETE VERTEX "101" WITH EDGE;
       """
     Then the execution should be successful
     When executing query:
@@ -685,23 +692,23 @@ Feature: Geo base
       FETCH PROP ON any_shape "101" YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo) |
+      | ST_ASText(any_shape.geo) |
     When executing query:
       """
       LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)        |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)"    |
-      | "103"    | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
-      | "108"    | "POINT(72.3 84.6)"              |
+      | ST_ASText(any_shape.geo)        |
+      | "LINESTRING(3 8, 4.7 73.23)"    |
+      | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
+      | "POINT(72.3 84.6)"              |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Covers(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo)     |
-      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+      | ST_ASText(any_shape.geo)     |
+      | "LINESTRING(3 8, 4.7 73.23)" |
     # Delete edge with index
     When executing query:
       """
@@ -713,20 +720,20 @@ Feature: Geo base
       FETCH PROP ON any_shape_edge "201"->"302" YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | any_shape_edge._src | any_shape_edge._dst | any_shape_edge._rank | ST_ASText(any_shape_edge.geo) |
+      | ST_ASText(any_shape_edge.geo) |
     When executing query:
       """
       LOOKUP ON any_shape_edge YIELD ST_ASText(any_shape_edge.geo);
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | ST_ASText(any_shape_edge.geo)                                              |
-      | "108"  | "408"  | 0       | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
+      | ST_ASText(any_shape_edge.geo)                                              |
+      | "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1 1, 2 2, 0 2, 1 1))" |
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_Intersects(ST_Point(-1, -1), any_shape.geo) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
-      | VertexID | ST_ASText(any_shape.geo) |
+      | ST_ASText(any_shape.geo) |
     # Drop tag index
     When executing query:
       """
@@ -736,7 +743,7 @@ Feature: Geo base
     And wait 3 seconds
     When executing query:
       """
-      LOOKUP ON any_shape;
+      LOOKUP ON any_shape YIELD id(vertex) as id;
       """
     Then a ExecutionError should be raised at runtime: There is no index to use at runtime
     # Drop edge index
@@ -748,7 +755,7 @@ Feature: Geo base
     And wait 3 seconds
     When executing query:
       """
-      LOOKUP ON any_shape_edge;
+      LOOKUP ON any_shape_edge YIELD edge as e;
       """
     Then a ExecutionError should be raised at runtime: There is no index to use at runtime
     # Drop tag

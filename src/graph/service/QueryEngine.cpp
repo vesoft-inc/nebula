@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/service/QueryEngine.h"
@@ -30,11 +29,12 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   metaClient_ = metaClient;
   schemaManager_ = meta::ServerBasedSchemaManager::create(metaClient_);
   indexManager_ = meta::ServerBasedIndexManager::create(metaClient_);
-  storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_);
+  storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_);
   charsetInfo_ = CharsetInfo::instance();
 
-  PlannersRegister::registPlanners();
+  PlannersRegister::registerPlanners();
 
+  // Set default optimizer rules
   std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
   if (FLAGS_enable_optimizer) {
     rulesets.emplace_back(&opt::RuleSet::QueryRules());
@@ -44,6 +44,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   return setupMemoryMonitorThread();
 }
 
+// Create query context and query instance and execute it
 void QueryEngine::execute(RequestContextPtr rctx) {
   auto qctx = std::make_unique<QueryContext>(std::move(rctx),
                                              schemaManager_.get(),

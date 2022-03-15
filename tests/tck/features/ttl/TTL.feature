@@ -390,76 +390,81 @@ Feature: TTLTest
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON person "1";
+      FETCH PROP ON person "1" YIELD vertex as node;
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_ |
+      | node  |
+      | ("1") |
     When executing query:
       """
       FETCH PROP ON person "1" YIELD person.id as id
       """
     Then the result should be, in any order:
-      | VertexID | id |
+      | id    |
+      | EMPTY |
     When executing query:
       """
       FETCH PROP ON * "1" YIELD person.id, career.id
       """
     Then the result should be, in any order:
-      | VertexID | person.id | career.id |
+      | person.id | career.id |
+      | EMPTY     | EMPTY     |
     When executing query:
       """
       FETCH PROP ON person "2" YIELD person.id
       """
     Then the result should be, in any order:
-      | VertexID | person.id |
+      | person.id |
+      | EMPTY     |
     When executing query:
       """
       FETCH PROP ON person "2" YIELD person.id as id
       """
     Then the result should be, in any order:
-      | VertexID | id |
+      | id    |
+      | EMPTY |
     When executing query:
       """
       FETCH PROP ON career "2" YIELD career.id;
       """
     Then the result should be, in any order:
-      | VertexID | career.id |
-      | "2"      | 200       |
+      | career.id |
+      | 200       |
     When executing query:
       """
       FETCH PROP ON * "2" YIELD person.id, career.id
       """
     Then the result should be, in any order:
-      | VertexID | person.id | career.id |
-      | "2"      | EMPTY     | 200       |
+      | person.id | career.id |
+      | EMPTY     | 200       |
     When executing query:
       """
       FETCH PROP ON friend "100"->"1","100"->"2" YIELD friend.id;
       """
     Then the result should be, in any order:
-      | friend._src | friend._dst | friend._rank | friend.id |
-      | "100"       | "1"         | 0            | 100       |
-      | "100"       | "2"         | 0            | 200       |
+      | friend.id |
+      | 100       |
+      | 200       |
     When executing query:
       """
       FETCH PROP ON friend "100"->"1","100"->"2" YIELD friend.id AS id;
       """
     Then the result should be, in any order:
-      | friend._src | friend._dst | friend._rank | id  |
-      | "100"       | "1"         | 0            | 100 |
-      | "100"       | "2"         | 0            | 200 |
+      | id  |
+      | 100 |
+      | 200 |
     When executing query:
       """
       FETCH PROP ON like "100"->"1","100"->"2" YIELD like.id;
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.id |
+      | like.id |
     When executing query:
       """
       FETCH PROP ON like "100"->"1","100"->"2" YIELD like.id AS id;
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | id |
+      | id |
     And drop the used space
 
   Scenario: TTLTest expire time
@@ -478,13 +483,14 @@ Feature: TTLTest
       FETCH PROP ON person "1" YIELD person.age as age;
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "1"      | 20  |
+      | age |
+      | 20  |
     And wait 7 seconds
     When executing query:
       """
       FETCH PROP ON person "1" YIELD person.age as age;
       """
     Then the result should be, in any order:
-      | VertexID | age |
+      | age   |
+      | EMPTY |
     And drop the used space

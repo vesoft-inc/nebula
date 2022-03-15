@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/VariableExpression.h"
@@ -10,12 +9,15 @@
 #include "common/expression/ExprVisitor.h"
 
 namespace nebula {
-const Value& VariableExpression::eval(ExpressionContext& ctx) { return ctx.getVar(var_); }
+const Value& VariableExpression::eval(ExpressionContext& ctx) {
+  return ctx.getVar(var_);
+}
 
-void VariableExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VariableExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 void VariableExpression::writeTo(Encoder& encoder) const {
-  DCHECK(isInner_);
   encoder << kind_;
   encoder << var_;
 }
@@ -56,11 +58,13 @@ std::string VersionedVariableExpression::toString() const {
   std::stringstream out;
   out << "$" << var_;
   if (version_ != nullptr) {
-    out << "{" << version_->toString() << "}";
+    out << "{" << (version_ ? version_->toString() : "") << "}";
   }
   return out.str();
 }
 
-void VersionedVariableExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VersionedVariableExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

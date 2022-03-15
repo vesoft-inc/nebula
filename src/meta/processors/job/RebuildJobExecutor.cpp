@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/RebuildJobExecutor.h"
@@ -10,7 +9,6 @@
 #include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -18,13 +16,15 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace meta {
 
-bool RebuildJobExecutor::check() { return paras_.size() >= 1; }
+bool RebuildJobExecutor::check() {
+  return paras_.size() >= 1;
+}
 
 nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
   // the last value of paras_ is the space name, others are index name
   auto spaceRet = getSpaceIdFromName(paras_.back());
   if (!nebula::ok(spaceRet)) {
-    LOG(ERROR) << "Can't find the space: " << paras_.back();
+    LOG(INFO) << "Can't find the space: " << paras_.back();
     return nebula::error(spaceRet);
   }
   space_ = nebula::value(spaceRet);
@@ -35,8 +35,8 @@ nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
     auto indexKey = MetaKeyUtils::indexIndexKey(space_, paras_[i]);
     auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get indexKey error indexName: " << paras_[i]
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get indexKey error indexName: " << paras_[i]
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
       return retCode;
     }
 
@@ -50,7 +50,7 @@ nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
 nebula::cpp2::ErrorCode RebuildJobExecutor::stop() {
   auto errOrTargetHost = getTargetHost(space_);
   if (!nebula::ok(errOrTargetHost)) {
-    LOG(ERROR) << "Get target host failed";
+    LOG(INFO) << "Get target host failed";
     auto retCode = nebula::error(errOrTargetHost);
     if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
@@ -59,20 +59,21 @@ nebula::cpp2::ErrorCode RebuildJobExecutor::stop() {
   }
 
   auto& hosts = nebula::value(errOrTargetHost);
-  std::vector<folly::Future<Status>> futures;
+  std::vector<folly::Future<StatusOr<bool>>> futures;
   for (auto& host : hosts) {
-    auto future = adminClient_->stopTask({Utils::getAdminAddrFromStoreAddr(host.first)}, jobId_, 0);
+    // Will convert StorageAddr to AdminAddr in AdminClient
+    auto future = adminClient_->stopTask(host.first, jobId_, 0);
     futures.emplace_back(std::move(future));
   }
 
   auto tries = folly::collectAll(std::move(futures)).get();
   if (std::any_of(tries.begin(), tries.end(), [](auto& t) { return t.hasException(); })) {
-    LOG(ERROR) << "RebuildJobExecutor::stop() RPC failure.";
+    LOG(INFO) << "RebuildJobExecutor::stop() RPC failure.";
     return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
   }
   for (const auto& t : tries) {
     if (!t.value().ok()) {
-      LOG(ERROR) << "Stop Build Index Failed";
+      LOG(INFO) << "Stop Build Index Failed";
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }

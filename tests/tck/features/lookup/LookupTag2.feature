@@ -30,31 +30,31 @@ Feature: Test lookup on tag index 2
   Scenario Outline: [tag] simple tag test cases
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 202
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 202 YIELD vertex as node
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE col1 == 200;
+      LOOKUP ON lookup_tag_1 WHERE col1 == 200 YIELD vertex as node;
       """
     Then a SemanticError should be raised at runtime: Expression (col1==200) not supported yet
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 200 OR lookup_tag_1.col5 == 20;
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 200 OR lookup_tag_1.col5 == 20 YIELD vertex as node;
       """
     Then a SemanticError should be raised at runtime: Invalid column: col5
     When executing query:
       """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 300
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 300 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     When executing query:
       """
-      lookup on lookup_tag_1 WHERE lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 201
+      lookup on lookup_tag_1 WHERE lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 201 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario Outline: [tag] scan without hints
@@ -64,9 +64,11 @@ Feature: Test lookup on tag index 2
         lookup_tag_1
       WHERE
         lookup_tag_1.col1 != 200
+      YIELD
+        id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id       |
       | <id_201> |
       | <id_202> |
     When executing query:
@@ -80,9 +82,9 @@ Feature: Test lookup on tag index 2
         lookup_tag_1.col3
       """
     Then the result should be, in any order:
-      | VertexID | col1 | lookup_tag_1.col3 |
-      | <id_201> | 201  | 201               |
-      | <id_202> | 202  | 202               |
+      | col1 | lookup_tag_1.col3 |
+      | 201  | 201               |
+      | 202  | 202               |
     Then drop the used space
 
 # TODO(yee): Test bool expression

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 
@@ -21,9 +20,8 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
   Interims interims;
 
   if (!iter->isGetNeighborsIter()) {
-    return Status::Error("Only accept GetNeighbotsIter.");
+    return Status::Error("Only accept GetNeighborsIter.");
   }
-  VLOG(1) << "Edge size: " << iter->size();
   for (; iter->valid(); iter->next()) {
     auto edgeVal = iter->getEdge();
     if (!edgeVal.isEdge()) {

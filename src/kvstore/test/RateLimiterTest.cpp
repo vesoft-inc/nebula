@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -16,7 +15,7 @@ DECLARE_uint32(snapshot_part_rate_limit);
 namespace nebula {
 namespace kvstore {
 
-TEST(RateLimter, ConsumeLessEqualThanBurst) {
+TEST(RateLimiter, ConsumeLessEqualThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
@@ -28,7 +27,7 @@ TEST(RateLimter, ConsumeLessEqualThanBurst) {
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
-TEST(RateLimter, ConsumeGreaterThanBurst) {
+TEST(RateLimiter, ConsumeGreaterThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
@@ -41,7 +40,7 @@ TEST(RateLimter, ConsumeGreaterThanBurst) {
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
-TEST(RateLimter, RateLessThanBurst) {
+TEST(RateLimiter, RateLessThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;

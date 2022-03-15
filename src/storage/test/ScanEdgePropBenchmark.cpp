@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/stop_watch.h>
@@ -24,7 +23,9 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
   explicit TestSingleEdgeIterator(std::unique_ptr<kvstore::KVIterator> iter)
       : iter_(std::move(iter)) {}
 
-  bool valid() const override { return iter_->valid(); }
+  bool valid() const override {
+    return iter_->valid();
+  }
 
   void next() override {
     do {
@@ -32,15 +33,23 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
     } while (iter_->valid() && !check());
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
  private:
   // return true when the value iter to a valid edge value
-  bool check() { return true; }
+  bool check() {
+    return true;
+  }
 
   std::unique_ptr<kvstore::KVIterator> iter_;
   std::unique_ptr<RowReader> reader_;
@@ -196,7 +205,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       ASSERT_TRUE(code.ok());
       result.mutableList().values.emplace_back(std::move(list));
     }
-    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schmeas: process " << edgeRowCount
+    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schemas: process " << edgeRowCount
                  << " edges takes " << watch.elapsed().count() << " us.";
   }
   {
@@ -246,7 +255,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       result.mutableList().values.emplace_back(std::move(list));
     }
     LOG(WARNING) << "ProcessEdgeProps only RowReaderV2 reset with vector "
-                    "schmeas: process "
+                    "schemas: process "
                  << edgeRowCount << " edges takes " << watch.elapsed().count() << " us.";
   }
 }
@@ -254,12 +263,12 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
 // the parameter pair<int, int> is
 // 1. count of edge schema version,
 // 2. how many edges will be scanned
-INSTANTIATE_TEST_CASE_P(ScanEdgePropBench,
-                        ScanEdgePropBench,
-                        ::testing::Values(std::make_pair(1, 10000),
-                                          std::make_pair(10, 10000),
-                                          std::make_pair(1, 100),
-                                          std::make_pair(10, 100)));
+INSTANTIATE_TEST_SUITE_P(ScanEdgePropBench,
+                         ScanEdgePropBench,
+                         ::testing::Values(std::make_pair(1, 10000),
+                                           std::make_pair(10, 10000),
+                                           std::make_pair(1, 100),
+                                           std::make_pair(10, 100)));
 
 }  // namespace nebula
 

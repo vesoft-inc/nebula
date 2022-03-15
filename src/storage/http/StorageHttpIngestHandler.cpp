@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/http/StorageHttpIngestHandler.h"
@@ -82,7 +81,9 @@ void StorageHttpIngestHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpIngestHandler::requestComplete() noexcept { delete this; }
+void StorageHttpIngestHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service MetaHttpIngestHandler Failed: " << proxygen::getErrorString(error);

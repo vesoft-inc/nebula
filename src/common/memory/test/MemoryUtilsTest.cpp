@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gflags/gflags.h>
@@ -38,7 +37,7 @@ TEST(MemoryHighWatermarkTest, DISABLED_TestHitsHighWatermarkInContainer) {
   ASSERT_TRUE(std::move(status).value());
 }
 
-TEST(MemoryHighWatermarkTest, TestNotHitsHighWatermarkInContainer) {
+TEST(MemoryHighWatermarkTest, DISABLED_TestNotHitsHighWatermarkInContainer) {
   FLAGS_containerized = true;
   FLAGS_system_memory_high_watermark_ratio = 0.99;
   auto status = MemoryUtils::hitsHighWatermark();

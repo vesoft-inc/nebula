@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/match/UnwindClausePlanner.h"
@@ -27,7 +26,8 @@ StatusOr<SubPlan> UnwindClausePlanner::transform(CypherClauseContextBase* clause
 }
 
 Status UnwindClausePlanner::buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan) {
-  auto* newUnwindExpr = MatchSolver::doRewrite(uctx->qctx, *uctx->aliasesUsed, uctx->unwindExpr);
+  auto* newUnwindExpr =
+      MatchSolver::doRewrite(uctx->qctx, uctx->aliasesAvailable, uctx->unwindExpr);
   auto* unwind = Unwind::make(uctx->qctx, nullptr, newUnwindExpr, uctx->alias);
   unwind->setColNames({uctx->alias});
   subPlan.root = unwind;

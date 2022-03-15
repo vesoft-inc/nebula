@@ -1,10 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_GEO_IO_WKB_BYTEORDERDATAIOSTREAM_H
+#define COMMON_GEO_IO_WKB_BYTEORDERDATAIOSTREAM_H
 
 #include <sstream>
 
@@ -22,11 +22,17 @@ class ByteOrderDataInStream {
 
   ~ByteOrderDataInStream() = default;
 
-  std::string str() const { return stream_.str(); }
+  std::string str() const {
+    return stream_.str();
+  }
 
-  void setInput(const std::string& s) { stream_.str(s); }
+  void setInput(const std::string& s) {
+    stream_.str(s);
+  }
 
-  void setByteOrder(ByteOrder order) { byteOrder_ = order; }
+  void setByteOrder(ByteOrder order) {
+    byteOrder_ = order;
+  }
 
   StatusOr<uint8_t> readUint8();
 
@@ -46,9 +52,13 @@ class ByteOrderDataOutStream {
 
   ~ByteOrderDataOutStream() = default;
 
-  std::string str() const { return stream_.str(); }
+  std::string str() const {
+    return stream_.str();
+  }
 
-  void setByteOrder(ByteOrder order) { byteOrder_ = order; }
+  void setByteOrder(ByteOrder order) {
+    byteOrder_ = order;
+  }
 
   void writeUint8(uint8_t v);
 
@@ -64,3 +74,4 @@ class ByteOrderDataOutStream {
 
 }  // namespace geo
 }  // namespace nebula
+#endif

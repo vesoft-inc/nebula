@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SERVICE_GRAPHSERVICE_H_
@@ -33,8 +32,18 @@ class GraphService final : public cpp2::GraphServiceSvIf {
 
   void signout(int64_t /*sessionId*/) override;
 
+  folly::Future<ExecutionResponse> future_executeWithParameter(
+      int64_t sessionId,
+      const std::string& stmt,
+      const std::unordered_map<std::string, Value>& parameterMap) override;
+
   folly::Future<ExecutionResponse> future_execute(int64_t sessionId,
                                                   const std::string& stmt) override;
+
+  folly::Future<std::string> future_executeJsonWithParameter(
+      int64_t sessionId,
+      const std::string& stmt,
+      const std::unordered_map<std::string, Value>& parameterMap) override;
 
   folly::Future<std::string> future_executeJson(int64_t sessionId,
                                                 const std::string& stmt) override;
@@ -42,12 +51,13 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
       const cpp2::VerifyClientVersionReq& req) override;
 
+  std::unique_ptr<meta::MetaClient> metaClient_;
+
  private:
-  bool auth(const std::string& username, const std::string& password);
+  Status auth(const std::string& username, const std::string& password, const HostAddr& clientIp);
 
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
-  std::unique_ptr<meta::MetaClient> metaClient_;
 };
 
 }  // namespace graph

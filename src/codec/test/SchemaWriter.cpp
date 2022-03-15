@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/test/SchemaWriter.h"
@@ -10,8 +9,8 @@
 
 namespace nebula {
 
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       PropertyType type,
@@ -79,6 +78,9 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
     case PropertyType::GEOGRAPHY:
       size = 2 * sizeof(int32_t);  // as same as STRING
       break;
+    case PropertyType::DURATION:
+      size = sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t);
+      break;
     default:
       LOG(FATAL) << "Unknown column type";
   }
@@ -88,8 +90,14 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
     nullFlagPos = numNullableFields_++;
   }
 
-  columns_.emplace_back(
-      name.toString(), type, size, nullable, offset, nullFlagPos, defaultValue, geoShape);
+  columns_.emplace_back(name.toString(),
+                        type,
+                        size,
+                        nullable,
+                        offset,
+                        nullFlagPos,
+                        defaultValue ? defaultValue->encode() : "",
+                        geoShape);
   nameIndex_.emplace(std::make_pair(hash, columns_.size() - 1));
 
   return *this;

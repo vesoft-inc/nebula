@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/FilterExecutor.h"
@@ -25,8 +24,7 @@ folly::Future<Status> FilterExecutor::execute() {
   }
 
   VLOG(2) << "Get input var: " << filter->inputVar()
-          << ", iterator type: " << static_cast<int16_t>(iter->kind())
-          << ", input data size: " << iter->size();
+          << ", iterator type: " << static_cast<int16_t>(iter->kind());
 
   ResultBuilder builder;
   builder.value(result.valuePtr());

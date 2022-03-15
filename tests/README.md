@@ -1,5 +1,4 @@
-Nebula Graph Test Manual
-========================
+# Nebula Graph Test Manual
 
 ## Usage
 
@@ -102,7 +101,7 @@ You can find all nebula test cases in [tck/features](tck/features) and some open
 
 The test cases are organized in feature files and described in gherkin language. The structure of feature file is like following example:
 
-#### Basic Case:
+### Basic Case
 
 ```gherkin
 Feature: Basic match
@@ -134,7 +133,8 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
 ```
 
-#### Case With an Execution Plan:
+### Case With an Execution Plan
+
 ```gherkin
 Scenario: push edge props filter down
   When profiling query:
@@ -165,6 +165,61 @@ The table in `Then` step must have the first header line even if there's no data
 `Background` is the common steps of different scenarios. Scenarios will be executed in parallel.
 
 Note that for cases that contain execution plans, it is mandatory to fill the `id` column.
+
+### Case With a New Nebula Cluster
+
+In some special cases, we need to test in a new nebula cluster.
+
+e.g.
+
+```gherkin
+Feature: Nebula service termination test
+  Scenario: Basic termination test
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged
+    When the cluster was terminated
+    Then no service should still running after 4s
+```
+
+```gherkin
+Feature: Example
+  Scenario: test with disable authorize
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+      """
+      graphd:enable_authorize=false
+      """
+    When executing query:
+      """
+      CREATE USER user1 WITH PASSWORD 'nebula';
+      CREATE SPACE s1(vid_type=int)
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE god on s1 to user1
+      """
+    Then the execution should be successful
+
+  Scenario: test with enable authorize
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+      """
+      graphd:enable_authorize=true
+      """
+    When executing query:
+      """
+      CREATE USER user1 WITH PASSWORD 'nebula';
+      CREATE SPACE s1(vid_type=int)
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE god on s1 to user1
+      """
+    Then an PermissionError should be raised at runtime: No permission to grant/revoke god user.
+```
+
+It would install a new nebula cluster, and create a session to connect this cluster.
 
 ### Format
 

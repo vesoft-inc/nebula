@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_EITHEROR_H_
@@ -117,7 +116,9 @@ class EitherOr {
   static constexpr State convert_to_s = TypeConverter<Args...>::state;
 
  public:
-  virtual ~EitherOr() { destruct(); }
+  virtual ~EitherOr() {
+    destruct();
+  }
 
   /***********************************************
    *
@@ -381,11 +382,17 @@ class EitherOr {
    * State check
    *
    **********************************************/
-  bool isVoid() const { return state_ == State::VOID; }
+  bool isVoid() const {
+    return state_ == State::VOID;
+  }
 
-  bool isLeftType() const { return state_ == State::LEFT_TYPE; }
+  bool isLeftType() const {
+    return state_ == State::LEFT_TYPE;
+  }
 
-  bool isRightType() const { return state_ == State::RIGHT_TYPE; }
+  bool isRightType() const {
+    return state_ == State::RIGHT_TYPE;
+  }
 
   /***********************************************
    *

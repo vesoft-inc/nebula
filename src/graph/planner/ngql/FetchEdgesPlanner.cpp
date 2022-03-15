@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
@@ -13,8 +12,8 @@ std::unique_ptr<FetchEdgesPlanner::EdgeProps> FetchEdgesPlanner::buildEdgeProps(
   const auto &edgePropsMap = fetchCtx_->exprProps.edgeProps();
   for (const auto &edgeProp : edgePropsMap) {
     EdgeProp ep;
-    ep.set_type(edgeProp.first);
-    ep.set_props(std::vector<std::string>(edgeProp.second.begin(), edgeProp.second.end()));
+    ep.type_ref() = edgeProp.first;
+    ep.props_ref() = std::vector<std::string>(edgeProp.second.begin(), edgeProp.second.end());
     eProps->emplace_back(std::move(ep));
   }
   return eProps;

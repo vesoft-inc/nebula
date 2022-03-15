@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/fs/FileUtils.h"
@@ -93,8 +92,8 @@ StatusOr<std::string> FileUtils::readLink(const char* path) {
 }
 
 StatusOr<std::string> FileUtils::realPath(const char* path) {
-  char* buffer = ::realpath(path, NULL);
-  if (buffer == NULL) {
+  char* buffer = ::realpath(path, nullptr);
+  if (buffer == nullptr) {
     return Status::Error("realpath %s: %s", path, ::strerror(errno));
   }
   std::string truePath(buffer);
@@ -199,13 +198,21 @@ int64_t FileUtils::fileLastUpdateTime(const char* path) {
   return st.st_mtime;
 }
 
-bool FileUtils::isStdinTTY() { return isFdTTY(::fileno(stdin)); }
+bool FileUtils::isStdinTTY() {
+  return isFdTTY(::fileno(stdin));
+}
 
-bool FileUtils::isStdoutTTY() { return isFdTTY(::fileno(stdout)); }
+bool FileUtils::isStdoutTTY() {
+  return isFdTTY(::fileno(stdout));
+}
 
-bool FileUtils::isStderrTTY() { return isFdTTY(::fileno(stderr)); }
+bool FileUtils::isStderrTTY() {
+  return isFdTTY(::fileno(stderr));
+}
 
-bool FileUtils::isFdTTY(int fd) { return ::isatty(fd) == 1; }
+bool FileUtils::isFdTTY(int fd) {
+  return ::isatty(fd) == 1;
+}
 
 std::string FileUtils::joinPath(const folly::StringPiece dir, const folly::StringPiece filename) {
   std::string buf;

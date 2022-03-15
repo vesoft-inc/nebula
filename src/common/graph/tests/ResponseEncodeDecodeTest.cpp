@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -16,7 +15,7 @@ namespace nebula {
 
 using serializer = apache::thrift::CompactSerializer;
 
-TEST(ResponseEncodDecodeTest, Basic) {
+TEST(ResponseEncodeDecodeTest, Basic) {
   // auth response
   {
     std::vector<AuthResponse> resps;
@@ -89,7 +88,27 @@ TEST(ResponseEncodDecodeTest, Basic) {
   }
 }
 
-TEST(ResponseEncodDecodeTest, ToJson) {
+TEST(ResponseEncodeDecodeTest, ToJson) {
+  // PlanNodeDescription
+  {
+    // Dummy data
+    PlanNodeDescription pnd;
+    pnd.name = "name";
+    pnd.id = 100;
+    pnd.outputVar = "outputVar";
+    pnd.description = nullptr;
+    pnd.profiles = nullptr;
+    pnd.branchInfo = nullptr;
+    pnd.dependencies = nullptr;
+
+    folly::dynamic jsonObj = pnd.toJson();
+    folly::dynamic expect = folly::dynamic::object();
+    expect.insert("name", "name");
+    expect.insert("id", 100);
+    expect.insert("outputVar", "outputVar");
+
+    ASSERT_EQ(jsonObj, expect);
+  }
   // plan description
   {
     std::vector<PlanDescription> pds;

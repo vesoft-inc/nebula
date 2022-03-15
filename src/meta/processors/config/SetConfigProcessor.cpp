@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/SetConfigProcessor.h"
@@ -17,8 +16,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
   auto name = req.get_item().get_name();
   auto value = req.get_item().get_value();
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-  auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     if (module != cpp2::ConfigModule::ALL) {
       // When we set config of a specified module, check if it exists.
@@ -40,7 +39,11 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     }
 
     if (!data.empty()) {
-      doSyncPutAndUpdate(std::move(data));
+      auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+      LastUpdateTimeMan::update(data, timeInMilliSec);
+      auto ret = doSyncPut(std::move(data));
+      handleErrorCode(ret);
+      onFinished();
       return;
     }
   } while (false);
@@ -60,8 +63,8 @@ nebula::cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& 
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       retCode = nebula::cpp2::ErrorCode::E_CONFIG_NOT_FOUND;
     }
-    LOG(ERROR) << "Set config " << name << " failed, error "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Set config " << name << " failed, error "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

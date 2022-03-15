@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/ColumnExpression.h"
@@ -29,13 +28,17 @@ std::string ColumnExpression::toString() const {
   return out.str();
 }
 
-void ColumnExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void ColumnExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 void ColumnExpression::writeTo(Encoder &encoder) const {
   encoder << kind_;
   encoder << index_;
 }
 
-void ColumnExpression::resetFrom(Decoder &decoder) { index_ = decoder.readValue().getInt(); }
+void ColumnExpression::resetFrom(Decoder &decoder) {
+  index_ = decoder.readValue().getInt();
+}
 
 }  // namespace nebula

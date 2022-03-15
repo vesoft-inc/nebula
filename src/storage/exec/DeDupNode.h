@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_DEDUPNODE_H_
@@ -20,7 +19,7 @@ class DeDupNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
 
-  explicit DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
+  DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
       : resultSet_(resultSet), pos_(pos) {
     IterateNode<T>::name_ = "DedupNode";
   }

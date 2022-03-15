@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/FetchVerticesValidator.h"
 
@@ -12,8 +11,6 @@
 
 namespace nebula {
 namespace graph {
-
-static constexpr char VertexID[] = "VertexID";
 
 Status FetchVerticesValidator::validateImpl() {
   auto *fSentence = static_cast<FetchVerticesSentence *>(sentence_);
@@ -26,6 +23,7 @@ Status FetchVerticesValidator::validateImpl() {
   return Status::OK();
 }
 
+// Check validity of tags specified in sentence
 Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   if (nameLabels == nullptr) {
     // all tag
@@ -33,6 +31,7 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
     NG_RETURN_IF_ERROR(tagStatus);
     for (const auto &tag : tagStatus.value()) {
       tagsSchema_.emplace(tag.first, tag.second);
+      tagIds_.emplace_back(tag.first);
     }
   } else {
     auto labels = nameLabels->labels();
@@ -46,37 +45,28 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
         return Status::SemanticError("no schema found for `%s'", label->c_str());
       }
       tagsSchema_.emplace(tagID, tagSchema);
+      tagIds_.emplace_back(tagID);
     }
   }
   return Status::OK();
 }
 
+// Validate columns of yield clause, rewrites expression to fit its sementic
+// and disable some invalid expression types.
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
-  auto pool = qctx_->objPool();
-  bool noYield = false;
   if (yield == nullptr) {
-    // TODO: compatible with previous version, this will be deprecated in version 3.0.
-    auto *yieldColumns = new YieldColumns();
-    auto *vertex = new YieldColumn(VertexExpression::make(pool), "vertices_");
-    yieldColumns->addColumn(vertex);
-    yield = pool->add(new YieldClause(yieldColumns));
-    noYield = true;
+    return Status::SemanticError("Missing yield clause.");
   }
   fetchCtx_->distinct = yield->isDistinct();
   auto size = yield->columns().size();
-  outputs_.reserve(size + 1);
+  outputs_.reserve(size);
 
+  auto pool = qctx_->objPool();
   auto *newCols = pool->add(new YieldColumns());
-  if (!noYield) {
-    outputs_.emplace_back(VertexID, vidType_);
-    auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
-    newCols->addColumn(vidCol);
-  }
 
   auto &exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
@@ -90,12 +80,8 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
       col->setAlias(col->name());
       col->setExpr(InputPropertyExpression::make(pool, nebula::kVid));
     }
-    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kVertex})) {
-      extractVertexProp(exprProps);
-    }
     newCols->addColumn(col->clone().release());
-
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_));
   }
   if (exprProps.tagProps().empty()) {
     for (const auto &tagSchema : tagsSchema_) {
@@ -117,17 +103,6 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     }
   }
   return Status::OK();
-}
-
-void FetchVerticesValidator::extractVertexProp(ExpressionProps &exprProps) {
-  for (const auto &tagSchema : tagsSchema_) {
-    auto tagID = tagSchema.first;
-    exprProps.insertTagProp(tagID, nebula::kTag);
-    for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
-      const auto propName = tagSchema.second->getFieldName(i);
-      exprProps.insertTagProp(tagID, propName);
-    }
-  }
 }
 
 }  // namespace graph

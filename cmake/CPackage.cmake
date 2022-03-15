@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 #
 
 
@@ -10,7 +9,7 @@ macro(package to_one name home_page scripts_dir)
     set(CPACK_PACKAGE_DESCRIPTION ${name})
     set(CPACK_PACKAGE_CONTACT ${name})
     set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
-    set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
+    set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0")
     set(CPACK_PACKAGE_NAME ${name})
     # set(CPACK_SET_DESTDIR TRUE)
     set(CPACK_PACKAGE_RELOCATABLE ON)
@@ -163,9 +162,11 @@ macro(package to_one name home_page scripts_dir)
     cpack_add_component(storage GROUP storage DEPENDS common)
     cpack_add_component(meta GROUP meta DEPENDS common)
     cpack_add_component(tool GROUP tool)
+    cpack_add_component(nebula-console GROUP nebula-console)
     cpack_add_component_group(common)
     cpack_add_component_group(graph)
     cpack_add_component_group(storage)
     cpack_add_component_group(meta)
     cpack_add_component_group(tool)
+    cpack_add_component_group(nebula-console)
 endmacro()

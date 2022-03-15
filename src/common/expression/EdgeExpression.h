@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_EDGEEXPRESSION_H_
@@ -22,22 +21,32 @@ class EdgeExpression final : public Expression {
   EdgeExpression& operator=(const EdgeExpression& rhs) = delete;
   EdgeExpression& operator=(EdgeExpression&&) = delete;
 
-  static EdgeExpression* make(ObjectPool* pool) { return pool->add(new EdgeExpression(pool)); }
+  static EdgeExpression* make(ObjectPool* pool) {
+    return pool->add(new EdgeExpression(pool));
+  }
 
   const Value& eval(ExpressionContext& ctx) override;
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgeExpression::make(pool_); }
+  Expression* clone() const override {
+    return EdgeExpression::make(pool_);
+  }
 
-  std::string toString() const override { return "EDGE"; }
+  std::string toString() const override {
+    return "EDGE";
+  }
 
-  bool operator==(const Expression& expr) const override { return kind() == expr.kind(); }
+  bool operator==(const Expression& expr) const override {
+    return kind() == expr.kind();
+  }
 
  private:
   explicit EdgeExpression(ObjectPool* pool) : Expression(pool, Kind::kEdge) {}
 
-  void writeTo(Encoder& encoder) const override { encoder << kind(); }
+  void writeTo(Encoder& encoder) const override {
+    encoder << kind();
+  }
 
   void resetFrom(Decoder&) override {}
 

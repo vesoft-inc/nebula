@@ -9,23 +9,23 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD player.name, player.age, player.age > 30
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age | (player.age>30) |
-      | "Boris Diaw" | "Boris Diaw" | 36         | True            |
+    Then the result should be, in any order:
+      | player.name  | player.age | (player.age>30) |
+      | "Boris Diaw" | 36         | True            |
     # without YIELD
     When executing query:
       """
-      FETCH PROP ON player hash('Boris Diaw')
+      FETCH PROP ON player hash('Boris Diaw') YIELD vertex as node
       """
     Then the result should be, in any order:
-      | vertices_                                             |
+      | node                                                  |
       | (hash('Boris Diaw'):player{age:36,name:"Boris Diaw"}) |
     # Fetch prop on not existing vertex
     When executing query:
@@ -33,7 +33,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player hash('NON EXIST VERTEX ID') yield player.name
       """
     Then the result should be, in any order:
-      | VertexID | player.name |
+      | player.name |
     # work with ORDER BY
     When executing query:
       """
@@ -41,65 +41,65 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player $var.id YIELD player.name as name, player.age |
       ORDER BY $-.name
       """
-    Then the result should be, in order, and the columns 0 should be hashed:
-      | VertexID      | name          | player.age |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         |
-      | "Tony Parker" | "Tony Parker" | 36         |
+    Then the result should be, in any order:
+      | name          | player.age |
+      | "Tim Duncan"  | 42         |
+      | "Tony Parker" | 36         |
     # works with DISTINCT
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw'), hash('Boris Diaw') YIELD DISTINCT player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw'), hash('Boris Diaw') YIELD DISTINCT player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.age |
-      | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.age |
+      | 36         |
 
   Scenario: Fetch prop on multiple tags
     When executing query:
       """
       FETCH PROP ON bachelor, team, player hash("Tim Duncan"), hash("Boris Diaw") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age | team.name | bachelor.name | bachelor.speciality |
-      | "Boris Diaw" | "Boris Diaw" | 36         | EMPTY     | EMPTY         | EMPTY               |
-      | "Tim Duncan" | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order, with relax comparison:
+      | player.name  | player.age | team.name | bachelor.name | bachelor.speciality |
+      | "Boris Diaw" | 36         | EMPTY     | EMPTY         | EMPTY               |
+      | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
       FETCH PROP ON player, team hash("Tim Duncan"),hash("Boris Diaw") YIELD player.name, team.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | team.name |
-      | "Boris Diaw" | "Boris Diaw" | EMPTY     |
-      | "Tim Duncan" | "Tim Duncan" | EMPTY     |
+    Then the result should be, in any order:
+      | player.name  | team.name |
+      | "Boris Diaw" | EMPTY     |
+      | "Tim Duncan" | EMPTY     |
     When executing query:
       """
       FETCH PROP ON player, team hash("Boris Diaw"),hash("Boris Diaw") YIELD player.name, team.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | team.name |
-      | "Boris Diaw" | "Boris Diaw" | EMPTY     |
-      | "Boris Diaw" | "Boris Diaw" | EMPTY     |
+    Then the result should be, in any order:
+      | player.name  | team.name |
+      | "Boris Diaw" | EMPTY     |
+      | "Boris Diaw" | EMPTY     |
     When executing query:
       """
       FETCH PROP ON team, player, bachelor hash("Boris Diaw") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age | team.name | bachelor.name | bachelor.speciality |
-      | "Boris Diaw" | "Boris Diaw" | 36         | EMPTY     | EMPTY         | EMPTY               |
+    Then the result should be, in any order:
+      | player.name  | player.age | team.name | bachelor.name | bachelor.speciality |
+      | "Boris Diaw" | 36         | EMPTY     | EMPTY         | EMPTY               |
     When executing query:
       """
       FETCH PROP ON player, team, bachelor hash("Tim Duncan") YIELD player.name, team.name, bachelor.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | team.name | bachelor.name |
-      | "Tim Duncan" | "Tim Duncan" | EMPTY     | "Tim Duncan"  |
+    Then the result should be, in any order:
+      | player.name  | team.name | bachelor.name |
+      | "Tim Duncan" | EMPTY     | "Tim Duncan"  |
 
   Scenario: Fetch from pipe
     When executing query:
@@ -107,10 +107,10 @@ Feature: Fetch Int Vid Vertices
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id |
       FETCH PROP ON player $-.id YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         |
+    Then the result should be, in any order:
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
+      | "Tim Duncan"  | 42         |
     # empty input
     When executing query:
       """
@@ -118,7 +118,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player $-.id yield player.name
       """
     Then the result should be, in any order:
-      | VertexID | player.name |
+      | player.name |
     When executing query:
       """
       GO FROM hash('NON EXIST VERTEX ID') over serve YIELD serve._dst as id, serve.start_year as start |
@@ -126,55 +126,55 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player $-.id yield player.name
       """
     Then the result should be, in any order:
-      | VertexID | player.name |
+      | player.name |
     # Fetch prop on multi tags of vertices from pipe
     When executing query:
       """
       GO FROM hash("Boris Diaw") over like YIELD like._dst as id |
       FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
-      | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
+    Then the result should be, in any order:
+      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
+      | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
     When executing query:
       """
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id |
       FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
-      | "Tony Parker" | "Tony Parker" | 36         | EMPTY         | EMPTY               |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | player.name   | player.age | bachelor.name | bachelor.speciality |
+      | "Tony Parker" | 36         | EMPTY         | EMPTY               |
+      | "Tim Duncan"  | 42         | "Tim Duncan"  | "psychology"        |
 
   Scenario: Fetch Vertices works with variable.
     When executing query:
       """
       $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         |
+    Then the result should be, in any order:
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
+      | "Tim Duncan"  | 42         |
     # Fetch prop on multi tags of vertices from variable
     When executing query:
       """
       $var = GO FROM hash("Boris Diaw") over like YIELD like._dst as id;
       FETCH PROP ON player, team, bachelor $var.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
-      | "Tim Duncan"  | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
-      | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
+    Then the result should be, in any order:
+      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
+      | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
     # Fetch prop on * from variable
     When executing query:
       """
       $var = GO FROM hash("Boris Diaw") over like YIELD like._dst as id; FETCH PROP ON * $var.id YIELD player.name, team.name, bachelor.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | team.name | bachelor.name |
-      | "Tony Parker" | "Tony Parker" | EMPTY     | EMPTY         |
-      | "Tim Duncan"  | "Tim Duncan"  | EMPTY     | "Tim Duncan"  |
+    Then the result should be, in any order:
+      | player.name   | team.name | bachelor.name |
+      | "Tony Parker" | EMPTY     | EMPTY         |
+      | "Tim Duncan"  | EMPTY     | "Tim Duncan"  |
 
   @skip
   Scenario: Fetch Vertices works with uuid() and YIELD
@@ -183,16 +183,16 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player uuid('Boris Diaw') YIELD player.name, player.age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID             | player.name  | player.age |
-      | -7391649757168799460 | "Boris Diaw" | 36         |
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
     # without YIELD
     When executing query:
       """
       FETCH PROP ON player uuid('Boris Diaw')
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID             | player.name  | player.age |
-      | -7391649757168799460 | "Boris Diaw" | 36         |
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
 
   Scenario: Fetch prop on *
     # on not existing vertex
@@ -201,65 +201,65 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON * hash('NON EXIST VERTEX ID') yield player.name
       """
     Then the result should be, in any order:
-      | VertexID | player.name |
+      | player.name |
     When executing query:
       """
-      FETCH PROP ON * hash('NON EXIST VERTEX ID')
+      FETCH PROP ON * hash('NON EXIST VERTEX ID') YIELD vertex as node
       """
     Then the result should be, in any order:
-      | vertices_ |
+      | node |
     # on existing vertex
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw') yield player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
     # on multiple vertices
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw'), hash('Boris Diaw') yield player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
+      | "Boris Diaw" | 36         |
     When executing query:
       """
       FETCH PROP ON * hash('Tim Duncan'), hash('Boris Diaw') yield player.name, bachelor.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | bachelor.name |
-      | "Boris Diaw" | "Boris Diaw" | EMPTY         |
-      | "Tim Duncan" | "Tim Duncan" | "Tim Duncan"  |
+    Then the result should be, in any order:
+      | player.name  | bachelor.name |
+      | "Boris Diaw" | EMPTY         |
+      | "Tim Duncan" | "Tim Duncan"  |
     # from pipe
     When executing query:
       """
       YIELD hash('Boris Diaw') as id | FETCH PROP ON * $-.id yield player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Boris Diaw" | 36         |
     When executing query:
       """
       YIELD hash('Tim Duncan') as id | FETCH PROP ON * $-.id yield player.name, player.age, bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan" | 42         | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | player.name  | player.age | bachelor.name | bachelor.speciality |
+      | "Tim Duncan" | 42         | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      FETCH PROP ON * hash('Tim Duncan')
+      FETCH PROP ON * hash('Tim Duncan') YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_                      |
+      | node                           |
       | ("Tim Duncan":player:bachelor) |
 
   Scenario: Fetch and Yield id(v)
     When executing query:
       """
-      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') | YIELD id($-.vertices_) as id
+      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') YIELD vertex as node | YIELD id($-.node) as id
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | id            |
@@ -269,11 +269,11 @@ Feature: Fetch Int Vid Vertices
   Scenario: Fetch vertices and then GO
     When executing query:
       """
-      FETCH PROP ON player hash('Tony Parker') YIELD player.name as Name |
-      GO FROM $-.VertexID OVER like
+      FETCH PROP ON player hash('Tony Parker') YIELD player.name as Name, id(vertex) as id |
+      GO FROM $-.id OVER like YIELD dst(edge) as dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | like._dst           |
+      | dst                 |
       | "LaMarcus Aldridge" |
       | "Manu Ginobili"     |
       | "Tim Duncan"        |
@@ -330,10 +330,10 @@ Feature: Fetch Int Vid Vertices
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id, like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
       """
     Then a SemanticError should be raised at runtime:
-    # only constant list or single colume of data is allowed in piped FETCH clause
+    # only constant list or single column of data is allowed in piped FETCH clause
     When executing query:
       """
-      GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst;
+      GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst YIELD vertex as node;
       """
     Then a SyntaxError should be raised at runtime:
 
@@ -346,7 +346,7 @@ Feature: Fetch Int Vid Vertices
     # $- is not supported
     When executing query:
       """
-      GO FROM hash('NON EXIST VERTEX ID') OVER serve | FETCH PROP ON team $-
+      GO FROM hash('NON EXIST VERTEX ID') OVER serve YIELD dst(edge) as id | FETCH PROP ON team $- YIELD vertex as node
       """
     Then a SyntaxError should be raised at runtime:
 
@@ -355,64 +355,64 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex)
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
-      | VertexID     | id(VERTEX)   |
-      | "Boris Diaw" | "Boris Diaw" |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   |
+      | "Boris Diaw" |
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
-      | VertexID     | id(VERTEX)   | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   | player.age |
+      | "Boris Diaw" | 36         |
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age, vertex as node
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
-      | VertexID     | id(VERTEX)   | player.age | node                                             |
-      | "Boris Diaw" | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   | player.age | node                                             |
+      | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD vertex as node
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | node                                             |
-      | "Boris Diaw" | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    Then the result should be, in any order:
+      | node                                             |
+      | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
     When executing query:
       """
       FETCH PROP ON * hash("Tim Duncan") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality, vertex as node
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | node                                                                                                        |
-      | "Tim Duncan" | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    Then the result should be, in any order:
+      | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | node                                                                                                        |
+      | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
       FETCH PROP ON * $-.id YIELD VERTEX as node
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID        | node                                                      |
-      | "Manu Ginobili" | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
-      | "Tony Parker"   | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+    Then the result should be, in any order:
+      | node                                                      |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
     When executing query:
       """
       FETCH PROP ON * hash('NON EXIST VERTEX ID'), hash('Boris Diaw') yield player.name, id(vertex)
       """
-    Then the result should be, in any order, and the columns 0, 2 should be hashed:
-      | VertexID     | player.name  | id(VERTEX)   |
-      | "Boris Diaw" | "Boris Diaw" | "Boris Diaw" |
+    Then the result should be, in any order, and the columns 1 should be hashed:
+      | player.name  | id(VERTEX)   |
+      | "Boris Diaw" | "Boris Diaw" |
     When executing query:
       """
       FETCH PROP ON player hash('Tim Duncan') YIELD  id(vertex), properties(vertex).name as name, properties(vertex)
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
-      | VertexID     | id(VERTEX)   | name         | properties(VERTEX)            |
-      | "Tim Duncan" | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   | name         | properties(VERTEX)            |
+      | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
-      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tags_, properties(vertex) as props
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
-      | VertexID     | id(VERTEX)   | keys                          | tagss                  | props                                                   |
-      | "Tim Duncan" | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   | keys                          | tags_                  | props                                                   |
+      | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

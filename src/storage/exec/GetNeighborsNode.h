@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_GETNEIGHBORSNODE_H_
@@ -83,7 +82,12 @@ class GetNeighborsNode : public QueryNode<VertexID> {
       row[1].setList(agg->mutableResult().moveList());
     }
 
-    resultDataSet_->rows.emplace_back(std::move(row));
+    // only set filterInvalidResultOut = true in TagOnly mode
+    // so if it it an edge, this test is always true
+    if (!context_->filterInvalidResultOut || context_->resultStat_ == ResultStatus::NORMAL) {
+      resultDataSet_->rows.emplace_back(std::move(row));
+    }
+
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
@@ -91,6 +95,9 @@ class GetNeighborsNode : public QueryNode<VertexID> {
   GetNeighborsNode() = default;
 
   virtual nebula::cpp2::ErrorCode iterateEdges(std::vector<Value>& row) {
+    if (edgeContext_->propContexts_.empty()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     int64_t edgeRowCount = 0;
     nebula::List list;
     for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {

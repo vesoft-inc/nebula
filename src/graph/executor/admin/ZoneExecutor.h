@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_ADMIN_ZONEEXECUTOR_H_
@@ -12,10 +11,18 @@
 namespace nebula {
 namespace graph {
 
-class AddZoneExecutor final : public Executor {
+class MergeZoneExecutor final : public Executor {
  public:
-  AddZoneExecutor(const PlanNode *node, QueryContext *qctx)
-      : Executor("AddZoneExecutor", node, qctx) {}
+  MergeZoneExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("MergeZoneExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
+class RenameZoneExecutor final : public Executor {
+ public:
+  RenameZoneExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("RenameZoneExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };
@@ -28,6 +35,14 @@ class DropZoneExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
+class DivideZoneExecutor final : public Executor {
+ public:
+  DivideZoneExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DivideZoneExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
 class DescribeZoneExecutor final : public Executor {
  public:
   DescribeZoneExecutor(const PlanNode *node, QueryContext *qctx)
@@ -36,18 +51,10 @@ class DescribeZoneExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
-class AddHostIntoZoneExecutor final : public Executor {
+class AddHostsIntoZoneExecutor final : public Executor {
  public:
-  AddHostIntoZoneExecutor(const PlanNode *node, QueryContext *qctx)
-      : Executor("AddHostIntoZoneExecutor", node, qctx) {}
-
-  folly::Future<Status> execute() override;
-};
-
-class DropHostFromZoneExecutor final : public Executor {
- public:
-  DropHostFromZoneExecutor(const PlanNode *node, QueryContext *qctx)
-      : Executor("DropHostFromZoneExecutor", node, qctx) {}
+  AddHostsIntoZoneExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("AddHostsIntoZoneExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

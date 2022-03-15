@@ -1,13 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/InternalStorageServiceHandler.h"
 
-#include "storage/transaction/ChainAddEdgesProcessorRemote.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorRemote.h"
+#include "storage/transaction/ChainAddEdgesRemoteProcessor.h"
+#include "storage/transaction/ChainDeleteEdgesRemoteProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeRemoteProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -21,13 +21,19 @@ InternalStorageServiceHandler::InternalStorageServiceHandler(StorageEnv* env) : 
 
 folly::Future<cpp2::ExecResponse> InternalStorageServiceHandler::future_chainAddEdges(
     const cpp2::ChainAddEdgesRequest& req) {
-  auto* processor = ChainAddEdgesProcessorRemote::instance(env_);
+  auto* processor = ChainAddEdgesRemoteProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::UpdateResponse> InternalStorageServiceHandler::future_chainUpdateEdge(
     const cpp2::ChainUpdateEdgeRequest& req) {
-  auto* processor = ChainUpdateEdgeProcessorRemote::instance(env_);
+  auto* processor = ChainUpdateEdgeRemoteProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse> InternalStorageServiceHandler::future_chainDeleteEdges(
+    const cpp2::ChainDeleteEdgesRequest& req) {
+  auto* processor = ChainDeleteEdgesRemoteProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 

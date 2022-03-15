@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -59,7 +58,7 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
     data.clear();
     for (const auto& vertex : part.second) {
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, part.first, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, part.first, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;
@@ -116,30 +115,30 @@ TEST(UpdateVertexTest, No_Filter_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 45
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& val1 = *ConstantExpression::make(pool, 45L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string col4new("China");
   const auto& val2 = *ConstantExpression::make(pool, col4new);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -155,8 +154,8 @@ TEST(UpdateVertexTest, No_Filter_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -185,7 +184,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -218,12 +217,12 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build filter...";
   // left int:  1.startYear = 1997
@@ -235,26 +234,26 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "endYear");
   auto* priExp2 = ConstantExpression::make(pool, 2017L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& val1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string col4new("China");
   const auto& val2 = *ConstantExpression::make(pool, col4new);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   {
@@ -271,8 +270,8 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(false);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = false;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -304,7 +303,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -337,30 +336,30 @@ TEST(UpdateVertexTest, Insertable_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -377,8 +376,8 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -407,7 +406,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -440,28 +439,28 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
   // int: player.birth = 1997 invalid
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("birth");
+  uProp2.name_ref() = "birth";
   const auto& uVal2 = *ConstantExpression::make(pool, 1997L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age
@@ -473,9 +472,9 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -488,7 +487,7 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -520,12 +519,12 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build filter...";
   // left int:  1.startYear = 1997
@@ -538,27 +537,27 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "birth");
   auto* priExp2 = ConstantExpression::make(pool, 1990L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // string: player.country= America
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string colnew("China");
   const auto& uVal2 = *ConstantExpression::make(pool, colnew);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -573,9 +572,9 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -588,7 +587,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -621,30 +620,30 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build filter...";
   // filter is valid, but filter value is false
@@ -659,7 +658,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
   // left AND right is false
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -676,8 +675,8 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -705,7 +704,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -738,7 +737,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
   auto partId = std::hash<std::string>()("Lonzo Ball") % parts + 1;
   VertexID vertexId("Lonzo Ball");
-  auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertexId, 1);
+  auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertexId, 1);
   std::vector<kvstore::KV> data;
   data.emplace_back(std::make_pair(key, ""));
   folly::Baton<> baton;
@@ -750,20 +749,20 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 23
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 23L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -771,8 +770,8 @@ TEST(UpdateVertexTest, CorruptDataTest) {
   const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "country");
   tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -806,29 +805,29 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 45
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 45L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string colnew("China");
   const auto& uVal2 = *ConstantExpression::make(pool, colnew);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -843,9 +842,9 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -881,31 +880,31 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim") % parts + 1;
   VertexID vertexId("Tim");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: 1.name = Tim
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string col1new("Tim");
   const auto& uVal1 = *ConstantExpression::make(pool, col1new);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& uVal2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -922,9 +921,9 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(true);
+  req.insertable_ref() = true;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -955,7 +954,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -991,40 +990,40 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: 1.name = Tim Duncan
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string col1new("Tim Duncan");
   const auto& uVal1 = *ConstantExpression::make(pool, col1new);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // int: 1.age = 50L
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& uVal2 = *ConstantExpression::make(pool, 50L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
 
   // string: player.country= China
   cpp2::UpdatedProp uProp3;
-  uProp3.set_name("country");
+  uProp3.name_ref() = "country";
   std::string col3new("China");
   const auto& uVal3 = *ConstantExpression::make(pool, col3new);
-  uProp3.set_value(Expression::encode(uVal3));
+  uProp3.value_ref() = Expression::encode(uVal3);
   updatedProps.emplace_back(uProp3);
 
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1041,9 +1040,9 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(true);
+  req.insertable_ref() = true;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -1073,10 +1072,10 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
-  // Get player from kvstore directly, ttl expired data can be readed
+  // Get player from kvstore directly, ttl expired data can be readded
   // First record is inserted record data
   // Second record is expired ttl data
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1113,9 +1112,9 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ(1, count);
 }
 
-// upsert, insert faild
+// upsert, insert failed
 // age filed has not default value and not nullable, not in set clause
-TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
+TEST(UpdateVertexTest, Insertable_No_Default_Test) {
   fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
@@ -1132,21 +1131,21 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   LOG(INFO) << "Build yield...";
@@ -1159,8 +1158,8 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -1192,30 +1191,30 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = $^.player.career
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *SourcePropertyExpression::make(pool, "1", "career");
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age
@@ -1229,8 +1228,8 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -1257,7 +1256,7 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[4].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1289,24 +1288,24 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // int: player.age = $^.team.career
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   // value is another tag expression
   const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
-  uProp1.set_value(Expression::encode(val2));
+  uProp1.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1316,8 +1315,8 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1329,7 +1328,7 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1359,24 +1358,24 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // int: player.age = $^.team.career
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   // value is another tag expression
   const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
-  uProp1.set_value(Expression::encode(val2));
+  uProp1.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1386,8 +1385,8 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(true);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = true;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1399,7 +1398,7 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1429,23 +1428,23 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: player.country_ = 2011(value int)
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("country");
+  uProp1.name_ref() = "country";
   const auto& uVal1 = *ConstantExpression::make(pool, 2011L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1455,8 +1454,8 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(true);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = true;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1468,7 +1467,7 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);

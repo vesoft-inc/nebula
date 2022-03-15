@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
@@ -20,9 +19,13 @@ class FindPathValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  AstContext* getAstContext() override { return pathCtx_.get(); }
+  AstContext* getAstContext() override {
+    return pathCtx_.get();
+  }
 
   Status validateWhere(WhereClause* where);
+
+  Status validateYield(YieldClause* yield);
 
  private:
   std::unique_ptr<PathContext> pathCtx_;

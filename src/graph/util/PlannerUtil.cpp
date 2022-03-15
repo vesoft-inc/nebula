@@ -1,8 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/PlannerUtil.h"
 
@@ -10,7 +8,6 @@
 #include "common/expression/ColumnExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {

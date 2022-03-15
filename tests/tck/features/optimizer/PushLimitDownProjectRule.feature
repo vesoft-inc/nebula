@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Limit down project rule
 
   Background:
@@ -11,7 +10,7 @@ Feature: Push Limit down project rule
     When profiling query:
       """
       MATCH p=(v:player)-[]->(n)
-      WHERE id(v)=="Tim Duncan" and n.age>30
+      WHERE id(v)=="Tim Duncan" and n.player.age>30
       RETURN p LIMIT 100
       """
     Then the result should be, in any order:
@@ -23,18 +22,12 @@ Feature: Push Limit down project rule
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                 |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                     |
     And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 18 | DataCollect  | 26           |               |
-      | 26 | Project      | 25           |               |
-      | 25 | Limit        | 20           |               |
-      | 20 | Filter       | 13           |               |
-      | 13 | Project      | 12           |               |
-      | 12 | InnerJoin    | 11           |               |
-      | 11 | Project      | 22           |               |
-      | 22 | GetVertices  | 7            |               |
-      | 7  | Filter       | 6            |               |
-      | 6  | Project      | 5            |               |
-      | 5  | Filter       | 24           |               |
-      | 24 | GetNeighbors | 1            |               |
-      | 1  | PassThrough  | 0            |               |
-      | 0  | Start        |              |               |
+      | id | name           | dependencies | operator info |
+      | 19 | Project        | 16           |               |
+      | 16 | Limit          | 11           |               |
+      | 11 | Filter         | 4            |               |
+      | 4  | AppendVertices | 3            |               |
+      | 3  | Traverse       | 2            |               |
+      | 2  | Dedup          | 1            |               |
+      | 1  | PassThrough    | 0            |               |
+      | 0  | Start          |              |               |

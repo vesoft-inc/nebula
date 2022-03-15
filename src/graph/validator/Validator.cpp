@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/Validator.h"
@@ -9,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/function/FunctionManager.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -16,7 +16,6 @@
 #include "graph/validator/AdminJobValidator.h"
 #include "graph/validator/AdminValidator.h"
 #include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/BalanceValidator.h"
 #include "graph/validator/DownloadValidator.h"
 #include "graph/validator/ExplainValidator.h"
 #include "graph/validator/FetchEdgesValidator.h"
@@ -50,6 +49,7 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
       qctx_(DCHECK_NOTNULL(qctx)),
       vctx_(DCHECK_NOTNULL(qctx->vctx())) {}
 
+// Create validator according to sentence type.
 std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
   auto kind = sentence->kind();
   switch (kind) {
@@ -133,8 +133,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<RevokeRoleValidator>(sentence, context);
     case Sentence::Kind::kShowRoles:
       return std::make_unique<ShowRolesInSpaceValidator>(sentence, context);
-    case Sentence::Kind::kBalance:
-      return std::make_unique<BalanceValidator>(sentence, context);
+    case Sentence::Kind::kDescribeUser:
+      return std::make_unique<DescribeUserValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
@@ -158,6 +158,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<UpdateVertexValidator>(sentence, context);
     case Sentence::Kind::kUpdateEdge:
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
+    case Sentence::Kind::kAddHosts:
+      return std::make_unique<AddHostsValidator>(sentence, context);
+    case Sentence::Kind::kDropHosts:
+      return std::make_unique<DropHostsValidator>(sentence, context);
     case Sentence::Kind::kShowHosts:
       return std::make_unique<ShowHostsValidator>(sentence, context);
     case Sentence::Kind::kShowMetaLeader:
@@ -204,30 +208,20 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<DropEdgeIndexValidator>(sentence, context);
     case Sentence::Kind::kLookup:
       return std::make_unique<LookupValidator>(sentence, context);
-    case Sentence::Kind::kAddGroup:
-      return std::make_unique<AddGroupValidator>(sentence, context);
-    case Sentence::Kind::kDropGroup:
-      return std::make_unique<DropGroupValidator>(sentence, context);
-    case Sentence::Kind::kDescribeGroup:
-      return std::make_unique<DescribeGroupValidator>(sentence, context);
-    case Sentence::Kind::kListGroups:
-      return std::make_unique<ListGroupsValidator>(sentence, context);
-    case Sentence::Kind::kAddZoneIntoGroup:
-      return std::make_unique<AddZoneIntoGroupValidator>(sentence, context);
-    case Sentence::Kind::kDropZoneFromGroup:
-      return std::make_unique<DropZoneFromGroupValidator>(sentence, context);
-    case Sentence::Kind::kAddZone:
-      return std::make_unique<AddZoneValidator>(sentence, context);
+    case Sentence::Kind::kMergeZone:
+      return std::make_unique<MergeZoneValidator>(sentence, context);
+    case Sentence::Kind::kRenameZone:
+      return std::make_unique<RenameZoneValidator>(sentence, context);
     case Sentence::Kind::kDropZone:
       return std::make_unique<DropZoneValidator>(sentence, context);
+    case Sentence::Kind::kDivideZone:
+      return std::make_unique<DivideZoneValidator>(sentence, context);
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:
-      return std::make_unique<ListZonesValidator>(sentence, context);
-    case Sentence::Kind::kAddHostIntoZone:
-      return std::make_unique<AddHostIntoZoneValidator>(sentence, context);
-    case Sentence::Kind::kDropHostFromZone:
-      return std::make_unique<DropHostFromZoneValidator>(sentence, context);
+      return std::make_unique<ShowZonesValidator>(sentence, context);
+    case Sentence::Kind::kAddHostsIntoZone:
+      return std::make_unique<AddHostsIntoZoneValidator>(sentence, context);
     case Sentence::Kind::kAddListener:
       return std::make_unique<AddListenerValidator>(sentence, context);
     case Sentence::Kind::kRemoveListener:
@@ -236,14 +230,14 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowListenerValidator>(sentence, context);
     case Sentence::Kind::kShowStats:
       return std::make_unique<ShowStatusValidator>(sentence, context);
-    case Sentence::Kind::kShowTSClients:
-      return std::make_unique<ShowTSClientsValidator>(sentence, context);
+    case Sentence::Kind::kShowServiceClients:
+      return std::make_unique<ShowServiceClientsValidator>(sentence, context);
     case Sentence::Kind::kShowFTIndexes:
       return std::make_unique<ShowFTIndexesValidator>(sentence, context);
-    case Sentence::Kind::kSignInTSService:
-      return std::make_unique<SignInTSServiceValidator>(sentence, context);
-    case Sentence::Kind::kSignOutTSService:
-      return std::make_unique<SignOutTSServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignInService:
+      return std::make_unique<SignInServiceValidator>(sentence, context);
+    case Sentence::Kind::kSignOutService:
+      return std::make_unique<SignOutServiceValidator>(sentence, context);
     case Sentence::Kind::kDownload:
       return std::make_unique<DownloadValidator>(sentence, context);
     case Sentence::Kind::kIngest:
@@ -260,6 +254,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowQueriesValidator>(sentence, context);
     case Sentence::Kind::kKillQuery:
       return std::make_unique<KillQueryValidator>(sentence, context);
+    case Sentence::Kind::kAlterSpace:
+      return std::make_unique<AlterSpaceValidator>(sentence, context);
+    case Sentence::Kind::kClearSpace:
+      return std::make_unique<ClearSpaceValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing
@@ -270,6 +268,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
   return std::make_unique<ReportError>(sentence, context);
 }
 
+// Entry of validating sentence.
+// Check session, switch space of validator context, create validators and validate.
 // static
 Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   DCHECK(sentence != nullptr);
@@ -293,6 +293,7 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   return Status::OK();
 }
 
+// Get output columns name of current validator(sentence).
 std::vector<std::string> Validator::getOutColNames() const {
   std::vector<std::string> colNames;
   colNames.reserve(outputs_.size());
@@ -302,19 +303,30 @@ std::vector<std::string> Validator::getOutColNames() const {
   return colNames;
 }
 
+// Append sub-plan to current plan.
+// \param node current plan
+// \param appended sub-plan to append
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
+
   if (!node->isSingleInput()) {
-    return Status::SemanticError("%s not support to append an input.",
+    return Status::SemanticError("PlanNode(%s) not support to append an input.",
                                  PlanNode::toString(node->kind()));
   }
   static_cast<SingleDependencyNode*>(node)->dependsOn(appended);
   return Status::OK();
 }
 
-Status Validator::appendPlan(PlanNode* root) { return appendPlan(tail_, root); }
+// Append sub-plan to previous plan
+// \param root sub-plan to append
+Status Validator::appendPlan(PlanNode* root) {
+  return appendPlan(tail_, root);
+}
 
+// Validate current sentence.
+// Check validator context, space, validate, duplicate reference columns,
+// check permission according to sentence kind and privilege of user.
 Status Validator::validate() {
   if (!vctx_) {
     VLOG(1) << "Validate context was not given.";
@@ -355,8 +367,12 @@ Status Validator::validate() {
   return Status::OK();
 }
 
-bool Validator::spaceChosen() { return vctx_->spaceChosen(); }
+// Does one space chosen?
+bool Validator::spaceChosen() {
+  return vctx_->spaceChosen();
+}
 
+// Deduce type of expression.
 StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   DeduceTypeVisitor visitor(qctx_, vctx_, inputs_, space_.id);
   const_cast<Expression*>(expr)->accept(&visitor);
@@ -366,12 +382,18 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   return visitor.type();
 }
 
-Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps) {
-  DeducePropsVisitor visitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
+// Collect properties used in expression.
+Status Validator::deduceProps(const Expression* expr,
+                              ExpressionProps& exprProps,
+                              std::vector<TagID>* tagIds,
+                              std::vector<EdgeType>* edgeTypes) {
+  DeducePropsVisitor visitor(
+      qctx_, space_.id, &exprProps, &userDefinedVarNameList_, tagIds, edgeTypes);
   const_cast<Expression*>(expr)->accept(&visitor);
   return std::move(visitor).status();
 }
 
+// Call planner to get final execution plan.
 Status Validator::toPlan() {
   auto* astCtx = getAstContext();
   if (astCtx != nullptr) {
@@ -386,6 +408,7 @@ Status Validator::toPlan() {
   return Status::OK();
 }
 
+// Disable duplicate columns of Input(Variable).
 Status Validator::checkDuplicateColName() {
   auto checkColName = [](const ColsDef& nameList) {
     std::unordered_set<std::string> names;
@@ -415,6 +438,9 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
+// TODO(Aiee) Move to validateUtil
+// Validate and build start vids.
+// Check vid type, construct expression to access vid.
 Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
   if (clause == nullptr) {
     return Status::SemanticError("From clause nullptr.");
@@ -451,7 +477,7 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
     auto vidList = clause->vidList();
     QueryExpressionContext ctx;
     for (auto* expr : vidList) {
-      if (!ExpressionUtils::isEvaluableExpr(expr)) {
+      if (!ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
         return Status::SemanticError("`%s' is not an evaluable expression.",
                                      expr->toString().c_str());
       }

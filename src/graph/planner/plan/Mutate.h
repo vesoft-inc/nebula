@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_MUTATE_H_
@@ -23,22 +22,38 @@ class InsertVertices final : public SingleDependencyNode {
                               GraphSpaceID spaceId,
                               std::vector<storage::cpp2::NewVertex> vertices,
                               std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
-                              bool ifNotExists) {
-    return qctx->objPool()->add(new InsertVertices(
-        qctx, input, spaceId, std::move(vertices), std::move(tagPropNames), ifNotExists));
+                              bool ifNotExists,
+                              bool ignoreExistedIndex) {
+    return qctx->objPool()->add(new InsertVertices(qctx,
+                                                   input,
+                                                   spaceId,
+                                                   std::move(vertices),
+                                                   std::move(tagPropNames),
+                                                   ifNotExists,
+                                                   ignoreExistedIndex));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const std::vector<storage::cpp2::NewVertex>& getVertices() const { return vertices_; }
+  const std::vector<storage::cpp2::NewVertex>& getVertices() const {
+    return vertices_;
+  }
 
   const std::unordered_map<TagID, std::vector<std::string>>& getPropNames() const {
     return tagPropNames_;
   }
 
-  GraphSpaceID getSpace() const { return spaceId_; }
+  GraphSpaceID getSpace() const {
+    return spaceId_;
+  }
 
-  bool getIfNotExists() const { return ifNotExists_; }
+  bool getIfNotExists() const {
+    return ifNotExists_;
+  }
+
+  bool getIgnoreExistedIndex() const {
+    return ignoreExistedIndex_;
+  }
 
  private:
   InsertVertices(QueryContext* qctx,
@@ -46,18 +61,21 @@ class InsertVertices final : public SingleDependencyNode {
                  GraphSpaceID spaceId,
                  std::vector<storage::cpp2::NewVertex> vertices,
                  std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
-                 bool ifNotExists)
+                 bool ifNotExists,
+                 bool ignoreExistedIndex)
       : SingleDependencyNode(qctx, Kind::kInsertVertices, input),
         spaceId_(spaceId),
         vertices_(std::move(vertices)),
         tagPropNames_(std::move(tagPropNames)),
-        ifNotExists_(ifNotExists) {}
+        ifNotExists_(ifNotExists),
+        ignoreExistedIndex_(ignoreExistedIndex) {}
 
  private:
   GraphSpaceID spaceId_{-1};
   std::vector<storage::cpp2::NewVertex> vertices_;
   std::unordered_map<TagID, std::vector<std::string>> tagPropNames_;
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
 };
 
 class InsertEdges final : public SingleDependencyNode {
@@ -68,22 +86,43 @@ class InsertEdges final : public SingleDependencyNode {
                            std::vector<storage::cpp2::NewEdge> edges,
                            std::vector<std::string> propNames,
                            bool ifNotExists,
+                           bool ignoreExistedIndex,
                            bool useChainInsert = false) {
-    return qctx->objPool()->add(new InsertEdges(
-        qctx, input, spaceId, std::move(edges), std::move(propNames), ifNotExists, useChainInsert));
+    return qctx->objPool()->add(new InsertEdges(qctx,
+                                                input,
+                                                spaceId,
+                                                std::move(edges),
+                                                std::move(propNames),
+                                                ifNotExists,
+                                                ignoreExistedIndex,
+                                                useChainInsert));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const std::vector<std::string>& getPropNames() const { return propNames_; }
+  const std::vector<std::string>& getPropNames() const {
+    return propNames_;
+  }
 
-  const std::vector<storage::cpp2::NewEdge>& getEdges() const { return edges_; }
+  const std::vector<storage::cpp2::NewEdge>& getEdges() const {
+    return edges_;
+  }
 
-  bool getIfNotExists() const { return ifNotExists_; }
+  bool getIfNotExists() const {
+    return ifNotExists_;
+  }
 
-  GraphSpaceID getSpace() const { return spaceId_; }
+  bool getIgnoreExistedIndex() const {
+    return ignoreExistedIndex_;
+  }
 
-  bool useChainInsert() const { return useChainInsert_; }
+  GraphSpaceID getSpace() const {
+    return spaceId_;
+  }
+
+  bool useChainInsert() const {
+    return useChainInsert_;
+  }
 
  private:
   InsertEdges(QueryContext* qctx,
@@ -92,12 +131,14 @@ class InsertEdges final : public SingleDependencyNode {
               std::vector<storage::cpp2::NewEdge> edges,
               std::vector<std::string> propNames,
               bool ifNotExists,
+              bool ignoreExistedIndex,
               bool useChainInsert)
       : SingleDependencyNode(qctx, Kind::kInsertEdges, input),
         spaceId_(spaceId),
         edges_(std::move(edges)),
         propNames_(std::move(propNames)),
         ifNotExists_(ifNotExists),
+        ignoreExistedIndex_(ignoreExistedIndex),
         useChainInsert_(useChainInsert) {}
 
  private:
@@ -105,6 +146,7 @@ class InsertEdges final : public SingleDependencyNode {
   std::vector<storage::cpp2::NewEdge> edges_;
   std::vector<std::string> propNames_;
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
   // if this enabled, add edge request will only sent to
   // outbound edges. (toss)
   bool useChainInsert_{false};
@@ -112,19 +154,33 @@ class InsertEdges final : public SingleDependencyNode {
 
 class Update : public SingleDependencyNode {
  public:
-  bool getInsertable() const { return insertable_; }
+  bool getInsertable() const {
+    return insertable_;
+  }
 
-  const std::vector<std::string>& getReturnProps() const { return returnProps_; }
+  const std::vector<std::string>& getReturnProps() const {
+    return returnProps_;
+  }
 
-  const std::string getCondition() const { return condition_; }
+  const std::string getCondition() const {
+    return condition_;
+  }
 
-  const std::vector<std::string>& getYieldNames() const { return yieldNames_; }
+  const std::vector<std::string>& getYieldNames() const {
+    return yieldNames_;
+  }
 
-  GraphSpaceID getSpaceId() const { return spaceId_; }
+  GraphSpaceID getSpaceId() const {
+    return spaceId_;
+  }
 
-  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const { return updatedProps_; }
+  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
+    return updatedProps_;
+  }
 
-  const std::string& getName() const { return schemaName_; }
+  const std::string& getName() const {
+    return schemaName_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -186,9 +242,13 @@ class UpdateVertex final : public Update {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const Value& getVId() const { return vId_; }
+  const Value& getVId() const {
+    return vId_;
+  }
 
-  TagID getTagId() const { return tagId_; }
+  TagID getTagId() const {
+    return tagId_;
+  }
 
  private:
   UpdateVertex(QueryContext* qctx,
@@ -252,15 +312,25 @@ class UpdateEdge final : public Update {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const Value& getSrcId() const { return srcId_; }
+  const Value& getSrcId() const {
+    return srcId_;
+  }
 
-  const Value& getDstId() const { return dstId_; }
+  const Value& getDstId() const {
+    return dstId_;
+  }
 
-  int64_t getRank() const { return rank_; }
+  int64_t getRank() const {
+    return rank_;
+  }
 
-  int64_t getEdgeType() const { return edgeType_; }
+  int64_t getEdgeType() const {
+    return edgeType_;
+  }
 
-  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const { return updatedProps_; }
+  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
+    return updatedProps_;
+  }
 
  private:
   UpdateEdge(QueryContext* qctx,
@@ -309,9 +379,13 @@ class DeleteVertices final : public SingleInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  GraphSpaceID getSpace() const { return space_; }
+  GraphSpaceID getSpace() const {
+    return space_;
+  }
 
-  Expression* getVidRef() const { return vidRef_; }
+  Expression* getVidRef() const {
+    return vidRef_;
+  }
 
  private:
   DeleteVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID spaceId, Expression* vidRef)
@@ -334,11 +408,17 @@ class DeleteTags final : public SingleInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  GraphSpaceID getSpace() const { return space_; }
+  GraphSpaceID getSpace() const {
+    return space_;
+  }
 
-  Expression* getVidRef() const { return vidRef_; }
+  Expression* getVidRef() const {
+    return vidRef_;
+  }
 
-  const std::vector<TagID>& tagIds() const { return tagIds_; }
+  const std::vector<TagID>& tagIds() const {
+    return tagIds_;
+  }
 
  private:
   DeleteTags(QueryContext* qctx,
@@ -368,9 +448,13 @@ class DeleteEdges final : public SingleInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  GraphSpaceID getSpace() const { return space_; }
+  GraphSpaceID getSpace() const {
+    return space_;
+  }
 
-  EdgeKeyRef* edgeKeyRef() const { return edgeKeyRef_; }
+  EdgeKeyRef* edgeKeyRef() const {
+    return edgeKeyRef_;
+  }
 
  private:
   DeleteEdges(QueryContext* qctx, PlanNode* input, GraphSpaceID spaceId, EdgeKeyRef* edgeKeyRef)

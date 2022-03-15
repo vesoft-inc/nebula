@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_SCAN_H_
@@ -15,7 +14,9 @@ namespace graph {
 // Logical Plan
 class EdgeIndexScan : public IndexScan {
  public:
-  const std::string& edgeType() const { return edgeType_; }
+  const std::string& edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   EdgeIndexScan(QueryContext* qctx,
@@ -244,7 +245,9 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
 
 class TagIndexScan : public IndexScan {
  public:
-  const std::string& tagName() const { return tagName_; }
+  const std::string& tagName() const {
+    return tagName_;
+  }
 
  protected:
   TagIndexScan(QueryContext* qctx,

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -52,9 +51,13 @@ struct HookableTask : public AdminTask {
     subTasks.emplace_back(subTask);
   }
 
-  void setJobId(int id) { ctx_.jobId_ = id; }
+  void setJobId(int id) {
+    ctx_.jobId_ = id;
+  }
 
-  void setTaskId(int id) { ctx_.taskId_ = id; }
+  void setTaskId(int id) {
+    ctx_.taskId_ = id;
+  }
 
   std::function<ErrOrSubTasks()> fGenSubTasks;
   std::vector<AdminSubTask> subTasks;
@@ -754,8 +757,8 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
   folly::Promise<nebula::cpp2::ErrorCode> task1_p;
   folly::Future<nebula::cpp2::ErrorCode> task1_f = task1_p.getFuture();
 
-  folly::Promise<int> cancle_p;
-  folly::Future<int> cancel = cancle_p.getFuture();
+  folly::Promise<int> cancel_p;
+  folly::Future<int> cancel = cancel_p.getFuture();
 
   folly::Promise<int> subtask_run_p;
   folly::Future<int> subtask_run_f = subtask_run_p.getFuture();
@@ -786,7 +789,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
   LOG(INFO) << "before taskMgr->cancelTask(1);";
   taskMgr->cancelTask(jobId);
   LOG(INFO) << "after taskMgr->cancelTask(1);";
-  cancle_p.setValue(0);
+  cancel_p.setValue(0);
 
   task1_f.wait();
 

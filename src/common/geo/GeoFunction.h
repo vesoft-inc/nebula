@@ -1,10 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_GEO_GEOFUNCTION_H
+#define COMMON_GEO_GEOFUNCTION_H
 
 #include <s2/s2region_coverer.h>
 
@@ -74,3 +74,4 @@ class GeoFunction {
 
 }  // namespace geo
 }  // namespace nebula
+#endif

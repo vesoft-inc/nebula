@@ -2,7 +2,7 @@ import time
 import pytest
 from graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.bench.data_generate import insert_vertexs, insert_edges
+from tests.bench.data_generate import insert_vertices, insert_edges
 
 
 class TestDeleteBench(NebulaTestSuite):
@@ -29,7 +29,7 @@ class TestDeleteBench(NebulaTestSuite):
         self.execute('CREATE EDGE IF NOT EXISTS like(likeness int)')
         self.check_resp_succeeded(resp)
         time.sleep(4)
-        insert_vertexs(self, "benchdeletespace", 50, 20000)
+        insert_vertices(self, "benchdeletespace", 50, 20000)
         insert_edges(self, "benchdeletespace", 50, 20000)
 
     @classmethod
@@ -48,7 +48,7 @@ class TestDeleteBench(NebulaTestSuite):
                     for col in row.columns:
                         if col.getType() == ttypes.ColumnValue.ID:
                             id = col.get_id()
-                            resp = self.execute('DELETE VERTEX {0}'.format(id))
+                            resp = self.execute('DELETE VERTEX {0} WITH EDGE'.format(id))
                             self.check_resp_succeeded(resp)
 
             resp = self.execute('lookup on person where person.age == {0} '.format(i))

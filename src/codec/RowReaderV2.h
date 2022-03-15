@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_ROWREADERV2_H_
@@ -27,15 +26,19 @@ class RowReaderV2 : public RowReader {
   FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
  public:
-  virtual ~RowReaderV2() = default;
+  ~RowReaderV2() override = default;
 
   Value getValueByName(const std::string& prop) const noexcept override;
   Value getValueByIndex(const int64_t index) const noexcept override;
   int64_t getTimestamp() const noexcept override;
 
-  int32_t readerVer() const noexcept override { return 2; }
+  int32_t readerVer() const noexcept override {
+    return 2;
+  }
 
-  size_t headerLen() const noexcept override { return headerLen_; }
+  size_t headerLen() const noexcept override {
+    return headerLen_;
+  }
 
  protected:
   bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept override;

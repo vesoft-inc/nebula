@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -144,6 +143,39 @@ TEST(DiskManagerTest, WalNoSpaceTest) {
       EXPECT_GT(i, 10);
     }
   }
+}
+
+TEST(DiskManagerTest, GetDiskPartsTest) {
+  GraphSpaceID spaceId = 1;
+  fs::TempDir disk1("/tmp/get_disk_part_test.XXXXXX");
+  auto path1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), spaceId);
+  boost::filesystem::create_directories(path1);
+  fs::TempDir disk2("/tmp/get_disk_part_test.XXXXXX");
+  auto path2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), spaceId);
+  boost::filesystem::create_directories(path2);
+  GraphSpaceID spaceId2 = 2;
+  fs::TempDir disk3("/tmp/get_disk_part_test.XXXXXX");
+  auto path3 = folly::stringPrintf("%s/nebula/%d", disk3.path(), spaceId2);
+  boost::filesystem::create_directories(path3);
+
+  std::vector<std::string> dataPaths = {disk1.path(), disk2.path(), disk3.path()};
+  DiskManager diskMan(dataPaths);
+  for (PartitionID partId = 1; partId <= 10; partId++) {
+    diskMan.addPartToPath(spaceId, partId, path1);
+  }
+  for (PartitionID partId = 11; partId <= 20; partId++) {
+    diskMan.addPartToPath(spaceId, partId, path2);
+  }
+  for (PartitionID partId = 1; partId <= 10; partId++) {
+    diskMan.addPartToPath(spaceId2, partId, path3);
+  }
+
+  SpaceDiskPartsMap diskParts;
+  diskMan.getDiskParts(diskParts);
+  ASSERT_EQ(2, diskParts.size());
+  ASSERT_EQ(2, diskParts[spaceId].size());
+  ASSERT_EQ(1, diskParts[spaceId2].size());
+  ASSERT_EQ(10, diskParts[spaceId2][path3].get_part_list().size());
 }
 
 }  // namespace kvstore

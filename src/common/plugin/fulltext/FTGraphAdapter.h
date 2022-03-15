@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_PLUGIN_FULLTEXT_G_ADAPTER_H_
@@ -47,6 +46,9 @@ class FTGraphAdapter {
                                      const std::string& indexTemplate = "") const = 0;
 
   virtual StatusOr<bool> dropIndex(const HttpClient& client, const std::string& index) const = 0;
+
+  // Clear the fulltext index data and keep the index schema.
+  virtual StatusOr<bool> clearIndex(const HttpClient& client, const std::string& index) const = 0;
 
   virtual StatusOr<bool> indexExists(const HttpClient& client, const std::string& index) const = 0;
 };

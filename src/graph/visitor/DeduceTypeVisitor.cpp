@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/visitor/DeduceTypeVisitor.h"
@@ -42,57 +41,95 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
     {Value::Type::MAP, Value(Map())},
     {Value::Type::SET, Value(Set())},
     {Value::Type::DATASET, Value(DataSet())},
+    {Value::Type::DURATION, Value(Duration())},
 };
 
-#define DETECT_BIEXPR_TYPE(OP)                                                        \
-  expr->left()->accept(this);                                                         \
-  if (!ok()) return;                                                                  \
-  auto left = type_;                                                                  \
-  expr->right()->accept(this);                                                        \
-  if (!ok()) return;                                                                  \
-  auto right = type_;                                                                 \
-  auto detectVal = kConstantValues.at(left) OP kConstantValues.at(right);             \
-  if (detectVal.isBadNull()) {                                                        \
-    std::stringstream ss;                                                             \
-    ss << "`" << expr->toString() << "' is not a valid expression, "                  \
-       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'."; \
-    status_ = Status::SemanticError(ss.str());                                        \
-    return;                                                                           \
-  }                                                                                   \
+#define DETECT_BIEXPR_TYPE(OP)                                                                  \
+  expr->left()->accept(this);                                                                   \
+  if (!ok()) return;                                                                            \
+  auto left = type_;                                                                            \
+  expr->right()->accept(this);                                                                  \
+  if (!ok()) return;                                                                            \
+  auto right = type_;                                                                           \
+  if (strcmp(#OP, "-") == 0 && (left == Value::Type::STRING || right == Value::Type::STRING)) { \
+    std::stringstream ss;                                                                       \
+    ss << "`" << expr->toString() << "' is not a valid expression, "                            \
+       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'.";           \
+    status_ = Status::SemanticError(ss.str());                                                  \
+    return;                                                                                     \
+  }                                                                                             \
+  auto lhs = kConstantValues.find(left);                                                        \
+  if (lhs == kConstantValues.end()) {                                                           \
+    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.",      \
+                                    Value::toString(left).c_str());                             \
+    return;                                                                                     \
+  }                                                                                             \
+  auto rhs = kConstantValues.find(right);                                                       \
+  if (rhs == kConstantValues.end()) {                                                           \
+    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.",      \
+                                    Value::toString(right).c_str());                            \
+    return;                                                                                     \
+  }                                                                                             \
+  auto detectVal = lhs->second OP rhs->second;                                                  \
+  if (detectVal.isBadNull()) {                                                                  \
+    std::stringstream ss;                                                                       \
+    ss << "`" << expr->toString() << "' is not a valid expression, "                            \
+       << "can not apply `" << #OP << "' to `" << left << "' and `" << right << "'.";           \
+    status_ = Status::SemanticError(ss.str());                                                  \
+    return;                                                                                     \
+  }                                                                                             \
   type_ = detectVal.type()
 
-#define DETECT_NARYEXPR_TYPE(OP)                                                            \
-  do {                                                                                      \
-    auto &operands = expr->operands();                                                      \
-    operands[0]->accept(this);                                                              \
-    if (!ok()) return;                                                                      \
-    auto prev = type_;                                                                      \
-    for (auto i = 1u; i < operands.size(); i++) {                                           \
-      operands[i]->accept(this);                                                            \
-      if (!ok()) return;                                                                    \
-      auto current = type_;                                                                 \
-      auto detectValue = kConstantValues.at(prev) OP kConstantValues.at(current);           \
-      if (detectValue.isBadNull()) {                                                        \
-        std::stringstream ss;                                                               \
-        ss << "`" << expr->toString() << "' is not a valid expression, "                    \
-           << "can not apply `" << #OP << "' to `" << prev << "' and `" << current << "'."; \
-        status_ = Status::SemanticError(ss.str());                                          \
-        return;                                                                             \
-      }                                                                                     \
-      prev = detectValue.type();                                                            \
-    }                                                                                       \
-    type_ = prev;                                                                           \
+#define DETECT_NARYEXPR_TYPE(OP)                                                               \
+  do {                                                                                         \
+    auto &operands = expr->operands();                                                         \
+    operands[0]->accept(this);                                                                 \
+    if (!ok()) return;                                                                         \
+    auto prev = type_;                                                                         \
+    for (auto i = 1u; i < operands.size(); i++) {                                              \
+      operands[i]->accept(this);                                                               \
+      if (!ok()) return;                                                                       \
+      auto current = type_;                                                                    \
+      auto prevOp = kConstantValues.find(prev);                                                \
+      if (prevOp == kConstantValues.end()) {                                                   \
+        status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.", \
+                                        Value::toString(prev).c_str());                        \
+        return;                                                                                \
+      }                                                                                        \
+      auto currentOp = kConstantValues.find(current);                                          \
+      if (currentOp == kConstantValues.end()) {                                                \
+        status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.", \
+                                        Value::toString(current).c_str());                     \
+        return;                                                                                \
+      }                                                                                        \
+      auto detectValue = prevOp->second OP currentOp->second;                                  \
+      if (detectValue.isBadNull()) {                                                           \
+        std::stringstream ss;                                                                  \
+        ss << "`" << expr->toString() << "' is not a valid expression, "                       \
+           << "can not apply `" << #OP << "' to `" << prev << "' and `" << current << "'.";    \
+        status_ = Status::SemanticError(ss.str());                                             \
+        return;                                                                                \
+      }                                                                                        \
+      prev = detectValue.type();                                                               \
+    }                                                                                          \
+    type_ = prev;                                                                              \
   } while (false)
 
-#define DETECT_UNARYEXPR_TYPE(OP)                                    \
-  auto detectVal = OP kConstantValues.at(type_);                     \
-  if (detectVal.isBadNull()) {                                       \
-    std::stringstream ss;                                            \
-    ss << "`" << expr->toString() << "' is not a valid expression, " \
-       << "can not apply `" << #OP << "' to " << type_ << ".";       \
-    status_ = Status::SemanticError(ss.str());                       \
-    return;                                                          \
-  }                                                                  \
+#define DETECT_UNARYEXPR_TYPE(OP)                                                          \
+  auto operand = kConstantValues.find(type_);                                              \
+  if (operand == kConstantValues.end()) {                                                  \
+    status_ = Status::SemanticError("Can't find constant value of `%s' when deduce type.", \
+                                    Value::toString(type_).c_str());                       \
+    return;                                                                                \
+  }                                                                                        \
+  auto detectVal = OP operand->second;                                                     \
+  if (detectVal.isBadNull()) {                                                             \
+    std::stringstream ss;                                                                  \
+    ss << "`" << expr->toString() << "' is not a valid expression, "                       \
+       << "can not apply `" << #OP << "' to " << type_ << ".";                             \
+    status_ = Status::SemanticError(ss.str());                                             \
+    return;                                                                                \
+  }                                                                                        \
   type_ = detectVal.type()
 
 DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
@@ -187,7 +224,7 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
     return;
   }
 
-  EvaluableExprVisitor visitor;
+  EvaluableExprVisitor visitor(qctx_);
   expr->operand()->accept(&visitor);
 
   if (!visitor.ok()) {
@@ -211,7 +248,9 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
   status_ = Status::OK();
 }
 
-void DeduceTypeVisitor::visit(LabelExpression *) { type_ = Value::Type::__EMPTY__; }
+void DeduceTypeVisitor::visit(LabelExpression *) {
+  type_ = Value::Type::__EMPTY__;
+}
 
 void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
   switch (expr->kind()) {
@@ -320,6 +359,13 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
+// in order to be consistent with the behavior in the opencypher, the schema is not checked
+void DeduceTypeVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  type_ = Value::Type::__EMPTY__;
+  return;
+}
+
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
   expr->left()->accept(this);
   if (!ok()) return;
@@ -410,6 +456,7 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
     if (!ok()) return;
     argsTypeList.push_back(type_);
   }
+
   auto funName = expr->name();
   if (funName == "id" || funName == "src" || funName == "dst") {
     type_ = vidType_;
@@ -431,7 +478,9 @@ void DeduceTypeVisitor::visit(AggregateExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(UUIDExpression *) { type_ = Value::Type::STRING; }
+void DeduceTypeVisitor::visit(UUIDExpression *) {
+  type_ = Value::Type::STRING;
+}
 
 void DeduceTypeVisitor::visit(VariableExpression *) {
   // Will not deduce the actual value type of variable expression.
@@ -443,13 +492,21 @@ void DeduceTypeVisitor::visit(VersionedVariableExpression *) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(ListExpression *) { type_ = Value::Type::LIST; }
+void DeduceTypeVisitor::visit(ListExpression *) {
+  type_ = Value::Type::LIST;
+}
 
-void DeduceTypeVisitor::visit(SetExpression *) { type_ = Value::Type::SET; }
+void DeduceTypeVisitor::visit(SetExpression *) {
+  type_ = Value::Type::SET;
+}
 
-void DeduceTypeVisitor::visit(MapExpression *) { type_ = Value::Type::MAP; }
+void DeduceTypeVisitor::visit(MapExpression *) {
+  type_ = Value::Type::MAP;
+}
 
-void DeduceTypeVisitor::visit(TagPropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(TagPropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
 void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
   const auto &edge = expr->sym();
@@ -489,7 +546,7 @@ void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
 
 void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   const auto &var = expr->sym();
-  if (!vctx_->existVar(var)) {
+  if (!vctx_->existVar(var) && !qctx_->existParameter(var)) {
     status_ = Status::SemanticError(
         "`%s', not exist variable `%s'", expr->toString().c_str(), var.c_str());
     return;
@@ -506,23 +563,41 @@ void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   type_ = found->type;
 }
 
-void DeduceTypeVisitor::visit(DestPropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(DestPropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
-void DeduceTypeVisitor::visit(SourcePropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(SourcePropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
-void DeduceTypeVisitor::visit(EdgeSrcIdExpression *) { type_ = vidType_; }
+void DeduceTypeVisitor::visit(EdgeSrcIdExpression *) {
+  type_ = vidType_;
+}
 
-void DeduceTypeVisitor::visit(EdgeTypeExpression *) { type_ = Value::Type::INT; }
+void DeduceTypeVisitor::visit(EdgeTypeExpression *) {
+  type_ = Value::Type::INT;
+}
 
-void DeduceTypeVisitor::visit(EdgeRankExpression *) { type_ = Value::Type::INT; }
+void DeduceTypeVisitor::visit(EdgeRankExpression *) {
+  type_ = Value::Type::INT;
+}
 
-void DeduceTypeVisitor::visit(EdgeDstIdExpression *) { type_ = vidType_; }
+void DeduceTypeVisitor::visit(EdgeDstIdExpression *) {
+  type_ = vidType_;
+}
 
-void DeduceTypeVisitor::visit(VertexExpression *) { type_ = Value::Type::VERTEX; }
+void DeduceTypeVisitor::visit(VertexExpression *) {
+  type_ = Value::Type::VERTEX;
+}
 
-void DeduceTypeVisitor::visit(EdgeExpression *) { type_ = Value::Type::EDGE; }
+void DeduceTypeVisitor::visit(EdgeExpression *) {
+  type_ = Value::Type::EDGE;
+}
 
-void DeduceTypeVisitor::visit(ColumnExpression *) { type_ = Value::Type::__EMPTY__; }
+void DeduceTypeVisitor::visit(ColumnExpression *) {
+  type_ = Value::Type::__EMPTY__;
+}
 
 void DeduceTypeVisitor::visit(CaseExpression *expr) {
   if (expr->hasCondition()) {
@@ -557,6 +632,10 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
+  if (expr->name() == "exists") {
+    type_ = Value::Type::BOOL;
+    return;
+  }
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
@@ -697,7 +776,9 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
   type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
-void DeduceTypeVisitor::visit(PathBuildExpression *) { type_ = Value::Type::PATH; }
+void DeduceTypeVisitor::visit(PathBuildExpression *) {
+  type_ = Value::Type::PATH;
+}
 #undef DETECT_NARYEXPR_TYPE
 #undef DETECT_UNARYEXPR_TYPE
 #undef DETECT_BIEXPR_TYPE

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushFilterDownAggregateRule.h"
@@ -23,7 +22,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownAggregateRule::kInstance =
     std::unique_ptr<PushFilterDownAggregateRule>(new PushFilterDownAggregateRule());
 
-PushFilterDownAggregateRule::PushFilterDownAggregateRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownAggregateRule::PushFilterDownAggregateRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& PushFilterDownAggregateRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
@@ -110,7 +111,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   return result;
 }
 
-std::string PushFilterDownAggregateRule::toString() const { return "PushFilterDownAggregateRule"; }
+std::string PushFilterDownAggregateRule::toString() const {
+  return "PushFilterDownAggregateRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_JOBUTIL_H_
@@ -34,8 +33,22 @@ class JobUtil {
     return *reinterpret_cast<const T*>(rawVal.data() + offset);
   }
 
+  /**
+   * @brief Get a string from a serialized value
+   *
+   * @param rawVal string to read
+   * @param offset from where to read the string
+   * @return
+   */
   static std::string parseString(folly::StringPiece rawVal, size_t offset);
 
+  /**
+   * @brief Get vector of string from a serialized value
+   *
+   * @param rawVal
+   * @param offset
+   * @return
+   */
   static std::vector<std::string> parseStrVector(folly::StringPiece rawVal, size_t* offset);
 };
 

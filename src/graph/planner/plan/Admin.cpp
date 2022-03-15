@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/Admin.h"
@@ -29,6 +28,13 @@ std::unique_ptr<PlanNodeDescription> CreateSpaceAsNode::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> DropSpace::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("spaceName", spaceName_, desc.get());
+  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> ClearSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("spaceName", spaceName_, desc.get());
   addDescription("ifExists", util::toJson(ifExists_), desc.get());
@@ -93,6 +99,18 @@ std::unique_ptr<PlanNodeDescription> DropNode::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> AddHosts::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("hosts", folly::toJson(util::toJson(hosts_)), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> DropHosts::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("hosts", folly::toJson(util::toJson(hosts_)), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> CreateUser::explain() const {
   auto desc = CreateNode::explain();
   addDescription("username", *username_, desc.get());
@@ -137,6 +155,12 @@ std::unique_ptr<PlanNodeDescription> ChangePassword::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> DescribeUser::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("username", *username_, desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> ListUserRoles::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("username", *username_, desc.get());
@@ -154,18 +178,6 @@ std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
   addDescription("operation", apache::thrift::util::enumNameSafe(op_), desc.get());
   addDescription("command", apache::thrift::util::enumNameSafe(cmd_), desc.get());
   addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> Balance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("deleteHosts", folly::toJson(util::toJson(deleteHosts_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> ShowBalance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("balanceId", util::toJson(id_), desc.get());
   return desc;
 }
 

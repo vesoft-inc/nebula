@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_ARITHMETICEXPRESSION_H_
@@ -59,10 +58,12 @@ class ArithmeticExpression final : public BinaryExpression {
     return pool_->add(new ArithmeticExpression(pool_, kind(), left()->clone(), right()->clone()));
   }
 
-  bool isArithmeticExpr() const override { return true; }
+  bool isArithmeticExpr() const override {
+    return true;
+  }
 
  private:
-  explicit ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+  ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : BinaryExpression(pool, kind, lhs, rhs) {}
 
  private:

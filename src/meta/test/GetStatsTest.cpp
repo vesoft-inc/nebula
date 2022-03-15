@@ -1,8 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2021.2022 License,
- * attached with Common Clause Condition 2023.2024, found in the LICENSES
- * directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/synchronization/Baton.h>
@@ -59,16 +57,17 @@ struct JobCallBack {
 
   folly::Future<nebula::Status> operator()() {
     cpp2::ReportTaskReq req;
-    req.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-    req.set_job_id(jobId_);
-    req.set_task_id(taskId_);
+    req.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    req.job_id_ref() = jobId_;
+    req.task_id_ref() = taskId_;
 
     cpp2::StatsItem item;
-    item.set_tag_vertices({{"t1", n_}, {"t2", n_}});
-    item.set_edges({{"e1", n_}, {"e2", n_}});
-    item.set_space_vertices(2 * n_);
-    item.set_space_edges(2 * n_);
-    req.set_stats(item);
+    item.tag_vertices_ref() = {{"t1", n_}, {"t2", n_}};
+    item.edges_ref() = {{"e1", n_}, {"e2", n_}};
+    item.space_vertices_ref() = 2 * n_;
+    item.space_edges_ref() = 2 * n_;
+    req.stats_ref() = item;
+    jobMgr_->muJobFinished_.unlock();
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }
@@ -88,6 +87,8 @@ class GetStatsTest : public ::testing::Test {
 
     DefaultValue<folly::Future<Status>>::SetFactory(
         [] { return folly::Future<Status>(Status::OK()); });
+    DefaultValue<folly::Future<StatusOr<bool>>>::SetFactory(
+        [] { return folly::Future<StatusOr<bool>>(true); });
 
     jobMgr = JobManager::getInstance();
     jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
@@ -108,8 +109,8 @@ class GetStatsTest : public ::testing::Test {
     ActiveHostsMan::AllLeaders leaders;
     for (auto i = 0U; i != parts.size(); ++i) {
       leaders[space].emplace_back();
-      leaders[space].back().set_part_id(parts[i]);
-      leaders[space].back().set_term(9999);
+      leaders[space].back().part_id_ref() = parts[i];
+      leaders[space].back().term_ref() = 9999;
     }
     return std::make_pair(host, leaders);
   }
@@ -124,30 +125,30 @@ TEST_F(GetStatsTest, StatsJob) {
   TestUtils::assembleSpace(kv_.get(), 1, 1);
   GraphSpaceID spaceId = 1;
   std::vector<std::string> paras{"test_space"};
-  JobDescription statisJob(12, cpp2::AdminCmd::STATS, paras);
+  JobDescription statsJob(12, cpp2::AdminCmd::STATS, paras);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
-  auto rc = jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
+  auto rc = jobMgr->save(statsJob.jobKey(), statsJob.jobVal());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   {
     // Job is not executed, job status is QUEUE.
     // Stats data does not exist.
-    auto job1Ret = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
+    auto job1Ret = JobDescription::loadJobDescription(statsJob.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job1Ret));
     auto job1 = nebula::value(job1Ret);
-    ASSERT_EQ(statisJob.id_, job1.id_);
+    ASSERT_EQ(statsJob.id_, job1.id_);
     ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    // Directly find statis data in kvstore, statis data does not exist.
+    // Directly find stats data in kvstore, stats data does not exist.
     auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
@@ -159,31 +160,31 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
-  // Run statis job, job finished.
-  // Insert running status statis data in prepare function of runJobInternal.
-  // Update statis data to finished or failed status in finish function of
+  // Run stats job, job finished.
+  // Insert running status stats data in prepare function of runJobInternal.
+  // Update stats data to finished or failed status in finish function of
   // runJobInternal.
-  auto result = jobMgr->runJobInternal(statisJob);
+  auto result = jobMgr->runJobInternal(statsJob, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
   // JobManager does not set the job finished status in RunJobInternal function.
-  // But set statis data.
-  statisJob.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
-  auto jobId = statisJob.getJobId();
+  // But set stats data.
+  statsJob.setStatus(cpp2::JobStatus::FINISHED);
+  jobMgr->save(statsJob.jobKey(), statsJob.jobVal());
+  auto jobId = statsJob.getJobId();
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
 
   copyData(kv_.get(), 0, 0, statsKey, tempKey);
   jobMgr->jobFinished(jobId, cpp2::JobStatus::FINISHED);
   {
-    auto job2Ret = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
+    auto job2Ret = JobDescription::loadJobDescription(statsJob.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job2Ret));
     auto job2 = nebula::value(job2Ret);
-    ASSERT_EQ(statisJob.id_, job2.id_);
+    ASSERT_EQ(statsJob.id_, job2.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -200,7 +201,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_vertices());
     ASSERT_EQ(0, statsItem.get_space_edges());
 
-    // Directly find statis data in kvstore, statis data exists.
+    // Directly find stats data in kvstore, stats data exists.
     auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
@@ -214,24 +215,24 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem1.get_space_edges());
   }
 
-  // Execute new statis job in same space.
+  // Execute new stats job in same space.
   std::vector<std::string> paras1{"test_space"};
-  JobDescription statisJob2(13, cpp2::AdminCmd::STATS, paras1);
-  auto rc2 = jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
+  JobDescription statsJob2(13, cpp2::AdminCmd::STATS, paras1);
+  auto rc2 = jobMgr->save(statsJob2.jobKey(), statsJob2.jobVal());
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
   {
     // Job is not executed, job status is QUEUE.
     // Stats data exists, but it is the result of the last stats job
     // execution.
-    auto job1Ret = JobDescription::loadJobDescription(statisJob2.id_, kv_.get());
+    auto job1Ret = JobDescription::loadJobDescription(statsJob2.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job1Ret));
     auto job1 = nebula::value(job1Ret);
-    ASSERT_EQ(statisJob2.id_, job1.id_);
+    ASSERT_EQ(statsJob2.id_, job1.id_);
     ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
 
-    // Success,  but statis data is the result of the last statis job.
+    // Success,  but stats data is the result of the last stats job.
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -245,7 +246,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_vertices());
     ASSERT_EQ(0, statsItem.get_space_edges());
 
-    // Directly find statis data in kvstore, statis data exists.
+    // Directly find stats data in kvstore, stats data exists.
     auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
@@ -264,7 +265,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
-  // Remove statis data.
+  // Remove stats data.
   {
     auto key = MetaKeyUtils::statsKey(spaceId);
     folly::Baton<true, std::atomic> baton;
@@ -279,13 +280,13 @@ TEST_F(GetStatsTest, StatsJob) {
     baton.wait();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
 
-    // Directly find statis data in kvstore, statis data does not exist.
+    // Directly find stats data in kvstore, stats data does not exist.
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -293,13 +294,13 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
 
-  // Run statis job.
-  // Insert running status statis data in prepare function of runJobInternal.
-  // Update statis data to finished or failed status in finish function of
+  // Run stats job.
+  // Insert running status stats data in prepare function of runJobInternal.
+  // Update stats data to finished or failed status in finish function of
   // runJobInternal.
-  auto result2 = jobMgr->runJobInternal(statisJob2);
+  auto result2 = jobMgr->runJobInternal(statsJob2, JobManager::JbOp::ADD);
 
-  auto jobId2 = statisJob2.getJobId();
+  auto jobId2 = statsJob2.getJobId();
   auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
@@ -308,19 +309,19 @@ TEST_F(GetStatsTest, StatsJob) {
 
   ASSERT_TRUE(result2);
   // JobManager does not set the job finished status in RunJobInternal function.
-  // But set statis data.
-  statisJob2.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
+  // But set stats data.
+  statsJob2.setStatus(cpp2::JobStatus::FINISHED);
+  jobMgr->save(statsJob2.jobKey(), statsJob2.jobVal());
 
   {
-    auto job2Ret = JobDescription::loadJobDescription(statisJob2.id_, kv_.get());
+    auto job2Ret = JobDescription::loadJobDescription(statsJob2.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job2Ret));
     auto job2 = nebula::value(job2Ret);
-    ASSERT_EQ(statisJob2.id_, job2.id_);
+    ASSERT_EQ(statsJob2.id_, job2.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -334,7 +335,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_vertices());
     ASSERT_EQ(0, statsItem.get_space_edges());
 
-    // Directly find statis data in kvstore, statis data exists.
+    // Directly find stats data in kvstore, stats data exists.
     auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
@@ -358,19 +359,22 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 1, 1, 1);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 
-  // add statis job1
+  // add stats job1
   JobID jobId1 = 1;
   std::vector<std::string> paras{"test_space"};
   JobDescription job1(jobId1, cpp2::AdminCmd::STATS, paras);
@@ -379,7 +383,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   JobCallBack cb1(jobMgr, jobId1, 0, 100);
   JobCallBack cb2(jobMgr, 2, 0, 200);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(2)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2));
@@ -394,7 +398,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -419,7 +423,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
     ASSERT_EQ(200, statsItem.get_space_edges());
   }
 
-  // add statis job2 of same space
+  // add stats job2 of same space
   JobID jobId2 = 2;
   JobDescription job2(jobId2, cpp2::AdminCmd::STATS, paras);
   jobMgr->addJob(job2, &adminClient);
@@ -434,7 +438,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -473,19 +477,22 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 6, 3, 3);
+  std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
     auto ret = ActiveHostsMan::updateHostInfo(kv_.get(),
                                               entry.first,
                                               HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
+                                              data,
                                               &entry.second);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
   }
 
+  TestUtils::doPut(kv_.get(), data);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
 
-  // add statis job
+  // add stats job
   JobID jobId = 1;
   std::vector<std::string> paras{"test_space"};
   JobDescription job(jobId, cpp2::AdminCmd::STATS, paras);
@@ -495,7 +502,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   JobCallBack cb2(jobMgr, jobId, 1, 200);
   JobCallBack cb3(jobMgr, jobId, 2, 300);
 
-  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _, _))
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(3)
       .WillOnce(testing::InvokeWithoutArgs(cb1))
       .WillOnce(testing::InvokeWithoutArgs(cb2))
@@ -511,7 +518,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);

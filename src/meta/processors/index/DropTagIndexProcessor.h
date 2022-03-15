@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_DROPTAGINDEXPROCESSOR_H
@@ -12,6 +11,13 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop the tag index, it will drop the index name and index id key for given space.
+ *        It will not handle the existing index data.
+ *        The index data in storaged will be removed when do compact with
+ *        custom compaction filter.
+ *
+ */
 class DropTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropTagIndexProcessor* instance(kvstore::KVStore* kvstore) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/ngql/GoPlanner.h"
@@ -38,24 +37,24 @@ void GoPlanner::doBuildEdgeProps(std::unique_ptr<EdgeProps>& eProps, bool onlyDs
   for (const auto& e : goCtx_->over.edgeTypes) {
     EdgeProp ep;
     if (isInEdge) {
-      ep.set_type(-e);
+      ep.type_ref() = -e;
     } else {
-      ep.set_type(e);
+      ep.type_ref() = e;
     }
 
     if (onlyDst) {
-      ep.set_props({kDst});
+      ep.props_ref() = {kDst};
       eProps->emplace_back(std::move(ep));
       continue;
     }
 
     auto found = exprProps.edgeProps().find(e);
     if (found == exprProps.edgeProps().end()) {
-      ep.set_props({kDst});
+      ep.props_ref() = {kDst};
     } else {
       std::set<folly::StringPiece> props(found->second.begin(), found->second.end());
       props.emplace(kDst);
-      ep.set_props(std::vector<std::string>(props.begin(), props.end()));
+      ep.props_ref() = std::vector<std::string>(props.begin(), props.end());
     }
     eProps->emplace_back(std::move(ep));
   }
@@ -69,9 +68,9 @@ std::unique_ptr<GoPlanner::VertexProps> GoPlanner::buildVertexProps(
   auto vertexProps = std::make_unique<VertexProps>(propsMap.size());
   auto fun = [](auto& tag) {
     VertexProp vp;
-    vp.set_tag(tag.first);
+    vp.tag_ref() = tag.first;
     std::vector<std::string> props(tag.second.begin(), tag.second.end());
-    vp.set_props(std::move(props));
+    vp.props_ref() = std::move(props);
     return vp;
   };
   std::transform(propsMap.begin(), propsMap.end(), vertexProps->begin(), fun);

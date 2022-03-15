@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_MATCH_VERTEXIDSEEK_H_
@@ -32,9 +31,7 @@ class VertexIdSeek final : public StartVidFinder {
 
   StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
-  std::pair<std::string, Expression*> listToAnnoVarVid(QueryContext* qctx, const List& list);
-
-  std::pair<std::string, Expression*> constToAnnoVarVid(QueryContext* qctx, const Value& v);
+  std::string listToAnnoVarVid(QueryContext* qctx, const List& list);
 
  private:
   VertexIdSeek() = default;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/RowReader.h"
@@ -30,9 +29,13 @@ bool RowReader::Iterator::operator==(const Iterator& rhs) const noexcept {
   return reader_ == rhs.reader_ && index_ == rhs.index_;
 }
 
-const RowReader::Cell& RowReader::Iterator::operator*() const noexcept { return cell_; }
+const RowReader::Cell& RowReader::Iterator::operator*() const noexcept {
+  return cell_;
+}
 
-const RowReader::Cell* RowReader::Iterator::operator->() const noexcept { return &cell_; }
+const RowReader::Cell* RowReader::Iterator::operator->() const noexcept {
+  return &cell_;
+}
 
 RowReader::Iterator& RowReader::Iterator::operator++() {
   if (index_ < reader_->numFields()) {

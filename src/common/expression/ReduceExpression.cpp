@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/ReduceExpression.h"
@@ -113,18 +112,20 @@ std::string ReduceExpression::toString() const {
   buf += "(";
   buf += accumulator_;
   buf += " = ";
-  buf += initial_->toString();
+  buf += initial_ ? initial_->toString() : "";
   buf += ", ";
   buf += innerVar_;
   buf += " IN ";
-  buf += collection_->toString();
+  buf += collection_ ? collection_->toString() : "";
   buf += " | ";
-  buf += mapping_->toString();
+  buf += mapping_ ? mapping_->toString() : "";
   buf += ")";
 
   return buf;
 }
 
-void ReduceExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ReduceExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

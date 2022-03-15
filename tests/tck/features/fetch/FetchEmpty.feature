@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Fetch prop on empty tag/edge
 
   Background:
@@ -27,57 +26,57 @@ Feature: Fetch prop on empty tag/edge
   Scenario: fetch prop on all tags
     When executing query:
       """
-      FETCH PROP ON * '1'
+      FETCH PROP ON * '1' YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_                                    |
+      | node                                         |
       | ("1":zero_prop_tag_0:zero_prop_tag_1:person) |
     And drop the used space
 
   Scenario: fetch prop on a empty tag
     When executing query:
       """
-      FETCH PROP ON zero_prop_tag_0 '1'
+      FETCH PROP ON zero_prop_tag_0 '1' YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_             |
+      | node                  |
       | ("1":zero_prop_tag_0) |
     When executing query:
       """
       GO FROM "1" OVER zero_prop_edge YIELD zero_prop_edge._dst as id |
-      FETCH PROP ON zero_prop_tag_0 $-.id
+      FETCH PROP ON zero_prop_tag_0 $-.id YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_             |
+      | node                  |
       | ("2":zero_prop_tag_0) |
     And drop the used space
 
   Scenario: fetch prop on empty edge
     When executing query:
       """
-      FETCH PROP ON zero_prop_edge "1"->"2"
+      FETCH PROP ON zero_prop_edge "1"->"2" YIELD edge as e
       """
     Then the result should be, in any order:
-      | edges_                          |
+      | e                               |
       | [:zero_prop_edge "1"->"2" @0{}] |
     When executing query:
       """
-      FETCH PROP ON zero_prop_edge "1"->"3"
+      FETCH PROP ON zero_prop_edge "1"->"3" YIELD edge as e
       """
     Then the result should be, in any order:
-      | edges_ |
+      | e |
     When executing query:
       """
-      FETCH PROP ON zero_prop_edge "101"->"102"
+      FETCH PROP ON zero_prop_edge "101"->"102" YIELD edge as e
       """
     Then the result should be, in any order:
-      | edges_ |
+      | e |
     When executing query:
       """
       GO FROM "1" OVER zero_prop_edge YIELD zero_prop_edge._src as src, zero_prop_edge._dst as dst |
-      FETCH PROP ON zero_prop_edge $-.src->$-.dst
+      FETCH PROP ON zero_prop_edge $-.src->$-.dst YIELD edge as e
       """
     Then the result should be, in any order:
-      | edges_                          |
+      | e                               |
       | [:zero_prop_edge "1"->"2" @0{}] |
     And drop the used space

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_test(
     NAME cord_test
@@ -77,13 +76,6 @@ nebula_add_test(
     NAME signal_handler_test
     SOURCES SignalHandlerTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
-    NAME slow_op_tracker_test
-    SOURCES SlowOpTrackerTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:time_obj>
     LIBRARIES gtest gtest_main
 )
 

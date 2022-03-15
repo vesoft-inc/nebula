@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Delete string vid of vertex
 
   Scenario: delete string vertex
@@ -9,7 +8,7 @@ Feature: Delete string vid of vertex
     # get vertex info
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like
+      GO FROM "Boris Diaw" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst     |
@@ -17,7 +16,7 @@ Feature: Delete string vid of vertex
       | "Tim Duncan"  |
     When executing query:
       """
-      GO FROM "Tony Parker" OVER like REVERSELY
+      GO FROM "Tony Parker" OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -32,20 +31,20 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
     # check value by fetch
     When executing query:
       """
       FETCH PROP ON serve "Tony Parker"->"Spurs" YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
-      | serve._src    | serve._dst | serve._rank | serve.start_year | serve.end_year |
-      | "Tony Parker" | "Spurs"    | 0           | 1999             | 2018           |
+      | serve.start_year | serve.end_year |
+      | 1999             | 2018           |
     # delete one vertex
     When executing query:
       """
-      DELETE VERTEX "Tony Parker";
+      DELETE VERTEX "Tony Parker" WITH EDGE;
       """
     Then the execution should be successful
     # after delete to check value by fetch
@@ -54,18 +53,18 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # check value by fetch
     When executing query:
       """
       FETCH PROP ON serve "Tony Parker"->"Spurs" YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
-      | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
+      | serve.start_year | serve.end_year |
     # after delete to check value by go
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like
+      GO FROM "Boris Diaw" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst    |
@@ -73,14 +72,14 @@ Feature: Delete string vid of vertex
     # after delete to check value by go
     When executing query:
       """
-      GO FROM "Tony Parker" OVER like REVERSELY
+      GO FROM "Tony Parker" OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     # before delete multi vertexes to check value by go
     When executing query:
       """
-      GO FROM "Chris Paul" OVER like
+      GO FROM "Chris Paul" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -90,7 +89,7 @@ Feature: Delete string vid of vertex
     # delete multi vertexes
     When executing query:
       """
-      DELETE VERTEX "LeBron James", "Dwyane Wade", "Carmelo Anthony";
+      DELETE VERTEX "LeBron James", "Dwyane Wade", "Carmelo Anthony" WITH EDGE;
       """
     Then the execution should be successful
     # after delete multi vertexes to check value by go
@@ -99,11 +98,11 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # before delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM "Tracy McGrady" OVER like
+      GO FROM "Tracy McGrady" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst     |
@@ -113,7 +112,7 @@ Feature: Delete string vid of vertex
     # before delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM "Grant Hill" OVER like REVERSELY
+      GO FROM "Grant Hill" OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -124,26 +123,26 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Grant Hill" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Grant Hill" | "Grant Hill" | 46         |
+      | player.name  | player.age |
+      | "Grant Hill" | 46         |
     # before delete hash id vertex to check value by fetch
     When executing query:
       """
       FETCH PROP ON serve "Grant Hill"->"Pistons" YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
-      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
-      | "Grant Hill" | "Pistons"  | 0           | 1994             | 2000           |
+      | serve.start_year | serve.end_year |
+      | 1994             | 2000           |
     # delete hash id vertex
     When executing query:
       """
-      DELETE VERTEX "Grant Hill"
+      DELETE VERTEX "Grant Hill" WITH EDGE
       """
     Then the execution should be successful
     # after delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM "Tracy McGrady" OVER like
+      GO FROM "Tracy McGrady" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst     |
@@ -152,7 +151,7 @@ Feature: Delete string vid of vertex
     # after delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM "Grant Hill" OVER like REVERSELY
+      GO FROM "Grant Hill" OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -162,18 +161,18 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Grant Hill" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # delete not existed vertex
     When executing query:
       """
-      DELETE VERTEX "Non-existing Vertex"
+      DELETE VERTEX "Non-existing Vertex" WITH EDGE
       """
     Then the execution should be successful
     # delete a vertex without edges
     When executing query:
       """
       INSERT VERTEX player(name, age) VALUES "A Loner": ("A Loner", 0);
-      DELETE VERTEX "A Loner";
+      DELETE VERTEX "A Loner" WITH EDGE;
       """
     Then the execution should be successful
     # check delete a vertex without edges
@@ -182,11 +181,11 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "A Loner" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # delete with no edge
     When executing query:
       """
-      DELETE VERTEX "Nobody"
+      DELETE VERTEX "Nobody" WITH EDGE
       """
     Then the execution should be successful
     # check delete with no edge
@@ -195,7 +194,7 @@ Feature: Delete string vid of vertex
       FETCH PROP ON player "Nobody" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     Then drop the used space
 
   Scenario: delete string vertex by pipe
@@ -203,13 +202,13 @@ Feature: Delete string vid of vertex
     # test delete with pipe wrong vid type
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE VERTEX $-.id
+      GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then a SemanticError should be raised at runtime:
     # delete with pipe, get result by go
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like
+      GO FROM "Boris Diaw" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst     |
@@ -217,7 +216,7 @@ Feature: Delete string vid of vertex
       | "Tim Duncan"  |
     When executing query:
       """
-      GO FROM "Tony Parker" OVER like
+      GO FROM "Tony Parker" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -226,7 +225,7 @@ Feature: Delete string vid of vertex
       | "Tim Duncan"        |
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like
+      GO FROM "Tim Duncan" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -234,24 +233,24 @@ Feature: Delete string vid of vertex
       | "Manu Ginobili" |
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | DELETE VERTEX $-.id
+      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like
+      GO FROM "Boris Diaw" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM "Tony Parker" OVER like
+      GO FROM "Tony Parker" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like
+      GO FROM "Tim Duncan" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -260,7 +259,7 @@ Feature: Delete string vid of vertex
     Given load "nba" csv data to a new space
     When executing query:
       """
-      GO FROM "Russell Westbrook" OVER like
+      GO FROM "Russell Westbrook" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst      |
@@ -268,38 +267,38 @@ Feature: Delete string vid of vertex
       | "James Harden" |
     When executing query:
       """
-      GO FROM "Paul George" OVER like
+      GO FROM "Paul George" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
       | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM "James Harden" OVER like
+      GO FROM "James Harden" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
       | "Russell Westbrook" |
     When executing query:
       """
-      $var = GO FROM "Russell Westbrook" OVER like YIELD like._dst as id; DELETE VERTEX $var.id
+      $var = GO FROM "Russell Westbrook" OVER like YIELD like._dst as id; DELETE VERTEX $var.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:
       """
-      GO FROM "Russell Westbrook" OVER like
+      GO FROM "Russell Westbrook" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM "Paul George" OVER like
+      GO FROM "Paul George" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM "Russell Westbrook" OVER like
+      GO FROM "Russell Westbrook" OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |

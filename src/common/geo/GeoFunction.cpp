@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/geo/GeoFunction.h"
@@ -176,7 +175,9 @@ bool GeoFunction::covers(const Geography& a, const Geography& b) {
   return false;
 }
 
-bool GeoFunction::coveredBy(const Geography& a, const Geography& b) { return covers(b, a); }
+bool GeoFunction::coveredBy(const Geography& a, const Geography& b) {
+  return covers(b, a);
+}
 
 bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distance, bool exclusive) {
   auto aRegion = a.asS2();
@@ -490,8 +491,8 @@ std::vector<uint64_t> GeoFunction::coveringCellIds(const S2Region& r,
 double GeoFunction::distanceOfS2PolylineWithS2Point(const S2Polyline* aLine,
                                                     const S2Point& bPoint) {
   int tmp;
-  S2Point cloestPointOnLine = aLine->Project(bPoint, &tmp);
-  return S2Earth::GetDistanceMeters(cloestPointOnLine, bPoint);
+  S2Point closestPointOnLine = aLine->Project(bPoint, &tmp);
+  return S2Earth::GetDistanceMeters(closestPointOnLine, bPoint);
 }
 
 double GeoFunction::distanceOfS2PolygonWithS2Polyline(const S2Polygon* aPolygon,

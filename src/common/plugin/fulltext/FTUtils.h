@@ -1,11 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_PLUGIN_FULLTEXT_UTILS_H_
 #define COMMON_PLUGIN_FULLTEXT_UTILS_H_
+
+#include <proxygen/lib/utils/CryptUtil.h>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <iomanip>
@@ -13,8 +14,6 @@
 #include "common/base/Base.h"
 #include "common/base/CommonMacro.h"
 #include "common/datatypes/HostAddr.h"
-#include "common/encryption/Base64.h"
-#include "common/encryption/MD5Utils.h"
 
 #define CURL "/usr/bin/curl"
 #define XPUT " -XPUT"
@@ -39,15 +38,19 @@ struct HttpClient {
   HostAddr host;
   std::string user;
   std::string password;
+  std::string connType{"http"};
 
   HttpClient() = default;
   ~HttpClient() = default;
 
   explicit HttpClient(HttpClient&& v) noexcept
-      : host(std::move(v.host)), user(std::move(v.user)), password(std::move(v.password)) {}
+      : host(std::move(v.host)),
+        user(std::move(v.user)),
+        password(std::move(v.password)),
+        connType(std::move(v.connType)) {}
 
   explicit HttpClient(const HttpClient& v) noexcept
-      : host(v.host), user(v.user), password(v.password) {}
+      : host(v.host), user(v.user), password(v.password), connType(v.connType) {}
 
   explicit HttpClient(HostAddr&& h) noexcept : host(std::move(h)) {}
 
@@ -59,10 +62,20 @@ struct HttpClient {
   HttpClient(const HostAddr& h, const std::string& u, const std::string& p) noexcept
       : host(h), user(u), password(p) {}
 
+  HttpClient(HostAddr&& h, std::string&& u, std::string&& p, std::string&& c) noexcept
+      : host(std::move(h)), user(std::move(u)), password(std::move(p)), connType(std::move(c)) {}
+
+  HttpClient(const HostAddr& h,
+             const std::string& u,
+             const std::string& p,
+             const std::string& c) noexcept
+      : host(h), user(u), password(p), connType(std::move(c)) {}
+
   void clear() {
     host.clear();
     user.clear();
     password.clear();
+    connType.clear();
   }
 
   std::string toString() const {
@@ -73,7 +86,7 @@ struct HttpClient {
         os << ":" << password;
       }
     }
-    os << " \"http://" << host.host << ":" << host.port << "/";
+    os << " -k \"" << connType << "://" << host.host << ":" << host.port << "/";
     return os.str();
   }
 };
@@ -128,7 +141,7 @@ struct DocIDTraits {
 
   static std::string column(const std::string& col) {
     // normalized column name is 32 bytes
-    return encryption::MD5Utils::md5Encode(col);
+    return proxygen::md5Encode(folly::StringPiece(col));
   }
 
   static std::string val(const std::string& v) {
@@ -145,9 +158,9 @@ struct DocIDTraits {
     // docId structure : partId(10bytes) + schemaId(10Bytes) +
     //                   columnName(32bytes) + encoded_val(max 344bytes)
     // the max length of docId is 512 bytes, still have about 100 bytes reserved
-    auto encoded = encryption::Base64::encode((item.val.size() > MAX_INDEX_TYPE_LENGTH)
-                                                  ? item.val.substr(0, MAX_INDEX_TYPE_LENGTH)
-                                                  : item.val);
+    auto encoded = proxygen::base64Encode(folly::StringPiece(
+        (item.val.size() > MAX_INDEX_TYPE_LENGTH) ? item.val.substr(0, MAX_INDEX_TYPE_LENGTH)
+                                                  : item.val));
     std::replace(encoded.begin(), encoded.end(), '/', '_');
     std::stringstream ss;
     ss << id(item.part) << column(item.column) << encoded;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "webservice/NotFoundHandler.h"
@@ -38,7 +37,9 @@ void NotFoundHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void NotFoundHandler::requestComplete() noexcept { delete this; }
+void NotFoundHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void NotFoundHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service NotFoundHandler got error: " << proxygen::getErrorString(err);

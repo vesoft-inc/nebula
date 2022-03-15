@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -18,7 +17,7 @@ namespace nebula {
 namespace graph {
 class SampleTest : public QueryTestBase {};
 
-#define SAMPLE_RESUTL_CHECK(outputName, count, expect)                                      \
+#define SAMPLE_RESULT_CHECK(outputName, count, expect)                                      \
   do {                                                                                      \
     qctx_->symTable()->newVariable(outputName);                                             \
     auto start = StartNode::make(qctx_.get());                                              \
@@ -42,13 +41,19 @@ class SampleTest : public QueryTestBase {};
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                  \
   } while (false)
 
-TEST_F(SampleTest, SequentialInRange2) { SAMPLE_RESUTL_CHECK("sample_in_sequential2", 4, 4); }
+TEST_F(SampleTest, SequentialInRange2) {
+  SAMPLE_RESULT_CHECK("sample_in_sequential2", 4, 4);
+}
 
-TEST_F(SampleTest, SequentialOutRange1) { SAMPLE_RESUTL_CHECK("sample_out_sequential3", 7, 6); }
+TEST_F(SampleTest, SequentialOutRange1) {
+  SAMPLE_RESULT_CHECK("sample_out_sequential3", 7, 6);
+}
 
-TEST_F(SampleTest, SequentialOutRange2) { SAMPLE_RESUTL_CHECK("sample_out_sequential4", 8, 6); }
+TEST_F(SampleTest, SequentialOutRange2) {
+  SAMPLE_RESULT_CHECK("sample_out_sequential4", 8, 6);
+}
 
-#define SAMPLE_GN_RESUTL_CHECK(outputName, count, expect)                                  \
+#define SAMPLE_GN_RESULT_CHECK(outputName, count, expect)                                  \
   do {                                                                                     \
     qctx_->symTable()->newVariable(outputName);                                            \
     auto start = StartNode::make(qctx_.get());                                             \
@@ -71,11 +76,17 @@ TEST_F(SampleTest, SequentialOutRange2) { SAMPLE_RESUTL_CHECK("sample_out_sequen
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                 \
   } while (false)
 
-TEST_F(SampleTest, GN2) { SAMPLE_GN_RESUTL_CHECK("sample_in_gn2", 4, 4); }
+TEST_F(SampleTest, GN2) {
+  SAMPLE_GN_RESULT_CHECK("sample_in_gn2", 4, 4);
+}
 
-TEST_F(SampleTest, GNOutOfRange1) { SAMPLE_GN_RESUTL_CHECK("sample_out_gn1", 6, 4); }
+TEST_F(SampleTest, GNOutOfRange1) {
+  SAMPLE_GN_RESULT_CHECK("sample_out_gn1", 6, 4);
+}
 
-TEST_F(SampleTest, GNOutOfRange2) { SAMPLE_GN_RESUTL_CHECK("sample_out_gn2", 7, 4); }
+TEST_F(SampleTest, GNOutOfRange2) {
+  SAMPLE_GN_RESULT_CHECK("sample_out_gn2", 7, 4);
+}
 
 }  // namespace graph
 }  // namespace nebula

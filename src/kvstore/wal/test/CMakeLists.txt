@@ -1,17 +1,26 @@
+set(WAL_TEST_LIBS
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
+)
+
 nebula_add_test(
     NAME
         file_based_wal_test
     SOURCES
         FileBasedWalTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )
 
@@ -22,13 +31,9 @@ nebula_add_test(
         InMemoryLogBufferTest.cpp
         InMemoryLogBuffer.cpp
     OBJECTS
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )
 
@@ -38,8 +43,9 @@ nebula_add_test(
     SOURCES
         AtomicLogBufferTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:base_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )
 
@@ -50,8 +56,9 @@ nebula_add_executable(
         LogBufferBenchmark.cpp
         InMemoryLogBuffer.cpp
     OBJECTS
-        $<TARGET_OBJECTS:base_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         follybenchmark
         boost_regex
 )
@@ -62,13 +69,8 @@ nebula_add_test(
     SOURCES
         WalFileIterTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:wal_obj>
-        $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
+        ${WAL_TEST_LIBS}
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         gtest
 )

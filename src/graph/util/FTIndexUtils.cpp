@@ -1,12 +1,11 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2021 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/FTIndexUtils.h"
 
 #include "common/expression/Expression.h"
+#include "graph/util/ExpressionUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
 
@@ -28,7 +27,7 @@ bool FTIndexUtils::needTextSearch(const Expression* expr) {
 
 StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
     meta::MetaClient* client) {
-  auto tcs = client->getFTClientsFromCache();
+  auto tcs = client->getServiceClientsFromCache(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!tcs.ok()) {
     return tcs.status();
   }
@@ -43,6 +42,7 @@ StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
       hc.user = *c.user_ref();
       hc.password = *c.pwd_ref();
     }
+    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
     tsClients.emplace_back(std::move(hc));
   }
   return tsClients;
@@ -74,6 +74,20 @@ StatusOr<bool> FTIndexUtils::dropTSIndex(const std::vector<nebula::plugin::HttpC
     return std::move(ret).value();
   }
   return Status::Error("drop fulltext index failed : %s", index.c_str());
+}
+
+StatusOr<bool> FTIndexUtils::clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
+                                          const std::string& index) {
+  auto retryCnt = FLAGS_ft_request_retry_times;
+  while (--retryCnt > 0) {
+    auto ret =
+        nebula::plugin::ESGraphAdapter::kAdapter->clearIndex(randomFTClient(tsClients), index);
+    if (!ret.ok()) {
+      continue;
+    }
+    return std::move(ret).value();
+  }
+  return Status::Error("clear fulltext index failed : %s", index.c_str());
 }
 
 StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(
@@ -113,13 +127,7 @@ StatusOr<std::vector<std::string>> FTIndexUtils::textSearch(
     const std::string& index,
     const std::vector<nebula::plugin::HttpClient>& tsClients) {
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
-  // if (*tsExpr->arg()->from() != from_) {
-  //     return Status::SemanticError("Schema name error : %s",
-  //     tsExpr->arg()->from()->c_str());
-  // }
-  // auto index =
-  // plugin::IndexTraits::indexName(*space_.spaceDesc.space_name_ref(),
-  // isEdge_);
+
   nebula::plugin::DocItem doc(index, tsExpr->arg()->prop(), tsExpr->arg()->val());
   nebula::plugin::LimitItem limit(tsExpr->arg()->timeout(), tsExpr->arg()->limit());
   std::vector<std::string> result;

@@ -1,13 +1,11 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #if defined(__x86_64__)
 #include <breakpad/client/linux/handler/exception_handler.h>
 
-#include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/fs/FileUtils.h"
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_DROPTAGPROCESSOR_H
@@ -12,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop tag schema for all versions. The indexes on it should be dropped before drop the
+ *        edge.
+ *
+ */
 class DropTagProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropTagProcessor* instance(kvstore::KVStore* kvstore) {

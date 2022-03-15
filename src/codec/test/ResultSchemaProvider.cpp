@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/test/ResultSchemaProvider.h"
@@ -9,8 +8,8 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 /***********************************
  *
@@ -18,12 +17,12 @@ using meta::cpp2::Schema;
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
-                                                           meta::cpp2::PropertyType type,
+                                                           PropertyType type,
                                                            int16_t size,
                                                            bool nullable,
                                                            int32_t offset,
                                                            size_t nullFlagPos,
-                                                           Expression* defaultValue,
+                                                           std::string defaultValue,
                                                            meta::cpp2::GeoShape geoShape)
     : name_(std::move(name)),
       type_(type),
@@ -34,34 +33,54 @@ ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
       defaultValue_(defaultValue),
       geoShape_(geoShape) {}
 
-const char* ResultSchemaProvider::ResultSchemaField::name() const { return name_.c_str(); }
-
-PropertyType ResultSchemaProvider::ResultSchemaField::type() const { return type_; }
-
-bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
-  return defaultValue_ != nullptr;
+const char* ResultSchemaProvider::ResultSchemaField::name() const {
+  return name_.c_str();
 }
 
-bool ResultSchemaProvider::ResultSchemaField::nullable() const { return nullable_; }
+PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
+  return type_;
+}
 
-Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const { return defaultValue_; }
+bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
+  return defaultValue_ != "";
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::size() const { return size_; }
+bool ResultSchemaProvider::ResultSchemaField::nullable() const {
+  return nullable_;
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::offset() const { return offset_; }
+const std::string& ResultSchemaProvider::ResultSchemaField::defaultValue() const {
+  return defaultValue_;
+}
 
-size_t ResultSchemaProvider::ResultSchemaField::nullFlagPos() const { return nullFlagPos_; }
+size_t ResultSchemaProvider::ResultSchemaField::size() const {
+  return size_;
+}
 
-meta::cpp2::GeoShape ResultSchemaProvider::ResultSchemaField::geoShape() const { return geoShape_; }
+size_t ResultSchemaProvider::ResultSchemaField::offset() const {
+  return offset_;
+}
+
+size_t ResultSchemaProvider::ResultSchemaField::nullFlagPos() const {
+  return nullFlagPos_;
+}
+
+meta::cpp2::GeoShape ResultSchemaProvider::ResultSchemaField::geoShape() const {
+  return geoShape_;
+}
 
 /***********************************
  *
  * ResultSchemaProvider
  *
  **********************************/
-size_t ResultSchemaProvider::getNumFields() const noexcept { return columns_.size(); }
+size_t ResultSchemaProvider::getNumFields() const noexcept {
+  return columns_.size();
+}
 
-size_t ResultSchemaProvider::getNumNullableFields() const noexcept { return numNullableFields_; }
+size_t ResultSchemaProvider::getNumNullableFields() const noexcept {
+  return numNullableFields_;
+}
 
 size_t ResultSchemaProvider::size() const noexcept {
   if (columns_.size() > 0) {

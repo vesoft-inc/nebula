@@ -1,15 +1,21 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-if(ENABLE_VERBOSE_BISON)
-    set(bison_flags "-Werror -v")
+if(ENABLE_ERROR)
+  if(ENABLE_VERBOSE_BISON)
+      set(bison_flags "-Werror -v")
+  else()
+      set(bison_flags "-Werror")
+  endif()
 else()
-    set(bison_flags "-Werror")
+  if(ENABLE_VERBOSE_BISON)
+      set(bison_flags "-v")
+  else()
+      set(bison_flags "")
+  endif()
 endif()
 bison_target(Parser parser.yy ${CMAKE_CURRENT_BINARY_DIR}/GraphParser.cpp COMPILE_FLAGS ${bison_flags})
 flex_target(Scanner scanner.lex ${CMAKE_CURRENT_BINARY_DIR}/GraphScanner.cpp)

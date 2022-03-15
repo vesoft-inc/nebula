@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_KV_REMOVEPROCESSOR_H_
@@ -15,6 +14,9 @@ namespace storage {
 
 extern ProcessorCounters kRemoveCounters;
 
+/**
+ * @brief this is a simple remove() interface when storage run in KV mode.
+ */
 class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:
   static RemoveProcessor* instance(StorageEnv* env,
@@ -25,7 +27,7 @@ class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::KVRemoveRequest& req);
 
  private:
-  explicit RemoveProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  RemoveProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 

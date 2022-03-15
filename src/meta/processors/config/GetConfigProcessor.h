@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_GETCONFIGPROCESSOR_H
@@ -12,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get dynamic configuration by given name in given module(all, meta, graph, storage)
+ *
+ */
 class GetConfigProcessor : public BaseProcessor<cpp2::GetConfigResp> {
  public:
   static GetConfigProcessor* instance(kvstore::KVStore* kvstore) {

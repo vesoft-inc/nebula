@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/TextSearchExpression.h"
@@ -70,7 +69,7 @@ std::string TextSearchExpression::toString() const {
       LOG(FATAL) << "Unimplemented";
     }
   }
-  buf += arg_->toString();
+  buf += arg_ ? arg_->toString() : "";
   buf += ")";
   return buf;
 }

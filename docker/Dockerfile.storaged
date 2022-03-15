@@ -5,7 +5,7 @@ ARG BRANCH=master
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -n OFF -b ${BRANCH} -t RelWithDebInfo -s TRUE
+  && ./package.sh -n OFF -b ${BRANCH} -t RelWithDebInfo -s TRUE -c OFF
 
 FROM centos:7
 

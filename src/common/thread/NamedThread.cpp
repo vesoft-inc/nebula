@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/thread/NamedThread.h"
@@ -15,11 +14,17 @@ namespace detail {
 
 class TLSThreadID {
  public:
-  TLSThreadID() { tid_ = ::syscall(SYS_gettid); }
+  TLSThreadID() {
+    tid_ = ::syscall(SYS_gettid);
+  }
 
-  ~TLSThreadID() { tid_ = 0; }
+  ~TLSThreadID() {
+    tid_ = 0;
+  }
 
-  pid_t tid() { return tid_; }
+  pid_t tid() {
+    return tid_;
+  }
 
  private:
   pid_t tid_;

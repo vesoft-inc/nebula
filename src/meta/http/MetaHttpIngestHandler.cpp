@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/http/MetaHttpIngestHandler.h"
@@ -19,9 +18,6 @@
 #include "webservice/WebService.h"
 
 DECLARE_int32(ws_storage_http_port);
-DECLARE_int32(ws_storage_h2_port);
-
-DEFINE_int32(meta_ingest_thread_num, 3, "Meta daemon's ingest thread number");
 
 namespace nebula {
 namespace meta {
@@ -85,7 +81,7 @@ void MetaHttpIngestHandler::onEOM() noexcept {
         .body("SSTFile ingest successfully")
         .sendWithEOM();
   } else {
-    LOG(ERROR) << "SSTFile ingest failed";
+    LOG(INFO) << "SSTFile ingest failed";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
                 WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
@@ -98,10 +94,12 @@ void MetaHttpIngestHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void MetaHttpIngestHandler::requestComplete() noexcept { delete this; }
+void MetaHttpIngestHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
-  LOG(ERROR) << "Web Service MetaHttpIngestHandler got error : " << proxygen::getErrorString(error);
+  LOG(INFO) << "Web Service MetaHttpIngestHandler got error : " << proxygen::getErrorString(error);
 }
 
 bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
@@ -112,7 +110,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
   static const PartitionID metaPartId = 0;
   auto ret = kvstore_->prefix(metaSpaceId, metaPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Fetch Parts Failed";
+    LOG(INFO) << "Fetch Parts Failed";
     return false;
   }
 
@@ -143,7 +141,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
   auto tries = folly::collectAll(std::move(futures)).get();
   for (const auto &t : tries) {
     if (t.hasException()) {
-      LOG(ERROR) << "Ingest Failed: " << t.exception();
+      LOG(INFO) << "Ingest Failed: " << t.exception();
       successfully = false;
       break;
     }

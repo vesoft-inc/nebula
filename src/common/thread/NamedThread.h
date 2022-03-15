@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef COMMON_THREAD_NAMEDTHREAD_H_
 #define COMMON_THREAD_NAMEDTHREAD_H_
@@ -37,9 +36,13 @@ class NamedThread final : public std::thread {
       set(name);
     }
 
-    ~Nominator() { set(prevName_); }
+    ~Nominator() {
+      set(prevName_);
+    }
 
-    static void set(const std::string &name) { ::prctl(PR_SET_NAME, name.c_str(), 0, 0, 0); }
+    static void set(const std::string &name) {
+      ::prctl(PR_SET_NAME, name.c_str(), 0, 0, 0);
+    }
 
     static void get(std::string &name) {
       char buf[64];

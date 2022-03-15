@@ -1,16 +1,17 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/PlannersRegister.h"
 
 #include "graph/planner/Planner.h"
 #include "graph/planner/SequentialPlanner.h"
+#include "graph/planner/match/ArgumentFinder.h"
 #include "graph/planner/match/LabelIndexSeek.h"
 #include "graph/planner/match/MatchPlanner.h"
 #include "graph/planner/match/PropIndexSeek.h"
+#include "graph/planner/match/ScanSeek.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/VertexIdSeek.h"
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
@@ -24,13 +25,13 @@
 namespace nebula {
 namespace graph {
 
-void PlannersRegister::registPlanners() {
-  registDDL();
-  registSequential();
-  registMatch();
+void PlannersRegister::registerPlanners() {
+  registerDDL();
+  registerSequential();
+  registerMatch();
 }
 
-void PlannersRegister::registDDL() {
+void PlannersRegister::registerDDL() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterTag];
     planners.emplace_back(&AlterTagPlanner::match, &AlterTagPlanner::make);
@@ -49,7 +50,7 @@ void PlannersRegister::registDDL() {
   }
 }
 
-void PlannersRegister::registSequential() {
+void PlannersRegister::registerSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kSequential];
     planners.emplace_back(&SequentialPlanner::match, &SequentialPlanner::make);
@@ -80,7 +81,7 @@ void PlannersRegister::registSequential() {
   }
 }
 
-void PlannersRegister::registMatch() {
+void PlannersRegister::registerMatch() {
   auto& planners = Planner::plannersMap()[Sentence::Kind::kMatch];
 
   planners.emplace_back(&MatchPlanner::match, &MatchPlanner::make);
@@ -90,6 +91,10 @@ void PlannersRegister::registMatch() {
   // MATCH(n) WHERE id(n) = value RETURN n
   startVidFinders.emplace_back(&VertexIdSeek::make);
 
+  // MATCH (n)-[]-(l), (l)-[]-(m) return n,l,m
+  // MATCH (n)-[]-(l) MATCH (l)-[]-(m) return n,l,m
+  startVidFinders.emplace_back(&ArgumentFinder::make);
+
   // MATCH(n:Tag{prop:value}) RETURN n
   // MATCH(n:Tag) WHERE n.prop = value RETURN n
   startVidFinders.emplace_back(&PropIndexSeek::make);
@@ -98,6 +103,11 @@ void PlannersRegister::registMatch() {
   // MATCH(n: tag) RETURN n
   // MATCH(s)-[:edge]->(e) RETURN e
   startVidFinders.emplace_back(&LabelIndexSeek::make);
+
+  // Scan the start vertex directly
+  // Now we hard code the order of match rules before CBO,
+  // put scan rule at the last for we assume it's most inefficient
+  startVidFinders.emplace_back(&ScanSeek::make);
 }
 
 }  // namespace graph

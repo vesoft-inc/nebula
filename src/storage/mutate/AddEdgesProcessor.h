@@ -1,13 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 #define STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
@@ -19,7 +19,7 @@ extern ProcessorCounters kAddEdgesCounters;
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   friend class TransactionManager;
-  friend class ChainAddEdgesProcessorLocal;
+  friend class ChainAddEdgesLocalProcessor;
 
  public:
   static AddEdgesProcessor* instance(StorageEnv* env,
@@ -46,12 +46,16 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   std::vector<std::string> indexKeys(PartitionID partId,
                                      RowReader* reader,
                                      const folly::StringPiece& rawKey,
-                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                     const meta::SchemaProviderIf* latestSchema);
+
+  void deleteDupEdge(std::vector<cpp2::NewEdge>& edges);
 
  private:
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
 
   /// this is a hook function to keep out-edge and in-edge consist
   using ConsistOper = std::function<void(kvstore::BatchHolder&, std::vector<kvstore::KV>*)>;

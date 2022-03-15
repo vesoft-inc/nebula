@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
@@ -10,6 +9,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -62,8 +62,8 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
           code = nebula::cpp2::ErrorCode::E_INVALID_VID;
           break;
         }
-
-        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid.getStr());
+        keys.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr()));
+        auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -81,6 +81,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
         continue;
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumVerticesDeleted, keys.size());
     }
   } else {
     for (auto& pv : partVertices) {
@@ -113,7 +114,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
   target.reserve(vertices.size());
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& vertex : vertices) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
+    batchHolder->remove(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vertex.getStr()));
+    auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vertex.getStr());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -127,11 +129,12 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
       auto l = std::make_tuple(spaceId_, partId, tagId, vertex.getStr());
       if (std::find(target.begin(), target.end(), l) == target.end()) {
         if (!env_->verticesML_->try_lock(l)) {
-          LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}", tagId, vertex.getStr());
+          LOG(ERROR) << folly::sformat("The vertex locked: tag {}, vid {}", tagId, vertex.getStr());
           return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
         }
         target.emplace_back(std::move(l));
       }
+      auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
       RowReaderWrapper reader;
       for (auto& index : indexes_) {
         if (index->get_schema_id().get_tag_id() == tagId) {
@@ -145,8 +148,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          const auto& cols = index->get_fields();
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValues(reader.get(), index.get(), schema.get());
           if (!valuesRet.ok()) {
             continue;
           }
@@ -171,6 +174,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
         }
       }
       batchHolder->remove(key.str());
+      stats::StatsManager::addValue(kNumVerticesDeleted);
       iter->next();
     }
   }

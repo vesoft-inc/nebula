@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -22,7 +21,7 @@
 namespace nebula {
 namespace storage {
 
-// statis tag record count, can distinguish multiple versions
+// stats tag record count, can distinguish multiple versions
 void checkTagVertexData(int32_t spaceVidLen,
                         GraphSpaceID spaceId,
                         TagID tagId,
@@ -36,7 +35,7 @@ void checkTagVertexData(int32_t spaceVidLen,
   VertexID lastVertexId = "";
 
   for (int part = 1; part <= parts; part++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(part);
+    auto prefix = NebulaKeyUtils::tagPrefix(part);
     auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
@@ -63,7 +62,7 @@ void checkTagVertexData(int32_t spaceVidLen,
   ASSERT_EQ(expectNum, totalCount);
 }
 
-// statis edge record count, can distinguish multiple versions
+// stats edge record count, can distinguish multiple versions
 void checkEdgeData(int32_t spaceVidLen,
                    GraphSpaceID spaceId,
                    EdgeType type,
@@ -113,7 +112,7 @@ void checkEdgeData(int32_t spaceVidLen,
   ASSERT_EQ(expectNum, totalCount);
 }
 
-// statis index record count
+// stats index record count
 void checkIndexData(
     GraphSpaceID spaceId, IndexID indexId, int parts, StorageEnv* env, int expectNum) {
   int totalCount = 0;

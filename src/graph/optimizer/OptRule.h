@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_OPTIMIZER_OPTRULE_H_
@@ -43,17 +42,39 @@ struct MatchedResult {
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
 };
 
+// Match plan node by trait or kind of plan node.
+class MatchNode {
+ public:
+  explicit MatchNode(graph::PlanNode::Kind kind) : node_({kind}) {}
+  explicit MatchNode(std::initializer_list<graph::PlanNode::Kind> kinds)
+      : node_(std::move(kinds)) {}
+
+  bool match(const graph::PlanNode *node) const {
+    auto find = node_.find(node->kind());
+    return find != node_.end();
+  }
+
+ private:
+  std::unordered_set<graph::PlanNode::Kind> node_;
+};
+
 class Pattern final {
  public:
   static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
+  static Pattern create(std::initializer_list<graph::PlanNode::Kind> kinds,
+                        std::initializer_list<Pattern> patterns = {});
 
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
  private:
-  Pattern() = default;
+  explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
+      : node_(kind), dependencies_(patterns) {}
+  explicit Pattern(std::initializer_list<graph::PlanNode::Kind> kinds,
+                   std::initializer_list<Pattern> patterns = {})
+      : node_(std::move(kinds)), dependencies_(patterns) {}
   StatusOr<MatchedResult> match(const OptGroup *group) const;
 
-  graph::PlanNode::Kind kind_;
+  MatchNode node_;
   std::vector<Pattern> dependencies_;
 };
 
@@ -100,7 +121,9 @@ class RuleSet final {
 
   void merge(const RuleSet &ruleset);
 
-  const std::vector<const OptRule *> &rules() const { return rules_; }
+  const std::vector<const OptRule *> &rules() const {
+    return rules_;
+  }
 
  private:
   explicit RuleSet(const std::string &name);

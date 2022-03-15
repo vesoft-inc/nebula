@@ -32,7 +32,7 @@ endmacro()
 #   @output_path - The directory where the thrift file lives
 #
 # Output:
-#  file-cpp2-target     - A custom target to add a dependenct
+#  file-cpp2-target     - A custom target to add a dependency
 #  ${file-cpp2-HEADERS} - The generated Header Files.
 #  ${file-cpp2-SOURCES} - The generated Source Files.
 #
@@ -86,7 +86,7 @@ add_custom_command(
     --gen "js:node:"
     --gen "csharp"
     --gen "java:hashcode"
-    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v2/,use_context"
+    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v3/,use_context"
     -o "." "${file_path}/${file_name}.thrift"
   COMMAND
     mkdir -p "./gen-rust/${file_name}"

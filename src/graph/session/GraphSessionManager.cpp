@@ -1,18 +1,20 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2018 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/stats/GraphStats.h"
 
 namespace nebula {
 namespace graph {
 
+// During construction, GraphSessionManager will start a background thread to periodically
+// reclaim expired sessions and update session information to the meta server.
 GraphSessionManager::GraphSessionManager(meta::MetaClient* metaClient, const HostAddr& hostAddr)
     : SessionManager<ClientSession>(metaClient, hostAddr) {
   scavenger_->addDelayTask(
@@ -73,7 +75,7 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
       auto findPtr = activeSessions_.find(id);
       if (findPtr == activeSessions_.end()) {
         VLOG(1) << "Add session id: " << id << " from metad";
-        session.set_graph_addr(myAddr_);
+        session.graph_addr_ref() = myAddr_;
         auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
         sessionPtr->charge();
         auto ret = activeSessions_.emplace(id, sessionPtr);
@@ -93,6 +95,15 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
     }
   };
   return metaClient_->getSession(id).via(runner).thenValue(addSession);
+}
+
+std::vector<meta::cpp2::Session> GraphSessionManager::getSessionFromLocalCache() const {
+  std::vector<meta::cpp2::Session> sessions;
+  sessions.reserve(activeSessions_.size());
+  for (auto& it : activeSessions_) {
+    sessions.emplace_back(it.second->getSession());
+  }
+  return sessions;
 }
 
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::createSession(
@@ -133,11 +144,14 @@ void GraphSessionManager::removeSession(SessionID id) {
     return;
   }
 
+  // Before removing the session, all queries on the session
+  // need to be marked as killed.
   iter->second->markAllQueryKilled();
   auto resp = metaClient_->removeSession(id).get();
   if (!resp.ok()) {
     // it will delete by reclaim
     LOG(ERROR) << "Remove session `" << id << "' failed: " << resp.status();
+    return;
   }
   activeSessions_.erase(iter);
 }
@@ -152,7 +166,10 @@ void GraphSessionManager::threadFunc() {
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more
 // efficient.
 void GraphSessionManager::reclaimExpiredSessions() {
+  DCHECK_GT(FLAGS_session_idle_timeout_secs, 0);
   if (FLAGS_session_idle_timeout_secs == 0) {
+    LOG(ERROR) << "Program should not reach here, session_idle_timeout_secs should be an integer "
+                  "between 1 and 604800";
     return;
   }
 
@@ -179,6 +196,8 @@ void GraphSessionManager::reclaimExpiredSessions() {
       LOG(ERROR) << "Remove session `" << iter->first << "' failed: " << resp.status();
     }
     iter = activeSessions_.erase(iter);
+    stats::StatsManager::decValue(kNumActiveSessions);
+    stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
     // TODO: Disconnect the connection of the session
   }
 }
@@ -194,13 +213,15 @@ void GraphSessionManager::updateSessionsToMeta() {
       VLOG(3) << "Add Update session id: " << ses.second->getSession().get_session_id();
       auto sessionCopy = ses.second->getSession();
       for (auto& query : *sessionCopy.queries_ref()) {
-        query.second.set_duration(time::WallClock::fastNowInMicroSec() -
-                                  query.second.get_start_time());
+        query.second.duration_ref() =
+            time::WallClock::fastNowInMicroSec() - query.second.get_start_time();
       }
       sessions.emplace_back(std::move(sessionCopy));
     }
   }
 
+  // There may be expired queries, and the
+  // expired queries will be killed here.
   auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();

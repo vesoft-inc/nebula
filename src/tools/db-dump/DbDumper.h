@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef TOOLS_DBDUMP_DBDUMPER_H_
@@ -75,7 +74,7 @@ class DbDumper {
   std::unique_ptr<meta::ServerBasedSchemaManager> schemaMng_;
   GraphSpaceID spaceId_;
   int32_t spaceVidLen_;
-  meta::cpp2::PropertyType spaceVidType_;
+  nebula::cpp2::PropertyType spaceVidType_;
   int32_t partNum_;
   std::unordered_set<PartitionID> parts_;
   std::unordered_set<VertexID> vids_;

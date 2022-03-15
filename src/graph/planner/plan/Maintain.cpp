@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/Maintain.h"
@@ -53,6 +52,9 @@ std::unique_ptr<PlanNodeDescription> CreateIndexNode::explain() const {
   }
   addDescription("fields", folly::toJson(util::toJson(fields)), desc.get());
   addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+  if (indexParams_) {
+    addDescription("indexParams", folly::toJson(util::toJson(*indexParams_)), desc.get());
+  }
   return desc;
 }
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/time/TimeUtils.h"
@@ -10,6 +9,7 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/time/parser/DatetimeReader.h"
 
 namespace nebula {
 namespace time {
@@ -66,7 +66,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       dt.microsec += kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   auto result = validateDate(dt);
@@ -99,7 +99,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       d.day = kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   auto result = validateDate(d);
@@ -141,7 +141,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       t.microsec += kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   return t;
@@ -169,6 +169,58 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     return Status::Error("Incorrect timestamp value: `%s'", val.toString().c_str());
   }
   return timestamp;
+}
+
+/*static*/ StatusOr<Duration> TimeUtils::durationFromMap(const Map &m) {
+  Duration d;
+  for (const auto &kv : m.kvs) {
+    if (!kv.second.isInt()) {
+      return Status::Error("Invalid value type.");
+    }
+    if (kv.first == "years") {
+      d.addYears(kv.second.getInt());
+    } else if (kv.first == "quarters") {
+      d.addQuarters(kv.second.getInt());
+    } else if (kv.first == "months") {
+      d.addMonths(kv.second.getInt());
+    } else if (kv.first == "weeks") {
+      d.addWeeks(kv.second.getInt());
+    } else if (kv.first == "days") {
+      d.addDays(kv.second.getInt());
+    } else if (kv.first == "hours") {
+      d.addHours(kv.second.getInt());
+    } else if (kv.first == "minutes") {
+      d.addMinutes(kv.second.getInt());
+    } else if (kv.first == "seconds") {
+      d.addSeconds(kv.second.getInt());
+    } else if (kv.first == "milliseconds") {
+      d.addMilliseconds(kv.second.getInt());
+    } else if (kv.first == "microseconds") {
+      d.addMicroseconds(kv.second.getInt());
+    } else {
+      return Status::Error("Unkown field %s.", kv.first.c_str());
+    }
+  }
+  return d;
+}
+
+/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
+  auto p = DatetimeReader();
+  auto result = p.readDatetime(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string &str) {
+  auto p = DatetimeReader();
+  auto result = p.readDate(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
+  auto p = DatetimeReader();
+  return p.readTime(str);
 }
 
 }  // namespace time

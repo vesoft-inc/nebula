@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_PROCESSORS_COMMON_H_
@@ -15,31 +14,21 @@ namespace meta {
 class LockUtils {
  public:
   LockUtils() = delete;
-#define GENERATE_LOCK(Entry)                 \
-  static folly::SharedMutex& Entry##Lock() { \
-    static folly::SharedMutex l;             \
-    return l;                                \
+
+  static folly::SharedMutex& lock() {
+    static folly::SharedMutex lock;
+    return lock;
   }
 
-  GENERATE_LOCK(lastUpdateTime);
-  GENERATE_LOCK(space);
-  GENERATE_LOCK(id);
-  GENERATE_LOCK(localId);
-  GENERATE_LOCK(tag);
-  GENERATE_LOCK(edge);
-  GENERATE_LOCK(tagIndex);
-  GENERATE_LOCK(edgeIndex);
-  GENERATE_LOCK(fulltextServices);
-  GENERATE_LOCK(fulltextIndex);
-  GENERATE_LOCK(user);
-  GENERATE_LOCK(config);
-  GENERATE_LOCK(snapshot);
-  GENERATE_LOCK(group);
-  GENERATE_LOCK(zone);
-  GENERATE_LOCK(listener);
-  GENERATE_LOCK(session);
+  static folly::SharedMutex& snapshotLock() {
+    static folly::SharedMutex snapshotLock;
+    return snapshotLock;
+  }
 
-#undef GENERATE_LOCK
+  static folly::SharedMutex& sessionLock() {
+    static folly::SharedMutex sessionLock;
+    return sessionLock;
+  }
 };
 
 }  // namespace meta

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TEST_MOCKHDFSHELPER_H_
@@ -36,7 +35,9 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
     return "";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
@@ -61,7 +62,9 @@ class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
     return Status::Error(folly::stringPrintf("HDFS Path %s Not Exist", hdfsPath.c_str()));
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 }  // namespace meta

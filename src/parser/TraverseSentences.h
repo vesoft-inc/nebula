@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
@@ -28,25 +27,45 @@ class GoSentence final : public Sentence {
     truncateClause_.reset(truncate);
   }
 
-  void setYieldClause(YieldClause* clause) { yieldClause_.reset(clause); }
+  void setYieldClause(YieldClause* clause) {
+    yieldClause_.reset(clause);
+  }
 
-  const StepClause* stepClause() const { return stepClause_.get(); }
+  const StepClause* stepClause() const {
+    return stepClause_.get();
+  }
 
-  const FromClause* fromClause() const { return fromClause_.get(); }
+  const FromClause* fromClause() const {
+    return fromClause_.get();
+  }
 
-  const OverClause* overClause() const { return overClause_.get(); }
+  const OverClause* overClause() const {
+    return overClause_.get();
+  }
 
-  const WhereClause* whereClause() const { return whereClause_.get(); }
+  const WhereClause* whereClause() const {
+    return whereClause_.get();
+  }
 
-  WhereClause* whereClause() { return whereClause_.get(); }
+  WhereClause* whereClause() {
+    return whereClause_.get();
+  }
 
-  const YieldClause* yieldClause() const { return yieldClause_.get(); }
+  const YieldClause* yieldClause() const {
+    return yieldClause_.get();
+  }
 
-  YieldClause* yieldClause() { return yieldClause_.get(); }
+  YieldClause* yieldClause() {
+    return yieldClause_.get();
+  }
 
-  const TruncateClause* truncateClause() const { return truncateClause_.get(); }
+  const TruncateClause* truncateClause() const {
+    return truncateClause_.get();
+  }
 
-  TruncateClause* truncateClause() { return truncateClause_.get(); }
+  TruncateClause* truncateClause() {
+    return truncateClause_.get();
+  }
 
   std::string toString() const override;
 
@@ -63,11 +82,17 @@ class LookupSentence final : public Sentence {
  public:
   LookupSentence(std::string* from, WhereClause* where, YieldClause* yield);
 
-  const std::string& from() const { return *from_; }
+  const std::string& from() const {
+    return *from_;
+  }
 
-  const WhereClause* whereClause() const { return whereClause_.get(); }
+  const WhereClause* whereClause() const {
+    return whereClause_.get();
+  }
 
-  const YieldClause* yieldClause() const { return yieldClause_.get(); }
+  const YieldClause* yieldClause() const {
+    return yieldClause_.get();
+  }
 
   std::string toString() const override;
 
@@ -84,7 +109,9 @@ class UseSentence final : public Sentence {
     space_.reset(space);
   }
 
-  const std::string* space() const { return space_.get(); }
+  const std::string* space() const {
+    return space_.get();
+  }
 
   std::string toString() const override;
 
@@ -105,15 +132,25 @@ class SetSentence final : public Sentence {
 
   std::string toString() const override;
 
-  auto left() { return left_.get(); }
+  auto left() {
+    return left_.get();
+  }
 
-  auto right() { return right_.get(); }
+  auto right() {
+    return right_.get();
+  }
 
-  Operator op() const { return op_; }
+  Operator op() const {
+    return op_;
+  }
 
-  void setDistinct() { distinct_ = true; }
+  void setDistinct() {
+    distinct_ = true;
+  }
 
-  bool distinct() const { return distinct_; }
+  bool distinct() const {
+    return distinct_;
+  }
 
  private:
   Operator op_;
@@ -130,9 +167,13 @@ class PipedSentence final : public Sentence {
     right_.reset(right);
   }
 
-  Sentence* left() const { return left_.get(); }
+  Sentence* left() const {
+    return left_.get();
+  }
 
-  Sentence* right() const { return right_.get(); }
+  Sentence* right() const {
+    return right_.get();
+  }
 
   std::string toString() const override;
 
@@ -149,9 +190,13 @@ class AssignmentSentence final : public Sentence {
     sentence_.reset(sentence);
   }
 
-  const std::string* var() const { return variable_.get(); }
+  const std::string* var() const {
+    return variable_.get();
+  }
 
-  Sentence* sentence() const { return sentence_.get(); }
+  Sentence* sentence() const {
+    return sentence_.get();
+  }
 
   std::string toString() const override;
 
@@ -169,11 +214,17 @@ class OrderFactor final {
     orderType_ = op;
   }
 
-  Expression* expr() { return expr_; }
+  Expression* expr() {
+    return expr_;
+  }
 
-  void setExpr(Expression* expr) { expr_ = expr; }
+  void setExpr(Expression* expr) {
+    expr_ = expr;
+  }
 
-  OrderType orderType() { return orderType_; }
+  OrderType orderType() {
+    return orderType_;
+  }
 
   std::string toString() const;
 
@@ -184,11 +235,17 @@ class OrderFactor final {
 
 class OrderFactors final {
  public:
-  void addFactor(OrderFactor* factor) { factors_.emplace_back(factor); }
+  void addFactor(OrderFactor* factor) {
+    factors_.emplace_back(factor);
+  }
 
-  auto& factors() { return factors_; }
+  auto& factors() {
+    return factors_;
+  }
 
-  const auto& factors() const { return factors_; }
+  const auto& factors() const {
+    return factors_;
+  }
 
   std::string toString() const;
 
@@ -203,9 +260,13 @@ class OrderBySentence final : public Sentence {
     kind_ = Kind::kOrderBy;
   }
 
-  auto& factors() { return orderFactors_->factors(); }
+  auto& factors() {
+    return orderFactors_->factors();
+  }
 
-  const auto& factors() const { return orderFactors_->factors(); }
+  const auto& factors() const {
+    return orderFactors_->factors();
+  }
 
   std::string toString() const override;
 
@@ -229,27 +290,35 @@ class FetchVerticesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  explicit FetchVerticesSentence(Expression* ref, YieldClause* clause) {
+  FetchVerticesSentence(Expression* ref, YieldClause* clause) {
     kind_ = Kind::kFetchVertices;
     tags_ = std::make_unique<NameLabelList>();
     vertices_.reset(new VerticesClause(ref));
     yieldClause_.reset(clause);
   }
 
-  explicit FetchVerticesSentence(VertexIDList* vidList, YieldClause* clause) {
+  FetchVerticesSentence(VertexIDList* vidList, YieldClause* clause) {
     kind_ = Kind::kFetchVertices;
     tags_ = std::make_unique<NameLabelList>();
     vertices_.reset(new VerticesClause(vidList));
     yieldClause_.reset(clause);
   }
 
-  const NameLabelList* tags() const { return tags_->empty() ? nullptr : tags_.get(); }
+  const NameLabelList* tags() const {
+    return tags_->empty() ? nullptr : tags_.get();
+  }
 
-  const VerticesClause* vertices() const { return vertices_.get(); }
+  const VerticesClause* vertices() const {
+    return vertices_.get();
+  }
 
-  YieldClause* yieldClause() const { return yieldClause_.get(); }
+  YieldClause* yieldClause() const {
+    return yieldClause_.get();
+  }
 
-  void setYieldClause(YieldClause* clause) { yieldClause_.reset(clause); }
+  void setYieldClause(YieldClause* clause) {
+    yieldClause_.reset(clause);
+  }
 
   std::string toString() const override;
 
@@ -275,23 +344,41 @@ class FetchEdgesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  bool isRef() const { return keyRef_ != nullptr; }
+  bool isRef() const {
+    return keyRef_ != nullptr;
+  }
 
-  void setKeyRef(EdgeKeyRef* ref) { keyRef_.reset(ref); }
+  void setKeyRef(EdgeKeyRef* ref) {
+    keyRef_.reset(ref);
+  }
 
-  EdgeKeyRef* ref() const { return keyRef_.get(); }
+  EdgeKeyRef* ref() const {
+    return keyRef_.get();
+  }
 
-  void setKeys(EdgeKeys* keys) { edgeKeys_.reset(keys); }
+  void setKeys(EdgeKeys* keys) {
+    edgeKeys_.reset(keys);
+  }
 
-  EdgeKeys* keys() const { return edgeKeys_.get(); }
+  EdgeKeys* keys() const {
+    return edgeKeys_.get();
+  }
 
-  void setYieldClause(YieldClause* clause) { yieldClause_.reset(clause); }
+  void setYieldClause(YieldClause* clause) {
+    yieldClause_.reset(clause);
+  }
 
-  YieldClause* yieldClause() const { return yieldClause_.get(); }
+  YieldClause* yieldClause() const {
+    return yieldClause_.get();
+  }
 
-  const std::string& edgeName() const { return *edge_->front(); }
+  const std::string& edgeName() const {
+    return *edge_->front();
+  }
 
-  std::size_t edgeSize() const { return edge_->size(); }
+  std::size_t edgeSize() const {
+    return edge_->size();
+  }
 
   std::string toString() const override;
 
@@ -311,31 +398,65 @@ class FindPathSentence final : public Sentence {
     noLoop_ = noLoop;
   }
 
-  void setFrom(FromClause* clause) { from_.reset(clause); }
+  void setFrom(FromClause* clause) {
+    from_.reset(clause);
+  }
 
-  void setTo(ToClause* clause) { to_.reset(clause); }
+  void setTo(ToClause* clause) {
+    to_.reset(clause);
+  }
 
-  void setOver(OverClause* clause) { over_.reset(clause); }
+  void setOver(OverClause* clause) {
+    over_.reset(clause);
+  }
 
-  void setStep(StepClause* clause) { step_.reset(clause); }
+  void setStep(StepClause* clause) {
+    step_.reset(clause);
+  }
 
-  void setWhere(WhereClause* clause) { where_.reset(clause); }
+  void setWhere(WhereClause* clause) {
+    where_.reset(clause);
+  }
 
-  FromClause* from() const { return from_.get(); }
+  void setYield(YieldClause* yield) {
+    yield_.reset(yield);
+  }
 
-  ToClause* to() const { return to_.get(); }
+  FromClause* from() const {
+    return from_.get();
+  }
 
-  OverClause* over() const { return over_.get(); }
+  ToClause* to() const {
+    return to_.get();
+  }
 
-  StepClause* step() const { return step_.get(); }
+  OverClause* over() const {
+    return over_.get();
+  }
 
-  WhereClause* where() const { return where_.get(); }
+  StepClause* step() const {
+    return step_.get();
+  }
 
-  bool isShortest() const { return isShortest_; }
+  WhereClause* where() const {
+    return where_.get();
+  }
 
-  bool withProp() const { return withProp_; }
+  YieldClause* yield() const {
+    return yield_.get();
+  }
 
-  bool noLoop() const { return noLoop_; }
+  bool isShortest() const {
+    return isShortest_;
+  }
+
+  bool withProp() const {
+    return withProp_;
+  }
+
+  bool noLoop() const {
+    return noLoop_;
+  }
 
   std::string toString() const override;
 
@@ -348,19 +469,24 @@ class FindPathSentence final : public Sentence {
   std::unique_ptr<OverClause> over_;
   std::unique_ptr<StepClause> step_;
   std::unique_ptr<WhereClause> where_;
+  std::unique_ptr<YieldClause> yield_;
 };
 
 class LimitSentence final : public Sentence {
  public:
-  explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
+  LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
     kind_ = Kind::kLimit;
   }
 
   std::string toString() const override;
 
-  int64_t offset() { return offset_; }
+  int64_t offset() {
+    return offset_;
+  }
 
-  int64_t count() { return count_; }
+  int64_t count() {
+    return count_;
+  }
 
  private:
   int64_t offset_{-1};
@@ -375,15 +501,25 @@ class YieldSentence final : public Sentence {
     kind_ = Kind::kYield;
   }
 
-  std::vector<YieldColumn*> columns() const { return yieldClause_->columns(); }
+  std::vector<YieldColumn*> columns() const {
+    return yieldClause_->columns();
+  }
 
-  YieldColumns* yieldColumns() const { return yieldClause_->yields(); }
+  YieldColumns* yieldColumns() const {
+    return yieldClause_->yields();
+  }
 
-  void setWhereClause(WhereClause* clause) { whereClause_.reset(clause); }
+  void setWhereClause(WhereClause* clause) {
+    whereClause_.reset(clause);
+  }
 
-  WhereClause* where() const { return whereClause_.get(); }
+  WhereClause* where() const {
+    return whereClause_.get();
+  }
 
-  YieldClause* yield() const { return yieldClause_.get(); }
+  YieldClause* yield() const {
+    return yieldClause_.get();
+  }
 
   std::string toString() const override;
 
@@ -403,17 +539,29 @@ class GroupBySentence final : public Sentence {
     groupClause_.reset(groupby);
   }
 
-  void setGroupClause(GroupClause* clause) { groupClause_.reset(clause); }
+  void setGroupClause(GroupClause* clause) {
+    groupClause_.reset(clause);
+  }
 
-  void setHavingClause(WhereClause* clause) { havingClause_.reset(clause); }
+  void setHavingClause(WhereClause* clause) {
+    havingClause_.reset(clause);
+  }
 
-  void setYieldClause(YieldClause* clause) { yieldClause_.reset(clause); }
+  void setYieldClause(YieldClause* clause) {
+    yieldClause_.reset(clause);
+  }
 
-  const GroupClause* groupClause() const { return groupClause_.get(); }
+  const GroupClause* groupClause() const {
+    return groupClause_.get();
+  }
 
-  const WhereClause* havingClause() const { return havingClause_.get(); }
+  const WhereClause* havingClause() const {
+    return havingClause_.get();
+  }
 
-  const YieldClause* yieldClause() const { return yieldClause_.get(); }
+  const YieldClause* yieldClause() const {
+    return yieldClause_.get();
+  }
 
   std::string toString() const override;
 
@@ -442,19 +590,33 @@ class GetSubgraphSentence final : public Sentence {
     yield_.reset(yield);
   }
 
-  StepClause* step() const { return step_.get(); }
+  StepClause* step() const {
+    return step_.get();
+  }
 
-  bool withProp() const { return withProp_; }
+  bool withProp() const {
+    return withProp_;
+  }
 
-  FromClause* from() const { return from_.get(); }
+  FromClause* from() const {
+    return from_.get();
+  }
 
-  InBoundClause* in() const { return in_.get(); }
+  InBoundClause* in() const {
+    return in_.get();
+  }
 
-  OutBoundClause* out() const { return out_.get(); }
+  OutBoundClause* out() const {
+    return out_.get();
+  }
 
-  BothInOutClause* both() const { return both_.get(); }
+  BothInOutClause* both() const {
+    return both_.get();
+  }
 
-  YieldClause* yield() const { return yield_.get(); }
+  YieldClause* yield() const {
+    return yield_.get();
+  }
 
   std::string toString() const override;
 

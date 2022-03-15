@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/time/WallClock.h"
@@ -31,7 +30,9 @@ int64_t WallClock::slowNowInMicroSec() {
 }
 
 #if defined(__x86_64__)
-int64_t WallClock::fastNowInSec() { return TscHelper::tickToTimePointInSec(TscHelper::readTsc()); }
+int64_t WallClock::fastNowInSec() {
+  return TscHelper::tickToTimePointInSec(TscHelper::readTsc());
+}
 
 int64_t WallClock::fastNowInMilliSec() {
   return TscHelper::tickToTimePointInMSec(TscHelper::readTsc());
@@ -41,11 +42,17 @@ int64_t WallClock::fastNowInMicroSec() {
   return TscHelper::tickToTimePointInUSec(TscHelper::readTsc());
 }
 #elif defined(__aarch64__) || defined(__arm64__) || defined(__mips64)
-int64_t WallClock::fastNowInSec() { return WallClock::slowNowInSec(); }
+int64_t WallClock::fastNowInSec() {
+  return WallClock::slowNowInSec();
+}
 
-int64_t WallClock::fastNowInMilliSec() { return slowNowInMilliSec(); }
+int64_t WallClock::fastNowInMilliSec() {
+  return slowNowInMilliSec();
+}
 
-int64_t WallClock::fastNowInMicroSec() { return slowNowInMicroSec(); }
+int64_t WallClock::fastNowInMicroSec() {
+  return slowNowInMicroSec();
+}
 #else  // defined(__x86_64__)
 #error "Only x86_64 and aarch64 are supported"
 #endif  // defined(__x86_64__)

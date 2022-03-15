@@ -1,15 +1,15 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_CHAINTESTUTILS_H
+#define STORAGE_TEST_CHAINTESTUTILS_H
 
 #include "storage/CommonUtils.h"
-#include "storage/transaction/ChainResumeProcessor.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
-#include "storage/transaction/ChainUpdateEdgeProcessorRemote.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeRemoteProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -19,6 +19,27 @@ extern const int32_t mockPartNum;
 extern const int32_t mockSpaceVidLen;
 
 using KeyGenerator = std::function<std::string(PartitionID partId, const cpp2::NewEdge& edge)>;
+
+class TransactionManagerTester {
+ public:
+  explicit TransactionManagerTester(TransactionManager* p) : man_(p) {}
+
+  void stop() {
+    man_->stop();
+    int32_t numCheckIdle = 0;
+    while (numCheckIdle < 3) {
+      auto stats = man_->exec_->getPoolStats();
+      if (stats.threadCount == stats.idleThreadCount) {
+        ++numCheckIdle;
+      } else {
+        numCheckIdle = 0;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+  }
+
+  TransactionManager* man_{nullptr};
+};
 
 class ChainTestUtils {
  public:
@@ -35,6 +56,38 @@ class ChainTestUtils {
       auto key = ConsistUtil::doublePrime(spaceVidLen_, partId, edge.get_key());
       return key;
     };
+  }
+
+  std::vector<std::string> genEdgeKeys(const cpp2::AddEdgesRequest& req, KeyGenerator gen) {
+    std::vector<std::string> ret;
+    for (auto& partAndEdges : *req.parts_ref()) {
+      auto partId = partAndEdges.first;
+      auto& edgeVec = partAndEdges.second;
+      for (auto& edge : edgeVec) {
+        auto key = gen(partId, edge);
+        ret.emplace_back(std::move(key));
+      }
+    }
+    return ret;
+  }
+
+  // return the actual num of keys in nebula store.
+  int32_t checkNumOfKey(StorageEnv* env,
+                        GraphSpaceID spaceId,
+                        const std::vector<std::string>& keys) {
+    int32_t ret = 0;
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    for (auto& key : keys) {
+      iter.reset();
+      auto partId = NebulaKeyUtils::getPart(key);
+      auto rc = env->kvstore_->prefix(spaceId, partId, key, &iter);
+      if (rc == Code::SUCCEEDED && iter && iter->valid()) {
+        ++ret;
+      }
+    }
+
+    return ret;
   }
 
  public:
@@ -58,6 +111,7 @@ int numOfKey(const cpp2::AddEdgesRequest& req, KeyGenerator gen, StorageEnv* env
       std::unique_ptr<kvstore::KVIterator> iter;
       EXPECT_EQ(Code::SUCCEEDED, env->kvstore_->prefix(spaceId, partId, key, &iter));
       if (iter && iter->valid()) {
+        // LOG(INFO) << "key = " << key;
         ++numOfEdges;
       } else {
         // LOG(INFO) << "key: " << key << " not exist";
@@ -83,7 +137,7 @@ bool keyExist(StorageEnv* env, GraphSpaceID spaceId, PartitionID partId, std::st
   return rc == Code::SUCCEEDED;
 }
 
-class FakeChainAddEdgesProcessorLocal : public ChainAddEdgesProcessorLocal {
+class FakeChainAddEdgesLocalProcessor : public ChainAddEdgesLocalProcessor {
   FRIEND_TEST(ChainAddEdgesTest, prepareLocalSucceededTest);
   FRIEND_TEST(ChainAddEdgesTest, processRemoteSucceededTest);
   FRIEND_TEST(ChainAddEdgesTest, processRemoteFailedTest);
@@ -91,44 +145,46 @@ class FakeChainAddEdgesProcessorLocal : public ChainAddEdgesProcessorLocal {
   // all the above will test succeeded path of process local
   // the failed path of process local will be tested in resume test
  public:
-  explicit FakeChainAddEdgesProcessorLocal(StorageEnv* env) : ChainAddEdgesProcessorLocal(env) {
+  explicit FakeChainAddEdgesLocalProcessor(StorageEnv* env) : ChainAddEdgesLocalProcessor(env) {
     spaceVidLen_ = 32;
+    rcRemote_ = Code::SUCCEEDED;
+    rcCommit_ = Code::SUCCEEDED;
   }
 
   folly::SemiFuture<Code> prepareLocal() override {
-    LOG(INFO) << "FakeChainAddEdgesProcessorLocal::" << __func__ << "()";
+    LOG(INFO) << "FakeChainAddEdgesLocalProcessor::" << __func__ << "()";
     if (rcPrepareLocal) {
       LOG(INFO) << "Fake return " << apache::thrift::util::enumNameSafe(*rcPrepareLocal);
       return *rcPrepareLocal;
     }
-    LOG(INFO) << "forward to ChainAddEdgesProcessorLocal::prepareLocal()";
-    return ChainAddEdgesProcessorLocal::prepareLocal();
+    LOG(INFO) << "forward to ChainAddEdgesLocalProcessor::prepareLocal()";
+    return ChainAddEdgesLocalProcessor::prepareLocal();
   }
 
   folly::SemiFuture<Code> processRemote(Code code) override {
-    LOG(INFO) << "FakeChainAddEdgesProcessorLocal::" << __func__ << "()";
+    LOG(INFO) << "FakeChainAddEdgesLocalProcessor::" << __func__ << "()";
     if (rcProcessRemote) {
       LOG(INFO) << "processRemote() fake return "
                 << apache::thrift::util::enumNameSafe(*rcProcessRemote);
       LOG_IF(FATAL, code != Code::SUCCEEDED) << "cheat must base on truth";
       return *rcProcessRemote;
     }
-    LOG(INFO) << "forward to ChainAddEdgesProcessorLocal::processRemote()";
-    return ChainAddEdgesProcessorLocal::processRemote(code);
+    LOG(INFO) << "forward to ChainAddEdgesLocalProcessor::processRemote()";
+    return ChainAddEdgesLocalProcessor::processRemote(code);
   }
 
   folly::SemiFuture<Code> processLocal(Code code) override {
-    LOG(INFO) << "FakeChainAddEdgesProcessorLocal::" << __func__ << "()";
+    LOG(INFO) << "FakeChainAddEdgesLocalProcessor::" << __func__ << "()";
     if (rcProcessLocal) {
       LOG(INFO) << "Fake return " << apache::thrift::util::enumNameSafe(*rcProcessLocal);
       return *rcProcessLocal;
     }
-    LOG(INFO) << "forward to ChainAddEdgesProcessorLocal::processLocal()";
-    return ChainAddEdgesProcessorLocal::processLocal(code);
+    LOG(INFO) << "forward to ChainAddEdgesLocalProcessor::processLocal()";
+    return ChainAddEdgesLocalProcessor::processLocal(code);
   }
 
   cpp2::AddEdgesRequest reverseRequestForward(const cpp2::AddEdgesRequest& req) {
-    return ChainAddEdgesProcessorLocal::reverseRequest(req);
+    return ChainAddEdgesLocalProcessor::reverseRequest(req);
   }
 
   std::optional<Code> rcPrepareLocal;
@@ -136,11 +192,33 @@ class FakeChainAddEdgesProcessorLocal : public ChainAddEdgesProcessorLocal {
   std::optional<Code> rcProcessRemote;
 
   std::optional<Code> rcProcessLocal;
+
+  void setPrepareCode(Code code, Code rc = Code::SUCCEEDED) {
+    rcPrepareLocal = code;
+    rcPrepare_ = rc;
+  }
+
+  void setRemoteCode(Code code) {
+    rcProcessRemote = code;
+    rcRemote_ = code;
+  }
+
+  void setCommitCode(Code code, Code rc = Code::SUCCEEDED) {
+    rcProcessLocal = code;
+    rcCommit_ = rc;
+  }
+
+  void finish() override {
+    auto rc = (rcPrepare_ == Code::SUCCEEDED) ? rcCommit_ : rcPrepare_;
+    pushResultCode(rc, localPartId_);
+    finished_.setValue(rc);
+    onFinished();
+  }
 };
 
-class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
+class FakeChainUpdateProcessor : public ChainUpdateEdgeLocalProcessor {
  public:
-  explicit FakeChainUpdateProcessor(StorageEnv* env) : ChainUpdateEdgeProcessorLocal(env) {
+  explicit FakeChainUpdateProcessor(StorageEnv* env) : ChainUpdateEdgeLocalProcessor(env) {
     spaceVidLen_ = 32;
   }
 
@@ -150,39 +228,89 @@ class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
       LOG(INFO) << "Fake return " << apache::thrift::util::enumNameSafe(*rcPrepareLocal);
       return *rcPrepareLocal;
     }
-    LOG(INFO) << "forward to ChainUpdateEdgeProcessorLocal::prepareLocal()";
-    return ChainUpdateEdgeProcessorLocal::prepareLocal();
+    LOG(INFO) << "forward to ChainUpdateEdgeLocalProcessor::prepareLocal()";
+    return ChainUpdateEdgeLocalProcessor::prepareLocal();
   }
 
   folly::SemiFuture<Code> processRemote(Code code) override {
-    LOG(INFO) << "FakeChainUpdateEdgeProcessorA::" << __func__ << "()";
+    LOG(INFO) << "FakeChainUpdateEdgeProcessor::" << __func__ << "()";
     if (rcProcessRemote) {
       LOG(INFO) << "processRemote() fake return "
                 << apache::thrift::util::enumNameSafe(*rcProcessRemote);
       LOG_IF(FATAL, code != Code::SUCCEEDED) << "cheat must base on truth";
       return *rcProcessRemote;
     }
-    LOG(INFO) << "forward to ChainUpdateEdgeProcessorLocal::processRemote()";
-    return ChainUpdateEdgeProcessorLocal::processRemote(code);
+    LOG(INFO) << "forward to ChainUpdateEdgeLocalProcessor::processRemote()";
+    return ChainUpdateEdgeLocalProcessor::processRemote(code);
   }
 
   folly::SemiFuture<Code> processLocal(Code code) override {
-    LOG(INFO) << "FakeChainUpdateEdgeProcessorA::" << __func__ << "()";
+    LOG(INFO) << "FakeChainUpdateEdgeProcessor::" << __func__ << "()";
     if (rcProcessLocal) {
       LOG(INFO) << "processLocal() fake return "
                 << apache::thrift::util::enumNameSafe(*rcProcessLocal);
       return *rcProcessLocal;
     }
-    LOG(INFO) << "forward to ChainUpdateEdgeProcessorLocal::processLocal()";
-    return ChainUpdateEdgeProcessorLocal::processLocal(code);
+    LOG(INFO) << "forward to ChainUpdateEdgeLocalProcessor::processLocal()";
+    return ChainUpdateEdgeLocalProcessor::processLocal(code);
   }
 
-  void wrapAddUnfinishedEdge(ResumeType type) { addUnfinishedEdge(type); }
+  void wrapAddUnfinishedEdge(ResumeType type) {
+    reportFailed(type);
+  }
+  void setPrepareCode(Code code, Code rc = Code::SUCCEEDED) {
+    rcPrepareLocal = code;
+    rcPrepare_ = rc;
+  }
+
+  void setRemoteCode(Code code) {
+    rcProcessRemote = code;
+    rcRemote_ = code;
+  }
+
+  void setCommitCode(Code code, Code rc = Code::SUCCEEDED) {
+    rcProcessLocal = code;
+    rcCommit_ = rc;
+  }
+
+  void setDoRecover(bool doRecover) {
+    doRecover_ = doRecover;
+  }
+
+  void finish() override {
+    if (doRecover_) {
+      LOG(INFO) << "do real finish()";
+      ChainUpdateEdgeLocalProcessor::finish();
+    } else {
+      auto rc = Code::SUCCEEDED;
+      do {
+        if (rcPrepare_ != Code::SUCCEEDED) {
+          rc = rcPrepare_;
+          break;
+        }
+
+        if (rcCommit_ != Code::SUCCEEDED) {
+          rc = rcCommit_;
+          break;
+        }
+
+        if (rcRemote_ != Code::E_RPC_FAILURE) {
+          rc = rcRemote_;
+          break;
+        }
+      } while (0);
+
+      pushResultCode(rc, localPartId_);
+      finished_.setValue(rc);
+      onFinished();
+    }
+  }
 
  public:
   std::optional<Code> rcPrepareLocal;
   std::optional<Code> rcProcessRemote;
   std::optional<Code> rcProcessLocal;
+  bool doRecover_{false};
 };
 
 class MetaClientTestUpdater {
@@ -192,14 +320,14 @@ class MetaClientTestUpdater {
   static void addLocalCache(meta::MetaClient& mClient,
                             GraphSpaceID spaceId,
                             std::shared_ptr<meta::SpaceInfoCache> spInfoCache) {
-    mClient.localCache_[spaceId] = spInfoCache;
+    mClient.metadata_.load()->localCache_[spaceId] = spInfoCache;
   }
 
   static meta::SpaceInfoCache* getLocalCache(meta::MetaClient* mClient, GraphSpaceID spaceId) {
-    if (mClient->localCache_.count(spaceId) == 0) {
+    if (mClient->metadata_.load()->localCache_.count(spaceId) == 0) {
       return nullptr;
     }
-    return mClient->localCache_[spaceId].get();
+    return mClient->metadata_.load()->localCache_[spaceId].get();
   }
 
   static void addPartTerm(meta::MetaClient* mClient,
@@ -215,23 +343,26 @@ class MetaClientTestUpdater {
     pCache->termOfPartition_[partId] = termId;
   }
 
-  static std::unique_ptr<meta::MetaClient> makeDefaultMetaClient() {
+  static std::unique_ptr<meta::MetaClient> makeDefault() {
     auto exec = std::make_shared<folly::IOThreadPoolExecutor>(3);
     std::vector<HostAddr> addrs(1);
     meta::MetaClientOptions options;
 
     auto mClient = std::make_unique<meta::MetaClient>(exec, addrs, options);
-    mClient->localCache_[mockSpaceId] = std::make_shared<meta::SpaceInfoCache>();
+    auto spSpaceInfoCache = std::make_shared<meta::SpaceInfoCache>();
+    addLocalCache(*mClient, mockSpaceId, spSpaceInfoCache);
+    auto* pCache = getLocalCache(mClient.get(), mockSpaceId);
+
     for (int i = 0; i != mockPartNum; ++i) {
-      mClient->localCache_[mockSpaceId]->termOfPartition_[i] = i;
-      auto ignoreItem = mClient->localCache_[mockSpaceId]->partsAlloc_[i];
+      pCache->termOfPartition_[i] = i;
+      auto ignoreItem = pCache->partsAlloc_[i];
       UNUSED(ignoreItem);
     }
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
-    type.set_type_length(32);
+    type.type_ref() = nebula::cpp2::PropertyType::FIXED_STRING;
+    type.type_length_ref() = 32;
 
-    mClient->localCache_[mockSpaceId]->spaceDesc_.set_vid_type(std::move(type));
+    pCache->spaceDesc_.vid_type_ref() = std::move(type);
     mClient->ready_ = true;
     return mClient;
   }
@@ -239,9 +370,9 @@ class MetaClientTestUpdater {
 
 class FakeInternalStorageClient : public InternalStorageClient {
  public:
-  explicit FakeInternalStorageClient(StorageEnv* env,
-                                     std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                                     Code code)
+  FakeInternalStorageClient(StorageEnv* env,
+                            std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+                            Code code)
       : InternalStorageClient(pool, env->metaClient_), env_(env), code_(code) {}
 
   void chainUpdateEdge(cpp2::UpdateEdgeRequest& req,
@@ -250,10 +381,10 @@ class FakeInternalStorageClient : public InternalStorageClient {
                        folly::Promise<Code>&& p,
                        folly::EventBase* evb = nullptr) override {
     cpp2::ChainUpdateEdgeRequest chainReq;
-    chainReq.set_update_edge_request(req);
-    chainReq.set_term(termOfSrc);
+    chainReq.update_edge_request_ref() = req;
+    chainReq.term_ref() = termOfSrc;
 
-    auto* proc = ChainUpdateEdgeProcessorRemote::instance(env_);
+    auto* proc = ChainUpdateEdgeRemoteProcessor::instance(env_);
     auto f = proc->getFuture();
     proc->process(chainReq);
     auto resp = std::move(f).get();
@@ -263,7 +394,9 @@ class FakeInternalStorageClient : public InternalStorageClient {
     UNUSED(evb);
   }
 
-  void setErrorCode(Code code) { code_ = code; }
+  void setErrorCode(Code code) {
+    code_ = code;
+  }
 
   void chainAddEdges(cpp2::AddEdgesRequest& req,
                      TermID termId,
@@ -277,13 +410,25 @@ class FakeInternalStorageClient : public InternalStorageClient {
     UNUSED(evb);
   }
 
+  void chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
+                        const std::string& txnId,
+                        TermID termId,
+                        folly::Promise<::nebula::cpp2::ErrorCode>&& p,
+                        folly::EventBase* evb = nullptr) override {
+    UNUSED(req);
+    UNUSED(txnId);
+    UNUSED(termId);
+    p.setValue(code_);
+    UNUSED(evb);
+  }
+
   static FakeInternalStorageClient* instance(StorageEnv* env, Code fakeCode = Code::SUCCEEDED) {
     auto pool = std::make_shared<folly::IOThreadPoolExecutor>(3);
     return new FakeInternalStorageClient(env, pool, fakeCode);
   }
 
   static void hookInternalStorageClient(StorageEnv* env, InternalStorageClient* client) {
-    env->txnMan_->iClient_ = client;
+    env->interClient_ = client;
   }
 
  private:
@@ -291,15 +436,19 @@ class FakeInternalStorageClient : public InternalStorageClient {
   Code code_{Code::SUCCEEDED};
 };
 
+using UPCLT = std::unique_ptr<FakeInternalStorageClient>;
+
 struct ChainUpdateEdgeTestHelper {
-  ChainUpdateEdgeTestHelper() { sEdgeType = std::to_string(std::abs(edgeType_)); }
+  ChainUpdateEdgeTestHelper() {
+    sEdgeType = std::to_string(std::abs(edgeType_));
+  }
 
   cpp2::EdgeKey defaultEdgeKey() {
     cpp2::EdgeKey ret;
-    ret.set_src(srcId_);
-    ret.set_edge_type(edgeType_);
-    ret.set_ranking(rank_);
-    ret.set_dst(dstId_);
+    ret.src_ref() = srcId_;
+    ret.edge_type_ref() = edgeType_;
+    ret.ranking_ref() = rank_;
+    ret.dst_ref() = dstId_;
     return ret;
   }
 
@@ -309,19 +458,19 @@ struct ChainUpdateEdgeTestHelper {
     std::vector<cpp2::UpdatedProp> props;
     // int: 101.teamCareer = 20
     cpp2::UpdatedProp uProp1;
-    uProp1.set_name("teamCareer");
+    uProp1.name_ref() = "teamCareer";
     // ConstantExpression val1(20);
     const auto& val1 = *ConstantExpression::make(&objPool, 20);
-    uProp1.set_value(Expression::encode(val1));
+    uProp1.value_ref() = Expression::encode(val1);
     props.emplace_back(uProp1);
 
     // bool: 101.type = trade
     cpp2::UpdatedProp uProp2;
-    uProp2.set_name("type");
+    uProp2.name_ref() = "type";
     std::string colnew("trade");
     // ConstantExpression val2(colnew);
     const auto& val2 = *ConstantExpression::make(&objPool, colnew);
-    uProp2.set_value(Expression::encode(val2));
+    uProp2.value_ref() = Expression::encode(val2);
     props.emplace_back(uProp2);
     return props;
   }
@@ -346,14 +495,14 @@ struct ChainUpdateEdgeTestHelper {
   }
 
   cpp2::UpdateEdgeRequest reverseRequest(StorageEnv* env, const cpp2::UpdateEdgeRequest& req) {
-    ChainUpdateEdgeProcessorLocal proc(env);
+    ChainUpdateEdgeLocalProcessor proc(env);
     return proc.reverseRequest(req);
   }
 
   cpp2::UpdateEdgeRequest makeInvalidRequest() {
     VertexID srcInvalid{"Spurssssssss"};
     auto edgeKey = defaultEdgeKey();
-    edgeKey.set_src(srcInvalid);
+    edgeKey.src_ref() = srcInvalid;
     auto updateProps = defaultUpdateProps();
     auto retProps = defaultRetProps();
     return makeRequest(edgeKey, updateProps, retProps);
@@ -364,17 +513,17 @@ struct ChainUpdateEdgeTestHelper {
                                       const std::vector<std::string>& retCols) {
     cpp2::UpdateEdgeRequest req;
     auto partId = std::hash<std::string>()(edgeKey.get_src().getStr()) % mockPartNum + 1;
-    req.set_space_id(mockSpaceId);
-    req.set_part_id(partId);
-    req.set_edge_key(edgeKey);
-    req.set_updated_props(updateProps);
-    req.set_return_props(retCols);
-    req.set_insertable(false);
+    req.space_id_ref() = mockSpaceId;
+    req.part_id_ref() = partId;
+    req.edge_key_ref() = edgeKey;
+    req.updated_props_ref() = updateProps;
+    req.return_props_ref() = retCols;
+    req.insertable_ref() = false;
     return req;
   }
 
-  bool checkResp2(cpp2::UpdateResponse& resp) {
-    LOG(INFO) << "checkResp2(cpp2::UpdateResponse& resp)";
+  bool checkResp(cpp2::UpdateResponse& resp) {
+    LOG(INFO) << "checkResp(cpp2::UpdateResponse& resp)";
     if (!resp.props_ref()) {
       LOG(INFO) << "!resp.props_ref()";
       return false;
@@ -454,7 +603,6 @@ struct ChainUpdateEdgeTestHelper {
       auto val1 = cexpr->value();
       auto val2 = edgeReader->getValueByName(prop.get_name());
 
-      // EXPECT_EQ(val1, val2);
       if (val1 != val2) {
         ret = false;
       }
@@ -472,25 +620,6 @@ struct ChainUpdateEdgeTestHelper {
   std::string sEdgeType;
 };
 
-// class ChainResumeProcessorTestHelper {
-// public:
-//     explicit ChainResumeProcessorTestHelper(ChainResumeProcessor* proc) : proc_(proc) {}
-
-//     void setAddEdgeProc(ChainAddEdgesProcessorLocal* proc) {
-//         proc_->addProc = proc;
-//     }
-
-//     // setUpdProc
-//     void setUpdProc(ChainUpdateEdgeProcessorLocal* proc) {
-//         proc_->updProc = proc;
-//     }
-
-//     std::string getTxnId() {
-//         return proc_->addProc->txnId_;
-//     }
-// public:
-//     ChainResumeProcessor* proc_{nullptr};
-// };
-
 }  // namespace storage
 }  // namespace nebula
+#endif

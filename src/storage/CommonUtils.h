@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_COMMON_H_
@@ -92,9 +91,13 @@ class StorageEnv {
     return IndexState::FINISHED;
   }
 
-  bool checkRebuilding(IndexState indexState) { return indexState == IndexState::BUILDING; }
+  bool checkRebuilding(IndexState indexState) {
+    return indexState == IndexState::BUILDING;
+  }
 
-  bool checkIndexLocked(IndexState indexState) { return indexState == IndexState::LOCKED; }
+  bool checkIndexLocked(IndexState indexState) {
+    return indexState == IndexState::LOCKED;
+  }
 };
 
 class IndexCountWrapper {
@@ -119,7 +122,9 @@ class IndexCountWrapper {
     return *this;
   }
 
-  ~IndexCountWrapper() { count_->fetch_sub(1, std::memory_order_release); }
+  ~IndexCountWrapper() {
+    count_->fetch_sub(1, std::memory_order_release);
+  }
 
  private:
   std::atomic<int32_t>* count_;
@@ -188,19 +193,34 @@ class PlanContext {
 struct RuntimeContext {
   explicit RuntimeContext(PlanContext* planContext) : planContext_(planContext) {}
 
-  StorageEnv* env() const { return planContext_->env_; }
+  StorageEnv* env() const {
+    return planContext_->env_;
+  }
 
-  GraphSpaceID spaceId() const { return planContext_->spaceId_; }
+  GraphSpaceID spaceId() const {
+    return planContext_->spaceId_;
+  }
 
-  size_t vIdLen() const { return planContext_->vIdLen_; }
+  size_t vIdLen() const {
+    return planContext_->vIdLen_;
+  }
 
-  bool isIntId() const { return planContext_->isIntId_; }
+  bool isIntId() const {
+    return planContext_->isIntId_;
+  }
 
-  bool isEdge() const { return planContext_->isEdge_; }
+  bool isEdge() const {
+    return planContext_->isEdge_;
+  }
 
-  ObjectPool* objPool() { return &planContext_->objPool_; }
+  ObjectPool* objPool() {
+    return &planContext_->objPool_;
+  }
 
   bool isPlanKilled() {
+    if (env() == nullptr) {
+      return false;
+    }
     return env()->metaClient_ &&
            env()->metaClient_->checkIsPlanKilled(planContext_->sessionId_, planContext_->planId_);
   }
@@ -220,6 +240,10 @@ struct RuntimeContext {
 
   // used for update
   bool insert_ = false;
+
+  // some times, one line is filter out but still return (has edge)
+  // and some time, this line is just removed from the return result
+  bool filterInvalidResultOut = false;
 
   ResultStatus resultStat_{ResultStatus::NORMAL};
 };

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_SIGNALHANDLER_H_
@@ -13,7 +12,7 @@
 #include "common/base/Status.h"
 
 /**
- * SignalHandler is a singleton to do the basic signal hanling,
+ * SignalHandler is a singleton to do the basic signal handling,
  * mainly used in a daemon executable.
  *
  * By default, it ignores SIGPIPE and SIGHUP as we usually do.
@@ -33,7 +32,7 @@ class SignalHandler final {
 
   /**
    * To install one or several signals to handle.
-   * Upon any signal arrives, the cooresponding handler would be invoked,
+   * Upon any signal arrives, the corresponding handler would be invoked,
    * with an argument holding the informations about the signal and the sender.
    * The handler typically prints out the info and do some other things,
    * e.g. stop the process on SIGTERM.
@@ -48,9 +47,15 @@ class SignalHandler final {
     explicit GeneralSignalInfo(const siginfo_t *info);
     virtual ~GeneralSignalInfo() = default;
     virtual const char *toString() const;
-    int sig() const { return sig_; }
-    pid_t pid() const { return pid_; }
-    uid_t uid() const { return uid_; }
+    int sig() const {
+      return sig_;
+    }
+    pid_t pid() const {
+      return pid_;
+    }
+    uid_t uid() const {
+      return uid_;
+    }
 
    protected:
     int sig_{0};

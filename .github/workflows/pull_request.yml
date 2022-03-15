@@ -7,6 +7,10 @@ on:
       - master
       - 'v[0-9]+.*'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -19,27 +23,35 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/checkout@v2
+        with:
+          clean: false
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
+      - name: Ensure clang-format-10 is available
+        run: |
+          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
-          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only ${{ github.event.pull_request.base.sha }} HEAD)
       - name: Format check
         run: |
-          res=$(git diff -U0 --no-color HEAD^ | /usr/share/clang/clang-format-10/clang-format-diff.py -p1)
-          [[ ! -z "$res" ]] && exit 1 || true
+          git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          [ -s /tmp/.clang-format-diff ] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
         run: make init-all -C tests
       - name: Check Gherkin feature format
-        run: make check -C tests
+        run: make check-and-diff -C tests
 
   build:
     name: build
     needs: lint
-    runs-on: self-hosted
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
@@ -47,7 +59,7 @@ jobs:
           - centos7
           - ubuntu2004
         compiler:
-          - gcc-9.2
+          - gcc-9.3
           - clang-10
         exclude:
           - os: centos7
@@ -79,25 +91,25 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
+                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_COVERAGE=on \
+                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::6"
               ;;
             esac
             ;;
@@ -109,17 +121,17 @@ jobs:
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
+                -GNinja \
                 -B build
             echo "::set-output name=j::6"
-            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(nproc) --target nebula-metad nebula-storaged nebula-graphd
-          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
+          ninja -j $(nproc)
           ccache -s
+        working-directory: build/
       - name: CTest
         env:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
@@ -158,6 +170,11 @@ jobs:
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
         working-directory: tests/
         timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
       - name: Down cluster
         run: |
           make RM_DIR=false down
@@ -176,6 +193,95 @@ jobs:
         if: ${{ always() }}
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  ./build/server_*/logs/
+
+  standalone:
+    name: standalone-build
+    needs: lint
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+        compiler:
+          - gcc-9.3
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v2
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              cmake \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DENABLE_TESTING=on \
+                  -DENABLE_STANDALONE_VERSION=on \
+                  -GNinja \
+                  -B build
+              echo "::set-output name=j::10"
+              ;;
+            esac
+            ;;
+          esac
+      - name: Make
+        run: |
+          ccache -z
+          ninja -j $(nproc)
+          ccache -s
+        working-directory: build/
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup Cluster
+        run: |
+          make standalone-up
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}

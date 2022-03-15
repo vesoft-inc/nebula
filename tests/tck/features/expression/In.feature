@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: In Expression
 
   Scenario: yield IN list
@@ -81,6 +80,7 @@ Feature: In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst IN ['Danny Green']
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -88,6 +88,7 @@ Feature: In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like.likeness IN [95,56,21]
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -96,7 +97,7 @@ Feature: In Expression
     When executing query:
       """
       GO FROM 'Tony Parker' OVER like YIELD like._dst AS ID |
-      GO FROM $-.ID OVER like WHERE like.likeness IN [95,56,21]
+      GO FROM $-.ID OVER like WHERE like.likeness IN [95,56,21] YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -117,7 +118,7 @@ Feature: In Expression
     When executing query:
       """
       GO FROM 'Tony Parker' OVER like
-      WHERE like._dst IN {'Danny Green'}
+      WHERE like._dst IN {'Danny Green'} YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -138,18 +139,18 @@ Feature: In Expression
     When executing query:
       """
       MATCH (v:player)
-      WHERE "Parker" IN split(v.name, " ")
-      RETURN v.name
+      WHERE "Parker" IN split(v.player.name, " ")
+      RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name        |
+      | v.player.name |
       | "Tony Parker" |
     When executing query:
       """
       MATCH (v:player)
-      WHERE "ing" IN [n IN split(v.name, "M") WHERE true]
-      RETURN v.name
+      WHERE "ing" IN [n IN split(v.player.name, "M") WHERE true]
+      RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name     |
-      | "Yao Ming" |
+      | v.player.name |
+      | "Yao Ming"    |

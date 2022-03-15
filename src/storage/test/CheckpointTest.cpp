@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -38,12 +37,13 @@ TEST(CheckpointTest, simpleTest) {
   {
     auto* processor = CreateCheckpointProcessor::instance(env);
     cpp2::CreateCPRequest req;
-    req.set_space_id(1);
-    req.set_name("checkpoint_test");
+    std::vector<GraphSpaceID> ids{1};
+    req.space_ids_ref() = ids;
+    req.name_ref() = "checkpoint_test";
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
-    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     auto checkpoint1 =
         folly::stringPrintf("%s/disk1/nebula/1/checkpoints/checkpoint_test/data", dataPath.path());
     auto files = fs::FileUtils::listAllFilesInDir(checkpoint1.data());

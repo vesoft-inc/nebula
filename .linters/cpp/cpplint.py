@@ -641,7 +641,7 @@ _repository = None
 # Files to exclude from linting. This is set by the --exclude flag.
 _excludes = None
 
-# Whether to supress PrintInfo messages
+# Whether to suppress PrintInfo messages
 _quiet = False
 
 # The allowed line length of files.
@@ -752,7 +752,7 @@ def ParseNolintSuppressions(filename, raw_line, linenum, error):
                 'Unknown NOLINT error category: %s' % category)
 
 
-def ProcessGlobalSuppresions(lines):
+def ProcessGlobalSuppressions(lines):
   """Updates the list of global error suppressions.
 
   Parses any lint directives in the file that have global effect.
@@ -780,7 +780,7 @@ def IsErrorSuppressedByNolint(category, linenum):
   """Returns true if the specified error category is suppressed on this line.
 
   Consults the global error_suppressions map populated by
-  ParseNolintSuppressions/ProcessGlobalSuppresions/ResetNolintSuppressions.
+  ParseNolintSuppressions/ProcessGlobalSuppressions/ResetNolintSuppressions.
 
   Args:
     category: str, the category of the error.
@@ -1013,7 +1013,7 @@ class _CppLintState(object):
     self._filters_backup = self.filters[:]
     self.counting = 'total'  # In what way are we counting errors?
     self.errors_by_category = {}  # string to int dict storing error counts
-    self.quiet = False  # Suppress non-error messagess?
+    self.quiet = False  # Suppress non-error messages?
 
     # output format:
     # "emacs" - format that emacs can parse (default)
@@ -2130,9 +2130,11 @@ def CheckForHeaderGuard(filename, clean_lines, error):
     if Search(r'//\s*NOLINT\(build/header_guard\)', i):
       return
 
-  # Allow pragma once instead of header guards
+  # notallow pragma once
   for i in raw_lines:
     if Search(r'^\s*#pragma\s+once', i):
+      error(filename, 0, 'build/header_guard', 5,
+        'Pragma once not allowed, please use ifndef Instead')
       return
 
   cppvar = GetHeaderGuardCPPVariable(filename)
@@ -6202,7 +6204,7 @@ def ProcessFileData(filename, file_extension, lines, error,
   ResetNolintSuppressions()
 
   CheckForCopyright(filename, lines, error)
-  ProcessGlobalSuppresions(lines)
+  ProcessGlobalSuppressions(lines)
   RemoveMultiLineComments(filename, lines, error)
   clean_lines = CleansedLines(lines)
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
@@ -215,7 +214,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
           CostPaths costPaths(weight, {std::move(path)});
           currentCostPathMap[dst].emplace(src, std::move(costPaths));
         } else {
-          // same (src, dst), diffrent edge type or rank
+          // same (src, dst), different edge type or rank
           auto currentCost = currentCostPathMap[dst][src].cost_;
           if (weight == currentCost) {
             currentCostPathMap[dst][src].paths_.emplace_back(std::move(path));

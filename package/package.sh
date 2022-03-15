@@ -6,14 +6,14 @@
 #   -v: The version of package, the version should be match tag name, default value is null
 #   -n: Package to one or multi-packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
-#   -b: Branch, default master
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
 #   -j: Number of threads, default $(nproc)
-#   -r: Whether enable compressed debug info, default ON
-#   -p: Whether dump the symbols from binary by dump_syms
+#   -r: Whether to enable compressed debug info, default ON
+#   -p: Whether to dump the symbols from binary by dump_syms
+#   -c: Whether to enable console building, default ON
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -c <ON/OFF>
 #
 
 set -e
@@ -21,21 +21,22 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
-branch="master"
+build_console="ON"
+branch=$(git rev-parse --abbrev-ref HEAD)
 jobs=$(nproc)
 enable_compressed_debug_info=ON
-dump_symbols=OFF
+dump_symbols="OFF"
 dump_syms_tool_dir=
 system_name=
 install_prefix=/usr/local/nebula
 
-while getopts v:n:s:b:d:t:r:p:j: opt;
+while getopts v:n:s:b:d:t:r:p:j:c: opt;
 do
     case $opt in
         v)
@@ -47,9 +48,6 @@ do
         s)
             strip_enable=$OPTARG
             ;;
-        b)
-            branch=$OPTARG
-            ;;
         d)
             enablesanitizer="ON"
             if [ "$OPTARG" == "static" ]; then
@@ -59,6 +57,9 @@ do
             ;;
         t)
             build_type=$OPTARG
+            ;;
+        c)
+            build_console=$OPTARG
             ;;
         j)
             jobs=$OPTARG
@@ -100,6 +101,7 @@ strip_enable: $strip_enable
 enablesanitizer: $enablesanitizer
 static_sanitizer: $static_sanitizer
 build_type: $build_type
+build_console: $build_console
 branch: $branch
 enable_compressed_debug_info: $enable_compressed_debug_info
 dump_symbols: $dump_symbols
@@ -116,6 +118,7 @@ function _build_graph {
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=${install_prefix} \
           -DENABLE_TESTING=OFF \
+          -DENABLE_CONSOLE_COMPILATION=${build_console} \
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           -DENABLE_PACKAGE_TAR=${package_tar} \
@@ -135,9 +138,8 @@ function build {
     san=$2
     ssan=$3
     build_type=$4
-    branch=$5
-    package_tar=$6
-    install_prefix=$7
+    package_tar=$5
+    install_prefix=$6
 
     mkdir -p ${build_dir}
 
@@ -183,7 +185,7 @@ function _find_dump_syms_tool {
 function _strip_unnecessary_binaries {
     for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$] | sed -e '/nebula-metad/d;/nebula-graphd/d;/nebula-storaged/d'); do
         if ! (strip ${build_dir}/bin/${bin}); then
-            echo ">>> strip ${bin} faild: $?. <<<"
+            echo ">>> strip ${bin} failed: $?. <<<"
             exit 1
         fi
     done
@@ -203,20 +205,20 @@ function dump_syms {
 
     for bin in nebula-graphd nebula-storaged nebula-metad; do
         if ! (${dump_syms} ${build_dir}/bin/${bin} > ${syms_dir}/${bin}${ver}.sym); then
-            echo ">>> dump ${bin} symbols faild: $?. <<<"
+            echo ">>> dump ${bin} symbols failed: $?. <<<"
             exit 1
         fi
     done
 }
 
 # The main
-build $version $enablesanitizer $static_sanitizer $build_type $branch "OFF" "/usr/local/nebula"
+build $version $enablesanitizer $static_sanitizer $build_type "OFF" "/usr/local/nebula"
 package $strip_enable
-if [[ $dump_symbols == ON ]]; then
+if [[ "$dump_symbols" == "ON" ]]; then
     echo ">>> start dump symbols <<<"
     dump_syms
 fi
 
 # tar package
-build $version $enablesanitizer $static_sanitizer $build_type $branch "ON" "/"
+build $version $enablesanitizer $static_sanitizer $build_type "ON" "/"
 package $strip_enable

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/FunctionCallExpression.h"
@@ -80,16 +79,24 @@ const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
 }
 
 std::string FunctionCallExpression::toString() const {
-  std::vector<std::string> args(args_->numArgs());
-  std::transform(
-      args_->args().begin(), args_->args().end(), args.begin(), [](const auto& arg) -> std::string {
-        return arg->toString();
-      });
   std::stringstream out;
-  out << name_ << "(" << folly::join(",", args) << ")";
+
+  if (args_ != nullptr) {
+    std::vector<std::string> args(args_->numArgs());
+    std::transform(args_->args().begin(),
+                   args_->args().end(),
+                   args.begin(),
+                   [](const auto& arg) -> std::string { return arg ? arg->toString() : ""; });
+    out << name_ << "(" << folly::join(",", args) << ")";
+
+  } else {
+    out << name_ << "()";
+  }
   return out.str();
 }
 
-void FunctionCallExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void FunctionCallExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
 #define _VALIDATOR_LOOKUP_VALIDATOR_H_
@@ -30,7 +29,7 @@ class LookupValidator final : public Validator {
 
   Status validateFrom();
   Status validateYield();
-  Status validateFilter();
+  Status validateWhere();
   Status validateYieldTag();
   Status validateYieldEdge();
 
@@ -54,13 +53,13 @@ class LookupValidator final : public Validator {
   Status getSchemaProvider(std::shared_ptr<const meta::NebulaSchemaProvider>* provider) const;
   StatusOr<Expression*> genTsFilter(Expression* filter);
   StatusOr<Expression*> handleLogicalExprOperands(LogicalExpression* lExpr);
-  Status extractSchemaProp();
   void extractExprProps();
 
   std::unique_ptr<LookupContext> lookupCtx_;
   std::vector<nebula::plugin::HttpClient> tsClients_;
   ExpressionProps exprProps_;
   std::vector<std::string> idxReturnCols_;
+  std::vector<int32_t> schemaIds_;
 };
 
 }  // namespace graph

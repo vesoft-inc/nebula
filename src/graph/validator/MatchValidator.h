@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
@@ -26,21 +25,21 @@ class MatchValidator final : public Validator {
 
   AstContext *getAstContext() override;
 
-  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
   Status validateReturn(MatchReturn *ret,
-                        const CypherClauseContextBase *cypherClauseCtx,
+                        const std::vector<QueryPart> &queryParts,
                         ReturnClauseContext &retClauseCtx) const;
 
   Status validateAliases(const std::vector<const Expression *> &exprs,
-                         const std::unordered_map<std::string, AliasType> *aliases) const;
+                         const std::unordered_map<std::string, AliasType> &aliases) const;
 
   Status validateStepRange(const MatchStepRange *range) const;
 
   Status validateWith(const WithClause *with,
-                      const CypherClauseContextBase *cypherClauseCtx,
+                      const std::vector<QueryPart> &queryParts,
                       WithClauseContext &withClauseCtx) const;
 
   Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
@@ -57,12 +56,8 @@ class MatchValidator final : public Validator {
 
   Status validateYield(YieldClauseContext &yieldCtx) const;
 
-  Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
-                         YieldColumns *columns) const;
-
-  StatusOr<Expression *> makeSubFilter(const std::string &alias,
-                                       const MapExpression *map,
-                                       const std::string &label = "") const;
+  Status buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
+                                        YieldColumns *columns) const;
 
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
@@ -73,29 +68,34 @@ class MatchValidator final : public Validator {
 
   Status buildNodeInfo(const MatchPath *path,
                        std::vector<NodeInfo> &edgeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
   Status buildEdgeInfo(const MatchPath *path,
                        std::vector<EdgeInfo> &nodeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
-  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
                         const std::unordered_map<std::string, AliasType> &lastAliases) const;
 
   Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
 
-  StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType> *aliasesUsed,
-                                   const std::string &name) const;
+  StatusOr<AliasType> getAliasType(
+      const std::unordered_map<std::string, AliasType> &aliasesAvailable,
+      const std::string &name) const;
 
   Status checkAlias(const Expression *refExpr,
-                    const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
+                    const std::unordered_map<std::string, AliasType> &aliasesAvailable) const;
 
   Status buildOutputs(const YieldColumns *yields);
 
+  StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
+
+  StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
+
  private:
-  std::unique_ptr<MatchAstContext> matchCtx_;
+  std::unique_ptr<CypherContext> cypherCtx_;
 };
 
 }  // namespace graph

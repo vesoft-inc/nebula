@@ -1,22 +1,14 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushLimitDownProjectRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
@@ -30,7 +22,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushLimitDownProjectRule::kInstance =
     std::unique_ptr<PushLimitDownProjectRule>(new PushLimitDownProjectRule());
 
-PushLimitDownProjectRule::PushLimitDownProjectRule() { RuleSet::QueryRules().addRule(this); }
+PushLimitDownProjectRule::PushLimitDownProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &PushLimitDownProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
@@ -72,7 +66,9 @@ StatusOr<OptRule::TransformResult> PushLimitDownProjectRule::transform(
   return result;
 }
 
-std::string PushLimitDownProjectRule::toString() const { return "PushLimitDownProjectRule"; }
+std::string PushLimitDownProjectRule::toString() const {
+  return "PushLimitDownProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

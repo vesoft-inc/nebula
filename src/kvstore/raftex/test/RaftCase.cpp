@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -39,7 +38,7 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   size_t idx = leader_->index();
   killOneCopy(services_, copies_, leader_, idx);
 
-  // Wait untill all copies agree on the same leader_
+  // Wait until all copies agree on the same leader_
   waitUntilLeaderElected(copies_, leader_);
   // Check all hosts agree on the same leader_
   checkLeadership(copies_, leader_);
@@ -63,7 +62,7 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   waitUntilLeaderElected(copies_, leader_);
 
   LOG(INFO) << "=====> Now all copy rejoin, should not disrupt leader";
-  rebootOneCopy(services_, copies_, allHosts_, idx);
+  rebootOneCopy(services_, copies_, allHosts_, (idx + 1) % copies_.size());
   sleep(FLAGS_raft_heartbeat_interval_secs);
   waitUntilAllHasLeader(copies_);
   checkLeadership(copies_, leader_);
@@ -113,7 +112,7 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   killOneCopy(services_, copies_, leader_, leader_->index());
 
   LOG(INFO) << "=====> Wait until leader of term 2 elected";
-  // Wait untill all copies agree on the same leader_
+  // Wait until all copies agree on the same leader_
   waitUntilLeaderElected(copies_, leader_);
   auto leader2 = leader_;
   ASSERT_NE(leader1, leader2);

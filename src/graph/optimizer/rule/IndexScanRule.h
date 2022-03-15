@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 #define GRAPH_OPTIMIZER_INDEXSCANRULE_H_
@@ -16,7 +15,6 @@ namespace opt {
 using graph::QueryContext;
 using storage::cpp2::IndexColumnHint;
 using storage::cpp2::IndexQueryContext;
-using BVO = graph::OptimizerUtils::BoundValueOperator;
 using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
 
 class OptContext;
@@ -45,10 +43,18 @@ class IndexScanRule final : public OptRule {
     Kind kind_;
 
    public:
-    ScanKind() { kind_ = Kind::kUnknown; }
-    void setKind(Kind k) { kind_ = k; }
-    Kind getKind() { return kind_; }
-    bool isSingleScan() { return kind_ == Kind::kSingleScan; }
+    ScanKind() {
+      kind_ = Kind::kUnknown;
+    }
+    void setKind(Kind k) {
+      kind_ = k;
+    }
+    Kind getKind() {
+      return kind_;
+    }
+    bool isSingleScan() {
+      return kind_ == Kind::kSingleScan;
+    }
   };
 
   // col_   : index column name
@@ -70,7 +76,9 @@ class IndexScanRule final : public OptRule {
   struct FilterItems {
     std::vector<FilterItem> items;
     FilterItems() {}
-    explicit FilterItems(const std::vector<FilterItem>& i) { items = i; }
+    explicit FilterItems(const std::vector<FilterItem>& i) {
+      items = i;
+    }
     void addItem(const std::string& field, RelationalExpression::Kind kind, const Value& v) {
       items.emplace_back(FilterItem(field, kind, v));
     }
@@ -103,7 +111,7 @@ class IndexScanRule final : public OptRule {
   Status appendIQCtx(const IndexItem& index,
                      const FilterItems& items,
                      std::vector<graph::IndexScan::IndexQueryContext>& iqctx,
-                     const std::string& filter = "") const;
+                     const Expression* filter = nullptr) const;
 
   Status appendIQCtx(const IndexItem& index,
                      std::vector<graph::IndexScan::IndexQueryContext>& iqctx) const;
@@ -122,12 +130,14 @@ class IndexScanRule final : public OptRule {
 
   Expression* filterExpr(const OptGroupNode* groupNode) const;
 
-  Status analyzeExpression(Expression* expr, FilterItems* items, ScanKind* kind, bool isEdge) const;
+  Status analyzeExpression(
+      Expression* expr, FilterItems* items, ScanKind* kind, bool isEdge, QueryContext* qctx) const;
 
   template <typename E,
             typename = std::enable_if_t<std::is_same<E, EdgePropertyExpression>::value ||
+                                        std::is_same<E, LabelTagPropertyExpression>::value ||
                                         std::is_same<E, TagPropertyExpression>::value>>
-  Status addFilterItem(RelationalExpression* expr, FilterItems* items) const;
+  Status addFilterItem(RelationalExpression* expr, FilterItems* items, QueryContext* qctx) const;
 
   IndexItem findOptimalIndex(graph::QueryContext* qctx,
                              const OptGroupNode* groupNode,

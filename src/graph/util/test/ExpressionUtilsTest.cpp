@@ -1,8 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include <gtest/gtest.h>
 
@@ -24,7 +22,9 @@ class ExpressionUtilsTest : public ::testing::Test {
     pool = qctx_->objPool();
   }
 
-  void TearDown() override { qctx_.reset(); }
+  void TearDown() override {
+    qctx_.reset();
+  }
 
   Expression *parse(const std::string &expr) {
     std::string query = "LOOKUP on t1 WHERE " + expr;

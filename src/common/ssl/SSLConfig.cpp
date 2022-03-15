@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/ssl/SSLConfig.h"
@@ -19,6 +18,7 @@ namespace nebula {
 std::shared_ptr<wangle::SSLContextConfig> sslContextConfig() {
   auto sslCfg = std::make_shared<wangle::SSLContextConfig>();
   sslCfg->addCertificate(FLAGS_cert_path, FLAGS_key_path, FLAGS_password_path);
+  sslCfg->clientVerification = folly::SSLContext::VerifyClientCertificate::DO_NOT_REQUEST;
   sslCfg->isDefault = true;
   return sslCfg;
 }

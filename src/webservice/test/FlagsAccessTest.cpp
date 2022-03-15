@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/json.h>
@@ -25,7 +24,6 @@ class FlagsAccessTestEnv : public ::testing::Environment {
  public:
   void SetUp() override {
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     VLOG(1) << "Starting web service...";
     webSvc_ = std::make_unique<WebService>();
     auto status = webSvc_->start();

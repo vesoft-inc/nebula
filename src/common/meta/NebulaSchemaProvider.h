@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_META_NEBULASCHEMAPROVIDER_H_
@@ -23,10 +22,10 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   class SchemaField final : public SchemaProviderIf::Field {
    public:
     SchemaField(std::string name,
-                cpp2::PropertyType type,
+                nebula::cpp2::PropertyType type,
                 bool nullable,
                 bool hasDefault,
-                Expression* defaultValue,
+                std::string defaultValue,
                 size_t size,
                 size_t offset,
                 size_t nullFlagPos,
@@ -41,33 +40,49 @@ class NebulaSchemaProvider : public SchemaProviderIf {
           nullFlagPos_(nullFlagPos),
           geoShape_(geoShape) {}
 
-    const char* name() const override { return name_.c_str(); }
+    const char* name() const override {
+      return name_.c_str();
+    }
 
-    cpp2::PropertyType type() const override { return type_; }
+    nebula::cpp2::PropertyType type() const override {
+      return type_;
+    }
 
-    bool nullable() const override { return nullable_; }
+    bool nullable() const override {
+      return nullable_;
+    }
 
-    bool hasDefault() const override { return hasDefault_; }
+    bool hasDefault() const override {
+      return hasDefault_;
+    }
 
-    Expression* defaultValue() const override { return defaultValue_; }
+    const std::string& defaultValue() const override {
+      return defaultValue_;
+    }
 
-    size_t size() const override { return size_; }
+    size_t size() const override {
+      return size_;
+    }
 
-    size_t offset() const override { return offset_; }
+    size_t offset() const override {
+      return offset_;
+    }
 
     size_t nullFlagPos() const override {
       DCHECK(nullable_);
       return nullFlagPos_;
     }
 
-    cpp2::GeoShape geoShape() const override { return geoShape_; }
+    cpp2::GeoShape geoShape() const override {
+      return geoShape_;
+    }
 
    private:
     std::string name_;
-    cpp2::PropertyType type_;
+    nebula::cpp2::PropertyType type_;
     bool nullable_;
     bool hasDefault_;
-    Expression* defaultValue_;
+    std::string defaultValue_;
     size_t size_;
     size_t offset_;
     size_t nullFlagPos_;
@@ -88,20 +103,20 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   int64_t getFieldIndex(const std::string& name) const override;
   const char* getFieldName(int64_t index) const override;
 
-  cpp2::PropertyType getFieldType(int64_t index) const override;
-  cpp2::PropertyType getFieldType(const std::string& name) const override;
+  nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
+  nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
 
   const SchemaProviderIf::Field* field(int64_t index) const override;
   const SchemaProviderIf::Field* field(const std::string& name) const override;
 
   void addField(folly::StringPiece name,
-                cpp2::PropertyType type,
+                nebula::cpp2::PropertyType type,
                 size_t fixedStrLen = 0,
                 bool nullable = false,
-                Expression* defaultValue = nullptr,
+                std::string defaultValue = "",
                 cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
-  static std::size_t fieldSize(cpp2::PropertyType type, std::size_t fixedStrLimit);
+  static std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
 
   void setProp(cpp2::SchemaProp schemaProp);
 

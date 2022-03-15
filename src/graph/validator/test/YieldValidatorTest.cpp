@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/YieldValidator.h"
@@ -93,7 +92,7 @@ TEST_F(YieldValidatorTest, Logic) {
 #endif
 }
 
-TEST_F(YieldValidatorTest, FuncitonCall) {
+TEST_F(YieldValidatorTest, FunctionCall) {
 #if 0
     {
         // TODO not support udf_is_in
@@ -214,17 +213,17 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   {
     std::string query = "YIELD (MAP)(\"12\")";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `(\"12\")'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `)(\"12\")'");
   }
   {
     std::string query = "YIELD (SET)12";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `SET'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `)12'");
   }
   {
     std::string query = "YIELD (PATH)true";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `true'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `PATH'");
   }
   {
     std::string query = "YIELD (NOEXIST)true";
@@ -554,7 +553,7 @@ TEST_F(YieldValidatorTest, AggCall) {
   }
   // Yield field has not input
   {
-    auto query = "GO FROM \"1\" OVER like | YIELD COUNT(*)";
+    auto query = "GO FROM \"1\" OVER like YIELD edge as e| YIELD COUNT(*)";
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
@@ -565,7 +564,7 @@ TEST_F(YieldValidatorTest, AggCall) {
   }
   // Yield field has not input
   {
-    auto query = "GO FROM \"1\" OVER like | YIELD 1";
+    auto query = "GO FROM \"1\" OVER like YIELD edge as e| YIELD 1";
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_LISTEDGEINDEXESPROCESSOR_H
@@ -12,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get all edge index items by scaning index prefix and then filter out the
+ *        indexes with edge type.
+ *
+ */
 class ListEdgeIndexesProcessor : public BaseProcessor<cpp2::ListEdgeIndexesResp> {
  public:
   static ListEdgeIndexesProcessor* instance(kvstore::KVStore* kvstore) {

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Orderby Sentence
 
   Background: Prepare space
@@ -162,7 +161,7 @@ Feature: Orderby Sentence
   Scenario: Pipe output of ORDER BY to graph traversal
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | ORDER BY $-.id | GO FROM $-.id over serve
+      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | ORDER BY $-.id | GO FROM $-.id over serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -191,10 +190,10 @@ Feature: Orderby Sentence
       | "LaMarcus Aldridge" | 90       |
     When executing query:
       """
-      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst YIELD vertex as node
       """
     Then the result should be, in order, with relax comparison:
-      | vertices_                                                                                                   |
+      | node                                                                                                        |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |

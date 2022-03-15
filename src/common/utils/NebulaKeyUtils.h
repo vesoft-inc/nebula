@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
@@ -12,7 +11,7 @@
 namespace nebula {
 
 /**
- * VertexKeyUtils:
+ * TagKeyUtils:
  * type(1) + partId(3) + vertexId(*) + tagId(4)
  *
  * EdgeKeyUtils:
@@ -54,9 +53,9 @@ class NebulaKeyUtils final {
   static std::string lastKey(const std::string& prefix, size_t count);
 
   /**
-   * Generate vertex key for kv store
+   * Generate tag key for kv store
    * */
-  static std::string vertexKey(
+  static std::string tagKey(
       size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad = '\0');
 
   static std::string edgeKey(size_t vIdLen,
@@ -67,6 +66,13 @@ class NebulaKeyUtils final {
                              const VertexID& dstId,
                              EdgeVerPlaceHolder ev = 1);
 
+  static std::string vertexKey(size_t vIdLen,
+                               PartitionID partId,
+                               const VertexID& vId,
+                               char pad = '\0');
+
+  static std::string vertexPrefix(PartitionID partId);
+
   static std::string systemCommitKey(PartitionID partId);
 
   static std::string systemPartKey(PartitionID partId);
@@ -74,16 +80,13 @@ class NebulaKeyUtils final {
   static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
 
   /**
-   * Prefix for vertex
+   * Prefix for tag
    * */
-  static std::string vertexPrefix(size_t vIdLen,
-                                  PartitionID partId,
-                                  const VertexID& vId,
-                                  TagID tagId);
+  static std::string tagPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId);
 
-  static std::string vertexPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId);
+  static std::string tagPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId);
 
-  static std::string vertexPrefix(PartitionID partId);
+  static std::string tagPrefix(PartitionID partId);
 
   /**
    * Prefix for edge
@@ -112,26 +115,26 @@ class NebulaKeyUtils final {
     return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
   }
 
-  static bool isVertex(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
+  static bool isTag(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() != kTagLen + vIdLen) {
       return false;
     }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
-    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVertex;
+    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kTag_;
   }
 
   static VertexIDSlice getVertexId(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
-      dumpBadKey(rawKey, kVertexLen + vIdLen, vIdLen);
+    if (rawKey.size() != kTagLen + vIdLen) {
+      dumpBadKey(rawKey, kTagLen + vIdLen, vIdLen);
     }
     auto offset = sizeof(PartitionID);
     return rawKey.subpiece(offset, vIdLen);
   }
 
   static TagID getTagId(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
-      dumpBadKey(rawKey, kVertexLen + vIdLen, vIdLen);
+    if (rawKey.size() != kTagLen + vIdLen) {
+      dumpBadKey(rawKey, kTagLen + vIdLen, vIdLen);
     }
     auto offset = sizeof(PartitionID) + vIdLen;
     return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
@@ -234,7 +237,7 @@ class NebulaKeyUtils final {
   }
 
   static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
-    // TODO(heng) We should change the method if varint data version supportted.
+    // TODO(heng) We should change the method if varint data version supported.
     return rawKey.subpiece(0, rawKey.size() - sizeof(EdgeVerPlaceHolder));
   }
 
@@ -252,11 +255,13 @@ class NebulaKeyUtils final {
    */
   static std::string toLockKey(const folly::StringPiece& rawKey);
 
-  static EdgeVerPlaceHolder getLockVersion(const folly::StringPiece&) { return 0; }
+  static EdgeVerPlaceHolder getLockVersion(const folly::StringPiece&) {
+    return 0;
+  }
 
   static folly::StringPiece lockWithNoVersion(const folly::StringPiece& rawKey) {
     // TODO(liuyu) We should change the method if varint data version
-    // supportted.
+    // supported.
     return rawKey.subpiece(0, rawKey.size() - 1);
   }
 
@@ -270,6 +275,10 @@ class NebulaKeyUtils final {
   }
 
   static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
+
+  static std::string dataVersionKey();
+
+  static std::string dataVersionValue();
 
   static_assert(sizeof(NebulaKeyType) == sizeof(PartitionID));
 

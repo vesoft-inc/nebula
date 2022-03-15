@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/JobUtils.h"
@@ -42,23 +41,29 @@ const std::string kJob = "__job_mgr_";  // NOLINT
  * */
 const std::string kJobArchive = "__job_mgr_archive_";  // NOLINT
 
-const std::string& JobUtil::jobPrefix() { return kJob; }
+const std::string& JobUtil::jobPrefix() {
+  return kJob;
+}
 
-const std::string& JobUtil::currJobKey() { return kCurrJob; }
+const std::string& JobUtil::currJobKey() {
+  return kCurrJob;
+}
 
-const std::string& JobUtil::archivePrefix() { return kJobArchive; }
+const std::string& JobUtil::archivePrefix() {
+  return kJobArchive;
+}
 
 std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
   if (rawVal.size() < offset + sizeof(size_t)) {
-    LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal) << ", offset: " << offset;
+    LOG(INFO) << "Error: rawVal: " << toHexStr(rawVal) << ", offset: " << offset;
     throw std::runtime_error(
         folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu", __func__, offset, rawVal.size()));
   }
   auto len = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
   offset += sizeof(size_t);
   if (rawVal.size() < offset + len) {
-    LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal) << ", len: " << len
-               << ", offset: " << offset;
+    LOG(INFO) << "Error: rawVal: " << toHexStr(rawVal) << ", len: " << len
+              << ", offset: " << offset;
     throw std::runtime_error(
         folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu", __func__, offset, rawVal.size()));
   }
@@ -68,7 +73,7 @@ std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
 std::vector<std::string> JobUtil::parseStrVector(folly::StringPiece rawVal, size_t* offset) {
   std::vector<std::string> ret;
   if (rawVal.size() < *offset + sizeof(size_t)) {
-    LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal) << ", offset: " << offset;
+    LOG(INFO) << "Error: rawVal: " << toHexStr(rawVal) << ", offset: " << offset;
     throw std::runtime_error(
         folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu", __func__, *offset, rawVal.size()));
   }

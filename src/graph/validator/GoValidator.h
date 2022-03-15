@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_GOVALIDATOR_H_
@@ -23,7 +22,9 @@ class GoValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  AstContext* getAstContext() override { return goCtx_.get(); }
+  AstContext* getAstContext() override {
+    return goCtx_.get();
+  }
 
   Status validateWhere(WhereClause* where);
 
@@ -33,19 +34,18 @@ class GoValidator final : public Validator {
 
   Status buildColumns();
 
-  void extractPropExprs(const Expression* expr);
+  Status extractTagIds();
+
+  void extractPropExprs(const Expression* expr, std::unordered_set<std::string>& uniqueCols);
 
   Expression* rewrite2VarProp(const Expression* expr);
-
-  Status extractVertexProp(ExpressionProps& exprProps, bool isSrc);
-
-  Status extractEdgeProp(ExpressionProps& exprProps);
 
  private:
   std::unique_ptr<GoContext> goCtx_;
 
   YieldColumns* inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn*> propExprColMap_;
+  std::vector<TagID> tagIds_;
 };
 }  // namespace graph
 }  // namespace nebula

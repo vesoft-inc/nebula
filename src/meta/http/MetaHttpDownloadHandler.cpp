@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -93,7 +92,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
           .body("SSTFile dispatch successfully")
           .sendWithEOM();
     } else {
-      LOG(ERROR) << "SSTFile dispatch failed";
+      LOG(INFO) << "SSTFile dispatch failed";
       ResponseBuilder(downstream_)
           .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
                   WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
@@ -101,7 +100,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
           .sendWithEOM();
     }
   } else {
-    LOG(ERROR) << "Hadoop Home not exist";
+    LOG(INFO) << "Hadoop Home not exist";
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::NOT_FOUND),
                 WebServiceUtils::toString(HttpStatusCode::NOT_FOUND))
@@ -113,11 +112,13 @@ void MetaHttpDownloadHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void MetaHttpDownloadHandler::requestComplete() noexcept { delete this; }
+void MetaHttpDownloadHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void MetaHttpDownloadHandler::onError(ProxygenError error) noexcept {
-  LOG(ERROR) << "Web Service MetaHttpDownloadHandler got error : "
-             << proxygen::getErrorString(error);
+  LOG(INFO) << "Web Service MetaHttpDownloadHandler got error : "
+            << proxygen::getErrorString(error);
 }
 
 bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
@@ -125,7 +126,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
                                                const std::string &hdfsPath) {
   auto result = helper_->ls(hdfsHost, hdfsPort, hdfsPath);
   if (!result.ok()) {
-    LOG(ERROR) << "Dispatch SSTFile Failed";
+    LOG(INFO) << "Dispatch SSTFile Failed";
     return false;
   }
   std::vector<std::string> files;
@@ -135,7 +136,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
   auto prefix = MetaKeyUtils::partPrefix(spaceID_);
   auto ret = kvstore_->prefix(0, 0, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Fetch Parts Failed";
+    LOG(INFO) << "Fetch Parts Failed";
     return false;
   }
 
@@ -186,7 +187,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
   auto tries = folly::collectAll(std::move(futures)).get();
   for (const auto &t : tries) {
     if (t.hasException()) {
-      LOG(ERROR) << "Download Failed: " << t.exception();
+      LOG(INFO) << "Download Failed: " << t.exception();
       successfully = false;
       break;
     }

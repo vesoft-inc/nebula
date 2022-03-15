@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef MOCK_ADHOCSCHEMAMANAGER_H_
@@ -73,7 +72,7 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 
   StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
-  StatusOr<meta::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
 
   // Get all versions of all tags
   StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) override;
@@ -99,9 +98,10 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
                                                                                  EdgeType edge,
                                                                                  SchemaVer ver);
 
-  StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() override;
+  StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+      nebula::meta::cpp2::ExternalServiceType type) override;
 
-  void addFTClient(const nebula::meta::cpp2::FTClient& client);
+  void addServiceClient(const nebula::meta::cpp2::ServiceClient& client);
 
   StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(GraphSpaceID,
                                                                            int32_t) override {
@@ -109,7 +109,9 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
     return Status::Error("Unimplemented");
   }
 
-  StatusOr<int32_t> getPartsNum(GraphSpaceID) override { return partNum_; }
+  StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
+    return partNum_;
+  }
 
  protected:
   folly::RWSpinLock tagLock_;
@@ -142,7 +144,7 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
                                         std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>>
       edgeSchemasInMap_;
 
-  std::vector<nebula::meta::cpp2::FTClient> ftClients_;
+  std::vector<nebula::meta::cpp2::ServiceClient> serviceClients_;
   int32_t partNum_;
 };
 

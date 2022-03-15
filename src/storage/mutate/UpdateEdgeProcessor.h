@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_
@@ -52,7 +51,9 @@ class UpdateEdgeProcessor
 
   void onProcessFinished() override;
 
-  std::vector<Expression*> getReturnPropsExp() { return returnPropsExp_; }
+  std::vector<Expression*> getReturnPropsExp() {
+    return returnPropsExp_;
+  }
   void profilePlan(StoragePlan<cpp2::EdgeKey>& plan) {
     auto& nodes = plan.getNodes();
     for (auto& node : nodes) {

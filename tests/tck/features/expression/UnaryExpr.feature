@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: UnaryExpression
 
   Background:
@@ -41,7 +40,7 @@ Feature: UnaryExpression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name IS NULL AND v.age < 0
+      WHERE v.player.name IS NULL AND v.player.age < 0
       RETURN v
       """
     Then the result should be, in any order, with relax comparison:
@@ -53,7 +52,7 @@ Feature: UnaryExpression
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.name IS NOT NULL AND v.age > 34
+      WHERE v.player.name IS NOT NULL AND v.player.age > 34
       RETURN v
       """
     Then the result should be, in any order, with relax comparison:
@@ -61,7 +60,7 @@ Feature: UnaryExpression
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         |
       | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         |
@@ -80,7 +79,7 @@ Feature: UnaryExpression
   Scenario: Unary reduce
     When profiling query:
       """
-      MATCH (v:player) WHERE !!(v.age>=40)
+      MATCH (v:player) WHERE !!(v.player.age>=40)
       RETURN v
       """
     Then the result should be, in any order:
@@ -94,14 +93,11 @@ Feature: UnaryExpression
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         |
       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 12           |                                                    |
-      | 12 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 14           |                                                    |
-      | 14 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info |
+      | 9  | Project        | 8            |               |
+      | 8  | Filter         | 2            |               |
+      | 2  | AppendVertices | 6            |               |
+      | 6  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |

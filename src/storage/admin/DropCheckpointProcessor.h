@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_DROPCHECKPOINTPROCESSOR_H_
@@ -14,16 +13,37 @@
 
 namespace nebula {
 namespace storage {
-class DropCheckpointProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class DropCheckpointProcessor {
  public:
+  /**
+   * @brief Construct new instance of DropCheckpoint.
+   *
+   * @param env Related environment variables for storage.
+   * @return DropCheckpointProcessor* DropCheckpointProcessor instance.
+   */
   static DropCheckpointProcessor* instance(StorageEnv* env) {
     return new DropCheckpointProcessor(env);
   }
 
+  /**
+   * @brief Entry point for dropping checkpoint.
+   *
+   * @param req Reuqest for dropping checkpoint.
+   */
   void process(const cpp2::DropCPRequest& req);
 
+  folly::Future<cpp2::DropCPResp> getFuture() {
+    return promise_.getFuture();
+  }
+
  private:
-  explicit DropCheckpointProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+  explicit DropCheckpointProcessor(StorageEnv* env) : env_(env) {}
+
+  void onFinished();
+
+  StorageEnv* env_{nullptr};
+  folly::Promise<cpp2::DropCPResp> promise_;
+  cpp2::DropCPResp resp_;
 };
 }  // namespace storage
 }  // namespace nebula

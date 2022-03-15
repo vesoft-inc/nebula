@@ -1,12 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
-
-#include <memory>
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETNEIGHBORSRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETNEIGHBORSRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -30,3 +28,4 @@ class PushLimitDownGetNeighborsRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

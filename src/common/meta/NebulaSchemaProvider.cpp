@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/meta/NebulaSchemaProvider.h"
@@ -11,11 +10,19 @@
 namespace nebula {
 namespace meta {
 
-SchemaVer NebulaSchemaProvider::getVersion() const noexcept { return ver_; }
+using nebula::cpp2::PropertyType;
 
-size_t NebulaSchemaProvider::getNumFields() const noexcept { return fields_.size(); }
+SchemaVer NebulaSchemaProvider::getVersion() const noexcept {
+  return ver_;
+}
 
-size_t NebulaSchemaProvider::getNumNullableFields() const noexcept { return numNullableFields_; }
+size_t NebulaSchemaProvider::getNumFields() const noexcept {
+  return fields_.size();
+}
+
+size_t NebulaSchemaProvider::getNumNullableFields() const noexcept {
+  return numNullableFields_;
+}
 
 size_t NebulaSchemaProvider::size() const noexcept {
   if (fields_.size() > 0) {
@@ -45,20 +52,20 @@ const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
   return fields_[index].name();
 }
 
-cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
+PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
   if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
     LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
-    return cpp2::PropertyType::UNKNOWN;
+    return PropertyType::UNKNOWN;
   }
 
   return fields_[index].type();
 }
 
-cpp2::PropertyType NebulaSchemaProvider::getFieldType(const std::string& name) const {
+PropertyType NebulaSchemaProvider::getFieldType(const std::string& name) const {
   auto it = fieldNameIndex_.find(name);
   if (UNLIKELY(fieldNameIndex_.end() == it)) {
     LOG(ERROR) << "Unknown field \"" << name << "\"";
-    return cpp2::PropertyType::UNKNOWN;
+    return PropertyType::UNKNOWN;
   }
 
   return fields_[it->second].type();
@@ -88,10 +95,10 @@ const SchemaProviderIf::Field* NebulaSchemaProvider::field(const std::string& na
 }
 
 void NebulaSchemaProvider::addField(folly::StringPiece name,
-                                    cpp2::PropertyType type,
+                                    PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
-                                    Expression* defaultValue,
+                                    std::string defaultValue,
                                     cpp2::GeoShape geoShape) {
   size_t size = fieldSize(type, fixedStrLen);
 
@@ -109,7 +116,7 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
   fields_.emplace_back(name.toString(),
                        type,
                        nullable,
-                       defaultValue != nullptr,
+                       defaultValue != "",
                        defaultValue,
                        size,
                        offset,
@@ -119,42 +126,42 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
 }
 
 /*static*/
-std::size_t NebulaSchemaProvider::fieldSize(cpp2::PropertyType type, std::size_t fixedStrLimit) {
+std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixedStrLimit) {
   switch (type) {
-    case cpp2::PropertyType::BOOL:
+    case PropertyType::BOOL:
       return 1;
-    case cpp2::PropertyType::INT64:
+    case PropertyType::INT64:
       return sizeof(int64_t);
-    case cpp2::PropertyType::INT32:
+    case PropertyType::INT32:
       return sizeof(int32_t);
-    case cpp2::PropertyType::INT16:
+    case PropertyType::INT16:
       return sizeof(int16_t);
-    case cpp2::PropertyType::INT8:
+    case PropertyType::INT8:
       return sizeof(int8_t);
-    case cpp2::PropertyType::VID:
+    case PropertyType::VID:
       // VID is deprecated in V2
       return sizeof(int64_t);
-    case cpp2::PropertyType::FLOAT:
+    case PropertyType::FLOAT:
       return sizeof(float);
-    case cpp2::PropertyType::DOUBLE:
+    case PropertyType::DOUBLE:
       return sizeof(double);
-    case cpp2::PropertyType::STRING:
+    case PropertyType::STRING:
       return 8;  // string offset + string length
-    case cpp2::PropertyType::FIXED_STRING:
+    case PropertyType::FIXED_STRING:
       CHECK_GT(fixedStrLimit, 0) << "Fixed string length must be greater than zero";
       return fixedStrLimit;
-    case cpp2::PropertyType::TIMESTAMP:
+    case PropertyType::TIMESTAMP:
       return sizeof(int64_t);
-    case cpp2::PropertyType::DATE:
+    case PropertyType::DATE:
       return sizeof(int16_t) +  // year
              sizeof(int8_t) +   // month
              sizeof(int8_t);    // day
-    case cpp2::PropertyType::TIME:
+    case PropertyType::TIME:
       return sizeof(int8_t) +  // hour
              sizeof(int8_t) +  // minute
              sizeof(int8_t) +  // sec
              sizeof(int32_t);  // microsec
-    case cpp2::PropertyType::DATETIME:
+    case PropertyType::DATETIME:
       return sizeof(int16_t) +  // year
              sizeof(int8_t) +   // month
              sizeof(int8_t) +   // day
@@ -162,9 +169,11 @@ std::size_t NebulaSchemaProvider::fieldSize(cpp2::PropertyType type, std::size_t
              sizeof(int8_t) +   // minute
              sizeof(int8_t) +   // sec
              sizeof(int32_t);   // microsec
-    case cpp2::PropertyType::GEOGRAPHY:
+    case PropertyType::GEOGRAPHY:
       return 8;  // as same as STRING
-    case cpp2::PropertyType::UNKNOWN:
+    case PropertyType::DURATION:
+      return sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t);
+    case PropertyType::UNKNOWN:
       break;
   }
   LOG(FATAL) << "Incorrect field type " << static_cast<int>(type);
@@ -174,7 +183,9 @@ void NebulaSchemaProvider::setProp(cpp2::SchemaProp schemaProp) {
   schemaProp_ = std::move(schemaProp);
 }
 
-const cpp2::SchemaProp NebulaSchemaProvider::getProp() const { return schemaProp_; }
+const cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
+  return schemaProp_;
+}
 
 StatusOr<std::pair<std::string, int64_t>> NebulaSchemaProvider::getTTLInfo() const {
   if (!schemaProp_.ttl_col_ref().has_value()) {

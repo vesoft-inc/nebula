@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     executor_obj OBJECT
@@ -11,6 +10,7 @@ nebula_add_library(
     logic/PassThroughExecutor.cpp
     logic/StartExecutor.cpp
     logic/SelectExecutor.cpp
+    logic/ArgumentExecutor.cpp
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
@@ -35,12 +35,18 @@ nebula_add_library(
     query/InnerJoinExecutor.cpp
     query/IndexScanExecutor.cpp
     query/AssignExecutor.cpp
+    query/ScanVerticesExecutor.cpp
+    query/ScanEdgesExecutor.cpp
+    query/TraverseExecutor.cpp
+    query/AppendVerticesExecutor.cpp
     algo/ConjunctPathExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
     algo/ProduceSemiShortestPathExecutor.cpp
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
+    admin/AddHostsExecutor.cpp
+    admin/DropHostsExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/CreateUserExecutor.cpp
     admin/DropUserExecutor.cpp
@@ -50,13 +56,9 @@ nebula_add_library(
     admin/ChangePasswordExecutor.cpp
     admin/ListUserRolesExecutor.cpp
     admin/ListUsersExecutor.cpp
+    admin/DescribeUserExecutor.cpp
     admin/ListRolesExecutor.cpp
     admin/SubmitJobExecutor.cpp
-    admin/BalanceExecutor.cpp
-    admin/StopBalanceExecutor.cpp
-    admin/ResetBalanceExecutor.cpp
-    admin/BalanceLeadersExecutor.cpp
-    admin/ShowBalanceExecutor.cpp
     admin/ShowHostsExecutor.cpp
     admin/ShowMetaLeaderExecutor.cpp
     admin/SpaceExecutor.cpp
@@ -68,11 +70,10 @@ nebula_add_library(
     admin/DownloadExecutor.cpp
     admin/IngestExecutor.cpp
     admin/ConfigExecutor.cpp
-    admin/GroupExecutor.cpp
     admin/ZoneExecutor.cpp
-    admin/ShowTSClientsExecutor.cpp
-    admin/SignInTSServiceExecutor.cpp
-    admin/SignOutTSServiceExecutor.cpp
+    admin/ShowServiceClientsExecutor.cpp
+    admin/SignInServiceExecutor.cpp
+    admin/SignOutServiceExecutor.cpp
     admin/SessionExecutor.cpp
     admin/ShowQueriesExecutor.cpp
     admin/KillQueryExecutor.cpp

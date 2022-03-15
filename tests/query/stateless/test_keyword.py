@@ -2,15 +2,14 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import re
 import sys
 import pytest
 import time
 
-from nebula2.graph import ttypes
+from nebula3.graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestReservedKeyword(NebulaTestSuite):
@@ -125,7 +124,7 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        cmd = 'create tag x23 (path string)'
+        cmd = 'create tag x23 (paths string)'
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
@@ -281,7 +280,7 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        cmd = 'create tag x233 (PATH string)'
+        cmd = 'create tag x233 (PATHS string)'
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 

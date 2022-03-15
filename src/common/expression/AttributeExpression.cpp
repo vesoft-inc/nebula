@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/AttributeExpression.h"
@@ -70,19 +69,25 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   }
 }
 
-void AttributeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void AttributeExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 std::string AttributeExpression::toString() const {
-  CHECK(right()->kind() == Kind::kLabel || right()->kind() == Kind::kConstant);
+  auto lhs = left();
+  auto rhs = right();
   std::string buf;
   buf.reserve(256);
-  buf += left()->toString();
+  buf += lhs ? lhs->toString() : "";
   buf += '.';
-  auto *constant = static_cast<const ConstantExpression *>(right());
-  if (constant->value().isStr()) {
-    buf += constant->value().getStr();
-  } else {
-    buf += right()->toString();
+  if (rhs) {
+    DCHECK_EQ(rhs->kind(), Kind::kConstant);
+    auto *constant = static_cast<const ConstantExpression *>(rhs);
+    if (constant->value().isStr()) {
+      buf += constant->value().getStr();
+    } else {
+      buf += rhs->toString();
+    }
   }
 
   return buf;

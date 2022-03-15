@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <common/datatypes/Edge.h>
@@ -130,6 +129,16 @@ void Edge::clear() {
   name.clear();
   ranking = 0;
   props.clear();
+}
+
+bool Edge::keyEqual(const Edge& rhs) const {
+  if (type != rhs.type && type != -rhs.type) {
+    return false;
+  }
+  if (type == rhs.type) {
+    return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking;
+  }
+  return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking;
 }
 
 }  // namespace nebula

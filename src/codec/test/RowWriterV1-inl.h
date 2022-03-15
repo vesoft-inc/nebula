@@ -1,10 +1,10 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CODEC_TEST_ROWWRITERV1_INL_H
+#define CODEC_TEST_ROWWRITERV1_INL_H
 
 namespace nebula {
 
@@ -12,17 +12,17 @@ template <typename T>
 typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type RowWriterV1::operator<<(
     T v) noexcept {
   switch (schema_->getFieldType(colNum_)) {
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case nebula::cpp2::PropertyType::INT64:
+    case nebula::cpp2::PropertyType::TIMESTAMP: {
       writeInt(v);
       break;
     }
-    case meta::cpp2::PropertyType::VID: {
+    case nebula::cpp2::PropertyType::VID: {
       cord_ << (uint64_t)v;
       break;
     }
     default: {
-      LOG(ERROR) << "Incompatible value type \"int\"";
+      LOG(WARNING) << "Incompatible value type \"int\"";
       writeInt(0);
       break;
     }
@@ -46,3 +46,4 @@ typename std::enable_if<std::is_integral<T>::value>::type RowWriterV1::writeInt(
 }
 
 }  // namespace nebula
+#endif

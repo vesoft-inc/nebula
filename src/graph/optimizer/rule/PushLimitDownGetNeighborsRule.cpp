@@ -1,22 +1,15 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushLimitDownGetNeighborsRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;
@@ -41,6 +34,7 @@ const Pattern &PushLimitDownGetNeighborsRule::pattern() const {
 
 StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
+  auto *qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto gnGroupNode = matched.dependencies.front().node;
 
@@ -50,8 +44,8 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
   if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
     return TransformResult::noTransform();
   }
-  int64_t limitRows = limit->offset() + limit->count();
-  if (gn->limit() >= 0 && limitRows >= gn->limit()) {
+  int64_t limitRows = limit->offset() + limit->count(qctx);
+  if (gn->limit(qctx) >= 0 && limitRows >= gn->limit(qctx)) {
     return TransformResult::noTransform();
   }
 

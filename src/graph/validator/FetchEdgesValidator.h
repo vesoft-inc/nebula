@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _VALIDATOR_FETCH_EDGES_VALIDATOR_H_
@@ -27,11 +26,11 @@ class FetchEdgesValidator final : public Validator {
 
   Status validateEdgeKey();
 
-  void extractEdgeProp(ExpressionProps& exprProps);
-
   Status validateYield(const YieldClause* yieldClause);
 
-  AstContext* getAstContext() override { return fetchCtx_.get(); }
+  AstContext* getAstContext() override {
+    return fetchCtx_.get();
+  }
 
  private:
   std::string edgeName_;

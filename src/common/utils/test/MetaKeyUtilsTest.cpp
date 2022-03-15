@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/IPAddressV4.h>
@@ -20,13 +19,33 @@ TEST(MetaKeyUtilsTest, SpaceKeyTest) {
   auto spaceKey = MetaKeyUtils::spaceKey(101);
   ASSERT_EQ(101, MetaKeyUtils::spaceId(spaceKey));
   meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("default");
-  spaceDesc.set_partition_num(100);
-  spaceDesc.set_replica_factor(3);
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 100;
+  spaceDesc.replica_factor_ref() = 3;
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
-  ASSERT_EQ(100, MetaKeyUtils::parseSpace(spaceVal).get_partition_num());
-  ASSERT_EQ(3, MetaKeyUtils::parseSpace(spaceVal).get_replica_factor());
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
+  ASSERT_EQ(100, properties.get_partition_num());
+  ASSERT_EQ(3, properties.get_replica_factor());
+}
+
+TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
+  auto prefix = MetaKeyUtils::spacePrefix();
+  ASSERT_EQ("__spaces__", prefix);
+  auto spaceKey = MetaKeyUtils::spaceKey(101);
+  ASSERT_EQ(101, MetaKeyUtils::spaceId(spaceKey));
+  meta::cpp2::SpaceDesc spaceDesc;
+  spaceDesc.space_name_ref() = "default";
+  spaceDesc.partition_num_ref() = 100;
+  spaceDesc.replica_factor_ref() = 3;
+  std::vector<std::string> zoneNames{"z1", "z2", "z3"};
+  spaceDesc.zone_names_ref() = std::move(zoneNames);
+  auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
+  ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
+  ASSERT_EQ(100, properties.get_partition_num());
+  ASSERT_EQ(3, properties.get_replica_factor());
+  ASSERT_EQ(3, properties.get_zone_names().size());
 }
 
 TEST(MetaKeyUtilsTest, PartKeyTest) {
@@ -70,12 +89,19 @@ TEST(MetaKeyUtilsTest, storeStrIpCodecTest) {
     auto decodedVal = MetaKeyUtils::parsePartVal(encodedVal);
     ASSERT_EQ(hosts.size(), decodedVal.size());
     for (int i = 0; i < N; i++) {
-      LOG(INFO) << folly::format("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
+      LOG(INFO) << folly::sformat("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
       ASSERT_EQ(hostnames[i], decodedVal[i].host);
       ASSERT_EQ(ports[i], decodedVal[i].port);
     }
   }
 
+  {
+    // kMachinesTable : key
+    auto key = MetaKeyUtils::machineKey(hostnames[0], ports[0]);
+    auto host = MetaKeyUtils::parseMachineKey(key);
+    ASSERT_EQ(host.host, hostnames[0]);
+    ASSERT_EQ(host.port, ports[0]);
+  }
   {
     // kHostsTable : key
     auto key = MetaKeyUtils::hostKey(hostnames[0], ports[0]);
@@ -162,35 +188,26 @@ TEST(MetaKeyUtilsTest, TagTest) {
   std::vector<meta::cpp2::ColumnDef> cols;
   for (auto i = 1; i <= 3; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::INT64);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::INT64;
     cols.emplace_back(std::move(column));
   }
   for (auto i = 4; i <= 6; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::FLOAT);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::FLOAT;
     cols.emplace_back(std::move(column));
   }
   for (auto i = 7; i < 10; i++) {
     meta::cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::STRING);
+    column.name_ref() = folly::stringPrintf("col_%d", i);
+    column.type.type_ref() = nebula::cpp2::PropertyType::STRING;
     cols.emplace_back(std::move(column));
   }
-  schema.set_columns(std::move(cols));
+  schema.columns_ref() = std::move(cols);
   auto val = MetaKeyUtils::schemaVal("test_tag", schema);
   auto parsedSchema = MetaKeyUtils::parseSchema(val);
   ASSERT_EQ(parsedSchema, schema);
-}
-
-TEST(MetaKeyUtilsTest, GroupTest) {
-  auto groupKey = MetaKeyUtils::groupKey("test_group");
-  ASSERT_EQ("test_group", MetaKeyUtils::parseGroupName(groupKey));
-
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-  auto groupValue = MetaKeyUtils::groupVal(zones);
-  ASSERT_EQ(zones, MetaKeyUtils::parseZoneNames(groupValue));
 }
 
 TEST(MetaKeyUtilsTest, ZoneTest) {
@@ -200,6 +217,17 @@ TEST(MetaKeyUtilsTest, ZoneTest) {
   std::vector<HostAddr> nodes = {{"0", 0}, {"1", 1}, {"2", 2}};
   auto zoneValue = MetaKeyUtils::zoneVal(nodes);
   ASSERT_EQ(nodes, MetaKeyUtils::parseZoneHosts(zoneValue));
+}
+
+TEST(MetaKeyUtilsTest, DiskPathsTest) {
+  HostAddr addr{"192.168.0.1", 1234};
+  GraphSpaceID spaceId = 1;
+  std::string path = "/data/storage/test_part1";
+
+  auto diskPartsKey = MetaKeyUtils::diskPartsKey(addr, spaceId, path);
+  ASSERT_EQ(addr, MetaKeyUtils::parseDiskPartsHost(diskPartsKey));
+  ASSERT_EQ(spaceId, MetaKeyUtils::parseDiskPartsSpace(diskPartsKey));
+  ASSERT_EQ(path, MetaKeyUtils::parseDiskPartsPath(diskPartsKey));
 }
 
 }  // namespace nebula

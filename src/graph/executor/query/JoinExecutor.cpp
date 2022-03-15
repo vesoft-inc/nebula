@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/JoinExecutor.h"
@@ -26,6 +25,28 @@ Status JoinExecutor::checkInputDataSets() {
   rhsIter_ = ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second).iter();
   DCHECK(!!rhsIter_);
   VLOG(1) << "rhs: " << join->rightVar().first << " " << rhsIter_->size();
+  if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << rhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  colSize_ = join->colNames().size();
+  return Status::OK();
+}
+
+Status JoinExecutor::checkBiInputDataSets() {
+  auto* join = asNode<BiJoin>(node());
+  lhsIter_ = ectx_->getResult(join->leftInputVar()).iter();
+  DCHECK(!!lhsIter_);
+  VLOG(1) << "lhs: " << join->leftInputVar() << " " << lhsIter_->size();
+  if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << lhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  rhsIter_ = ectx_->getResult(join->rightInputVar()).iter();
+  DCHECK(!!rhsIter_);
+  VLOG(1) << "rhs: " << join->rightInputVar() << " " << rhsIter_->size();
   if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "Join executor does not support " << rhsIter_->kind();

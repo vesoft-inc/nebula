@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/AlterTagProcessor.h"
@@ -14,41 +13,40 @@ namespace meta {
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   GraphSpaceID spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
-  auto tagName = req.get_tag_name();
+  const auto& tagName = req.get_tag_name();
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto ret = getTagId(spaceId, tagName);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
-    LOG(ERROR) << "Failed to get tag " << tagName << " error "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Failed to get tag " << tagName << " error "
+              << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
   auto tagId = nebula::value(ret);
 
-  // Check the tag belongs to the space
+  // Check the tag belongs to the space, and get the shcema with latest version
   auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
   auto retPre = doPrefix(tagPrefix);
   if (!nebula::ok(retPre)) {
     auto retCode = nebula::error(retPre);
-    LOG(ERROR) << "Tag Prefix failed, tagname: " << tagName << ", spaceId " << spaceId
-               << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Tag Prefix failed, tagname: " << tagName << ", spaceId " << spaceId
+              << " error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
   auto iter = nebula::value(retPre).get();
   if (!iter->valid()) {
-    LOG(ERROR) << "Tag could not be found, spaceId " << spaceId << ", tagname: " << tagName;
+    LOG(INFO) << "Tag could not be found, spaceId " << spaceId << ", tagname: " << tagName;
     handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
     onFinished();
     return;
   }
 
-  // Get the last version of the tag
   auto version = MetaKeyUtils::parseTagVersion(iter->key()) + 1;
   auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
@@ -69,8 +67,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   if (existIndex) {
     auto iStatus = indexCheck(indexes, tagItems);
     if (iStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Alter tag error, index conflict : "
-                 << apache::thrift::util::enumNameSafe(iStatus);
+      LOG(INFO) << "Alter tag error, index conflict : "
+                << apache::thrift::util::enumNameSafe(iStatus);
       handleErrorCode(iStatus);
       onFinished();
       return;
@@ -79,6 +77,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 
   auto& alterSchemaProp = req.get_schema_prop();
 
+  // If index exist, could not alter ttl column
   if (existIndex) {
     int64_t duration = 0;
     if (alterSchemaProp.get_ttl_duration()) {
@@ -89,14 +88,14 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
       col = *alterSchemaProp.get_ttl_col();
     }
     if (!col.empty() && duration > 0) {
-      LOG(ERROR) << "Alter tag error, index and ttl conflict";
+      LOG(INFO) << "Alter tag error, index and ttl conflict";
       handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
       onFinished();
       return;
     }
   }
 
-  // check fulltext index
+  // Check fulltext index
   auto ftIdxRet = getFTIndex(spaceId, tagId);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
@@ -117,7 +116,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     for (auto& col : cols) {
       auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, *tagItem.op_ref());
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
+        LOG(INFO) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -134,21 +133,25 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   // Update schema property if tag not index
   auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Alter tag property error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Alter tag property error " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
 
-  schema.set_schema_prop(std::move(prop));
-  schema.set_columns(std::move(columns));
+  schema.schema_prop_ref() = std::move(prop);
+  schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId;
   data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
                     MetaKeyUtils::schemaVal(tagName, schema));
-  resp_.set_id(to(tagId, EntryType::TAG));
-  doSyncPutAndUpdate(std::move(data));
+  resp_.id_ref() = to(tagId, EntryType::TAG);
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 }  // namespace meta

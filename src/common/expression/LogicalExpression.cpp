@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/LogicalExpression.h"
@@ -122,17 +121,21 @@ std::string LogicalExpression::toString() const {
   buf.reserve(256);
 
   buf += "(";
-  buf += operands_[0]->toString();
-  for (auto i = 1u; i < operands_.size(); i++) {
-    buf += op;
-    buf += operands_[i]->toString();
+  if (!operands_.empty()) {
+    buf += operands_[0]->toString();
+    for (auto i = 1u; i < operands_.size(); i++) {
+      buf += op;
+      buf += operands_[i]->toString();
+    }
   }
   buf += ")";
 
   return buf;
 }
 
-void LogicalExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void LogicalExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 void LogicalExpression::writeTo(Encoder &encoder) const {
   encoder << kind();

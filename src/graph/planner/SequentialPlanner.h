@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
@@ -9,6 +8,7 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/planner/Planner.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
@@ -27,6 +27,8 @@ class SequentialPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
   void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
+
+  void rmLeftTailStartNode(Validator* validator, Sentence::Kind appendPlanKind);
 
  private:
   SequentialPlanner() = default;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/Admin.h"
@@ -141,24 +140,6 @@ TEST_F(ACLValidatorTest, Simple) {
     ASSERT_EQ(*changePassword->username(), user);
     ASSERT_EQ(*changePassword->password(), password);
     ASSERT_EQ(*changePassword->newPassword(), newPassword);
-  }
-
-  // grant role
-  {
-    auto root =
-        getPlanRoot(folly::stringPrintf("GRANT ROLE %s ON %s TO %s", roleTypeName, space, user));
-
-    std::vector<PlanNode::Kind> expectedTop{
-        PlanNode::Kind::kGrantRole,
-        PlanNode::Kind::kStart,
-    };
-    ASSERT_TRUE(verifyPlan(root, expectedTop));
-
-    ASSERT_EQ(root->kind(), PlanNode::Kind::kGrantRole);
-    auto grantRole = static_cast<const GrantRole *>(root);
-    ASSERT_EQ(*grantRole->username(), user);
-    ASSERT_EQ(*grantRole->spaceName(), space);
-    ASSERT_EQ(grantRole->role(), meta::cpp2::RoleType::ADMIN);
   }
 
   // revoke role

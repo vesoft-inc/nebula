@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -20,7 +19,7 @@ class KillQueryMetaWrapper {
  public:
   explicit KillQueryMetaWrapper(MetaClient* client) : client_(client) {}
   void killQuery(SessionID session_id, ExecutionPlanID plan_id) {
-    client_->killedPlans_.load()->emplace(session_id, plan_id);
+    client_->metadata_.load()->killedPlans_.emplace(session_id, plan_id);
   }
 
  private:
@@ -74,9 +73,9 @@ TEST_F(KillQueryTest, GetNeighbors) {
 
   auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
   cpp2::RequestCommon common;
-  common.set_session_id(1);
-  common.set_plan_id(1);
-  req.set_common(common);
+  common.session_id_ref() = 1;
+  common.plan_id_ref() = 1;
+  req.common_ref() = common;
   auto fut = processor->getFuture();
   processor->process(req);
   cpp2::GetNeighborsResponse resp = std::move(fut).get();
@@ -101,39 +100,39 @@ TEST_F(KillQueryTest, TagIndex) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
+    schemaId.tag_id_ref() = 1;
+    indices.schema_id_ref() = schemaId;
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = std::move(parts);
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     returnCols.emplace_back("age");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = std::move(returnCols);
     cpp2::IndexColumnHint columnHint;
     std::string name = "Rudy Gay";
-    columnHint.set_begin_value(Value(name));
-    columnHint.set_column_name("name");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = Value(name);
+    columnHint.column_name_ref() = "name";
+    columnHint.scan_type_ref() = cpp2::ScanType::PREFIX;
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(1);
+    context1.column_hints_ref() = std::move(columnHints);
+    context1.filter_ref() = "";
+    context1.index_id_ref() = 1;
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = std::move(contexts);
+    req.indices_ref() = std::move(indices);
     cpp2::RequestCommon common;
-    common.set_session_id(1);
-    common.set_plan_id(1);
-    req.set_common(common);
+    common.session_id_ref() = 1;
+    common.plan_id_ref() = 1;
+    req.common_ref() = common;
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -161,15 +160,15 @@ TEST_F(KillQueryTest, EdgeIndex) {
     auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
+    schemaId.edge_type_ref() = 102;
+    indices.schema_id_ref() = schemaId;
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
+    req.parts_ref() = std::move(parts);
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -178,25 +177,25 @@ TEST_F(KillQueryTest, EdgeIndex) {
     returnCols.emplace_back(kRank);
     returnCols.emplace_back(kDst);
     returnCols.emplace_back("teamName");
-    req.set_return_columns(std::move(returnCols));
+    req.return_columns_ref() = std::move(returnCols);
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(tony));
-    columnHint.set_column_name("player1");
-    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    columnHint.begin_value_ref() = Value(tony);
+    columnHint.column_name_ref() = "player1";
+    columnHint.scan_type_ref() = cpp2::ScanType::PREFIX;
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
-    context1.set_column_hints(std::move(columnHints));
-    context1.set_filter("");
-    context1.set_index_id(102);
+    context1.column_hints_ref() = std::move(columnHints);
+    context1.filter_ref() = "";
+    context1.index_id_ref() = 102;
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
-    req.set_indices(std::move(indices));
+    indices.contexts_ref() = std::move(contexts);
+    req.indices_ref() = std::move(indices);
     cpp2::RequestCommon common;
-    common.set_session_id(1);
-    common.set_plan_id(1);
-    req.set_common(common);
+    common.session_id_ref() = 1;
+    common.plan_id_ref() = 1;
+    req.common_ref() = common;
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();

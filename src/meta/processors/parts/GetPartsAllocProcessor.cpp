@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -10,13 +9,13 @@ namespace nebula {
 namespace meta {
 
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto spaceId = req.get_space_id();
   auto prefix = MetaKeyUtils::partPrefix(spaceId);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
-    LOG(ERROR) << "Get parts failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get parts failed, error " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
@@ -33,10 +32,10 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_parts(std::move(parts));
+  resp_.parts_ref() = std::move(parts);
   auto terms = getTerm(spaceId);
   if (!terms.empty()) {
-    resp_.set_terms(std::move(terms));
+    resp_.terms_ref() = std::move(terms);
   }
   onFinished();
 }
@@ -48,8 +47,8 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
   auto spaceVal = doGet(spaceKey);
   if (!nebula::ok(spaceVal)) {
     auto rc = nebula::error(spaceVal);
-    LOG(ERROR) << "Get Space SpaceId: " << spaceId
-               << " error: " << apache::thrift::util::enumNameSafe(rc);
+    LOG(INFO) << "Get Space SpaceId: " << spaceId
+              << " error: " << apache::thrift::util::enumNameSafe(rc);
     handleErrorCode(rc);
     return ret;
   }
@@ -78,11 +77,12 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
     if (statusVec[i].ok()) {
       std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(WARNING) << apache::thrift::util::enumNameSafe(code);
-        LOG(INFO) << folly::sformat("term of part {} is invalid", partIdVec[i]);
+        LOG(INFO) << folly::sformat("term of part {} is invalid, error = {}",
+                                    partIdVec[i],
+                                    apache::thrift::util::enumNameSafe(code));
         continue;
       }
-      LOG(INFO) << folly::sformat("term of part {} is {}", partIdVec[i], term);
+      VLOG(2) << folly::sformat("term of part {} is {}", partIdVec[i], term);
       ret[partIdVec[i]] = term;
     }
   }

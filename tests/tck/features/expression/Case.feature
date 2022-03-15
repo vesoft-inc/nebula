@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Case Expression
 
   Background:
@@ -150,25 +149,25 @@ Feature: Case Expression
   Scenario: use case in MATCH
     When executing query:
       """
-      MATCH (v:player) WHERE CASE v.age > 45 WHEN false THEN false ELSE true END
-      RETURN v.name, v.age
+      MATCH (v:player) WHERE CASE v.player.age > 45 WHEN false THEN false ELSE true END
+      RETURN v.player.name, v.player.age
       """
     Then the result should be, in any order:
-      | v.name            | v.age |
-      | "Shaquile O'Neal" | 47    |
-      | "Grant Hill"      | 46    |
+      | v.player.name      | v.player.age |
+      | "Shaquille O'Neal" | 47           |
+      | "Grant Hill"       | 46           |
     When executing query:
       """
       MATCH (v:player)
-      WHERE v.age > 43
-      RETURN CASE WHEN v.age > 46 THEN v.name WHEN v.age > 45 THEN v.age ELSE "nothing" END AS r
+      WHERE v.player.age > 43
+      RETURN CASE WHEN v.player.age > 46 THEN v.player.name WHEN v.player.age > 45 THEN v.player.age ELSE "nothing" END AS r
       """
     Then the result should be, in any order:
-      | r                 |
-      | "nothing"         |
-      | 46                |
-      | "Shaquile O'Neal" |
-      | "nothing"         |
+      | r                  |
+      | "nothing"          |
+      | 46                 |
+      | "Shaquille O'Neal" |
+      | "nothing"          |
 
   Scenario: mixed use of generic case and conditional case
     When executing query:
@@ -299,7 +298,7 @@ Feature: Case Expression
   Scenario: Using the return value of case expr as an input
     When executing query:
       """
-      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like;
+      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
       """
     Then the result should be, in order:
       | like._dst       |

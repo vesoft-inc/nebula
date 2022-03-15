@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_RELNODE_H_
@@ -69,7 +68,7 @@ class RelNode {
 
   void addDependency(RelNode<T>* dep) {
     dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dep->isDependent_ = true;
   }
 
   RelNode() = default;
@@ -78,9 +77,13 @@ class RelNode {
 
   explicit RelNode(const std::string& name) : name_(name) {}
 
+  const std::string& name() const {
+    return name_;
+  }
+
   std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isDependent_ = false;
   time::Duration duration_{true};
 };
 
@@ -89,9 +92,13 @@ class RelNode {
 template <typename T>
 class QueryNode : public RelNode<T> {
  public:
-  const Value& result() { return result_; }
+  const Value& result() {
+    return result_;
+  }
 
-  Value& mutableResult() { return result_; }
+  Value& mutableResult() {
+    return result_;
+  }
 
  protected:
   Value result_;
@@ -113,7 +120,9 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
 
   explicit IterateNode(IterateNode* node) : upstream_(node) {}
 
-  bool valid() const override { return upstream_->valid(); }
+  bool valid() const override {
+    return upstream_->valid();
+  }
 
   void next() override {
     do {
@@ -121,16 +130,24 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
     } while (upstream_->valid() && !check());
   }
 
-  folly::StringPiece key() const override { return upstream_->key(); }
+  folly::StringPiece key() const override {
+    return upstream_->key();
+  }
 
-  folly::StringPiece val() const override { return upstream_->val(); }
+  folly::StringPiece val() const override {
+    return upstream_->val();
+  }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override { return upstream_->reader(); }
+  RowReader* reader() const override {
+    return upstream_->reader();
+  }
 
  protected:
   // return true when the iterator points to a valid value
-  virtual bool check() { return true; }
+  virtual bool check() {
+    return true;
+  }
 
   IterateNode* upstream_;
 };

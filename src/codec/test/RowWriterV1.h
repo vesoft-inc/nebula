@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_TEST_ROWWRITERV1_H_
@@ -49,7 +48,9 @@ class RowWriterV1 {
   // Calculate the exact length of the encoded binary array
   int64_t size() const noexcept;
 
-  const meta::SchemaProviderIf* schema() const { return schema_; }
+  const meta::SchemaProviderIf* schema() const {
+    return schema_;
+  }
 
   // Data stream
   RowWriterV1& operator<<(bool v) noexcept;

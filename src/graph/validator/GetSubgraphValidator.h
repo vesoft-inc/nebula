@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
@@ -28,7 +27,9 @@ class GetSubgraphValidator final : public Validator {
 
   Status validateYield(YieldClause* yield);
 
-  AstContext* getAstContext() override { return subgraphCtx_.get(); }
+  AstContext* getAstContext() override {
+    return subgraphCtx_.get();
+  }
 
  private:
   std::unique_ptr<SubgraphContext> subgraphCtx_;

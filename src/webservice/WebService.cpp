@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "webservice/WebService.h"
@@ -19,9 +18,12 @@
 #include "webservice/StatusHandler.h"
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
-DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
 DEFINE_string(ws_ip, "0.0.0.0", "IP/Hostname to bind to");
 DEFINE_int32(ws_threads, 4, "Number of threads for the web service.");
+
+#ifdef BUILD_STANDALONE
+DEFINE_int32(ws_storage_threads, 4, "Number of threads for the web service.");
+#endif
 
 namespace nebula {
 namespace {
@@ -58,7 +60,7 @@ WebService::~WebService() {
   wsThread_->join();
 }
 
-Status WebService::start() {
+Status WebService::start(uint16_t httpPort) {
   if (started_) {
     LOG(INFO) << "Web service has been started.";
     return Status::OK();
@@ -88,8 +90,7 @@ Status WebService::start() {
   started_ = true;
 
   std::vector<HTTPServer::IPConfig> ips = {
-      {SocketAddress(FLAGS_ws_ip, FLAGS_ws_http_port, true), HTTPServer::Protocol::HTTP},
-      {SocketAddress(FLAGS_ws_ip, FLAGS_ws_h2_port, true), HTTPServer::Protocol::HTTP2},
+      {SocketAddress(FLAGS_ws_ip, httpPort, true), HTTPServer::Protocol::HTTP},
   };
 
   CHECK_GT(FLAGS_ws_threads, 0) << "The number of webservice threads must be greater than zero";
@@ -115,16 +116,12 @@ Status WebService::start() {
     server_->start(
         [&]() {
           auto addresses = server_->addresses();
-          CHECK_EQ(addresses.size(), 2UL);
+          CHECK_EQ(addresses.size(), 1UL);
           if (FLAGS_ws_http_port == 0) {
             FLAGS_ws_http_port = addresses[0].address.getPort();
           }
-          if (FLAGS_ws_h2_port == 0) {
-            FLAGS_ws_h2_port = addresses[1].address.getPort();
-          }
           LOG(INFO) << "Web service started on "
-                    << "HTTP[" << FLAGS_ws_http_port << "], "
-                    << "HTTP2[" << FLAGS_ws_h2_port << "]";
+                    << "HTTP[" << FLAGS_ws_http_port << "]";
           {
             std::lock_guard<std::mutex> g(mut);
             serverStartedDone = true;

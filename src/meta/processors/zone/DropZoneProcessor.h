@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_DROPZONEPROCESSOR_H
@@ -12,6 +11,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop zone from the cluster
+ * The hosts that belong to the zone should not contain any parts
+ * It will drop the hosts too
+ */
 class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropZoneProcessor* instance(kvstore::KVStore* kvstore) {
@@ -23,7 +27,20 @@ class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  private:
   explicit DropZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  nebula::cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
+  /**
+   * @brief check all spaces if they have enough zones to hold replica when dropping one zone
+   *
+   * @return
+   */
+  nebula::cpp2::ErrorCode checkSpaceReplicaZone();
+
+  /**
+   * @brief Check whether the node holds zones on each space
+   *
+   * @param address
+   * @return
+   */
+  nebula::cpp2::ErrorCode checkHostPartition(const HostAddr& address);
 };
 
 }  // namespace meta

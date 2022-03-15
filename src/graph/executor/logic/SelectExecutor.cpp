@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/logic/SelectExecutor.h"
@@ -25,6 +24,7 @@ folly::Future<Status> SelectExecutor::execute() {
   QueryExpressionContext ctx(ectx_);
   auto value = expr->eval(ctx);
   DCHECK(value.isBool());
+  condition_ = (value.isBool() && value.getBool());
   return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 

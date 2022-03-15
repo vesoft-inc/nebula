@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/SnapShot.h"
@@ -11,16 +10,16 @@
 #include "common/network/NetworkUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
-ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>>>
+ErrorOr<nebula::cpp2::ErrorCode,
+        std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>>>
 Snapshot::createSnapshot(const std::string& name) {
-  auto retSpacesHostsRet = getSpacesHosts();
-  if (!nebula::ok(retSpacesHostsRet)) {
-    auto retcode = nebula::error(retSpacesHostsRet);
+  auto hostSpacesRet = getHostSpaces();
+  if (!nebula::ok(hostSpacesRet)) {
+    auto retcode = nebula::error(hostSpacesRet);
     if (retcode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retcode = nebula::cpp2::ErrorCode::E_STORE_FAILURE;
     }
@@ -28,21 +27,37 @@ Snapshot::createSnapshot(const std::string& name) {
   }
   // This structure is used for the subsequent construction of the
   // common.PartitionBackupInfo
-  std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>> info;
+  std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>> info;
 
-  auto spacesHosts = nebula::value(retSpacesHostsRet);
-  for (const auto& spaceHosts : spacesHosts) {
-    for (const auto& host : spaceHosts.second) {
-      auto status = client_->createSnapshot(spaceHosts.first, name, host).get();
-      if (!status.ok()) {
-        return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
-      }
-      auto backupInfo = status.value();
-      auto it = info.find(spaceHosts.first);
-      if (it != info.cend()) {
-        it->second.emplace_back(backupInfo);
+  auto hostSpaces = nebula::value(hostSpacesRet);
+  for (auto const& [host, spaces] : hostSpaces) {
+    auto snapshotRet = client_->createSnapshot(spaces, name, host).get();
+    if (!snapshotRet.ok()) {
+      return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+    }
+    auto backupInfo = snapshotRet.value();
+
+    // split backup info by space id
+    std::unordered_map<GraphSpaceID, cpp2::HostBackupInfo> spaceBackup;
+    for (auto& ck : backupInfo.get_checkpoints()) {
+      auto it = spaceBackup.find(ck.get_space_id());
+      if (it == spaceBackup.cend()) {
+        cpp2::HostBackupInfo hostBackup;
+        hostBackup.host_ref() = host;
+        hostBackup.checkpoints_ref().value().push_back(ck);
+        spaceBackup[ck.get_space_id()] = std::move(hostBackup);
       } else {
-        info[spaceHosts.first] = {std::move(backupInfo)};
+        it->second.checkpoints_ref().value().push_back(ck);
+      }
+    }
+
+    // insert to global result
+    for (auto& [spaceId, binfo] : spaceBackup) {
+      auto it = info.find(spaceId);
+      if (it == info.cend()) {
+        info[spaceId] = {std::move(binfo)};
+      } else {
+        it->second.emplace_back(binfo);
       }
     }
   }
@@ -51,89 +66,88 @@ Snapshot::createSnapshot(const std::string& name) {
 
 nebula::cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                                const std::vector<HostAddr>& hosts) {
-  auto retSpacesHostsRet = getSpacesHosts();
-  if (!nebula::ok(retSpacesHostsRet)) {
-    auto retcode = nebula::error(retSpacesHostsRet);
+  auto hostSpacesRet = getHostSpaces();
+  if (!nebula::ok(hostSpacesRet)) {
+    auto retcode = nebula::error(hostSpacesRet);
     if (retcode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retcode = nebula::cpp2::ErrorCode::E_STORE_FAILURE;
     }
     return retcode;
   }
 
-  auto spacesHosts = nebula::value(retSpacesHostsRet);
-  for (const auto& spaceHosts : spacesHosts) {
-    for (const auto& host : spaceHosts.second) {
-      if (std::find(hosts.begin(), hosts.end(), host) != hosts.end()) {
-        auto status = client_->dropSnapshot(spaceHosts.first, name, host).get();
-        if (!status.ok()) {
-          auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
-          auto error = folly::stringPrintf(
-              msg, name.c_str(), host.toString().c_str(), status.toString().c_str());
-          LOG(ERROR) << error;
-        }
-      }
+  auto hostSpaces = nebula::value(hostSpacesRet);
+  for (const auto& [host, spaces] : hostSpaces) {
+    if (std::find(hosts.begin(), hosts.end(), host) == hosts.end()) {
+      continue;
+    }
+
+    auto result = client_->dropSnapshot(spaces, name, host).get();
+    if (!result.ok()) {
+      auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
+      LOG(INFO) << folly::stringPrintf(
+          msg, name.c_str(), host.toString().c_str(), result.status().toString().c_str());
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-  auto retSpacesHostsRet = getSpacesHosts();
-  if (!nebula::ok(retSpacesHostsRet)) {
-    auto retcode = nebula::error(retSpacesHostsRet);
+  auto hostSpacesRet = getHostSpaces();
+  if (!nebula::ok(hostSpacesRet)) {
+    auto retcode = nebula::error(hostSpacesRet);
     if (retcode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       retcode = nebula::cpp2::ErrorCode::E_STORE_FAILURE;
     }
     return retcode;
   }
 
-  auto spacesHosts = nebula::value(retSpacesHostsRet);
+  auto hostSpaces = nebula::value(hostSpacesRet);
   auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  for (const auto& spaceHosts : spacesHosts) {
-    for (const auto& host : spaceHosts.second) {
-      LOG(INFO) << "will block write host: " << host;
-      auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
-      if (!status.ok()) {
-        LOG(ERROR) << "Send blocking sign error on host : " << host;
-        ret = nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
-        if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
-          break;
-        }
+  for (const auto& [host, spaces] : hostSpaces) {
+    LOG(INFO) << "will block write host: " << host;
+    auto result = client_->blockingWrites(spaces, sign, host).get();
+    LOG(INFO) << "after block write host";
+    if (!result.ok()) {
+      LOG(INFO) << "Send blocking sign error on host " << host
+                << ", errorcode: " << result.status().toString();
+      ret = nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
+      if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
+        break;
       }
     }
   }
   return ret;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>>
-Snapshot::getSpacesHosts() {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+ErrorOr<nebula::cpp2::ErrorCode, std::map<HostAddr, std::set<GraphSpaceID>>>
+Snapshot::getHostSpaces() {
   const auto& prefix = MetaKeyUtils::partPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get hosts meta data failed, error: "
-               << apache::thrift::util::enumNameSafe(retCode);
+    LOG(INFO) << "Get hosts meta data failed, error: "
+              << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
-  std::map<GraphSpaceID, std::set<HostAddr>> hostsByspaces;
-
+  std::map<HostAddr, std::set<GraphSpaceID>> hostSpaces;
   for (; iter->valid(); iter->next()) {
     auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
-    auto space = MetaKeyUtils::parsePartKeySpaceId(iter->key());
-    if (!spaces_.empty()) {
-      auto it = spaces_.find(space);
+    auto spaceId = MetaKeyUtils::parsePartKeySpaceId(iter->key());
+
+    bool allSpaces = spaces_.empty();
+    if (!allSpaces) {
+      auto it = spaces_.find(spaceId);
       if (it == spaces_.end()) {
         continue;
       }
     }
 
-    for (auto& ph : partHosts) {
-      hostsByspaces[space].emplace(std::move(ph));
+    for (auto& host : partHosts) {
+      hostSpaces[host].emplace(spaceId);
     }
   }
-  return hostsByspaces;
+  return hostSpaces;
 }
 
 }  // namespace meta

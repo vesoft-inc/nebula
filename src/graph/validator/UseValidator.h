@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_USEVALIDATOR_H_
@@ -21,7 +20,9 @@ class UseValidator final : public Validator {
   /**
    * Will not check the space for use space sentence.
    */
-  bool spaceChosen() override { return true; }
+  bool spaceChosen() override {
+    return true;
+  }
 
   Status validateImpl() override;
 

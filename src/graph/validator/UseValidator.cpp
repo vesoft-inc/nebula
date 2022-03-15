@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/UseValidator.h"
@@ -13,6 +12,9 @@
 
 namespace nebula {
 namespace graph {
+
+// Choose graph space, first from validator context (space created in previous sentence),
+// then from meta data cache.
 Status UseValidator::validateImpl() {
   auto useSentence = static_cast<UseSentence*>(sentence_);
   spaceName_ = useSentence->space();

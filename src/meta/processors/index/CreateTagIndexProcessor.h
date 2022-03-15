@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_CREATETAGINDEXPROCESSOR_H
@@ -12,6 +11,14 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Create tag index on given tag fields. This processor has similar logic with the
+ *        CreateEdgeIndexProcessor. It only check if the tag index could be built
+ *        and then create a tag index item to save all the tag index meta.
+ *        After tag index created, any vertex inserted satisfying the tag and fields
+ *        will trigger corresponding index built.
+ *
+ */
 class CreateTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateTagIndexProcessor* instance(kvstore::KVStore* kvstore) {

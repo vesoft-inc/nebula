@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/RowReaderV1.h"
@@ -20,6 +19,8 @@
   }
 
 namespace nebula {
+
+using nebula::cpp2::PropertyType;
 
 /*********************************************
  *
@@ -42,7 +43,7 @@ bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema, folly::StringP
     return true;
   } else {
     // Invalid data
-    LOG(ERROR) << "Invalid row data: " << toHexStr(row);
+    LOG(WARNING) << "Invalid row data: " << toHexStr(row);
     return false;
   }
 }
@@ -71,7 +72,7 @@ bool RowReaderV1::processHeader(folly::StringPiece row) {
   uint32_t numOffsets = (numFields >> 4);
   if (numBytesForOffset_ * numOffsets + verBytes + 1 > row.size()) {
     // Data is too short
-    LOG(ERROR) << "Row data is too short: " << toHexStr(row);
+    LOG(WARNING) << "Row data is too short: " << toHexStr(row);
     return false;
   }
   offsets_.resize(numFields + 1, -1);
@@ -95,19 +96,19 @@ bool RowReaderV1::processHeader(folly::StringPiece row) {
 }
 
 int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
-  const meta::cpp2::PropertyType& vType = getSchema()->getFieldType(index);
+  const PropertyType& vType = getSchema()->getFieldType(index);
   if (offsets_[index + 1] >= 0) {
     return offsets_[index + 1];
   }
 
   switch (vType) {
-    case meta::cpp2::PropertyType::BOOL: {
+    case PropertyType::BOOL: {
       // One byte
       offset++;
       break;
     }
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case PropertyType::INT64:
+    case PropertyType::TIMESTAMP: {
       int64_t v;
       int32_t len = readInteger(offset, v);
       if (len <= 0) {
@@ -116,17 +117,17 @@ int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
       offset += len;
       break;
     }
-    case meta::cpp2::PropertyType::FLOAT: {
+    case PropertyType::FLOAT: {
       // Four bytes
       offset += sizeof(float);
       break;
     }
-    case meta::cpp2::PropertyType::DOUBLE: {
+    case PropertyType::DOUBLE: {
       // Eight bytes
       offset += sizeof(double);
       break;
     }
-    case meta::cpp2::PropertyType::STRING: {
+    case PropertyType::STRING: {
       int64_t strLen;
       int32_t intLen = readInteger(offset, strLen);
       if (intLen <= 0) {
@@ -135,7 +136,7 @@ int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
       offset += intLen + strLen;
       break;
     }
-    case meta::cpp2::PropertyType::VID: {
+    case PropertyType::VID: {
       // Eight bytes
       offset += sizeof(int64_t);
       break;
@@ -200,22 +201,22 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
     return Value(NullType::UNKNOWN_PROP);
   }
   auto vType = getSchema()->getFieldType(index);
-  if (meta::cpp2::PropertyType::UNKNOWN == vType) {
+  if (PropertyType::UNKNOWN == vType) {
     return Value(NullType::UNKNOWN_PROP);
   }
   switch (vType) {
-    case meta::cpp2::PropertyType::BOOL:
+    case PropertyType::BOOL:
       return getBool(index);
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP:
+    case PropertyType::INT64:
+    case PropertyType::TIMESTAMP:
       return getInt(index);
-    case meta::cpp2::PropertyType::VID:
+    case PropertyType::VID:
       return getVid(index);
-    case meta::cpp2::PropertyType::FLOAT:
+    case PropertyType::FLOAT:
       return getFloat(index);
-    case meta::cpp2::PropertyType::DOUBLE:
+    case PropertyType::DOUBLE:
       return getDouble(index);
-    case meta::cpp2::PropertyType::STRING:
+    case PropertyType::STRING:
       return getString(index);
     default:
       LOG(ERROR) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
@@ -223,7 +224,9 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
   }
 }
 
-int64_t RowReaderV1::getTimestamp() const noexcept { return std::numeric_limits<int64_t>::max(); }
+int64_t RowReaderV1::getTimestamp() const noexcept {
+  return std::numeric_limits<int64_t>::max();
+}
 
 /************************************************************
  *
@@ -234,12 +237,12 @@ Value RowReaderV1::getBool(int64_t index) const noexcept {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::BOOL: {
+    case PropertyType::BOOL: {
       v.setBool(intToBool(buffer_[offset]));
       offset++;
       break;
     }
-    case meta::cpp2::PropertyType::INT64: {
+    case PropertyType::INT64: {
       int64_t intV;
       int32_t numBytes = readInteger(offset, intV);
       if (numBytes > 0) {
@@ -250,7 +253,7 @@ Value RowReaderV1::getBool(int64_t index) const noexcept {
       }
       break;
     }
-    case meta::cpp2::PropertyType::STRING: {
+    case PropertyType::STRING: {
       folly::StringPiece strV;
       int32_t numBytes = readString(offset, strV);
       if (numBytes > 0) {
@@ -273,8 +276,8 @@ Value RowReaderV1::getInt(int64_t index) const noexcept {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case PropertyType::INT64:
+    case PropertyType::TIMESTAMP: {
       int64_t val;
       int32_t numBytes = readInteger(offset, val);
       if (numBytes < 0) {
@@ -297,7 +300,7 @@ Value RowReaderV1::getFloat(int64_t index) const noexcept {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::FLOAT: {
+    case PropertyType::FLOAT: {
       float f;
       int32_t numBytes = readFloat(offset, f);
       if (numBytes < 0) {
@@ -308,7 +311,7 @@ Value RowReaderV1::getFloat(int64_t index) const noexcept {
       }
       break;
     }
-    case meta::cpp2::PropertyType::DOUBLE: {
+    case PropertyType::DOUBLE: {
       double d;
       int32_t numBytes = readDouble(offset, d);
       if (numBytes < 0) {
@@ -335,7 +338,7 @@ Value RowReaderV1::getDouble(int64_t index) const noexcept {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::FLOAT: {
+    case PropertyType::FLOAT: {
       float f;
       int32_t numBytes = readFloat(offset, f);
       if (numBytes < 0) {
@@ -346,7 +349,7 @@ Value RowReaderV1::getDouble(int64_t index) const noexcept {
       }
       break;
     }
-    case meta::cpp2::PropertyType::DOUBLE: {
+    case PropertyType::DOUBLE: {
       double d;
       int32_t numBytes = readDouble(offset, d);
       if (numBytes < 0) {
@@ -369,7 +372,7 @@ Value RowReaderV1::getString(int64_t index) const noexcept {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::STRING: {
+    case PropertyType::STRING: {
       folly::StringPiece s;
       int32_t numBytes = readString(offset, s);
       if (numBytes < 0) {
@@ -393,8 +396,8 @@ Value RowReaderV1::getInt64(int64_t index) const noexcept {
   Value v;
   int64_t val;
   switch (getSchema()->getFieldType(index)) {
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case PropertyType::INT64:
+    case PropertyType::TIMESTAMP: {
       int32_t numBytes = readInteger(offset, val);
       if (numBytes < 0) {
         v.setNull(NullType::BAD_DATA);
@@ -404,7 +407,7 @@ Value RowReaderV1::getInt64(int64_t index) const noexcept {
       }
       break;
     }
-    case meta::cpp2::PropertyType::VID: {
+    case PropertyType::VID: {
       int32_t numBytes = readVid(offset, val);
       if (numBytes < 0) {
         v.setNull(NullType::BAD_DATA);
@@ -424,7 +427,7 @@ Value RowReaderV1::getInt64(int64_t index) const noexcept {
 
 Value RowReaderV1::getVid(int64_t index) const noexcept {
   auto fieldType = getSchema()->getFieldType(index);
-  if (fieldType == meta::cpp2::PropertyType::INT64 || fieldType == meta::cpp2::PropertyType::VID) {
+  if (fieldType == PropertyType::INT64 || fieldType == PropertyType::VID) {
     // Since 2.0, vid has been defined as a binary array. So we need to convert
     // the int64 vid in 1.0 to a binary array
     Value v(getInt64(index));
@@ -439,7 +442,7 @@ Value RowReaderV1::getVid(int64_t index) const noexcept {
 
 /************************************************************
  *
- *  Low -level functions to read from the bytes
+ *  Low-level functions to read from the bytes
  *
  ***********************************************************/
 int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/CaseExpression.h"
@@ -94,9 +93,9 @@ std::string CaseExpression::toString() const {
     }
     for (const auto& whenThen : cases_) {
       buf += " WHEN ";
-      buf += whenThen.when->toString();
+      buf += whenThen.when ? whenThen.when->toString() : "";
       buf += " THEN ";
-      buf += whenThen.then->toString();
+      buf += whenThen.then ? whenThen.then->toString() : "";
     }
     if (default_ != nullptr) {
       buf += " ELSE ";
@@ -105,11 +104,13 @@ std::string CaseExpression::toString() const {
     buf += " END";
   } else {
     buf += "(";
-    buf += cases_.front().when->toString();
+    auto casesWhen = cases_.front().when;
+    auto casesThen = cases_.front().then;
+    buf += casesWhen ? casesWhen->toString() : "";
     buf += " ? ";
-    buf += cases_.front().then->toString();
+    buf += casesThen ? casesThen->toString() : "";
     buf += " : ";
-    buf += default_->toString();
+    buf += default_ ? default_->toString() : "";
     buf += ")";
   }
 
@@ -159,6 +160,8 @@ void CaseExpression::resetFrom(Decoder& decoder) {
   }
 }
 
-void CaseExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void CaseExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

@@ -43,12 +43,12 @@ Feature: Lookup edge index full scan
   Scenario: Edge with relational NE filter
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str != "Yellow" YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str != "Yellow" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
-      | "101"  | "102"  | 0       | "Red1"          |
-      | "103"  | "101"  | 0       | "Blue"          |
+      | src   | dst   | rank | edge_1.col1_str |
+      | "101" | "102" | 0    | "Red1"          |
+      | "103" | "101" | 0    | "Blue"          |
     And the execution plan should be:
       | id | name              | dependencies | operator info                                  |
       | 3  | Project           | 2            |                                                |
@@ -57,12 +57,12 @@ Feature: Lookup edge index full scan
       | 0  | Start             |              |                                                |
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col2_int != 11 YIELD edge_1.col2_int
+      LOOKUP ON edge_1 WHERE edge_1.col2_int != 11 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2_int |
-      | "103"  | "101"  | 0       | 33              |
-      | "102"  | "103"  | 0       | 22              |
+      | src   | dst   | rank | edge_1.col2_int |
+      | "103" | "101" | 0    | 33              |
+      | "102" | "103" | 0    | 22              |
     And the execution plan should be:
       | id | name              | dependencies | operator info                          |
       | 3  | Project           | 2            |                                        |
@@ -73,11 +73,11 @@ Feature: Lookup edge index full scan
   Scenario: Edge with simple relational IN filter
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str IN ["Red", "Yellow"] YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str IN ["Red", "Yellow"] YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
-      | "102"  | "103"  | 0       | "Yellow"        |
+      | src   | dst   | rank | edge_1.col1_str |
+      | "102" | "103" | 0    | "Yellow"        |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -88,15 +88,15 @@ Feature: Lookup edge index full scan
       LOOKUP ON edge_1 WHERE edge_1.col1_str IN ["non-existed-name"] YIELD edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
+      | edge_1.col1_str |
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col2_int IN [23 - 1 , 66/2] YIELD edge_1.col2_int
+      LOOKUP ON edge_1 WHERE edge_1.col2_int IN [23 - 1 , 66/2] YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2_int |
-      | "103"  | "101"  | 0       | 33              |
-      | "102"  | "103"  | 0       | 22              |
+      | src   | dst   | rank | edge_1.col2_int |
+      | "103" | "101" | 0    | 33              |
+      | "102" | "103" | 0    | 22              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -107,13 +107,13 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col2_int==11
-      YIELD edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2_int |
-      | "101"  | "102"  | 0       | 11              |
-      | "102"  | "103"  | 0       | 22              |
-      | "103"  | "101"  | 0       | 33              |
+      | src   | dst   | rank | edge_1.col2_int |
+      | "101" | "102" | 0    | 11              |
+      | "102" | "103" | 0    | 22              |
+      | "103" | "101" | 0    | 33              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -124,13 +124,13 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col1_str IN [toUpper("r")+"ed1"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
-      | "102"  | "103"  | 0       | "Yellow"        | 22              |
-      | "103"  | "101"  | 0       | "Blue"          | 33              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
+      | "102" | "103" | 0    | "Yellow"        | 22              |
+      | "103" | "101" | 0    | "Blue"          | 33              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -141,11 +141,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col2_int==11
-      YIELD edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2_int |
-      | "101"  | "102"  | 0       | 11              |
+      | src   | dst   | rank | edge_1.col2_int |
+      | "101" | "102" | 0    | 11              |
     And the execution plan should be:
       | id | name              | dependencies | operator info |
       | 3  | Project           | 2            |               |
@@ -160,11 +160,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -176,11 +176,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -203,11 +203,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -231,11 +231,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col1_str IN ["Red1", "ABC"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD  src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
     And the execution plan should be:
       | id | name              | dependencies | operator info |
       | 3  | Project           | 2            |               |
@@ -246,11 +246,11 @@ Feature: Lookup edge index full scan
       """
       LOOKUP ON edge_1
       WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
-      YIELD edge_1.col1_str, edge_1.col2_int
+      YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
-      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | src   | dst   | rank | edge_1.col1_str | edge_1.col2_int |
+      | "101" | "102" | 0    | "Red1"          | 11              |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 3  | Project   | 4            |               |
@@ -260,12 +260,12 @@ Feature: Lookup edge index full scan
   Scenario: Edge with relational NOT IN filter
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str NOT IN ["Blue"] YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str NOT IN ["Blue"] YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
-      | "101"  | "102"  | 0       | "Red1"          |
-      | "102"  | "103"  | 0       | "Yellow"        |
+      | src   | dst   | rank | edge_1.col1_str |
+      | "101" | "102" | 0    | "Red1"          |
+      | "102" | "103" | 0    | "Yellow"        |
     And the execution plan should be:
       | id | name              | dependencies | operator info                                        |
       | 3  | Project           | 2            |                                                      |
@@ -274,11 +274,11 @@ Feature: Lookup edge index full scan
       | 0  | Start             |              |                                                      |
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col2_int NOT IN [23 - 1 , 66/2] YIELD edge_1.col2_int
+      LOOKUP ON edge_1 WHERE edge_1.col2_int NOT IN [23 - 1 , 66/2] YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col2_int
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2_int |
-      | "101"  | "102"  | 0       | 11              |
+      | src   | dst   | rank | edge_1.col2_int |
+      | "101" | "102" | 0    | 11              |
     And the execution plan should be:
       | id | name              | dependencies | operator info                                     |
       | 3  | Project           | 2            |                                                   |
@@ -301,11 +301,11 @@ Feature: Lookup edge index full scan
   Scenario: Edge with relational STARTS/NOT STARTS WITH filter
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH toUpper("r") YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH toUpper("r") YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank, edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
-      | "101"  | "102"  | 0       | "Red1"          |
+      | src   | dst   | rank | edge_1.col1_str |
+      | "101" | "102" | 0    | "Red1"          |
     And the execution plan should be:
       | id | name              | dependencies | operator info                                        |
       | 3  | Project           | 2            |                                                      |
@@ -317,7 +317,7 @@ Feature: Lookup edge index full scan
       LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH "ABC" YIELD edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
+      | edge_1.col1_str |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH 123 YIELD edge_1.col1_str

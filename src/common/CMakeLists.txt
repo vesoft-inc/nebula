@@ -1,14 +1,12 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_subdirectory(base)
 nebula_add_subdirectory(time)
 nebula_add_subdirectory(network)
 nebula_add_subdirectory(thrift)
 nebula_add_subdirectory(fs)
-nebula_add_subdirectory(concurrent)
 nebula_add_subdirectory(thread)
 nebula_add_subdirectory(process)
 nebula_add_subdirectory(hdfs)
@@ -16,7 +14,6 @@ nebula_add_subdirectory(http)
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(charset)
 nebula_add_subdirectory(algorithm)
-nebula_add_subdirectory(encryption)
 nebula_add_subdirectory(datatypes)
 nebula_add_subdirectory(conf)
 nebula_add_subdirectory(meta)
@@ -28,3 +25,5 @@ nebula_add_subdirectory(utils)
 nebula_add_subdirectory(ssl)
 nebula_add_subdirectory(geo)
 nebula_add_subdirectory(memory)
+nebula_add_subdirectory(id)
+nebula_add_subdirectory(log)

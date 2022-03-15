@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "mock/AdHocSchemaManager.h"
@@ -248,8 +247,8 @@ StatusOr<int32_t> AdHocSchemaManager::getSpaceVidLen(GraphSpaceID space) {
   return 32;
 }
 
-StatusOr<meta::cpp2::PropertyType> AdHocSchemaManager::getSpaceVidType(GraphSpaceID) {
-  return meta::cpp2::PropertyType::FIXED_STRING;
+StatusOr<nebula::cpp2::PropertyType> AdHocSchemaManager::getSpaceVidType(GraphSpaceID) {
+  return nebula::cpp2::PropertyType::FIXED_STRING;
 }
 
 StatusOr<TagSchemas> AdHocSchemaManager::getAllVerTagSchema(GraphSpaceID space) {
@@ -300,12 +299,14 @@ StatusOr<EdgeSchema> AdHocSchemaManager::getAllLatestVerEdgeSchema(GraphSpaceID 
   return edgesSchema;
 }
 
-StatusOr<std::vector<nebula::meta::cpp2::FTClient>> AdHocSchemaManager::getFTClients() {
-  return ftClients_;
+StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> AdHocSchemaManager::getServiceClients(
+    nebula::meta::cpp2::ExternalServiceType) {
+  return serviceClients_;
 }
 
-void AdHocSchemaManager::addFTClient(const nebula::meta::cpp2::FTClient& client) {
-  ftClients_.emplace_back(client);
+void AdHocSchemaManager::addServiceClient(const nebula::meta::cpp2::ServiceClient& client) {
+  serviceClients_.emplace_back(client);
 }
+
 }  // namespace mock
 }  // namespace nebula

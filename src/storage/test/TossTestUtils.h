@@ -1,10 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_TOSSTESTUTILS_H
+#define STORAGE_TEST_TOSSTESTUTILS_H
 
 #include <folly/Benchmark.h>
 #include <folly/Format.h>
@@ -15,8 +15,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 
-#include "clients/storage/GraphStorageClient.h"
 #include "clients/storage/InternalStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
@@ -227,7 +227,7 @@ struct TossTestUtils {
   }
 
   static std::vector<meta::cpp2::ColumnDef> makeColDefs(
-      const std::vector<meta::cpp2::PropertyType>& types) {
+      const std::vector<nebula::cpp2::PropertyType>& types) {
     auto N = types.size();
     auto colNames = makeColNames(N);
     std::vector<meta::cpp2::ColumnDef> columnDefs(N);
@@ -244,3 +244,4 @@ struct TossTestUtils {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_EDGE_H_
@@ -47,7 +46,9 @@ struct Edge {
 
   void clear();
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;
@@ -69,9 +70,13 @@ struct Edge {
   bool contains(const Value& key) const;
 
   const Value& value(const std::string& key) const;
+
+  bool keyEqual(const Edge& rhs) const;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Edge& v) { return os << v.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const Edge& v) {
+  return os << v.toString();
+}
 
 }  // namespace nebula
 

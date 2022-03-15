@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "FunctionManager.h"
@@ -39,6 +38,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat", Value::Type::STRING},
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
+    {"coalesce", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -56,7 +56,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -181,6 +183,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
       TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+    {"toset",
+     {TypeSignature({Value::Type::LIST}, Value::Type::SET),
+      TypeSignature({Value::Type::SET}, Value::Type::SET)}},
     {"hash",
      {TypeSignature({Value::Type::INT}, Value::Type::INT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
@@ -279,10 +284,6 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
     {"last",
-     {
-         TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
-     }},
-    {"coalesce",
      {
          TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__),
      }},
@@ -412,6 +413,10 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
+    {"duration",
+     {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
+      TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
 };
 
 // static
@@ -540,17 +545,23 @@ FunctionManager::FunctionManager() {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
-        case Value::Type::INT: {
-          return std::round(args[0].get().getInt());
-        }
+        case Value::Type::INT:
         case Value::Type::FLOAT: {
+          if (args.size() == 2) {
+            if (args[1].get().type() == Value::Type::INT) {
+              auto decimal = args[1].get().getInt();
+              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+            } else {
+              return Value::kNullBadType;
+            }
+          }
           return std::round(args[0].get().getFloat());
         }
         default: {
@@ -798,7 +809,7 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    // return the mathmatical constant PI
+    // return the mathematical constant PI
     auto &attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
@@ -1072,7 +1083,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
-      return time::WallClock::fastNowInSec();
+      return ::time(NULL);
     };
   }
   {
@@ -1419,6 +1430,13 @@ FunctionManager::FunctionManager() {
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
   }
   {
+    auto &attr = functions_["toset"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
+  }
+  {
     auto &attr = functions_["lpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
@@ -1636,7 +1654,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["date"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1708,7 +1726,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["datetime"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1746,8 +1764,8 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = false;
     attr.body_ = [](const auto &args) -> Value {
-      if (args.size() == 0) {
-        return time::WallClock::fastNowInSec();
+      if (args.empty()) {
+        return ::time(NULL);
       }
       auto status = time::TimeUtils::toTimestamp(args[0].get());
       if (!status.ok()) {
@@ -1939,6 +1957,41 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &lastVal = listVal.values.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
     auto &attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -2046,29 +2099,15 @@ FunctionManager::FunctionManager() {
   {
     auto &attr = functions_["coalesce"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
-          if (list.values.empty()) {
-            return Value::kNullValue;
-          }
-          for (auto &i : list.values) {
-            if (i != Value::kNullValue) {
-              return i;
-            }
-          }
-          return Value::kNullValue;
-        }
-        default: {
-          return Value::kNullBadType;
+      for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].get().type() != Value::Type::NULLVALUE) {
+          return args[i].get();
         }
       }
+      return Value::kNullValue;
     };
   }
   {
@@ -2627,6 +2666,39 @@ FunctionManager::FunctionManager() {
         vals.emplace_back(cellId2);
       }
       return List(vals);
+    };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
+  }
+  {
+    auto &attr = functions_["duration"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      const auto &arg = args[0].get();
+      switch (arg.type()) {
+        case Value::Type::MAP: {
+          auto result = time::TimeUtils::durationFromMap(arg.getMap());
+          if (result.ok()) {
+            return result.value();
+          } else {
+            return Value::kNullBadData;
+          }
+        }
+        case Value::Type::STRING: {
+          // TODO
+          return Value::kNullBadType;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
     };
   }
 }  // NOLINT

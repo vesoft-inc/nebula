@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "webservice/GetStatsHandler.h"
@@ -83,7 +82,9 @@ void GetStatsHandler::addOneStat(folly::dynamic& vals,
   vals.push_back(folly::dynamic::object(statName, error));
 }
 
-void GetStatsHandler::requestComplete() noexcept { delete this; }
+void GetStatsHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void GetStatsHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service GetStatsHandler got error: " << proxygen::getErrorString(err);
