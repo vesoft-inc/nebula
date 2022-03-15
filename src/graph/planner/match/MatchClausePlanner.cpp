@@ -555,6 +555,10 @@ Status MatchClausePlanner::buildShortestPath(const std::vector<NodeInfo>& nodeIn
   shortestPath->setEdgeFilter(genEdgeFilter(edge));
   shortestPath->setStepRange(edge.range);
 
+  auto vertexProps = SchemaUtil::getAllVertexProp(qtx, spaceId, true);
+  NG_RETURN_IF_ERROR(vertexProps);
+  shortestPath->setVertexProps(std::move(vertexProps).value());
+
   std::vector<std::string> cols = {nodeInfos[0].alias, edgeInfos[0].alias, nodeInfos[1].alias};
   shortestPath->setColNames(cols);
 
