@@ -4,8 +4,6 @@
  */
 #include "graph/executor/query/ShortestPathExecutor.h"
 
-#include <unordered_set>
-
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -35,8 +33,8 @@ folly::Future<Status> ShortestPathExecutor::execute() {
     if (pair.first == pair.second) {
       return folly::makeFuture<Status>(Status::Error("Source and destination cannot be the same"));
     }
-    dss_[0].rows = std::vector<Row>{Row(std::vector<Value>{std::move(pair.first)})};
-    dss_[1].rows = std::vector<Row>{Row(std::vector<Value>{std::move(pair.second)})};
+    vids_[0].rows = std::vector<Row>{Row(std::vector<Value>{std::move(pair.first)})};
+    vids_[1].rows = std::vector<Row>{Row(std::vector<Value>{std::move(pair.second)})};
 
     resetPairState();
     step_ = 0;
@@ -44,8 +42,8 @@ folly::Future<Status> ShortestPathExecutor::execute() {
       // Set left(dss_[0]) or right(dss_[1]) dataset as req dataset, and get neighbors
       for (int i = 0; i < 2; i++) {
         if (step_ > shortestPathNode_->stepRange()->max()) {
-          dss_[0].rows.clear();
-          dss_[1].rows.clear();
+          vids_[0].rows.clear();
+          vids_[1].rows.clear();
           break;
         }
         status = getNeighbors().get();
@@ -54,11 +52,11 @@ folly::Future<Status> ShortestPathExecutor::execute() {
         }
         setInterimState(1 - i);
         if (break_) {
-          dss_[direction_].rows.clear();  // For break while()
+          vids_[direction_].rows.clear();  // For break while()
           break;
         }
       }
-    } while (!dss_[direction_].rows.empty());
+    } while (!vids_[direction_].rows.empty());
   }
 
   return folly::makeFuture<Status>(buildResult());
@@ -79,8 +77,8 @@ void ShortestPathExecutor::resetPairState() {
 
 Status ShortestPathExecutor::close() {
   // clear the members
-  dss_[0].clear();
-  dss_[1].clear();
+  vids_[0].clear();
+  vids_[1].clear();
   vidToVertex_.clear();
   allPrevPaths_[0].clear();
   allPrevPaths_[1].clear();
@@ -134,12 +132,12 @@ folly::Future<Status> ShortestPathExecutor::getNeighbors() {
 
   return storageClient
       ->getNeighbors(param,
-                     dss_[direction_].colNames,
-                     std::move(dss_[direction_].rows),
+                     vids_[direction_].colNames,
+                     std::move(vids_[direction_].rows),
                      edgeTypes,
                      shortestPathNode_->edgeDirection(),
                      nullptr,
-                     nullptr,
+                     shortestPathNode_->vertexProps(),
                      edgeProps,
                      nullptr,
                      false,
@@ -179,11 +177,11 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(RpcResponse&& resps) 
 Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   QueryExpressionContext ctx(ectx_);
-  std::unordered_map<Value, Paths>& prevPaths = allPrevPaths_[direction_];
-  std::unordered_map<Value, Paths>& otherPrevPaths = allPrevPaths_[1 - direction_];
+  std::unordered_map<Value, PrevNodeEdge>& prevPaths = allPrevPaths_[direction_];
+  std::unordered_map<Value, PrevNodeEdge>& otherPrevPaths = allPrevPaths_[1 - direction_];
 
   DataSet reqDs;
-  reqDs.colNames = dss_[direction_].colNames;
+  reqDs.colNames = vids_[direction_].colNames;
 
   std::unordered_set<Value> uniqueSet;
 
@@ -205,7 +203,7 @@ Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
     }
     Value srcV = iter->getVertex();
     Value edge = iter->getEdge();
-    const Value& dst = iter->getEdgeProp("*", kDst);
+    const Value dst = edge.getEdge().dst;
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
     }
@@ -216,14 +214,14 @@ Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
     // 1. Due to src can have multiple edge, so src will be repeated, this make it work once
     // 2. Filter the min step
     // 3. Join the left and right by using vid to find in allPrevPaths_;
-    if (uniqueSet.emplace(srcV.getVertex().vid).second && step_ >= range_.first &&
+    if (uniqueSet.emplace(srcV.getVertex().vid).second &&
         otherPrevPaths.find(srcV.getVertex().vid) != otherPrevPaths.end()) {
       findPaths(srcV);
       break_ = true;
       if (single_) {
         return Status::OK();
       } else {
-        // Couldn't AddPrevPath(), otherwise it will be a infinite loop
+        // Continue for skipping AddPrevPath(), otherwise it will be a infinite loop
         continue;
       }
     }
@@ -241,7 +239,7 @@ Status ShortestPathExecutor::judge(GetNeighborsIter* iter) {
     }
   }
 
-  dss_[direction_] = std::move(reqDs);
+  vids_[direction_] = std::move(reqDs);
 
   return Status::OK();
 }
@@ -255,12 +253,12 @@ Status ShortestPathExecutor::buildResult() {
 // The shortest path from src to dst is like [src]..[node]..[dst].
 // When we find the node, we need to find the path to src and dst.
 // So build the backward paths to src and dst for finding path [node]-> [src] and [dst].
-void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, Paths>& prevPaths,
+void ShortestPathExecutor::AddPrevPath(std::unordered_map<Value, PrevNodeEdge>& prevPaths,
                                        const Value& vid,
                                        Row&& prevPath) {
   auto pathFound = prevPaths.find(vid);
   if (pathFound == prevPaths.end()) {
-    Paths interimPaths;
+    PrevNodeEdge interimPaths;
     interimPaths.emplace_back(std::move(prevPath));
     prevPaths.emplace(vid, std::move(interimPaths));
   } else {
@@ -342,7 +340,7 @@ std::vector<List> ShortestPathExecutor::getPathsFromMap(Value vid, int direction
   }
 
   std::vector<List> paths;
-  Paths& prevPaths = prevPathsSet.find(vid)->second;
+  PrevNodeEdge& prevPaths = prevPathsSet.find(vid)->second;
 
   for (auto& prevPath : prevPaths) {
     Value e = prevPath[1];
