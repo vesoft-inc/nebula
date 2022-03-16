@@ -235,9 +235,9 @@ void AdminTaskManager::schedule() {
   std::chrono::milliseconds interval{20};  // 20ms
   while (!shutdown_.load(std::memory_order_acquire)) {
     LOG(INFO) << "waiting for incoming task";
-    std::optional<TaskHandle> optTaskHandle{std::nullopt};
+    folly::Optional<TaskHandle> optTaskHandle{folly::none};
     while (!optTaskHandle && !shutdown_.load(std::memory_order_acquire)) {
-      optTaskHandle = taskQueue_.try_take_for(interval).value();
+      optTaskHandle = taskQueue_.try_take_for(interval);
     }
 
     if (shutdown_.load(std::memory_order_acquire)) {
