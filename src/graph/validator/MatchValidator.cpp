@@ -995,7 +995,6 @@ Status MatchValidator::validateMatchPathExpr(
     Expression *expr,
     const std::unordered_map<std::string, AliasType> &availableAliases,
     std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
-  std::vector<std::unique_ptr<MatchClauseContext>> ctxs;
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
   for (auto &matchPathExpr : matchPathExprs) {
     auto matchClauseCtx = getContext<MatchClauseContext>();
