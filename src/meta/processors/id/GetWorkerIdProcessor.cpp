@@ -11,7 +11,6 @@ namespace meta {
 void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   const std::string& ipAddr = req.get_host();
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-
   auto result = doGet(ipAddr);
   if (nebula::ok(result)) {
     int64_t workerId = std::stoi(std::move(nebula::value(result)));
