@@ -19,11 +19,11 @@ std::ostream& operator<<(std::ostream& os, nebula::cpp2::PropertyType type) {
 std::string SchemaPropItem::toString() const {
   switch (propType_) {
     case TTL_DURATION:
-      return folly::stringPrintf("ttl_duration = %ld", boost::get<int64_t>(propValue_));
+      return folly::stringPrintf("ttl_duration = %ld", std::get<int64_t>(propValue_));
     case TTL_COL:
-      return folly::stringPrintf("ttl_col = \"%s\"", boost::get<std::string>(propValue_).c_str());
+      return folly::stringPrintf("ttl_col = \"%s\"", std::get<std::string>(propValue_).c_str());
     case COMMENT:
-      return folly::stringPrintf("comment = \"%s\"", boost::get<std::string>(propValue_).c_str());
+      return folly::stringPrintf("comment = \"%s\"", std::get<std::string>(propValue_).c_str());
   }
   DLOG(FATAL) << "Schema property type illegal";
   return "Unknown";
