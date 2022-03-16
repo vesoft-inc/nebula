@@ -19,6 +19,7 @@ using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
 
 class OptContext;
 
+// Select the optimal index according to the preset filter inside [[IndexScan]]
 class IndexScanRule final : public OptRule {
   FRIEND_TEST(IndexScanRuleTest, BoundValueTest);
   FRIEND_TEST(IndexScanRuleTest, IQCtxTest);

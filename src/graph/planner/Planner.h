@@ -36,17 +36,28 @@ struct MatchAndInstantiate {
   PlannerInstantiateFunc instantiate;
 };
 
+// A planner generates plans for statements.
+// For example, we have MatchPlanner that generates plan for Match statement.
+// And we have GoPlanner that generates plan for Go statements. Each planner
+// will be registered into the plannersMap in the PlannersRegister when the
+// graphd service starts up.
 class Planner {
  public:
   virtual ~Planner() = default;
 
+  // Each statement might have many planners that match different situations.
+  // Each planner should provide two funtions:
+  // 1. MatchFunc that matchs the proper situation
+  // 2. PlannerInstantiateFunc that instantiates the planner
   static auto& plannersMap() {
     static std::unordered_map<Sentence::Kind, std::vector<MatchAndInstantiate>> plannersMap;
     return plannersMap;
   }
 
+  // Generates plans for each statement based on AsrContext.
   static StatusOr<SubPlan> toPlan(AstContext* astCtx);
 
+  // Transforms the AstContext to a plan which determined by the implementations.
   virtual StatusOr<SubPlan> transform(AstContext* astCtx) = 0;
 
  protected:

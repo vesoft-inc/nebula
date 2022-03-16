@@ -4,7 +4,6 @@
         "v",
         "heartbeat_interval_secs",
         "meta_client_retry_times",
-        "slow_op_threshold_ms",
         "clean_wal_interval_secs",
         "wal_ttl",
         "clean_wal_interval_secs",

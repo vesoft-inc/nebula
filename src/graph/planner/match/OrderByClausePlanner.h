@@ -10,9 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The OrderByClausePlanner was designed to generate plan for order by clause;
- */
+// The OrderByClausePlanner generates plan for order by clause;
 class OrderByClausePlanner final : public CypherClausePlanner {
  public:
   OrderByClausePlanner() = default;

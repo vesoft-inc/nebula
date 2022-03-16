@@ -220,7 +220,9 @@ class RocksEngine : public KVEngine {
    * @param value Pointer of value
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) override;
+  nebula::cpp2::ErrorCode get(const std::string& key,
+                              std::string* value,
+                              const void* snapshot = nullptr) override;
 
   /**
    * @brief Read a list of keys

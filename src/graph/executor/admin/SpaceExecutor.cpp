@@ -176,6 +176,50 @@ void DropSpaceExecutor::unRegisterSpaceLevelMetrics(const std::string &spaceName
   }
 }
 
+folly::Future<Status> ClearSpaceExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto *csNode = asNode<ClearSpace>(node());
+
+  // prepare text search index.
+  std::vector<std::string> ftIndexes;
+  auto spaceIdRet = qctx()->getMetaClient()->getSpaceIdByNameFromCache(csNode->getSpaceName());
+  if (spaceIdRet.ok()) {
+    auto ftIndexesRet = qctx()->getMetaClient()->getFTIndexBySpaceFromCache(spaceIdRet.value());
+    NG_RETURN_IF_ERROR(ftIndexesRet);
+    auto map = std::move(ftIndexesRet).value();
+    auto get = [](const auto &ptr) { return ptr.first; };
+    std::transform(map.begin(), map.end(), std::back_inserter(ftIndexes), get);
+  } else {
+    LOG(WARNING) << "Get space ID failed when prepare text index: " << csNode->getSpaceName();
+  }
+
+  return qctx()
+      ->getMetaClient()
+      ->clearSpace(csNode->getSpaceName(), csNode->getIfExists())
+      .via(runner())
+      .thenValue([this, csNode, spaceIdRet, ftIndexes = std::move(ftIndexes)](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << "Clear space `" << csNode->getSpaceName() << "' failed: " << resp.status();
+          return resp.status();
+        }
+        if (!ftIndexes.empty()) {
+          auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
+          if (!tsRet.ok()) {
+            LOG(WARNING) << "Get text search clients failed";
+            return Status::OK();
+          }
+          for (const auto &ftindex : ftIndexes) {
+            auto ftRet = FTIndexUtils::clearTSIndex(std::move(tsRet).value(), ftindex);
+            if (!ftRet.ok()) {
+              LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet.status();
+            }
+          }
+        }
+        return Status::OK();
+      });
+}
+
 folly::Future<Status> ShowSpacesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 

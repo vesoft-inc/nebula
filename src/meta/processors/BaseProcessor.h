@@ -67,26 +67,20 @@ class BaseProcessor {
    * @brief Set error code and handle leader changed.
    *
    * @param code
-   * @param spaceId
-   * @param partId
    */
-  void handleErrorCode(nebula::cpp2::ErrorCode code,
-                       GraphSpaceID spaceId = kDefaultSpaceId,
-                       PartitionID partId = kDefaultPartId) {
+  void handleErrorCode(nebula::cpp2::ErrorCode code) {
     resp_.code_ref() = code;
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      handleLeaderChanged(spaceId, partId);
+      handleLeaderChanged();
     }
   }
 
   /**
    * @brief Set leader address to reponse.
    *
-   * @param spaceId
-   * @param partId
    */
-  void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
-    auto leaderRet = kvstore_->partLeader(spaceId, partId);
+  void handleLeaderChanged() {
+    auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
     if (ok(leaderRet)) {
       resp_.leader_ref() = toThriftHost(nebula::value(leaderRet));
     } else {
@@ -440,6 +434,16 @@ class BaseProcessor {
   ErrorOr<nebula::cpp2::ErrorCode, bool> replaceHostInZone(const HostAddr& ipv4From,
                                                            const HostAddr& ipv4To,
                                                            bool direct = false);
+
+  /**
+   * @brief Get all parts' distribution information of a space.
+   *
+   * @param spaceId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID,
+   *         std::vector<HostAddr>>> map for part id -> peer hosts.
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+  getAllParts(GraphSpaceID spaceId);
 
  protected:
   kvstore::KVStore* kvstore_ = nullptr;

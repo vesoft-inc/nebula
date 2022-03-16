@@ -11,6 +11,7 @@
 namespace nebula {
 namespace opt {
 
+// Apply the transformation of base class(GeoPredicateIndexScanBaseRule::transform)
 class GeoPredicateTagIndexScanRule final : public GeoPredicateIndexScanBaseRule {
  public:
   const Pattern &pattern() const override;
