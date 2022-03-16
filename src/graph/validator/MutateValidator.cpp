@@ -53,7 +53,7 @@ Status InsertVerticesValidator::check() {
     auto *tagName = item->tagName();
     auto tagStatus = qctx_->schemaMng()->toTagID(spaceId_, *tagName);
     if (!tagStatus.ok()) {
-      LOG(ERROR) << "No schema found for " << *tagName;
+      LOG(ERROR) << "No schema found for " << *tagName << " : " << tagStatus.status();
       return Status::SemanticError("No schema found for `%s'", tagName->c_str());
     }
 
@@ -758,13 +758,13 @@ Status UpdateVertexValidator::validateImpl() {
   auto idRet = SchemaUtil::toVertexID(sentence->getVid(), vidType_);
   if (!idRet.ok()) {
     LOG(ERROR) << idRet.status();
-    return idRet.status();
+    return std::move(idRet).status();
   }
   vId_ = std::move(idRet).value();
   NG_RETURN_IF_ERROR(initProps());
   auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
   if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_;
+    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
     return Status::SemanticError("No schema found for `%s'", name_.c_str());
   }
   tagId_ = ret.value();
@@ -806,7 +806,7 @@ Status UpdateEdgeValidator::validateImpl() {
   NG_RETURN_IF_ERROR(initProps());
   auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, name_);
   if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_;
+    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
     return Status::SemanticError("No schema found for `%s'", name_.c_str());
   }
   edgeType_ = ret.value();

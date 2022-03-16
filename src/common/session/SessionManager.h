@@ -21,6 +21,24 @@
 
 namespace nebula {
 
+class SessionCount {
+ private:
+  std::atomic<int32_t> count_ = 1;
+
+ public:
+  int fetch_add(int step) {
+    count_.fetch_add(step, std::memory_order_release);
+    return count_;
+  }
+  int fetch_sub(int step) {
+    count_.fetch_sub(step, std::memory_order_release);
+    return count_;
+  }
+  int get() {
+    return count_;
+  }
+};
+
 template <class SessionType>
 class SessionManager {
  public:
@@ -56,7 +74,9 @@ class SessionManager {
 
  protected:
   using SessionPtr = std::shared_ptr<SessionType>;
+  using SessionCountPtr = std::shared_ptr<SessionCount>;
   folly::ConcurrentHashMap<SessionID, SessionPtr> activeSessions_;
+  folly::ConcurrentHashMap<std::string, SessionCountPtr> userIpSessionCount_;
   std::unique_ptr<thread::GenericWorker> scavenger_;
   meta::MetaClient* metaClient_{nullptr};
   HostAddr myAddr_;

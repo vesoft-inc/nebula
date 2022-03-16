@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 
+// StartNode is a spetial leaf node that helps the scheduler to work properly.
 class StartNode final : public PlanNode {
  public:
   static StartNode* make(QueryContext* qctx) {
@@ -47,6 +48,7 @@ class BinarySelect : public SingleInputNode {
   Expression* condition_{nullptr};
 };
 
+// Select the if branch or else branch at runtime
 class Select final : public BinarySelect {
  public:
   static Select* make(QueryContext* qctx,
@@ -92,6 +94,7 @@ class Select final : public BinarySelect {
   PlanNode* else_{nullptr};
 };
 
+// Executing the branch multi times at runtime.
 class Loop final : public BinarySelect {
  public:
   static Loop* make(QueryContext* qctx,
@@ -123,9 +126,7 @@ class Loop final : public BinarySelect {
   PlanNode* body_{nullptr};
 };
 
-/**
- * This operator is used for pass through situation.
- */
+// This operator is used for pass through situation.
 class PassThroughNode final : public SingleInputNode {
  public:
   static PassThroughNode* make(QueryContext* qctx, PlanNode* input) {
@@ -141,9 +142,7 @@ class PassThroughNode final : public SingleInputNode {
   void cloneMembers(const PassThroughNode&);
 };
 
-/**
- * This operator is used for getting a named alias from another executed operator.
- */
+// This operator is used for getting a named alias from another executed operator.
 class Argument final : public PlanNode {
  public:
   static Argument* make(QueryContext* qctx, std::string alias) {

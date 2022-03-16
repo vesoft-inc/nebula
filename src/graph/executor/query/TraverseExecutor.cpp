@@ -140,7 +140,6 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
 }
 
 folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
-  SCOPED_TIMER(&execTime_);
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
   if (!result.ok()) {
     return folly::makeFuture<Status>(std::move(result).status());
