@@ -215,7 +215,13 @@ class QueryUtils final {
     return Status::OK();
   }
 
-  // return none if no valid ttl, else return the ttl property name and time
+  /**
+   * @brief Get the Edge TTL Info object
+   *
+   * @param edgeContext
+   * @param edgeType
+   * @return return none if no valid ttl, else return the ttl property name and time
+   */
   static std::optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeContext* edgeContext,
                                                                        EdgeType edgeType) {
     std::optional<std::pair<std::string, int64_t>> ret;
@@ -226,7 +232,13 @@ class QueryUtils final {
     return ret;
   }
 
-  // return none if no valid ttl, else return the ttl property name and time
+  /**
+   * @brief Get the Tag TTL Info object
+   *
+   * @param tagContext
+   * @param tagId
+   * @return return none if no valid ttl, else return the ttl property name and time
+   */
   static std::optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagContext* tagContext,
                                                                       TagID tagId) {
     std::optional<std::pair<std::string, int64_t>> ret;

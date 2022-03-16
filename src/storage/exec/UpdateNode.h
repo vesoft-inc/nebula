@@ -314,6 +314,18 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  /**
+   * @brief Calculate updated propertis and indexes
+   *
+   * This function will calculate the properties to be updated and those indexes if exist, and
+   * encode them into key-value format.
+   *
+   * @param partId
+   * @param vId
+   * @return folly::Optional<std::string> BatchHolder encode value.
+   * @see BatchHolder
+   */
+
   std::optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
