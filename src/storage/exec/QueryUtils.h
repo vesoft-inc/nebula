@@ -31,7 +31,13 @@ class QueryUtils final {
     kDst,
     kOther,
   };
-
+  /**
+   * @brief Get return col type by name
+   *
+   * @param name
+   * @return ReturnColType
+   * @see ReturnColType
+   */
   static ReturnColType toReturnColType(const std::string& name) {
     if (name == kVid) {
       return ReturnColType::kVid;
@@ -49,7 +55,14 @@ class QueryUtils final {
       return ReturnColType::kOther;
     }
   }
-
+  /**
+   * @brief Get value with propName from reader
+   *
+   * @param reader Value set
+   * @param propName Filed name
+   * @param field Field definition
+   * @return StatusOr<nebula::Value>
+   */
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
                                            const meta::SchemaProviderIf::Field* field) {
@@ -84,9 +97,15 @@ class QueryUtils final {
     return value;
   }
 
-  // read prop value, If the RowReader contains this field,
-  // read from the rowreader, otherwise read the default value
-  // or null value from the latest schema
+  /**
+   * @brief read prop value, If the RowReader contains this field, read from the rowreader,
+   * otherwise read the default value or null value from the latest schema
+   *
+   * @param reader
+   * @param propName
+   * @param schema
+   * @return StatusOr<nebula::Value>
+   */
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
                                            const meta::NebulaSchemaProvider* schema) {

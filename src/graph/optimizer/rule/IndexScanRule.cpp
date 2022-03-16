@@ -73,6 +73,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
     NG_RETURN_IF_ERROR(analyzeExpression(newFilter, &items, &kind, isEdge(groupNode), qctx));
     auto status = createIndexQueryCtx(iqctx, kind, items, qctx, groupNode);
     if (!status.ok()) {
+      // Degenerate back to tag lookup
       NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, groupNode));
     }
   }
@@ -118,6 +119,7 @@ Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx& iqctx,
   return Status::OK();
 }
 
+// Single ColumnHints item
 Status IndexScanRule::createSingleIQC(IndexQueryCtx& iqctx,
                                       const FilterItems& items,
                                       graph::QueryContext* qctx,
@@ -132,6 +134,7 @@ Status IndexScanRule::createSingleIQC(IndexQueryCtx& iqctx,
   return appendIQCtx(index, items, iqctx, newFilter);
 }
 
+// Multiple ColumnHints items
 Status IndexScanRule::createMultipleIQC(IndexQueryCtx& iqctx,
                                         const FilterItems& items,
                                         graph::QueryContext* qctx,
@@ -237,7 +240,6 @@ inline bool verifyType(const Value& val) {
 Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
                                     const FilterItems& items,
                                     const meta::cpp2::ColumnDef& col) const {
-  // CHECK(false);
   IndexColumnHint hint;
   std::pair<Value, bool> begin, end;
   bool isRangeScan = true;
@@ -324,6 +326,7 @@ GraphSpaceID IndexScanRule::spaceId(const OptGroupNode* groupNode) const {
   return in->space();
 }
 
+// TODO: Delete similar interfaces and get the filter from PlanNode
 Expression* IndexScanRule::filterExpr(const OptGroupNode* groupNode) const {
   auto in = static_cast<const IndexScan*>(groupNode->node());
   const auto& qct = in->queryContext();
