@@ -64,9 +64,10 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
   }
   auto resp = getResponse(
       evb,
-      std::make_pair(leader, chainReq),
+      leader,
+      chainReq,
       [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::ChainUpdateEdgeRequest& r) {
-        return client->future_chainUpdateEdge(r);
+        return client->semifuture_chainUpdateEdge(r);
       });
 
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
@@ -102,9 +103,10 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   cpp2::ChainAddEdgesRequest chainReq = makeChainAddReq(directReq, termId, optVersion);
   auto resp = getResponse(
       evb,
-      std::make_pair(leader, chainReq),
+      leader,
+      chainReq,
       [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::ChainAddEdgesRequest& r) {
-        return client->future_chainAddEdges(r);
+        return client->semifuture_chainAddEdges(r);
       });
 
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
@@ -158,9 +160,10 @@ void InternalStorageClient::chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
   chainReq.term_ref() = termId;
   auto resp = getResponse(
       evb,
-      std::make_pair(leader, chainReq),
+      leader,
+      chainReq,
       [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::ChainDeleteEdgesRequest& r) {
-        return client->future_chainDeleteEdges(r);
+        return client->semifuture_chainDeleteEdges(r);
       });
 
   std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {

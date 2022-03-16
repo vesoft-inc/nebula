@@ -12,6 +12,7 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/meta/Common.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -144,17 +145,9 @@ class StorageClientBase {
             class Response = typename std::result_of<RemoteFunc(ClientType* client,
                                                                 const Request&)>::type::value_type>
   folly::Future<StatusOr<Response>> getResponse(folly::EventBase* evb,
-                                                std::pair<HostAddr, Request>&& request,
+                                                const HostAddr& host,
+                                                const Request& request,
                                                 RemoteFunc&& remoteFunc);
-
-  template <class Request,
-            class RemoteFunc,
-            class Response = typename std::result_of<RemoteFunc(ClientType* client,
-                                                                const Request&)>::type::value_type>
-  void getResponseImpl(folly::EventBase* evb,
-                       std::pair<HostAddr, Request> request,
-                       RemoteFunc remoteFunc,
-                       std::shared_ptr<folly::Promise<StatusOr<Response>>> pro);
 
   // Cluster given ids into the host they belong to
   // The method returns a map

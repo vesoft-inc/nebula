@@ -25,8 +25,8 @@ PASSWORD_LOCK_TIME_IN_SECS ?= 0
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
-test_without_skip = python3 -m pytest -m "not skip"
-test_without_skip_sa = python3 -m pytest -m "not skip and not distonly"
+test_without_skip = python3 -m pytest -m "not skip" --build_dir=$(BUILD_DIR)
+test_without_skip_sa = python3 -m pytest -m "not skip and not distonly" --build_dir=$(BUILD_DIR)
 test_j = $(test_without_skip) -n$(J)
 test_j_sa = $(test_without_skip_sa) -n$(J)
 

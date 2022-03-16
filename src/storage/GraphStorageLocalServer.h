@@ -29,31 +29,39 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
   void serve();
 
  public:
-  folly::Future<cpp2::GetNeighborsResponse> future_getNeighbors(
+  folly::SemiFuture<cpp2::GetNeighborsResponse> semifuture_getNeighbors(
       const cpp2::GetNeighborsRequest& request);
-  folly::Future<cpp2::ExecResponse> future_addVertices(const cpp2::AddVerticesRequest& request);
-  folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::AddEdgesRequest& request);
-  folly::Future<cpp2::ExecResponse> future_addEdges(const cpp2::AddEdgesRequest& request);
-  folly::Future<cpp2::GetPropResponse> future_getProps(const cpp2::GetPropRequest& request);
-  folly::Future<cpp2::ExecResponse> future_deleteEdges(const cpp2::DeleteEdgesRequest& request);
-  folly::Future<cpp2::ExecResponse> future_chainDeleteEdges(
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_addVertices(
+      const cpp2::AddVerticesRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_chainAddEdges(
+      const cpp2::AddEdgesRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_addEdges(const cpp2::AddEdgesRequest& request);
+  folly::SemiFuture<cpp2::GetPropResponse> semifuture_getProps(const cpp2::GetPropRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_deleteEdges(
       const cpp2::DeleteEdgesRequest& request);
-  folly::Future<cpp2::ExecResponse> future_deleteVertices(
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_chainDeleteEdges(
+      const cpp2::DeleteEdgesRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_deleteVertices(
       const cpp2::DeleteVerticesRequest& request);
-  folly::Future<cpp2::ExecResponse> future_deleteTags(const cpp2::DeleteTagsRequest& request);
-  folly::Future<cpp2::UpdateResponse> future_updateVertex(const cpp2::UpdateVertexRequest& request);
-  folly::Future<cpp2::UpdateResponse> future_chainUpdateEdge(
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_deleteTags(
+      const cpp2::DeleteTagsRequest& request);
+  folly::SemiFuture<cpp2::UpdateResponse> semifuture_updateVertex(
+      const cpp2::UpdateVertexRequest& request);
+  folly::SemiFuture<cpp2::UpdateResponse> semifuture_chainUpdateEdge(
       const cpp2::UpdateEdgeRequest& request);
-  folly::Future<cpp2::UpdateResponse> future_updateEdge(const cpp2::UpdateEdgeRequest& request);
-  folly::Future<cpp2::GetUUIDResp> future_getUUID(const cpp2::GetUUIDReq& request);
-  folly::Future<cpp2::LookupIndexResp> future_lookupIndex(const cpp2::LookupIndexRequest& request);
-  folly::Future<cpp2::GetNeighborsResponse> future_lookupAndTraverse(
+  folly::SemiFuture<cpp2::UpdateResponse> semifuture_updateEdge(
+      const cpp2::UpdateEdgeRequest& request);
+  folly::SemiFuture<cpp2::GetUUIDResp> semifuture_getUUID(const cpp2::GetUUIDReq& request);
+  folly::SemiFuture<cpp2::LookupIndexResp> semifuture_lookupIndex(
+      const cpp2::LookupIndexRequest& request);
+  folly::SemiFuture<cpp2::GetNeighborsResponse> semifuture_lookupAndTraverse(
       const cpp2::LookupAndTraverseRequest& request);
-  folly::Future<cpp2::ScanResponse> future_scanVertex(const cpp2::ScanVertexRequest& request);
-  folly::Future<cpp2::ScanResponse> future_scanEdge(const cpp2::ScanEdgeRequest& request);
-  folly::Future<cpp2::KVGetResponse> future_get(const cpp2::KVGetRequest& request);
-  folly::Future<cpp2::ExecResponse> future_put(const cpp2::KVPutRequest& request);
-  folly::Future<cpp2::ExecResponse> future_remove(const cpp2::KVRemoveRequest& request);
+  folly::SemiFuture<cpp2::ScanResponse> semifuture_scanVertex(
+      const cpp2::ScanVertexRequest& request);
+  folly::SemiFuture<cpp2::ScanResponse> semifuture_scanEdge(const cpp2::ScanEdgeRequest& request);
+  folly::SemiFuture<cpp2::KVGetResponse> semifuture_get(const cpp2::KVGetRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_put(const cpp2::KVPutRequest& request);
+  folly::SemiFuture<cpp2::ExecResponse> semifuture_remove(const cpp2::KVRemoveRequest& request);
 
  private:
   GraphStorageLocalServer() = default;
