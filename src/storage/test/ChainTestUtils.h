@@ -27,7 +27,7 @@ class TransactionManagerTester {
     man_->stop();
     int32_t numCheckIdle = 0;
     while (numCheckIdle < 3) {
-      auto stats = man_->exec_->getPoolStats();
+      auto stats = man_->worker_->getPoolStats();
       if (stats.threadCount == stats.idleThreadCount) {
         ++numCheckIdle;
       } else {
