@@ -89,7 +89,7 @@ class ChainUpdateEdgeLocalProcessor
   bool primeInserted_{false};
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
-  folly::Optional<int64_t> ver_{folly::none};
+  std::optional<int64_t> ver_;
 };
 
 }  // namespace storage
