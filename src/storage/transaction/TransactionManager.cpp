@@ -195,14 +195,16 @@ void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::Call
                               opt.partId,
                               opt.term);
   // clean some out-dated item in memory lock
-  for (auto cit = memLocks_.cbegin(); cit != memLocks_.cend(); ++cit) {
+  for (auto cit = memLocks_.cbegin(); cit != memLocks_.cend();) {
     auto& [spaceId, partId, termId] = cit->first;
     if (spaceId == opt.spaceId && partId == opt.partId && termId < opt.term) {
       auto sptrLockCore = cit->second;
       if (sptrLockCore->size() == 0) {
         cit = memLocks_.erase(cit);
+        continue;
       }
     }
+    ++cit;
   }
 }
 

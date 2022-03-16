@@ -134,7 +134,9 @@ class TransactionManager {
   using SpacePart = std::pair<GraphSpaceID, PartitionID>;
 
   StorageEnv* env_{nullptr};
+  // real executor to run recover / normal jobs
   std::shared_ptr<folly::IOThreadPoolExecutor> worker_;
+  // only used for waiting some job stop.
   std::shared_ptr<folly::IOThreadPoolExecutor> controller_;
 
   /**
