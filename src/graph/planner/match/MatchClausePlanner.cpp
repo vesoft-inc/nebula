@@ -136,6 +136,9 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
         connectPathPlan(nodeInfos, matchClauseCtx, subplan, nodeAliasesSeen, matchClausePlan));
   }
   NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, matchClausePlan));
+  for (const auto& pathInfo : matchClauseCtx->paths) {
+    NG_RETURN_IF_ERROR(collectPathList(matchClauseCtx->qctx, pathInfo, matchClausePlan));
+  }
   NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
   return matchClausePlan;
 }
@@ -496,5 +499,39 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
   }
   return Status::OK();
 }
+
+/*static*/ Status MatchClausePlanner::collectPathList(QueryContext* qctx,
+                                                      const Path& pathInfo,
+                                                      SubPlan& subplan) {
+  if (!pathInfo.agg) {
+    return Status::OK();
+  }
+  std::vector<Expression*> newGroupKeys;
+  newGroupKeys.reserve(pathInfo.groupVariables.size());
+  for (const auto& variable : pathInfo.groupVariables) {
+    newGroupKeys.emplace_back(InputPropertyExpression::make(qctx->objPool(), variable));
+  }
+  std::vector<std::string> colNames;
+  colNames.reserve(pathInfo.aggVariables.size());
+  std::vector<Expression*> newGroupItems;
+  newGroupItems.reserve(pathInfo.aggVariables.size());
+  for (std::size_t i = 0; i < pathInfo.aggVariables.size() - 1; i++) {
+    newGroupItems.emplace_back(
+        InputPropertyExpression::make(qctx->objPool(), pathInfo.aggVariables[i]));
+    colNames.emplace_back(pathInfo.aggVariables[i]);
+  }
+  newGroupItems.emplace_back(AggregateExpression::make(
+      qctx->objPool(),
+      "collect",
+      InputPropertyExpression::make(qctx->objPool(), pathInfo.aggVariables.back())));
+  colNames.emplace_back(pathInfo.aggVariables.back());
+
+  auto* agg =
+      Aggregate::make(qctx, subplan.root, std::move(newGroupKeys), std::move(newGroupItems));
+  agg->setColNames(std::move(colNames));
+  subplan.root = agg;
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

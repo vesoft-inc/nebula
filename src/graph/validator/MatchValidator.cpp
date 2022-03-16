@@ -49,17 +49,18 @@ Status MatchValidator::validateImpl() {
         auto aliasesTmp = matchClauseCtx->aliasesGenerated;
         aliasesAvailable.merge(aliasesTmp);
 
-        if (matchClause->where() != nullptr) {
-          auto whereClauseCtx = getContext<WhereClauseContext>();
-          whereClauseCtx->aliasesAvailable = aliasesAvailable;
-          NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(), *whereClauseCtx));
-          matchClauseCtx->where = std::move(whereClauseCtx);
-        }
-
         // Copy the aliases without delete the origins.
         aliasesTmp = matchClauseCtx->aliasesGenerated;
         cypherCtx_->queryParts.back().aliasesGenerated.merge(aliasesTmp);
         cypherCtx_->queryParts.back().matchs.emplace_back(std::move(matchClauseCtx));
+        if (matchClause->where() != nullptr) {
+          auto whereClauseCtx = getContext<WhereClauseContext>();
+          whereClauseCtx->aliasesAvailable = aliasesAvailable;
+          NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(),
+                                            *whereClauseCtx,
+                                            cypherCtx_->queryParts.back().matchs));
+          cypherCtx_->queryParts.back().matchs.back()->where = std::move(whereClauseCtx);
+        }
 
         break;
       }
@@ -67,7 +68,8 @@ Status MatchValidator::validateImpl() {
         auto *unwindClause = static_cast<UnwindClause *>(clause.get());
         auto unwindClauseCtx = getContext<UnwindClauseContext>();
         unwindClauseCtx->aliasesAvailable = aliasesAvailable;
-        NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
+        NG_RETURN_IF_ERROR(
+            validateUnwind(unwindClause, *unwindClauseCtx, cypherCtx_->queryParts.back().matchs));
 
         // An unwind pass all available aliases.
         aliasesAvailable.insert(unwindClauseCtx->aliasesGenerated.begin(),
@@ -84,11 +86,16 @@ Status MatchValidator::validateImpl() {
         auto withYieldCtx = getContext<YieldClauseContext>();
         withClauseCtx->yield = std::move(withYieldCtx);
         withClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-        NG_RETURN_IF_ERROR(validateWith(withClause, cypherCtx_->queryParts, *withClauseCtx));
+        NG_RETURN_IF_ERROR(validateWith(withClause,
+                                        cypherCtx_->queryParts,
+                                        *withClauseCtx,
+                                        cypherCtx_->queryParts.back().matchs));
         if (withClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
           whereClauseCtx->aliasesAvailable = withClauseCtx->aliasesGenerated;
-          NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(), *whereClauseCtx));
+          NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(),
+                                            *whereClauseCtx,
+                                            cypherCtx_->queryParts.back().matchs));
           withClauseCtx->where = std::move(whereClauseCtx);
         }
 
@@ -104,7 +111,10 @@ Status MatchValidator::validateImpl() {
   }
 
   retClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-  NG_RETURN_IF_ERROR(validateReturn(sentence->ret(), cypherCtx_->queryParts, *retClauseCtx));
+  NG_RETURN_IF_ERROR(validateReturn(sentence->ret(),
+                                    cypherCtx_->queryParts,
+                                    *retClauseCtx,
+                                    cypherCtx_->queryParts.back().matchs));
 
   NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yield->yieldColumns));
   cypherCtx_->queryParts.back().boundary = std::move(retClauseCtx);
@@ -277,7 +287,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Validate filter expression.
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
-                                      WhereClauseContext &whereClauseCtx) const {
+                                      WhereClauseContext &whereClauseCtx,
+                                      std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
@@ -297,7 +308,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   }
 
   NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter}, whereClauseCtx.aliasesAvailable));
-  NG_RETURN_IF_ERROR(validateMatchPathExpr(whereClauseCtx.filter, whereClauseCtx.aliasesAvailable));
+  NG_RETURN_IF_ERROR(
+      validateMatchPathExpr(whereClauseCtx.filter, whereClauseCtx.aliasesAvailable, matchs));
 
   return Status::OK();
 }
@@ -374,7 +386,8 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
 // order by options.
 Status MatchValidator::validateReturn(MatchReturn *ret,
                                       const std::vector<QueryPart> &queryParts,
-                                      ReturnClauseContext &retClauseCtx) const {
+                                      ReturnClauseContext &retClauseCtx,
+                                      std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   YieldColumns *columns = saveObject(new YieldColumns());
   if (ret->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
@@ -409,7 +422,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   retClauseCtx.yield->yieldColumns = columns;
 
   NG_RETURN_IF_ERROR(validateAliases(exprs, retClauseCtx.yield->aliasesAvailable));
-  NG_RETURN_IF_ERROR(validateYield(*retClauseCtx.yield));
+  NG_RETURN_IF_ERROR(validateYield(*retClauseCtx.yield, matchs));
 
   retClauseCtx.yield->distinct = ret->isDistinct();
 
@@ -468,7 +481,8 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 // check aggregate expression, check columns, check limit and order by options.
 Status MatchValidator::validateWith(const WithClause *with,
                                     const std::vector<QueryPart> &queryParts,
-                                    WithClauseContext &withClauseCtx) const {
+                                    WithClauseContext &withClauseCtx,
+                                    std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   YieldColumns *columns = saveObject(new YieldColumns());
   if (with->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
@@ -526,7 +540,7 @@ Status MatchValidator::validateWith(const WithClause *with,
   }
 
   NG_RETURN_IF_ERROR(validateAliases(exprs, withClauseCtx.yield->aliasesAvailable));
-  NG_RETURN_IF_ERROR(validateYield(*withClauseCtx.yield));
+  NG_RETURN_IF_ERROR(validateYield(*withClauseCtx.yield, matchs));
 
   withClauseCtx.yield->distinct = with->isDistinct();
 
@@ -548,7 +562,8 @@ Status MatchValidator::validateWith(const WithClause *with,
 // Check column must has alias, check can't contains aggregate expression, check alias in expression
 // must be available, check defined alias don't defined before.
 Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
-                                      UnwindClauseContext &unwindCtx) const {
+                                      UnwindClauseContext &unwindCtx,
+                                      std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   if (unwindClause->alias().empty()) {
     return Status::SemanticError("Expression in UNWIND must be aliased (use AS)");
   }
@@ -572,7 +587,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
 
-  NG_RETURN_IF_ERROR(validateMatchPathExpr(unwindCtx.unwindExpr, unwindCtx.aliasesAvailable));
+  NG_RETURN_IF_ERROR(
+      validateMatchPathExpr(unwindCtx.unwindExpr, unwindCtx.aliasesAvailable, matchs));
 
   return Status::OK();
 }
@@ -760,7 +776,8 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
 }
 
 // Validate group by and fill group by context.
-Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
+Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
+                                     std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   auto cols = yieldCtx.yieldColumns->columns();
   auto *pool = qctx_->objPool();
 
@@ -798,7 +815,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
       yieldCtx.groupKeys_.emplace_back(colExpr);
     }
 
-    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable));
+    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, matchs));
 
     yieldCtx.groupItems_.emplace_back(colExpr);
 
@@ -812,7 +829,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
 }
 
 // Validate yield clause, check normal yield and group by yield.
-Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
+Status MatchValidator::validateYield(YieldClauseContext &yieldCtx,
+                                     std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
   auto cols = yieldCtx.yieldColumns->columns();
   if (cols.empty()) {
     return Status::OK();
@@ -821,13 +839,13 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
   yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
   if (!yieldCtx.hasAgg_) {
     for (auto &col : yieldCtx.yieldColumns->columns()) {
-      NG_RETURN_IF_ERROR(validateMatchPathExpr(col->expr(), yieldCtx.aliasesAvailable));
+      NG_RETURN_IF_ERROR(validateMatchPathExpr(col->expr(), yieldCtx.aliasesAvailable, matchs));
       yieldCtx.projCols_->addColumn(col->clone().release());
       yieldCtx.projOutputColumnNames_.emplace_back(col->name());
     }
     return Status::OK();
   } else {
-    return validateGroup(yieldCtx);
+    return validateGroup(yieldCtx, matchs);
   }
 }
 
@@ -971,16 +989,31 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
   return Status::OK();
 }
 
-/*static*/ Status MatchValidator::validateMatchPathExpr(
-    const Expression *expr, const std::unordered_map<std::string, AliasType> &availableAliases) {
+// Validate match path pattern expression in match sentence,
+// e.g. MATCH (v:player) WHERE (v)--(v) RETURN v
+Status MatchValidator::validateMatchPathExpr(
+    Expression *expr,
+    const std::unordered_map<std::string, AliasType> &availableAliases,
+    std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
+  std::vector<std::unique_ptr<MatchClauseContext>> ctxs;
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
-  // Check variables
-  for (const auto &matchPathExpr : matchPathExprs) {
+  for (auto &matchPathExpr : matchPathExprs) {
+    auto matchClauseCtx = getContext<MatchClauseContext>();
+    matchClauseCtx->aliasesAvailable = availableAliases;
     DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
-    NG_RETURN_IF_ERROR(checkMatchPathExpr(
-        static_cast<const MatchPathPatternExpression *>(matchPathExpr), availableAliases));
+    auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
+        static_cast<const MatchPathPatternExpression *>(matchPathExpr));
+    // Check variables
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl, availableAliases));
+    // Build path alias
+    auto &matchPath = matchPathExprImpl->matchPath();
+    auto pathAlias = matchPath.toString();
+    matchPath.setAlias(new std::string(pathAlias));
+    matchPathExprImpl->setInputProp(pathAlias);
+    NG_RETURN_IF_ERROR(validatePath(&matchPath, *matchClauseCtx));
+    NG_RETURN_IF_ERROR(buildAggPathInfo(&matchPath, *matchClauseCtx));
+    matchs.emplace_back(std::move(matchClauseCtx));
   }
-  // Build path alias
   return Status::OK();
 }
 
@@ -1025,6 +1058,27 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
       }
     }
   }
+  return Status::OK();
+}
+
+/*static*/ Status MatchValidator::buildAggPathInfo(const MatchPath *path,
+                                                   MatchClauseContext &matchClauseCtx) {
+  DCHECK(!DCHECK_NOTNULL(path->alias())->empty());
+  auto &pathInfo = matchClauseCtx.paths.back();
+  for (const auto &node : path->nodes()) {
+    if (!node->alias().empty()) {
+      pathInfo.groupVariables.emplace_back(node->alias());
+      pathInfo.aggVariables.emplace_back(node->alias());
+    }
+  }
+  for (const auto &edge : path->edges()) {
+    if (!edge->alias().empty()) {
+      pathInfo.groupVariables.emplace_back(edge->alias());
+      pathInfo.aggVariables.emplace_back(edge->alias());
+    }
+  }
+  pathInfo.aggVariables.emplace_back(*path->alias());
+  pathInfo.agg = true;
   return Status::OK();
 }
 

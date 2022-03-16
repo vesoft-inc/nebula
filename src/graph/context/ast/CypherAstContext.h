@@ -132,6 +132,13 @@ struct Path final {
   std::vector<NodeInfo> nodeInfos;
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
+
+  // True for pattern expresssion, to collect path to list
+  bool agg{false};
+  // vector ["v"] in (v)-[:like]->()
+  std::vector<std::string> groupVariables;
+  // "(v)-[:like]->()" in (v)-[:like]->()
+  std::vector<std::string> aggVariables;
 };
 
 struct MatchClauseContext final : CypherClauseContextBase {

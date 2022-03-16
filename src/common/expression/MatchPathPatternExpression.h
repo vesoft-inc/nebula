@@ -50,6 +50,10 @@ class MatchPathPatternExpression final : public Expression {
     return *matchPath_;
   }
 
+  MatchPath& matchPath() {
+    return *matchPath_;
+  }
+
  private:
   explicit MatchPathPatternExpression(ObjectPool* pool, std::unique_ptr<MatchPath>&& matchPath)
       : Expression(pool, Kind::kMatchPathPattern), matchPath_(std::move(matchPath)) {}
