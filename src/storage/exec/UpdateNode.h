@@ -269,7 +269,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     }
 
     auto batch = this->updateAndWriteBack(partId, vId);
-    if (batch == folly::none) {
+    if (batch == std::nullopt) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
 
@@ -387,14 +387,15 @@ class UpdateTagNode : public UpdateNode<VertexID> {
    * @return folly::Optional<std::string> BatchHolder encode value.
    * @see BatchHolder
    */
-  folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
+
+  std::optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
       auto propName = updateProp.get_name();
       auto updateExp = Expression::decode(&pool, updateProp.get_value());
       if (!updateExp) {
         LOG(ERROR) << "Update expression decode failed " << updateProp.get_value();
-        return folly::none;
+        return std::nullopt;
       }
       auto updateVal = updateExp->eval(*expCtx_);
       // update prop value to props_
@@ -407,7 +408,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
         LOG(ERROR) << "Add field failed ";
-        return folly::none;
+        return std::nullopt;
       }
     }
 
@@ -416,7 +417,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
       LOG(ERROR) << "Add field failed ";
-      return folly::none;
+      return std::nullopt;
     }
 
     auto nVal = rowWriter_->moveEncodedStr();
@@ -434,7 +435,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
           if (!val_.empty()) {
             if (!reader_) {
               LOG(ERROR) << "Bad format row";
-              return folly::none;
+              return std::nullopt;
             }
             auto ois = indexKeys(partId, vId, reader_, index);
             if (!ois.empty()) {
@@ -446,7 +447,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
                 }
               } else if (context_->env()->checkIndexLocked(iState)) {
                 LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
+                return std::nullopt;
               } else {
                 for (auto& oi : ois) {
                   batchHolder->remove(std::move(oi));
@@ -462,7 +463,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
           }
           if (!nReader) {
             LOG(ERROR) << "Bad format row";
-            return folly::none;
+            return std::nullopt;
           }
           auto nis = indexKeys(partId, vId, nReader.get(), index);
           if (!nis.empty()) {
@@ -476,7 +477,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
               }
             } else if (context_->env()->checkIndexLocked(indexState)) {
               LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              return folly::none;
+              return std::nullopt;
             } else {
               for (auto& ni : nis) {
                 batchHolder->put(std::move(ni), std::string(niv));
@@ -563,19 +564,19 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
     }
 
-    auto op = [&partId, &edgeKey, this]() -> folly::Optional<std::string> {
+    auto op = [&partId, &edgeKey, this]() -> std::optional<std::string> {
       this->exeResult_ = RelNode::doExecute(partId, edgeKey);
       if (this->exeResult_ == nebula::cpp2::ErrorCode::SUCCEEDED) {
         if (*edgeKey.edge_type_ref() != this->edgeType_) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
-          return folly::none;
+          return std::nullopt;
         }
         if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_INVALID_DATA;
-          return folly::none;
+          return std::nullopt;
         } else if (this->context_->resultStat_ == ResultStatus::FILTER_OUT) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_FILTER_OUT;
-          return folly::none;
+          return std::nullopt;
         }
 
         if (filterNode_->valid()) {
@@ -594,22 +595,22 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
         }
 
         if (this->exeResult_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return folly::none;
+          return std::nullopt;
         }
         auto batch = this->updateAndWriteBack(partId, edgeKey);
-        if (batch == folly::none) {
+        if (batch == std::nullopt) {
           // There is an error in updateAndWriteBack
           this->exeResult_ = nebula::cpp2::ErrorCode::E_INVALID_DATA;
         }
         return batch;
       } else {
         // If filter out, StorageExpressionContext is set in filterNode
-        return folly::none;
+        return std::nullopt;
       }
     };
 
     auto batch = op();
-    if (batch == folly::none) {
+    if (batch == std::nullopt) {
       return this->exeResult_;
     }
 
@@ -738,14 +739,14 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
    *
    * @see UpdateTagNode::updateAndWriteBack
    */
-  folly::Optional<std::string> updateAndWriteBack(const PartitionID partId,
-                                                  const cpp2::EdgeKey& edgeKey) {
+  std::optional<std::string> updateAndWriteBack(const PartitionID partId,
+                                                const cpp2::EdgeKey& edgeKey) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
       auto propName = updateProp.get_name();
       auto updateExp = Expression::decode(&pool, updateProp.get_value());
       if (!updateExp) {
-        return folly::none;
+        return std::nullopt;
       }
       auto updateVal = updateExp->eval(*expCtx_);
       // update prop value to updateContext_
@@ -758,7 +759,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
         VLOG(1) << "Add field failed ";
-        return folly::none;
+        return std::nullopt;
       }
     }
 
@@ -767,7 +768,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
       VLOG(1) << "Add field failed ";
-      return folly::none;
+      return std::nullopt;
     }
 
     auto nVal = rowWriter_->moveEncodedStr();
@@ -784,7 +785,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           if (!val_.empty()) {
             if (!reader_) {
               LOG(ERROR) << "Bad format row";
-              return folly::none;
+              return std::nullopt;
             }
             auto ois = indexKeys(partId, reader_, edgeKey, index);
             if (!ois.empty()) {
@@ -796,7 +797,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
                 }
               } else if (context_->env()->checkIndexLocked(iState)) {
                 LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
+                return std::nullopt;
               } else {
                 for (auto& oi : ois) {
                   batchHolder->remove(std::move(oi));
@@ -812,7 +813,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           }
           if (!nReader) {
             LOG(ERROR) << "Bad format row";
-            return folly::none;
+            return std::nullopt;
           }
           auto niks = indexKeys(partId, nReader.get(), edgeKey, index);
           if (!niks.empty()) {
@@ -826,7 +827,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
               }
             } else if (context_->env()->checkIndexLocked(indexState)) {
               LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              return folly::none;
+              return std::nullopt;
             } else {
               for (auto& nik : niks) {
                 batchHolder->put(std::move(nik), std::string(niv));
