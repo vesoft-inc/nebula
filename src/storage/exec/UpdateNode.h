@@ -732,7 +732,13 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     val_ = reader_->getData();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-
+  /**
+   * @brief Calculate updated propertis and indexes
+   *
+   * Similar to UpdateTagNode::updateAndWriteBack
+   *
+   * @see UpdateTagNode::updateAndWriteBack
+   */
   std::optional<std::string> updateAndWriteBack(const PartitionID partId,
                                                 const cpp2::EdgeKey& edgeKey) {
     ObjectPool pool;
