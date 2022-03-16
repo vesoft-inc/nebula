@@ -10,9 +10,7 @@
 #include "graph/planner/plan/Query.h"
 #include "parser/TraverseSentences.h"
 
-/**
- * All mutate-related nodes would put in this file.
- */
+// All mutate-related nodes would put in this file.
 namespace nebula {
 namespace graph {
 class InsertVertices final : public SingleDependencyNode {

@@ -11,6 +11,30 @@
 namespace nebula {
 namespace opt {
 
+//  Merge [[Dedup]] and [[GetNeighbors]] node
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Delete unnecessary node
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+-------+
+//  | GetNeighbors |
+//  +------+-------+
+//         |
+//  +------+------+
+//  |    Dedup    |
+//  +------+------+
+//
+//  After:
+//
+//  +------+-------+
+//  | GetNeighbors |
+//  | (dedup=true) |
+//  +------+-------+
+
 class MergeGetNbrsAndDedupRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
