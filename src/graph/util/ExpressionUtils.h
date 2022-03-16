@@ -87,7 +87,8 @@ class ExpressionUtils {
   // Rewrites IN expression into OR expression or relEQ expression
   static Expression* rewriteInExpr(const Expression* expr);
 
-  // Rewrites Logical AND expr to Logical OR expr using distributive law
+  // Rewrite Logical AND expr that contains Logical OR expr to Logical OR expr using distributive
+  // law
   // Examples:
   // A and (B or C)  => (A and B) or (A and C)
   // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)

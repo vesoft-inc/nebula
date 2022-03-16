@@ -1072,6 +1072,15 @@ void RaftPart::getState(cpp2::GetStateResponse& resp) {
   resp.last_log_id_ref() = lastLogId_;
   resp.last_log_term_ref() = lastLogTerm_;
   resp.status_ref() = status_;
+  std::vector<std::string> peers;
+  for (auto& h : hosts_) {
+    std::string str = h->address().toString();
+    if (h->isLearner()) {
+      str += "_learner";
+    }
+    peers.emplace_back(str);
+  }
+  resp.peers_ref() = peers;
 }
 
 bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& results,

@@ -14,9 +14,12 @@
 namespace nebula {
 namespace storage {
 
-// MultiTagNode is a replacement of HashJoinNode
-// in execution of "go over"
-// if Graph don't pass any Edge prop
+/**
+ * @brief MultiTagNode is a replacement of HashJoinNode in execution of "go over" if Graph don't
+ * pass any Edge prop
+ *
+ * @see IterateNode
+ */
 class MultiTagNode : public IterateNode<VertexID> {
  public:
   using RelNode::doExecute;

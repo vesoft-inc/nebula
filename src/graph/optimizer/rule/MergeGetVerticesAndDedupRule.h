@@ -11,6 +11,30 @@
 namespace nebula {
 namespace opt {
 
+//  Merge [[Dedup]] and [[GetVertices]] node
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Delete unnecessary node
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+-------+
+//  | GetVertices  |
+//  +------+-------+
+//         |
+//  +------+------+
+//  |    Dedup    |
+//  +------+------+
+//
+//  After:
+//
+//  +------+-------+
+//  | GetVertices  |
+//  | (dedup=true) |
+//  +------+-------+
+
 class MergeGetVerticesAndDedupRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
