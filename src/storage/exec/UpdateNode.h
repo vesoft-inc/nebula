@@ -17,10 +17,33 @@
 
 namespace nebula {
 namespace storage {
-
+/**
+ * @brief Updatenode will calculate new values of properties that need to be updated and write them
+ * back to kvstore
+ *
+ * @tparam T input data type
+ * @see RelNode
+ */
 template <typename T>
 class UpdateNode : public RelNode<T> {
  public:
+  /**
+   * @brief Construct a new Update Node object
+   *
+   * @param context Runtime context.
+   * @param indexes Indexes of the updated Tags/Edges.
+   * @param updatedProps Updated properties of Tags/Edges.
+   * @param filterNode Filter node.Note that in the current implementation, FilterNode can never be
+   * Null. If there is no filter condition, the check inside FilterNode will always return true.
+   * @param insertable Flag of upsert.
+   * @param depPropMap Dependent properties when executing update
+   * @param expCtx Expression context.
+   * @param isEdge Is Edge or not.
+   *
+   * @see FilterNode
+   * @todo If there is no filter condition, skip filterNode directly when building the execution
+   * plan.
+   */
   UpdateNode(RuntimeContext* context,
              std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
              std::vector<storage::cpp2::UpdatedProp>& updatedProps,
@@ -39,7 +62,9 @@ class UpdateNode : public RelNode<T> {
         isEdge_(isEdge) {
     RelNode<T>::name_ = "UpdateNode";
   }
-
+  /**
+   * @brief Check if Field exists
+   */
   nebula::cpp2::ErrorCode checkField(const meta::SchemaProviderIf::Field* field) {
     if (!field) {
       VLOG(1) << "Fail to read prop";
@@ -51,6 +76,14 @@ class UpdateNode : public RelNode<T> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  /**
+   * @brief Get the Default Or Null Value object
+   *
+   * @param field Field to be computed.
+   * @param name Property name
+   * @return E_INVALID_FIELD_VALUE if the field can't be null and doesn't have default value, else
+   * SUCCEEDED.
+   */
   nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
                                                 const std::string& name) {
     if (field->hasDefault()) {
@@ -65,8 +98,11 @@ class UpdateNode : public RelNode<T> {
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-
-  // Used for upsert tag/edge
+  /**
+   * @brief Used for upsert tag/edge
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode checkPropsAndGetDefaultValue() {
     // Store checked props
     // For example:
@@ -125,10 +161,14 @@ class UpdateNode : public RelNode<T> {
   // =====================================================
   RuntimeContext* context_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
-  // update <prop name, new value expression>
+  /**
+   * @brief update <prop name>:= <new value expression>
+   */
   std::vector<storage::cpp2::UpdatedProp> updatedProps_;
   FilterNode<T>* filterNode_;
-  // Whether to allow insert
+  /**
+   * @brief Whether to allow insert
+   */
   bool insertable_{false};
 
   std::string key_;
@@ -136,26 +176,39 @@ class UpdateNode : public RelNode<T> {
 
   const meta::NebulaSchemaProvider* schema_{nullptr};
 
-  // use to save old row value
+  /**
+   * @brief use to save old row value
+   */
   std::string val_;
   std::unique_ptr<RowWriterV2> rowWriter_;
-  // prop -> value
+  /**
+   * @brief value of prop
+   */
   std::unordered_map<std::string, Value> props_;
   std::atomic<nebula::cpp2::ErrorCode> exeResult_;
 
-  // updatedProps_ dependent props in value expression
+  /**
+   * @brief updatedProps_ dependent props in value expression
+   */
   std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap_;
 
   StorageExpressionContext* expCtx_;
   bool isEdge_{false};
 };
 
-// Only use for update vertex
-// Update records, write to kvstore
+/**
+ * @brief Only use for update vertex
+ *
+ * Update records, write to kvstore
+ */
 class UpdateTagNode : public UpdateNode<VertexID> {
  public:
   using RelNode<VertexID>::doExecute;
-
+  /**
+   * @brief Construct a new Update Tag Node object
+   *
+   * @see UpdateNode
+   */
   UpdateTagNode(RuntimeContext* context,
                 std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                 std::vector<storage::cpp2::UpdatedProp>& updatedProps,
@@ -230,7 +283,11 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     baton.wait();
     return ret;
   }
-
+  /**
+   * @brief Get the Latest Tag Schema And Name object
+   *
+   * @return E_TAG_NOT_FOUND if tag not found.
+   */
   nebula::cpp2::ErrorCode getLatestTagSchemaAndName() {
     auto schemaIter = tagContext_->schemas_.find(tagId_);
     if (schemaIter == tagContext_->schemas_.end() || schemaIter->second.empty()) {
@@ -251,9 +308,12 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  // Insert props row,
-  // For insert, condition is always true,
-  // Props must have default value or nullable, or set in UpdatedProp_
+  /**
+   * @brief Insert props row.
+   *
+   * For insert, condition is always true,
+   * Props must have default value or nullable, or set in UpdatedProp_
+   */
   nebula::cpp2::ErrorCode insertTagProps(PartitionID partId, const VertexID& vId) {
     context_->insert_ = true;
     auto ret = getLatestTagSchemaAndName();
@@ -276,8 +336,10 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-
-  // collect tag prop
+  /**
+   * @brief collect tag prop
+   *
+   */
   nebula::cpp2::ErrorCode collTagProp(const VertexID& vId) {
     auto ret = getLatestTagSchemaAndName();
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -314,6 +376,17 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  /**
+   * @brief Calculate updated propertis and indexes
+   *
+   * This function will calculate the properties to be updated and those indexes if exist, and
+   * encode them into key-value format.
+   *
+   * @param partId
+   * @param vId
+   * @return folly::Optional<std::string> BatchHolder encode value.
+   * @see BatchHolder
+   */
   folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
@@ -419,6 +492,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return encodeBatchValue(batchHolder->getBatch());
   }
 
+  /**
+   * @brief Generate index keys
+   */
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
                                      RowReader* reader,
@@ -437,12 +513,20 @@ class UpdateTagNode : public UpdateNode<VertexID> {
   std::string tagName_;
 };
 
-// Only use for update edge
-// Update records, write to kvstore
+/**
+ * @brief Only use for update edge
+ *
+ * Update records, write to kvstore
+ */
 class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
  public:
   using RelNode<cpp2::EdgeKey>::doExecute;
 
+  /**
+   * @brief Construct a new Update Edge Node object
+   *
+   * @see UpdateNode
+   */
   UpdateEdgeNode(RuntimeContext* context,
                  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                  std::vector<storage::cpp2::UpdatedProp>& updatedProps,
@@ -540,7 +624,11 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     baton.wait();
     return ret;
   }
-
+  /**
+   * @brief Get the Latest Edge Schema And Name object
+   *
+   * @return E_EDGE_NOT_FOUND if edge not found
+   */
   nebula::cpp2::ErrorCode getLatestEdgeSchemaAndName() {
     auto schemaIter = edgeContext_->schemas_.find(std::abs(edgeType_));
     if (schemaIter == edgeContext_->schemas_.end() || schemaIter->second.empty()) {
@@ -561,8 +649,11 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  // Insert props row,
-  // Operator props must have default value or nullable, or set in UpdatedProp_
+  /**
+   * @brief Insert props row
+   *
+   * Operator props must have default value or nullable, or set in UpdatedProp_
+   */
   nebula::cpp2::ErrorCode insertEdgeProps(const PartitionID partId, const cpp2::EdgeKey& edgeKey) {
     context_->insert_ = true;
     auto ret = getLatestEdgeSchemaAndName();
@@ -597,7 +688,9 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  // Collect edge prop
+  /**
+   * @brief Collect edge prop
+   */
   nebula::cpp2::ErrorCode collEdgeProp(const cpp2::EdgeKey& edgeKey) {
     auto ret = getLatestEdgeSchemaAndName();
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -638,7 +731,13 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     val_ = reader_->getData();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-
+  /**
+   * @brief Calculate updated propertis and indexes
+   *
+   * Similar to UpdateTagNode::updateAndWriteBack
+   *
+   * @see UpdateTagNode::updateAndWriteBack
+   */
   folly::Optional<std::string> updateAndWriteBack(const PartitionID partId,
                                                   const cpp2::EdgeKey& edgeKey) {
     ObjectPool pool;

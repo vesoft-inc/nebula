@@ -10,6 +10,30 @@
 namespace nebula {
 namespace opt {
 
+//  Eliminate useless [[DataCollect]] node
+//  Required conditions:
+//   1. Match the pattern
+//   2. DataCollect::DCKind is `kRowBasedMove`
+//  Benefits:
+//   1. Delete unnecessary node
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+------+
+//  | DataCollect |
+//  +------+------+
+//         |
+//  +------+------+
+//  |   Project   |
+//  +------+------+
+//
+//  After:
+//
+//  +------+------+
+//  |   Project   |
+//  +------+------+
+
 class EliminateRowCollectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

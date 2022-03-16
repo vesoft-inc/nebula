@@ -130,7 +130,7 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
           return TransformResult::noTransform();
         } else {
           // If the inner IN expr has only 1 element, rewrite it to an relEQ expression and there is
-          // no need to check wether it has a index
+          // no need to check whether it has a index
           auto relEqExpr = graph::ExpressionUtils::rewriteInExpr(inExpr);
           static_cast<LogicalExpression*>(transformedExpr)->setOperand(operandIndex, relEqExpr);
           continue;
