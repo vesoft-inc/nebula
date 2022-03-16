@@ -13,11 +13,23 @@
 namespace nebula {
 namespace storage {
 
-// TagNode will return a DataSet of specified props of tagId
+/**
+ * @brief TagNode will return a DataSet of specified props of tagId
+ *
+ * @see IterateNode<T>
+ */
 class TagNode final : public IterateNode<VertexID> {
  public:
   using RelNode::doExecute;
 
+  /**
+   * @brief Construct a new Tag Node object
+   *
+   * @param context Runtime Context.
+   * @param ctx Tag Context.
+   * @param tagId Tag id to get.
+   * @param props Tag's props to get.
+   */
   TagNode(RuntimeContext* context,
           TagContext* ctx,
           TagID tagId,
@@ -61,6 +73,13 @@ class TagNode final : public IterateNode<VertexID> {
     return ret;
   }
 
+  /**
+   * @brief For resuming from a breakpoint.
+   *
+   * @param key Next key to be read
+   * @param value Next value to be read
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
     key_ = key;
     value_ = value;
@@ -68,6 +87,13 @@ class TagNode final : public IterateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  /**
+   * @brief Collect tag's prop
+   *
+   * @param nullHandler Callback if prop is null.
+   * @param valueHandler Callback if prop is not null.
+   * @return nebula::cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode collectTagPropsIfValid(NullHandler nullHandler,
                                                  PropHandler valueHandler) {
     if (!valid()) {
