@@ -1070,12 +1070,6 @@ Status MatchValidator::validateMatchPathExpr(
       pathInfo.aggVariables.emplace_back(node->alias());
     }
   }
-  for (const auto &edge : path->edges()) {
-    if (!edge->alias().empty()) {
-      pathInfo.groupVariables.emplace_back(edge->alias());
-      pathInfo.aggVariables.emplace_back(edge->alias());
-    }
-  }
   pathInfo.aggVariables.emplace_back(*path->alias());
   pathInfo.agg = true;
   return Status::OK();
