@@ -9,6 +9,7 @@
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "common/utils/Utils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -393,6 +394,8 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
         auto learner = decodeHost(OP_ADD_LEARNER, log);
         LOG(INFO) << idStr_ << "preprocess add learner " << learner;
         addLearner(learner);
+        // persist the part learner info in case of storaged restarting
+        engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
         break;
       }
       case OP_TRANS_LEADER: {
@@ -405,12 +408,15 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
         auto peer = decodeHost(OP_ADD_PEER, log);
         LOG(INFO) << idStr_ << "preprocess add peer " << peer;
         addPeer(peer);
+        engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
         LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
         preProcessRemovePeer(peer);
+        // remove peer in the persist info
+        engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
         break;
       }
       default: {

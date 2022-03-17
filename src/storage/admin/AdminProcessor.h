@@ -170,11 +170,7 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       LOG(INFO) << "Space " << spaceId << " not exist, create it!";
       store->addSpace(spaceId);
     }
-    std::vector<HostAddr> peers;
-    for (auto& p : req.get_peers()) {
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
-    }
-    store->addPart(spaceId, partId, req.get_as_learner(), peers);
+    store->addPart(spaceId, partId, req.get_as_learner(), req.get_peers());
     onFinished();
   }
 
@@ -429,6 +425,11 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
     }
     part->checkAndResetPeers(peers);
+
+    for (auto p : peers) {
+      // change the promoted peer to the normal peer when finish balancing
+      part->engine()->updatePart(partId, kvstore::Peer(p, kvstore::Peer::Status::kNormalPeer));
+    }
     this->onFinished();
   }
 

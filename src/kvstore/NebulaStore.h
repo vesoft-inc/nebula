@@ -49,6 +49,7 @@ struct SpaceListenerInfo {
 class NebulaStore : public KVStore, public Handler {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
   FRIEND_TEST(NebulaStoreTest, PartsTest);
+  FRIEND_TEST(NebulaStoreTest, PersistPeersTest);
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
   FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
   FRIEND_TEST(NebulaStoreTest, CheckpointTest);
@@ -552,12 +553,12 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param partId
    * @param asLearner Whether start partition as learner
-   * @param peers Raft peers
+   * @param peers Storage peers, do not contain learner address
    */
   void addPart(GraphSpaceID spaceId,
                PartitionID partId,
                bool asLearner,
-               const std::vector<HostAddr>& peers = {}) override;
+               const std::vector<HostAddr>& peers) override;
 
   /**
    * @brief Remove a space, called from part manager
@@ -769,14 +770,14 @@ class NebulaStore : public KVStore, public Handler {
    * @param partId
    * @param engine Partition's related kv engine
    * @param asLearner Whether start as raft learner
-   * @param defaultPeers The raft peer's address
+   * @param peers All partition raft peers
    * @return std::shared_ptr<Part>
    */
   std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 KVEngine* engine,
                                 bool asLearner,
-                                const std::vector<HostAddr>& defaultPeers);
+                                const std::vector<HostAddr>& raftPeers);
 
   /**
    * @brief Start a new listener part

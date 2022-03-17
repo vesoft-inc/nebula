@@ -7,6 +7,8 @@
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
+#include <memory>
+
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobUtils.h"
@@ -41,6 +43,10 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
+      if (status == Status::Balanced()) {
+        executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+        return Status::OK();
+      }
       return status;
     }
   }
@@ -307,16 +313,19 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
   // all parts of lost zones have moved to active zones, then rebalance the active zones
   nebula::cpp2::ErrorCode rc =
       rebalanceActiveZones(&sortedActiveZones, &sortedZoneHosts, &existTasks);
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return Status::Error(apache::thrift::util::enumNameSafe(rc));
+  }
 
-  bool empty = std::find_if(existTasks.begin(),
-                            existTasks.end(),
-                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                              return !p.second.empty();
-                            }) == existTasks.end();
-  if (empty || rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+  bool emty = std::find_if(existTasks.begin(),
+                           existTasks.end(),
+                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                             return !p.second.empty();
+                           }) == existTasks.end();
+  if (emty) {
     return Status::Balanced();
   }
-  plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
+  plan_ = std::make_unique<BalancePlan>(jobDescription_, kvstore_, adminClient_);
   std::for_each(existTasks.begin(),
                 existTasks.end(),
                 [this](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
