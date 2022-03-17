@@ -11,7 +11,7 @@ Feature: Clear space test
       | partition_num  | 9                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
-    And wait 2 seconds
+    And wait 6 seconds
     When executing query:
       """
       CLEAR SPACE IF EXISTS clear_space;
@@ -41,7 +41,7 @@ Feature: Clear space test
       | partition_num  | 9                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
-    And wait 2 seconds
+    And wait 6 seconds
     When executing query:
       """
       CREATE TAG IF NOT EXISTS player(name string, age int);
@@ -92,7 +92,7 @@ Feature: Clear space test
       """
       submit job stats;
       """
-    And wait 2 seconds
+    And wait 6 seconds
     Then the execution should be successful
     When executing query:
       """
