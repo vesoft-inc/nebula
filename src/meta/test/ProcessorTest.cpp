@@ -2198,6 +2198,260 @@ TEST(ProcessorTest, AlterEdgeTest) {
   }
 }
 
+TEST(ProcessorTest, AlterTagForMoreThan256TimesTest) {
+  fs::TempDir rootPath("/tmp/AlterTagForMoreThan256TimesTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  TestUtils::assembleSpace(kv.get(), 1, 1);
+  TestUtils::mockTag(kv.get(), 1);
+  const int times = 1000;
+  int totalScheVer = 1;
+  std::vector<cpp2::ColumnDef> expectedCols;
+  for (auto i = 0; i < 2; i++) {
+    cpp2::ColumnDef column;
+    column.name_ref() = folly::stringPrintf("tag_0_col_%d", i);
+    if (i < 1) {
+      column.type.type_ref() = PropertyType::INT64;
+    } else {
+      column.type.type_ref() = PropertyType::FIXED_STRING;
+      column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
+    }
+    expectedCols.emplace_back(std::move(column));
+  }
+
+  // helper functions
+  auto alterTagFunc = [kv = kv.get()](cpp2::AlterSchemaOp op,
+                                      std::string col_name,
+                                      PropertyType col_type = PropertyType::BOOL) {
+    cpp2::AlterTagReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema alterSche;
+    cpp2::ColumnDef column;
+    column.name = col_name;
+    if (op != cpp2::AlterSchemaOp::DROP) column.type.type_ref() = col_type;
+    (*alterSche.columns_ref()).emplace_back(std::move(column));
+    items.emplace_back();
+    items.back().op_ref() = op;
+    items.back().schema_ref() = std::move(alterSche);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
+    auto* processor = AlterTagProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  };
+
+  auto getLatestTagSche = [kv = kv.get()]() -> nebula::meta::cpp2::Schema {
+    cpp2::GetTagReq req;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.version_ref() = -1;
+
+    auto* processor = GetTagProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    return resp.get_schema();
+  };
+
+  auto checkTagSchema = [getLatestTagSche](std::vector<cpp2::ColumnDef>& expected) {
+    auto curSchema = getLatestTagSche();
+    std::vector<cpp2::ColumnDef> cols = curSchema.get_columns();
+    int expectedColNum = expected.size();
+    ASSERT_EQ(cols.size(), expectedColNum);
+    // index 0,1 holds the original cols, new cols begin with index 2
+    for (auto j = 0; j < expectedColNum; j++) {
+      ASSERT_EQ(expected[j].get_name(), cols[j].get_name());
+      ASSERT_EQ(expected[j].get_type().get_type(), cols[j].get_type().get_type());
+    }
+  };
+
+  auto checkCurTagScheVer = [kv = kv.get()](int expectedScheVer) {
+    cpp2::ListTagsReq req;
+    req.space_id_ref() = 1;
+    auto* processor = ListTagsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto tags = resp.get_tags();
+    ASSERT_EQ(expectedScheVer, tags.size());
+  };
+
+  // add columns for 1000 times
+  {
+    for (auto i = 1; i <= times; i++) {
+      auto col_name = folly::stringPrintf("tag_0_a_%d", i);
+      auto col_type = PropertyType::INT64;
+      alterTagFunc(cpp2::AlterSchemaOp::ADD, col_name, col_type);
+      totalScheVer++;
+
+      cpp2::ColumnDef column;
+      column.name_ref() = col_name;
+      column.type.type_ref() = col_type;
+      expectedCols.emplace_back(std::move(column));
+
+      checkTagSchema(expectedCols);
+    }
+    checkCurTagScheVer(totalScheVer);
+  }
+
+  // change columns
+  {
+    for (auto i = 3; i < times; i += 2) {
+      auto col_name = expectedCols[i].get_name();
+      auto new_col_type = PropertyType::BOOL;
+      expectedCols[i].type.type_ref() = new_col_type;
+      alterTagFunc(cpp2::AlterSchemaOp::CHANGE, col_name, new_col_type);
+      totalScheVer++;
+
+      checkTagSchema(expectedCols);
+    }
+    checkCurTagScheVer(totalScheVer);
+  }
+
+  // drop columns
+  {
+    for (auto i = times; i > 0; i--) {
+      auto col_name = expectedCols.back().get_name();
+      expectedCols.pop_back();
+      alterTagFunc(cpp2::AlterSchemaOp::DROP, col_name);
+      totalScheVer++;
+
+      checkTagSchema(expectedCols);
+    }
+    checkCurTagScheVer(totalScheVer);
+  }
+}
+
+TEST(ProcessorTest, AlterEdgeForMoreThan256TimesTest) {
+  fs::TempDir rootPath("/tmp/AlterEdgeForMoreThan256TimesTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  TestUtils::assembleSpace(kv.get(), 1, 1);
+  TestUtils::mockEdge(kv.get(), 1);
+  const int times = 1000;
+  int totalScheVer = 1;
+  std::vector<cpp2::ColumnDef> expectedCols;
+  for (auto i = 0; i < 2; i++) {
+    cpp2::ColumnDef column;
+    column.name_ref() = folly::stringPrintf("edge_0_col_%d", i);
+    if (i < 1) {
+      column.type.type_ref() = PropertyType::INT64;
+    } else {
+      column.type.type_ref() = PropertyType::FIXED_STRING;
+      column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
+    }
+    expectedCols.emplace_back(std::move(column));
+  }
+
+  // helper functions
+  auto alterEdgeFunc = [kv = kv.get()](cpp2::AlterSchemaOp op,
+                                       std::string col_name,
+                                       PropertyType col_type = PropertyType::BOOL) {
+    cpp2::AlterEdgeReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema alterSche;
+    cpp2::ColumnDef column;
+    column.name = col_name;
+    if (op != cpp2::AlterSchemaOp::DROP) column.type.type_ref() = col_type;
+    (*alterSche.columns_ref()).emplace_back(std::move(column));
+    items.emplace_back();
+    items.back().op_ref() = op;
+    items.back().schema_ref() = std::move(alterSche);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
+    auto* processor = AlterEdgeProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  };
+
+  auto getLatestEdgeSche = [kv = kv.get()]() -> nebula::meta::cpp2::Schema {
+    cpp2::GetEdgeReq req;
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.version_ref() = -1;
+
+    auto* processor = GetEdgeProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    return resp.get_schema();
+  };
+
+  auto checkEdgeSchema = [getLatestEdgeSche](std::vector<cpp2::ColumnDef>& expected) {
+    auto curSchema = getLatestEdgeSche();
+    std::vector<cpp2::ColumnDef> cols = curSchema.get_columns();
+    int expectedColNum = expected.size();
+    ASSERT_EQ(cols.size(), expectedColNum);
+    // index 0,1 holds the original cols, new cols begin with index 2
+    for (auto j = 0; j < expectedColNum; j++) {
+      ASSERT_EQ(expected[j].get_name(), cols[j].get_name());
+      ASSERT_EQ(expected[j].get_type().get_type(), cols[j].get_type().get_type());
+    }
+  };
+
+  auto checkCurEdgeScheVer = [kv = kv.get()](int expectedScheVer) {
+    cpp2::ListEdgesReq req;
+    req.space_id_ref() = 1;
+    auto* processor = ListEdgesProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    auto edges = resp.get_edges();
+    ASSERT_EQ(expectedScheVer, edges.size());
+  };
+
+  // add columns for 1000 times
+  {
+    for (auto i = 1; i <= times; i++) {
+      auto col_name = folly::stringPrintf("edge_0_a_%d", i);
+      auto col_type = PropertyType::INT64;
+      alterEdgeFunc(cpp2::AlterSchemaOp::ADD, col_name, col_type);
+      totalScheVer++;
+
+      cpp2::ColumnDef column;
+      column.name_ref() = col_name;
+      column.type.type_ref() = col_type;
+      expectedCols.emplace_back(std::move(column));
+
+      checkEdgeSchema(expectedCols);
+    }
+    checkCurEdgeScheVer(totalScheVer);
+  }
+
+  // change columns
+  {
+    for (auto i = 3; i < times; i += 2) {
+      auto col_name = expectedCols[i].get_name();
+      auto new_col_type = PropertyType::BOOL;
+      expectedCols[i].type.type_ref() = new_col_type;
+      alterEdgeFunc(cpp2::AlterSchemaOp::CHANGE, col_name, new_col_type);
+      totalScheVer++;
+
+      checkEdgeSchema(expectedCols);
+    }
+    checkCurEdgeScheVer(totalScheVer);
+  }
+
+  // drop columns
+  {
+    for (auto i = times; i > 0; i--) {
+      auto col_name = expectedCols.back().get_name();
+      expectedCols.pop_back();
+      alterEdgeFunc(cpp2::AlterSchemaOp::DROP, col_name);
+      totalScheVer++;
+
+      checkEdgeSchema(expectedCols);
+    }
+    checkCurEdgeScheVer(totalScheVer);
+  }
+}
+
 TEST(ProcessorTest, SameNameTagsTest) {
   fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
