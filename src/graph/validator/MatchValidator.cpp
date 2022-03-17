@@ -53,13 +53,35 @@ Status MatchValidator::validateImpl() {
         aliasesTmp = matchClauseCtx->aliasesGenerated;
         cypherCtx_->queryParts.back().aliasesGenerated.merge(aliasesTmp);
         cypherCtx_->queryParts.back().matchs.emplace_back(std::move(matchClauseCtx));
+        const std::size_t preMatchSize = cypherCtx_->queryParts.back().matchs.size();
         if (matchClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
           whereClauseCtx->aliasesAvailable = aliasesAvailable;
           NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(),
                                             *whereClauseCtx,
                                             cypherCtx_->queryParts.back().matchs));
-          cypherCtx_->queryParts.back().matchs.back()->where = std::move(whereClauseCtx);
+          if (preMatchSize < cypherCtx_->queryParts.back().matchs.size()) {
+            // We should delay filter to next clause
+            auto withClauseCtx = getContext<WithClauseContext>();
+            auto withYieldCtx = getContext<YieldClauseContext>();
+            withClauseCtx->yield = std::move(withYieldCtx);
+            withClauseCtx->yield->aliasesAvailable = aliasesAvailable;
+            withClauseCtx->yield->projCols_ = qctx_->objPool()->add(new YieldColumns());
+            for (const auto &var : aliasesAvailable) {
+              withClauseCtx->yield->projCols_->addColumn(
+                  new YieldColumn(LabelExpression::make(qctx_->objPool(), var.first)));
+              withClauseCtx->yield->projOutputColumnNames_.emplace_back(var.first);
+            }
+            withClauseCtx->where = std::move(whereClauseCtx);
+
+            // Render all variable
+            withClauseCtx->aliasesGenerated = aliasesAvailable;
+            cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
+            cypherCtx_->queryParts.emplace_back();
+            cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
+          } else {
+            cypherCtx_->queryParts.back().matchs.back()->where = std::move(whereClauseCtx);
+          }
         }
 
         break;
@@ -999,6 +1021,7 @@ Status MatchValidator::validateMatchPathExpr(
   for (auto &matchPathExpr : matchPathExprs) {
     auto matchClauseCtx = getContext<MatchClauseContext>();
     matchClauseCtx->aliasesAvailable = availableAliases;
+    matchClauseCtx->isOptional = true;
     DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));

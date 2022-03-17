@@ -83,9 +83,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
                          std::unordered_set<std::string>& nodeAliasesSeen,
                          SubPlan& matchClausePlan);
 
-  // Use in pattern expression
-  static Status collectPathList(QueryContext* qctx, const Path& pathInfo, SubPlan& subplan);
-
  private:
   Expression* initialExpr_{nullptr};
 };

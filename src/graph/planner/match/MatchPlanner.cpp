@@ -35,6 +35,7 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       auto matchPlan = std::move(matchPlanStatus).value();
       connectMatch(match.get(), matchPlan, queryPartPlan);
     }
+    NG_RETURN_IF_ERROR(collectPathList(cypherCtx->qctx, queryPart.matchs, queryPartPlan));
 
     NG_RETURN_IF_ERROR(connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan));
   }
@@ -140,5 +141,53 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
   queryPlan = SegmentsConnector::addInput(boundaryPlan.value(), queryPlan);
   return Status::OK();
 }
+
+/*static*/ Status MatchPlanner::collectPathList(
+    QueryContext* qctx,
+    const std::vector<std::unique_ptr<MatchClauseContext>>& matchs,
+    SubPlan& subplan) {
+  std::vector<Expression*> newGroupKeys;
+  std::vector<std::string> colNames;
+  std::vector<Expression*> newGroupItems;
+  bool doesAgg{false};
+  for (const auto& match : matchs) {
+    for (const auto& pathInfo : match->paths) {
+      if (!pathInfo.agg) {
+        continue;
+      }
+      doesAgg = true;
+      newGroupKeys.reserve(newGroupKeys.size() + pathInfo.groupVariables.size());
+      for (const auto& variable : pathInfo.groupVariables) {
+        newGroupKeys.emplace_back(InputPropertyExpression::make(qctx->objPool(), variable));
+      }
+      colNames.reserve(colNames.size() + pathInfo.aggVariables.size());
+      newGroupItems.reserve(newGroupItems.size() + pathInfo.aggVariables.size());
+      for (std::size_t i = 0; i < pathInfo.aggVariables.size() - 1; i++) {
+        newGroupItems.emplace_back(
+            InputPropertyExpression::make(qctx->objPool(), pathInfo.aggVariables[i]));
+        colNames.emplace_back(pathInfo.aggVariables[i]);
+      }
+      newGroupItems.emplace_back(AggregateExpression::make(
+          qctx->objPool(),
+          "collect",
+          InputPropertyExpression::make(qctx->objPool(), pathInfo.aggVariables.back())));
+      colNames.emplace_back(pathInfo.aggVariables.back());
+    }
+  }
+  if (doesAgg) {
+    for (const auto& colName : subplan.root->colNames()) {
+      if (std::find(colNames.begin(), colNames.end(), colName) == colNames.end()) {
+        newGroupItems.emplace_back(InputPropertyExpression::make(qctx->objPool(), colName));
+        colNames.emplace_back(colName);
+      }
+    }
+    auto* agg =
+        Aggregate::make(qctx, subplan.root, std::move(newGroupKeys), std::move(newGroupItems));
+    agg->setColNames(std::move(colNames));
+    subplan.root = agg;
+  }
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula
