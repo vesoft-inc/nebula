@@ -214,6 +214,7 @@ class PartManager {
 class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
   FRIEND_TEST(NebulaStoreTest, PartsTest);
+  FRIEND_TEST(NebulaStoreTest, PersistPeersTest);
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
   FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
   FRIEND_TEST(NebulaStoreTest, CheckpointTest);
@@ -267,7 +268,7 @@ class MemPartManager final : public PartManager {
       handler_->addSpace(spaceId);
     }
     if (noPart && handler_) {
-      handler_->addPart(spaceId, partId, false, {});
+      handler_->addPart(spaceId, partId, false, peers);
     }
   }
 
