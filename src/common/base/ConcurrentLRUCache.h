@@ -8,8 +8,8 @@
 
 #include <gtest/gtest_prod.h>
 
-#include <boost/optional.hpp>
 #include <list>
+#include <optional>
 #include <utility>
 
 #include "common/base/Base.h"
@@ -112,7 +112,7 @@ class ConcurrentLRUCache final {
     StatusOr<V> get(const K& key) {
       std::lock_guard<std::mutex> guard(lock_);
       auto v = lru_->get(key);
-      if (v == boost::none) {
+      if (v == std::nullopt) {
         return Status::Error();
       }
       return std::move(v).value();
@@ -121,7 +121,7 @@ class ConcurrentLRUCache final {
     StatusOr<V> putIfAbsent(K&& key, V&& val) {
       std::lock_guard<std::mutex> guard(lock_);
       auto v = lru_->get(key);
-      if (v == boost::none) {
+      if (v == std::nullopt) {
         lru_->insert(std::forward<K>(key), std::forward<V>(val));
         return Status::Inserted();
       }
@@ -218,13 +218,13 @@ class LRU {
     }
   }
 
-  boost::optional<value_type> get(const key_type& key) {
+  std::optional<value_type> get(const key_type& key) {
     // lookup value in the cache
     total_++;
     typename map_type::iterator i = map_.find(key);
     if (i == map_.end()) {
       // value not in cache
-      return boost::none;
+      return std::nullopt;
     }
 
     // return the value, but first update its place in the most

@@ -64,6 +64,14 @@ class Handler {
   virtual void removeSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
 
   /**
+   * @brief clear space data, but not remove the data dirs.
+   *
+   * @param spaceId space which will be cleared.
+   * @return
+   */
+  virtual nebula::cpp2::ErrorCode clearSpace(GraphSpaceID spaceId) = 0;
+
+  /**
    * @brief Remove a partition
    *
    * @param spaceId
@@ -206,6 +214,7 @@ class PartManager {
 class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
   FRIEND_TEST(NebulaStoreTest, PartsTest);
+  FRIEND_TEST(NebulaStoreTest, PersistPeersTest);
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
   FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
   FRIEND_TEST(NebulaStoreTest, CheckpointTest);
@@ -259,7 +268,7 @@ class MemPartManager final : public PartManager {
       handler_->addSpace(spaceId);
     }
     if (noPart && handler_) {
-      handler_->addPart(spaceId, partId, false, {});
+      handler_->addPart(spaceId, partId, false, peers);
     }
   }
 

@@ -33,7 +33,7 @@ class RequestContext final : public boost::noncopyable, public cpp::NonMovable {
   RequestContext() = default;
   ~RequestContext() {
     if (session_ != nullptr) {
-      // keep the session active
+      // Keep the session active
       session_->charge();
     }
   }
@@ -57,7 +57,7 @@ class RequestContext final : public boost::noncopyable, public cpp::NonMovable {
   void setSession(std::shared_ptr<ClientSession> session) {
     session_ = std::move(session);
     if (session_ != nullptr) {
-      // keep the session active
+      // Keep the session active
       session_->charge();
     }
   }

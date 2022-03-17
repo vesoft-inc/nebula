@@ -133,6 +133,7 @@ struct GetStateResponse {
     6: LogID            last_log_id;
     7: TermID           last_log_term;
     8: Status           status;
+    9: list<binary>     peers;
 }
 
 service RaftexService {

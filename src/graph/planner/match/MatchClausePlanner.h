@@ -10,9 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The MatchClausePlanner was designed to generate plan for match clause;
- */
+// The MatchClausePlanner generates plan for match clause;
 class MatchClausePlanner final : public CypherClausePlanner {
  public:
   MatchClausePlanner() = default;
@@ -62,10 +60,8 @@ class MatchClausePlanner final : public CypherClausePlanner {
                         size_t startIndex,
                         SubPlan& subplan);
 
-  /*
-   * Project all named alias.
-   * TODO: Might not neccessary
-   */
+  // Project all named alias.
+  // TODO: Might not neccessary
   Status projectColumnsBySymbols(MatchClauseContext* matchClauseCtx, SubPlan& plan);
 
   YieldColumn* buildVertexColumn(MatchClauseContext* matchClauseCtx,

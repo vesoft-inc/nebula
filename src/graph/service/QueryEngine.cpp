@@ -34,6 +34,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 
   PlannersRegister::registerPlanners();
 
+  // Set default optimizer rules
   std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
   if (FLAGS_enable_optimizer) {
     rulesets.emplace_back(&opt::RuleSet::QueryRules());
@@ -43,6 +44,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   return setupMemoryMonitorThread();
 }
 
+// Create query context and query instance and execute it
 void QueryEngine::execute(RequestContextPtr rctx) {
   auto qctx = std::make_unique<QueryContext>(std::move(rctx),
                                              schemaManager_.get(),

@@ -10,10 +10,8 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The PropIndexSeek was designed to find if could get starting vids by tag
- * props or edge props index.
- */
+// The PropIndexSeek finds if a plan could get starting vids by tag
+// props or edge props index.
 class PropIndexSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<PropIndexSeek> make() {

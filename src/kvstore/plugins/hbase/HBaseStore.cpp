@@ -123,17 +123,17 @@ std::vector<KV> HBaseStore::decode(GraphSpaceID spaceId,
     NebulaCodec::Value anyValue = result[fieldName];
     std::string value;
     if (anyValue.type() == typeid(int32_t)) {
-      value = folly::to<std::string>(boost::any_cast<int32_t>(anyValue));
+      value = folly::to<std::string>(std::any_cast<int32_t>(anyValue));
     } else if (anyValue.type() == typeid(std::string)) {
-      value = folly::to<std::string>(boost::any_cast<std::string>(anyValue));
+      value = folly::to<std::string>(std::any_cast<std::string>(anyValue));
     } else if (anyValue.type() == typeid(int64_t)) {
-      value = folly::to<std::string>(boost::any_cast<int64_t>(anyValue));
+      value = folly::to<std::string>(std::any_cast<int64_t>(anyValue));
     } else if (anyValue.type() == typeid(float)) {
-      value = folly::to<std::string>(boost::any_cast<float>(anyValue));
+      value = folly::to<std::string>(std::any_cast<float>(anyValue));
     } else if (anyValue.type() == typeid(double)) {
-      value = folly::to<std::string>(boost::any_cast<double>(anyValue));
+      value = folly::to<std::string>(std::any_cast<double>(anyValue));
     } else if (anyValue.type() == typeid(bool)) {
-      value = folly::to<std::string>(boost::any_cast<bool>(anyValue));
+      value = folly::to<std::string>(std::any_cast<bool>(anyValue));
     } else {
       LOG(ERROR) << "Value Type :" << anyValue.type().name() << std::endl;
     }

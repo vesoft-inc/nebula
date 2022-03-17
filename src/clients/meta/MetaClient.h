@@ -269,6 +269,9 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> dropSpace(std::string name, bool ifExists = false);
 
+  // clear space data, but keep the space schema.
+  folly::Future<StatusOr<bool>> clearSpace(std::string name, bool ifExists = false);
+
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
 
