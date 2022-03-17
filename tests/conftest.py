@@ -73,7 +73,8 @@ def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func
     if step_func_args.get("graph_spaces") is not None:
         graph_spaces = step_func_args.get("graph_spaces")
         if graph_spaces.get("space_desc") is not None:
-            logging.info("error space is {}".format(graph_spaces.get("space_desc")))
+            logging.info("error space is {}".format(
+                graph_spaces.get("space_desc")))
 
 
 def pytest_configure(config):
@@ -109,6 +110,7 @@ def get_ports():
         if port is None:
             raise Exception(f"Invalid port: {port}")
         return port
+
 
 def get_ssl_config_from_tmp():
     with open(NB_TMP_PATH, "r") as f:
@@ -262,6 +264,7 @@ def workarround_for_class(
     if request.cls.client is not None:
         request.cls.cleanup()
         request.cls.drop_data()
+
 
 @pytest.fixture(scope="class")
 def establish_a_rare_connection(conn_pool, pytestconfig):

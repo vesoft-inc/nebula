@@ -11,6 +11,40 @@
 namespace nebula {
 namespace opt {
 
+//  Push down the filter items from the left subplan of [[LeftJoin]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Filter data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +-----------+-----------+
+//  |         Filter        |
+//  | ($left>3 and $right<4)|
+//  +-----------+-----------+
+//              |
+//       +------+------+
+//       |  LeftJoin   |
+//       +------+------+
+//
+//  After:
+//
+//  +------+------+
+//  |    Filter   |
+//  |  ($right<4) |
+//  +------+------+
+//         |
+//  +------+------+
+//  |  LeftJoin   |
+//  +------+------+
+//         /
+//  +------+------+
+//  |    Filter   |
+//  |  ($left>3)  |
+//  +------+------+
+
 class PushFilterDownLeftJoinRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

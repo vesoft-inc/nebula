@@ -160,7 +160,7 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
 
 void MetaServerBasedPartManager::onPartAdded(const meta::PartHosts& partMeta) {
   if (handler_ != nullptr) {
-    handler_->addPart(partMeta.spaceId_, partMeta.partId_, false, {});
+    handler_->addPart(partMeta.spaceId_, partMeta.partId_, false, partMeta.hosts_);
   }
 }
 

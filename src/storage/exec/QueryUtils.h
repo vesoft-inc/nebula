@@ -31,7 +31,13 @@ class QueryUtils final {
     kDst,
     kOther,
   };
-
+  /**
+   * @brief Get return col type by name
+   *
+   * @param name
+   * @return ReturnColType
+   * @see ReturnColType
+   */
   static ReturnColType toReturnColType(const std::string& name) {
     if (name == kVid) {
       return ReturnColType::kVid;
@@ -49,7 +55,14 @@ class QueryUtils final {
       return ReturnColType::kOther;
     }
   }
-
+  /**
+   * @brief Get value with propName from reader
+   *
+   * @param reader Value set
+   * @param propName Filed name
+   * @param field Field definition
+   * @return StatusOr<nebula::Value>
+   */
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
                                            const meta::SchemaProviderIf::Field* field) {
@@ -84,9 +97,15 @@ class QueryUtils final {
     return value;
   }
 
-  // read prop value, If the RowReader contains this field,
-  // read from the rowreader, otherwise read the default value
-  // or null value from the latest schema
+  /**
+   * @brief read prop value, If the RowReader contains this field, read from the rowreader,
+   * otherwise read the default value or null value from the latest schema
+   *
+   * @param reader
+   * @param propName
+   * @param schema
+   * @return StatusOr<nebula::Value>
+   */
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
                                            const meta::NebulaSchemaProvider* schema) {
@@ -215,10 +234,16 @@ class QueryUtils final {
     return Status::OK();
   }
 
-  // return none if no valid ttl, else return the ttl property name and time
-  static folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeContext* edgeContext,
-                                                                         EdgeType edgeType) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
+  /**
+   * @brief Get the Edge TTL Info object
+   *
+   * @param edgeContext
+   * @param edgeType
+   * @return return none if no valid ttl, else return the ttl property name and time
+   */
+  static std::optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeContext* edgeContext,
+                                                                       EdgeType edgeType) {
+    std::optional<std::pair<std::string, int64_t>> ret;
     auto edgeFound = edgeContext->ttlInfo_.find(std::abs(edgeType));
     if (edgeFound != edgeContext->ttlInfo_.end()) {
       ret.emplace(edgeFound->second.first, edgeFound->second.second);
@@ -226,10 +251,16 @@ class QueryUtils final {
     return ret;
   }
 
-  // return none if no valid ttl, else return the ttl property name and time
-  static folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagContext* tagContext,
-                                                                        TagID tagId) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
+  /**
+   * @brief Get the Tag TTL Info object
+   *
+   * @param tagContext
+   * @param tagId
+   * @return return none if no valid ttl, else return the ttl property name and time
+   */
+  static std::optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagContext* tagContext,
+                                                                      TagID tagId) {
+    std::optional<std::pair<std::string, int64_t>> ret;
     auto tagFound = tagContext->ttlInfo_.find(tagId);
     if (tagFound != tagContext->ttlInfo_.end()) {
       ret.emplace(tagFound->second.first, tagFound->second.second);

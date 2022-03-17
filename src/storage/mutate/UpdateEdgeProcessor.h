@@ -74,8 +74,8 @@ class UpdateEdgeProcessor
   // update <prop name, new value expression>
   std::vector<storage::cpp2::UpdatedProp> updatedProps_;
 
-  folly::Optional<std::vector<std::string>> returnProps_;
-  folly::Optional<std::string> condition_;
+  std::optional<std::vector<std::string>> returnProps_;
+  std::optional<std::string> condition_;
 
   // return props expression
   std::vector<Expression*> returnPropsExp_;
