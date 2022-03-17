@@ -47,29 +47,31 @@ Feature: Clear space test
       CREATE TAG IF NOT EXISTS player(name string, age int);
       CREATE TAG INDEX IF NOT EXISTS name ON player(name(20));
       """
-    And wait 2 seconds
+    And wait 6 seconds
     Then the execution should be successful
     When executing query:
       """
-      INSERT VERTEX player(name, age) VALUES
-            "Russell Westbrook": ("Russell Westbrook", 30),
-            "Chris Paul": ("Chris Paul", 33),
-            "Boris Diaw": ("Boris Diaw", 36),
-            "David West": ("David West", 38),
-            "Danny Green": ("Danny Green", 31),
-            "Tim Duncan": ("Tim Duncan", 42),
-            "James Harden": ("James Harden", 29),
-            "Tony Parker": ("Tony Parker", 36),
-            "Aron Baynes": ("Aron Baynes", 32),
-            "Ben Simmons": ("Ben Simmons", 22),
-            "Blake Griffin": ("Blake Griffin", 30);
+      INSERT VERTEX
+        player(name, age)
+      VALUES
+        "Russell Westbrook": ("Russell Westbrook", 30),
+        "Chris Paul": ("Chris Paul", 33),
+        "Boris Diaw": ("Boris Diaw", 36),
+        "David West": ("David West", 38),
+        "Danny Green": ("Danny Green", 31),
+        "Tim Duncan": ("Tim Duncan", 42),
+        "James Harden": ("James Harden", 29),
+        "Tony Parker": ("Tony Parker", 36),
+        "Aron Baynes": ("Aron Baynes", 32),
+        "Ben Simmons": ("Ben Simmons", 22),
+        "Blake Griffin": ("Blake Griffin", 30);
       """
     Then the execution should be successful
     When executing query:
       """
       submit job stats;
       """
-    And wait 2 seconds
+    And wait 6 seconds
     Then the execution should be successful
     When executing query:
       """
@@ -107,7 +109,7 @@ Feature: Clear space test
       """
       CREATE USER IF NOT EXISTS clear_space_user WITH PASSWORD 'nebula';
       """
-    And wait 3 seconds
+    And wait 6 seconds
     Then the execution should be successful
     When executing query:
       """
