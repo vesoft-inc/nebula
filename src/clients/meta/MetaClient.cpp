@@ -1149,10 +1149,10 @@ PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
 }
 
 folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
-    cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras) {
+    cpp2::JobOp op, cpp2::JobType type, std::vector<std::string> paras) {
   cpp2::AdminJobReq req;
   req.op_ref() = op;
-  req.cmd_ref() = cmd;
+  req.type_ref() = type;
   req.paras_ref() = std::move(paras);
   folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
   auto future = promise.getFuture();

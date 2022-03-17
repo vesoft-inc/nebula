@@ -30,7 +30,7 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
       }
       auto optJob = nebula::value(optJobRet);
       auto jobDesc = optJob.toJobDesc();
-      if (jobDesc.get_cmd() == meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
+      if (jobDesc.get_type() == meta::cpp2::JobType::REBUILD_EDGE_INDEX) {
         auto paras = jobDesc.get_paras();
         DCHECK_GE(paras.size(), 1);
         auto spaceName = paras.back();

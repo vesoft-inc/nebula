@@ -53,13 +53,13 @@ struct TaskContext {
 
   TaskContext() = default;
   TaskContext(const cpp2::AddTaskRequest& req, CallBack cb)
-      : cmd_(req.get_cmd()),
+      : jobType_(req.get_job_type()),
         jobId_(req.get_job_id()),
         taskId_(req.get_task_id()),
         parameters_(req.get_para()),
         onFinish_(cb) {}
 
-  nebula::meta::cpp2::AdminCmd cmd_;
+  nebula::meta::cpp2::JobType jobType_;
   JobID jobId_{-1};
   TaskID taskId_{-1};
   nebula::storage::cpp2::TaskPara parameters_;
@@ -210,10 +210,10 @@ class AdminTask {
   /**
    * @brief Get admin job's command type.
    *
-   * @return meta::cpp2::AdminCmd job's command type.
+   * @return meta::cpp2::JobType job's command type.
    */
-  meta::cpp2::AdminCmd cmdType() {
-    return ctx_.cmd_;
+  meta::cpp2::JobType jobType() {
+    return ctx_.jobType_;
   }
 
  public:

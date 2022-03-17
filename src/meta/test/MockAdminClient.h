@@ -41,7 +41,7 @@ class MockAdminClient : public AdminClient {
                                              storage::cpp2::EngineSignType,
                                              const HostAddr&));
   MOCK_METHOD7(addTask,
-               folly::Future<StatusOr<bool>>(cpp2::AdminCmd,
+               folly::Future<StatusOr<bool>>(cpp2::JobType,
                                              int32_t,
                                              int32_t,
                                              GraphSpaceID,

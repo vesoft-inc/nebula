@@ -207,7 +207,7 @@ class AdminClient {
   /**
    * @brief Add storage admin task to given storage host
    *
-   * @param cmd
+   * @param jobType
    * @param jobId
    * @param taskId
    * @param spaceId
@@ -216,7 +216,7 @@ class AdminClient {
    * @param parts
    * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
    */
-  virtual folly::Future<StatusOr<bool>> addTask(cpp2::AdminCmd cmd,
+  virtual folly::Future<StatusOr<bool>> addTask(cpp2::JobType jobType,
                                                 int32_t jobId,
                                                 int32_t taskId,
                                                 GraphSpaceID spaceId,

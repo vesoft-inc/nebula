@@ -220,7 +220,7 @@ struct AlterSpaceReq {
 }
 
 // Job related data structures
-enum AdminJobOp {
+enum JobOp {
     ADD         = 0x01,
     SHOW_All    = 0x02,
     SHOW        = 0x03,
@@ -228,13 +228,7 @@ enum AdminJobOp {
     RECOVER     = 0x05,
 } (cpp.enum_strict)
 
-struct AdminJobReq {
-    1: AdminJobOp       op,
-    2: AdminCmd         cmd,
-    3: list<binary>     paras,
-}
-
-enum AdminCmd {
+enum JobType {
     COMPACT                  = 0,
     FLUSH                    = 1,
     REBUILD_TAG_INDEX        = 2,
@@ -249,6 +243,12 @@ enum AdminCmd {
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
+struct AdminJobReq {
+    1: JobOp            op,
+    2: JobType          type,
+    3: list<binary>     paras,
+}
+
 enum JobStatus {
     QUEUE           = 0x01,
     RUNNING         = 0x02,
@@ -260,7 +260,7 @@ enum JobStatus {
 
 struct JobDesc {
     1: i32              id,
-    2: AdminCmd         cmd,
+    2: JobType          type,
     3: list<string>     paras,
     4: JobStatus        status,
     5: i64              start_time,
