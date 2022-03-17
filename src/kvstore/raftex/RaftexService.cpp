@@ -126,14 +126,16 @@ void RaftexService::stop() {
 
   // stop service
   LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
+  std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts;
   {
     folly::RWSpinLock::WriteHolder wh(partsLock_);
-    for (auto& p : parts_) {
-      p.second->stop();
-    }
-    parts_.clear();
-    LOG(INFO) << "All partitions have stopped";
+    // partsLock_ should not be hold when waiting for parts stop, so swap them out first
+    parts.swap(parts_);
   }
+  for (auto& p : parts) {
+    p.second->stop();
+  }
+  LOG(INFO) << "All partitions have stopped";
   server_->stop();
 }
 

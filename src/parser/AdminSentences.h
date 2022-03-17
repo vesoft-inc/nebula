@@ -156,7 +156,7 @@ class ShowCollationSentence final : public Sentence {
 
 class SpaceOptItem final {
  public:
-  using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
+  using Value = std::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
 
   enum OptionType : uint8_t {
     PARTITION_NUM,
@@ -189,27 +189,27 @@ class SpaceOptItem final {
   }
 
   int64_t asInt() const {
-    return boost::get<int64_t>(optValue_);
+    return std::get<int64_t>(optValue_);
   }
 
   const std::string& asString() const {
-    return boost::get<std::string>(optValue_);
+    return std::get<std::string>(optValue_);
   }
 
   const meta::cpp2::ColumnTypeDef& asTypeDef() const {
-    return boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+    return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
   bool isInt() const {
-    return optValue_.which() == 0;
+    return optValue_.index() == 0;
   }
 
   bool isString() const {
-    return optValue_.which() == 1;
+    return optValue_.index() == 1;
   }
 
   bool isTypeDef() const {
-    return optValue_.which() == 2;
+    return optValue_.index() == 2;
   }
 
   int64_t getPartitionNum() const {

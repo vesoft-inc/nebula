@@ -10,9 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The UnwindClausePlanner was designed to generate plan for unwind clause
- */
+// The UnwindClausePlanner generates plan for unwind clause
 class UnwindClausePlanner final : public CypherClausePlanner {
  public:
   UnwindClausePlanner() = default;

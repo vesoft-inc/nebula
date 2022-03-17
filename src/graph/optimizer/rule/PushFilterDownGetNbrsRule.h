@@ -11,6 +11,37 @@
 namespace nebula {
 namespace opt {
 
+//  Embed the [[Filter]] into [[GetNeighbors]]
+//  Required conditions:
+//   1. Match the pattern
+//   2. Filter contains subexpressions that meet pushdown conditions
+//  Benefits:
+//   1. Filter data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +------------------+------------------+
+//  |                Filter               |
+//  |($^.player.age>3 and $$.player.age<4)|
+//  +------------------+------------------+
+//                     |
+//              +------+------+
+//              | GetNeighbors|
+//              +------+------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |    Filter       |
+//  |($$.player.age<4)|
+//  +--------+--------+
+//           |
+//  +--------+--------+
+//  |  GetNeighbors   |
+//  |($^.player.age>3)|
+//  +--------+--------+
+
 class PushFilterDownGetNbrsRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

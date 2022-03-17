@@ -14,11 +14,25 @@ namespace storage {
 
 using Cursor = std::string;
 
-// Node to scan vertices of one partition
+/**
+ * @brief Node to scan vertices of one partition
+ */
 class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
   using RelNode<Cursor>::doExecute;
 
+  /**
+   * @brief Construct a new Scan Vertex Prop Node object
+   *
+   * @param context
+   * @param tagNodes
+   * @param enableReadFollower
+   * @param limit
+   * @param cursors
+   * @param resultDataSet
+   * @param expCtx
+   * @param filter
+   */
   ScanVertexPropNode(RuntimeContext* context,
                      std::vector<std::unique_ptr<TagNode>> tagNodes,
                      bool enableReadFollower,

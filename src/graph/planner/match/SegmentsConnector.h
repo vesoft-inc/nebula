@@ -13,10 +13,7 @@
 
 namespace nebula {
 namespace graph {
-/**
- * The SegmentsConnector was designed to be a util to help connecting the
- * plan segment.
- */
+// The SegmentsConnector is a util to help connecting the plan segment.
 class SegmentsConnector final {
  public:
   SegmentsConnector() = delete;

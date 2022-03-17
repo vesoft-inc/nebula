@@ -11,6 +11,33 @@
 namespace nebula {
 namespace opt {
 
+//  Merge [[Project]] and [[GetVertices]] node
+//  Required conditions:
+//   1. Match the pattern
+//   2. The projection must project only one column which expression will be assigned to the src
+//  expression of GetVertices Benefits:
+//   1. Delete unnecessary node
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+-------+
+//  | GetVertices |
+//  | (src:$-.vage)|
+//  +------+-------+
+//         |
+//  +-------+-------+
+//  |    Project    |
+//  |(v.age AS vage)|
+//  +-------+-------+
+//
+//  After:
+//
+//  +------+-------+
+//  | GetVertices |
+//  | (src:v.age)  |
+//  +------+-------+
+
 class MergeGetVerticesAndProjectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

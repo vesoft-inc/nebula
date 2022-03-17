@@ -11,10 +11,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The VertexIdSeek was designed to find if could get the starting vids in
- * filter.
- */
+// The VertexIdSeek find if a plan could get the starting vids in filters.
 class VertexIdSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<VertexIdSeek> make() {
