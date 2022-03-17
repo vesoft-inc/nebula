@@ -742,7 +742,8 @@ void MetaClient::getResponse(Request req,
                        // succeeded
                        pro.setValue(respGen(std::move(resp)));
                        return;
-                     } else if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+                     } else if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
+                                code == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
                        updateLeader(resp.get_leader());
                        if (retry < retryLimit) {
                          evb->runAfterDelay(
@@ -768,8 +769,6 @@ void MetaClient::getResponse(Request req,
                      } else if (code == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
                        pro.setValue(respGen(std::move(resp)));
                        return;
-                     } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
-                       updateLeader();
                      }
                      pro.setValue(this->handleResponse(resp));
                    });  // then
@@ -1231,6 +1230,22 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_dropSpace(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::clearSpace(std::string name, const bool ifExists) {
+  cpp2::ClearSpaceReq req;
+  req.space_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_clearSpace(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -2297,6 +2312,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
   if (!ready_) {
     return Status::Error("Meta Service not ready");
   }
+
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto iter = metadata.userPasswordMap_.find(account);
@@ -2466,6 +2482,11 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       req.disk_parts_ref() = diskParts;
     }
   }
+
+  // TTL for clientAddrMap
+  // If multiple connections are created but do not authenticate, the clientAddrMap_ will keep
+  // growing. This is to clear the clientAddrMap_ regularly.
+  clearClientAddrMap();
 
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
@@ -3617,6 +3638,22 @@ Status MetaClient::verifyVersion() {
     return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
   }
   return Status::OK();
+}
+
+void MetaClient::clearClientAddrMap() {
+  if (clientAddrMap_.size() == 0) {
+    return;
+  }
+
+  auto curTimestamp = time::WallClock::fastNowInSec();
+  for (auto it = clientAddrMap_.cbegin(); it != clientAddrMap_.cend();) {
+    // The clientAddr is expired
+    if (it->second < curTimestamp) {
+      it = clientAddrMap_.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 }  // namespace meta
 }  // namespace nebula

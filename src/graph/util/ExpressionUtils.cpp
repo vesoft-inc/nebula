@@ -217,6 +217,12 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
+
+  // If the given expression does not contain any inner logical OR expression, no need to rewrite
+  if (!findAny(expr, {Expression::Kind::kLogicalOr})) {
+    return const_cast<Expression *>(expr);
+  }
+
   auto pool = expr->getObjPool();
   auto logicalAndExpr = static_cast<LogicalExpression *>(expr->clone());
   auto logicalAndExprSize = (logicalAndExpr->operands()).size();

@@ -177,7 +177,7 @@ using namespace nebula;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_DROP KW_CLEAR KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
@@ -361,7 +361,7 @@ using namespace nebula;
 %type <query_unique_identifier> query_unique_identifier
 
 %type <sentence> maintain_sentence
-%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence alter_space_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence clear_space_sentence alter_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
@@ -3622,6 +3622,12 @@ drop_space_sentence
     }
     ;
 
+clear_space_sentence
+    : KW_CLEAR KW_SPACE opt_if_exists name_label {
+        $$ = new ClearSpaceSentence($4, $3);
+    }
+    ;
+
 //  User manager sentences.
 
 create_user_sentence
@@ -3866,6 +3872,7 @@ maintain_sentence
     | describe_space_sentence { $$ = $1; }
     | alter_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
+    | clear_space_sentence { $$ = $1; }
     | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }

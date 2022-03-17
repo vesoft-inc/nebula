@@ -70,7 +70,7 @@ class EdgeNode : public IterateNode<T> {
   Expression* exp_;
 
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-  folly::Optional<std::pair<std::string, int64_t>> ttl_;
+  std::optional<std::pair<std::string, int64_t>> ttl_;
   std::string edgeName_;
 };
 
@@ -155,7 +155,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
   void resetReader() {
     reader_.reset(*schemas_, val_);
     if (!reader_ ||
-        (ttl_.hasValue() &&
+        (ttl_.has_value() &&
          CommonUtils::checkDataExpiredForTTL(
              schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
       reader_.reset();

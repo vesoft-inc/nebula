@@ -124,7 +124,7 @@ class JobDescription {
 
   /**
    * @brief
-   * Get a existed job from kvstore, return folly::none if there isn't
+   * Get a existed job from kvstore, reture std::nullopt if there isn't
    *
    * @param iJob Id of the job we would load
    * @param kv Where we load the job from

@@ -27,17 +27,17 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values,
   RowWriter writer(schema);
   for (auto& value : values) {
     if (value.type() == typeid(int32_t)) {
-      writer << boost::any_cast<int32_t>(value);
+      writer << std::any_cast<int32_t>(value);
     } else if (value.type() == typeid(int64_t)) {
-      writer << boost::any_cast<int64_t>(value);
+      writer << std::any_cast<int64_t>(value);
     } else if (value.type() == typeid(std::string)) {
-      writer << boost::any_cast<std::string>(value);
+      writer << std::any_cast<std::string>(value);
     } else if (value.type() == typeid(double)) {
-      writer << boost::any_cast<double>(value);
+      writer << std::any_cast<double>(value);
     } else if (value.type() == typeid(float)) {
-      writer << boost::any_cast<float>(value);
+      writer << std::any_cast<float>(value);
     } else if (value.type() == typeid(bool)) {
-      writer << boost::any_cast<bool>(value);
+      writer << std::any_cast<bool>(value);
     } else {
       LOG(ERROR) << "Value Type :" << value.type().name() << std::endl;
     }

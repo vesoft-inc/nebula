@@ -10,12 +10,10 @@
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/meta_types.h"
 
-/**
- * All admin-related nodes would be put in this file.
- * These nodes would not exist in a same plan with maintain-related/
- * mutate-related/query-related nodes. And they are also isolated
- * from each other. This would be guaranteed by parser and validator.
- */
+// All admin-related nodes would be put in this file.
+// These nodes would not exist in a same plan with maintain-related/
+// mutate-related/query-related nodes. And they are also isolated
+// from each other. This would be guaranteed by parser and validator.
 namespace nebula {
 namespace graph {
 
@@ -207,6 +205,37 @@ class DropSpace final : public SingleDependencyNode {
  private:
   DropSpace(QueryContext* qctx, PlanNode* input, std::string spaceName, bool ifExists)
       : SingleDependencyNode(qctx, Kind::kDropSpace, input) {
+    spaceName_ = std::move(spaceName);
+    ifExists_ = ifExists;
+  }
+
+ private:
+  std::string spaceName_;
+  bool ifExists_;
+};
+
+class ClearSpace final : public SingleDependencyNode {
+ public:
+  static ClearSpace* make(QueryContext* qctx,
+                          PlanNode* input,
+                          std::string spaceName,
+                          bool ifExists) {
+    return qctx->objPool()->add(new ClearSpace(qctx, input, std::move(spaceName), ifExists));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  const std::string& getSpaceName() const {
+    return spaceName_;
+  }
+
+  bool getIfExists() const {
+    return ifExists_;
+  }
+
+ private:
+  ClearSpace(QueryContext* qctx, PlanNode* input, std::string spaceName, bool ifExists)
+      : SingleDependencyNode(qctx, Kind::kClearSpace, input) {
     spaceName_ = std::move(spaceName);
     ifExists_ = ifExists;
   }

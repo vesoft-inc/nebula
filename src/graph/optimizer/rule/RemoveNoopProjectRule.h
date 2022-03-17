@@ -11,6 +11,23 @@
 namespace nebula {
 namespace opt {
 
+//  Remove [[Project]] without any Expression computing and alias operation
+//  Required conditions:
+//   1. Match the pattern
+//   2. The [[Project]] has the same column names as the previous node
+//  Benefits:
+//   1. Remove unnecessary Project node
+//
+//  Tranformation:
+//  Before:
+//
+// +---------+---------+
+// |      Project      |
+// +---------+---------+
+//
+//  After:
+//  // Remove Project node
+
 class RemoveNoopProjectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

@@ -16,6 +16,7 @@
 namespace nebula {
 namespace graph {
 
+// This module is responsible for checking the permission of the user
 class PermissionManager final {
  public:
   PermissionManager() = delete;
