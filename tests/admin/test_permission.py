@@ -21,11 +21,11 @@ class TestPermission(NebulaTestSuite):
             return False, None
 
     @classmethod
-    def prepare(self):
+    def prepare(cls):
         query = 'CREATE USER test WITH PASSWORD "test"'
-        resp = self.execute(query)
-        self.check_resp_succeeded(resp)
-        time.sleep(self.delay)
+        resp = cls.execute(query)
+        cls.check_resp_succeeded(resp)
+        time.sleep(cls.delay * 2)
 
     @classmethod
     def cleanup(self):
