@@ -31,6 +31,20 @@ class TestSession(NebulaTestSuite):
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
+        resp = self.execute('CREATE USER IF NOT EXISTS session_user1 WITH PASSWORD "123456"')
+        self.check_resp_succeeded(resp)
+
+        query = 'GRANT ROLE ADMIN ON nba TO session_user1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.execute('CREATE USER IF NOT EXISTS session_user2 WITH PASSWORD "123456"')
+        self.check_resp_succeeded(resp)
+
+        query = 'GRANT ROLE ADMIN ON nba TO session_user2'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
         resp = self.execute('SHOW HOSTS GRAPH')
         self.check_resp_succeeded(resp)
         assert not resp.is_empty()
@@ -53,7 +67,10 @@ class TestSession(NebulaTestSuite):
         session = self.client_pool.get_session('root', 'nebula')
         resp = session.execute('DROP USER session_user')
         self.check_resp_succeeded(resp)
-
+        resp = session.execute('DROP USER session_user1')
+        self.check_resp_succeeded(resp)
+        resp = session.execute('DROP USER session_user2')
+        self.check_resp_succeeded(resp)
     def test_sessions(self):
         # 1: test add session with right username
         try:
@@ -225,3 +242,44 @@ class TestSession(NebulaTestSuite):
         resp = conn.execute(session_id, 'SHOW HOSTS')
         assert resp.error_code == ttypes.ErrorCode.E_SESSION_INVALID, resp.error_msg
         assert resp.error_msg.find(b'Session not existed!') > 0
+
+    def test_out_of_max_sessions_per_ip_per_user(self):
+        resp = self.execute('SHOW SESSIONS')
+        self.check_resp_succeeded(resp)
+        sessions = len(resp.rows())
+
+        i = 0
+        session_user1_count = 0
+        while (i < sessions):
+            row = resp.rows()[i]
+            if (row.values[1].get_sVal() == b'session_user1'):
+                session_user1_count += 1
+            i += 1
+
+        session_limit = max(3, sessions)
+        resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = {}'.format(session_limit))
+        self.check_resp_succeeded(resp)
+        time.sleep(3)
+
+        # get new session failed for user session_user1
+        try:
+            i = 0
+            while (i < session_limit - session_user1_count):
+                self.client_pool.get_session("session_user1", "123456")
+                i += 1
+            self.client_pool.get_session("session_user1", "123456")
+            assert False
+        except Exception as e:
+            assert True
+
+        # get new session success from session_user2
+        try:
+            self.client_pool.get_session("session_user2", "123456")
+            self.check_resp_succeeded(resp)
+            assert True
+        except Exception as e:
+            assert False, e.message
+        
+        resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = 300')
+        self.check_resp_succeeded(resp)
+        time.sleep(3)
