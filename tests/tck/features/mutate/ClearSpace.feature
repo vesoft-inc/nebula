@@ -1,6 +1,7 @@
 # Copyright (c) 2022 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@skip
 Feature: Clear space test
   This file is mainly used to test the function of clear space.
 
