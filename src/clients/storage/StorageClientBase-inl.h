@@ -9,6 +9,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Optional.h>
 #include <folly/Try.h>
+#include <folly/futures/Future.h>
 #include <glog/logging.h>
 
 #include <unordered_map>
@@ -146,7 +147,7 @@ template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerType>::getResponse(
     folly::EventBase* evb, const HostAddr& host, const Request& request, RemoteFunc&& remoteFunc) {
-  static_assert(folly::isSemiFuture<
+  static_assert(folly::isFuture<
                 typename std::result_of<RemoteFunc(ClientType*, const Request&)>::type>::value);
 
   stats::StatsManager::addValue(kNumRpcSentToStoraged);
@@ -154,11 +155,14 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
     evb = DCHECK_NOTNULL(ioThreadPool_)->getEventBase();
   }
 
-  auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
   auto spaceId = request.get_space_id();
   auto partsId = getReqPartsId(request);
-  return remoteFunc(client.get(), request)
-      .via(evb)
+  return folly::via(evb)
+      .thenValue([func = std::move(remoteFunc), req = std::move(request), evb, host, this](auto&&) {
+        // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
+        auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+        return func(client.get(), req);
+      })
       .thenValue([spaceId, this](Response&& resp) mutable -> StatusOr<Response> {
         auto& result = resp.get_result();
         for (auto& part : result.get_failed_parts()) {
@@ -189,7 +193,7 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         }
         return std::move(resp);
       })
-      .thenError([this, host, spaceId, partsId = std::move(partsId)](
+      .thenError([partsId = std::move(partsId), host, spaceId, this](
                      folly::exception_wrapper&& exWrapper) mutable -> StatusOr<Response> {
         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
 

@@ -103,7 +103,7 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::GetNeighborsRequest& r) {
-                           return client->semifuture_getNeighbors(r);
+                           return client->future_getNeighbors(r);
                          });
 }
 
@@ -142,7 +142,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::AddVerticesRequest& r) {
-                           return client->semifuture_addVertices(r);
+                           return client->future_addVertices(r);
                          });
 }
 
@@ -180,8 +180,8 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
                          std::move(requests),
                          [useToss = param.useExperimentalFeature](ThriftClientType* client,
                                                                   const cpp2::AddEdgesRequest& r) {
-                           return useToss ? client->semifuture_chainAddEdges(r)
-                                          : client->semifuture_addEdges(r);
+                           return useToss ? client->future_chainAddEdges(r)
+                                          : client->future_addEdges(r);
                          });
 }
 
@@ -237,7 +237,7 @@ StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
 
   return collectResponse(
       param.evb, std::move(requests), [](ThriftClientType* client, const cpp2::GetPropRequest& r) {
-        return client->semifuture_getProps(r);
+        return client->future_getProps(r);
       });
 }
 
@@ -270,8 +270,8 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
                          std::move(requests),
                          [useToss = param.useExperimentalFeature](
                              ThriftClientType* client, const cpp2::DeleteEdgesRequest& r) {
-                           return useToss ? client->semifuture_chainDeleteEdges(r)
-                                          : client->semifuture_deleteEdges(r);
+                           return useToss ? client->future_chainDeleteEdges(r)
+                                          : client->future_deleteEdges(r);
                          });
 }
 
@@ -303,7 +303,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteVertices(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::DeleteVerticesRequest& r) {
-                           return client->semifuture_deleteVertices(r);
+                           return client->future_deleteVertices(r);
                          });
 }
 
@@ -335,7 +335,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteTags(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::DeleteTagsRequest& r) {
-                           return client->semifuture_deleteTags(r);
+                           return client->future_deleteTags(r);
                          });
 }
 
@@ -385,7 +385,7 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
                      host.value(),
                      req,
                      [](ThriftClientType* client, const cpp2::UpdateVertexRequest& r) {
-                       return client->semifuture_updateVertex(r);
+                       return client->future_updateVertex(r);
                      });
 }
 
@@ -435,8 +435,8 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
                      req,
                      [useExperimentalFeature = param.useExperimentalFeature](
                          ThriftClientType* client, const cpp2::UpdateEdgeRequest& r) {
-                       return useExperimentalFeature ? client->semifuture_chainUpdateEdge(r)
-                                                     : client->semifuture_updateEdge(r);
+                       return useExperimentalFeature ? client->future_chainUpdateEdge(r)
+                                                     : client->future_updateEdge(r);
                      });
 }
 
@@ -466,7 +466,7 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID s
 
   return getResponse(
       evb, host.value(), req, [](ThriftClientType* client, const cpp2::GetUUIDReq& r) {
-        return client->semifuture_getUUID(r);
+        return client->future_getUUID(r);
       });
 }
 
@@ -514,7 +514,7 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::LookupIndexRequest& r) {
-                           return client->semifuture_lookupIndex(r);
+                           return client->future_lookupIndex(r);
                          });
 }
 
@@ -543,7 +543,7 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTravers
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::LookupAndTraverseRequest& r) {
-                           return client->semifuture_lookupAndTraverse(r);
+                           return client->future_lookupAndTraverse(r);
                          });
 }
 
@@ -574,7 +574,7 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanEdge(
 
   return collectResponse(
       param.evb, std::move(requests), [](ThriftClientType* client, const cpp2::ScanEdgeRequest& r) {
-        return client->semifuture_scanEdge(r);
+        return client->future_scanEdge(r);
       });
 }
 
@@ -606,7 +606,7 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanVertex(
   return collectResponse(param.evb,
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::ScanVertexRequest& r) {
-                           return client->semifuture_scanVertex(r);
+                           return client->future_scanVertex(r);
                          });
 }
 
@@ -632,7 +632,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> StorageClient::get(
 
   return collectResponse(
       evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVGetRequest& r) {
-        return client->semifuture_get(r);
+        return client->future_get(r);
       });
 }
 
@@ -657,7 +657,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
 
   return collectResponse(
       evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVPutRequest& r) {
-        return client->semifuture_put(r);
+        return client->future_put(r);
       });
 }
 
@@ -682,7 +682,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
 
   return collectResponse(
       evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVRemoveRequest& r) {
-        return client->semifuture_remove(r);
+        return client->future_remove(r);
       });
 }
 

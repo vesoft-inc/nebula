@@ -12,7 +12,7 @@
   UNUSED(request);                                             \
   auto promise = std::make_shared<folly::Promise<respType>>(); \
   respType dummyResp;                                          \
-  auto f = promise->getSemiFuture();                           \
+  auto f = promise->getFuture();                               \
   promise->setValue(std::move(dummyResp));                     \
   return f;
 
@@ -50,104 +50,104 @@ void GraphStorageLocalServer::stop() {
   serving_ = false;
 }
 
-folly::SemiFuture<cpp2::GetNeighborsResponse> GraphStorageLocalServer::semifuture_getNeighbors(
+folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_getNeighbors(
     const cpp2::GetNeighborsRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, semifuture_getNeighbors);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_getNeighbors);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_addVertices(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_addVertices(
     const cpp2::AddVerticesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_addVertices);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_addVertices);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_chainAddEdges(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_chainAddEdges(
     const cpp2::AddEdgesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_chainAddEdges);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_chainAddEdges);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_addEdges(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_addEdges(
     const cpp2::AddEdgesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_addEdges);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_addEdges);
 }
 
-folly::SemiFuture<cpp2::GetPropResponse> GraphStorageLocalServer::semifuture_getProps(
+folly::Future<cpp2::GetPropResponse> GraphStorageLocalServer::future_getProps(
     const cpp2::GetPropRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetPropResponse, semifuture_getProps);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetPropResponse, future_getProps);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_deleteEdges(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteEdges(
     const cpp2::DeleteEdgesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_deleteEdges);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteEdges);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_chainDeleteEdges(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_chainDeleteEdges(
     const cpp2::DeleteEdgesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_chainDeleteEdges);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_chainDeleteEdges);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_deleteVertices(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteVertices(
     const cpp2::DeleteVerticesRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_deleteVertices);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteVertices);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_deleteTags(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteTags(
     const cpp2::DeleteTagsRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_deleteTags);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteTags);
 }
 
-folly::SemiFuture<cpp2::UpdateResponse> GraphStorageLocalServer::semifuture_updateVertex(
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_updateVertex(
     const cpp2::UpdateVertexRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, semifuture_updateVertex);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_updateVertex);
 }
 
-folly::SemiFuture<cpp2::UpdateResponse> GraphStorageLocalServer::semifuture_chainUpdateEdge(
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_chainUpdateEdge(
     const cpp2::UpdateEdgeRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, semifuture_chainUpdateEdge);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_chainUpdateEdge);
 }
 
-folly::SemiFuture<cpp2::UpdateResponse> GraphStorageLocalServer::semifuture_updateEdge(
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_updateEdge(
     const cpp2::UpdateEdgeRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, semifuture_updateEdge);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_updateEdge);
 }
 
-folly::SemiFuture<cpp2::GetUUIDResp> GraphStorageLocalServer::semifuture_getUUID(
+folly::Future<cpp2::GetUUIDResp> GraphStorageLocalServer::future_getUUID(
     const cpp2::GetUUIDReq& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetUUIDResp, semifuture_getUUID);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetUUIDResp, future_getUUID);
 }
 
-folly::SemiFuture<cpp2::LookupIndexResp> GraphStorageLocalServer::semifuture_lookupIndex(
+folly::Future<cpp2::LookupIndexResp> GraphStorageLocalServer::future_lookupIndex(
     const cpp2::LookupIndexRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::LookupIndexResp, semifuture_lookupIndex);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::LookupIndexResp, future_lookupIndex);
 }
 
-folly::SemiFuture<cpp2::GetNeighborsResponse> GraphStorageLocalServer::semifuture_lookupAndTraverse(
+folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_lookupAndTraverse(
     const cpp2::LookupAndTraverseRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, semifuture_lookupAndTraverse);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_lookupAndTraverse);
 }
 
-folly::SemiFuture<cpp2::ScanResponse> GraphStorageLocalServer::semifuture_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageLocalServer::future_scanVertex(
     const cpp2::ScanVertexRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, semifuture_scanVertex);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, future_scanVertex);
 }
 
-folly::SemiFuture<cpp2::ScanResponse> GraphStorageLocalServer::semifuture_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageLocalServer::future_scanEdge(
     const cpp2::ScanEdgeRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, semifuture_scanEdge);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, future_scanEdge);
 }
 
-folly::SemiFuture<cpp2::KVGetResponse> GraphStorageLocalServer::semifuture_get(
+folly::Future<cpp2::KVGetResponse> GraphStorageLocalServer::future_get(
     const cpp2::KVGetRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::KVGetResponse, semifuture_get);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::KVGetResponse, future_get);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_put(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_put(
     const cpp2::KVPutRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_put);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_put);
 }
 
-folly::SemiFuture<cpp2::ExecResponse> GraphStorageLocalServer::semifuture_remove(
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_remove(
     const cpp2::KVRemoveRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, semifuture_remove);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_remove);
 }
 
 }  // namespace nebula::storage
