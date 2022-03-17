@@ -50,8 +50,9 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   }
 
   // Parse version from edge type key
-  auto version = MetaKeyUtils::parseEdgeVersion(iter->key()) + 1;
-  auto schema = MetaKeyUtils::parseSchema(iter->val());
+  folly::StringPiece iterVal;
+  auto version = MetaKeyUtils::getLatestEdgeScheInfo(iter, iterVal) + 1;
+  auto schema = MetaKeyUtils::parseSchema(iterVal);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
 
@@ -148,7 +149,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
-  LOG(INFO) << "Alter edge " << edgeName << ", edgeType " << edgeType;
+  LOG(INFO) << "Alter edge " << edgeName << ", edgeType " << edgeType << ", new version "
+            << version;
   data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, version),
                     MetaKeyUtils::schemaVal(edgeName, schema));
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
