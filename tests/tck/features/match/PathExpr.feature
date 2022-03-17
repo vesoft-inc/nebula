@@ -96,6 +96,25 @@ Feature: Basic match
       | "Paul George"        |
       | "Grant Hill"         |
       | "Shaquille O'Neal"   |
+    When executing query:
+      """
+      MATCH (v:player) WHERE (v)-[:like]->() AND (v)-[:serve]->(:team{name: "Spurs"}) RETURN v.player.name AS name
+      """
+    Then the result should be, in any order:
+      | name                |
+      | "Tracy McGrady"     |
+      | "Boris Diaw"        |
+      | "Marco Belinelli"   |
+      | "Tony Parker"       |
+      | "Danny Green"       |
+      | "Rudy Gay"          |
+      | "LaMarcus Aldridge" |
+      | "Tim Duncan"        |
+      | "Tiago Splitter"    |
+      | "Paul Gasol"        |
+      | "Aron Baynes"       |
+      | "Manu Ginobili"     |
+      | "Dejounte Murray"   |
 
   Scenario: In With
     When executing query:

@@ -32,11 +32,10 @@ folly::Future<Status> FilterExecutor::execute() {
   auto condition = filter->condition();
   while (iter->valid()) {
     auto val = condition->eval(ctx(iter));
-    if (val.isBadNull() || (!val.empty() && !val.isBool() && !val.isNull() && !val.isList())) {
-      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL or LIST");
+    if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
+      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
     }
-    if (val.empty() || val.isNull() || (val.isBool() && !val.getBool()) ||
-        (val.isList() && val.getList().empty())) {
+    if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
       if (UNLIKELY(filter->needStableFilter())) {
         iter->erase();
       } else {
