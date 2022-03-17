@@ -29,43 +29,43 @@ class TestPermission(NebulaTestSuite):
 
     @classmethod
     def cleanup(self):
-        query = 'DROP USER test'
+        query = 'DROP USER IF EXISTS test'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER dba'
+        query = 'DROP USER IF EXISTS dba'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER user'
+        query = 'DROP USER IF EXISTS user'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER guest'
+        query = 'DROP USER IF EXISTS guest'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE test_permission_space'
+        query = 'DROP SPACE IF EXISTS test_permission_space'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space1'
+        query = 'DROP SPACE IF EXISTS space1'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space2'
+        query = 'DROP SPACE IF EXISTS space2'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space3'
+        query = 'DROP SPACE IF EXISTS space3'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space4'
+        query = 'DROP SPACE IF EXISTS space4'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -163,11 +163,11 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.adminClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -806,6 +806,6 @@ class TestPermission(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_result)
 
         # clean up
-        query = 'DROP SPACE space5'
+        query = 'DROP SPACE IF EXISTS space5'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
