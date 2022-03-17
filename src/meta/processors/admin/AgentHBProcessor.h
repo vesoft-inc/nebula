@@ -51,7 +51,7 @@ class AgentHBProcessor : public BaseProcessor<cpp2::AgentHBResp> {
   void onFinished() override;
 
  private:
-  explicit AgentHBProcessor(kvstore::KVStore* kvstore, const AgentHBCounters* counters)
+  AgentHBProcessor(kvstore::KVStore* kvstore, const AgentHBCounters* counters)
       : BaseProcessor<cpp2::AgentHBResp>(kvstore), counters_(counters) {}
 
   const AgentHBCounters* counters_{nullptr};

@@ -27,7 +27,7 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
-folly::Optional<std::string> compareAndSet(const std::string& log);
+std::optional<std::string> compareAndSet(const std::string& log);
 
 std::string encodeTransferLeader(const HostAddr& addr);
 
@@ -160,13 +160,19 @@ class NebulaSnapshotManager : public SnapshotManager {
     int64_t totalCount = 0;
     int64_t totalSize = 0;
     std::vector<std::string> data;
+    auto commitLogIdAndTerm = part->lastCommittedLogId();
     folly::RWSpinLock::ReadHolder rh(&part->lock_);
     for (auto& row : part->data_) {
       if (data.size() > 100) {
         LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
                   << ", total count sended " << totalCount << ", total size sended " << totalSize
                   << ", finished false";
-        cb(data, totalCount, totalSize, SnapshotStatus::IN_PROGRESS);
+        cb(commitLogIdAndTerm.first,
+           commitLogIdAndTerm.second,
+           data,
+           totalCount,
+           totalSize,
+           SnapshotStatus::IN_PROGRESS);
         data.clear();
       }
       auto encoded = encodeSnapshotRow(row.first, row.second);
@@ -177,7 +183,12 @@ class NebulaSnapshotManager : public SnapshotManager {
     LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
               << ", total count sended " << totalCount << ", total size sended " << totalSize
               << ", finished true";
-    cb(data, totalCount, totalSize, SnapshotStatus::DONE);
+    cb(commitLogIdAndTerm.first,
+       commitLogIdAndTerm.second,
+       data,
+       totalCount,
+       totalSize,
+       SnapshotStatus::DONE);
   }
 
   RaftexService* service_;

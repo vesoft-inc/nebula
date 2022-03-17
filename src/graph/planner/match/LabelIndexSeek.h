@@ -11,10 +11,7 @@
 namespace nebula {
 namespace graph {
 
-/*
- * The LabelIndexSeek was designed to find if could get the starting vids by tag
- * index.
- */
+// The LabelIndexSeek finds if a plan could get the starting vids by tag index.
 class LabelIndexSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<LabelIndexSeek> make() {

@@ -12,6 +12,9 @@
 
 namespace nebula {
 namespace graph {
+
+// Choose graph space, first from validator context (space created in previous sentence),
+// then from meta data cache.
 Status UseValidator::validateImpl() {
   auto useSentence = static_cast<UseSentence*>(sentence_);
   spaceName_ = useSentence->space();
@@ -22,7 +25,7 @@ Status UseValidator::validateImpl() {
     // secondly get from cache
     auto spaceId = qctx_->schemaMng()->toGraphSpaceID(*spaceName_);
     if (!spaceId.ok()) {
-      LOG(ERROR) << "Unknown space: " << *spaceName_;
+      LOG(ERROR) << "Unknown space: " << *spaceName_ << " : " << spaceId.status();
       return spaceId.status();
     }
     auto spaceDesc = qctx_->getMetaClient()->getSpaceDesc(spaceId.value());

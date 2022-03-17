@@ -225,20 +225,22 @@ TEST(ProcessorTest, ListPartsTest) {
     for (int i = 1; i < 6; ++i) {
       allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
     }
-    auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {"0", 0}, info, &allLeaders);
+    std::vector<kvstore::KV> times;
+    auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {"0", 0}, info, times, &allLeaders);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     allLeaders.clear();
     for (int i = 6; i < 9; ++i) {
       allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
     }
-    ret = ActiveHostsMan::updateHostInfo(kv.get(), {"1", 1}, info, &allLeaders);
+    ret = ActiveHostsMan::updateHostInfo(kv.get(), {"1", 1}, info, times, &allLeaders);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     allLeaders.clear();
     allLeaders[spaceId].emplace_back(makeLeaderInfo(9));
-    ret = ActiveHostsMan::updateHostInfo(kv.get(), {"2", 2}, info, &allLeaders);
+    ret = ActiveHostsMan::updateHostInfo(kv.get(), {"2", 2}, info, times, &allLeaders);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
+    TestUtils::doPut(kv.get(), times);
   }
 
   {
@@ -2497,7 +2499,6 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     ASSERT_EQ(20, count);
 
     // modify id to 21 for mock some schema
-    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string kId = "__id__";
     int32_t id = 21;
     std::vector<kvstore::KV> data;

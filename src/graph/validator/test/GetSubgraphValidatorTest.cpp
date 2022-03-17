@@ -21,7 +21,6 @@ TEST_F(GetSubgraphValidatorTest, Base) {
   {
     std::string query = "GET SUBGRAPH FROM \"1\" YIELD vertices as nodes";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -34,7 +33,6 @@ TEST_F(GetSubgraphValidatorTest, Base) {
   {
     std::string query = "GET SUBGRAPH WITH PROP 3 STEPS FROM \"1\" YIELD edges as relationships";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -47,7 +45,6 @@ TEST_F(GetSubgraphValidatorTest, Base) {
   {
     std::string query = "GET SUBGRAPH  WITH PROP FROM \"1\" BOTH like YIELD vertices AS a";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -61,7 +58,6 @@ TEST_F(GetSubgraphValidatorTest, Base) {
     std::string query =
         "GET SUBGRAPH WITH PROP FROM \"1\", \"2\" IN like YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -79,7 +75,6 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         "GO FROM \"1\" OVER like YIELD like._src AS src | GET SUBGRAPH WITH "
         "PROP FROM $-.src YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kDedup,
@@ -98,7 +93,6 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         "$a = GO FROM \"1\" OVER like YIELD like._src AS src; GET SUBGRAPH "
         "FROM $a.src YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kDedup,

@@ -19,6 +19,10 @@ namespace storage {
 
 using nebula::HttpCode;
 
+/**
+ * @brief down load files from hdfs
+ *
+ */
 class StorageHttpDownloadHandler : public proxygen::RequestHandler {
  public:
   StorageHttpDownloadHandler() = default;

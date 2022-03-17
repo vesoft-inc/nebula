@@ -6,8 +6,6 @@
 #ifndef CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 #define CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 
-#include <gtest/gtest_prod.h>
-
 #include "clients/storage/StorageClientBase.h"
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
@@ -38,13 +36,13 @@ class InternalStorageClient
 
   virtual void chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
                                TermID termOfSrc,
-                               folly::Optional<int64_t> optVersion,
+                               std::optional<int64_t> optVersion,
                                folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                folly::EventBase* evb = nullptr);
 
   virtual void chainAddEdges(cpp2::AddEdgesRequest& req,
                              TermID termId,
-                             folly::Optional<int64_t> optVersion,
+                             std::optional<int64_t> optVersion,
                              folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                              folly::EventBase* evb = nullptr);
 
@@ -57,7 +55,7 @@ class InternalStorageClient
  private:
   cpp2::ChainAddEdgesRequest makeChainAddReq(const cpp2::AddEdgesRequest& req,
                                              TermID termId,
-                                             folly::Optional<int64_t> optVersion);
+                                             std::optional<int64_t> optVersion);
 };
 
 }  // namespace storage

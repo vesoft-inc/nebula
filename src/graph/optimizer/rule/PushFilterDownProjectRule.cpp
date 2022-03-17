@@ -45,8 +45,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   auto projColNames = oldProjNode->colNames();
   auto projColumns = oldProjNode->columns()->columns();
   std::unordered_map<std::string, Expression*> rewriteMap;
-  // split the `condition` based on whether the propExprs comes from the left
-  // child
+  // Pick the passthrough expression items to avoid the expression overhead after filter pushdown
   auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
     auto varProps = graph::ExpressionUtils::collectAll(e,
                                                        {Expression::Kind::kTagProperty,

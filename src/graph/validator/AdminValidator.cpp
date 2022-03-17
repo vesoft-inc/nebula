@@ -15,6 +15,8 @@
 
 namespace nebula {
 namespace graph {
+
+// Validate options of create space sentence, and fill them into spaceDesc_
 Status CreateSpaceValidator::validateImpl() {
   auto sentence = static_cast<CreateSpaceSentence *>(sentence_);
   ifNotExist_ = sentence->isIfNotExist();
@@ -150,6 +152,7 @@ Status CreateSpaceValidator::toPlan() {
   return Status::OK();
 }
 
+// Validate sentence to create space by clone existed one. Just clone meta data, don't clone data.
 Status CreateSpaceAsValidator::validateImpl() {
   auto sentence = static_cast<CreateSpaceAsSentence *>(sentence_);
   oldSpaceName_ = sentence->getOldSpaceName();
@@ -164,6 +167,7 @@ Status CreateSpaceAsValidator::toPlan() {
   return Status::OK();
 }
 
+// Alter options of space: zone
 Status AlterSpaceValidator::validateImpl() {
   return Status::OK();
 }
@@ -212,10 +216,25 @@ Status DropSpaceValidator::toPlan() {
   return Status::OK();
 }
 
+Status ClearSpaceValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status ClearSpaceValidator::toPlan() {
+  auto sentence = static_cast<ClearSpaceSentence *>(sentence_);
+  auto *doNode = ClearSpace::make(qctx_, nullptr, *sentence->spaceName(), sentence->isIfExists());
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+// Show the sentence to create this space. It's created from options of space, so maybe is different
+// from the origin sentence to create this space.
 Status ShowCreateSpaceValidator::validateImpl() {
   return Status::OK();
 }
 
+// Show create space need read permission on target space.
 Status ShowCreateSpaceValidator::checkPermission() {
   auto sentence = static_cast<ShowCreateSpaceSentence *>(sentence_);
   auto spaceIdResult = qctx_->schemaMng()->toGraphSpaceID(*sentence->spaceName());
@@ -323,6 +342,7 @@ Status ShowListenerValidator::toPlan() {
   return Status::OK();
 }
 
+// Register hosts, unregistered host won't be allowed to join cluster.
 Status AddHostsValidator::validateImpl() {
   auto sentence = static_cast<AddHostsSentence *>(sentence_);
   auto hosts = sentence->hosts()->hosts();
@@ -527,6 +547,7 @@ Status ShowStatusValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to show stats of vertices and edges
 Status ShowStatusValidator::toPlan() {
   auto *node = ShowStats::make(qctx_, nullptr);
   root_ = node;
@@ -538,6 +559,7 @@ Status ShowServiceClientsValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to show external service clients, e.g. Text Search client
 Status ShowServiceClientsValidator::toPlan() {
   auto sentence = static_cast<ShowServiceClientsSentence *>(sentence_);
   auto type = sentence->getType();
@@ -551,6 +573,7 @@ Status SignInServiceValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to sign in external services, e.g. Text Search
 Status SignInServiceValidator::toPlan() {
   auto sentence = static_cast<SignInServiceSentence *>(sentence_);
   std::vector<meta::cpp2::ServiceClient> clients;
@@ -568,6 +591,7 @@ Status SignOutServiceValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to sign out external services, e.g. Text Search
 Status SignOutServiceValidator::toPlan() {
   auto sentence = static_cast<SignOutServiceSentence *>(sentence_);
   auto type = sentence->getType();
@@ -639,6 +663,7 @@ Status KillQueryValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to kill query by execution plan id
 Status KillQueryValidator::toPlan() {
   auto sentence = static_cast<KillQuerySentence *>(sentence_);
   auto *node = KillQuery::make(qctx_, nullptr, sentence->sessionId(), sentence->epId());

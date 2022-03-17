@@ -5,11 +5,13 @@
 
 #include "meta/processors/service/ServiceProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
 void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::serviceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   auto serviceKey = MetaKeyUtils::serviceKey(type);
@@ -31,11 +33,15 @@ void SignInServiceProcessor::process(const cpp2::SignInServiceReq& req) {
 
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(serviceKey), MetaKeyUtils::serviceVal(req.get_clients()));
-  doSyncPutAndUpdate(std::move(data));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
 void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::serviceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   auto serviceKey = MetaKeyUtils::serviceKey(type);
@@ -53,11 +59,16 @@ void SignOutServiceProcessor::process(const cpp2::SignOutServiceReq& req) {
     return;
   }
 
-  doSyncMultiRemoveAndUpdate({std::move(serviceKey)});
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove({std::move(serviceKey)});
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListServiceClientsProcessor::process(const cpp2::ListServiceClientsReq& req) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::serviceLock());
+  folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   auto type = req.get_type();
 
   std::unordered_map<cpp2::ExternalServiceType, std::vector<cpp2::ServiceClient>> serviceClients;

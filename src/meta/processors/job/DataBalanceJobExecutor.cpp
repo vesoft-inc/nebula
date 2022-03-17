@@ -7,6 +7,8 @@
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
+#include <memory>
+
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobUtils.h"
@@ -18,12 +20,17 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
+      if (status == Status::Balanced()) {
+        executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+        return Status::OK();
+      }
       return status;
     }
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
-    if (LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec()) !=
-        nebula::cpp2::ErrorCode::SUCCEEDED) {
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+    auto ret = updateLastTime();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
     }
     executorOnFinished_(status);
@@ -166,15 +173,15 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     std::vector<Host*>& hvec = pair.second;
     balanceHostVec(hvec);
   }
-  bool emty = std::find_if(existTasks.begin(),
-                           existTasks.end(),
-                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                             return !p.second.empty();
-                           }) == existTasks.end();
-  if (emty) {
+  bool empty = std::find_if(existTasks.begin(),
+                            existTasks.end(),
+                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                              return !p.second.empty();
+                            }) == existTasks.end();
+  if (empty) {
     return Status::Balanced();
   }
-  plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
+  plan_ = std::make_unique<BalancePlan>(jobDescription_, kvstore_, adminClient_);
   std::for_each(existTasks.begin(),
                 existTasks.end(),
                 [this](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {

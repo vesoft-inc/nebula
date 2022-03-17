@@ -60,17 +60,17 @@ std::string ShowCollationSentence::toString() const {
 std::string SpaceOptItem::toString() const {
   switch (optType_) {
     case OptionType::PARTITION_NUM:
-      return folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
+      return folly::stringPrintf("partition_num = %ld", std::get<int64_t>(optValue_));
     case OptionType::REPLICA_FACTOR:
-      return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
+      return folly::stringPrintf("replica_factor = %ld", std::get<int64_t>(optValue_));
     case OptionType::VID_TYPE: {
-      auto &typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+      auto &typeDef = std::get<meta::cpp2::ColumnTypeDef>(optValue_);
       return folly::stringPrintf("vid_type = %s", graph::SchemaUtil::typeToString(typeDef).c_str());
     }
     case OptionType::CHARSET:
-      return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
+      return folly::stringPrintf("charset = %s", std::get<std::string>(optValue_).c_str());
     case OptionType::COLLATE:
-      return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
+      return folly::stringPrintf("collate = %s", std::get<std::string>(optValue_).c_str());
     case OptionType::ATOMIC_EDGE:
       return folly::stringPrintf("atomic_edge = %s", getAtomicEdge() ? "true" : "false");
     case OptionType::GROUP_NAME:
@@ -122,6 +122,10 @@ std::string CreateSpaceAsSentence::toString() const {
 
 std::string DropSpaceSentence::toString() const {
   return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
+}
+
+std::string ClearSpaceSentence::toString() const {
+  return folly::stringPrintf("CLEAR SPACE %s", spaceName_.get()->c_str());
 }
 
 std::string AlterSpaceSentence::toString() const {
@@ -242,11 +246,9 @@ std::string AdminJobSentence::toString() const {
     case meta::cpp2::AdminJobOp::ADD: {
       switch (cmd_) {
         case meta::cpp2::AdminCmd::COMPACT:
-          return paras_.empty() ? "SUBMIT JOB COMPACT"
-                                : folly::stringPrintf("SUBMIT JOB COMPACT %s", paras_[0].c_str());
+          return "SUBMIT JOB COMPACT";
         case meta::cpp2::AdminCmd::FLUSH:
-          return paras_.empty() ? "SUBMIT JOB FLUSH"
-                                : folly::stringPrintf("SUBMIT JOB FLUSH %s", paras_[0].c_str());
+          return "SUBMIT JOB FLUSH";
         case meta::cpp2::AdminCmd::REBUILD_TAG_INDEX:
           return folly::stringPrintf("REBUILD TAG INDEX %s", folly::join(",", paras_).c_str());
         case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
@@ -254,8 +256,7 @@ std::string AdminJobSentence::toString() const {
         case meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
           return "REBUILD FULLTEXT INDEX";
         case meta::cpp2::AdminCmd::STATS:
-          return paras_.empty() ? "SUBMIT JOB STATS"
-                                : folly::stringPrintf("SUBMIT JOB STATS %s", paras_[0].c_str());
+          return "SUBMIT JOB STATS";
         case meta::cpp2::AdminCmd::DOWNLOAD:
           return paras_.empty() ? "DOWNLOAD HDFS "
                                 : folly::stringPrintf("DOWNLOAD HDFS %s", paras_[0].c_str());

@@ -8,7 +8,7 @@
 namespace nebula {
 namespace meta {
 void AlterSpaceProcessor::process(const cpp2::AlterSpaceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   const std::vector<std::string>& zones = req.get_paras();
   const std::string& spaceName = req.get_space_name();
   cpp2::AlterSpaceOp op = req.get_op();
@@ -39,8 +39,7 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   auto spaceId = nebula::value(spaceRet);
   std::string spaceKey = MetaKeyUtils::spaceKey(spaceId);
   std::string spaceVal;
-  nebula::cpp2::ErrorCode retCode =
-      kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return retCode;
   }
@@ -54,8 +53,7 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   for (const std::string& z : distinctZones) {
     std::string zoneKey = MetaKeyUtils::zoneKey(z);
     std::string zoneVal;
-    nebula::cpp2::ErrorCode zoneRet =
-        kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneVal);
+    auto zoneRet = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneVal);
     if (zoneRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return zoneRet == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND
                  ? nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND
@@ -72,23 +70,10 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   properties.zone_names_ref() = newZones;
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Put data error on meta server";
-                            }
-                            baton.post();
-                          });
-  baton.wait();
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return ret;
-  }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto ret = doSyncPut(std::move(data));
+  return ret;
 }
 
 }  // namespace meta

@@ -14,15 +14,25 @@ namespace storage {
 
 using Cursor = std::string;
 
-inline bool vTrue(const Value& v) {
-  return v.isBool() && v.getBool();
-}
-
-// Node to scan vertices of one partition
+/**
+ * @brief Node to scan vertices of one partition
+ */
 class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
   using RelNode<Cursor>::doExecute;
 
+  /**
+   * @brief Construct a new Scan Vertex Prop Node object
+   *
+   * @param context
+   * @param tagNodes
+   * @param enableReadFollower
+   * @param limit
+   * @param cursors
+   * @param resultDataSet
+   * @param expCtx
+   * @param filter
+   */
   ScanVertexPropNode(RuntimeContext* context,
                      std::vector<std::unique_ptr<TagNode>> tagNodes,
                      bool enableReadFollower,
@@ -154,7 +164,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         }
       }
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-          (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+          (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
         resultDataSet_->rows.emplace_back(std::move(row));
       }
       expCtx_->clear();
@@ -295,7 +305,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
       }
     }
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-        (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
+        (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
       resultDataSet_->rows.emplace_back(std::move(row));
     }
     expCtx_->clear();

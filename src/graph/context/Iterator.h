@@ -288,9 +288,11 @@ class GetNeighborsIter final : public Iterator {
 
   void sample(int64_t count) override;
 
-  size_t size() const override {
-    LOG(FATAL) << "Unimplemented method for Get Neighbros iterator.";
-  }
+  // num of edges
+  size_t size() const override;
+
+  // num of vertices
+  size_t numRows() const;
 
   const Value& getColumn(const std::string& col) const override;
 
