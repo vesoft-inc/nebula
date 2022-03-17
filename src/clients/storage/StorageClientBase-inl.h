@@ -7,14 +7,14 @@
 #define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
 #include <folly/ExceptionWrapper.h>
-#include <folly/Optional.h>
 #include <folly/Try.h>
 #include <folly/futures/Future.h>
-#include <glog/logging.h>
 
+#include <optional>
 #include <unordered_map>
 
 #include "clients/storage/stats/StorageClientStats.h"
+#include "common/base/Logging.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/ssl/SSLConfig.h"
@@ -104,7 +104,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
         for (size_t i = 0; i < resps.size(); i++) {
           auto& host = hosts->at(i);
           auto& tryResp = resps[i];
-          folly::Optional<std::string> errMsg;
+          std::optional<std::string> errMsg;
           if (tryResp.hasException()) {
             errMsg = std::string(tryResp.exception().what().c_str());
           } else {
