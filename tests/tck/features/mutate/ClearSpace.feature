@@ -32,6 +32,7 @@ Feature: Clear space test
       CLEAR SPACE clear_space_0;
       """
     Then a ExecutionError should be raised at runtime: Space not existed!
+    And drop the used space
 
   Scenario: Clear space function test
     Given an empty graph
@@ -105,10 +106,18 @@ Feature: Clear space test
     When executing query:
       """
       CREATE USER IF NOT EXISTS clear_space_user WITH PASSWORD 'nebula';
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
       GRANT ROLE ADMIN ON clear_space TO clear_space_user;
       """
-    And wait 2 seconds
     Then the execution should be successful
-    When connect to nebula service with user[u:clear_space_user, p:nebula]
-    And executing clear space
-    Then the result should be failed
+    When switch to new session with user "clear_space_user" and password "nebula"
+    And executing query:
+      """
+      CLEAR SPACE IF EXISTS clear_space
+      """
+    Then a PermissionError should be raised at runtime: No permission to write space.
+    And drop the used space
