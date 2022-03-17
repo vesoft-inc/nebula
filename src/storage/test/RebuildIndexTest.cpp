@@ -78,7 +78,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
   parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
   request.para_ref() = std::move(parameter);
@@ -165,7 +165,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
   parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 16;
   request.para_ref() = std::move(parameter);
@@ -262,7 +262,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
   parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 11;
   request.para_ref() = std::move(parameter);
@@ -323,7 +323,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
   parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 12;
   request.para_ref() = std::move(parameter);
@@ -367,7 +367,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   parameter.parts_ref() = std::move(parts);
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_TAG_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 13;
   parameter.task_specific_paras_ref() = {"4", "5"};
@@ -423,7 +423,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
   parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 14;
   request.para_ref() = std::move(parameter);
@@ -485,7 +485,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 15;
   request.para_ref() = std::move(parameter);
@@ -529,7 +529,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
   parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddTaskRequest request;
-  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_type_ref() = meta::cpp2::JobType::REBUILD_EDGE_INDEX;
   request.job_id_ref() = ++gJobId;
   request.task_id_ref() = 16;
   request.para_ref() = std::move(parameter);

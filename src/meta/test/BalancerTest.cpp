@@ -466,7 +466,7 @@ TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 10;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 20; i++) {
       BalanceTask task(0,
@@ -487,7 +487,7 @@ TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 10;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
@@ -508,7 +508,7 @@ TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 20;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
@@ -558,7 +558,7 @@ TEST(BalanceTest, BalancePlanTest) {
     LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
     NiceMock<MockAdminClient> client;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, &client);
     TestUtils::createSomeHosts(kv, hosts);
     TestUtils::registerHB(kv, hosts);
@@ -590,7 +590,7 @@ TEST(BalanceTest, BalancePlanTest) {
     LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
     NiceMock<MockAdminClient> client;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, &client);
     TestUtils::registerHB(kv, hosts);
 
@@ -622,7 +622,7 @@ TEST(BalanceTest, BalancePlanTest) {
   {
     LOG(INFO) << "Test with one task failed, 10 buckets";
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, nullptr);
     NiceMock<MockAdminClient> client1, client2;
     {
@@ -735,8 +735,8 @@ void verifyZonePartNum(kvstore::KVStore* kv,
   EXPECT_EQ(zoneNum, zones);
 }
 
-JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::AdminCmd cmd) {
-  JobDescription jd(testJobId.fetch_add(1, std::memory_order_relaxed), cmd, {});
+JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::JobType jobType) {
+  JobDescription jd(testJobId.fetch_add(1, std::memory_order_relaxed), jobType, {});
   std::vector<nebula::kvstore::KV> data;
   data.emplace_back(jd.jobKey(), jd.jobVal());
   folly::Baton<true, std::atomic> baton;
@@ -759,7 +759,7 @@ TEST(BalanceTest, NormalZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::ZONE_BALANCE);
+  JobDescription jd = makeJobDescription(kv, cpp2::JobType::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(1, kv);
   auto ret = balancer.executeInternal();
@@ -790,7 +790,7 @@ TEST(BalanceTest, NormalDataTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(1, kv);
   auto ret = balancer.executeInternal();
@@ -826,7 +826,7 @@ TEST(BalanceTest, RecoveryTest) {
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(1, kv);
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
@@ -892,7 +892,7 @@ TEST(BalanceTest, StopPlanTest) {
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
   FLAGS_task_concurrency = 8;
-  JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
   balancer.spaceInfo_.loadInfo(1, kv);
   balancer.lostZones_ = {"4", "5"};
