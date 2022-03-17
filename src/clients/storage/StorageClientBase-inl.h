@@ -158,10 +158,10 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
   auto spaceId = request.get_space_id();
   auto partsId = getReqPartsId(request);
   return folly::via(evb)
-      .thenValue([func = std::move(remoteFunc), req = std::move(request), evb, host, this](auto&&) {
+      .thenValue([remoteFunc = std::move(remoteFunc), request, evb, host, this](auto&&) {
         // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
-        return func(client.get(), req);
+        return remoteFunc(client.get(), request);
       })
       .thenValue([spaceId, this](Response&& resp) mutable -> StatusOr<Response> {
         auto& result = resp.get_result();
