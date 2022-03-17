@@ -762,11 +762,16 @@ TEST(BalanceTest, NormalZoneTest) {
   JobDescription jd = makeJobDescription(kv, cpp2::JobType::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(1, kv);
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
   auto ret = balancer.executeInternal();
-  EXPECT_EQ(Status::Balanced(), ret.value());
+  EXPECT_EQ(Status::OK(), ret.value());
   balancer.finish();
   balancer.lostZones_ = {"5", "6", "7", "8"};
-  folly::Baton<true, std::atomic> baton;
+  baton.reset();
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
     baton.post();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -794,7 +799,7 @@ TEST(BalanceTest, NormalDataTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(1, kv);
   auto ret = balancer.executeInternal();
-  EXPECT_EQ(Status::Balanced(), ret.value());
+  EXPECT_EQ(Status::OK(), ret.value());
   balancer.finish();
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
   folly::Baton<true, std::atomic> baton;

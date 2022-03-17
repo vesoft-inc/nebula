@@ -45,6 +45,21 @@ set(KVSTORE_TEST_LIBS
 
 nebula_add_test(
     NAME
+        kvstore_common_test
+    SOURCES
+        CommonTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         part_test
     SOURCES
         PartTest.cpp
