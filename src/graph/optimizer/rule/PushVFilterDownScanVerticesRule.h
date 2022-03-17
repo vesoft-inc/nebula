@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHVFILTERDOWNSCANVERTICESRULE_H
 
 #include <memory>
 
@@ -11,6 +12,35 @@
 
 namespace nebula {
 namespace opt {
+
+//  Embedding vFilter to [[ScanVertices]]
+//  Required conditions:
+//   1. Match the pattern
+//   2. AppendVertices get vid from ScanVertices
+//  Benefits:
+//   1. Filter data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |    ScanVertices   |
+// +---------+---------+
+//
+//  After:
+//
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |    ScanVertices   |
+// |     (vFilter)     |
+// +---------+---------+
 
 class PushVFilterDownScanVerticesRule final : public OptRule {
  public:
@@ -29,3 +59,4 @@ class PushVFilterDownScanVerticesRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

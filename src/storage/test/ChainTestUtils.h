@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_CHAINTESTUTILS_H
+#define STORAGE_TEST_CHAINTESTUTILS_H
 
 #include "storage/CommonUtils.h"
 #include "storage/transaction/ChainAddEdgesLocalProcessor.h"
@@ -186,11 +187,11 @@ class FakeChainAddEdgesLocalProcessor : public ChainAddEdgesLocalProcessor {
     return ChainAddEdgesLocalProcessor::reverseRequest(req);
   }
 
-  folly::Optional<Code> rcPrepareLocal;
+  std::optional<Code> rcPrepareLocal;
 
-  folly::Optional<Code> rcProcessRemote;
+  std::optional<Code> rcProcessRemote;
 
-  folly::Optional<Code> rcProcessLocal;
+  std::optional<Code> rcProcessLocal;
 
   void setPrepareCode(Code code, Code rc = Code::SUCCEEDED) {
     rcPrepareLocal = code;
@@ -306,9 +307,9 @@ class FakeChainUpdateProcessor : public ChainUpdateEdgeLocalProcessor {
   }
 
  public:
-  folly::Optional<Code> rcPrepareLocal;
-  folly::Optional<Code> rcProcessRemote;
-  folly::Optional<Code> rcProcessLocal;
+  std::optional<Code> rcPrepareLocal;
+  std::optional<Code> rcProcessRemote;
+  std::optional<Code> rcProcessLocal;
   bool doRecover_{false};
 };
 
@@ -369,14 +370,14 @@ class MetaClientTestUpdater {
 
 class FakeInternalStorageClient : public InternalStorageClient {
  public:
-  explicit FakeInternalStorageClient(StorageEnv* env,
-                                     std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                                     Code code)
+  FakeInternalStorageClient(StorageEnv* env,
+                            std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+                            Code code)
       : InternalStorageClient(pool, env->metaClient_), env_(env), code_(code) {}
 
   void chainUpdateEdge(cpp2::UpdateEdgeRequest& req,
                        TermID termOfSrc,
-                       folly::Optional<int64_t> optVersion,
+                       std::optional<int64_t> optVersion,
                        folly::Promise<Code>&& p,
                        folly::EventBase* evb = nullptr) override {
     cpp2::ChainUpdateEdgeRequest chainReq;
@@ -399,7 +400,7 @@ class FakeInternalStorageClient : public InternalStorageClient {
 
   void chainAddEdges(cpp2::AddEdgesRequest& req,
                      TermID termId,
-                     folly::Optional<int64_t> optVersion,
+                     std::optional<int64_t> optVersion,
                      folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                      folly::EventBase* evb = nullptr) override {
     UNUSED(req);
@@ -621,3 +622,4 @@ struct ChainUpdateEdgeTestHelper {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

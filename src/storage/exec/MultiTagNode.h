@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_MULTITAGNODE_H
+#define STORAGE_EXEC_MULTITAGNODE_H
 
 #include "common/base/Base.h"
 #include "storage/context/StorageExpressionContext.h"
@@ -13,9 +14,12 @@
 namespace nebula {
 namespace storage {
 
-// MultiTagNode is a replacement of HashJoinNode
-// in execution of "go over"
-// if Graph don't pass any Edge prop
+/**
+ * @brief MultiTagNode is a replacement of HashJoinNode in execution of "go over" if Graph don't
+ * pass any Edge prop
+ *
+ * @see IterateNode
+ */
 class MultiTagNode : public IterateNode<VertexID> {
  public:
   using RelNode::doExecute;
@@ -116,3 +120,4 @@ class MultiTagNode : public IterateNode<VertexID> {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

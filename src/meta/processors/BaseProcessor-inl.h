@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef META_PROCESSORS_BASEPROCESSOR_INL_H
+#define META_PROCESSORS_BASEPROCESSOR_INL_H
 
 #include "interface/gen-cpp2/storage_types.h"
 #include "meta/processors/BaseProcessor.h"
@@ -12,17 +13,21 @@ namespace nebula {
 namespace meta {
 
 template <typename RESP>
-void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
   folly::Baton<true, std::atomic> baton;
+  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   kvstore_->asyncMultiPut(kDefaultSpaceId,
                           kDefaultPartId,
                           std::move(data),
-                          [this, &baton](nebula::cpp2::ErrorCode code) {
-                            this->handleErrorCode(code);
+                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                              ret = code;
+                              VLOG(2) << "Put data error on meta server";
+                            }
                             baton.post();
                           });
   baton.wait();
-  this->onFinished();
+  return ret;
 }
 
 template <typename RESP>
@@ -74,20 +79,6 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 }
 
 template <typename RESP>
-void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
-  folly::Baton<true, std::atomic> baton;
-  kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(keys),
-                             [this, &baton](nebula::cpp2::ErrorCode code) {
-                               this->handleErrorCode(code);
-                               baton.post();
-                             });
-  baton.wait();
-  this->onFinished();
-}
-
-template <typename RESP>
 void BaseProcessor<RESP>::doBatchOperation(std::string batchOp) {
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncAppendBatch(kDefaultSpaceId,
@@ -114,26 +105,7 @@ void BaseProcessor<RESP>::doRemoveRange(const std::string& start, const std::str
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::doScan(
-    const std::string& start, const std::string& end) {
-  std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->range(kDefaultSpaceId, kDefaultPartId, start, end, &iter);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    VLOG(2) << "Scan Failed";
-    return code;
-  }
-
-  std::vector<std::string> values;
-  while (iter->valid()) {
-    values.emplace_back(iter->val());
-    iter->next();
-  }
-  return values;
-}
-
-template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
-  folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
   const std::string kIdKey = MetaKeyUtils::idKey();
   int32_t id;
   std::string val;
@@ -185,9 +157,6 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGloba
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdInSpace(
     GraphSpaceID spaceId) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::localIdLock());
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::idLock());
-
   auto localIdkey = MetaKeyUtils::localIdKey(spaceId);
   int32_t id;
   std::string val;
@@ -227,7 +196,6 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto ret = doGet(std::move(spaceKey));
   if (nebula::ok(ret)) {
@@ -415,74 +383,6 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> BaseProcessor<RESP>::checkPassword(
 }
 
 template <typename RESP>
-nebula::cpp2::ErrorCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Put data error on meta server";
-                            }
-                            baton.post();
-                          });
-  baton.wait();
-  return ret;
-}
-
-template <typename RESP>
-void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Put data error on meta server";
-                            }
-                            baton.post();
-                          });
-  baton.wait();
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    this->handleErrorCode(ret);
-    this->onFinished();
-    return;
-  }
-  auto retCode = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-  this->handleErrorCode(retCode);
-  this->onFinished();
-}
-
-template <typename RESP>
-void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> keys) {
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(keys),
-                             [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                               if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                                 ret = code;
-                                 LOG(INFO) << "Remove data error on meta server";
-                               }
-                               baton.post();
-                             });
-  baton.wait();
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    this->handleErrorCode(ret);
-    this->onFinished();
-    return;
-  }
-  auto retCode = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-  this->handleErrorCode(retCode);
-  this->onFinished();
-}
-
-template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RESP>::getIndexes(
     GraphSpaceID spaceId, int32_t tagOrEdge) {
   std::vector<cpp2::IndexItem> items;
@@ -616,7 +516,6 @@ ErrorOr<nebula::cpp2::ErrorCode, ZoneID> BaseProcessor<RESP>::getZoneId(
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
                                                            cpp2::ListenerType type) {
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
@@ -630,5 +529,32 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+template <typename RESP>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+BaseProcessor<RESP>::getAllParts(GraphSpaceID spaceId) {
+  std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
+
+  const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
+  auto ret = doPrefix(prefix);
+  if (!nebula::ok(ret)) {
+    auto retCode = nebula::error(ret);
+    LOG(ERROR) << "List Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  auto iter = nebula::value(ret).get();
+  while (iter->valid()) {
+    auto key = iter->key();
+    PartitionID partId;
+    memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
+    partHostsMap.emplace(partId, std::move(partHosts));
+    iter->next();
+  }
+
+  return partHostsMap;
+}
+
 }  // namespace meta
 }  // namespace nebula
+#endif

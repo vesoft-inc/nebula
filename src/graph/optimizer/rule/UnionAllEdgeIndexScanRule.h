@@ -11,6 +11,7 @@
 namespace nebula {
 namespace opt {
 
+// Apply the transformation of base class(UnionAllIndexScanBaseRule::transform)
 class UnionAllEdgeIndexScanRule final : public UnionAllIndexScanBaseRule {
  public:
   const Pattern &pattern() const override;

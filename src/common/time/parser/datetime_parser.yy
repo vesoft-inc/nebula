@@ -8,7 +8,6 @@
 %parse-param { nebula::time::DatetimeScanner& scanner }
 %parse-param { std::string &errmsg }
 %parse-param { nebula::DateTime** output }
-%parse-param { nebula::time::Type outputType }
 
 %code requires {
 #include <iostream>
@@ -23,12 +22,6 @@
 namespace nebula {
 namespace time {
 class DatetimeScanner;
-
-enum class Type {
-  kDate,
-  kTime,
-  kDateTime,
-};
 }
 }
 

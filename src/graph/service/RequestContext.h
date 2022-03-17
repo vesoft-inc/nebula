@@ -5,6 +5,7 @@
 
 #ifndef GRAPH_REQUESTCONTEXT_H_
 #define GRAPH_REQUESTCONTEXT_H_
+#include <boost/core/noncopyable.hpp>
 
 #include "common/base/Base.h"
 #include "common/cpp/helpers.h"
@@ -27,12 +28,12 @@ namespace nebula {
 namespace graph {
 
 template <typename Response>
-class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
+class RequestContext final : public boost::noncopyable, public cpp::NonMovable {
  public:
   RequestContext() = default;
   ~RequestContext() {
     if (session_ != nullptr) {
-      // keep the session active
+      // Keep the session active
       session_->charge();
     }
   }
@@ -56,7 +57,7 @@ class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
   void setSession(std::shared_ptr<ClientSession> session) {
     session_ = std::move(session);
     if (session_ != nullptr) {
-      // keep the session active
+      // Keep the session active
       session_->charge();
     }
   }

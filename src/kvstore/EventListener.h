@@ -12,8 +12,11 @@ namespace kvstore {
 
 class EventListener : public rocksdb::EventListener {
  public:
-  // A callback function to RocksDB which will be called before a RocksDB starts
-  // to compact.
+  /**
+   * @brief A callback function to RocksDB which will be called before a RocksDB starts to compact.
+   *
+   * @param info Compaction job information passed by rocksdb
+   */
   void OnCompactionBegin(rocksdb::DB*, const rocksdb::CompactionJobInfo& info) override {
     LOG(INFO) << "Rocksdb start compaction column family: " << info.cf_name << " because of "
               << compactionReasonString(info.compaction_reason)
@@ -22,8 +25,12 @@ class EventListener : public rocksdb::EventListener {
               << info.base_input_level << ", output level is " << info.output_level;
   }
 
-  // A callback function for RocksDB which will be called
-  // whenever a registered RocksDB compacts a file.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a registered RocksDB
+   * compacts a file.
+   *
+   * @param info Compaction job information passed by rocksdb
+   */
   void OnCompactionCompleted(rocksdb::DB*, const rocksdb::CompactionJobInfo& info) override {
     LOG(INFO) << "Rocksdb compaction completed column family: " << info.cf_name << " because of "
               << compactionReasonString(info.compaction_reason)
@@ -32,8 +39,12 @@ class EventListener : public rocksdb::EventListener {
               << info.base_input_level << ", output level is " << info.output_level;
   }
 
-  // A callback function to RocksDB which will be called
-  // before a RocksDB starts to flush memtables.
+  /**
+   * @brief A callback function to RocksDB which will be called before a RocksDB starts to flush
+   * memtables.
+   *
+   * @param info Flush job information passed by rocksdb
+   */
   void OnFlushBegin(rocksdb::DB*, const rocksdb::FlushJobInfo& info) override {
     VLOG(1) << "Rocksdb start flush column family: " << info.cf_name << " because of "
             << flushReasonString(info.flush_reason)
@@ -43,8 +54,12 @@ class EventListener : public rocksdb::EventListener {
             << ", the properties of the table: " << info.table_properties.ToString();
   }
 
-  // A callback function to RocksDB which will be called
-  // whenever a registered RocksDB flushes a file.
+  /**
+   * @brief A callback function to RocksDB which will be called whenever a registered RocksDB
+   * flushes a file.
+   *
+   * @param info Flush job information passed by rocksdb
+   */
   void OnFlushCompleted(rocksdb::DB*, const rocksdb::FlushJobInfo& info) override {
     VLOG(1) << "Rocksdb flush completed column family: " << info.cf_name << " because of "
             << flushReasonString(info.flush_reason) << " the newly created file: " << info.file_path
@@ -53,123 +68,199 @@ class EventListener : public rocksdb::EventListener {
             << " the properties of the table: " << info.table_properties.ToString();
   }
 
-  // A callback function for RocksDB which will be called whenever a SST file is
-  // created.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a SST file is created.
+   *
+   * @param info Table file creation information passed by rocksdb
+   */
   void OnTableFileCreated(const rocksdb::TableFileCreationInfo& info) override {
     VLOG(3) << "Rocksdb SST file created: the path is " << info.file_path << " the file size is "
             << info.file_size;
   }
 
-  // A callback function for RocksDB which will be called whenever a SST file is
-  // deleted.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a SST file is deleted
+   *
+   * @param info Table file deletion information passed by rocksdb
+   */
   void OnTableFileDeleted(const rocksdb::TableFileDeletionInfo& info) override {
     VLOG(3) << "Rocksdb SST file deleted: the path is " << info.file_path;
   }
 
-  // A callback function for RocksDB which will be called before a SST file is
-  // being created.
+  /**
+   * @brief A callback function for RocksDB which will be called before a SST file is being created.
+   *
+   * @param info Table file creation information passed by rocksdb
+   */
   void OnTableFileCreationStarted(const rocksdb::TableFileCreationBriefInfo& info) override {
     VLOG(3) << " database's name is " << info.db_name << ", column family's name is "
             << info.cf_name << ", the created file is " << info.file_path << ", because of "
             << tableFileCreationReasonString(info.reason);
   }
 
-  // A callback function for RocksDB which will be called before
-  // a memtable is made immutable.
+  /**
+   * @brief A callback function for RocksDB which will be called before a memtable is made
+   * immutable.
+   *
+   * @param info MemTable informations passed by rocksdb
+   */
   void OnMemTableSealed(const rocksdb::MemTableInfo& info) override {
     VLOG(3) << "MemTable Sealed column family: " << info.cf_name
             << ", the total number of entries: " << info.num_entries
             << ", the total number of deletes: " << info.num_deletes;
   }
 
-  // A callback function for RocksDB which will be called before
-  // a column family handle is deleted.
-  void OnColumnFamilyHandleDeletionStarted(rocksdb::ColumnFamilyHandle* /*handle*/) override {}
+  /**
+   * @brief A callback function for RocksDB which will be called before a column family handle is
+   * deleted.
+   *
+   * @param handle Comlumn family handle passed by rocksdb
+   */
+  void OnColumnFamilyHandleDeletionStarted(rocksdb::ColumnFamilyHandle* handle) override {
+    UNUSED(handle);
+  }
 
-  // A callback function for RocksDB which will be called after an external
-  // file is ingested using IngestExternalFile.
-  void OnExternalFileIngested(rocksdb::DB*,
+  /**
+   * @brief A callback function for RocksDB which will be called after an external file is ingested
+   * using IngestExternalFile.
+   *
+   * @param db Rocksdb instance
+   * @param info Ingest infomations passed by rocksdb
+   */
+  void OnExternalFileIngested(rocksdb::DB* db,
                               const rocksdb::ExternalFileIngestionInfo& info) override {
-    LOG(INFO) << "Ingest external SST file: column family " << info.cf_name
-              << ", the external file path " << info.external_file_path
-              << ", the internal file path " << info.internal_file_path
-              << ", the properties of the table: " << info.table_properties.ToString();
+    UNUSED(db);
+    VLOG(1) << "Ingest external SST file: column family " << info.cf_name
+            << ", the external file path " << info.external_file_path << ", the internal file path "
+            << info.internal_file_path
+            << ", the properties of the table: " << info.table_properties.ToString();
   }
 
-  // A callback function for RocksDB which will be called before setting the
-  // background error status to a non-OK value.
-  void OnBackgroundError(rocksdb::BackgroundErrorReason reason, rocksdb::Status*) override {
-    LOG(INFO) << "BackgroundError: because of " << backgroundErrorReasonString(reason);
+  /**
+   * @brief A callback function for RocksDB which will be called before setting the background error
+   * status to a non-OK value, e.g. disk is corrupted during comapction
+   *
+   * @param reason Reason to start a background job
+   * @param status Detail status of the background job
+   */
+  void OnBackgroundError(rocksdb::BackgroundErrorReason reason, rocksdb::Status* status) override {
+    LOG(INFO) << "BackgroundError: because of " << backgroundErrorReasonString(reason) << " "
+              << status->ToString();
   }
 
-  // A callback function for RocksDB which will be called whenever a change
-  // of superversion triggers a change of the stall conditions.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a change of superversion
+   * triggers a change of the stall conditions.
+   *
+   * @param info Current and previous status of whether write is stalled
+   */
   void OnStallConditionsChanged(const rocksdb::WriteStallInfo& info) override {
     LOG(INFO) << "Stall conditions changed column family: " << info.cf_name
               << ", current condition: " << writeStallConditionString(info.condition.cur)
               << ", previous condition: " << writeStallConditionString(info.condition.prev);
   }
 
-  // A callback function for RocksDB which will be called whenever a file read
-  // operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file read operation
+   * finishes.
+   *
+   * @param info Information when read a rocksdb file
+   */
   void OnFileReadFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Reading file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Reading file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file write
-  // operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file write operation
+   * finishes.
+   *
+   * @param info Information when write a rocksdb file
+   */
   void OnFileWriteFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Writeing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Writeing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file flush
-  // operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file flush operation
+   * finishes.
+   *
+   * @param info Information when flush a rocksdb file
+   */
   void OnFileFlushFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Flushing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Flushing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file sync
-  // operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file sync operation
+   * finishes.
+   *
+   * @param info Information when sync a rocksdb file
+   */
   void OnFileSyncFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Syncing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Syncing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file
-  // rangeSync operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file rangeSync operation
+   * finishes.
+   *
+   * @param info Information when range sync a rocksdb file
+   */
   void OnFileRangeSyncFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "RangeSyncing file finished: file path is " << info.path
+    VLOG(4) << "RangeSyncing file finished: file path is " << info.path
             << " offset: " << info.offset << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file
-  // truncate operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file truncate operation
+   * finishes.
+   *
+   * @param info Information when truncate a rocksdb file
+   */
   void OnFileTruncateFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Truncating file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Truncating file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 
-  // A callback function for RocksDB which will be called whenever a file close
-  // operation finishes.
+  /**
+   * @brief A callback function for RocksDB which will be called whenever a file close operation
+   * finishes.
+   *
+   * @param info Information when close a rocksdb file
+   */
   void OnFileCloseFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(3) << "Closing file finished: file path is " << info.path;
+    VLOG(4) << "Closing file finished: file path is " << info.path;
   }
 
-  // A callback function for RocksDB which will be called just before
-  // starting the automatic recovery process for recoverable background errors。
+  /**
+   * @brief A callback function for RocksDB which will be called just before starting the automatic
+   * recovery process for recoverable background errors。
+   *
+   * @param reason Reason to start a background job
+   * @param status Background job status
+   * @param autoRecovery Whether is recovered automatically
+   */
   void OnErrorRecoveryBegin(rocksdb::BackgroundErrorReason reason,
-                            rocksdb::Status /* bg_error */,
-                            bool* /* auto_recovery */) override {
-    LOG(INFO) << "Error recovery begin: because of " << backgroundErrorReasonString(reason);
+                            rocksdb::Status status,
+                            bool* autoRecovery) override {
+    UNUSED(autoRecovery);
+    LOG(INFO) << "Error recovery begin: because of " << backgroundErrorReasonString(reason)
+              << ", previously failed because of " << status.ToString();
   }
 
-  // A callback function for RocksDB which will be called once the database
-  // is recovered from read-only mode after an error.
-  void OnErrorRecoveryCompleted(rocksdb::Status) override {
-    LOG(INFO) << "Error Recovery Completed";
+  /**
+   * @brief A callback function for RocksDB which will be called once the database is recovered from
+   * read-only mode after an error.
+   *
+   * @param oldBgStatus Previous background job status
+   */
+  void OnErrorRecoveryCompleted(rocksdb::Status oldBgStatus) override {
+    LOG(INFO) << "Error Recovery Completed, previously failed because of "
+              << oldBgStatus.ToString();
   }
 
  private:

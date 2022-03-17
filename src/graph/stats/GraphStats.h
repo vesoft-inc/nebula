@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_STATS_GRAPHSTATS_H
+#define GRAPH_STATS_GRAPHSTATS_H
 
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
@@ -14,11 +15,13 @@ DECLARE_bool(enable_space_level_metrics);
 namespace nebula {
 
 // Query
+// A sequential sentence is treated as one query
 extern stats::CounterId kNumQueries;
 extern stats::CounterId kNumActiveQueries;
 extern stats::CounterId kNumSlowQueries;
 extern stats::CounterId kNumQueryErrors;
 extern stats::CounterId kNumQueryErrorsLeaderChanges;
+// A sequential sentence is treated as multiple sentences seperated by `;`
 extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;
@@ -47,3 +50,4 @@ extern stats::CounterId kNumReclaimedExpiredSessions;
 void initGraphStats();
 
 }  // namespace nebula
+#endif

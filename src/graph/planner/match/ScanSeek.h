@@ -3,17 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_PLANNER_MATCH_SCANSEEK_H
+#define GRAPH_PLANNER_MATCH_SCANSEEK_H
 
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/StartVidFinder.h"
 
 namespace nebula {
 namespace graph {
-/*
- * The ScanSeek was designed to find if could get the starting vids in
- * filter.
- */
+// The ScanSeek finds if a plan could get the starting vids in filter.
 class ScanSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<ScanSeek> make() {
@@ -33,3 +31,4 @@ class ScanSeek final : public StartVidFinder {
 };
 }  // namespace graph
 }  // namespace nebula
+#endif

@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef STORAGE_EXEC_INDEXAGGREGATENODE_H
+#define STORAGE_EXEC_INDEXAGGREGATENODE_H
 #include "storage/exec/IndexNode.h"
 
 namespace nebula {
@@ -24,9 +25,9 @@ struct ColumnStat {
 class IndexAggregateNode : public IndexNode {
  public:
   IndexAggregateNode(const IndexAggregateNode& node);
-  explicit IndexAggregateNode(RuntimeContext* context,
-                              const std::vector<std::pair<std::string, cpp2::StatType>>& statInfos,
-                              size_t returnColumnsCount);
+  IndexAggregateNode(RuntimeContext* context,
+                     const std::vector<std::pair<std::string, cpp2::StatType>>& statInfos,
+                     size_t returnColumnsCount);
 
   nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   void initStatValue();
@@ -47,3 +48,4 @@ class IndexAggregateNode : public IndexNode {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

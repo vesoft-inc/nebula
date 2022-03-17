@@ -3,12 +3,43 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETNEIGHBORSRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETNEIGHBORSRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
+
+//  Embedding limit to [[GetNeighbors]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |    GetNeighbors   |
+// +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |    GetNeighbors   |
+// |     (limit=3)     |
+// +---------+---------+
 
 class PushLimitDownGetNeighborsRule final : public OptRule {
  public:
@@ -27,3 +58,4 @@ class PushLimitDownGetNeighborsRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

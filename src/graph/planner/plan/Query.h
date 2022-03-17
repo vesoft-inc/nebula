@@ -13,19 +13,15 @@
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 
-/**
- * All query-related nodes would be put in this file,
- * and they are derived from PlanNode.
- */
+// All query-related nodes would be put in this file,
+// and they are derived from PlanNode.
 namespace nebula {
 namespace graph {
-/**
- * Now we have four kind of exploration nodes:
- *  GetNeighbors,
- *  GetVertices,
- *  GetEdges,
- *  IndexScan
- */
+// Now we have four kind of exploration nodes:
+//  GetNeighbors,
+//  GetVertices,
+//  GetEdges,
+//  IndexScan
 class Explore : public SingleInputNode {
  public:
   GraphSpaceID space() const {
@@ -137,9 +133,8 @@ using EdgeProp = nebula::storage::cpp2::EdgeProp;
 using StatProp = nebula::storage::cpp2::StatProp;
 using Expr = nebula::storage::cpp2::Expr;
 using Direction = nebula::storage::cpp2::EdgeDirection;
-/**
- * Get neighbors' property
- */
+
+// Get neighbors' property
 class GetNeighbors : public Explore {
  public:
   static GetNeighbors* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
@@ -263,9 +258,7 @@ class GetNeighbors : public Explore {
   bool random_{false};
 };
 
-/**
- * Get property with given vertex keys.
- */
+// Get property with given vertex keys.
 class GetVertices : public Explore {
  public:
   static GetVertices* make(QueryContext* qctx,
@@ -346,9 +339,7 @@ class GetVertices : public Explore {
   std::unique_ptr<std::vector<Expr>> exprs_;
 };
 
-/**
- * Get property with given edge keys.
- */
+// Get property with given edge keys.
 class GetEdges final : public Explore {
  public:
   static GetEdges* make(QueryContext* qctx,
@@ -450,9 +441,7 @@ class GetEdges final : public Explore {
   std::unique_ptr<std::vector<Expr>> exprs_;
 };
 
-/**
- * Read data through the index.
- */
+// Read data through the index.
 class IndexScan : public Explore {
  public:
   using IndexQueryContext = storage::cpp2::IndexQueryContext;
@@ -569,9 +558,7 @@ class IndexScan : public Explore {
   YieldColumns* yieldColumns_;
 };
 
-/**
- * Scan vertices
- */
+// Scan vertices
 class ScanVertices final : public Explore {
  public:
   static ScanVertices* make(QueryContext* qctx,
@@ -636,9 +623,7 @@ class ScanVertices final : public Explore {
   std::unique_ptr<std::vector<Expr>> exprs_;
 };
 
-/**
- * Scan edges
- */
+// Scan edges
 class ScanEdges final : public Explore {
  public:
   static ScanEdges* make(QueryContext* qctx,
@@ -703,9 +688,7 @@ class ScanEdges final : public Explore {
   std::unique_ptr<std::vector<Expr>> exprs_;
 };
 
-/**
- * A Filter node helps filt some records with condition.
- */
+// A Filter node helps filt some records with condition.
 class Filter final : public SingleInputNode {
  public:
   static Filter* make(QueryContext* qctx,
@@ -730,6 +713,8 @@ class Filter final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
   void cloneMembers(const Filter&);
@@ -740,12 +725,10 @@ class Filter final : public SingleInputNode {
   bool needStableFilter_;
 };
 
-/**
- * Now we have three kind of set operations:
- *   UNION,
- *   INTERSECT,
- *   MINUS
- */
+// Now we have three kind of set operations:
+//   UNION,
+//   INTERSECT,
+//   MINUS
 class SetOp : public BinaryInputNode {
  protected:
   SetOp(QueryContext* qctx, Kind kind, PlanNode* left, PlanNode* right)
@@ -756,9 +739,7 @@ class SetOp : public BinaryInputNode {
   void cloneMembers(const SetOp&);
 };
 
-/**
- * Combine two set of records.
- */
+// Combine two set of records.
 class Union final : public SetOp {
  public:
   static Union* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
@@ -774,9 +755,7 @@ class Union final : public SetOp {
   void cloneMembers(const Union&);
 };
 
-/**
- * Return the intersected records between two sets.
- */
+// Return the intersected records between two sets.
 class Intersect final : public SetOp {
  public:
   static Intersect* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
@@ -792,9 +771,7 @@ class Intersect final : public SetOp {
   void cloneMembers(const Intersect&);
 };
 
-/**
- * Do subtraction between two sets.
- */
+// Do subtraction between two sets.
 class Minus final : public SetOp {
  public:
   static Minus* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
@@ -810,9 +787,7 @@ class Minus final : public SetOp {
   void cloneMembers(const Minus&);
 };
 
-/**
- * Project is used to specify output vars or field.
- */
+// Project is used to specify output vars or field.
 class Project final : public SingleInputNode {
  public:
   static Project* make(QueryContext* qctx, PlanNode* input, YieldColumns* cols = nullptr) {
@@ -826,6 +801,8 @@ class Project final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
 
@@ -835,6 +812,7 @@ class Project final : public SingleInputNode {
   YieldColumns* cols_{nullptr};
 };
 
+// Thansforms a list to column.
 class Unwind final : public SingleInputNode {
  public:
   static Unwind* make(QueryContext* qctx,
@@ -866,9 +844,7 @@ class Unwind final : public SingleInputNode {
   std::string alias_;
 };
 
-/**
- * Sort the given record set.
- */
+// Sort the given record set.
 class Sort final : public SingleInputNode {
  public:
   static Sort* make(QueryContext* qctx,
@@ -912,9 +888,7 @@ class Sort final : public SingleInputNode {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors_;
 };
 
-/**
- * Output the records with the given limitation.
- */
+// Output the records with the given limitation.
 class Limit final : public SingleInputNode {
  public:
   static Limit* make(QueryContext* qctx, PlanNode* input, int64_t offset = -1, int64_t count = -1) {
@@ -972,9 +946,7 @@ class Limit final : public SingleInputNode {
   Expression* count_{nullptr};
 };
 
-/**
- * Get the Top N record set.
- */
+// Get the Top N record set.
 class TopN final : public SingleInputNode {
  public:
   static TopN* make(QueryContext* qctx,
@@ -1036,9 +1008,7 @@ class TopN final : public SingleInputNode {
   int64_t count_{-1};
 };
 
-/**
- * Sample the given input data.
- */
+// Sample the given input data.
 class Sample final : public SingleInputNode {
  public:
   static Sample* make(QueryContext* qctx, PlanNode* input, const int64_t count) {
@@ -1089,10 +1059,8 @@ class Sample final : public SingleInputNode {
   Expression* count_{nullptr};
 };
 
-/**
- * Do Aggregation with the given set of records,
- * such as AVG(), COUNT()...
- */
+// Do Aggregation with the given set of records,
+// such as AVG(), COUNT()...
 class Aggregate final : public SingleInputNode {
  public:
   static Aggregate* make(QueryContext* qctx,
@@ -1114,6 +1082,8 @@ class Aggregate final : public SingleInputNode {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   Aggregate(QueryContext* qctx,
             PlanNode* input,
@@ -1131,6 +1101,7 @@ class Aggregate final : public SingleInputNode {
   std::vector<Expression*> groupItems_;
 };
 
+// Change the space that specified for current session.
 class SwitchSpace final : public SingleInputNode {
  public:
   static SwitchSpace* make(QueryContext* qctx, PlanNode* input, std::string spaceName) {
@@ -1156,6 +1127,7 @@ class SwitchSpace final : public SingleInputNode {
   std::string spaceName_;
 };
 
+// Dedup the rows.
 class Dedup final : public SingleInputNode {
  public:
   static Dedup* make(QueryContext* qctx, PlanNode* input) {
@@ -1170,6 +1142,7 @@ class Dedup final : public SingleInputNode {
   void cloneMembers(const Dedup&);
 };
 
+// Collect the variable results.
 class DataCollect final : public VariableDependencyNode {
  public:
   enum class DCKind : uint8_t {
@@ -1220,6 +1193,14 @@ class DataCollect final : public VariableDependencyNode {
     return distinct_;
   }
 
+  void setColType(std::vector<Value::Type>&& colType) {
+    colType_ = std::move(colType);
+  }
+
+  const std::vector<Value::Type>& colType() const {
+    return colType_;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1234,9 +1215,12 @@ class DataCollect final : public VariableDependencyNode {
   DCKind kind_;
   // using for m to n steps
   StepClause step_;
+  std::vector<Value::Type> colType_;
   bool distinct_{false};
 };
 
+// Join two result set based on the keys
+// We have LeftJoin and InnerJoin now.
 class Join : public SingleDependencyNode {
  public:
   const std::pair<std::string, int64_t>& leftVar() const {
@@ -1294,9 +1278,7 @@ class Join : public SingleDependencyNode {
   std::vector<Expression*> probeKeys_;
 };
 
-/*
- *  left join
- */
+// Left join
 class LeftJoin final : public Join {
  public:
   static LeftJoin* make(QueryContext* qctx,
@@ -1334,9 +1316,7 @@ class LeftJoin final : public Join {
   void cloneMembers(const LeftJoin&);
 };
 
-/*
- *  inner join
- */
+// Inner join
 class InnerJoin final : public Join {
  public:
   static InnerJoin* make(QueryContext* qctx,
@@ -1374,9 +1354,7 @@ class InnerJoin final : public Join {
   void cloneMembers(const InnerJoin&);
 };
 
-/*
- * set var = value
- */
+// Binding a value to a variable
 class Assign final : public SingleInputNode {
  public:
   static Assign* make(QueryContext* qctx, PlanNode* input) {
@@ -1406,10 +1384,8 @@ class Assign final : public SingleInputNode {
   std::vector<std::pair<std::string, Expression*>> items_;
 };
 
-/**
- * Union all versions of the variable in the dependency
- * The input is a single PlanNode
- */
+// Union all versions of the variable in the dependency
+// The input is a single PlanNode
 class UnionAllVersionVar final : public SingleInputNode {
  public:
   static UnionAllVersionVar* make(QueryContext* qctx, PlanNode* input) {
@@ -1425,6 +1401,7 @@ class UnionAllVersionVar final : public SingleInputNode {
   void cloneMembers(const UnionAllVersionVar&);
 };
 
+// Traverse several steps based on condition.
 class Traverse final : public GetNeighbors {
  public:
   using VertexProps = std::unique_ptr<std::vector<storage::cpp2::VertexProp>>;
@@ -1468,6 +1445,8 @@ class Traverse final : public GetNeighbors {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   Traverse* clone() const override;
 
@@ -1518,6 +1497,7 @@ class Traverse final : public GetNeighbors {
   bool trackPrevPath_{true};
 };
 
+// Append vertices to a path.
 class AppendVertices final : public GetVertices {
  public:
   static AppendVertices* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
@@ -1525,6 +1505,8 @@ class AppendVertices final : public GetVertices {
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   AppendVertices* clone() const override;
 
@@ -1555,7 +1537,7 @@ class AppendVertices final : public GetVertices {
                     nullptr,
                     false,
                     {},
-                    0,
+                    -1,  // means no limit
                     nullptr) {}
 
   void cloneMembers(const AppendVertices& a);
@@ -1565,6 +1547,7 @@ class AppendVertices final : public GetVertices {
   bool trackPrevPath_{true};
 };
 
+// Binary Join that joins two results from two inputs.
 class BiJoin : public BinaryInputNode {
  public:
   const std::vector<Expression*>& hashKeys() const {
@@ -1585,6 +1568,8 @@ class BiJoin : public BinaryInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  protected:
   BiJoin(QueryContext* qctx,
          Kind kind,
@@ -1600,9 +1585,7 @@ class BiJoin : public BinaryInputNode {
   std::vector<Expression*> probeKeys_;
 };
 
-/*
- *  left join
- */
+// Left join
 class BiLeftJoin final : public BiJoin {
  public:
   static BiLeftJoin* make(QueryContext* qctx,
@@ -1628,9 +1611,7 @@ class BiLeftJoin final : public BiJoin {
   void cloneMembers(const BiLeftJoin&);
 };
 
-/*
- *  inner join
- */
+// Inner join
 class BiInnerJoin final : public BiJoin {
  public:
   static BiInnerJoin* make(QueryContext* qctx,

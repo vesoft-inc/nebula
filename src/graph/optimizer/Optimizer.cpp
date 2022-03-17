@@ -12,6 +12,7 @@
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/PlanNode.h"
+#include "graph/visitor/PrunePropertiesVisitor.h"
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;
@@ -20,22 +21,46 @@ using nebula::graph::QueryContext;
 using nebula::graph::Select;
 using nebula::graph::SingleDependencyNode;
 
+DEFINE_bool(enable_optimizer_property_pruner_rule, true, "");
+
 namespace nebula {
 namespace opt {
 
 Optimizer::Optimizer(std::vector<const RuleSet *> ruleSets) : ruleSets_(std::move(ruleSets)) {}
 
+// Optimizer entrance
 StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   DCHECK(qctx != nullptr);
   auto optCtx = std::make_unique<OptContext>(qctx);
 
   auto root = qctx->plan()->root();
-  auto status = prepare(optCtx.get(), root);
-  NG_RETURN_IF_ERROR(status);
-  auto rootGroup = std::move(status).value();
+  auto spaceID = qctx->rctx()->session()->space().id;
+
+  auto ret = prepare(optCtx.get(), root);
+  NG_RETURN_IF_ERROR(ret);
+  auto rootGroup = std::move(ret).value();
 
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
-  return rootGroup->getPlan();
+  auto *newRoot = rootGroup->getPlan();
+
+  auto status2 = postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
+  if (!status2.ok()) {
+    LOG(ERROR) << "Failed to postprocess plan: " << status2;
+  }
+  return newRoot;
+}
+
+// Just for Properties Pruning
+Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
+  if (FLAGS_enable_optimizer_property_pruner_rule) {
+    graph::PropertyTracker propsUsed;
+    graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
+    root->accept(&visitor);
+    if (!visitor.ok()) {
+      return visitor.status();
+    }
+  }
+  return Status::OK();
 }
 
 StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
@@ -44,12 +69,15 @@ StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
 }
 
 Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
+  // Terminate when the maximum number of iterations(RuleSets) is reached or the execution plan is
+  // unchanged
   int8_t appliedTimes = kMaxIterationRound;
   while (octx->changed()) {
     if (--appliedTimes < 0) break;
     octx->setChanged(false);
     for (auto ruleSet : ruleSets_) {
       for (auto rule : ruleSet->rules()) {
+        // Explore until the maximum number of iterations(Rules) is reached
         NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
         rootGroup->setUnexplored(rule);
       }
@@ -58,6 +86,7 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
   return Status::OK();
 }
 
+// Create Memo structure
 OptGroup *Optimizer::convertToGroup(OptContext *ctx,
                                     PlanNode *node,
                                     std::unordered_map<int64_t, OptGroup *> *visited) {

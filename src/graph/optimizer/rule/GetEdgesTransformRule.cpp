@@ -47,6 +47,7 @@ bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched)
   const auto &colNames = traverse->colNames();
   auto colSize = colNames.size();
   DCHECK_GE(colSize, 2);
+  // TODO: Poor readability for optimizer, is there any other way to do the same thing?
   if (colNames[colSize - 2][0] != '_') {  // src
     return false;
   }

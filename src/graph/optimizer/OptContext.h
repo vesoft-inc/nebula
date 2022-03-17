@@ -6,6 +6,7 @@
 #ifndef GRAPH_OPTIMIZER_OPTCONTEXT_H_
 #define GRAPH_OPTIMIZER_OPTCONTEXT_H_
 
+#include <boost/core/noncopyable.hpp>
 #include <memory>
 #include <unordered_map>
 
@@ -23,7 +24,7 @@ namespace opt {
 
 class OptGroupNode;
 
-class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
+class OptContext final : private boost::noncopyable, private cpp::NonMovable {
  public:
   explicit OptContext(graph::QueryContext *qctx);
 
@@ -47,8 +48,10 @@ class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
   const OptGroupNode *findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;
 
  private:
+  // A global flag to record whether this iteration caused a change to the plan
   bool changed_{true};
   graph::QueryContext *qctx_{nullptr};
+  // Memo memory management in the Optimizer phase
   std::unique_ptr<ObjectPool> objPool_;
   std::unordered_map<int64_t, const OptGroupNode *> planNodeToOptGroupNodeMap_;
 };

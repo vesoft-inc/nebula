@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef MOCK_LOCALSERVER_H
+#define MOCK_LOCALSERVER_H
 
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -51,3 +52,4 @@ struct LocalServer {
 
 }  // namespace mock
 }  // namespace nebula
+#endif

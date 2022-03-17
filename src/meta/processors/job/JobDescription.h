@@ -18,18 +18,18 @@ namespace nebula {
 namespace meta {
 
 class JobDescription {
-  FRIEND_TEST(JobDescriptionTest, parseKey);
-  FRIEND_TEST(JobDescriptionTest, parseVal);
-  FRIEND_TEST(JobManagerTest, buildJobDescription);
-  FRIEND_TEST(JobManagerTest, addJob);
+  FRIEND_TEST(JobDescriptionTest, ParseKey);
+  FRIEND_TEST(JobDescriptionTest, ParseVal);
+  FRIEND_TEST(JobManagerTest, BuildJobDescription);
+  FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
-  FRIEND_TEST(JobManagerTest, loadJobDescription);
-  FRIEND_TEST(JobManagerTest, showJobs);
-  FRIEND_TEST(JobManagerTest, showJob);
-  FRIEND_TEST(JobManagerTest, showJobsFromMultiSpace);
-  FRIEND_TEST(JobManagerTest, showJobInOtherSpace);
-  FRIEND_TEST(JobManagerTest, backupJob);
-  FRIEND_TEST(JobManagerTest, recoverJob);
+  FRIEND_TEST(JobManagerTest, LoadJobDescription);
+  FRIEND_TEST(JobManagerTest, ShowJobs);
+  FRIEND_TEST(JobManagerTest, ShowJob);
+  FRIEND_TEST(JobManagerTest, ShowJobsFromMultiSpace);
+  FRIEND_TEST(JobManagerTest, ShowJobInOtherSpace);
+  FRIEND_TEST(JobManagerTest, BackupJob);
+  FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
@@ -124,7 +124,7 @@ class JobDescription {
 
   /**
    * @brief
-   * Get a existed job from kvstore, return folly::none if there isn't
+   * Get a existed job from kvstore, reture std::nullopt if there isn't
    *
    * @param iJob Id of the job we would load
    * @param kv Where we load the job from

@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TEST_INDEXTESTUTIL_H
+#define STORAGE_TEST_INDEXTESTUTIL_H
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -64,35 +65,25 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     return 0;
   };
   void stop() override {}
-  ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
-                                                        PartitionID partID) override {
-    UNUSED(spaceId), UNUSED(partID);
+  ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID, PartitionID) override {
     CHECK(false);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  const void* GetSnapshot(GraphSpaceID spaceId,
-                          PartitionID partID,
-                          bool canReadFromFollower = false) override {
-    UNUSED(spaceId);
-    UNUSED(partID);
-    UNUSED(canReadFromFollower);
+  const void* GetSnapshot(GraphSpaceID, PartitionID, bool) override {
     return nullptr;
   }
-  void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(snapshot);
-    return;
-  }
+  void ReleaseSnapshot(GraphSpaceID, PartitionID, const void*) override {}
   // Read a single key
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
                               std::string* value,
-                              bool canReadFromFollower = false) override {
+                              bool canReadFromFollower = false,
+                              const void* snapshot = nullptr) override {
     UNUSED(canReadFromFollower);
     UNUSED(partId);
+    UNUSED(snapshot);
     CHECK_EQ(spaceId, spaceId_);
     auto iter = kv_.lower_bound(key);
     if (iter != kv_.end() && iter->first == key) {
@@ -107,14 +98,11 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
   // If key[i] does not exist, the i-th value in return value would be
   // Status::KeyNotFound
   std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> multiGet(
-      GraphSpaceID spaceId,
-      PartitionID partId,
+      GraphSpaceID,
+      PartitionID,
       const std::vector<std::string>& keys,
       std::vector<std::string>* values,
-      bool canReadFromFollower = false) override {
-    UNUSED(canReadFromFollower);
-    UNUSED(spaceId);
-    UNUSED(partId);
+      bool) override {
     std::vector<Status> status;
     nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     for (auto& key : keys) {
@@ -133,14 +121,11 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
 
   // Get all results in range [start, end)
   nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-                                PartitionID partId,
+                                PartitionID,
                                 const std::string& start,
                                 const std::string& end,
                                 std::unique_ptr<KVIterator>* iter,
-                                bool canReadFromFollower = false) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(canReadFromFollower);
+                                bool) override {
     CHECK_EQ(spaceId, spaceId_);
     std::unique_ptr<MockKVIterator> mockIter;
     mockIter = std::make_unique<MockKVIterator>(kv_, kv_.lower_bound(start));
@@ -148,23 +133,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     (*iter) = std::move(mockIter);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  //   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
-  //                                          PartitionID partId,
-  //                                          std::string&& prefix,
-  //                                          std::unique_ptr<KVIterator>* iter,
-  //                                          bool canReadFromFollower = false) = delete override;
-  //   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
-  //                                                   PartitionID partId,
-  //                                                   std::string&& start,
-  //                                                   std::string&& prefix,
-  //                                                   std::unique_ptr<KVIterator>* iter,
-  //                                                   bool canReadFromFollower = false) = delete;
-  //   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-  //                                         PartitionID partId,
-  //                                         std::string&& start,
-  //                                         std::string&& end,
-  //                                         std::unique_ptr<KVIterator>* iter,
-  //                                         bool canReadFromFollower = false) = delete;
+
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::string& prefix,
@@ -219,43 +188,32 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  nebula::cpp2::ErrorCode sync(GraphSpaceID spaceId, PartitionID partId) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
+  nebula::cpp2::ErrorCode sync(GraphSpaceID, PartitionID) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  void asyncMultiPut(GraphSpaceID spaceId,
-                     PartitionID partId,
+  void asyncMultiPut(GraphSpaceID,
+                     PartitionID,
                      std::vector<::nebula::kvstore::KV>&& keyValues,
-                     ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
+                     ::nebula::kvstore::KVCallback) override {
     for (size_t i = 0; i < keyValues.size(); i++) {
       kv_.emplace(std::move(keyValues[i]));
     }
   }
 
   // Asynchronous version of remove methods
-  void asyncRemove(GraphSpaceID spaceId,
-                   PartitionID partId,
+  void asyncRemove(GraphSpaceID,
+                   PartitionID,
                    const std::string& key,
-                   ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
+                   ::nebula::kvstore::KVCallback) override {
     kv_.erase(key);
   }
 
-  void asyncMultiRemove(GraphSpaceID spaceId,
-                        PartitionID partId,
+  void asyncMultiRemove(GraphSpaceID,
+                        PartitionID,
                         std::vector<std::string>&& keys,
-                        ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
+                        ::nebula::kvstore::KVCallback) override {
     for (size_t i = 0; i < keys.size(); i++) {
       kv_.erase(keys[i]);
     }
@@ -278,102 +236,73 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     }
   }
 
-  void asyncAtomicOp(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     raftex::AtomicOp op,
-                     ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
-    UNUSED(op);
+  void asyncAtomicOp(GraphSpaceID,
+                     PartitionID,
+                     raftex::AtomicOp,
+                     ::nebula::kvstore::KVCallback) override {
     LOG(FATAL) << "Unexpect";
   }
-  void asyncAppendBatch(GraphSpaceID spaceId,
-                        PartitionID partId,
-                        std::string&& batch,
-                        ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
-    LOG(FATAL) << "Unexpect " << batch;
+  void asyncAppendBatch(GraphSpaceID,
+                        PartitionID,
+                        std::string&&,
+                        ::nebula::kvstore::KVCallback) override {
+    LOG(FATAL) << "Unexpect";
   }
-  nebula::cpp2::ErrorCode ingest(GraphSpaceID spaceId) override {
-    UNUSED(spaceId);
+  nebula::cpp2::ErrorCode ingest(GraphSpaceID) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   int32_t allLeader(
-      std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) override {
-    UNUSED(leaderIds);
-
+      std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>&) override {
     LOG(FATAL) << "Unexpect";
     return 0;
   }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<::nebula::kvstore::Part>> part(
-      GraphSpaceID spaceId, PartitionID partId) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
+      GraphSpaceID, PartitionID) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  nebula::cpp2::ErrorCode compact(GraphSpaceID spaceId) override {
-    UNUSED(spaceId);
+  nebula::cpp2::ErrorCode compact(GraphSpaceID) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  nebula::cpp2::ErrorCode flush(GraphSpaceID spaceId) override {
-    UNUSED(spaceId);
+  nebula::cpp2::ErrorCode flush(GraphSpaceID) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<::nebula::cpp2::CheckpointInfo>> createCheckpoint(
-      GraphSpaceID spaceId, const std::string& name) override {
-    UNUSED(spaceId);
-    UNUSED(name);
+      GraphSpaceID, const std::string&) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   };
-  nebula::cpp2::ErrorCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override {
-    UNUSED(spaceId);
-    UNUSED(name);
+  nebula::cpp2::ErrorCode dropCheckpoint(GraphSpaceID, const std::string&) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override {
-    UNUSED(spaceId);
-    UNUSED(sign);
+  nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID, bool) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> backupTable(
-      GraphSpaceID spaceId,
-      const std::string& name,
-      const std::string& tablePrefix,
-      std::function<bool(const folly::StringPiece& key)> filter) override {
-    UNUSED(spaceId);
-    UNUSED(name);
-    UNUSED(tablePrefix);
-    UNUSED(filter);
+      GraphSpaceID,
+      const std::string&,
+      const std::string&,
+      std::function<bool(const folly::StringPiece& key)>) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   // for meta BR
-  nebula::cpp2::ErrorCode restoreFromFiles(GraphSpaceID spaceId,
-                                           const std::vector<std::string>& files) override {
-    UNUSED(spaceId);
-    UNUSED(files);
+  nebula::cpp2::ErrorCode restoreFromFiles(GraphSpaceID, const std::vector<std::string>&) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  nebula::cpp2::ErrorCode multiPutWithoutReplicator(
-      GraphSpaceID spaceId, std::vector<::nebula::kvstore::KV> keyValues) override {
-    UNUSED(spaceId);
-    UNUSED(keyValues);
+  nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID,
+                                                    std::vector<::nebula::kvstore::KV>) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -382,10 +311,8 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     return {};
   }
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
-                                                            const std::string& property) override {
-    UNUSED(spaceId);
-    UNUSED(property);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID,
+                                                            const std::string&) override {
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   void put(const std::string& key, const std::string& value) {
@@ -655,3 +582,4 @@ IndexParser operator"" _index(const char* str, std::size_t) {
 
 }  // namespace storage
 }  // namespace nebula
+#endif

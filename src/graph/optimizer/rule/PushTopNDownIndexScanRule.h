@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHTOPNDOWNINDEXSCANRULE_H
 
 #include <initializer_list>
 
@@ -11,6 +12,44 @@
 
 namespace nebula {
 namespace opt {
+
+//  Embedding TopN factors into Storage layer
+//  Required conditions:
+//   1. Match the pattern
+//   2. YieldColumn Expression is kTagProperty or kEdgeProperty
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +----------+----------+
+//  |        TopN         |
+//  +----------+----------+
+//             |
+//  +----------+----------+
+//  |       Project       |
+//  +----------+----------+
+//             |
+//   +---------+---------+
+//   |  kIndexScanKinds  |
+//   +---------+---------+
+//
+//  After:
+//
+//  +----------+----------+
+//  |        TopN         |
+//  +----------+----------+
+//             |
+//  +----------+----------+
+//  |       Project       |
+//  +----------+----------+
+//             |
+//   +---------+---------+
+//   |  kIndexScanKinds  |
+//   | (limit_=limitRows)|
+//   |(orderBy_=orderBys)|
+//   +---------+---------+
 
 class PushTopNDownIndexScanRule final : public OptRule {
  public:
@@ -30,3 +69,4 @@ class PushTopNDownIndexScanRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

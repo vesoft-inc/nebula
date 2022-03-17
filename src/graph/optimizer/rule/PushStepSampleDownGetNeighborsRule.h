@@ -3,12 +3,44 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHSTEPSAMPLEDOWNGETNEIGHBORSRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHSTEPSAMPLEDOWNGETNEIGHBORSRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
+
+//  Embedding limit to [[GetNeighbors]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//  Query example:
+//   GO 2 STEPS FROM "Tim Duncan" over like YIELD like._dst SAMPLE [2,3]
+//  Tranformation:
+//  Before:
+//
+//  +----------+----------+
+//  |        Sample       |
+//  |(SubscriptExpression)|
+//  +----------+----------+
+//             |
+//   +---------+---------+
+//   |    GetNeighbors   |
+//   +---------+---------+
+//
+//  After:
+//
+// +----------+----------+
+// |        Sample       |
+// |(SubscriptExpression)|
+// +----------+----------+
+//            |
+// +----------+----------+
+// |     GetNeighbors    |
+// |(SubscriptExpression)|
+// +----------+----------+
 
 class PushStepSampleDownGetNeighborsRule final : public OptRule {
  public:
@@ -27,3 +59,4 @@ class PushStepSampleDownGetNeighborsRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

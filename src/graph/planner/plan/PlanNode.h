@@ -14,10 +14,10 @@
 namespace nebula {
 namespace graph {
 
-/**
- * PlanNode is an abstraction of nodes in an execution plan which
- * is a kind of directed cyclic graph.
- */
+class PlanNodeVisitor;
+
+// PlanNode is an abstraction of nodes in an execution plan which
+// is a kind of directed cyclic graph.
 class PlanNode {
  public:
   enum class Kind : uint8_t {
@@ -94,6 +94,7 @@ class PlanNode {
     kShowCreateTag,
     kShowCreateEdge,
     kDropSpace,
+    kClearSpace,
     kDropTag,
     kDropEdge,
     kAlterSpace,
@@ -189,6 +190,12 @@ class PlanNode {
   // Describe plan node
   virtual std::unique_ptr<PlanNodeDescription> explain() const;
 
+  virtual void accept(PlanNodeVisitor* visitor);
+
+  void markDeleted() {
+    deleted_ = true;
+  }
+
   virtual PlanNode* clone() const = 0;
 
   virtual void calcCost();
@@ -282,6 +289,14 @@ class PlanNode {
     return cost_;
   }
 
+  void setLoopLayers(std::size_t c) {
+    loopLayers_ = c;
+  }
+
+  std::size_t loopLayers() const {
+    return loopLayers_;
+  }
+
   template <typename T>
   const T* asNode() const {
     static_assert(std::is_base_of<PlanNode, T>::value, "T must be a subclass of PlanNode");
@@ -311,6 +326,9 @@ class PlanNode {
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
+  // nested loop layers of current node
+  std::size_t loopLayers_{0};
+  bool deleted_{false};
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
@@ -342,6 +360,7 @@ class SingleDependencyNode : public PlanNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 };
 
+// SingleInputNode has one dependency and it sinks data from the dependency.
 class SingleInputNode : public SingleDependencyNode {
  public:
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -365,6 +384,7 @@ class SingleInputNode : public SingleDependencyNode {
   SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep);
 };
 
+// BinaryInputNode has two dependencies and it sinks data from them.
 class BinaryInputNode : public PlanNode {
  public:
   void setLeftDep(const PlanNode* left) {

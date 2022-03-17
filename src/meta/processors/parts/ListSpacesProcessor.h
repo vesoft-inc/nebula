@@ -11,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Used for command `show spaces`, return all spaces' names.
+ *
+ */
 class ListSpacesProcessor : public BaseProcessor<cpp2::ListSpacesResp> {
  public:
   static ListSpacesProcessor* instance(kvstore::KVStore* kvstore) {

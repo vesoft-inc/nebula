@@ -29,29 +29,26 @@ SnapshotManager::SnapshotManager() {
 folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
     std::shared_ptr<RaftPart> part, const HostAddr& dst) {
   folly::Promise<StatusOr<std::pair<LogID, TermID>>> p;
-  auto fut = p.getFuture();
+  // if use getFuture(), the future's executor is InlineExecutor, and if the promise setValue first,
+  // the future's callback will be called directly in thenValue in the same thread, the Host::lock_
+  // would be locked twice in one thread, this will cause deadlock
+  auto fut = p.getSemiFuture().via(executor_.get());
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
     auto partId = part->partId_;
     auto termId = part->term_;
-    // TODO(heng):  maybe the committedLogId is less than the real one in the
-    // snapshot. It will not loss the data, but maybe some record will be
-    // committed twice.
-    auto commitLogIdAndTerm = part->lastCommittedLogId();
     const auto& localhost = part->address();
-    std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-    LOG(INFO) << part->idStr_ << "Begin to send the snapshot to the host " << dst
-              << ", commitLogId = " << commitLogIdAndTerm.first
-              << ", commitLogTerm = " << commitLogIdAndTerm.second;
     accessAllRowsInSnapshot(
         spaceId,
         partId,
-        [&, this, p = std::move(p)](const std::vector<std::string>& data,
+        [&, this, p = std::move(p)](LogID commitLogId,
+                                    TermID commitLogTerm,
+                                    const std::vector<std::string>& data,
                                     int64_t totalCount,
                                     int64_t totalSize,
                                     SnapshotStatus status) mutable -> bool {
           if (status == SnapshotStatus::FAILED) {
-            LOG(INFO) << part->idStr_ << "Snapshot send failed, the leader changed?";
+            VLOG(1) << part->idStr_ << "Snapshot send failed, the leader changed?";
             p.setValue(Status::Error("Send snapshot failed!"));
             return false;
           }
@@ -60,8 +57,8 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
             auto f = send(spaceId,
                           partId,
                           termId,
-                          commitLogIdAndTerm.first,
-                          commitLogIdAndTerm.second,
+                          commitLogId,
+                          commitLogTerm,
                           localhost,
                           data,
                           totalSize,
@@ -73,28 +70,28 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
             try {
               auto resp = std::move(f).get();
               if (resp.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
-                VLOG(1) << part->idStr_ << "has sended count " << totalCount;
+                VLOG(3) << part->idStr_ << "has sended count " << totalCount;
                 if (status == SnapshotStatus::DONE) {
-                  LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
-                            << ", totalSize " << totalSize;
-                  p.setValue(commitLogIdAndTerm);
+                  VLOG(1) << part->idStr_ << "Finished, totalCount " << totalCount << ", totalSize "
+                          << totalSize;
+                  p.setValue(std::make_pair(commitLogId, commitLogTerm));
                 }
                 return true;
               } else {
-                LOG(INFO) << part->idStr_ << "Sending snapshot failed, we don't retry anymore! "
-                          << "The error code is "
-                          << apache::thrift::util::enumNameSafe(resp.get_error_code());
+                VLOG(2) << part->idStr_ << "Sending snapshot failed, we don't retry anymore! "
+                        << "The error code is "
+                        << apache::thrift::util::enumNameSafe(resp.get_error_code());
                 p.setValue(Status::Error("Send snapshot failed!"));
                 return false;
               }
             } catch (const std::exception& e) {
-              LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what()
-                         << ", retry " << retry << " times";
+              VLOG(3) << part->idStr_ << "Send snapshot failed, exception " << e.what()
+                      << ", retry " << retry << " times";
               sleep(1);
               continue;
             }
           }
-          LOG(WARNING) << part->idStr_ << "Send snapshot failed!";
+          VLOG(2) << part->idStr_ << "Send snapshot failed!";
           p.setValue(Status::Error("Send snapshot failed!"));
           return false;
         });
@@ -114,7 +111,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     int64_t totalCount,
     const HostAddr& addr,
     bool finished) {
-  VLOG(2) << "Send snapshot request to " << addr;
+  VLOG(4) << "Send snapshot request to " << addr;
   raftex::cpp2::SendSnapshotRequest req;
   req.space_ref() = spaceId;
   req.part_ref() = partId;

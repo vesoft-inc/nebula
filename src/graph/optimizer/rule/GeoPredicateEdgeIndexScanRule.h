@@ -3,13 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_GEOPREDICATEEDGEINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_GEOPREDICATEEDGEINDEXSCANRULE_H
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
 namespace nebula {
 namespace opt {
 
+// Apply the transformation of base class(GeoPredicateIndexScanBaseRule::transform)
 class GeoPredicateEdgeIndexScanRule final : public GeoPredicateIndexScanBaseRule {
  public:
   const Pattern &pattern() const override;
@@ -23,3 +25,4 @@ class GeoPredicateEdgeIndexScanRule final : public GeoPredicateIndexScanBaseRule
 
 }  // namespace opt
 }  // namespace nebula
+#endif

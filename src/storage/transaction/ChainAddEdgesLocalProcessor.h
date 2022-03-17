@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
+#define STORAGE_TRANSACTION_CHAINADDEDGESPROCESSORLOCAL_H
 
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/LogEncoder.h"
@@ -148,7 +149,7 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
 
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
-  folly::Optional<int64_t> edgeVer_{folly::none};
+  std::optional<int64_t> edgeVer_;
 
   // for trace purpose
   std::string uuid_;
@@ -164,3 +165,4 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
 
 }  // namespace storage
 }  // namespace nebula
+#endif

@@ -188,7 +188,7 @@ class ColumnNameList final {
 
 class SchemaPropItem final {
  public:
-  using Value = boost::variant<int64_t, bool, std::string>;
+  using Value = std::variant<int64_t, bool, std::string>;
 
   enum PropType : uint8_t { TTL_DURATION, TTL_COL, COMMENT };
 
@@ -211,7 +211,8 @@ class SchemaPropItem final {
     if (isInt()) {
       return asInt();
     } else {
-      LOG(ERROR) << "Ttl_duration value illegal: " << propValue_;
+      std::visit([](const auto &val) { LOG(ERROR) << "Ttl_duration value illegal: " << val; },
+                 propValue_);
       return Status::Error("Ttl_duration value illegal");
     }
   }
@@ -220,7 +221,8 @@ class SchemaPropItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "Ttl_col value illegal: " << propValue_;
+      std::visit([](const auto &val) { LOG(ERROR) << "Ttl_col value illegal: " << val; },
+                 propValue_);
       return Status::Error("Ttl_col value illegal");
     }
   }
@@ -241,19 +243,19 @@ class SchemaPropItem final {
 
  private:
   int64_t asInt() {
-    return boost::get<int64_t>(propValue_);
+    return std::get<int64_t>(propValue_);
   }
 
   const std::string &asString() {
-    return boost::get<std::string>(propValue_);
+    return std::get<std::string>(propValue_);
   }
 
   bool asBool() {
-    switch (propValue_.which()) {
+    switch (propValue_.index()) {
       case 0:
         return asInt() != 0;
       case 1:
-        return boost::get<bool>(propValue_);
+        return std::get<bool>(propValue_);
       case 2:
         return asString().empty();
       default:
@@ -263,15 +265,15 @@ class SchemaPropItem final {
   }
 
   bool isInt() {
-    return propValue_.which() == 0;
+    return propValue_.index() == 0;
   }
 
   bool isBool() {
-    return propValue_.which() == 1;
+    return propValue_.index() == 1;
   }
 
   bool isString() {
-    return propValue_.which() == 2;
+    return propValue_.index() == 2;
   }
 
  private:
@@ -516,7 +518,7 @@ class DescribeEdgeSentence final : public Sentence {
 
 class DropTagSentence final : public DropSentence {
  public:
-  explicit DropTagSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
+  DropTagSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
     name_.reset(name);
     kind_ = Kind::kDropTag;
   }
@@ -533,7 +535,7 @@ class DropTagSentence final : public DropSentence {
 
 class DropEdgeSentence final : public DropSentence {
  public:
-  explicit DropEdgeSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
+  DropEdgeSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
     name_.reset(name);
     kind_ = Kind::kDropEdge;
   }
@@ -772,7 +774,7 @@ class DescribeEdgeIndexSentence final : public Sentence {
 
 class DropTagIndexSentence final : public DropSentence {
  public:
-  explicit DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+  DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
     indexName_.reset(indexName);
     kind_ = Kind::kDropTagIndex;
   }

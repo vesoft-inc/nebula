@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
+#define STORAGE_TRANSACTION_CHAINUPDATEEDGEPROCESSORLOCAL_H
 
 #include <boost/stacktrace.hpp>
 
@@ -88,8 +89,9 @@ class ChainUpdateEdgeLocalProcessor
   bool primeInserted_{false};
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
-  folly::Optional<int64_t> ver_{folly::none};
+  std::optional<int64_t> ver_;
 };
 
 }  // namespace storage
 }  // namespace nebula
+#endif

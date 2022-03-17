@@ -3,12 +3,52 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNSCANAPPENDVERTICESRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNSCANAPPENDVERTICESRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
+
+//  Embedding limit to [[ScanVertices]]
+//  Required conditions:
+//   1. Match the pattern
+//   2. All filters of [[AppendVertices]] must be nullptr
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |    ScanVertices   |
+// +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |    ScanVertices   |
+// |     (limit=3)     |
+// +---------+---------+
 
 class PushLimitDownScanAppendVerticesRule final : public OptRule {
  public:
@@ -28,3 +68,4 @@ class PushLimitDownScanAppendVerticesRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

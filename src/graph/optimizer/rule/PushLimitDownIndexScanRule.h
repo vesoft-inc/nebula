@@ -3,7 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNINDEXSCANRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNINDEXSCANRULE_H
 
 #include <initializer_list>
 
@@ -11,6 +12,36 @@
 
 namespace nebula {
 namespace opt {
+
+//  Push down the limit to storage layer
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |    IndexScan      |
+// +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |     IndexScan     |
+// |     (limit=3)     |
+// +---------+---------+
 
 class PushLimitDownIndexScanRule final : public OptRule {
  public:
@@ -31,3 +62,4 @@ class PushLimitDownIndexScanRule final : public OptRule {
 
 }  // namespace opt
 }  // namespace nebula
+#endif

@@ -61,43 +61,49 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
+  const auto* dc = asNode<DataCollect>(node());
+  const auto& colType = dc->colType();
   DataSet ds;
   ds.colNames = std::move(colNames_);
-  std::unordered_set<std::tuple<Value, EdgeType, EdgeRanking, Value>> uniqueEdges;
-  for (auto i = vars.begin(); i != vars.end(); ++i) {
-    const auto& hist = ectx_->getHistory(*i);
-    for (auto j = hist.begin(); j != hist.end(); ++j) {
-      if (i == vars.begin() && j == hist.end() - 1) {
-        continue;
-      }
-      auto iter = (*j).iter();
-      if (!iter->isGetNeighborsIter()) {
-        std::stringstream msg;
-        msg << "Iterator should be kind of GetNeighborIter, but was: " << iter->kind();
-        return Status::Error(msg.str());
-      }
-      List vertices;
-      List edges;
-      auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-      auto originVertices = gnIter->getVertices();
-      for (auto& v : originVertices.values) {
-        if (UNLIKELY(!v.isVertex())) {
-          continue;
+  const auto& hist = ectx_->getHistory(vars[0]);
+  for (const auto& result : hist) {
+    auto iter = result.iter();
+    auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
+    List vertices;
+    List edges;
+    Row row;
+    bool notEmpty = false;
+    for (const auto& type : colType) {
+      if (type == Value::Type::VERTEX) {
+        auto originVertices = gnIter->getVertices();
+        vertices.reserve(originVertices.size());
+        for (auto& v : originVertices.values) {
+          if (UNLIKELY(!v.isVertex())) {
+            continue;
+          }
+          vertices.emplace_back(std::move(v));
         }
-        vertices.emplace_back(std::move(v));
-      }
-      auto originEdges = gnIter->getEdges();
-      for (auto& edge : originEdges.values) {
-        if (UNLIKELY(!edge.isEdge())) {
-          continue;
+        if (!vertices.empty()) {
+          notEmpty = true;
+          row.emplace_back(std::move(vertices));
         }
-        const auto& e = edge.getEdge();
-        auto edgeKey = std::make_tuple(e.src, e.type, e.ranking, e.dst);
-        if (uniqueEdges.emplace(std::move(edgeKey)).second) {
+      } else {
+        auto originEdges = gnIter->getEdges();
+        edges.reserve(originEdges.size());
+        for (auto& edge : originEdges.values) {
+          if (UNLIKELY(!edge.isEdge())) {
+            continue;
+          }
           edges.emplace_back(std::move(edge));
         }
+        if (!edges.empty()) {
+          notEmpty = true;
+        }
+        row.emplace_back(std::move(edges));
       }
-      ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
+    }
+    if (notEmpty) {
+      ds.rows.emplace_back(std::move(row));
     }
   }
   result_.setDataSet(std::move(ds));

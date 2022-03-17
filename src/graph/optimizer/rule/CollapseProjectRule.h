@@ -8,18 +8,39 @@
 
 #include "graph/optimizer/OptRule.h"
 
+DECLARE_bool(enable_optimizer_collapse_project_rule);
+
 namespace nebula {
 namespace opt {
 
-/**
- * Combines two [[Project]] nodes into one
- * Required conditions:
- *  1. Match the pattern
- *  2. Expressions between nodes cannot be referenced more than once
- * Benefits:
- *  1. reduce the copy of memory between nodes
- *  2. reduces expression overhead in some cases(similar to column pruning)
- */
+//  Combines two [[Project]] nodes into one
+//  Required conditions:
+//   1. Match the pattern
+//   2. Expressions between nodes cannot be referenced more than once
+//  Benefits:
+//   1. reduce the copy of memory between nodes
+//   2. reduces expression overhead in some cases(similar to column pruning)
+//
+//  Tranformation:
+//  Before:
+//
+//         +------------+------------+
+//         |       Project           |
+//         | ($A1+1 AS A2,$B1 AS B2) |
+//         +------------+------------+
+//                      |
+//  +-------------------+-------------------+
+//  |                Project                |
+//  | ($v.age+1 AS A1,$v AS B1,$n.age AS C1)|
+//  +-------------------+-------------------+
+//
+//  After:
+//
+//       +--------------+--------------+
+//       |           Project           |
+//       | ($v.age+1+1 AS A2,$v AS B2) |
+//       +--------------+--------------+
+//
 
 class CollapseProjectRule final : public OptRule {
  public:

@@ -38,7 +38,7 @@ std::string indexStr(RowReader* reader, const std::string& col) {
     return "";
   }
   auto&& v = value(std::move(res));
-  return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
+  return NebulaKeyUtils::encodeInt64(std::get<int64_t>(v));
 }
 
 IndexValues collectIndexValues(RowReader* reader,

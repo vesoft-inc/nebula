@@ -2,7 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#pragma once
+#ifndef META_PROCESSORS_PARTS_CREATESPACEASPROCESSOR_H
+#define META_PROCESSORS_PARTS_CREATESPACEASPROCESSOR_H
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -11,6 +12,16 @@ namespace meta {
 
 using Hosts = std::vector<HostAddr>;
 
+/**
+ * @brief Create a new space, copying schema and partition topology from an existing space,
+ * including:
+ *        - space properties
+ *        - partition hosts distribution
+ *        - tags
+ *        - edges
+ *        - indexes
+ *
+ */
 class CreateSpaceAsProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static CreateSpaceAsProcessor* instance(kvstore::KVStore* kvstore) {
@@ -41,3 +52,4 @@ class CreateSpaceAsProcessor : public BaseProcessor<cpp2::ExecResp> {
 
 }  // namespace meta
 }  // namespace nebula
+#endif

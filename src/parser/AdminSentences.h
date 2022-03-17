@@ -156,7 +156,7 @@ class ShowCollationSentence final : public Sentence {
 
 class SpaceOptItem final {
  public:
-  using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
+  using Value = std::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
 
   enum OptionType : uint8_t {
     PARTITION_NUM,
@@ -189,27 +189,27 @@ class SpaceOptItem final {
   }
 
   int64_t asInt() const {
-    return boost::get<int64_t>(optValue_);
+    return std::get<int64_t>(optValue_);
   }
 
   const std::string& asString() const {
-    return boost::get<std::string>(optValue_);
+    return std::get<std::string>(optValue_);
   }
 
   const meta::cpp2::ColumnTypeDef& asTypeDef() const {
-    return boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+    return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
   bool isInt() const {
-    return optValue_.which() == 0;
+    return optValue_.index() == 0;
   }
 
   bool isString() const {
-    return optValue_.which() == 1;
+    return optValue_.index() == 1;
   }
 
   bool isTypeDef() const {
-    return optValue_.which() == 2;
+    return optValue_.index() == 2;
   }
 
   int64_t getPartitionNum() const {
@@ -402,6 +402,33 @@ class DropSpaceSentence final : public DropSentence {
   DropSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
     spaceName_.reset(spaceName);
     kind_ = Kind::kDropSpace;
+  }
+
+  void setClusterName(std::string* clusterName) {
+    clusterName_.reset(clusterName);
+  }
+
+  const std::string* spaceName() const {
+    return spaceName_.get();
+  }
+
+  const std::string* clusterName() const {
+    return clusterName_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> spaceName_;
+  std::unique_ptr<std::string> clusterName_;
+};
+
+// clear space data and index data, but keep space schema and index schema.
+class ClearSpaceSentence final : public DropSentence {
+ public:
+  ClearSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
+    spaceName_.reset(spaceName);
+    kind_ = Kind::kClearSpace;
   }
 
   void setClusterName(std::string* clusterName) {
@@ -703,8 +730,7 @@ class ShowServiceClientsSentence final : public Sentence {
 
 class SignInServiceSentence final : public Sentence {
  public:
-  explicit SignInServiceSentence(const meta::cpp2::ExternalServiceType& type,
-                                 ServiceClientList* clients)
+  SignInServiceSentence(const meta::cpp2::ExternalServiceType& type, ServiceClientList* clients)
       : type_(type) {
     kind_ = Kind::kSignInService;
     clients_.reset(clients);
@@ -797,7 +823,7 @@ class ShowQueriesSentence final : public Sentence {
 
 class QueryUniqueIdentifier final {
  public:
-  explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+  QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
       : epId_(epId), sessionId_(sessionId) {}
 
   Expression* sessionId() const {

@@ -141,7 +141,6 @@ void JobManager::scheduleThread() {
   }
 }
 
-// @return: true if all task dispatched, else false
 bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   std::lock_guard<std::recursive_mutex> lk(muJobFinished_);
   std::unique_ptr<JobExecutor> je =
@@ -285,7 +284,7 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   auto jobExec = JobExecutorFactory::createJobExecutor(optJobDesc, kvStore_, adminClient_);
 
   if (!jobExec) {
-    LOG(INFO) << folly::sformat("createMetaJobExecutor failed(), jobId={}", jobId);
+    LOG(INFO) << folly::sformat("createJobExecutor failed(), jobId={}", jobId);
     return nebula::cpp2::ErrorCode::E_TASK_REPORT_OUT_DATE;
   }
 
@@ -494,10 +493,7 @@ bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
 
 bool JobManager::isRunningJob(const JobDescription& jobDesc) {
   auto status = jobDesc.getStatus();
-  if (status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING) {
-    return true;
-  }
-  return false;
+  return status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING;
 }
 
 nebula::cpp2::ErrorCode JobManager::removeExpiredJobs(

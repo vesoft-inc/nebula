@@ -50,7 +50,7 @@ std::pair<LogID, TermID> Part::lastCommittedLogId() {
   std::string val;
   auto res = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
   if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
+    VLOG(2) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
     return std::make_pair(0, 0);
   }
   CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
@@ -124,8 +124,8 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_LEARNER, learner);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), learner, this](nebula::cpp2::ErrorCode code) mutable {
-        LOG(INFO) << idStr_ << "add learner " << learner
-                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        VLOG(1) << idStr_ << "add learner " << learner
+                << ", result: " << apache::thrift::util::enumNameSafe(code);
         callback(code);
       });
 }
@@ -134,8 +134,8 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
   std::string log = encodeHost(OP_TRANS_LEADER, target);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), target, this](nebula::cpp2::ErrorCode code) mutable {
-        LOG(INFO) << idStr_ << "transfer leader to " << target
-                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        VLOG(1) << idStr_ << "transfer leader to " << target
+                << ", result: " << apache::thrift::util::enumNameSafe(code);
         callback(code);
       });
 }
@@ -144,8 +144,8 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_ADD_PEER, peer);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
-        LOG(INFO) << idStr_ << "add peer " << peer
-                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        VLOG(1) << idStr_ << "add peer " << peer
+                << ", result: " << apache::thrift::util::enumNameSafe(code);
         callback(code);
       });
 }
@@ -154,8 +154,8 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
   std::string log = encodeHost(OP_REMOVE_PEER, peer);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
-        LOG(INFO) << idStr_ << "remove peer " << peer
-                  << ", result: " << apache::thrift::util::enumNameSafe(code);
+        VLOG(1) << idStr_ << "remove peer " << peer
+                << ", result: " << apache::thrift::util::enumNameSafe(code);
         callback(code);
       });
 }
@@ -165,7 +165,7 @@ void Part::setBlocking(bool sign) {
 }
 
 void Part::onLostLeadership(TermID term) {
-  VLOG(1) << "Lost the leadership for the term " << term;
+  VLOG(2) << "Lost the leadership for the term " << term;
 
   CallbackOptions opt;
   opt.spaceId = spaceId_;
@@ -178,11 +178,11 @@ void Part::onLostLeadership(TermID term) {
 }
 
 void Part::onElected(TermID term) {
-  VLOG(1) << "Being elected as the leader for the term: " << term;
+  VLOG(2) << "Being elected as the leader for the term: " << term;
 }
 
 void Part::onLeaderReady(TermID term) {
-  VLOG(1) << "leader ready to server for the term: " << term;
+  VLOG(2) << "leader ready to server for the term: " << term;
 
   CallbackOptions opt;
   opt.spaceId = spaceId_;
@@ -203,7 +203,7 @@ void Part::registerOnLeaderLost(LeaderChangeCB cb) {
 }
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
-  LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
+  VLOG(2) << idStr_ << "Find the new leader " << nLeader;
   if (newLeaderCb_) {
     newLeaderCb_(nLeader);
   }
@@ -220,7 +220,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
     lastTerm = iter->logTerm();
     auto log = iter->logMsg();
     if (log.empty()) {
-      VLOG(3) << idStr_ << "Skip the heartbeat!";
+      VLOG(4) << idStr_ << "Skip the heartbeat!";
       ++(*iter);
       continue;
     }
@@ -232,7 +232,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         DCHECK_EQ(2, pieces.size());
         auto code = batch->put(pieces[0], pieces[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
+          VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
           return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
@@ -242,11 +242,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         // Make the number of values are an even number
         DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
-          VLOG(2) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+          VLOG(4) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
                   << ", val = " << folly::hexlify(kvs[i + 1]);
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
+            VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
             return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
@@ -256,7 +256,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         auto key = decodeSingleValue(log);
         auto code = batch->remove(key);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
+          VLOG(3) << idStr_ << "Failed to call WriteBatch::remove()";
           return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
@@ -266,7 +266,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         for (auto k : keys) {
           auto code = batch->remove(k);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
+            VLOG(3) << idStr_ << "Failed to call WriteBatch::remove()";
             return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
@@ -277,7 +277,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         DCHECK_EQ(2, range.size());
         auto code = batch->removeRange(range[0], range[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
+          VLOG(3) << idStr_ << "Failed to call WriteBatch::removeRange()";
           return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
@@ -285,8 +285,8 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       case OP_BATCH_WRITE: {
         auto data = decodeBatchValue(log);
         for (auto& op : data) {
-          VLOG(2) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
-                  << ", val=" << folly::hexlify(op.second.second);
+          VLOG(4) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
+                  << ", val = " << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
             code = batch->put(op.second.first, op.second.second);
@@ -296,7 +296,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
             code = batch->removeRange(op.second.first, op.second.second);
           }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
+            VLOG(3) << idStr_ << "Failed to call WriteBatch";
             return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
@@ -308,30 +308,17 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          commitTransLeader(newLeader);
-        } else {
-          LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader
-                    << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                    << ts;
-        }
+        commitTransLeader(newLeader);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          commitRemovePeer(peer);
-        } else {
-          LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer
-                    << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                    << ts;
-        }
+        commitRemovePeer(peer);
         break;
       }
       default: {
-        LOG(WARNING) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
+        VLOG(3) << idStr_
+                << "Should not reach here. Unknown operation: " << static_cast<int32_t>(log[0]);
       }
     }
 
@@ -341,7 +328,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
   if (lastId >= 0) {
     auto code = putCommitMsg(batch.get(), lastId, lastTerm);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << idStr_ << "Commit msg failed";
+      VLOG(3) << idStr_ << "Put commit id into batch failed";
       return {code, kNoCommitLogId, kNoCommitLogTerm};
     }
   }
@@ -368,14 +355,14 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
     size += row.size();
     auto kv = decodeKV(row);
     if (nebula::cpp2::ErrorCode::SUCCEEDED != batch->put(kv.first, kv.second)) {
-      LOG(ERROR) << idStr_ << "Put failed in commit";
+      VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
       return std::make_pair(0, 0);
     }
   }
   if (finished) {
     auto retCode = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
     if (nebula::cpp2::ErrorCode::SUCCEEDED != retCode) {
-      LOG(ERROR) << idStr_ << "Put failed in commit";
+      VLOG(3) << idStr_ << "Put commit id into batch failed";
       return std::make_pair(0, 0);
     }
   }
@@ -383,7 +370,6 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
   auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Put failed in commit";
     return std::make_pair(0, 0);
   }
   return std::make_pair(count, size);
@@ -400,56 +386,31 @@ nebula::cpp2::ErrorCode Part::putCommitMsg(WriteBatch* batch,
 }
 
 bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const std::string& log) {
-  VLOG(3) << idStr_ << "logId " << logId << ", termId " << termId << ", clusterId " << clusterId;
+  VLOG(4) << idStr_ << "logId " << logId << ", termId " << termId << ", clusterId " << clusterId;
   if (!log.empty()) {
     switch (log[sizeof(int64_t)]) {
       case OP_ADD_LEARNER: {
         auto learner = decodeHost(OP_ADD_LEARNER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess add learner " << learner;
-          addLearner(learner);
-        } else {
-          LOG(INFO) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
-                    << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess add learner " << learner;
+        addLearner(learner);
         break;
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
-          preProcessTransLeader(newLeader);
-        } else {
-          LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader
-                    << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
-                    << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
+        preProcessTransLeader(newLeader);
         break;
       }
       case OP_ADD_PEER: {
         auto peer = decodeHost(OP_ADD_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess add peer " << peer;
-          addPeer(peer);
-        } else {
-          LOG(INFO) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
-                    << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess add peer " << peer;
+        addPeer(peer);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        auto ts = getTimestamp(log);
-        if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
-          preProcessRemovePeer(peer);
-        } else {
-          LOG(INFO) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
-                    << startTimeMs_ << ", but the log timestamp is " << ts;
-        }
+        LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
+        preProcessRemovePeer(peer);
         break;
       }
       default: {
@@ -464,12 +425,12 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
-  const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
-                                NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  const auto& tagPre = NebulaKeyUtils::tagPrefix(partId_);
+  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
+                                NebulaKeyUtils::lastKey(tagPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
-               << static_cast<int32_t>(ret);
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup tag, error "
+            << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
 
@@ -477,7 +438,8 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   ret = batch->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
                            NebulaKeyUtils::lastKey(edgePre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup edge, error "
+            << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
 
@@ -485,8 +447,8 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   ret = batch->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
                            NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
-               << static_cast<int32_t>(ret);
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup index, error "
+            << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
 
@@ -494,15 +456,26 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   ret = batch->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
                            NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
-               << static_cast<int32_t>(ret);
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup operation, error "
+            << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
 
+  const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                           NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup operation, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
+
+  // todo(doodle): toss prime and double prime
+
   ret = batch->remove(NebulaKeyUtils::systemCommitKey(partId_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
-               << static_cast<int32_t>(ret);
+    VLOG(3) << idStr_ << "Remove the part system commit data failed, error "
+            << apache::thrift::util::enumNameSafe(ret);
     return ret;
   }
   return engine_->commitBatchWrite(
