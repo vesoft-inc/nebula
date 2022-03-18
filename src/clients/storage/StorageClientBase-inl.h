@@ -156,7 +156,6 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
   }
 
   auto spaceId = request.get_space_id();
-  auto partsId = getReqPartsId(request);
   return folly::via(evb)
       .thenValue([remoteFunc = std::move(remoteFunc), request, evb, host, this](auto&&) {
         // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
@@ -193,7 +192,7 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         }
         return std::move(resp);
       })
-      .thenError([partsId = std::move(partsId), host, spaceId, this](
+      .thenError([request, host, spaceId, this](
                      folly::exception_wrapper&& exWrapper) mutable -> StatusOr<Response> {
         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
 
@@ -202,10 +201,11 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         if (ex && ex->getType() == TransportException::TIMED_OUT) {
           LOG(ERROR) << "Request to " << host << " time out: " << ex->what();
         } else {
+          auto partsId = getReqPartsId(request);
           invalidLeader(spaceId, partsId);
           LOG(ERROR) << "Request to " << host << " failed: " << ex->what();
         }
-        return Status::Error(folly::sformat("RPC failure in StorageClient: {}", ex->what()));
+        return Status::Error("RPC failure in StorageClient: %s", ex->what());
       });
 }
 
