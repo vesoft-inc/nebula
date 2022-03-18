@@ -11,6 +11,30 @@
 namespace nebula {
 namespace opt {
 
+//  Combines two [[Filter]] nodes into one and connect the filter expressions with `LogicalAnd`
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. reduces the expression iterated times
+//
+//  Tranformation:
+//  Before:
+//
+//  +-----+-----+
+//  | Filter(A) |
+//  +-----+-----+
+//        |
+//  +-----+-----+
+//  | Filter(B) |
+//  +-----+-----+
+//
+//  After:
+//
+//  +--------+--------+
+//  | Filter(A and B) |
+//  +--------+--------+
+//
+
 class CombineFilterRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

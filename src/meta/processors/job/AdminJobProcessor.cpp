@@ -15,8 +15,8 @@ namespace meta {
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
   std::stringstream oss;
   oss << "op = " << apache::thrift::util::enumNameSafe(req.get_op());
-  if (req.get_op() == nebula::meta::cpp2::AdminJobOp::ADD) {
-    oss << ", cmd = " << apache::thrift::util::enumNameSafe(req.get_cmd());
+  if (req.get_op() == nebula::meta::cpp2::JobOp::ADD) {
+    oss << ", type = " << apache::thrift::util::enumNameSafe(req.get_type());
   }
   oss << ", paras.size()=" << req.get_paras().size();
   for (auto& p : req.get_paras()) {
@@ -29,11 +29,11 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
   jobMgr_ = JobManager::getInstance();
 
   switch (req.get_op()) {
-    case nebula::meta::cpp2::AdminJobOp::ADD: {
+    case nebula::meta::cpp2::JobOp::ADD: {
       errorCode = addJobProcess(req, result);
       break;
     }
-    case nebula::meta::cpp2::AdminJobOp::SHOW_All: {
+    case nebula::meta::cpp2::JobOp::SHOW_All: {
       auto ret = jobMgr_->showJobs(req.get_paras().back());
       if (nebula::ok(ret)) {
         result.job_desc_ref() = nebula::value(ret);
@@ -42,7 +42,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       }
       break;
     }
-    case nebula::meta::cpp2::AdminJobOp::SHOW: {
+    case nebula::meta::cpp2::JobOp::SHOW: {
       static const size_t kShowArgsNum = 2;
       if (req.get_paras().size() != kShowArgsNum) {
         LOG(INFO) << "Parameter number not matched";
@@ -65,7 +65,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       }
       break;
     }
-    case nebula::meta::cpp2::AdminJobOp::STOP: {
+    case nebula::meta::cpp2::JobOp::STOP: {
       static const size_t kStopJobArgsNum = 2;
       if (req.get_paras().size() != kStopJobArgsNum) {
         LOG(INFO) << "Parameter number not matched";
@@ -81,7 +81,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       errorCode = jobMgr_->stopJob(iJob, req.get_paras().back());
       break;
     }
-    case nebula::meta::cpp2::AdminJobOp::RECOVER: {
+    case nebula::meta::cpp2::JobOp::RECOVER: {
       const std::vector<std::string>& paras = req.get_paras();
       const std::string& spaceName = req.get_paras().back();
       std::vector<int32_t> jobIds;
@@ -113,7 +113,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
 
 nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq& req,
                                                          cpp2::AdminJobResult& result) {
-  auto cmd = req.get_cmd();
+  auto type = req.get_type();
   auto paras = req.get_paras();
 
   // All jobs here are the space level, so the last parameter is spaceName.
@@ -134,7 +134,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
 
   // Check if job not exists
   JobID jId = 0;
-  auto jobExist = jobMgr_->checkJobExist(cmd, paras, jId);
+  auto jobExist = jobMgr_->checkJobExist(type, paras, jId);
   if (jobExist) {
     LOG(INFO) << "Job has already exists: " << jId;
     result.job_id_ref() = jId;
@@ -147,7 +147,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
     return nebula::error(jobId);
   }
 
-  JobDescription jobDesc(nebula::value(jobId), cmd, paras);
+  JobDescription jobDesc(nebula::value(jobId), type, paras);
   auto errorCode = jobMgr_->addJob(jobDesc, adminClient_);
   if (errorCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
     result.job_id_ref() = nebula::value(jobId);

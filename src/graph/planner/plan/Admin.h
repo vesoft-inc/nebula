@@ -10,12 +10,10 @@
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/meta_types.h"
 
-/**
- * All admin-related nodes would be put in this file.
- * These nodes would not exist in a same plan with maintain-related/
- * mutate-related/query-related nodes. And they are also isolated
- * from each other. This would be guaranteed by parser and validator.
- */
+// All admin-related nodes would be put in this file.
+// These nodes would not exist in a same plan with maintain-related/
+// mutate-related/query-related nodes. And they are also isolated
+// from each other. This would be guaranteed by parser and validator.
 namespace nebula {
 namespace graph {
 
@@ -207,6 +205,37 @@ class DropSpace final : public SingleDependencyNode {
  private:
   DropSpace(QueryContext* qctx, PlanNode* input, std::string spaceName, bool ifExists)
       : SingleDependencyNode(qctx, Kind::kDropSpace, input) {
+    spaceName_ = std::move(spaceName);
+    ifExists_ = ifExists;
+  }
+
+ private:
+  std::string spaceName_;
+  bool ifExists_;
+};
+
+class ClearSpace final : public SingleDependencyNode {
+ public:
+  static ClearSpace* make(QueryContext* qctx,
+                          PlanNode* input,
+                          std::string spaceName,
+                          bool ifExists) {
+    return qctx->objPool()->add(new ClearSpace(qctx, input, std::move(spaceName), ifExists));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  const std::string& getSpaceName() const {
+    return spaceName_;
+  }
+
+  bool getIfExists() const {
+    return ifExists_;
+  }
+
+ private:
+  ClearSpace(QueryContext* qctx, PlanNode* input, std::string spaceName, bool ifExists)
+      : SingleDependencyNode(qctx, Kind::kClearSpace, input) {
     spaceName_ = std::move(spaceName);
     ifExists_ = ifExists;
   }
@@ -879,21 +908,21 @@ class SubmitJob final : public SingleDependencyNode {
  public:
   static SubmitJob* make(QueryContext* qctx,
                          PlanNode* dep,
-                         meta::cpp2::AdminJobOp op,
-                         meta::cpp2::AdminCmd cmd,
+                         meta::cpp2::JobOp op,
+                         meta::cpp2::JobType type,
                          const std::vector<std::string>& params) {
-    return qctx->objPool()->add(new SubmitJob(qctx, dep, op, cmd, params));
+    return qctx->objPool()->add(new SubmitJob(qctx, dep, op, type, params));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  public:
-  meta::cpp2::AdminJobOp jobOp() const {
+  meta::cpp2::JobOp jobOp() const {
     return op_;
   }
 
-  meta::cpp2::AdminCmd cmd() const {
-    return cmd_;
+  meta::cpp2::JobType jobType() const {
+    return type_;
   }
 
   const std::vector<std::string>& params() const {
@@ -903,14 +932,14 @@ class SubmitJob final : public SingleDependencyNode {
  private:
   SubmitJob(QueryContext* qctx,
             PlanNode* dep,
-            meta::cpp2::AdminJobOp op,
-            meta::cpp2::AdminCmd cmd,
+            meta::cpp2::JobOp op,
+            meta::cpp2::JobType type,
             const std::vector<std::string>& params)
-      : SingleDependencyNode(qctx, Kind::kSubmitJob, dep), op_(op), cmd_(cmd), params_(params) {}
+      : SingleDependencyNode(qctx, Kind::kSubmitJob, dep), op_(op), type_(type), params_(params) {}
 
  private:
-  meta::cpp2::AdminJobOp op_;
-  meta::cpp2::AdminCmd cmd_;
+  meta::cpp2::JobOp op_;
+  meta::cpp2::JobType type_;
   const std::vector<std::string> params_;
 };
 

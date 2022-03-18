@@ -11,6 +11,45 @@
 namespace nebula {
 namespace opt {
 
+//  Embedding limit to [[ScanEdges]]
+//  Required conditions:
+//   1. Match the pattern
+//   2. All filters of [[AppendVertices]] must be nullptr
+//  Benefits:
+//   1. Limit data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |      ScanEdges    |
+// +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  |    (limit=3)    |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |     ScanEdges     |
+// |     (limit=3)     |
+// +---------+---------+
+
 class PushLimitDownScanEdgesAppendVerticesRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

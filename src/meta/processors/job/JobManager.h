@@ -87,12 +87,12 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   /**
    * @brief The same job is in jobMap
    *
-   * @param cmd
+   * @param type
    * @param paras
    * @param iJob
    * @return
    */
-  bool checkJobExist(const cpp2::AdminCmd& cmd, const std::vector<std::string>& paras, JobID& iJob);
+  bool checkJobExist(const cpp2::JobType& type, const std::vector<std::string>& paras, JobID& iJob);
 
   /**
    * @brief Load all jobs of the space from kvStore and convert to cpp2::JobDesc
@@ -174,9 +174,9 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    *
    * @param op Recover a job or add a new one
    * @param jobId Id of the job
-   * @param cmd Cmd type of the job
+   * @param jobType Type of the job
    */
-  void enqueue(const JbOp& op, const JobID& jobId, const cpp2::AdminCmd& cmd);
+  void enqueue(const JbOp& op, const JobID& jobId, const cpp2::JobType& jobType);
 
   /**
    * @brief Check if there is a rebuild_tag_index or rebuild_edge_index running
@@ -257,7 +257,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
  private:
   // Todo(pandasheep)
   // When folly is upgraded, PriorityUMPSCQueueSet can be used
-  // Use two queues to simulate priority queue, Divide by job cmd
+  // Use two queues to simulate priority queue, Divide by job type
   std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> lowPriorityQueue_;
   std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> highPriorityQueue_;
   std::map<JobID, std::unique_ptr<JobExecutor>> runningJobs_;

@@ -133,12 +133,14 @@ Status GoValidator::validateYield(YieldClause* yield) {
   auto& exprProps = goCtx_->exprProps;
 
   for (auto col : yield->columns()) {
+    const auto& colName = col->name();
     auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
     if (vertexExpr != nullptr &&
         static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
+    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
@@ -146,7 +148,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
-    outputs_.emplace_back(col->name(), type);
+    outputs_.emplace_back(colName, type);
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   }
 
@@ -181,6 +183,24 @@ void GoValidator::extractPropExprs(const Expression* expr,
                                  propExprColMap_,
                                  uniqueExpr);
   const_cast<Expression*>(expr)->accept(&visitor);
+}
+
+Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
+  auto pool = qctx_->objPool();
+  const auto& name = expr->toString();
+  if (name == "id($^)" || name == "src(edge)") {
+    return EdgeSrcIdExpression::make(pool, "*");
+  }
+  if (name == "id($$)" || name == "dst(edge)") {
+    return EdgeDstIdExpression::make(pool, "*");
+  }
+  if (name == "rank(edge)") {
+    return EdgeRankExpression::make(pool, "*");
+  }
+  if (name == "type(edge)") {
+    return EdgeTypeExpression::make(pool, "*");
+  }
+  return const_cast<Expression*>(expr);
 }
 
 // Rewrites the property expression to corresponding Variable/Input expression

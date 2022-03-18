@@ -6,11 +6,11 @@
 #ifndef META_JOBUTIL_H_
 #define META_JOBUTIL_H_
 
-#include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/String.h>
 
 #include <ctime>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>

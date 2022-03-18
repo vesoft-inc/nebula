@@ -219,11 +219,22 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode removeRange(const std::string& start, const std::string& end) = 0;
 
   /**
-   * @brief Add a partition to kv engine
+   * @brief Add partId into current storage engine.
    *
-   * @param partId Partition id to add
+   * @param partId
+   * @param raftPeers partition raft peers, including peers created during balance which are not in
+   * meta
    */
-  virtual void addPart(PartitionID partId) = 0;
+  virtual void addPart(PartitionID partId, const Peers& raftPeers) = 0;
+
+  /**
+   * @brief Update part info. Could only update the peers' persist info now.
+   *
+   * @param partId
+   * @param raftPeer 1. if raftPeer.status is kDeleted, delete this peer.
+   *                 2. if raftPeer.status is others, add or update this peer
+   */
+  virtual void updatePart(PartitionID partId, const Peer& raftPeer) = 0;
 
   /**
    * @brief Remove a partition from kv engine
@@ -233,11 +244,18 @@ class KVEngine {
   virtual void removePart(PartitionID partId) = 0;
 
   /**
-   * @brief Return all partIds in kv engine
+   * @brief Return all parts current engine holds.
    *
    * @return std::vector<PartitionID> Partition ids
    */
   virtual std::vector<PartitionID> allParts() = 0;
+
+  /**
+   * @brief Return all partId->raft peers that current storage engine holds.
+   *
+   * @return std::map<PartitionID, Peers> partId-> raft peers for each part, including learners
+   */
+  virtual std::map<PartitionID, Peers> allPartPeers() = 0;
 
   /**
    * @brief Return total parts num

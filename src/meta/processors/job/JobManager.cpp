@@ -148,7 +148,8 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   JobExecutor* jobExec = je.get();
   runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
   if (jobExec == nullptr) {
-    LOG(INFO) << "unreconized job cmd " << apache::thrift::util::enumNameSafe(jobDesc.getCmd());
+    LOG(INFO) << "unreconized job type "
+              << apache::thrift::util::enumNameSafe(jobDesc.getJobType());
     return false;
   }
 
@@ -393,7 +394,7 @@ nebula::cpp2::ErrorCode JobManager::addJob(const JobDescription& jobDesc, AdminC
   auto rc = save(jobDesc.jobKey(), jobDesc.jobVal());
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     auto jobId = jobDesc.getJobId();
-    enqueue(JbOp::ADD, jobId, jobDesc.getCmd());
+    enqueue(JbOp::ADD, jobId, jobDesc.getJobType());
     // Add job to jobMap
     inFlightJobs_.emplace(jobId, jobDesc);
   } else {
@@ -420,8 +421,8 @@ bool JobManager::try_dequeue(std::pair<JbOp, JobID>& opJobId) {
   return false;
 }
 
-void JobManager::enqueue(const JbOp& op, const JobID& jobId, const cpp2::AdminCmd& cmd) {
-  if (cmd == cpp2::AdminCmd::STATS) {
+void JobManager::enqueue(const JbOp& op, const JobID& jobId, const cpp2::JobType& jobType) {
+  if (jobType == cpp2::JobType::STATS) {
     highPriorityQueue_->enqueue(std::make_pair(op, jobId));
   } else {
     lowPriorityQueue_->enqueue(std::make_pair(op, jobId));
@@ -515,10 +516,10 @@ nebula::cpp2::ErrorCode JobManager::removeExpiredJobs(
   return ret;
 }
 
-bool JobManager::checkJobExist(const cpp2::AdminCmd& cmd,
+bool JobManager::checkJobExist(const cpp2::JobType& jobType,
                                const std::vector<std::string>& paras,
                                JobID& iJob) {
-  JobDescription jobDesc(0, cmd, paras);
+  JobDescription jobDesc(0, jobType, paras);
   auto it = inFlightJobs_.begin();
   while (it != inFlightJobs_.end()) {
     if (it->second == jobDesc) {
@@ -562,8 +563,8 @@ JobManager::showJob(JobID iJob, const std::string& spaceName) {
       ret.second.emplace_back(td.toTaskDesc());
     }
   }
-  if (ret.first.get_cmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
-      ret.first.get_cmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
+  if (ret.first.get_type() == meta::cpp2::JobType::DATA_BALANCE ||
+      ret.first.get_type() == meta::cpp2::JobType::ZONE_BALANCE) {
     auto res = BalancePlan::show(iJob, kvStore_, adminClient_);
     if (ok(res)) {
       std::vector<cpp2::BalanceTask> thriftTasks = value(res);
@@ -648,11 +649,11 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
                              optJob.getStatus() == cpp2::JobStatus::STOPPED))) {
         // Check if the job exists
         JobID jId = 0;
-        auto jobExist = checkJobExist(optJob.getCmd(), optJob.getParas(), jId);
+        auto jobExist = checkJobExist(optJob.getJobType(), optJob.getParas(), jId);
 
         if (!jobExist) {
           auto jobId = optJob.getJobId();
-          enqueue(JbOp::RECOVER, jobId, optJob.getCmd());
+          enqueue(JbOp::RECOVER, jobId, optJob.getJobType());
           inFlightJobs_.emplace(jobId, optJob);
           ++recoveredJobNum;
         }
@@ -708,8 +709,9 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkIndexJobRunning() {
       if (!isRunningJob(jobDesc)) {
         continue;
       }
-      auto cmd = jobDesc.getCmd();
-      if (cmd == cpp2::AdminCmd::REBUILD_TAG_INDEX || cmd == cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
+      auto jobType = jobDesc.getJobType();
+      if (jobType == cpp2::JobType::REBUILD_TAG_INDEX ||
+          jobType == cpp2::JobType::REBUILD_EDGE_INDEX) {
         return true;
       }
     }

@@ -335,6 +335,50 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
   return fut;
 }
 
+folly::Future<nebula::cpp2::ErrorCode> AdminClient::clearSpace(GraphSpaceID spaceId,
+                                                               const std::vector<HostAddr>& hosts) {
+  folly::Promise<nebula::cpp2::ErrorCode> promise;
+  auto f = promise.getFuture();
+
+  std::vector<folly::Future<StatusOr<nebula::cpp2::ErrorCode>>> futures;
+  for (auto& host : hosts) {
+    folly::Promise<StatusOr<nebula::cpp2::ErrorCode>> pro;
+    futures.emplace_back(pro.getFuture());
+
+    storage::cpp2::ClearSpaceReq req;
+    req.space_id_ref() = spaceId;
+    getResponseFromHost(
+        Utils::getAdminAddrFromStoreAddr(host),
+        std::move(req),
+        [](auto client, auto request) { return client->future_clearSpace(request); },
+        [](auto&& resp) -> nebula::cpp2::ErrorCode { return resp.get_code(); },
+        std::move(pro));
+  }
+
+  folly::collectAll(std::move(futures))
+      .via(ioThreadPool_.get())
+      .thenTry([pro = std::move(promise)](auto&& futureRet) mutable {
+        if (futureRet.hasException()) {
+          pro.setValue(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+        } else {
+          auto vec = std::move(futureRet).value();
+          bool isAllOk = true;
+          for (auto& v : vec) {
+            auto resp = std::move(v).value();
+            if (!resp.ok()) {
+              pro.setValue(nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+              isAllOk = false;
+              break;
+            }
+          }
+          if (isAllOk) {
+            pro.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+          }
+        }
+      });
+  return f;
+}
+
 template <typename Request, typename RemoteFunc, typename RespGenerator>
 folly::Future<Status> AdminClient::getResponseFromPart(const HostAddr& host,
                                                        Request req,
@@ -711,7 +755,7 @@ folly::Future<StatusOr<bool>> AdminClient::blockingWrites(const std::set<GraphSp
 }
 
 folly::Future<StatusOr<bool>> AdminClient::addTask(
-    cpp2::AdminCmd cmd,
+    cpp2::JobType type,
     int32_t jobId,
     int32_t taskId,
     GraphSpaceID spaceId,
@@ -723,7 +767,7 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
   storage::cpp2::AddTaskRequest req;
-  req.cmd_ref() = cmd;
+  req.job_type_ref() = type;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
 

@@ -40,6 +40,8 @@ class GoValidator final : public Validator {
 
   Expression* rewrite2VarProp(const Expression* expr);
 
+  Expression* rewriteVertexEdge2EdgeProp(const Expression* expr);
+
  private:
   std::unique_ptr<GoContext> goCtx_;
 

@@ -65,7 +65,7 @@ class AppendLogsIterator;
  * should be applied atomically. You could implement CAS, READ-MODIFY-WRITE
  * operations though it.
  * */
-using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
+using AtomicOp = folly::Function<std::optional<std::string>(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
   friend class AppendLogsIterator;
@@ -159,6 +159,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   TermID termId() const {
     return term_;
   }
+
+  /**
+   * @brief clean wal that before commitLogId
+   */
+  virtual void cleanWal();
 
   /**
    * @brief Return the wal

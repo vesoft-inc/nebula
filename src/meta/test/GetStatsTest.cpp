@@ -125,7 +125,7 @@ TEST_F(GetStatsTest, StatsJob) {
   TestUtils::assembleSpace(kv_.get(), 1, 1);
   GraphSpaceID spaceId = 1;
   std::vector<std::string> paras{"test_space"};
-  JobDescription statsJob(12, cpp2::AdminCmd::STATS, paras);
+  JobDescription statsJob(12, cpp2::JobType::STATS, paras);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
   auto rc = jobMgr->save(statsJob.jobKey(), statsJob.jobVal());
@@ -217,7 +217,7 @@ TEST_F(GetStatsTest, StatsJob) {
 
   // Execute new stats job in same space.
   std::vector<std::string> paras1{"test_space"};
-  JobDescription statsJob2(13, cpp2::AdminCmd::STATS, paras1);
+  JobDescription statsJob2(13, cpp2::JobType::STATS, paras1);
   auto rc2 = jobMgr->save(statsJob2.jobKey(), statsJob2.jobVal());
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
   {
@@ -377,7 +377,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   // add stats job1
   JobID jobId1 = 1;
   std::vector<std::string> paras{"test_space"};
-  JobDescription job1(jobId1, cpp2::AdminCmd::STATS, paras);
+  JobDescription job1(jobId1, cpp2::JobType::STATS, paras);
   jobMgr->addJob(job1, &adminClient);
 
   JobCallBack cb1(jobMgr, jobId1, 0, 100);
@@ -425,7 +425,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   // add stats job2 of same space
   JobID jobId2 = 2;
-  JobDescription job2(jobId2, cpp2::AdminCmd::STATS, paras);
+  JobDescription job2(jobId2, cpp2::JobType::STATS, paras);
   jobMgr->addJob(job2, &adminClient);
 
   // check job result
@@ -495,7 +495,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   // add stats job
   JobID jobId = 1;
   std::vector<std::string> paras{"test_space"};
-  JobDescription job(jobId, cpp2::AdminCmd::STATS, paras);
+  JobDescription job(jobId, cpp2::JobType::STATS, paras);
   jobMgr->addJob(job, &adminClient);
 
   JobCallBack cb1(jobMgr, jobId, 0, 100);

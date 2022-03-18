@@ -151,6 +151,16 @@ class AdminClient {
   virtual folly::Future<Status> checkPeers(GraphSpaceID spaceId, PartitionID partId);
 
   /**
+   * @brief Clear space data in all corresponding storage hosts.
+   *
+   * @param spaceId space which will be cleared
+   * @param hosts storage admin service addresses
+   * @return folly::Future<nebula::cpp2::ErrorCode>
+   */
+  virtual folly::Future<nebula::cpp2::ErrorCode> clearSpace(GraphSpaceID spaceId,
+                                                            const std::vector<HostAddr>& hosts);
+
+  /**
    * @brief Get the all partitions' leader distribution
    *
    * @param result
@@ -197,7 +207,7 @@ class AdminClient {
   /**
    * @brief Add storage admin task to given storage host
    *
-   * @param cmd
+   * @param jobType
    * @param jobId
    * @param taskId
    * @param spaceId
@@ -206,7 +216,7 @@ class AdminClient {
    * @param parts
    * @return folly::Future<StatusOr<bool>> Return true if succeed, else return an error status
    */
-  virtual folly::Future<StatusOr<bool>> addTask(cpp2::AdminCmd cmd,
+  virtual folly::Future<StatusOr<bool>> addTask(cpp2::JobType jobType,
                                                 int32_t jobId,
                                                 int32_t taskId,
                                                 GraphSpaceID spaceId,

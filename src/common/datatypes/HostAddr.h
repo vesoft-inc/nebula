@@ -64,6 +64,10 @@ struct HostAddr {
     ha.port = std::stoi(str.substr(pos + 1));
     return ha;
   }
+
+  static HostAddr nullAddr() {
+    return HostAddr("", 0);
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const HostAddr& addr) {
