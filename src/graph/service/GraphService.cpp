@@ -11,7 +11,6 @@
 
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
-#include "common/id/SegmentId.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
 #include "common/time/TimezoneInfo.h"
@@ -62,10 +61,6 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   }
 
   queryEngine_ = std::make_unique<QueryEngine>();
-
-  SegmentId::initClient(metaClient_.get());
-  SegmentId::initRunner(getThreadManager());
-
   return queryEngine_->init(std::move(ioExecutor), metaClient_.get());
 }
 

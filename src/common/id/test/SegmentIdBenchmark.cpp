@@ -31,9 +31,7 @@ size_t SegmentIdCurrencyTest(size_t iters, int threadNum) {
   threadManager->setNamePrefix("executor");
   threadManager->start();
 
-  nebula::SegmentId::initClient(&metaClient);
-  nebula::SegmentId::initRunner(threadManager.get());
-  nebula::SegmentId& generator = nebula::SegmentId::getInstance();
+  nebula::SegmentId generator = nebula::SegmentId(&metaClient, threadManager.get());
   nebula::Status status = generator.init(step);
   ASSERT(status.ok());
 

@@ -17,9 +17,6 @@ class TestSegmentId : public testing::Test {
 
     threadManager_->setNamePrefix("executor");
     threadManager_->start();
-
-    nebula::SegmentId::initClient(&metaClient_);
-    nebula::SegmentId::initRunner(threadManager_.get());
   }
 
   int threadNum_{32};
@@ -34,7 +31,7 @@ class TestSegmentId : public testing::Test {
 };
 
 TEST_F(TestSegmentId, TestConcurrencySmallStep) {
-  SegmentId& generator = SegmentId::getInstance();
+  SegmentId generator = SegmentId(&metaClient_, threadManager_.get());
   Status status = generator.init(1000);
 
   auto proc = [&]() {
@@ -58,7 +55,7 @@ TEST_F(TestSegmentId, TestConcurrencySmallStep) {
 
 // check the result (in the case of no fetchSegment() by useing big step)
 TEST_F(TestSegmentId, TestConcurrencyBigStep) {
-  SegmentId& generator = SegmentId::getInstance();
+  SegmentId generator = SegmentId(&metaClient_, threadManager_.get());
   Status status = generator.init(120000000);
 
   auto proc = [&]() {
