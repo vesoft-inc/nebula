@@ -718,7 +718,7 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
 }
 
 TermID FileBasedWal::getLogTerm(LogID id) {
-  TermID term = -1;
+  TermID term = INVALID_TERM;
   auto iter = iterator(id, id);
   if (iter->valid()) {
     term = iter->logTerm();

@@ -33,6 +33,7 @@ namespace nebula {
 namespace kvstore {
 
 NebulaStore::~NebulaStore() {
+  stop();
   LOG(INFO) << "Cut off the relationship with meta client";
   options_.partMan_.reset();
   raftService_->stop();

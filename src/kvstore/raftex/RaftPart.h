@@ -522,12 +522,13 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @param committedLogId Commit log id of snapshot
    * @param committedLogTerm Commit log term of snapshot
    * @param finished Whether spapshot is finished
-   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
    */
-  virtual std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                                     LogID committedLogId,
-                                                     TermID committedLogTerm,
-                                                     bool finished) = 0;
+  virtual std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) = 0;
 
   /**
    * @brief Clean up extra data about the partition, usually related to state machine
@@ -620,7 +621,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   bool needToCleanupSnapshot();
 
   /**
-   * @brief Clean up the outdated snapshot
+   * @brief Convert to follower when snapshot has been outdated
    */
   void cleanupSnapshot();
 
@@ -943,6 +944,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   TermID committedLogTerm_{0};
   static constexpr LogID kNoCommitLogId{-1};
   static constexpr TermID kNoCommitLogTerm{-1};
+  static constexpr int64_t kNoSnapshotCount{-1};
+  static constexpr int64_t kNoSnapshotSize{-1};
 
   // To record how long ago when the last leader message received
   time::Duration lastMsgRecvDur_;
@@ -973,8 +976,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   std::shared_ptr<SnapshotManager> snapshot_;
 
   std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan_;
-  // Used in snapshot, record the last total count and total size received from
-  // request
+  // Used in snapshot, record the commitLogId and commitLogTerm of the snapshot, as well as
+  // last total count and total size received from request
+  LogID lastSnapshotCommitId_ = 0;
+  TermID lastSnapshotCommitTerm_ = 0;
   int64_t lastTotalCount_ = 0;
   int64_t lastTotalSize_ = 0;
   time::Duration lastSnapshotRecvDur_;

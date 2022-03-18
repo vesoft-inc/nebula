@@ -343,10 +343,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
   }
 }
 
-std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
-                                                 LogID committedLogId,
-                                                 TermID committedLogTerm,
-                                                 bool finished) {
+std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Part::commitSnapshot(
+    const std::vector<std::string>& rows,
+    LogID committedLogId,
+    TermID committedLogTerm,
+    bool finished) {
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;
@@ -355,25 +356,26 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
     count++;
     size += row.size();
     auto kv = decodeKV(row);
-    if (nebula::cpp2::ErrorCode::SUCCEEDED != batch->put(kv.first, kv.second)) {
+    auto code = batch->put(kv.first, kv.second);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
-      return std::make_pair(0, 0);
+      return {code, kNoSnapshotCount, kNoSnapshotSize};
     }
   }
   if (finished) {
-    auto retCode = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
-    if (nebula::cpp2::ErrorCode::SUCCEEDED != retCode) {
+    auto code = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(3) << idStr_ << "Put commit id into batch failed";
-      return std::make_pair(0, 0);
+      return {code, kNoSnapshotCount, kNoSnapshotSize};
     }
   }
   // For snapshot, we open the rocksdb's wal to avoid loss data if crash.
   auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return std::make_pair(0, 0);
+    return {code, kNoSnapshotCount, kNoSnapshotSize};
   }
-  return std::make_pair(count, size);
+  return {code, count, size};
 }
 
 nebula::cpp2::ErrorCode Part::putCommitMsg(WriteBatch* batch,
