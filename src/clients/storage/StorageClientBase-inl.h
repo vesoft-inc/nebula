@@ -147,8 +147,8 @@ template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerType>::getResponse(
     folly::EventBase* evb, const HostAddr& host, const Request& request, RemoteFunc&& remoteFunc) {
-  static_assert(folly::isFuture<
-                typename std::result_of<RemoteFunc(ClientType*, const Request&)>::type>::value);
+  static_assert(
+      folly::isFuture<std::invoke_result_t<RemoteFunc, ClientType*, const Request&>>::value);
 
   stats::StatsManager::addValue(kNumRpcSentToStoraged);
   if (evb == nullptr) {
