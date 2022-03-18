@@ -29,9 +29,8 @@ void BalanceTask::invoke() {
     LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Task invalid, status "
               << static_cast<int32_t>(status_);
     // When a plan is stopped or dst is not alive any more, a task will be
-    // marked as INVALID, the task will not be executed again. Balancer will
-    // start a new plan instead.
-    onFinished_();
+    // marked as INVALID, and the job will be marked as FAILED.
+    onError_();
     return;
   } else if (ret_ == BalanceTaskResult::FAILED) {
     endTimeMs_ = time::WallClock::fastNowInSec();

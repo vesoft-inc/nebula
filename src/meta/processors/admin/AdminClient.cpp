@@ -755,7 +755,7 @@ folly::Future<StatusOr<bool>> AdminClient::blockingWrites(const std::set<GraphSp
 }
 
 folly::Future<StatusOr<bool>> AdminClient::addTask(
-    cpp2::AdminCmd cmd,
+    cpp2::JobType type,
     int32_t jobId,
     int32_t taskId,
     GraphSpaceID spaceId,
@@ -767,7 +767,7 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
   storage::cpp2::AddTaskRequest req;
-  req.cmd_ref() = cmd;
+  req.job_type_ref() = type;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
 

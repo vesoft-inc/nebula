@@ -19,7 +19,7 @@ folly::Future<Status> CompactJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::COMPACT,
+      ->addTask(cpp2::JobType::COMPACT,
                 jobId_,
                 taskId_++,
                 space_,

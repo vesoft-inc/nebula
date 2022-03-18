@@ -39,7 +39,7 @@ class JobDescription {
  public:
   JobDescription() = default;
   JobDescription(JobID id,
-                 cpp2::AdminCmd cmd,
+                 cpp2::JobType type,
                  std::vector<std::string> paras,
                  Status status = Status::QUEUE,
                  int64_t startTime = 0,
@@ -64,8 +64,8 @@ class JobDescription {
    *
    * @return
    */
-  cpp2::AdminCmd getCmd() const {
-    return cmd_;
+  cpp2::JobType getJobType() const {
+    return type_;
   }
 
   /**
@@ -124,7 +124,7 @@ class JobDescription {
 
   /**
    * @brief
-   * Get a existed job from kvstore, return folly::none if there isn't
+   * Get a existed job from kvstore, reture std::nullopt if there isn't
    *
    * @param iJob Id of the job we would load
    * @param kv Where we load the job from
@@ -176,7 +176,7 @@ class JobDescription {
    * @param rawVal
    * @return
    */
-  static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> parseVal(
+  static std::tuple<cpp2::JobType, std::vector<std::string>, Status, int64_t, int64_t> parseVal(
       const folly::StringPiece& rawVal);
 
   /**
@@ -189,7 +189,8 @@ class JobDescription {
   static bool isJobKey(const folly::StringPiece& rawKey);
 
   bool operator==(const JobDescription& that) const {
-    return this->cmd_ == that.cmd_ && this->paras_ == that.paras_ && this->status_ == that.status_;
+    return this->type_ == that.type_ && this->paras_ == that.paras_ &&
+           this->status_ == that.status_;
   }
 
   bool operator!=(const JobDescription& that) const {
@@ -207,12 +208,12 @@ class JobDescription {
    * @param rawVal
    * @return
    */
-  static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> decodeValV1(
+  static std::tuple<cpp2::JobType, std::vector<std::string>, Status, int64_t, int64_t> decodeValV1(
       const folly::StringPiece& rawVal);
 
  private:
   JobID id_;
-  cpp2::AdminCmd cmd_;
+  cpp2::JobType type_;
   std::vector<std::string> paras_;
   Status status_;
   int64_t startTime_;

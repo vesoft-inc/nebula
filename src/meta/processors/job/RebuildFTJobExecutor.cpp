@@ -13,7 +13,7 @@ folly::Future<Status> RebuildFTJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX,
+      ->addTask(cpp2::JobType::REBUILD_FULLTEXT_INDEX,
                 jobId_,
                 taskId_++,
                 space_,

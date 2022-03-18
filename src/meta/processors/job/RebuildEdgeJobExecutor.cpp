@@ -13,7 +13,7 @@ folly::Future<Status> RebuildEdgeJobExecutor::executeInternal(HostAddr&& address
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::REBUILD_EDGE_INDEX,
+      ->addTask(cpp2::JobType::REBUILD_EDGE_INDEX,
                 jobId_,
                 taskId_++,
                 space_,

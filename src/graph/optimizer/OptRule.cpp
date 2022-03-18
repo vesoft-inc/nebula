@@ -109,7 +109,6 @@ bool OptRule::checkDataflowDeps(OptContext *ctx,
       auto optGNode = ctx->findOptGroupNodeByPlanNodeId(pnode->id());
       if (!optGNode) continue;
       const auto &deps = optGNode->dependencies();
-      if (deps.empty()) continue;
       auto found = std::find(deps.begin(), deps.end(), node->group());
       if (found == deps.end()) {
         VLOG(2) << ctx->qctx()->symTable()->toString();

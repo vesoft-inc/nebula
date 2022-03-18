@@ -6,25 +6,25 @@
 #include <gtest/gtest.h>
 
 #include "codec/NebulaCodecImpl.h"
-#include "codec/RowReaderWrapper"
+#include "codec/RowReaderWrapper.h"
 #include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 
 namespace nebula {
 
 TEST(NebulaCodec, encode) {
-  std::vector<boost::any> v;
+  std::vector<std::any> v;
   v.emplace_back(1);
   v.emplace_back(false);
   v.emplace_back(3.14F);
   v.emplace_back(3.14);
   v.emplace_back(std::string("hi"));
 
-  EXPECT_EQ(boost::any_cast<int>(v[0]), 1);
-  EXPECT_EQ(boost::any_cast<bool>(v[1]), false);
-  EXPECT_EQ(boost::any_cast<float>(v[2]), 3.14F);
-  EXPECT_EQ(boost::any_cast<double>(v[3]), 3.14);
-  EXPECT_EQ(boost::any_cast<std::string>(v[4]), "hi");
+  EXPECT_EQ(std::any_cast<int>(v[0]), 1);
+  EXPECT_EQ(std::any_cast<bool>(v[1]), false);
+  EXPECT_EQ(std::any_cast<float>(v[2]), 3.14F);
+  EXPECT_EQ(std::any_cast<double>(v[3]), 3.14);
+  EXPECT_EQ(std::any_cast<std::string>(v[4]), "hi");
 
   SchemaWriter schemaWriter;
   schemaWriter.appendCol("i_field", cpp2::SupportedType::INT);
@@ -81,7 +81,7 @@ TEST(NebulaCodec, encode) {
   EXPECT_EQ("hi", sVal.toString());
 
   // check empty values
-  std::vector<boost::any> emptyV;
+  std::vector<std::any> emptyV;
   std::string emptyEncoded = codec.encode(emptyV);
 
   SchemaWriter emptyWriter;
@@ -133,12 +133,12 @@ TEST(NebulaCodec, decode) {
   NebulaCodecImpl codec;
   auto result = codec.decode(encoded, schema);
 
-  EXPECT_TRUE(boost::any_cast<bool>(result.value()["b_field"]));
-  EXPECT_EQ(boost::any_cast<int>(result.value()["i_field"]), 64);
-  EXPECT_EQ(boost::any_cast<int64_t>(result.value()["v_field"]), 0x1122334455667788L);
-  EXPECT_EQ(boost::any_cast<float>(result.value()["f_field"]), 3.14F);
-  EXPECT_EQ(boost::any_cast<double>(result.value()["d_field"]), 2.718);
-  EXPECT_EQ(boost::any_cast<std::string>(result.value()["s_field"]), "Hello World!");
+  EXPECT_TRUE(std::any_cast<bool>(result.value()["b_field"]));
+  EXPECT_EQ(std::any_cast<int>(result.value()["i_field"]), 64);
+  EXPECT_EQ(std::any_cast<int64_t>(result.value()["v_field"]), 0x1122334455667788L);
+  EXPECT_EQ(std::any_cast<float>(result.value()["f_field"]), 3.14F);
+  EXPECT_EQ(std::any_cast<double>(result.value()["d_field"]), 2.718);
+  EXPECT_EQ(std::any_cast<std::string>(result.value()["s_field"]), "Hello World!");
 
   // check empty encoded string
   auto empty_encoded = codec.decode("", schema);

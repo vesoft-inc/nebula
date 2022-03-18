@@ -104,7 +104,11 @@ void BalancePlan::invoke() {
         } else if (j + 1 < buckets_[i].size()) {
           auto& task = tasks_[buckets_[i][j + 1]];
           LOG(INFO) << "Skip the task for the same partId " << task.partId_;
-          task.ret_ = BalanceTaskResult::FAILED;
+          if (stopped) {
+            task.ret_ = BalanceTaskResult::INVALID;
+          } else {
+            task.ret_ = BalanceTaskResult::FAILED;
+          }
           task.invoke();
         } else {
           size_t index = curIndex_.fetch_add(1, std::memory_order_relaxed);
