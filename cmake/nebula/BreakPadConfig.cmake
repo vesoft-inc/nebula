@@ -1,4 +1,10 @@
 # Breakpad
+if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+	MESSAGE(FATAL_ERROR "Breakpad need debug info.")
+endif()
+if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    set(ENABLE_BREAKPAD OFF)
+endif()
 if (ENABLE_BREAKPAD)
     add_compile_options(-DENABLE_BREAKPAD=1)
 endif()

@@ -115,12 +115,6 @@ EOF
 
 function _build_graph {
     pushd ${build_dir}
-    if [ "x"$enable_breakpad == "xON" ]; then
-        if [ "x"$build_type != "xDebug" ] && [ "x"$build_type != "xRelWithDebInfo" ]; then
-            echo 'Breakpad need debug info.'
-            exit 1
-        fi
-    fi
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
           -DENABLE_ASAN=${san} \

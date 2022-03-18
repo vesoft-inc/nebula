@@ -56,7 +56,7 @@ static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 static void signalHandler(apache::thrift::ThriftServer* metaServer, int sig);
 static void waitForStop();
 static Status setupSignalHandler(apache::thrift::ThriftServer* metaServer);
-#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
+#if defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
 
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
+#if defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
   if (!status.ok()) {
     LOG(ERROR) << status;

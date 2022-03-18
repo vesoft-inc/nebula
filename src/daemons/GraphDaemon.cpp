@@ -33,7 +33,7 @@ using nebula::network::NetworkUtils;
 static void signalHandler(nebula::graph::GraphServer *graphServer, int sig);
 static Status setupSignalHandler(nebula::graph::GraphServer *graphServer);
 static void printHelp(const char *prog);
-#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
+#if defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-#if defined(__x86_64__) && defined(ENABLE_BREAKPAD)
+#if defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
   if (!status.ok()) {
     LOG(ERROR) << status;
