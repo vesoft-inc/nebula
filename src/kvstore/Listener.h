@@ -62,10 +62,11 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *   // If listener falls far behind from leader, leader would send snapshot to listener. The
  *   // snapshot is a vector of kv, listener could decode them and treat them as normal logs until
  *   // all snapshot has been received.
- *   std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
- *                                              LogID committedLogId,
- *                                              TermID committedLogTerm,
- *                                              bool finished) override;
+ *   std::tuple<cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+ *        const std::vector<std::string>& data,
+ *        LogID committedLogId,
+ *        TermID committedLogTerm,
+ *        bool finished) override;
  *
  * * Must implement in derived class
  *   // extra initialize work could do here
@@ -279,12 +280,14 @@ class Listener : public raftex::RaftPart {
    * @param committedLogId Commit log id of snapshot
    * @param committedLogTerm Commit log term of snapshot
    * @param finished Whether spapshot is finished
-   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
+   * succeed, else return {errorcode, -1, -1}
    */
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override;
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
   /**
    * @brief Background job thread will trigger doApply to apply data into state machine periodically

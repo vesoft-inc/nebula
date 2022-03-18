@@ -1317,9 +1317,10 @@ bool RaftPart::needToCleanupSnapshot() {
 }
 
 void RaftPart::cleanupSnapshot() {
-  VLOG(1) << idStr_ << "Snapshot has not been received for a long time, clean up the snapshot";
+  VLOG(1) << idStr_
+          << "Snapshot has not been received for a long time, convert to running so we can receive "
+             "another snapshot";
   std::lock_guard<std::mutex> g(raftLock_);
-  reset();
   status_ = Status::RUNNING;
 }
 
@@ -1566,12 +1567,42 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // previously in fact. There are two choise: ask leader to send logs after committedLogId_ or
       // just do nothing.
       if (req.get_last_log_id_sent() < committedLogId_ ||
-          wal_->lastLogId() < req.get_last_log_id_sent() ||
-          wal_->getLogTerm(req.get_last_log_id_sent()) != req.get_last_log_term_sent()) {
+          wal_->lastLogId() < req.get_last_log_id_sent()) {
+        // case 1 and case 2
         resp.last_matched_log_id_ref() = committedLogId_;
         resp.last_matched_log_term() = committedLogTerm_;
         resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
-        // lastMatchedLogId is committedLogId_
+        return;
+      }
+      auto prevLogTerm = wal_->getLogTerm(req.get_last_log_id_sent());
+      if (UNLIKELY(prevLogTerm == FileBasedWal::INVALID_TERM)) {
+        /*
+        At this point, the condition below established:
+        committedLogId <= req.get_last_log_id_sent() <= wal_->lastLogId()
+
+        When INVALID_TERM is returned, we failed to find the log of req.get_last_log_id_sent()
+        in wal. This usually happens the node has received a snapshot recently.
+        */
+        if (req.get_last_log_id_sent() == committedLogId_ &&
+            req.get_last_log_term_sent() == committedLogTerm_) {
+          // Logs are matched of at log index of committedLogId_, and we could check remaing wal if
+          // there are any.
+          // The first log of wal must be committedLogId_ + 1, it can't be 0 (no wal) as well
+          // because it has been checked by case 2
+          DCHECK(wal_->firstLogId() == committedLogId_ + 1);
+        } else {
+          // case 3: checked by committedLogId_ and committedLogTerm_
+          // When log is not matched, we just return committedLogId_ and committedLogTerm_ instead
+          resp.last_matched_log_id_ref() = committedLogId_;
+          resp.last_matched_log_term() = committedLogTerm_;
+          resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
+          return;
+        }
+      } else if (prevLogTerm != req.get_last_log_term_sent()) {
+        // case 3
+        resp.last_matched_log_id_ref() = committedLogId_;
+        resp.last_matched_log_term() = committedLogTerm_;
+        resp.error_code() = nebula::cpp2::ErrorCode::E_RAFT_LOG_GAP;
         return;
       }
 
@@ -1791,9 +1822,12 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
 
 void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
                                           cpp2::SendSnapshotResponse& resp) {
-  VLOG(2) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
-          << ", total count received " << req.get_total_count() << ", total size received "
-          << req.get_total_size() << ", finished " << req.get_done();
+  VLOG(2) << idStr_ << "Receive snapshot from " << req.get_leader_addr() << ":"
+          << req.get_leader_port() << ", commit log id " << req.get_committed_log_id()
+          << ", commit log term " << req.get_committed_log_term() << ", leader has sent "
+          << req.get_total_count() << " logs of size " << req.get_total_size() << ", finished "
+          << req.get_done();
+
   std::lock_guard<std::mutex> g(raftLock_);
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1806,30 +1840,44 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
-  if (UNLIKELY(role_ != Role::FOLLOWER && role_ != Role::LEARNER)) {
-    VLOG(3) << idStr_ << "Bad role " << roleStr(role_);
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_STOPPED;
-    return;
-  }
-  if (UNLIKELY(leader_ != HostAddr(req.get_leader_addr(), req.get_leader_port()) ||
-               term_ != req.get_term())) {
-    VLOG(2) << idStr_ << "Term out of date, current term " << term_ << ", received term "
-            << req.get_term();
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE;
+  // Check leadership
+  nebula::cpp2::ErrorCode err = verifyLeader<cpp2::SendSnapshotRequest>(req);
+  // Set term_ again because it may be modified in verifyLeader
+  resp.current_term_ref() = term_;
+  if (err != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    // Wrong leadership
+    VLOG(3) << idStr_ << "Will not follow the leader";
+    resp.error_code_ref() = err;
     return;
   }
   if (status_ != Status::WAITING_SNAPSHOT) {
     VLOG(2) << idStr_ << "Begin to receive the snapshot";
     reset();
     status_ = Status::WAITING_SNAPSHOT;
+    lastSnapshotCommitId_ = req.get_committed_log_id();
+    lastSnapshotCommitTerm_ = req.get_committed_log_term();
+    lastTotalCount_ = 0;
+    lastTotalSize_ = 0;
+  } else if (lastSnapshotCommitId_ != req.get_committed_log_id() ||
+             lastSnapshotCommitTerm_ != req.get_committed_log_term()) {
+    // Still waiting for snapshot from another peer, just return error. If the the peer doesn't
+    // send any logs during raft_snapshot_timeout, will convert to Status::RUNNING, so we can accept
+    // snapshot again
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
+    return;
   }
   lastSnapshotRecvDur_.reset();
   // TODO(heng): Maybe we should save them into one sst firstly?
   auto ret = commitSnapshot(
       req.get_rows(), req.get_committed_log_id(), req.get_committed_log_term(), req.get_done());
+  if (std::get<0>(ret) != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(2) << idStr_ << "Persist snapshot failed";
+    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED;
+    return;
+  }
   stats::StatsManager::addValue(kCommitSnapshotLatencyUs, execTime_);
-  lastTotalCount_ += ret.first;
-  lastTotalSize_ += ret.second;
+  lastTotalCount_ += std::get<1>(ret);
+  lastTotalSize_ += std::get<2>(ret);
   if (lastTotalCount_ != req.get_total_count() || lastTotalSize_ != req.get_total_size()) {
     VLOG(2) << idStr_ << "Bad snapshot, total rows received " << lastTotalCount_
             << ", total rows sended " << req.get_total_count() << ", total size received "
@@ -1983,8 +2031,6 @@ void RaftPart::reset() {
   cleanup();
   lastLogId_ = committedLogId_ = 0;
   lastLogTerm_ = committedLogTerm_ = 0;
-  lastTotalCount_ = 0;
-  lastTotalSize_ = 0;
 }
 
 nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {

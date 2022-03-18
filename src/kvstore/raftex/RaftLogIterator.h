@@ -19,7 +19,7 @@ namespace raftex {
 class RaftLogIterator final : public LogIterator {
  public:
   /**
-   * @brief Construct a new raf log iterator
+   * @brief Construct a new raft log iterator
    *
    * @param firstLogId First log id in iterator
    * @param logEntries Log entries from rpc request
