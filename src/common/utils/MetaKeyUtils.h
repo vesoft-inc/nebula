@@ -10,6 +10,7 @@
 #include "common/base/Status.h"
 #include "common/datatypes/HostAddr.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/KVStore.h"
 
 namespace nebula {
 
@@ -182,11 +183,15 @@ class MetaKeyUtils final {
 
   static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
+  static const std::string& schemaEdgesPrefix();
+
   static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
   static EdgeType parseEdgeType(folly::StringPiece key);
 
   static SchemaVer parseEdgeVersion(folly::StringPiece key);
+
+  static SchemaVer getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
 
   static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
 
@@ -194,9 +199,13 @@ class MetaKeyUtils final {
 
   static SchemaVer parseTagVersion(folly::StringPiece key);
 
+  static SchemaVer getLatestTagScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
+
   static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 
   static std::string schemaTagsPrefix(GraphSpaceID spaceId);
+
+  static const std::string& schemaTagsPrefix();
 
   static meta::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
@@ -205,6 +214,8 @@ class MetaKeyUtils final {
   static std::string indexVal(const meta::cpp2::IndexItem& item);
 
   static std::string indexPrefix(GraphSpaceID spaceId);
+
+  static const std::string& indexPrefix();
 
   static IndexID parseIndexesKeyIndexID(folly::StringPiece key);
 

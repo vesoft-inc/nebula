@@ -53,19 +53,18 @@ struct TaskContext {
 
   TaskContext() = default;
   TaskContext(const cpp2::AddTaskRequest& req, CallBack cb)
-      : cmd_(req.get_cmd()),
+      : jobType_(req.get_job_type()),
         jobId_(req.get_job_id()),
         taskId_(req.get_task_id()),
         parameters_(req.get_para()),
         onFinish_(cb) {}
 
-  nebula::meta::cpp2::AdminCmd cmd_;
+  nebula::meta::cpp2::JobType jobType_;
   JobID jobId_{-1};
   TaskID taskId_{-1};
   nebula::storage::cpp2::TaskPara parameters_;
   TaskPriority pri_{TaskPriority::MID};
   CallBack onFinish_;
-  size_t concurrentReq_{INT_MAX};
 };
 
 /**
@@ -159,26 +158,6 @@ class AdminTask {
   }
 
   /**
-   * @brief Set the Concurrent Request
-   *
-   * @param concurrentReq Number of concurrent requests.
-   */
-  virtual void setConcurrentReq(int concurrentReq) {
-    if (concurrentReq > 0) {
-      ctx_.concurrentReq_ = concurrentReq;
-    }
-  }
-
-  /**
-   * @brief Get the Concurrent Requests number.
-   *
-   * @return size_t Concurrent requests number.
-   */
-  virtual size_t getConcurrentReq() {
-    return ctx_.concurrentReq_;
-  }
-
-  /**
    * @brief Get error code.
    *
    * @return nebula::cpp2::ErrorCode Errorcode.
@@ -231,10 +210,10 @@ class AdminTask {
   /**
    * @brief Get admin job's command type.
    *
-   * @return meta::cpp2::AdminCmd job's command type.
+   * @return meta::cpp2::JobType job's command type.
    */
-  meta::cpp2::AdminCmd cmdType() {
-    return ctx_.cmd_;
+  meta::cpp2::JobType jobType() {
+    return ctx_.jobType_;
   }
 
  public:

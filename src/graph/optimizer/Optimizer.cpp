@@ -28,6 +28,7 @@ namespace opt {
 
 Optimizer::Optimizer(std::vector<const RuleSet *> ruleSets) : ruleSets_(std::move(ruleSets)) {}
 
+// Optimizer entrance
 StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   DCHECK(qctx != nullptr);
   auto optCtx = std::make_unique<OptContext>(qctx);
@@ -49,6 +50,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   return newRoot;
 }
 
+// Just for Properties Pruning
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
   if (FLAGS_enable_optimizer_property_pruner_rule) {
     graph::PropertyTracker propsUsed;
@@ -67,12 +69,15 @@ StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
 }
 
 Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
+  // Terminate when the maximum number of iterations(RuleSets) is reached or the execution plan is
+  // unchanged
   int8_t appliedTimes = kMaxIterationRound;
   while (octx->changed()) {
     if (--appliedTimes < 0) break;
     octx->setChanged(false);
     for (auto ruleSet : ruleSets_) {
       for (auto rule : ruleSet->rules()) {
+        // Explore until the maximum number of iterations(Rules) is reached
         NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
         rootGroup->setUnexplored(rule);
       }
@@ -81,6 +86,7 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
   return Status::OK();
 }
 
+// Create Memo structure
 OptGroup *Optimizer::convertToGroup(OptContext *ctx,
                                     PlanNode *node,
                                     std::unordered_map<int64_t, OptGroup *> *visited) {

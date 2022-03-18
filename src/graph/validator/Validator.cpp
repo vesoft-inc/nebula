@@ -256,6 +256,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<KillQueryValidator>(sentence, context);
     case Sentence::Kind::kAlterSpace:
       return std::make_unique<AlterSpaceValidator>(sentence, context);
+    case Sentence::Kind::kClearSpace:
+      return std::make_unique<ClearSpaceValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing
@@ -436,6 +438,7 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
+// TODO(Aiee) Move to validateUtil
 // Validate and build start vids.
 // Check vid type, construct expression to access vid.
 Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {

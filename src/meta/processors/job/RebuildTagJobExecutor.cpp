@@ -13,14 +13,13 @@ folly::Future<Status> RebuildTagJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::REBUILD_TAG_INDEX,
+      ->addTask(cpp2::JobType::REBUILD_TAG_INDEX,
                 jobId_,
                 taskId_++,
                 space_,
                 std::move(address),
                 taskParameters_,
-                std::move(parts),
-                concurrency_)
+                std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();

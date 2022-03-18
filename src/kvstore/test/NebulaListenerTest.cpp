@@ -58,17 +58,17 @@ class DummyListener : public Listener {
     return data_;
   }
 
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override {
+  std::tuple<cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                                               LogID committedLogId,
+                                                               TermID committedLogTerm,
+                                                               bool finished) override {
     bool unl = raftLock_.try_lock();
     auto result = Listener::commitSnapshot(data, committedLogId, committedLogTerm, finished);
     if (unl) {
       raftLock_.unlock();
     }
-    committedSnapshot_.first += result.first;
-    committedSnapshot_.second += result.second;
+    committedSnapshot_.first += std::get<1>(result);
+    committedSnapshot_.second += std::get<2>(result);
     snapshotBatchCount_++;
     return result;
   }
@@ -447,8 +447,9 @@ TEST_P(ListenerBasicTest, CommitSnapshotTest) {
     }
     auto dummy = dummies_[partId];
     auto ret = dummy->commitSnapshot(rows, 100, 1, true);
-    CHECK_EQ(ret.first, 100);
-    CHECK_EQ(ret.second, size);
+    EXPECT_EQ(std::get<0>(ret), nebula::cpp2::ErrorCode::SUCCEEDED);
+    EXPECT_EQ(std::get<1>(ret), 100);
+    EXPECT_EQ(std::get<2>(ret), size);
   }
 
   LOG(INFO) << "Check listener's data";

@@ -31,7 +31,7 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
 
       auto optJob = nebula::value(optJobRet);
       auto jobDesc = optJob.toJobDesc();
-      if (jobDesc.get_cmd() == cpp2::AdminCmd::REBUILD_TAG_INDEX) {
+      if (jobDesc.get_type() == cpp2::JobType::REBUILD_TAG_INDEX) {
         auto paras = jobDesc.get_paras();
         DCHECK_GE(paras.size(), 1);
         auto spaceName = paras.back();

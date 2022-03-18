@@ -13,25 +13,25 @@
 namespace nebula {
 namespace storage {
 
-/*
-Originated from folly::FutureDAG, not thread-safe.
-
-The StoragePlan contains a set of RelNode, all you need to do is define a
-RelNode, add it to plan by calling addNode, which will return the index of the
-RelNode in this plan. The dependencies between different nodes is defined by
-calling addDependency in RelNode.
-
-To run the plan, call the go method, you could get the final result.
-
-For simplicity, StoragePlan has not detect if has cycle in it for now, user must
-make sure no cycle dependency in it.
-
-For this version, if there are more than one node depends on the same node, that
-node will be executed **more than once**. If you want to make sure each node
-would be executed exactly once, StoragePlan would be inappropriate. In that
-case, please refer to the previous implement, FutureDAG in
-StorageDAGBenchmark.cpp
-*/
+/**
+ * @brief Storage query plan
+ *
+ * The StoragePlan contains a set of RelNode, all you need to do is define a RelNode, add it to plan
+ * by calling addNode, which will return the index of the RelNode in this plan. The dependencies
+ * between different nodes is defined by calling addDependency in RelNode.
+ *
+ * To run the plan, call the go method, you could get the final result.
+ *
+ * For simplicity, StoragePlan has not detect if has cycle in it for now, user must make sure no
+ * cycle dependency in it.
+ *
+ * For this version, if there are more than one node depends on the same node, that node will be
+ * executed **more than once**. If you want to make sure each node would be executed exactly once,
+ * StoragePlan would be inappropriate. In that case, please refer to the previous implement,
+ * FutureDAG in StorageDAGBenchmark.cpp
+ *
+ * @tparam T Iterated data type
+ */
 template <typename T>
 class StoragePlan {
  public:

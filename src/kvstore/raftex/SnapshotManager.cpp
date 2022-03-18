@@ -29,24 +29,21 @@ SnapshotManager::SnapshotManager() {
 folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
     std::shared_ptr<RaftPart> part, const HostAddr& dst) {
   folly::Promise<StatusOr<std::pair<LogID, TermID>>> p;
-  auto fut = p.getFuture();
+  // if use getFuture(), the future's executor is InlineExecutor, and if the promise setValue first,
+  // the future's callback will be called directly in thenValue in the same thread, the Host::lock_
+  // would be locked twice in one thread, this will cause deadlock
+  auto fut = p.getSemiFuture().via(executor_.get());
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
     auto partId = part->partId_;
     auto termId = part->term_;
-    // TODO(heng):  maybe the committedLogId is less than the real one in the
-    // snapshot. It will not loss the data, but maybe some record will be
-    // committed twice.
-    auto commitLogIdAndTerm = part->lastCommittedLogId();
     const auto& localhost = part->address();
-    std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-    VLOG(1) << part->idStr_ << "Begin to send the snapshot to the host " << dst
-            << ", commitLogId = " << commitLogIdAndTerm.first
-            << ", commitLogTerm = " << commitLogIdAndTerm.second;
     accessAllRowsInSnapshot(
         spaceId,
         partId,
-        [&, this, p = std::move(p)](const std::vector<std::string>& data,
+        [&, this, p = std::move(p)](LogID commitLogId,
+                                    TermID commitLogTerm,
+                                    const std::vector<std::string>& data,
                                     int64_t totalCount,
                                     int64_t totalSize,
                                     SnapshotStatus status) mutable -> bool {
@@ -60,8 +57,8 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
             auto f = send(spaceId,
                           partId,
                           termId,
-                          commitLogIdAndTerm.first,
-                          commitLogIdAndTerm.second,
+                          commitLogId,
+                          commitLogTerm,
                           localhost,
                           data,
                           totalSize,
@@ -77,7 +74,7 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
                 if (status == SnapshotStatus::DONE) {
                   VLOG(1) << part->idStr_ << "Finished, totalCount " << totalCount << ", totalSize "
                           << totalSize;
-                  p.setValue(commitLogIdAndTerm);
+                  p.setValue(std::make_pair(commitLogId, commitLogTerm));
                 }
                 return true;
               } else {
@@ -118,7 +115,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
   raftex::cpp2::SendSnapshotRequest req;
   req.space_ref() = spaceId;
   req.part_ref() = partId;
-  req.term_ref() = termId;
+  req.current_term_ref() = termId;
   req.committed_log_id_ref() = committedLogId;
   req.committed_log_term_ref() = committedLogTerm;
   req.leader_addr_ref() = localhost.host;

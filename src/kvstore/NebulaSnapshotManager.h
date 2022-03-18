@@ -50,6 +50,8 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
                    const void* snapshot,
                    const std::string& prefix,
                    raftex::SnapshotCallback& cb,
+                   LogID commitLogId,
+                   TermID commitLogTerm,
                    std::vector<std::string>& data,
                    int64_t& totalCount,
                    int64_t& totalSize,

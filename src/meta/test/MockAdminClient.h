@@ -40,15 +40,14 @@ class MockAdminClient : public AdminClient {
                folly::Future<StatusOr<bool>>(const std::set<GraphSpaceID>&,
                                              storage::cpp2::EngineSignType,
                                              const HostAddr&));
-  MOCK_METHOD8(addTask,
-               folly::Future<StatusOr<bool>>(cpp2::AdminCmd,
+  MOCK_METHOD7(addTask,
+               folly::Future<StatusOr<bool>>(cpp2::JobType,
                                              int32_t,
                                              int32_t,
                                              GraphSpaceID,
                                              const HostAddr&,
                                              const std::vector<std::string>&,
-                                             std::vector<PartitionID>,
-                                             int));
+                                             std::vector<PartitionID>));
   MOCK_METHOD3(stopTask, folly::Future<StatusOr<bool>>(const HostAddr&, int32_t, int32_t));
 };
 

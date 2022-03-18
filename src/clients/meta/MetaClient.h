@@ -154,6 +154,8 @@ using MetaConfigMap =
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
 using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
+
+using clientAddrMap = folly::ConcurrentHashMap<HostAddr, int64_t>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -250,8 +252,8 @@ class MetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::AdminJobOp op,
-                                                          cpp2::AdminCmd cmd,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+                                                          cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
   // Operations for parts
@@ -266,6 +268,9 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::SpaceItem>> getSpace(std::string name);
 
   folly::Future<StatusOr<bool>> dropSpace(std::string name, bool ifExists = false);
+
+  // clear space data, but keep the space schema.
+  folly::Future<StatusOr<bool>> clearSpace(std::string name, bool ifExists = false);
 
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);
@@ -641,6 +646,10 @@ class MetaClient {
     return options_.localHost_.toString();
   }
 
+  clientAddrMap& getClientAddrMap() {
+    return clientAddrMap_;
+  }
+
  protected:
   // Return true if load succeeded.
   bool loadData();
@@ -727,6 +736,9 @@ class MetaClient {
 
   Status verifyVersion();
 
+  // Removes expired keys in the clientAddrMap_
+  void clearClientAddrMap();
+
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
@@ -806,6 +818,18 @@ class MetaClient {
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
+
+  // TODO(Aiee) This is a walkaround to address the problem that using a lower version(< v2.6.0)
+  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
+  //
+  // The key here is the host of the client that sends the request, and the value indicates the
+  // expiration of the key because we don't want to keep the key forever.
+  //
+  // The assumption here is that there is ONLY ONE VERSION of the client in the host.
+  //
+  // This map will be updated when verifyVersion() is called. Only the clients since v2.6.0 will
+  // call verifyVersion(), thus we could determine whether the client version is lower than v2.6.0
+  clientAddrMap clientAddrMap_;
 
   // Global service client
   ServiceClientsList serviceClientList_;

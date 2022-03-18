@@ -9,10 +9,11 @@
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
 #   -j: Number of threads, default $(nproc)
-#   -r: Whether enable compressed debug info, default ON
-#   -p: Whether dump the symbols from binary by dump_syms
+#   -r: Whether to enable compressed debug info, default ON
+#   -p: Whether to dump the symbols from binary by dump_syms
+#   -c: Whether to enable console building, default ON
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -c <ON/OFF>
 #
 
 set -e
@@ -26,15 +27,16 @@ build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
+build_console="ON"
 branch=$(git rev-parse --abbrev-ref HEAD)
 jobs=$(nproc)
 enable_compressed_debug_info=ON
-dump_symbols=OFF
+dump_symbols="OFF"
 dump_syms_tool_dir=
 system_name=
 install_prefix=/usr/local/nebula
 
-while getopts v:n:s:b:d:t:r:p:j: opt;
+while getopts v:n:s:b:d:t:r:p:j:c: opt;
 do
     case $opt in
         v)
@@ -55,6 +57,9 @@ do
             ;;
         t)
             build_type=$OPTARG
+            ;;
+        c)
+            build_console=$OPTARG
             ;;
         j)
             jobs=$OPTARG
@@ -96,6 +101,7 @@ strip_enable: $strip_enable
 enablesanitizer: $enablesanitizer
 static_sanitizer: $static_sanitizer
 build_type: $build_type
+build_console: $build_console
 branch: $branch
 enable_compressed_debug_info: $enable_compressed_debug_info
 dump_symbols: $dump_symbols
@@ -112,6 +118,7 @@ function _build_graph {
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=${install_prefix} \
           -DENABLE_TESTING=OFF \
+          -DENABLE_CONSOLE_COMPILATION=${build_console} \
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           -DENABLE_PACKAGE_TAR=${package_tar} \
@@ -207,7 +214,7 @@ function dump_syms {
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type "OFF" "/usr/local/nebula"
 package $strip_enable
-if [[ $dump_symbols == ON ]]; then
+if [[ "$dump_symbols" == "ON" ]]; then
     echo ">>> start dump symbols <<<"
     dump_syms
 fi

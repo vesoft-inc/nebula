@@ -19,14 +19,13 @@ folly::Future<Status> CompactJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::COMPACT,
+      ->addTask(cpp2::JobType::COMPACT,
                 jobId_,
                 taskId_++,
                 space_,
                 std::move(address),
                 {},
-                std::move(parts),
-                concurrency_)
+                std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();

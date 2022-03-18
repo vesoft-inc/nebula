@@ -524,6 +524,10 @@ std::string MetaKeyUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
   return key;
 }
 
+const std::string& MetaKeyUtils::schemaEdgesPrefix() {
+  return kEdgesTable;
+}
+
 std::string MetaKeyUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                         EdgeType edgeType,
                                         SchemaVer version) {
@@ -556,6 +560,21 @@ SchemaVer MetaKeyUtils::parseEdgeVersion(folly::StringPiece key) {
          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
 }
 
+SchemaVer MetaKeyUtils::getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val) {
+  SchemaVer maxVer = MetaKeyUtils::parseEdgeVersion(iter->key());
+  val = iter->val();
+  iter->next();
+  while (iter->valid()) {
+    SchemaVer curVer = MetaKeyUtils::parseEdgeVersion(iter->key());
+    if (curVer > maxVer) {
+      maxVer = curVer;
+      val = iter->val();
+    }
+    iter->next();
+  }
+  return maxVer;
+}
+
 GraphSpaceID MetaKeyUtils::parseEdgesKeySpaceID(folly::StringPiece key) {
   return *reinterpret_cast<const GraphSpaceID*>(key.data() + kEdgesTable.size());
 }
@@ -581,6 +600,21 @@ SchemaVer MetaKeyUtils::parseTagVersion(folly::StringPiece key) {
          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
 }
 
+SchemaVer MetaKeyUtils::getLatestTagScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val) {
+  SchemaVer maxVer = MetaKeyUtils::parseTagVersion(iter->key());
+  val = iter->val();
+  iter->next();
+  while (iter->valid()) {
+    SchemaVer curVer = MetaKeyUtils::parseTagVersion(iter->key());
+    if (curVer > maxVer) {
+      maxVer = curVer;
+      val = iter->val();
+    }
+    iter->next();
+  }
+  return maxVer;
+}
+
 std::string MetaKeyUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
   std::string key;
   key.reserve(kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID));
@@ -588,6 +622,10 @@ std::string MetaKeyUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
   return key;
+}
+
+const std::string& MetaKeyUtils::schemaTagsPrefix() {
+  return kTagsTable;
 }
 
 std::string MetaKeyUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
@@ -623,6 +661,10 @@ std::string MetaKeyUtils::indexVal(const nebula::meta::cpp2::IndexItem& item) {
   std::string value;
   apache::thrift::CompactSerializer::serialize(item, &value);
   return value;
+}
+
+const std::string& MetaKeyUtils::indexPrefix() {
+  return kIndexesTable;
 }
 
 std::string MetaKeyUtils::indexPrefix(GraphSpaceID spaceId) {
@@ -1237,7 +1279,10 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
 }
 
 /**
- * diskPartsKey = kDiskPartsTable + len(serialized(hostAddr)) + serialized(hostAddr) + path
+ * diskPartsKey = kDiskPartsTable +
+ *                len(serialized(hostAddr)) + serialized(hostAddr) +
+ *                space id +
+ *                disk path
  */
 
 HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {

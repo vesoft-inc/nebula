@@ -196,6 +196,16 @@ class Part : public raftex::RaftPart {
     reset();
   }
 
+  /**
+   * @brief clean up data safely
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode cleanupSafely() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    return cleanup();
+  }
+
  private:
   /**
    * Methods inherited from RaftPart
@@ -271,12 +281,14 @@ class Part : public raftex::RaftPart {
    * @param committedLogId Commit log id of snapshot
    * @param committedLogTerm Commit log term of snapshot
    * @param finished Whether spapshot is finished
-   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
+   * succeed, else return {errorcode, -1, -1}
    */
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override;
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
   /**
    * @brief Encode the commit log id and commit log term to write batch

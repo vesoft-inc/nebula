@@ -816,12 +816,11 @@ struct ListClusterInfoReq {
 }
 
 struct AddTaskRequest {
-    // rebuild index / flush / compact / statis
-    1: meta.AdminCmd                        cmd
+    // Task distributed to storage to execute, e.g. flush, compact, stats, etc.
+    1: meta.JobType                         job_type
     2: i32                                  job_id
     3: i32                                  task_id
     4: TaskPara                             para
-    5: optional i32                         concurrency
 }
 
 struct AddTaskResp {
@@ -835,6 +834,14 @@ struct StopTaskRequest {
 
 struct StopTaskResp {
     1: common.ErrorCode                     code,
+}
+
+struct ClearSpaceReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ClearSpaceResp {
+    1: common.ErrorCode code,
 }
 
 service StorageAdminService {
@@ -858,6 +865,8 @@ service StorageAdminService {
 
     AddTaskResp   addAdminTask(1: AddTaskRequest req);
     StopTaskResp  stopAdminTask(1: StopTaskRequest req);
+
+    ClearSpaceResp clearSpace(1: ClearSpaceReq req);
 }
 
 

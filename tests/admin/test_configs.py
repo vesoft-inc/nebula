@@ -66,7 +66,6 @@ class TestConfigs(NebulaTestSuite):
         expected_result = [
             ['GRAPH', 'v', 'int', 'MUTABLE', v],
             ['GRAPH', 'minloglevel', 'int', 'MUTABLE', 0],
-            ['GRAPH', 'slow_op_threshold_ms', 'int', 'MUTABLE', 100],
             ['GRAPH', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
             ['GRAPH', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
             ['GRAPH', 'accept_partial_success', 'bool', 'MUTABLE', False],
@@ -76,6 +75,7 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 2],
             ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
             ['GRAPH', 'disable_octal_escape_char', 'bool', 'MUTABLE', False],
+            ['GRAPH', 'max_sessions_per_ip_per_user', 'int', 'MUTABLE', 300],
         ]
         self.check_out_of_order_result(resp, expected_result)
 
@@ -86,7 +86,6 @@ class TestConfigs(NebulaTestSuite):
             ['STORAGE', 'wal_ttl', 'int', 'MUTABLE', 14400],
             ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 0],
             ['STORAGE', 'custom_filter_interval_secs', 'int', 'MUTABLE', 86400],
-            ['STORAGE', 'slow_op_threshold_ms', 'int', 'MUTABLE', 100],
             ['STORAGE', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
             ['STORAGE', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
             ['STORAGE', 'rocksdb_db_options', 'map', 'MUTABLE', {}],

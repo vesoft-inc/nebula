@@ -42,9 +42,10 @@ nebula::cpp2::ErrorCode StatsJobExecutor::doRemove(const std::string& key) {
 }
 
 nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
-  auto spaceRet = getSpaceIdFromName(paras_[0]);
+  std::string spaceName = paras_.back();
+  auto spaceRet = getSpaceIdFromName(spaceName);
   if (!nebula::ok(spaceRet)) {
-    LOG(INFO) << "Can't find the space: " << paras_[0];
+    LOG(INFO) << "Can't find the space: " << spaceName;
     return nebula::error(spaceRet);
   }
   space_ = nebula::value(spaceRet);
@@ -62,14 +63,8 @@ folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::STATS,
-                jobId_,
-                taskId_++,
-                space_,
-                std::move(address),
-                {},
-                std::move(parts),
-                concurrency_)
+      ->addTask(
+          cpp2::JobType::STATS, jobId_, taskId_++, space_, std::move(address), {}, std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();
