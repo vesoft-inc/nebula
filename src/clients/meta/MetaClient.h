@@ -252,8 +252,8 @@ class MetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::AdminJobOp op,
-                                                          cpp2::AdminCmd cmd,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+                                                          cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
   // Operations for parts

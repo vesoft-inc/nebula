@@ -48,7 +48,7 @@ using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalInfo;
 using nebula::wal::FileBasedWalPolicy;
 
-using OpProcessor = folly::Function<folly::Optional<std::string>(AtomicOp op)>;
+using OpProcessor = folly::Function<std::optional<std::string>(AtomicOp op)>;
 
 class AppendLogsIterator final : public LogIterator {
  public:
@@ -101,7 +101,7 @@ class AppendLogsIterator final : public LogIterator {
       // Process AtomicOp log
       CHECK(!!opCB_);
       opResult_ = opCB_(std::move(std::get<3>(tup)));
-      if (opResult_.hasValue()) {
+      if (opResult_.has_value()) {
         // AtomicOp Succeeded
         return true;
       } else {
@@ -155,7 +155,7 @@ class AppendLogsIterator final : public LogIterator {
   folly::StringPiece logMsg() const override {
     DCHECK(valid());
     if (currLogType_ == LogType::ATOMIC_OP) {
-      CHECK(opResult_.hasValue());
+      CHECK(opResult_.has_value());
       return opResult_.value();
     } else {
       return std::get<2>(logs_.at(idx_));
@@ -191,7 +191,7 @@ class AppendLogsIterator final : public LogIterator {
   bool valid_{true};
   LogType lastLogType_{LogType::NORMAL};
   LogType currLogType_{LogType::NORMAL};
-  folly::Optional<std::string> opResult_;
+  std::optional<std::string> opResult_;
   LogID firstLogId_;
   TermID termId_;
   LogID logId_;
@@ -382,8 +382,12 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
 }
 
 void RaftPart::addLearner(const HostAddr& addr) {
-  CHECK(!raftLock_.try_lock());
+  bool acquiredHere = raftLock_.try_lock();  // because addLearner may be called in the
+                                             // NebulaStore, in which we could not access raftLock_
   if (addr == addr_) {
+    if (acquiredHere) {
+      raftLock_.unlock();
+    }
     VLOG(1) << idStr_ << "I am learner!";
     return;
   }
@@ -395,6 +399,10 @@ void RaftPart::addLearner(const HostAddr& addr) {
   } else {
     VLOG(1) << idStr_ << "The host " << addr << " has been existed as "
             << ((*it)->isLearner() ? " learner " : " group member");
+  }
+
+  if (acquiredHere) {
+    raftLock_.unlock();
   }
 }
 
@@ -706,10 +714,10 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
       firstId,
       termId,
       std::move(swappedOutLogs),
-      [this](AtomicOp opCB) -> folly::Optional<std::string> {
+      [this](AtomicOp opCB) -> std::optional<std::string> {
         CHECK(opCB != nullptr);
         auto opRet = opCB();
-        if (!opRet.hasValue()) {
+        if (!opRet.has_value()) {
           // Failed
           sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
         }
@@ -969,9 +977,9 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
           iter = AppendLogsIterator(firstLogId,
                                     currTerm,
                                     std::move(logs_),
-                                    [this](AtomicOp op) -> folly::Optional<std::string> {
+                                    [this](AtomicOp op) -> std::optional<std::string> {
                                       auto opRet = op();
-                                      if (!opRet.hasValue()) {
+                                      if (!opRet.has_value()) {
                                         // Failed
                                         sendingPromise_.setOneSingleValue(
                                             nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);

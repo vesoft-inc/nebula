@@ -264,7 +264,14 @@ void DeducePropsVisitor::visit(EdgeExpression *expr) {
 }
 
 void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toEdgeType(space_, expr->sym());
+  const auto &edgeName = expr->sym();
+  if (edgeName == "*") {
+    for (const auto &edgeType : *edgeTypes_) {
+      exprProps_->insertEdgeProp(edgeType, expr->prop());
+    }
+    return;
+  }
+  auto status = qctx_->schemaMng()->toEdgeType(space_, edgeName);
   if (!status.ok()) {
     status_ = std::move(status).status();
     return;

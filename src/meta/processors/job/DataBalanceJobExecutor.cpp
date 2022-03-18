@@ -7,6 +7,8 @@
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
+#include <memory>
+
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobUtils.h"
@@ -18,6 +20,10 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
+      if (status == Status::Balanced()) {
+        executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+        return Status::OK();
+      }
       return status;
     }
   }
@@ -175,7 +181,7 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
   if (empty) {
     return Status::Balanced();
   }
-  plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
+  plan_ = std::make_unique<BalancePlan>(jobDescription_, kvstore_, adminClient_);
   std::for_each(existTasks.begin(),
                 existTasks.end(),
                 [this](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {

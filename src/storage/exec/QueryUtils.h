@@ -241,9 +241,9 @@ class QueryUtils final {
    * @param edgeType
    * @return return none if no valid ttl, else return the ttl property name and time
    */
-  static folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeContext* edgeContext,
-                                                                         EdgeType edgeType) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
+  static std::optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeContext* edgeContext,
+                                                                       EdgeType edgeType) {
+    std::optional<std::pair<std::string, int64_t>> ret;
     auto edgeFound = edgeContext->ttlInfo_.find(std::abs(edgeType));
     if (edgeFound != edgeContext->ttlInfo_.end()) {
       ret.emplace(edgeFound->second.first, edgeFound->second.second);
@@ -258,9 +258,9 @@ class QueryUtils final {
    * @param tagId
    * @return return none if no valid ttl, else return the ttl property name and time
    */
-  static folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagContext* tagContext,
-                                                                        TagID tagId) {
-    folly::Optional<std::pair<std::string, int64_t>> ret;
+  static std::optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagContext* tagContext,
+                                                                      TagID tagId) {
+    std::optional<std::pair<std::string, int64_t>> ret;
     auto tagFound = tagContext->ttlInfo_.find(tagId);
     if (tagFound != tagContext->ttlInfo_.end()) {
       ret.emplace(tagFound->second.first, tagFound->second.second);

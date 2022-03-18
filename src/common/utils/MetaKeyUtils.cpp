@@ -560,6 +560,21 @@ SchemaVer MetaKeyUtils::parseEdgeVersion(folly::StringPiece key) {
          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
 }
 
+SchemaVer MetaKeyUtils::getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val) {
+  SchemaVer maxVer = MetaKeyUtils::parseEdgeVersion(iter->key());
+  val = iter->val();
+  iter->next();
+  while (iter->valid()) {
+    SchemaVer curVer = MetaKeyUtils::parseEdgeVersion(iter->key());
+    if (curVer > maxVer) {
+      maxVer = curVer;
+      val = iter->val();
+    }
+    iter->next();
+  }
+  return maxVer;
+}
+
 GraphSpaceID MetaKeyUtils::parseEdgesKeySpaceID(folly::StringPiece key) {
   return *reinterpret_cast<const GraphSpaceID*>(key.data() + kEdgesTable.size());
 }
@@ -583,6 +598,21 @@ SchemaVer MetaKeyUtils::parseTagVersion(folly::StringPiece key) {
   auto offset = kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID);
   return std::numeric_limits<SchemaVer>::max() -
          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
+}
+
+SchemaVer MetaKeyUtils::getLatestTagScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val) {
+  SchemaVer maxVer = MetaKeyUtils::parseTagVersion(iter->key());
+  val = iter->val();
+  iter->next();
+  while (iter->valid()) {
+    SchemaVer curVer = MetaKeyUtils::parseTagVersion(iter->key());
+    if (curVer > maxVer) {
+      maxVer = curVer;
+      val = iter->val();
+    }
+    iter->next();
+  }
+  return maxVer;
 }
 
 std::string MetaKeyUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {

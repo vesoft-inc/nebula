@@ -47,32 +47,32 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
                                                                    kvstore::KVStore* store,
                                                                    AdminClient* client) {
   std::unique_ptr<JobExecutor> ret;
-  switch (jd.getCmd()) {
-    case cpp2::AdminCmd::COMPACT:
+  switch (jd.getJobType()) {
+    case cpp2::JobType::COMPACT:
       ret.reset(new CompactJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::DATA_BALANCE:
+    case cpp2::JobType::DATA_BALANCE:
       ret.reset(new DataBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::ZONE_BALANCE:
+    case cpp2::JobType::ZONE_BALANCE:
       ret.reset(new ZoneBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::LEADER_BALANCE:
+    case cpp2::JobType::LEADER_BALANCE:
       ret.reset(new LeaderBalanceJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::FLUSH:
+    case cpp2::JobType::FLUSH:
       ret.reset(new FlushJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::REBUILD_TAG_INDEX:
+    case cpp2::JobType::REBUILD_TAG_INDEX:
       ret.reset(new RebuildTagJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::REBUILD_EDGE_INDEX:
+    case cpp2::JobType::REBUILD_EDGE_INDEX:
       ret.reset(new RebuildEdgeJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
+    case cpp2::JobType::REBUILD_FULLTEXT_INDEX:
       ret.reset(new RebuildFTJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
-    case cpp2::AdminCmd::STATS:
+    case cpp2::JobType::STATS:
       ret.reset(new StatsJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
     default:
