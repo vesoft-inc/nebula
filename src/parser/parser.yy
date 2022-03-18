@@ -3403,7 +3403,7 @@ show_sentence
         $$ = new ShowCollationSentence();
     }
     | KW_SHOW KW_ZONES {
-        $$ = new ShowZonesSentence();
+        $$ = new ListZonesSentence();
     }
     | KW_SHOW KW_STATS {
         $$ = new ShowStatsSentence();

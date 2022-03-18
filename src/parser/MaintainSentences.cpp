@@ -461,7 +461,7 @@ std::string DescribeZoneSentence::toString() const {
   return folly::stringPrintf("DESCRIBE ZONE `%s`", zoneName_.get()->c_str());
 }
 
-std::string ShowZonesSentence::toString() const {
+std::string ListZonesSentence::toString() const {
   return folly::stringPrintf("SHOW ZONES");
 }
 

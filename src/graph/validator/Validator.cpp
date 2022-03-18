@@ -219,7 +219,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:
-      return std::make_unique<ShowZonesValidator>(sentence, context);
+      return std::make_unique<ListZonesValidator>(sentence, context);
     case Sentence::Kind::kAddHostsIntoZone:
       return std::make_unique<AddHostsIntoZoneValidator>(sentence, context);
     case Sentence::Kind::kAddListener:
