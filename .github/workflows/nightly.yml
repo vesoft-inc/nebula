@@ -2,7 +2,9 @@ name: nightly
 
 on:
   schedule:
-    - cron: '0 18 * * *'
+    - cron: "0 18 * * *"
+
+  workflow_dispatch:
 
 concurrency:
   group: nightly
@@ -35,7 +37,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.16.7'
+          go-version: "^1.16.7"
       - name: package
         run: ./package/package.sh
       - name: output some vars
@@ -62,14 +64,9 @@ jobs:
   docker:
     name: build docker image
     runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - graphd
-          - metad
-          - storaged
-          - tools
+    env:
+      DOCKERHUB_ORG: harrischu
+
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -84,10 +81,38 @@ jobs:
       - uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
+          file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-${{ matrix.service }}:nightly
+            ${DOCKERHUB_ORG}/nebula-graphd:nightly
+          target: graphd
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${DOCKERHUB_ORG}/nebula-storaged:nightly
+          target: storaged
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${DOCKERHUB_ORG}/nebula-metad:nightly
+          target: metad
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${DOCKERHUB_ORG}/nebula-tools:nightly
+          target: tools
           push: true
 
   coverage:
@@ -162,7 +187,7 @@ jobs:
         timeout-minutes: 2
       - name: coverage
         run: |
-            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
         with:
           files: fastcov.info
@@ -172,4 +197,4 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs/
+          path: ./build/server_*/logs/
