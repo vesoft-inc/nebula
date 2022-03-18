@@ -176,7 +176,7 @@ std::unique_ptr<PlanNodeDescription> ListRoles::explain() const {
 std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("operation", apache::thrift::util::enumNameSafe(op_), desc.get());
-  addDescription("command", apache::thrift::util::enumNameSafe(cmd_), desc.get());
+  addDescription("command", apache::thrift::util::enumNameSafe(type_), desc.get());
   addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
   return desc;
 }

@@ -13,7 +13,7 @@ folly::Future<Status> RebuildTagJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::REBUILD_TAG_INDEX,
+      ->addTask(cpp2::JobType::REBUILD_TAG_INDEX,
                 jobId_,
                 taskId_++,
                 space_,

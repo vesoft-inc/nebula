@@ -659,10 +659,10 @@ class ShowListenerSentence final : public Sentence {
 
 class AdminJobSentence final : public Sentence {
  public:
-  explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
-                            meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
-      : op_(op), cmd_(cmd) {
-    if (op == meta::cpp2::AdminJobOp::SHOW || op == meta::cpp2::AdminJobOp::SHOW_All) {
+  explicit AdminJobSentence(meta::cpp2::JobOp op,
+                            meta::cpp2::JobType type = meta::cpp2::JobType::UNKNOWN)
+      : op_(op), type_(type) {
+    if (op == meta::cpp2::JobOp::SHOW || op == meta::cpp2::JobOp::SHOW_All) {
       kind_ = Kind::kAdminShowJobs;
     } else {
       kind_ = Kind::kAdminJob;
@@ -672,13 +672,13 @@ class AdminJobSentence final : public Sentence {
   void addPara(const std::string& para);
   void addPara(const NameLabelList& NameLabelList);
   std::string toString() const override;
-  meta::cpp2::AdminJobOp getOp() const;
-  meta::cpp2::AdminCmd getCmd() const;
+  meta::cpp2::JobOp getOp() const;
+  meta::cpp2::JobType getJobType() const;
   const std::vector<std::string>& getParas() const;
 
  private:
-  meta::cpp2::AdminJobOp op_;
-  meta::cpp2::AdminCmd cmd_;
+  meta::cpp2::JobOp op_;
+  meta::cpp2::JobType type_;
   std::vector<std::string> paras_;
 };
 
