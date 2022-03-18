@@ -20,7 +20,7 @@ class SubmitJobExecutor final : public Executor {
 
  private:
   FRIEND_TEST(JobTest, JobFinishTime);
-  StatusOr<DataSet> buildResult(meta::cpp2::AdminJobOp jobOp, meta::cpp2::AdminJobResult &&resp);
+  StatusOr<DataSet> buildResult(meta::cpp2::JobOp jobOp, meta::cpp2::AdminJobResult &&resp);
   Value convertJobTimestampToDateTime(int64_t timestamp);
   nebula::DataSet buildShowResultData(const nebula::meta::cpp2::JobDesc &jd,
                                       const std::vector<nebula::meta::cpp2::TaskDesc> &td);

@@ -252,8 +252,8 @@ class MetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::AdminJobOp op,
-                                                          cpp2::AdminCmd cmd,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+                                                          cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
   // Operations for parts
@@ -268,6 +268,9 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::SpaceItem>> getSpace(std::string name);
 
   folly::Future<StatusOr<bool>> dropSpace(std::string name, bool ifExists = false);
+
+  // clear space data, but keep the space schema.
+  folly::Future<StatusOr<bool>> clearSpace(std::string name, bool ifExists = false);
 
   folly::Future<StatusOr<std::vector<cpp2::HostItem>>> listHosts(
       cpp2::ListHostType type = cpp2::ListHostType::ALLOC);

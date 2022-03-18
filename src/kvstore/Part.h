@@ -196,6 +196,16 @@ class Part : public raftex::RaftPart {
     reset();
   }
 
+  /**
+   * @brief clean up data safely
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode cleanupSafely() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    return cleanup();
+  }
+
  private:
   /**
    * Methods inherited from RaftPart

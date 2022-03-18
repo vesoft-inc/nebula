@@ -10,9 +10,7 @@
 
 namespace nebula {
 namespace graph {
-/*
- * The WithClausePlanner was designed to generate plan for with clause.
- */
+// The WithClausePlanner generates plan for with clause.
 class WithClausePlanner final : public CypherClausePlanner {
  public:
   WithClausePlanner() = default;

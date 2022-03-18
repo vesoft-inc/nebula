@@ -196,6 +196,28 @@ std::string ESGraphAdapter::dropIndexCmd(const HttpClient& client,
   return os.str();
 }
 
+StatusOr<bool> ESGraphAdapter::clearIndex(const HttpClient& client,
+                                          const std::string& index) const {
+  // curl -H "Content-Type: application/json; charset=utf-8"
+  // -XPOST "http://127.0.0.1:9200/${index}/_delete_by_query?refresh&slices=5"
+  // -d '{"query": {"match_all":{}}}'
+  std::string cmd = clearIndexCmd(client, index);
+  auto ret = nebula::ProcessUtils::runCommand(cmd.c_str());
+  if (!ret.ok() || ret.value().empty()) {
+    LOG(ERROR) << "Http POST Failed: " << cmd;
+    return Status::Error("command failed : %s", cmd.c_str());
+  }
+  return clearCheck(ret.value());
+}
+
+std::string ESGraphAdapter::clearIndexCmd(const HttpClient& client,
+                                          const std::string& index) const noexcept {
+  std::stringstream os;
+  os << header() << XPOST << client.toString() << index << "/_delete_by_query?refresh&slices=5\""
+     << " -d '{\"query\": {\"match_all\":{}}}'";
+  return os.str();
+}
+
 StatusOr<bool> ESGraphAdapter::indexExists(const HttpClient& client,
                                            const std::string& index) const {
   // curl -H "Content-Type: application/json; charset=utf-8"
@@ -283,5 +305,24 @@ bool ESGraphAdapter::indexCheck(const std::string& ret) const {
   LOG(ERROR) << "error reason : " << ret;
   return false;
 }
+
+bool ESGraphAdapter::clearCheck(const std::string& ret) const {
+  try {
+    auto root = folly::parseJson(ret);
+    if (root.isArray()) {
+      return false;
+    }
+    auto result = root.find("failures");
+    if (result != root.items().end() && result->second.isArray() && result->second.size() == 0) {
+      return true;
+    }
+  } catch (const std::exception& ex) {
+    LOG(ERROR) << "result error : " << ex.what();
+  }
+
+  LOG(ERROR) << "error reason : " << ret;
+  return false;
+}
+
 }  // namespace plugin
 }  // namespace nebula

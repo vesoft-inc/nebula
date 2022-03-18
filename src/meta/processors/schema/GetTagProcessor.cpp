@@ -44,7 +44,9 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
       onFinished();
       return;
     }
-    schemaValue = iter->val().str();
+    folly::StringPiece iterVal;
+    MetaKeyUtils::getLatestTagScheInfo(iter, iterVal);
+    schemaValue = iterVal.str();
   } else {
     auto tagKey = MetaKeyUtils::schemaTagKey(spaceId, tagId, ver);
     auto ret = doGet(tagKey);

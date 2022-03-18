@@ -11,6 +11,30 @@
 namespace nebula {
 namespace opt {
 
+//  Convert [[Limit]] and [[Sort]] into [[TopN]]
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Equivalently transform the plan to implement a better topN algorithm at the computing layer
+//
+//  Tranformation:
+//  Before:
+//
+//  +--------+--------+
+//  |      Limit      |
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |       Sort        |
+// +---------+---------+
+//
+//  After:
+//
+//
+// +---------+---------+
+// |        TopN       |
+// +---------+---------+
+
 class TopNRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

@@ -11,6 +11,33 @@
 namespace nebula {
 namespace opt {
 
+//  Merge [[Project]] and [[GetNeighbors]] node
+//  Required conditions:
+//   1. Match the pattern
+//   2. The projection must project only one column which expression will be assigned to the src
+//  expression of GetNeighbors Benefits:
+//   1. Delete unnecessary node
+//
+//  Tranformation:
+//  Before:
+//
+//  +------+-------+
+//  | GetNeighbors |
+//  | (src:$-.vage)|
+//  +------+-------+
+//         |
+//  +-------+-------+
+//  |    Project    |
+//  |(v.age AS vage)|
+//  +-------+-------+
+//
+//  After:
+//
+//  +------+-------+
+//  | GetNeighbors |
+//  | (src:v.age)  |
+//  +------+-------+
+
 class MergeGetNbrsAndProjectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
