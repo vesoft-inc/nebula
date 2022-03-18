@@ -37,7 +37,7 @@ Feature: Clear space test
   Scenario: Clear space function test
     Given an empty graph
     And create a space with following options:
-      | name           | clear_space      |
+      | name           | clear_space2     |
       | partition_num  | 9                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
@@ -85,7 +85,7 @@ Feature: Clear space test
       | "Space" | "edges"    | 0     |
     When executing query:
       """
-      CLEAR SPACE IF EXISTS clear_space;
+      CLEAR SPACE IF EXISTS clear_space2;
       """
     Then the execution should be successful
     When executing query:
@@ -113,13 +113,13 @@ Feature: Clear space test
     Then the execution should be successful
     When executing query:
       """
-      GRANT ROLE ADMIN ON clear_space TO clear_space_user;
+      GRANT ROLE ADMIN ON clear_space2 TO clear_space_user;
       """
     Then the execution should be successful
     When switch to new session with user "clear_space_user" and password "nebula"
     And executing query:
       """
-      CLEAR SPACE IF EXISTS clear_space
+      CLEAR SPACE IF EXISTS clear_space2
       """
     Then a PermissionError should be raised at runtime: No permission to write space.
     And drop the used space
