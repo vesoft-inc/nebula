@@ -171,7 +171,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @param opJobId
    * @return return true if the element is obtained, otherwise return false.
    */
-  bool try_dequeue(std::tuple<JbOp, JobID, GraphSpaceID>& opJobId);
+  bool tryDequeue(std::tuple<JbOp, JobID, GraphSpaceID>& opJobId);
 
   /**
    * @brief Enter different priority queues according to the command type and space

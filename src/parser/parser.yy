@@ -3762,9 +3762,9 @@ balance_sentence
          std::vector<HostAddr> has = hl->hosts();
          for (HostAddr& ha: has) {
             sentence->addPara(ha.toString());
-        }
-        delete hl;
-        $$ = sentence;
+         }
+         delete hl;
+         $$ = sentence;
     }
     | KW_BALANCE KW_ACROSS KW_ZONE {
          auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
@@ -3778,9 +3778,9 @@ balance_sentence
          std::vector<std::string> names = nl->zoneNames();
          for (std::string& name: names) {
            sentence->addPara(name);
-        }
-        delete nl;
-        $$ = sentence;
+         }
+         delete nl;
+         $$ = sentence;
     }
     ;
 

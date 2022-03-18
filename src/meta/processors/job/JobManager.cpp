@@ -115,7 +115,7 @@ void JobManager::scheduleThread() {
   LOG(INFO) << "JobManager::scheduleThread enter";
   while (status_.load(std::memory_order_acquire) != JbmgrStatus::STOPPED) {
     std::tuple<JbOp, JobID, GraphSpaceID> opJobId;
-    while (!try_dequeue(opJobId)) {
+    while (!tryDequeue(opJobId)) {
       if (status_.load(std::memory_order_acquire) == JbmgrStatus::STOPPED) {
         LOG(INFO) << "[JobManager] detect shutdown called, exit";
         break;
@@ -418,7 +418,7 @@ size_t JobManager::jobSize() const {
 
 // Execute jobs concurrently between spaces
 // Execute jobs according to priority within the space
-bool JobManager::try_dequeue(std::tuple<JbOp, JobID, GraphSpaceID>& opJobId) {
+bool JobManager::tryDequeue(std::tuple<JbOp, JobID, GraphSpaceID>& opJobId) {
   for (auto queueIter = priorityQueues_.begin(); queueIter != priorityQueues_.end(); ++queueIter) {
     auto spaceId = queueIter->first;
     auto runningJobIter = spaceRunningJobs_.find(spaceId);

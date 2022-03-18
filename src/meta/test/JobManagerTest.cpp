@@ -51,7 +51,7 @@ class JobManagerTest : public ::testing::Test {
         new JobManager(), [](JobManager* p) {
           std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
           while (p->jobSize() != 0) {
-            p->try_dequeue(opJobId);
+            p->tryDequeue(opJobId);
           }
           delete p;
         });
@@ -164,17 +164,17 @@ TEST_F(JobManagerTest, JobPriority) {
   ASSERT_EQ(2, jobMgr->jobSize());
 
   std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
-  auto result = jobMgr->try_dequeue(opJobId);
+  auto result = jobMgr->tryDequeue(opJobId);
   ASSERT_TRUE(result);
   ASSERT_EQ(14, std::get<1>(opJobId));
   ASSERT_EQ(1, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(opJobId);
+  result = jobMgr->tryDequeue(opJobId);
   ASSERT_TRUE(result);
   ASSERT_EQ(13, std::get<1>(opJobId));
   ASSERT_EQ(0, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(opJobId);
+  result = jobMgr->tryDequeue(opJobId);
   ASSERT_FALSE(result);
 }
 
@@ -218,17 +218,17 @@ TEST_F(JobManagerTest, JobDeduplication) {
 
   ASSERT_EQ(2, jobMgr->jobSize());
   std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
-  auto result = jobMgr->try_dequeue(opJobId);
+  auto result = jobMgr->tryDequeue(opJobId);
   ASSERT_TRUE(result);
   ASSERT_EQ(16, std::get<1>(opJobId));
   ASSERT_EQ(1, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(opJobId);
+  result = jobMgr->tryDequeue(opJobId);
   ASSERT_TRUE(result);
   ASSERT_EQ(15, std::get<1>(opJobId));
   ASSERT_EQ(0, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(opJobId);
+  result = jobMgr->tryDequeue(opJobId);
   ASSERT_FALSE(result);
 }
 

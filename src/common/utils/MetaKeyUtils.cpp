@@ -82,8 +82,8 @@ static const std::string kListenerTable       = tableMaps.at("listener").first; 
 static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;     // NOLINT
 
 /*
- * there will be one job, and a bunch of tasks use this prefix.
- * if there are 1 job(let say 65536) which has 4 sub tasks, there will 5 records
+ * There will be one job, and a bunch of tasks use this prefix.
+ * If there are 1 job(let say 65536) which has 4 sub tasks, there will 5 records
  * in kvstore which are
  * __job_mgr_<65536>
  * __job_mgr_<65536><0>
@@ -1381,7 +1381,7 @@ std::string MetaKeyUtils::jobPrefix(GraphSpaceID spaceId) {
 
 std::string MetaKeyUtils::jobKey(GraphSpaceID spaceID, JobID jobId) {
   std::string key;
-  key.reserve(32);
+  key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID));
   key.append(kJobTable.data(), kJobTable.size())
       .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID));
@@ -1452,7 +1452,7 @@ std::pair<GraphSpaceID, JobID> MetaKeyUtils::parseJobKey(folly::StringPiece key)
 
 std::string MetaKeyUtils::taskKey(GraphSpaceID spaceId, JobID jobId, TaskID taskId) {
   std::string key;
-  key.reserve(32);
+  key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
   key.append(kJobTable.data(), kJobTable.size())
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID))

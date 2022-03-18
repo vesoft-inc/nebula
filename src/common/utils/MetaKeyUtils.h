@@ -438,16 +438,15 @@ class MetaKeyUtils final {
 
   static bool isJobKey(const folly::StringPiece& rawKey);
 
-  /**
-   * @brief Decode val from kvstore, return
-   * {jobType, paras, status, start time, stop time}
-   */
   static std::string jobVal(const meta::cpp2::JobType& type,
                             std::vector<std::string> paras,
                             meta::cpp2::JobStatus jobStatus,
                             int64_t startTime,
                             int64_t stopTime);
-
+  /**
+   * @brief Decode val from kvstore, return
+   * {jobType, paras, status, start time, stop time}
+   */
   static std::
       tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
       parseJobVal(folly::StringPiece rawVal);
