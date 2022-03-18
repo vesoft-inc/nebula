@@ -128,7 +128,7 @@ TEST_F(JobManagerTest, StatsJob) {
   // Function runJobInternal does not set the finished status of the job
   jobDesc.setStatus(cpp2::JobStatus::FINISHED);
   auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
-  auto jobVal = MetaKeyUtils::jobVal(jobDesc.getCmd(),
+  auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
                                      jobDesc.getParas(),
                                      jobDesc.getStatus(),
                                      jobDesc.getStartTime(),
@@ -201,7 +201,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   JobID jobId3 = 17;
   JobDescription jobDesc3(spaceId, jobId3, cpp2::JobType::LEADER_BALANCE);
   JobID jId3 = 0;
-  auto jobExist = jobMgr->checkJobExist(spaceId, jobDesc3.getCmd(), jobDesc3.getParas(), jId3);
+  auto jobExist = jobMgr->checkJobExist(spaceId, jobDesc3.getJobType(), jobDesc3.getParas(), jId3);
   if (!jobExist) {
     auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
     ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -210,7 +210,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   JobID jobId4 = 18;
   JobDescription jobDesc4(spaceId, jobId4, cpp2::JobType::COMPACT);
   JobID jId4 = 0;
-  jobExist = jobMgr->checkJobExist(spaceId, jobDesc4.getCmd(), jobDesc4.getParas(), jId4);
+  jobExist = jobMgr->checkJobExist(spaceId, jobDesc4.getJobType(), jobDesc4.getParas(), jId4);
   if (!jobExist) {
     auto rc4 = jobMgr->addJob(jobDesc4, adminClient_.get());
     ASSERT_NE(rc4, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -243,7 +243,7 @@ TEST_F(JobManagerTest, LoadJobDescription) {
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   ASSERT_EQ(jobDesc1.getSpace(), 1);
   ASSERT_EQ(jobDesc1.getJobId(), 1);
-  ASSERT_EQ(jobDesc1.getCmd(), cpp2::JobType::COMPACT);
+  ASSERT_EQ(jobDesc1.getJobType(), cpp2::JobType::COMPACT);
   ASSERT_TRUE(jobDesc1.getParas().empty());
 
   auto optJd2Ret =
@@ -289,7 +289,7 @@ TEST_F(JobManagerTest, ShowJobs) {
 
   ASSERT_EQ(jobs[1].get_space_id(), jobDesc1.getSpace());
   ASSERT_EQ(jobs[1].get_job_id(), jobDesc1.getJobId());
-  ASSERT_EQ(jobs[1].get_type(), cpp2::AdminCmd::COMPACT);
+  ASSERT_EQ(jobs[1].get_type(), cpp2::JobType::COMPACT);
   ASSERT_EQ(jobs[1].get_status(), cpp2::JobStatus::FINISHED);
   ASSERT_EQ(jobs[1].get_start_time(), jobDesc1.getStartTime());
   ASSERT_EQ(jobs[1].get_stop_time(), jobDesc1.getStopTime());
@@ -445,7 +445,7 @@ TEST_F(JobManagerTest, RecoverJob) {
     JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH);
     auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
     auto jobVal = MetaKeyUtils::jobVal(
-        jd.getCmd(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+        jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
     jobMgr->save(jobKey, jobVal);
   }
 
@@ -472,7 +472,7 @@ TEST(JobDescriptionTest, Ctor2) {
 
   auto jobKey = MetaKeyUtils::jobKey(jd1.getSpace(), jd1.getJobId());
   auto jobVal = MetaKeyUtils::jobVal(
-      jd1.getCmd(), jd1.getParas(), jd1.getStatus(), jd1.getStartTime(), jd1.getStopTime());
+      jd1.getJobType(), jd1.getParas(), jd1.getStatus(), jd1.getStartTime(), jd1.getStopTime());
   auto optJobRet = JobDescription::makeJobDescription(jobKey, jobVal);
   ASSERT_TRUE(nebula::ok(optJobRet));
 }
@@ -501,7 +501,7 @@ TEST(JobDescriptionTest, ParseVal) {
   auto stopTime = jd.getStopTime();
 
   auto jobVal = MetaKeyUtils::jobVal(
-      jd.getCmd(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+      jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
   auto parsedVal = MetaKeyUtils::parseJobVal(jobVal);
   ASSERT_EQ(cpp2::JobType::FLUSH, std::get<0>(parsedVal));
   auto paras = std::get<1>(parsedVal);

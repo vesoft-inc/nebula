@@ -1395,14 +1395,14 @@ bool MetaKeyUtils::isJobKey(const folly::StringPiece& rawKey) {
   return rawKey.size() == kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID);
 }
 
-std::string MetaKeyUtils::jobVal(meta::cpp2::AdminCmd cmd,
+std::string MetaKeyUtils::jobVal(const meta::cpp2::JobType& type,
                                  std::vector<std::string> paras,
                                  meta::cpp2::JobStatus jobStatus,
                                  int64_t startTime,
                                  int64_t stopTime) {
   std::string val;
   val.reserve(256);
-  val.append(reinterpret_cast<const char*>(&cmd), sizeof(meta::cpp2::AdminCmd));
+  val.append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::JobType));
   auto paraSize = paras.size();
   val.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
   for (auto& para : paras) {
@@ -1416,13 +1416,13 @@ std::string MetaKeyUtils::jobVal(meta::cpp2::AdminCmd cmd,
   return val;
 }
 
-std::tuple<meta::cpp2::AdminCmd, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
+std::tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
 MetaKeyUtils::parseJobVal(folly::StringPiece rawVal) {
   CHECK_GE(rawVal.size(),
-           sizeof(meta::cpp2::AdminCmd) + sizeof(size_t) + sizeof(meta::cpp2::JobStatus) +
+           sizeof(meta::cpp2::JobType) + sizeof(size_t) + sizeof(meta::cpp2::JobStatus) +
                sizeof(int64_t) * 2);
-  auto cmd = *reinterpret_cast<const meta::cpp2::AdminCmd*>(rawVal.data());
-  auto offset = sizeof(const meta::cpp2::AdminCmd);
+  auto type = *reinterpret_cast<const meta::cpp2::JobType*>(rawVal.data());
+  auto offset = sizeof(const meta::cpp2::JobType);
 
   std::vector<std::string> paras;
   auto vec_size = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
@@ -1439,7 +1439,7 @@ MetaKeyUtils::parseJobVal(folly::StringPiece rawVal) {
   auto tStart = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
   offset += sizeof(int64_t);
   auto tStop = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
-  return std::make_tuple(cmd, paras, status, tStart, tStop);
+  return std::make_tuple(type, paras, status, tStart, tStop);
 }
 
 std::pair<GraphSpaceID, JobID> MetaKeyUtils::parseJobKey(folly::StringPiece key) {

@@ -440,24 +440,23 @@ class MetaKeyUtils final {
 
   /**
    * @brief Decode val from kvstore, return
-   * {command, paras, status, start time, stop time}
+   * {jobType, paras, status, start time, stop time}
    */
-  static std::string jobVal(meta::cpp2::AdminCmd cmd,
+  static std::string jobVal(const meta::cpp2::JobType& type,
                             std::vector<std::string> paras,
                             meta::cpp2::JobStatus jobStatus,
                             int64_t startTime,
                             int64_t stopTime);
 
   static std::
-      tuple<meta::cpp2::AdminCmd, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
+      tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
       parseJobVal(folly::StringPiece rawVal);
 
   static std::pair<GraphSpaceID, JobID> parseJobKey(folly::StringPiece key);
 
   // task related
   /**
-   * @brief Encoded task key, it should be
-   * kJobTable+spceId+jobid+taskid
+   * @brief Encoded task key, it should bekJobTable+spceId+jobid+taskid
    */
   static std::string taskKey(GraphSpaceID spaceId, JobID jobId, TaskID taskId);
 

@@ -83,8 +83,8 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   JobManager* jobMgr = JobManager::getInstance();
 
   // make sure there is no index job
-  std::unordered_set<cpp2::AdminCmd> jobTypes{cpp2::AdminCmd::REBUILD_TAG_INDEX,
-                                              cpp2::AdminCmd::REBUILD_EDGE_INDEX};
+  std::unordered_set<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
+                                             cpp2::JobType::REBUILD_EDGE_INDEX};
   auto result = jobMgr->checkTypeJobRunning(jobTypes);
   if (!nebula::ok(result)) {
     LOG(INFO) << "Get Index status failed, not allowed to create backup.";

@@ -190,7 +190,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @return ErrorOr<nebula::cpp2::ErrorCode, bool>
    */
   ErrorOr<nebula::cpp2::ErrorCode, bool> checkTypeJobRunning(
-      std::unordered_set<cpp2::AdminCmd>& jobTypes);
+      std::unordered_set<cpp2::JobType>& jobTypes);
 
   /**
    * @brief Load jobs that are running before crashed, set status to QUEUE

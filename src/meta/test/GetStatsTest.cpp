@@ -131,7 +131,7 @@ TEST_F(GetStatsTest, StatsJob) {
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
   auto jobKey1 = MetaKeyUtils::jobKey(statsJob.getSpace(), statsJob.getJobId());
-  auto jobVal1 = MetaKeyUtils::jobVal(statsJob.getCmd(),
+  auto jobVal1 = MetaKeyUtils::jobVal(statsJob.getJobType(),
                                       statsJob.getParas(),
                                       statsJob.getStatus(),
                                       statsJob.getStartTime(),
@@ -166,7 +166,7 @@ TEST_F(GetStatsTest, StatsJob) {
     auto res = job11.setStatus(cpp2::JobStatus::RUNNING);
     ASSERT_TRUE(res);
     auto jobKey2 = MetaKeyUtils::jobKey(job11.getSpace(), job11.getJobId());
-    auto jobVal2 = MetaKeyUtils::jobVal(job11.getCmd(),
+    auto jobVal2 = MetaKeyUtils::jobVal(job11.getJobType(),
                                         job11.getParas(),
                                         job11.getStatus(),
                                         job11.getStartTime(),
@@ -185,7 +185,7 @@ TEST_F(GetStatsTest, StatsJob) {
   // But set stats data.
   statsJob.setStatus(cpp2::JobStatus::FINISHED);
   auto jobKey3 = MetaKeyUtils::jobKey(statsJob.getSpace(), statsJob.getJobId());
-  auto jobVal3 = MetaKeyUtils::jobVal(statsJob.getCmd(),
+  auto jobVal3 = MetaKeyUtils::jobVal(statsJob.getJobType(),
                                       statsJob.getParas(),
                                       statsJob.getStatus(),
                                       statsJob.getStartTime(),
@@ -291,7 +291,7 @@ TEST_F(GetStatsTest, StatsJob) {
     auto res = job21.setStatus(cpp2::JobStatus::RUNNING);
     ASSERT_TRUE(res);
     auto jobKey5 = MetaKeyUtils::jobKey(job21.getSpace(), job21.getJobId());
-    auto jobVal5 = MetaKeyUtils::jobVal(job21.getCmd(),
+    auto jobVal5 = MetaKeyUtils::jobVal(job21.getJobType(),
                                         job21.getParas(),
                                         job21.getStatus(),
                                         job21.getStartTime(),
@@ -346,7 +346,7 @@ TEST_F(GetStatsTest, StatsJob) {
   // But set stats data.
   statsJob2.setStatus(cpp2::JobStatus::FINISHED);
   auto jobKey6 = MetaKeyUtils::jobKey(statsJob2.getSpace(), statsJob2.getJobId());
-  auto jobVal6 = MetaKeyUtils::jobVal(statsJob2.getCmd(),
+  auto jobVal6 = MetaKeyUtils::jobVal(statsJob2.getJobType(),
                                       statsJob2.getParas(),
                                       statsJob2.getStatus(),
                                       statsJob2.getStartTime(),

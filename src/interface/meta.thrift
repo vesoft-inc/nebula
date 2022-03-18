@@ -244,9 +244,10 @@ enum JobType {
 } (cpp.enum_strict)
 
 struct AdminJobReq {
-    1: JobOp            op,
-    2: JobType          type,
-    3: list<binary>     paras,
+    1: common.GraphSpaceID  space_id,
+    2: JobOp                op,
+    3: JobType              type,
+    4: list<binary>         paras,
 }
 
 enum JobStatus {

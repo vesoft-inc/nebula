@@ -738,12 +738,12 @@ void verifyZonePartNum(kvstore::KVStore* kv,
   EXPECT_EQ(zoneNum, zones);
 }
 
-JobDescription makeJobDescription(GraphSpaceID space, kvstore::KVStore* kv, cpp2::JobType cmd) {
+JobDescription makeJobDescription(GraphSpaceID space, kvstore::KVStore* kv, cpp2::JobType jobType) {
   JobDescription jd(space, testJobId.fetch_add(1, std::memory_order_relaxed), jobType, {});
   std::vector<nebula::kvstore::KV> data;
   auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
   auto jobVal = MetaKeyUtils::jobVal(
-      jd.getCmd(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+      jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
   data.emplace_back(jobKey, jobVal);
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
@@ -769,6 +769,11 @@ TEST(BalanceTest, NormalZoneTest) {
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(space, kv);
+  folly::Baton<true, std::atomic> baton;
+  balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
+    baton.post();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
   auto ret = balancer.executeInternal();
   EXPECT_EQ(Status::OK(), ret.value());
   balancer.finish();

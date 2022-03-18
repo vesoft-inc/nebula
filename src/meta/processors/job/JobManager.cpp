@@ -93,7 +93,7 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
     jd.setStatus(cpp2::JobStatus::QUEUE, true);
     auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
     auto jobVal = MetaKeyUtils::jobVal(
-        jd.getCmd(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+        jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
     save(jobKey, jobVal);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -138,7 +138,7 @@ void JobManager::scheduleThread() {
     }
 
     auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
-    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getCmd(),
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
                                        jobDesc.getParas(),
                                        jobDesc.getStatus(),
                                        jobDesc.getStartTime(),
@@ -245,7 +245,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
 
   spaceRunningJobs_.insert_or_assign(spaceId, false);
   auto jobKey = MetaKeyUtils::jobKey(optJobDesc.getSpace(), optJobDesc.getJobId());
-  auto jobVal = MetaKeyUtils::jobVal(optJobDesc.getCmd(),
+  auto jobVal = MetaKeyUtils::jobVal(optJobDesc.getJobType(),
                                      optJobDesc.getParas(),
                                      optJobDesc.getStatus(),
                                      optJobDesc.getStartTime(),
@@ -388,7 +388,7 @@ nebula::cpp2::ErrorCode JobManager::addJob(JobDescription& jobDesc, AdminClient*
   auto spaceId = jobDesc.getSpace();
   auto jobId = jobDesc.getJobId();
   auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
-  auto jobVal = MetaKeyUtils::jobVal(jobDesc.getCmd(),
+  auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
                                      jobDesc.getParas(),
                                      jobDesc.getStatus(),
                                      jobDesc.getStartTime(),
@@ -691,7 +691,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobManager::getSpaceId(const std:
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
-    std::unordered_set<cpp2::AdminCmd>& jobTypes) {
+    std::unordered_set<cpp2::JobType>& jobTypes) {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto jobPrefix = MetaKeyUtils::jobPrefix();
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobPrefix, &iter);
@@ -708,8 +708,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
         continue;
       }
       auto jobDesc = nebula::value(optJobRet);
-      auto jobType = jobDesc.getJobType();
-      if (jobTypes.find(jobType) == jobTypes.end()) {
+      auto jType = jobDesc.getJobType();
+      if (jobTypes.find(jType) == jobTypes.end()) {
         continue;
       }
 
