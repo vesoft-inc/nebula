@@ -10,7 +10,7 @@ do
     fi
     if [[ -f ${install_dir}/etc/unit/nebula-${daemon}.service ]]; then
         if [[ ! -d /usr/lib/systemd/system ]]; then
-           echo "WARNING! Failed to install systemd script successfully."
+           echo "WARNING! Failed to install systemd script."
         else
            cp ${install_dir}/etc/unit/nebula-${daemon}.service /usr/lib/systemd/system
            num=`grep -n "ExecStart" /usr/lib/systemd/system/nebula-${daemon}.service | awk -F: '{print $1}'`
@@ -23,12 +23,13 @@ done
 
 if [[ -f ${install_dir}/etc/unit/nebula.service ]]; then
     if [[ ! -d /usr/lib/systemd/system ]]; then
-        echo "WARNING! Failed to install systemd script successfully."
+        echo "WARNING! Failed to install systemd script."
     else
         cp ${install_dir}/etc/unit/nebula.service /usr/lib/systemd/system
         num=`grep -n "ExecStart" /usr/lib/systemd/system/nebula.service | awk -F: '{print $1}'`
         sed -i "${num}d" /usr/lib/systemd/system/nebula.service
         sed -i "${num} i ExecStart=${install_dir}/scripts/nebula.service start all" \
             /usr/lib/systemd/system/nebula.service
+    fi
 fi
 
