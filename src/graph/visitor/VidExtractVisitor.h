@@ -27,7 +27,7 @@ namespace graph {
 //    other vid make it eval to TRUE!
 class VidExtractVisitor final : public ExprVisitor {
  public:
-  VidExtractVisitor(const QueryContext *qctx = nullptr) : qctx_(qctx) {};
+  explicit VidExtractVisitor(const QueryContext *qctx = nullptr) : qctx_(qctx) {}
 
   struct VidPattern {
     enum class Special {
