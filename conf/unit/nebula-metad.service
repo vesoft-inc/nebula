@@ -1,6 +1,6 @@
 [Service]
 Type=simple
-ExecStart=/usr/local/nebula/scripts/nebula.service start graphd
+ExecStart=/usr/local/nebula/scripts/nebula.service start metad
 RemainAfterExit=yes
  
 [Install]
