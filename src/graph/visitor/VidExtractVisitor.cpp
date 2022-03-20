@@ -166,12 +166,11 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
 
-    auto *listExpr = static_cast<ListExpression *>(expr->right());
-    QueryExpressionContext ctx;
+    auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
     vidPattern_ =
         VidPattern{VidPattern::Special::kInUsed,
                    {{fCallExpr->args()->args().front()->toString(),
-                     {VidPattern::Vids::Kind::kIn, listExpr->eval(ctx(nullptr)).getList()}}}};
+                     {VidPattern::Vids::Kind::kIn, rightListValue.getList()}}}};
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
     // id(V) == vid
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
