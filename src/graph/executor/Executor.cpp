@@ -84,6 +84,7 @@
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
+#include "graph/executor/query/RollUpApplyExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/ScanEdgesExecutor.h"
 #include "graph/executor/query/ScanVerticesExecutor.h"
@@ -549,6 +550,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kBiCartesianProduct: {
       return pool->add(new BiCartesianProductExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kRollUpApply: {
+      return pool->add(new RollUpApplyExecutor(node, qctx));
     }
     case PlanNode::Kind::kArgument: {
       return pool->add(new ArgumentExecutor(node, qctx));

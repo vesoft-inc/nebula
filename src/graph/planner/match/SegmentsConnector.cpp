@@ -65,6 +65,27 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
   return newPlan;
 }
 
+/*static*/ SubPlan SegmentsConnector::rollUpApply(QueryContext* qctx,
+                                                  const SubPlan& left,
+                                                  const SubPlan& right,
+                                                  const std::vector<std::string>& compareCols,
+                                                  const std::string& collectCol) {
+  SubPlan newPlan = left;
+  std::vector<Expression*> compareProps;
+  for (const auto& col : compareCols) {
+    compareProps.emplace_back(FunctionCallExpression::make(
+        qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
+  }
+  InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
+  auto* rollUpApply =
+      RollUpApply::make(qctx, left.root, right.root, std::move(compareProps), collectProp);
+  std::vector<std::string> colNames = left.root->colNames();
+  colNames.emplace_back(collectCol);
+  rollUpApply->setColNames(std::move(colNames));
+  newPlan.root = rollUpApply;
+  return newPlan;
+}
+
 SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, bool copyColNames) {
   SubPlan newPlan = left;
   DCHECK(left.root->isSingleInput());

@@ -115,6 +115,14 @@ Feature: Basic match
       | "Aron Baynes"       |
       | "Manu Ginobili"     |
       | "Dejounte Murray"   |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[:like]->() WHERE (v)-->() RETURN v.player.name AS name
+      """
+    Then the result should be, in any order:
+      | name         |
+      | "Tim Duncan" |
+      | "Tim Duncan" |
 
   Scenario: In With
     When executing query:
@@ -179,6 +187,14 @@ Feature: Basic match
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[:like]->() WITH (v)-[:serve]->() AS p RETURN p
+      """
+    Then the result should be, in any order:
+      | p                                                                                                                                                                                             |
+      | [<("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>] |
+      | [<("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>] |
 
   Scenario: In Return
     When executing query:
@@ -243,6 +259,14 @@ Feature: Basic match
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
       | []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[:like]->() RETURN (v)-[:serve]->() AS p
+      """
+    Then the result should be, in any order:
+      | p                                                                                                                                                                                             |
+      | [<("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>] |
+      | [<("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>] |
 
   Scenario: In Unwind
     When executing query:
@@ -261,3 +285,11 @@ Feature: Basic match
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:teammate@0 {end_year: 2016, start_year: 2001}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>             |
       | <("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})-[:teammate@0 {end_year: 2016, start_year: 2002}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                               |
       | <("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})-[:teammate@0 {end_year: 2016, start_year: 2002}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>         |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[:like]->() UNWIND (v)-[:serve]->() AS p RETURN p
+      """
+    Then the result should be, in any order:
+      | p                                                                                                                                                                                           |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |

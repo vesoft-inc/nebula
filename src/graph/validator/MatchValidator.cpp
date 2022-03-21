@@ -1089,12 +1089,11 @@ Status MatchValidator::validateMatchPathExpr(
   auto &pathInfo = matchClauseCtx.paths.back();
   for (const auto &node : path->nodes()) {
     if (!node->alias().empty()) {
-      pathInfo.groupVariables.emplace_back(node->alias());
-      pathInfo.aggVariables.emplace_back(node->alias());
+      pathInfo.compareVariables.emplace_back(node->alias());
     }
   }
-  pathInfo.aggVariables.emplace_back(*path->alias());
-  pathInfo.agg = true;
+  pathInfo.collectVariable = *path->alias();
+  pathInfo.rollUpApply = true;
   return Status::OK();
 }
 

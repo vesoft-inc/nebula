@@ -33,11 +33,6 @@ class MatchPlanner final : public Planner {
                            const SubPlan& partPlan,
                            QueryContext* qctx,
                            SubPlan& queryPlan);
-
-  // Use in pattern expression
-  static Status collectPathList(QueryContext* qctx,
-                                const std::vector<std::unique_ptr<MatchClauseContext>>& matchs,
-                                SubPlan& subplan);
 };
 }  // namespace graph
 }  // namespace nebula
