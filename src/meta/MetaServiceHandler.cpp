@@ -21,6 +21,7 @@
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
 #include "meta/processors/config/SetConfigProcessor.h"
+#include "meta/processors/id/GetSegmentIdProcessor.h"
 #include "meta/processors/id/GetWorkerIdProcessor.h"
 #include "meta/processors/index/CreateEdgeIndexProcessor.h"
 #include "meta/processors/index/CreateTagIndexProcessor.h"
@@ -544,5 +545,10 @@ folly::Future<cpp2::GetWorkerIdResp> MetaServiceHandler::future_getWorkerId(
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::GetSegmentIdResp> MetaServiceHandler::future_getSegmentId(
+    const cpp2::GetSegmentIdReq& req) {
+  auto* processor = GetSegmentIdProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
 }  // namespace meta
 }  // namespace nebula
