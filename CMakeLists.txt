@@ -39,6 +39,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/nebula)
 
+include(BreakPadConfig)
 include(PlatformCheck)
 include(NebulaCMakeMacros)
 include(GeneralCMakeOptions)
@@ -52,7 +53,6 @@ include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
 include(IncludeWhatYouUse)
-include(BreakPadConfig)
 include(TimeTrace)
 
 add_custom_target(
