@@ -23,20 +23,26 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
 
   auto newResult = doGet(kIdKey);
   if (!nebula::ok(newResult)) {
-    handleErrorCode(nebula::cpp2::ErrorCode::E_WORKER_ID_FAILED);
+    LOG(ERROR) << "Get worker kIdKey failed during get worker id";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
     onFinished();
     return;
   }
 
   int64_t workerId = std::stoi(std::move(nebula::value(newResult)));
-  resp_.workerid_ref() = workerId;
-  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-
   // TODO: (jackwener) limit worker, add LOG ERROR
   auto code = doSyncPut(std::vector<kvstore::KV>{{ipAddr, std::to_string(workerId + 1)}});
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Put worker ipAddr failed during get worker id";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ID_FAILED);
+    onFinished();
+    return;
+  }
+  code = doSyncPut(std::vector<kvstore::KV>{{kIdKey, std::to_string(workerId + 1)}});
   handleErrorCode(code);
+  resp_.workerid_ref() = workerId;
   onFinished();
+  return;
 }
-
 }  // namespace meta
 }  // namespace nebula

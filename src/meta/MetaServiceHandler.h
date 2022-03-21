@@ -228,6 +228,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::GetWorkerIdResp> future_getWorkerId(const cpp2::GetWorkerIdReq& req) override;
 
+  folly::Future<cpp2::GetSegmentIdResp> future_getSegmentId(
+      const cpp2::GetSegmentIdReq& req) override;
+
  private:
   kvstore::KVStore* kvstore_ = nullptr;
   ClusterID clusterId_{0};
