@@ -817,7 +817,7 @@ struct ListClusterInfoReq {
 
 struct AddTaskRequest {
     // Task distributed to storage to execute, e.g. flush, compact, stats, etc.
-    1: meta.AdminCmd                        cmd
+    1: meta.JobType                         job_type
     2: i32                                  job_id
     3: i32                                  task_id
     4: TaskPara                             para

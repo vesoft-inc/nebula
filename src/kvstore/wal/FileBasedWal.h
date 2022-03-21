@@ -49,6 +49,11 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   friend class WalFileIterator;
 
  public:
+  /**
+   * @brief Invalid term when wal not found, used in getLogTerm
+   */
+  static constexpr TermID INVALID_TERM{-1};
+
   // A factory method to create a new WAL
   /**
    * @brief Build the file based wal
@@ -110,7 +115,6 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    */
   bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) override;
 
-  //
   /**
    * @brief Append a list of log messages to the WAL. This method **IS NOT** thread-safe. We **DO
    * NOT** expect multiple threads will append logs simultaneously

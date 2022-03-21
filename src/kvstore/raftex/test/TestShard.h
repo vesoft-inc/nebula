@@ -116,10 +116,11 @@ class TestShard : public RaftPart {
     return true;
   }
 
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override;
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
   nebula::cpp2::ErrorCode cleanup() override;
 

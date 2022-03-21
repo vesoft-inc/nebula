@@ -444,7 +444,7 @@ Feature: Basic match
   Scenario: filter evaluable
     When executing query:
       """
-      match (v:player{age: -1}) return v
+      match (v:player{age: -5}) return v
       """
     Then the result should be, in any order, with relax comparison:
       | v |

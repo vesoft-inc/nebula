@@ -229,8 +229,3 @@ Feature: Multi Query Parts
       RETURN m
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `m'
-    When executing query:
-      """
-      MATCH (v:player)-[e]-(v:team) RETURN v, e
-      """
-    Then a SemanticError should be raised at runtime: `v': Redefined alias in a single path pattern.
