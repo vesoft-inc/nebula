@@ -433,9 +433,19 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
+
+  const auto& kvPre = NebulaKeyUtils::kvPrefix(partId_);
+  auto ret =
+      batch->removeRange(NebulaKeyUtils::firstKey(kvPre, 128), NebulaKeyUtils::lastKey(kvPre, 128));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup kvdata, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
+
   const auto& tagPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
-                                NebulaKeyUtils::lastKey(tagPre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
+                           NebulaKeyUtils::lastKey(tagPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup tag, error "
             << apache::thrift::util::enumNameSafe(ret);

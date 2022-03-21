@@ -13,4 +13,9 @@ nebula_add_library(
     UUID.cpp
 )
 
+nebula_add_library(
+    segment_id_obj OBJECT
+    SegmentId.cpp
+)
+
 nebula_add_subdirectory(test)

@@ -7,10 +7,6 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include <iostream>
-#include <thread>
-
-#include "common/base/Logging.h"
 #include "common/id/Snowflake.h"
 
 namespace nebula {
