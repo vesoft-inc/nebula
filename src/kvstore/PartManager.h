@@ -77,7 +77,7 @@ class Handler {
    * @param spaceId
    * @param partId
    */
-  virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
+  virtual void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) = 0;
 
   /**
    * @brief Add a partition as listener
