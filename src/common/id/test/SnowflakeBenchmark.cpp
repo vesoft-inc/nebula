@@ -5,9 +5,6 @@
 
 #include <folly/Benchmark.h>
 
-#include <cstddef>
-#include <cstdint>
-
 #include "common/base/Base.h"
 #include "common/id/Snowflake.h"
 
