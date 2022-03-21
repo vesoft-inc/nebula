@@ -82,43 +82,43 @@ Feature: LDBC Interactive Workload - Complex Reads
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
   Scenario: 3. Friends and friends of friends that have been to given countries
+    # TODO enhance order by
     # {"personId":"6597069766734","countryXName":"Angola","countryYName":"Colombia","startDate":"1275393600000","endDate":"1277812800000"}
     When executing query:
       """
-      MATCH (countryX:Country)
-      WHERE id(countryX) == "Angola"
-      MATCH (countryY:Country)
-      WHERE id(countryY) == "Colombia"
-      MATCH (person:Person)
-      WHERE id(person) == "6597069766734"
-      WITH person, countryX, countryY
-      LIMIT 1
-      MATCH (city:City)-[:IS_PART_OF]->(country:Country)
-      WHERE id(country) IN ["Angola", "Colombia"]
-      WITH person, countryX, countryY, collect(city) AS cities
-      MATCH (person)-[:KNOWS*1..2]-(friend)-[:IS_LOCATED_IN]->(city)
-      WHERE person<>friend AND NOT city IN cities
-      WITH DISTINCT friend, countryX, countryY
-      MATCH (friend)<-[:HAS_CREATOR]-(message),
-            (message)-[:IS_LOCATED_IN]->(country)
-      WHERE "1277812800000" > message.Message.creationDate >= "1275393600000" AND
-            country IN [countryX, countryY]
-      WITH friend,
-           CASE WHEN country==countryX THEN 1 ELSE 0 END AS messageX,
-           CASE WHEN country==countryY THEN 1 ELSE 0 END AS messageY
-      WITH friend, sum(messageX) AS xCount, sum(messageY) AS yCount
-      WHERE xCount>0 AND yCount>0
-      RETURN friend.Person.id AS friendId,
-             friend.Person.firstName AS friendFirstName,
-             friend.Person.lastName AS friendLastName,
-             xCount,
-             yCount,
-             xCount + yCount AS xyCount
-      ORDER BY xyCount DESC, friendId ASC
+      MATCH (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(messageX:Message),
+      (messageX)-[:IS_LOCATED_IN]->(countryX:Place)
+      WHERE
+        id(person) == "6597069766734"
+        AND not(person==friend)
+        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryX))
+        AND id(countryX)=="Angola" AND messageX.Message.creationDate>="1275393600000"
+        AND messageX.Message.creationDate<"1277812800000"
+      WITH friend, count(DISTINCT messageX) AS xCount
+      MATCH (friend)<-[:HAS_CREATOR]-(messageY:Message)-[:IS_LOCATED_IN]->(countryY:Place)
+      WHERE
+        id(countryY)=="Colombia"
+        AND not((friend)-[:IS_LOCATED_IN]->()-[:IS_PART_OF]->(countryY))
+        AND messageY.Message.creationDate>="$startDate"
+        AND messageY.Message.creationDate<"$endDate"
+      WITH
+        friend.Person.id AS personId,
+        friend.Person.firstName AS personFirstName,
+        friend.Person.lastName AS personLastName,
+        xCount,
+        count(DISTINCT messageY) AS yCount
+      RETURN
+        personId,
+        personFirstName,
+        personLastName,
+        xCount,
+        yCount,
+        xCount + yCount AS count
+      ORDER BY count DESC, personId ASC
       LIMIT 20
       """
     Then the result should be, in any order:
-      | friendId | friendFirstName | friendLastName | xCount | yCount | xyCount |
+      | personId | personFirstName | personLastName | xCount | yCount | count |
 
   Scenario: 4. New topics
     # {"personId":"4398046511333","startDate":"1275350400000","endDate":"1277856000000"}
@@ -165,15 +165,14 @@ Feature: LDBC Interactive Workload - Complex Reads
     When executing query:
       """
       MATCH
-        (person:Person)-[:KNOWS*1..2]-(friend:Person)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"Carl_Gustaf_Emil_Mannerheim"})
+        (person:Person)-[:KNOWS*1..2]-(friend:Person),
+        (friend)<-[:HAS_CREATOR]-(friendPost:Post)-[:HAS_TAG]->(knownTag:`Tag` {name:"$tagName"})
       WHERE id(person) == "4398046511333" AND not(person==friend)
       MATCH (friendPost)-[:HAS_TAG]->(commonTag:`Tag`)
       WHERE not(commonTag==knownTag)
       WITH DISTINCT commonTag, knownTag, friend
       MATCH (commonTag)<-[:HAS_TAG]-(commonPost:Post)-[:HAS_TAG]->(knownTag)
-      OPTIONAL MATCH p = (commonPost)-[:HAS_CREATOR]->(friend)
-      WITH commonTag, commonPost, p
-      WHERE p IS NOT NULL
+      WHERE (commonPost)-[:HAS_CREATOR]->(friend)
       RETURN
         commonTag.`Tag`.name AS tagName,
         count(commonPost) AS postCount
@@ -184,6 +183,7 @@ Feature: LDBC Interactive Workload - Complex Reads
       | tagName | postCount |
 
   Scenario: 7. Recent likers
+    # TODO enhance order by
     # personId: 4398046511268
     When executing query:
       """
@@ -195,7 +195,6 @@ Feature: LDBC Interactive Workload - Complex Reads
         liker,
         head(collect({msg: message, likeTime: likeTime})) AS latestLike,
         person
-      OPTIONAL MATCH p = (liker)-[:KNOWS]-(person)
       RETURN
         toInteger(liker.Person.id) AS personId,
         liker.Person.firstName AS personFirstName,
@@ -207,7 +206,7 @@ Feature: LDBC Interactive Workload - Complex Reads
           ELSE latestLike.msg.imageFile
         END AS messageContent,
         latestLike.msg.creationDate AS messageCreationDate,
-        p IS NULL AS isNew
+        not((liker)-[:KNOWS]-(person)) AS isNew
       ORDER BY likeCreationDate DESC, personId ASC
       LIMIT 20
       """
@@ -254,34 +253,34 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
+  @skip
   Scenario: 10. Friend recommendation
+    # TODO support local defined variable in expression
     # personId: 4398046511333, moth:5
     When executing query:
       """
-      MATCH (person:Person)-[:KNOWS*2..2]-(friend)-[:IS_LOCATED_IN]->(city:City)
-      WHERE id(person)=="4398046511333" AND
-            NOT friend==person
-      OPTIONAL MATCH p = (friend)-[:KNOWS]-(person)
-      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday, p
-      WHERE  p IS NULL AND
-             ((birthday.month==5 AND birthday.day>=21) OR
-             (birthday.month==(5%12)+1 AND birthday.day<22))
+      MATCH (person:Person)-[:KNOWS*2..2]-(friend:Person)-[:IS_LOCATED_IN]->(city:Place)
+      WHERE id(person) == "" AND
+        ((friend.Person.birthday/100%100 == "$month" AND friend.Person.birthday%100 >= 21) OR
+        (friend.Person.birthday/100%100 == "$nextMonth" AND friend.Person.birthday%100 < 22))
+        AND not(friend==person)
+        AND not((friend)-[:KNOWS]-(person))
       WITH DISTINCT friend, city, person
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)
-      OPTIONAL MATCH p = (post)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)
-      WITH friend, city, post, person, p
-      WITH friend, city, collect(post) AS posts, person, collect(p) AS paths
-      WITH friend,
-           city,
-           size(posts) AS postCount,
-           size([p IN paths WHERE p IS NOT NULL ]) AS commonPostCount
-      RETURN friend.Person.id AS personId,
-             friend.Person.firstName AS personFirstName,
-             friend.Person.lastName AS personLastName,
-             commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
-             friend.Person.gender AS personGender,
-             city.City.name AS personCityName
-      ORDER BY commonInterestScore DESC, personId ASC
+      WITH friend, city, collect(post) AS posts, person
+      WITH
+        friend,
+        city,
+        length(posts) AS postCount,
+        length([p IN posts WHERE (p)-[:HAS_TAG]->(:`Tag`)<-[:HAS_INTEREST]-(person)]) AS commonPostCount
+      RETURN
+        friend.Person.id AS personId,
+        friend.Person.firstName AS personFirstName,
+        friend.Person.lastName AS personLastName,
+        commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
+        friend.Person.gender AS personGender,
+        city.City.name AS personCityName
+      ORDER BY commonInterestScore DESC, toInteger(personId) ASC
       LIMIT 10
       """
     Then the result should be, in any order:

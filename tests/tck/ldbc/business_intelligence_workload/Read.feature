@@ -214,14 +214,13 @@ Feature: LDBC Business Intelligence Workload - Read
       | person1Id | authorityScore |
 
   Scenario: 8. Related topics
+    # NOTICE: I had rewrite the original query
     When executing query:
       """
       MATCH
-        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
-      WHERE id(`tag`) == "Genghis_Khan"
-      OPTIONAL MATCH p = (comment)-[:HAS_TAG]->(`tag`)
-      WITH relatedTag,comment,p
-      WHERE p IS NULL
+        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message),
+        (message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
+      WHERE id(`tag`) == "Genghis_Khan" AND NOT `tag` == relatedTag
       RETURN
         relatedTag.`Tag`.name AS relatedTagName,
         count(DISTINCT comment) AS count
@@ -263,68 +262,42 @@ Feature: LDBC Business Intelligence Workload - Read
 
   @skip
   Scenario: 10. Central person for a tag
-    # TODO: The execution plan has scan at the last query part. This is not in expectation.
+    # TODO: 100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
     When executing query:
       """
       MATCH (`tag`:`Tag`)
       WHERE id(`tag`) == "John_Rhys-Davies"
-      /* score */
       OPTIONAL MATCH (`tag`)<-[interest:HAS_INTEREST]-(person:Person)
       WITH `tag`, collect(person) AS interestedPersons
       OPTIONAL MATCH (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
-               WHERE message.Message.creationDate > 20120122000000000
+               WHERE message.creationDate > "20120122000000000"
       WITH `tag`, interestedPersons + collect(person) AS persons
       UNWIND persons AS person
-      /* poor man's disjunct union (should be changed to UNION + post-union processing in the future) */
       WITH DISTINCT `tag`, person
-      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(person)
-      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.Message.creationDate > 20120122000000000
-      WITH `tag`,
-           person,
-           CASE p1
-            WHEN NOT NULL THEN true
-            ELSE NULL
-           END AS hasP1,
-           CASE p2
-            WHEN NOT NULL THEN true
-            ELSE NULL
-           END AS hasP2
       WITH
         `tag`,
         person,
-        100 * count(hasP1) + count(hasP2) AS score
+        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(person) | interest])
+          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.creationDate > $date | message])
+        AS score
       OPTIONAL MATCH (person)-[:KNOWS]-(friend)
-      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(friend)
-      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.Message.creationDate > 2012012200000000
-      WITH person,
-           score,
-           CASE p1
-            WHEN NOT NULL THEN true
-            ELSE NULL
-           END AS hasP1,
-           CASE p2
-            WHEN NOT NULL THEN true
-            ELSE NULL
-           END AS hasP2
       WITH
         person,
         score,
-        100 * count(hasP1) + count(hasP2) AS friendScore
-      WITH
-        person.Person.id AS personId,
+        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
+          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.creationDate > $date | message])
+        AS friendScore
+      RETURN
+        person.id,
         score,
         sum(friendScore) AS friendsScore
-      RETURN
-        personId,
-        score,
-        friendsScore,
-        score + friendsScore AS sumScore
       ORDER BY
-        sumScore DESC,
-        personId ASC
+        score + friendsScore DESC,
+        person.id ASC
       LIMIT 100
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in order:
+      | person.id | score | friendsScore |
 
   Scenario: 11. Unrelated replies
     When executing query:
@@ -531,31 +504,31 @@ Feature: LDBC Business Intelligence Workload - Read
       | messageCount | personCount |
 
   Scenario: 19. Stranger’s interaction
+    # NOTICE: A big rewritten, have to test the correctness
     When executing query:
       """
       MATCH
-        (tagClass1:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum1:Forum)-[:HAS_MEMBER]->(stranger:Person)
-      WHERE id(tagClass1)=="MusicalArtist"
+      WHERE id(tagClass) == "MusicalArtist"
       WITH DISTINCT stranger
       MATCH
-        (tagClass2:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum2:Forum)-[:HAS_MEMBER]->(stranger)
-      WHERE id(tagClass2)=="OfficeHolder"
+      WHERE id(tagClass) == "OfficeHolder"
       WITH DISTINCT stranger
       MATCH
-        (person:Person)<-[:HAS_CREATOR]-(`comment`:`Comment`)-[:REPLY_OF*]->(message:Message)-[:HAS_CREATOR]->(stranger)
-      WHERE person.Person.birthday > 19890101 AND
-            person <> stranger
-      OPTIONAL MATCH p1 = (person)-[:KNOWS]-(stranger)
-      OPTIONAL MATCH p2       =(message)-[:REPLY_OF*]->(:Message)-[:HAS_CREATOR]->(stranger)
-      WITH person.Person.id AS personId, stranger.Person.id AS strangerId, `comment`.`Comment`.length AS commentLength, p1, p2
-      WHERE p1 IS NULL AND
-            p2 IS NULL
+        (person:Person)<-[:HAS_CREATOR]-(comment:`Comment`)-[:REPLY_OF*100]->(message:Message)-[:HAS_CREATOR]->(stranger)
+      OPTIONAL MATCH (person)-[knows:KNOWS]-(stranger)
+      OPTIONAL MATCH (message)-[replyOf:REPLY_OF*100]->(:Message)-[hasCreator:HAS_CREATOR]->(stranger)
+      WHERE person.Person.birthday > "19890101"
+        AND person <> stranger
+        AND knows IS NULL
+        AND (replyOf IS NULL OR hasCreator IS NULL)
       RETURN
-        personId,
-        count(DISTINCT strangerId) AS strangersCount,
-        count(commentLength) AS interactionCount
+        person.Person.id AS personId,
+        count(DISTINCT stranger) AS strangersCount,
+        count(comment) AS interactionCount
       ORDER BY
         interactionCount DESC,
         personId ASC
