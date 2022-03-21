@@ -164,9 +164,8 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   size_t jobSize() const;
 
   /**
-   * @brief Traverse from priorityQueues_ according to spaceId,
-   * and find the priorityQueue of the space that is not executing the job.
-   * Then take a job from the queue according to the priority.
+   * @brief Traverse from priorityQueues_, and find the priorityQueue of the space
+   * that is not executing the job. Then take a job from the queue according to the priority.
    *
    * @param opJobId
    * @return return true if the element is obtained, otherwise return false.
