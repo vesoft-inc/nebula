@@ -9,9 +9,8 @@
 #include <memory>
 
 #include "common/expression/ExprVisitor.h"
-#include "graph/util/SchemaUtil.h"
 #include "graph/context/QueryContext.h"
-
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 
