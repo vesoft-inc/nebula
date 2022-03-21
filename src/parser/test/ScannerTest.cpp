@@ -608,7 +608,7 @@ TEST(Scanner, LexColumnCount) {
   nebula::GraphParser::semantic_type yylval;
   nebula::GraphParser::location_type yyloc;
   GraphScanner scanner;
-  std::string stream("2..");
+  std::string stream("datetime 2..");
 
   auto input = [&](char *buf, int maxSize) {
     static int copied = 0;
@@ -623,10 +623,12 @@ TEST(Scanner, LexColumnCount) {
   };
   scanner.setReadBuffer(input);
   auto type = scanner.yylex(&yylval, &yyloc);
+  ASSERT_EQ(type, TokenType::KW_DATETIME);
+  type = scanner.yylex(&yylval, &yyloc);
   ASSERT_EQ(type, TokenType::INTEGER);
   type = scanner.yylex(&yylval, &yyloc);
   ASSERT_EQ(type, TokenType::DOT_DOT);
-  ASSERT_EQ(yyloc.begin.column, 1);
+  ASSERT_EQ(yyloc.begin.column, 10);
 }
 
 }  // namespace nebula
