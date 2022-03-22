@@ -1,9 +1,7 @@
-/* Copyright (c) 2022 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ShortestPathExecutor.h"
-
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -14,7 +12,7 @@ using nebula::storage::cpp2::GetNeighborsResponse;
 namespace nebula {
 namespace graph {
 
-Status ShortestPathExecutor::init() {
+Status ShortestPathExecutor::buildRequestDataSet() {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
   cartesianProduct_.reserve(iter->size());
   const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
@@ -44,17 +42,124 @@ Status ShortestPathExecutor::init() {
   return Status::OK();
 }
 
+std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
+  std::vector<Row> leftPaths;
+  std::vector<Row> interimPaths({meetVid});
+  for (auto stepIter = allLeftSteps_.rbegin(); stepIter < allLeftSteps_.rend(); ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& interimPath : interimPaths) {
+      Value id = meetVid;
+      if (interimPath.size() != 1) {
+        auto& row = interimPath.back();
+        id = row.values.front().getVertex().vid;
+      }
+
+      auto findStep = stepIter.find(id);
+      for (auto step : findStep.second) {
+        Row path = interimPath;
+        path.emplace_back(step);
+        if (stepIter == allLeftSteps_.rend() - 1) {
+          leftPaths.emplace_back(std::move(path))
+        } else {
+          temp.emplace_back(std::move(path));
+        }
+      }  //  step
+    }    //  interimPath
+    if (stepIter != allLeftSteps_.rend() - 1) {
+      interimPaths.swap(temp);
+    }
+  }
+  // reverse leftPath
+  return leftPaths;
+}
+
+std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool evenStep) {
+  std::vector<Row> rightPaths;
+  std::vector<Row> interimPaths({meetVid});
+
+  for (; stepIter < allRightSteps_.rend() - 1; ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& iterimPath : interimPaths) {
+      Value id = meetVid;
+      if (iterimPath.size() != 1) {
+        auto& row = interimPath.back();
+        id = row.values.front().getVertex().vid;
+      }
+      auto findStep = stepIter.find(id);
+      for (auto step : findStep.second) {
+        Row path = iterimPath;
+        path.emplace_back(step);
+        if (stepIter == allRightSteps_.rend() - 2) {
+          rightPaths.emplace_back(std::move(path));
+        } else {
+          temp.emplace_back(std::move(path));
+        }
+      }  //  step
+    }    //  interimPath
+    if (stepIter != allRightSteps_.rend() - 2) {
+      interimPaths.swap(temp);
+    }
+  }
+  // process
+  return rightPaths;
+}
+
+void ShortestPathExecutor::buildOddPath(const std::vector<Value>& meetVids) {
+  for (auto& meetVid : meetVids) {
+    // create leftPath
+    auto leftPaths = createLeftPath(meetVid);
+    auto rightPaths = createRightPath(meetVid);
+    for (auto& leftPath : leftPaths) {
+      for (auto& rightPath : rightPaths) {
+      }
+    }
+    // result = leftPaths + rightPaths
+    // save result to resultDs_
+  }
+}
+
+bool ShortestPathExecutor::buildEvenPath(const std::vector<Value>& meetVids) {
+  // getProps then filter
+  return true;
+}
+
 bool ShortestPathExecutor::conjunctPath() {
-  return false;
+  const auto& leftStep = allLeftSteps_.back();
+  const auto& prevRightStep = allRightSteps_[step_ - 1];
+  std::vector<Value> meetVids;
+  for (const auto& step : leftStep) {
+    if (prevRightStep.find(step.first) != preRightStep.end()) {
+      meetVids.push_back(step.first);
+    }
+  }
+  if (!meetVids.empty()) {
+    buildOddPath(meetVids);
+    return true;
+  }
+
+  const auto& rightStep = allRightSteps_.back();
+  for (const auto& step : leftStep) {
+    if (rightStep.find(step.first) != rightStep.end()) {
+      meetVids.push_back(step.first);
+    }
+  }
+  if (meetVids.empty()) {
+    return false;
+  }
+  return buildEvenPath(meetVids);
 }
 
 Status ShortestPathExecutor::doBuildPath(GetNeighborsIter* iter, bool reverse) {
   auto iterSize = iter->size();
   auto& visitedVids = reverse ? rightVisitedVids_ : leftVisitedVids_;
   visitedVids.reserve(visitedVids.size() + iterSize);
-  auto& paths = reverse ? rightPaths_ : leftPaths_;
-  paths.emplace_back();
-  auto& currentStep = paths.back();
+  auto& allSteps = reverse ? allRightSteps_ : allLeftSteps_;
+  if (reverse&& step_ = 0) {
+    for (; iter->valid(); iter->next()) {
+    }
+  }
+  allSteps.emplace_back();
+  auto& currentStep = allSteps.back();
 
   std::unordered_set<Value> uniqueDst;
   uniqueDst.reserve(iterSize);
@@ -64,7 +169,7 @@ Status ShortestPathExecutor::doBuildPath(GetNeighborsIter* iter, bool reverse) {
   QueryExpressionContext ctx(ectx_);
   auto* vFilter = pathNode_->vFilter();
   auto* eFilter = pathNode_->eFilter();
-  for (; iter->valid(); iter->next()) {
+  for (iter->reset(); iter->valid(); iter->next()) {
     auto edgeVal = iter->getEdge();
     if (UNLIKELY(!edgeVal.isEdge())) {
       continue;
@@ -144,8 +249,8 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(std::vector<RpcRespon
     }
     leftVisitedVids_.clear();
     rightVisitedVids_.clear();
-    leftPaths_.clear();
-    rightPaths_.clear();
+    allLeftSteps_.clear();
+    allRightSteps_.clear();
     return Status::OK();
   }
   step_++;
@@ -188,7 +293,7 @@ folly::Future<Status> ShortestPathExecutor::shortestPath(size_t i) {
 
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  NG_RETURN_IF_ERROR(init());
+  NG_RETURN_IF_ERROR(buildRequestDataSet());
   std::vector<folly::Future<Status>> futures;
   for (size_t i = 0; i < cartesianProduct_.size(); ++i) {
     futures.emplace_back(shortestPath(i));

@@ -1,8 +1,6 @@
-/* Copyright (c) 2022 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
-
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 #ifndef GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
 
@@ -29,7 +27,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
  private:
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
 
-  Status init();
+  Status buildRequestDataSet();
   folly::Future<GetNeighborsResponse> getNeighbors(bool reverse);
 
   folly::Future<Status> shortestPath(size_t i);
@@ -37,6 +35,10 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   Status buildPath(RpcResponse& resp, bool reverse);
   Status doBuildPath(GetNeighborsIter* iter, bool reverse);
   bool conjunctPath();
+  bool buildEvenPath(const std::vector<Value>& meetVids);
+  void buildOddPath(const std::vector<Value>& meetVids);
+  std::vector<Row> createRightPath(Value& meetVid, bool evenStep);
+  std::vector<Row> createLeftPath(Value& meetVid);
 
  private:
   const ShortestPath* pathNode_{nullptr};
@@ -50,8 +52,8 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   DataSet rightVids_;
   std::unordered_set<Value> leftVisitedVids_;
   std::unordered_set<Value> rightVisitedVids_;
-  std::vector<std::unordered_map<Value, std::vector<Row>>> leftPaths_;
-  std::vector<std::unordered_map<Value, std::vector<Row>>> rightPaths_;
+  std::vector<std::unordered_map<Value, std::vector<Row>>> allLeftSteps_;
+  std::vector<std::unordered_map<Value, std::vector<Row>>> allRightSteps_;
 };
 
 }  // namespace graph
