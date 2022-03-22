@@ -62,6 +62,11 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
     RECOVER,
   };
 
+  enum class JbPriority : size_t {
+    kHIGH = 0x00,
+    kLOW = 0x01,
+  };
+
   /**
    * @brief Init task queue, kvStore and schedule thread
    *

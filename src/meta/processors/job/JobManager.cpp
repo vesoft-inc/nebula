@@ -441,18 +441,21 @@ void JobManager::enqueue(GraphSpaceID space,
                          JobID jobId,
                          const JbOp& op,
                          const cpp2::JobType& jobType) {
+  static const size_t priorityCount = 2;
   auto iter = priorityQueues_.find(space);
   if (iter == priorityQueues_.end()) {
-    std::unique_ptr<PriorityQueue> priQueue = std::make_unique<PriorityQueue>(2);
+    std::unique_ptr<PriorityQueue> priQueue = std::make_unique<PriorityQueue>(priorityCount);
     priorityQueues_.emplace(space, std::move(priQueue));
   }
   iter = priorityQueues_.find(space);
   CHECK(iter != priorityQueues_.end());
   if (jobType == cpp2::JobType::LEADER_BALANCE) {
-    iter->second->at_priority(0).enqueue(std::make_tuple(op, jobId, space));
+    iter->second->at_priority(static_cast<size_t>(JbPriority::kHIGH))
+        .enqueue(std::make_tuple(op, jobId, space));
 
   } else {
-    iter->second->at_priority(1).enqueue(std::make_tuple(op, jobId, space));
+    iter->second->at_priority(static_cast<size_t>(JbPriority::kLOW))
+        .enqueue(std::make_tuple(op, jobId, space));
   }
 }
 

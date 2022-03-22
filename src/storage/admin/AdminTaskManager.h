@@ -59,8 +59,7 @@ class AdminTaskManager {
 
   void invoke();
 
-  nebula::cpp2::ErrorCode cancelJob(JobID jobId);
-  nebula::cpp2::ErrorCode cancelTask(JobID jobId, TaskID taskId = -1);
+  nebula::cpp2::ErrorCode cancelTask(JobID jobId);
 
   void cancelTasks(GraphSpaceID spaceId);
   int32_t runningTaskCnt(GraphSpaceID spaceId);
