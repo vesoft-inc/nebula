@@ -1,9 +1,11 @@
+// Bison options
 %language "C++"
 %skeleton "lalr1.cc"
 %no-lines
 %locations
 %define api.namespace { nebula }
 %define api.parser.class { GraphParser }
+// Parameters of scanner and parser
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }
@@ -54,6 +56,7 @@ static constexpr size_t kCommentLengthLimit = 256;
                       const nebula::GraphParser::location_type& loc);
 }
 
+// Define types of semantic values
 %union {
     bool                                    boolval;
     int64_t                                 intval;
@@ -402,6 +405,18 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <boolval> opt_with_properties
 %type <boolval> opt_ignore_existed_index
 
+/* Define precedence and associativity of tokens.
+ * Associativity:
+ * The associativity of an operator op determines how repeated uses of the operator nest:
+ * whether ‘x op y op z’ is parsed by grouping x with y first or by grouping y with z first.
+ * %left specifies left-associativity (grouping x with y first) and %right specifies right-associativity (grouping y with z first).
+ * %nonassoc specifies no associativity, which means that ‘x op y op z’ is considered a syntax error.
+ *
+ * Precedence:
+ * The precedence of an operator determines how it nests with other operators.
+ * All the tokens declared in a single precedence declaration have equal precedence and nest together according to their associativity.
+ * When two tokens declared in different precedence declarations associate, the one declared later has the higher precedence and is grouped first.
+ */
 %left QM COLON
 %left KW_OR KW_XOR
 %left KW_AND

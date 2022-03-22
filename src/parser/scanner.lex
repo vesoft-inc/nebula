@@ -1,3 +1,5 @@
+/* Flex definitions section */
+/* Flex options */
 %option c++
 %option yyclass="GraphScanner"
 %option nodefault noyywrap
@@ -11,6 +13,7 @@
 #include "GraphParser.hpp"
 #include "graph/service/GraphFlags.h"
 
+/* YY_USER_ACTION is called to advance location after each time a pattern is matched. */
 #define YY_USER_ACTION                  \
     yylloc->step();                     \
     yylloc->columns(yyleng);
@@ -19,6 +22,13 @@ static constexpr size_t MAX_STRING = 4096;
 
 %}
 
+/* Define some exclusive states.
+ * Each state is referenced within a `<>` in the rules section
+ * <DQ_STR> double quoted string literal
+ * <SQ_STR> single quoted string literal
+ * <LB_STR> accent quoted label, eg. `v2`
+ * <COMMENT> comment
+ */
 %x DQ_STR
 %x SQ_STR
 %x LB_STR
@@ -60,6 +70,15 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 %%
 
+ /* Flex rules section */
+ /* How Does the input is matched?
+  * When the generated scanner is run, it analyzes its input looking for strings which match any of its patterns.
+  * 1. If it finds more than one match, it takes the one matching the most text.
+  * 2. If it finds two or more matches of the same length, the rule listed first in the flex input file is chosen.
+  * Once the match is determined, the text corresponding to the match is made available in the global character pointer yytext, and its length in the global integer yyleng.
+  * The action corresponding to the matched pattern is then executed, and then the remaining input is scanned for another match.
+  * The last rule `.` could match any single character except `\n`.
+  */
  /* Reserved keyword */
 "GO"                        { return TokenType::KW_GO; }
 "AS"                        { return TokenType::KW_AS; }
@@ -538,3 +557,4 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                             }
 
 %%
+/* Flex user code section */
