@@ -424,6 +424,54 @@ class MetaKeyUtils final {
   static std::string diskPartsVal(const meta::cpp2::PartitionList& partList);
 
   static meta::cpp2::PartitionList parseDiskPartsVal(const folly::StringPiece& rawData);
+
+  // job related
+  static const std::string& jobPrefix();
+
+  static std::string jobPrefix(GraphSpaceID spaceId);
+
+  /**
+   * @brief Encoded job key, it should be
+   * kJobTable+spceId+jobid
+   */
+  static std::string jobKey(GraphSpaceID spaceId, JobID iJob);
+
+  static bool isJobKey(const folly::StringPiece& rawKey);
+
+  static std::string jobVal(const meta::cpp2::JobType& type,
+                            std::vector<std::string> paras,
+                            meta::cpp2::JobStatus jobStatus,
+                            int64_t startTime,
+                            int64_t stopTime);
+  /**
+   * @brief Decode val from kvstore, return
+   * {jobType, paras, status, start time, stop time}
+   */
+  static std::
+      tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
+      parseJobVal(folly::StringPiece rawVal);
+
+  static std::pair<GraphSpaceID, JobID> parseJobKey(folly::StringPiece key);
+
+  // task related
+  /**
+   * @brief Encoded task key, it should bekJobTable+spceId+jobid+taskid
+   */
+  static std::string taskKey(GraphSpaceID spaceId, JobID jobId, TaskID taskId);
+
+  static std::tuple<GraphSpaceID, JobID, TaskID> parseTaskKey(folly::StringPiece key);
+
+  static std::string taskVal(HostAddr host,
+                             meta::cpp2::JobStatus jobStatus,
+                             int64_t startTime,
+                             int64_t stopTime);
+
+  /**
+   * @brief Decode task val，it should be
+   * {host, status, start time, stop time}
+   */
+  static std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t> parseTaskVal(
+      folly::StringPiece rawVal);
 };
 
 }  // namespace nebula

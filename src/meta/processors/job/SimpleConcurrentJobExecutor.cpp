@@ -11,26 +11,24 @@
 namespace nebula {
 namespace meta {
 
-SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(JobID jobId,
+SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(GraphSpaceID space,
+                                                         JobID jobId,
                                                          kvstore::KVStore* kvstore,
                                                          AdminClient* adminClient,
                                                          const std::vector<std::string>& paras)
-    : StorageJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : StorageJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 bool SimpleConcurrentJobExecutor::check() {
-  auto parasNum = paras_.size();
-  return parasNum == 1;
+  return paras_.empty();
 }
 
 nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
-  std::string spaceName = paras_.back();
-  auto errOrSpaceId = getSpaceIdFromName(spaceName);
-  if (!nebula::ok(errOrSpaceId)) {
-    LOG(INFO) << "Can't find the space: " << spaceName;
-    return nebula::error(errOrSpaceId);
+  auto spaceRet = spaceExist();
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Can't find the space, spaceId " << space_;
+    return spaceRet;
   }
 
-  space_ = nebula::value(errOrSpaceId);
   ErrOrHosts errOrHost = getTargetHost(space_);
   if (!nebula::ok(errOrHost)) {
     LOG(INFO) << "Can't get any host according to space";

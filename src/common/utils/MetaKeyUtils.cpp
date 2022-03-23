@@ -55,7 +55,8 @@ static const std::unordered_map<
                  {"balance_plan", {"__balance_plan__", nullptr}},
                  {"ft_index", {"__ft_index__", nullptr}},
                  {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}},
-                 {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}}};
+                 {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}},
+                 {"job_manager", {"__job_mgr__", nullptr}}};
 
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
@@ -79,6 +80,18 @@ static const std::string kGroupsTable         = systemTableMaps.at("groups").fir
 static const std::string kZonesTable          = systemTableMaps.at("zones").first;    // NOLINT
 static const std::string kListenerTable       = tableMaps.at("listener").first;       // NOLINT
 static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;     // NOLINT
+
+/*
+ * There will be one job, and a bunch of tasks use this prefix.
+ * If there are 1 job(let say 65536) which has 4 sub tasks, there will 5 records
+ * in kvstore which are
+ * __job_mgr_<65536>
+ * __job_mgr_<65536><0>
+ * __job_mgr_<65536><1>
+ * __job_mgr_<65536><2>
+ * __job_mgr_<65536><3>
+ * */
+static const std::string kJobTable              = tableMaps.at("job_manager").first;    // NOLINT
 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
@@ -1352,6 +1365,140 @@ meta::cpp2::PartitionList MetaKeyUtils::parseDiskPartsVal(const folly::StringPie
   meta::cpp2::PartitionList partList;
   apache::thrift::CompactSerializer::deserialize(rawData, partList);
   return partList;
+}
+
+const std::string& MetaKeyUtils::jobPrefix() {
+  return kJobTable;
+}
+
+std::string MetaKeyUtils::jobPrefix(GraphSpaceID spaceId) {
+  std::string key;
+  key.reserve(kJobTable.size() + sizeof(GraphSpaceID));
+  key.append(kJobTable.data(), kJobTable.size())
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+  return key;
+}
+
+std::string MetaKeyUtils::jobKey(GraphSpaceID spaceID, JobID jobId) {
+  std::string key;
+  key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID));
+  key.append(kJobTable.data(), kJobTable.size())
+      .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
+      .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID));
+  return key;
+}
+
+bool MetaKeyUtils::isJobKey(const folly::StringPiece& rawKey) {
+  if (!rawKey.startsWith(kJobTable)) {
+    return false;
+  }
+  return rawKey.size() == kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID);
+}
+
+std::string MetaKeyUtils::jobVal(const meta::cpp2::JobType& type,
+                                 std::vector<std::string> paras,
+                                 meta::cpp2::JobStatus jobStatus,
+                                 int64_t startTime,
+                                 int64_t stopTime) {
+  std::string val;
+  val.reserve(256);
+  val.append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::JobType));
+  auto paraSize = paras.size();
+  val.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
+  for (auto& para : paras) {
+    auto len = para.length();
+    val.append(reinterpret_cast<const char*>(&len), sizeof(len))
+        .append(reinterpret_cast<const char*>(&para[0]), len);
+  }
+  val.append(reinterpret_cast<const char*>(&jobStatus), sizeof(meta::cpp2::JobStatus))
+      .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
+      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
+  return val;
+}
+
+std::tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
+MetaKeyUtils::parseJobVal(folly::StringPiece rawVal) {
+  CHECK_GE(rawVal.size(),
+           sizeof(meta::cpp2::JobType) + sizeof(size_t) + sizeof(meta::cpp2::JobStatus) +
+               sizeof(int64_t) * 2);
+  auto type = *reinterpret_cast<const meta::cpp2::JobType*>(rawVal.data());
+  auto offset = sizeof(const meta::cpp2::JobType);
+
+  std::vector<std::string> paras;
+  auto vec_size = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
+  offset += sizeof(size_t);
+  for (size_t i = 0; i < vec_size; ++i) {
+    auto len = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
+    offset += sizeof(size_t);
+    paras.emplace_back(rawVal.data() + offset, len);
+    offset += len;
+  }
+
+  auto status = *reinterpret_cast<const meta::cpp2::JobStatus*>(rawVal.data() + offset);
+  offset += sizeof(meta::cpp2::JobStatus);
+  auto tStart = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
+  offset += sizeof(int64_t);
+  auto tStop = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
+  return std::make_tuple(type, paras, status, tStart, tStop);
+}
+
+std::pair<GraphSpaceID, JobID> MetaKeyUtils::parseJobKey(folly::StringPiece key) {
+  auto offset = kJobTable.size();
+  auto spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
+  offset += sizeof(GraphSpaceID);
+  auto jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
+  return std::make_pair(spaceId, jobId);
+}
+
+std::string MetaKeyUtils::taskKey(GraphSpaceID spaceId, JobID jobId, TaskID taskId) {
+  std::string key;
+  key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  key.append(kJobTable.data(), kJobTable.size())
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
+      .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID))
+      .append(reinterpret_cast<const char*>(&taskId), sizeof(TaskID));
+  return key;
+}
+
+std::tuple<GraphSpaceID, JobID, TaskID> MetaKeyUtils::parseTaskKey(folly::StringPiece key) {
+  auto offset = kJobTable.size();
+  auto spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
+  offset += sizeof(GraphSpaceID);
+  auto jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
+  offset += sizeof(JobID);
+  auto taskId = *reinterpret_cast<const TaskID*>(key.data() + offset);
+  return std::make_tuple(spaceId, jobId, taskId);
+}
+
+std::string MetaKeyUtils::taskVal(HostAddr host,
+                                  meta::cpp2::JobStatus jobStatus,
+                                  int64_t startTime,
+                                  int64_t stopTime) {
+  std::string val;
+  val.reserve(128);
+  val.append(MetaKeyUtils::serializeHostAddr(host))
+      .append(reinterpret_cast<const char*>(&jobStatus), sizeof(meta::cpp2::JobStatus))
+      .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
+      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
+  return val;
+}
+
+std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t> MetaKeyUtils::parseTaskVal(
+    folly::StringPiece rawVal) {
+  CHECK_GE(rawVal.size(),
+           sizeof(size_t) + sizeof(Port) + sizeof(meta::cpp2::JobStatus) + sizeof(int64_t) * 2);
+  size_t offset = 0;
+  HostAddr host = MetaKeyUtils::deserializeHostAddr(rawVal);
+  offset += sizeof(size_t);
+  offset += host.host.size();
+  offset += sizeof(uint32_t);
+
+  auto status = *reinterpret_cast<const meta::cpp2::JobStatus*>(rawVal.data() + offset);
+  offset += sizeof(meta::cpp2::JobStatus);
+  auto tStart = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
+  offset += sizeof(int64_t);
+  auto tStop = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
+  return std::make_tuple(host, status, tStart, tStop);
 }
 
 }  // namespace nebula

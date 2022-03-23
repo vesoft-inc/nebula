@@ -46,21 +46,22 @@ TEST(BalanceTest, BalanceTaskTest) {
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
+  GraphSpaceID space = 0;
   {
     StrictMock<MockAdminClient> client;
-    EXPECT_CALL(client, checkPeers(0, 0)).Times(2);
-    EXPECT_CALL(client, transLeader(0, 0, src, _)).Times(1);
-    EXPECT_CALL(client, addPart(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, addLearner(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, src, false)).Times(1);
-    EXPECT_CALL(client, updateMeta(0, 0, src, dst)).Times(1);
-    EXPECT_CALL(client, removePart(0, 0, src)).Times(1);
+    EXPECT_CALL(client, checkPeers(space, 0)).Times(2);
+    EXPECT_CALL(client, transLeader(space, 0, src, _)).Times(1);
+    EXPECT_CALL(client, addPart(space, 0, dst, true)).Times(1);
+    EXPECT_CALL(client, addLearner(space, 0, dst)).Times(1);
+    EXPECT_CALL(client, waitingForCatchUpData(space, 0, dst)).Times(1);
+    EXPECT_CALL(client, memberChange(space, 0, dst, true)).Times(1);
+    EXPECT_CALL(client, memberChange(space, 0, src, false)).Times(1);
+    EXPECT_CALL(client, updateMeta(space, 0, src, dst)).Times(1);
+    EXPECT_CALL(client, removePart(space, 0, src)).Times(1);
 
     folly::Baton<true, std::atomic> b;
     BalanceTask task(
-        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
+        testJobId.fetch_add(1, std::memory_order_relaxed), space, 0, src, dst, kv, &client);
     task.onFinished_ = [&]() {
       LOG(INFO) << "Task finished!";
       EXPECT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
@@ -79,7 +80,7 @@ TEST(BalanceTest, BalanceTaskTest) {
 
     folly::Baton<true, std::atomic> b;
     BalanceTask task(
-        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
+        testJobId.fetch_add(1, std::memory_order_relaxed), space, 0, src, dst, kv, &client);
     task.onFinished_ = []() { LOG(FATAL) << "We should not reach here!"; };
     task.onError_ = [&]() {
       LOG(INFO) << "Error happens!";
@@ -463,14 +464,15 @@ void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
 }
 
 TEST(BalanceTest, DispatchTasksTest) {
+  GraphSpaceID space = 0;
   {
     FLAGS_task_concurrency = 10;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 20; i++) {
       BalanceTask task(0,
-                       0,
+                       space,
                        0,
                        HostAddr(std::to_string(i), 0),
                        HostAddr(std::to_string(i), 1),
@@ -479,7 +481,7 @@ TEST(BalanceTest, DispatchTasksTest) {
       plan.addTask(std::move(task));
     }
     plan.dispatchTasks();
-    // All tasks is about space 0, part 0.
+    // All tasks is about space 1, part 0.
     // So they will be dispatched into the same bucket.
     ASSERT_EQ(1, plan.buckets_.size());
     ASSERT_EQ(20, plan.buckets_[0].size());
@@ -487,11 +489,11 @@ TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 10;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
-                       0,
+                       space,
                        i,
                        HostAddr(std::to_string(i), 0),
                        HostAddr(std::to_string(i), 1),
@@ -508,11 +510,11 @@ TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 20;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
-                       0,
+                       space,
                        i,
                        HostAddr(std::to_string(i), 0),
                        HostAddr(std::to_string(i), 1),
@@ -522,7 +524,7 @@ TEST(BalanceTest, DispatchTasksTest) {
     }
     for (int i = 0; i < 10; i++) {
       BalanceTask task(0,
-                       0,
+                       space,
                        i,
                        HostAddr(std::to_string(i), 2),
                        HostAddr(std::to_string(i), 3),
@@ -551,6 +553,7 @@ TEST(BalanceTest, BalancePlanTest) {
     hosts.emplace_back(std::to_string(i), 0);
     hosts.emplace_back(std::to_string(i), 1);
   }
+  GraphSpaceID space = 0;
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
@@ -558,14 +561,14 @@ TEST(BalanceTest, BalancePlanTest) {
     LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
     NiceMock<MockAdminClient> client;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, &client);
     TestUtils::createSomeHosts(kv, hosts);
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
       BalanceTask task(plan.id(),
-                       0,
+                       space,
                        0,
                        HostAddr(std::to_string(i), 0),
                        HostAddr(std::to_string(i), 1),
@@ -590,13 +593,13 @@ TEST(BalanceTest, BalancePlanTest) {
     LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
     NiceMock<MockAdminClient> client;
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, &client);
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
       BalanceTask task(plan.id(),
-                       0,
+                       space,
                        i,
                        HostAddr(std::to_string(i), 0),
                        HostAddr(std::to_string(i), 1),
@@ -622,13 +625,13 @@ TEST(BalanceTest, BalancePlanTest) {
   {
     LOG(INFO) << "Test with one task failed, 10 buckets";
     JobDescription jd(
-        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
+        space, testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::JobType::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, nullptr);
     NiceMock<MockAdminClient> client1, client2;
     {
       for (int i = 0; i < 9; i++) {
         BalanceTask task(plan.id(),
-                         0,
+                         space,
                          i,
                          HostAddr(std::to_string(i), 0),
                          HostAddr(std::to_string(i), 1),
@@ -641,7 +644,7 @@ TEST(BalanceTest, BalancePlanTest) {
       EXPECT_CALL(client2, transLeader(_, _, _, _))
           .Times(1)
           .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
-      BalanceTask task(plan.id(), 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv, &client2);
+      BalanceTask task(plan.id(), space, 9, HostAddr("9", 0), HostAddr("9", 1), kv, &client2);
       plan.addTask(std::move(task));
     }
     TestUtils::registerHB(kv, hosts);
@@ -735,10 +738,13 @@ void verifyZonePartNum(kvstore::KVStore* kv,
   EXPECT_EQ(zoneNum, zones);
 }
 
-JobDescription makeJobDescription(kvstore::KVStore* kv, cpp2::JobType jobType) {
-  JobDescription jd(testJobId.fetch_add(1, std::memory_order_relaxed), jobType, {});
+JobDescription makeJobDescription(GraphSpaceID space, kvstore::KVStore* kv, cpp2::JobType jobType) {
+  JobDescription jd(space, testJobId.fetch_add(1, std::memory_order_relaxed), jobType, {});
   std::vector<nebula::kvstore::KV> data;
-  data.emplace_back(jd.jobKey(), jd.jobVal());
+  auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
+  auto jobVal = MetaKeyUtils::jobVal(
+      jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+  data.emplace_back(jobKey, jobVal);
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
@@ -752,6 +758,7 @@ TEST(BalanceTest, NormalZoneTest) {
   fs::TempDir rootPath("/tmp/NormalZoneTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  GraphSpaceID space = 1;
   FLAGS_heartbeat_interval_secs = 1;
   TestUtils::assembleSpaceWithZone(kv, 1, 8, 3, 8, 24);
   std::unordered_map<HostAddr, int32_t> partCount;
@@ -759,9 +766,9 @@ TEST(BalanceTest, NormalZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd = makeJobDescription(kv, cpp2::JobType::ZONE_BALANCE);
+  JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(space, kv);
   folly::Baton<true, std::atomic> baton;
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
     baton.post();
@@ -789,15 +796,17 @@ TEST(BalanceTest, NormalDataTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::assembleSpaceWithZone(kv, 1, 8, 3, 1, 8);
+  GraphSpaceID space = 1;
+
+  TestUtils::assembleSpaceWithZone(kv, space, 8, 3, 1, 8);
   std::unordered_map<HostAddr, int32_t> partCount;
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(space, kv);
   auto ret = balancer.executeInternal();
   EXPECT_EQ(Status::OK(), ret.value());
   balancer.finish();
@@ -818,11 +827,13 @@ TEST(BalanceTest, RecoveryTest) {
   fs::TempDir rootPath("/tmp/TryToRecoveryTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  TestUtils::assembleSpaceWithZone(kv, 1, 24, 1, 1, 8);
+  GraphSpaceID space = 1;
+
+  TestUtils::assembleSpaceWithZone(kv, space, 24, 1, 1, 8);
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(client, waitingForCatchUpData(space, _, _))
       .Times(12)
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
@@ -831,9 +842,9 @@ TEST(BalanceTest, RecoveryTest) {
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(space, kv);
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
   folly::Baton<true, std::atomic> baton;
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
@@ -873,8 +884,10 @@ TEST(BalanceTest, StopPlanTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
+  GraphSpaceID space = 1;
+
   TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpaceWithZone(kv, 1, 24, 3, 5, 5);
+  TestUtils::assembleSpaceWithZone(kv, space, 24, 3, 5, 5);
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> delayClient;
@@ -897,9 +910,9 @@ TEST(BalanceTest, StopPlanTest) {
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
   FLAGS_task_concurrency = 8;
-  JobDescription jd = makeJobDescription(kv, cpp2::JobType::DATA_BALANCE);
+  JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
-  balancer.spaceInfo_.loadInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(space, kv);
   balancer.lostZones_ = {"4", "5"};
   folly::Baton<true, std::atomic> baton;
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
@@ -983,14 +996,16 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}};
   TestUtils::createSomeHosts(kv, hosts);
+  GraphSpaceID space = 1;
+
   // 9 partition in space 1, 3 replica, 3 hosts
-  TestUtils::assembleSpace(kv, 1, 9, 3, 3);
+  TestUtils::assembleSpace(kv, space, 9, 3, 3);
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
@@ -1000,14 +1015,14 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
 
     // check two plan build are same
     LeaderBalancePlan tempPlan;
     auto tempLeaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&tempMap, 1, 3, false, tempPlan, false);
+        balancer.buildLeaderBalancePlan(&tempMap, space, 3, false, tempPlan, false);
     ASSERT_TRUE(nebula::ok(tempLeaderBalanceResult) && nebula::value(tempLeaderBalanceResult));
     verifyLeaderBalancePlan(tempMap, tempPlan, 3, 3);
 
@@ -1024,7 +1039,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
   }
@@ -1036,7 +1051,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
   }
@@ -1048,7 +1063,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
   }
@@ -1060,15 +1075,17 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}};
   TestUtils::createSomeHosts(kv, hosts);
+  GraphSpaceID space = 1;
+
   // 7 partition in space 1, 3 replica, 6 hosts, so not all hosts have
   // intersection parts
-  TestUtils::assembleSpace(kv, 1, 7, 3, 6);
+  TestUtils::assembleSpace(kv, space, 7, 3, 6);
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   {
     HostLeaderMap hostLeaderMap;
@@ -1078,11 +1095,11 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     hostLeaderMap[HostAddr("3", 3)][1] = {1, 2, 3, 7};
     hostLeaderMap[HostAddr("4", 4)][1] = {};
     hostLeaderMap[HostAddr("5", 5)][1] = {};
-    showHostLoading(kv, 1);
+    showHostLoading(kv, space);
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1097,7 +1114,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1112,7 +1129,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1127,7 +1144,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1142,7 +1159,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan, false);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan, false);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1153,6 +1170,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
+  GraphSpaceID space = 1;
 
   int partCount = 99999;
   int replica = 3;
@@ -1162,7 +1180,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     hosts.emplace_back(std::to_string(i), i);
   }
   TestUtils::createSomeHosts(kv, hosts);
-  TestUtils::assembleSpace(kv, 1, partCount, replica, hostCount);
+  TestUtils::assembleSpace(kv, space, partCount, replica, hostCount);
 
   float avgLoad = static_cast<float>(partCount) / hostCount;
   int32_t minLoad = std::floor(avgLoad * (1 - FLAGS_leader_balance_deviation));
@@ -1172,7 +1190,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   // check several times if they are balanced
   for (int count = 0; count < 1; count++) {
@@ -1190,7 +1208,8 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     }
 
     LeaderBalancePlan plan;
-    auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, false, plan);
+    auto leaderBalanceResult =
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, false, plan);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, minLoad, maxLoad);
   }
@@ -1202,7 +1221,8 @@ TEST(BalanceTest, LeaderBalanceTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}};
   TestUtils::createSomeHosts(kv, hosts);
-  TestUtils::assembleSpace(kv, 1, 9, 3, 3);
+  GraphSpaceID space = 1;
+  TestUtils::assembleSpace(kv, space, 9, 3, 3);
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
@@ -1216,7 +1236,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
                                Return(ByMove(folly::Future<Status>(Status::OK())))));
 
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   auto ret = balancer.executeInternal();
   ASSERT_EQ(Status::OK(), ret.value());
 }
@@ -1226,6 +1246,8 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
+  GraphSpaceID space = 0;
+
   std::vector<HostAddr> hosts;
   for (int i = 0; i < 9; i++) {
     hosts.emplace_back(std::to_string(i), i);
@@ -1254,7 +1276,8 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(1, resp.get_id().get_space_id());
+    space = resp.get_id().get_space_id();
+    ASSERT_EQ(1, space);
   }
 
   sleep(1);
@@ -1262,7 +1285,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 3, 5, 7};
@@ -1274,7 +1297,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, true, plan, true);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, true, plan, true);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1289,7 +1312,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, true, plan, true);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, true, plan, true);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
   }
@@ -1300,6 +1323,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
+  GraphSpaceID space = 0;
   std::vector<HostAddr> hosts;
   for (int i = 0; i < 15; i++) {
     hosts.emplace_back(std::to_string(i), i);
@@ -1332,6 +1356,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    space = resp.get_id().get_space_id();
     ASSERT_EQ(1, resp.get_id().get_space_id());
   }
 
@@ -1340,7 +1365,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 5, 8};
@@ -1355,7 +1380,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
 
     LeaderBalancePlan plan;
     auto leaderBalanceResult =
-        balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3, true, plan, true);
+        balancer.buildLeaderBalancePlan(&hostLeaderMap, space, 3, true, plan, true);
     ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
     verifyLeaderBalancePlan(hostLeaderMap, plan, 0, 1);
   }
@@ -1366,6 +1391,8 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
+  GraphSpaceID space = 3;
+
   std::vector<HostAddr> hosts;
   for (int i = 0; i < 18; i++) {
     hosts.emplace_back(std::to_string(i), i);
@@ -1445,7 +1472,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
   LeaderBalanceJobExecutor balancer(
-      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+      space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   {
     HostLeaderMap hostLeaderMap;

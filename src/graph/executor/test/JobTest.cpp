@@ -19,7 +19,7 @@ TEST_F(JobTest, JobFinishTime) {
     meta::cpp2::AdminJobResult resp;
     resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.id_ref() = 0;
+    jobDesc.job_id_ref() = 0;
     jobDesc.start_time_ref() = 123;
     jobDesc.stop_time_ref() = 0;
     resp.job_desc_ref() = {std::move(jobDesc)};
@@ -46,7 +46,7 @@ TEST_F(JobTest, JobFinishTime) {
     meta::cpp2::AdminJobResult resp;
     resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.id_ref() = 0;
+    jobDesc.job_id_ref() = 0;
     jobDesc.start_time_ref() = 123;
     jobDesc.stop_time_ref() = 0;
     resp.job_desc_ref() = {std::move(jobDesc)};

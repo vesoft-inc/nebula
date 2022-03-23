@@ -16,7 +16,8 @@ namespace meta {
  */
 class CompactJobExecutor : public SimpleConcurrentJobExecutor {
  public:
-  CompactJobExecutor(JobID jobId,
+  CompactJobExecutor(GraphSpaceID space,
+                     JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& params);
