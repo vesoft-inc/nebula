@@ -6,11 +6,24 @@
 #include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
-using nebula::storage::StorageRpcResponse;
-using nebula::storage::cpp2::GetNeighborsResponse;
-
 namespace nebula {
 namespace graph {
+folly::Future<Status> ShortestPathExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  single_ = pathNode_->single();
+  range_ = {pathNode_->stepRange()->min(), pathNode_->stepRange()->max()};
+  NG_RETURN_IF_ERROR(buildRequestDataSet());
+  std::vector<folly::Future<Status>> futures;
+  for (size_t i = 0; i < cartesianProduct_.size(); ++i) {
+    futures.emplace_back(shortestPath(i));
+  }
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    for (auto& resp : resps) {
+      NG_RETURN_IF_ERROR(resp);
+    }
+    return finish(ResultBuilder().value(Value(std::move(resultDs_))).build());
+  });
+}
 
 Status ShortestPathExecutor::buildRequestDataSet() {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
@@ -41,217 +54,62 @@ Status ShortestPathExecutor::buildRequestDataSet() {
   return Status::OK();
 }
 
-Status ShortestPathExecutor::handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices) {
-  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
-  NG_RETURN_IF_ERROR(result);
-  nebula::DataSet v;
-  for (auto& resp : resps.responses()) {
-    if (resp.props_ref().has_value()) {
-      if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
-        // it's impossible according to the interface
-        LOG(WARNING) << "Heterogeneous props dataset";
+folly::Future<Status> ShortestPathExecutor::shortestPath(size_t i) {
+  std::vector<folly::Future<Status>> futures;
+  futures.emplace_back(getNeighbors(false));
+  futures.emplace_back(getNeighbors(true));
+  return folly::collect(futures).via(runner()).thenValue([this, i](auto&& resps) {
+    for (auto& resp : resps) {
+      if (!resp.ok()) {
+        return folly::makeFuture<Status>(std::move(resp));
       }
-    } else {
-      LOG(WARNING) << "GetProp partial success";
     }
-  }
-  auto val = std::make_shared<Value>(std::move(v));
-  auto iter = std::make_unique<PropIter>(val);
-  vertices.reserve(iter->size());
-  for (; iter->valid(); iter->next()) {
-    vertices.emplace_back(iter->getVertex());
-  }
-  return Status::OK();
+    return handleResponse(i);
+  });
 }
 
-folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<Value>& meetVids,
-                                                             std::vector<Value>& meetVertices) {
-  SCOPED_TIMER(&execTime_);
-  nebula::DataSet vertices({kVid});
-  vertices.rows.reserve(meetVids.size());
-  for (auto& vid : meetVids) {
-    vertices.emplace_back(Row({vid}));
-  }
-
-  time::Duration getPropsTime;
-  StorageClient* storageClient = qctx()->getStorageClient();
-  StorageClient::CommonRequestParam param(pathNode_->space(),
-                                          qctx()->rctx()->session()->id(),
-                                          qctx()->plan()->id(),
-                                          qctx()->plan()->isProfileEnabled());
-  auto* vFilter = pathNode_->vFilter();
-  return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vertices),
-                 pathNode_->vertexProps(),
-                 nullptr,
-                 nullptr,
-                 false,
-                 {},
-                 -1,
-                 vFilter)
+folly::Future<Status> ShortestPathExecutor::getNeighbors(bool reverse) {
+  StorageClient* storageClient = qctx_->getStorageClient();
+  storage::StorageClient::CommonRequestParam param(pathNode_->space(),
+                                                   qctx()->rctx()->session()->id(),
+                                                   qctx()->plan()->id(),
+                                                   qctx()->plan()->isProfileEnabled());
+  return storageClient
+      ->getNeighbors(param,
+                     {nebula::kVid},
+                     reverse ? std::move(rightVids_.rows) : std::move(leftVids_.rows),
+                     {},
+                     pathNode_->edgeDirection(),
+                     nullptr,
+                     pathNode_->vertexProps(),
+                     reverse ? pathNode_->reverseEdgeProps() : pathNode_->edgeProps(),
+                     nullptr,
+                     false,
+                     false,
+                     {},
+                     -1,
+                     nullptr)
       .via(runner())
-      .ensure([this, getPropsTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("get_prop_total_rpc",
-                            folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
-      })
-      .thenValue([this, &meetVertices](PropRpcResponse&& resp) {
-        SCOPED_TIMER(&execTime_);
-        // addStats(resp, otherStats_);
-        return handlePropResp(std::move(resp), meetVertices);
-      });
+      .thenValue([this, reverse](auto&& resp) { return buildPath(std::move(resp), reverse); });
 }
 
-std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
-  std::vector<Row> leftPaths;
-  std::vector<Row> interimPaths({Row({meetVid})});
-  for (auto stepIter = allLeftSteps_.rbegin(); stepIter < allLeftSteps_.rend(); ++stepIter) {
-    std::vector<Row> temp;
-    for (auto& interimPath : interimPaths) {
-      Value id = meetVid;
-      if (interimPath.size() != 1) {
-        auto& row = interimPath.values.back();
-        id = row.values.front().getVertex().vid;
-      }
-
-      auto findStep = stepIter->find(id);
-      for (auto step : findStep->second) {
-        Row path = interimPath;
-        path.emplace_back(step);
-        if (stepIter == allLeftSteps_.rend() - 1) {
-          leftPaths.emplace_back(std::move(path));
-        } else {
-          temp.emplace_back(std::move(path));
-        }
-      }  // step
-    }    // interimPath
-    if (stepIter != allLeftSteps_.rend() - 1) {
-      interimPaths.swap(temp);
+folly::Future<Status> ShortestPathExecutor::handleResponse(size_t i) {
+  if (conjunctPath()) {
+    if (i < cartesianProduct_.size() - 1) {
+      leftVids_.rows = {Row({std::move(cartesianProduct_[i + 1].first)})};
+      rightVids_.rows = {Row({std::move(cartesianProduct_[i + 1].second)})};
     }
-  }  // stepIter
-  std::vector<Row> result;
-  result.reserve(leftPaths.size());
-  for (auto& path : leftPaths) {
-    Row row, steps;
-    auto& firstStep = path.values.back();
-    row.emplace_back(firstStep.values.front());
-    steps.emplace_back(firstStep.values.back());
-    for (auto iter = path.values.rbegin() + 1; iter != path.values.rend() - 1; ++iter) {
-      steps.values.insert(steps.values.end(),
-                          std::make_move_iterator(iter->begin()),
-                          std::make_move_iterator(iter->end()));
-    }
-    row.emplace_back(std::move(steps));
-    result.emplace_back(std::move(row));
+    leftVisitedVids_.clear();
+    rightVisitedVids_.clear();
+    allLeftSteps_.clear();
+    allRightSteps_.clear();
+    return Status::OK();
   }
-  return result;
-}
-
-std::vector<Row> ShortestPathExecutor::createRightPath(const Value& meetVid, bool oddStep) {
-  std::vector<Row> rightPaths;
-  std::vector<Row> interimPaths({Row({meetVid})});
-
-  auto stepIter = oddStep ? allRightSteps_.rbegin() + 1 : allRightSteps_.rbegin();
-  for (; stepIter < allRightSteps_.rend() - 1; ++stepIter) {
-    std::vector<Row> temp;
-    for (auto& interimPath : interimPaths) {
-      Value id = meetVid;
-      if (interimPath.size() != 1) {
-        auto& row = interimPath.values.back();
-        id = row.values.front().getVertex().vid;
-      }
-      auto findStep = stepIter->find(id);
-      for (auto step : findStep->second) {
-        Row path = interimPath;
-        path.emplace_back(step);
-        if (stepIter == allRightSteps_.rend() - 2) {
-          rightPaths.emplace_back(std::move(path));
-        } else {
-          temp.emplace_back(std::move(path));
-        }
-      }  //  step
-    }    //  interimPath
-    if (stepIter != allRightSteps_.rend() - 2) {
-      interimPaths.swap(temp);
-    }
+  step_++;
+  if (step_ > 10) {
+    return Status::OK();
   }
-  Value meetVertex;
-  if (oddStep) {
-    auto& lastSteps = allRightSteps_.back();
-    for (auto& steps : lastSteps) {
-      bool flag = false;
-      for (auto& step : steps.second) {
-        auto& vertex = step.values.front();
-        if (vertex.getVertex().vid == meetVid) {
-          meetVertex = vertex;
-          flag = true;
-          break;
-        }
-      }
-      if (flag) {
-        break;
-      }
-    }
-  }
-  std::vector<Row> result;
-  if (rightPaths.empty()) {
-    result.emplace_back(Row({meetVertex}));
-    return result;
-  }
-  result.reserve(rightPaths.size());
-  for (auto& path : rightPaths) {
-    Row row;
-    if (oddStep) {
-      row.emplace_back(meetVertex);
-    }
-    path.values.erase(path.values.begin());
-    for (auto iter = path.values.begin() + 1; iter != path.values.end(); ++iter) {
-      row.values.insert(row.values.end(),
-                        std::make_move_iterator(iter->rbegin()),
-                        std::make_move_iterator(iter->rend()));
-    }
-    result.emplace_back(std::move(row));
-  }
-  return result;
-}
-
-void ShortestPathExecutor::buildOddPath(const std::vector<Value>& meetVids) {
-  for (auto& meetVid : meetVids) {
-    auto leftPaths = createLeftPath(meetVid);
-    auto rightPaths = createRightPath(meetVid, true);
-    for (auto& leftPath : leftPaths) {
-      for (auto& rightPath : rightPaths) {
-        Row path = leftPath;
-        auto& steps = path.values.back();
-        steps.values.insert(steps.values.end(), rightPath.begin(), rightPath.end());
-        resultDs_.rows.emplace_back(std::move(path));
-      }
-    }
-  }
-}
-
-bool ShortestPathExecutor::buildEvenPath(const std::vector<Value>& meetVids) {
-  std::vector<Value> meetVertices;
-  auto status = getMeetVidsProps(meetVids, meetVertices).get();
-  if (!status.ok() || meetVertices.empty()) {
-    return false;
-  }
-  for (auto& meetVertex : meetVertices) {
-    auto meetVid = meetVertex.getVertex().vid;
-    auto leftPaths = createLeftPath(meetVid);
-    auto rightPaths = createRightPath(meetVid, false);
-    for (auto& leftPath : leftPaths) {
-      for (auto& rightPath : rightPaths) {
-        Row path = leftPath;
-        auto& steps = path.values.back();
-        steps.emplace_back(meetVertex);
-        steps.values.insert(steps.values.end(), rightPath.begin(), rightPath.end());
-        resultDs_.rows.emplace_back(std::move(path));
-      }
-    }
-  }
-  return true;
+  return shortestPath(i);
 }
 
 bool ShortestPathExecutor::conjunctPath() {
@@ -259,7 +117,7 @@ bool ShortestPathExecutor::conjunctPath() {
   const auto& prevRightStep = allRightSteps_[step_ - 1];
   std::vector<Value> meetVids;
   for (const auto& step : leftStep) {
-    if (prevRightStep.find(step.first) != preRightStep.end()) {
+    if (prevRightStep.find(step.first) != prevRightStep.end()) {
       meetVids.push_back(step.first);
     }
   }
@@ -280,17 +138,36 @@ bool ShortestPathExecutor::conjunctPath() {
   return buildEvenPath(meetVids);
 }
 
+Status ShortestPathExecutor::buildPath(RpcResponse&& resps, bool reverse) {
+  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
+  NG_RETURN_IF_ERROR(result);
+  auto& responses = std::move(resps).responses();
+  List list;
+  for (auto& resp : responses) {
+    auto dataset = resp.get_vertices();
+    if (dataset == nullptr) {
+      LOG(INFO) << "Empty dataset in response";
+      continue;
+    }
+    list.values.emplace_back(std::move(*dataset));
+  }
+  auto listVal = std::make_shared<Value>(std::move(list));
+  auto iter = std::make_unique<GetNeighborsIter>(listVal);
+  return doBuildPath(iter.get(), reverse);
+}
+
 Status ShortestPathExecutor::doBuildPath(GetNeighborsIter* iter, bool reverse) {
   auto iterSize = iter->size();
   auto& visitedVids = reverse ? rightVisitedVids_ : leftVisitedVids_;
   visitedVids.reserve(visitedVids.size() + iterSize);
   auto& allSteps = reverse ? allRightSteps_ : allLeftSteps_;
-  if (reverse&& step_ = 0) {
+  if (reverse && step_ == 0) {
     std::unordered_map<Value, std::vector<Row>> steps;
     for (; iter->valid(); iter->next()) {
       // set oright rightPath_;
       auto& vid = iter->getColumn(0);
-      steps.emplace(vid, {});
+      std::vector<Row> dummpy;
+      steps.emplace(vid, std::move(dummpy));
     }
     allSteps.emplace_back(std::move(steps));
   }
@@ -337,11 +214,11 @@ Status ShortestPathExecutor::doBuildPath(GetNeighborsIter* iter, bool reverse) {
     step.emplace_back(std::move(edge));
     auto findDst = currentStep.find(dst);
     if (findDst == currentStep.end()) {
-      std::vector<Row> steps(std::move(step));
+      std::vector<Row> steps({std::move(step)});
       currentStep.emplace(std::move(dst), std::move(steps));
     } else {
       auto& steps = findDst->second;
-      steps.emplace_back(std::move(steps));
+      steps.emplace_back(std::move(step));
     }
   }
   visitedVids.insert(std::make_move_iterator(uniqueDst.begin()),
@@ -354,91 +231,176 @@ Status ShortestPathExecutor::doBuildPath(GetNeighborsIter* iter, bool reverse) {
   return Status::OK();
 }
 
-Status ShortestPathExecutor::buildPath(RpcResponse& resps, bool reverse) {
+void ShortestPathExecutor::buildOddPath(const std::vector<Value>& meetVids) {
+  for (auto& meetVid : meetVids) {
+    auto leftPaths = createLeftPath(meetVid);
+    auto rightPaths = createRightPath(meetVid, true);
+    for (auto& leftPath : leftPaths) {
+      for (auto& rightPath : rightPaths) {
+        Row path = leftPath;
+        auto& steps = path.values.back().mutableList().values;
+        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end());
+        resultDs_.rows.emplace_back(std::move(path));
+      }
+    }
+  }
+}
+
+bool ShortestPathExecutor::buildEvenPath(const std::vector<Value>& meetVids) {
+  std::vector<Value> meetVertices;
+  auto status = getMeetVidsProps(meetVids, meetVertices).get();
+  if (!status.ok() || meetVertices.empty()) {
+    return false;
+  }
+  for (auto& meetVertex : meetVertices) {
+    auto meetVid = meetVertex.getVertex().vid;
+    auto leftPaths = createLeftPath(meetVid);
+    auto rightPaths = createRightPath(meetVid, false);
+    for (auto& leftPath : leftPaths) {
+      for (auto& rightPath : rightPaths) {
+        Row path = leftPath;
+        auto& steps = path.values.back().mutableList().values;
+        steps.emplace_back(meetVertex);
+        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end());
+        resultDs_.rows.emplace_back(std::move(path));
+      }
+    }
+  }
+  return true;
+}
+
+std::vector<Row> ShortestPathExecutor::createLeftPath(const Value& meetVid) {
+  auto& lastSteps = allLeftSteps_.back();
+  auto findMeetVid = lastSteps.find(meetVid);
+  std::vector<Row> leftPaths(findMeetVid->second);
+  for (auto stepIter = allLeftSteps_.rbegin() + 1; stepIter != allLeftSteps_.rend(); ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& leftPath : leftPaths) {
+      Value id = leftPath.values.front().getVertex().vid;
+      auto findId = stepIter->find(id);
+      for (auto& step : findId->second) {
+        auto newPath = leftPath;
+        newPath.values.insert(leftPath.values.begin(), step.values.begin(), step.values.end());
+        temp.emplace_back(std::move(newPath));
+      }
+    }
+    leftPaths.swap(temp);
+  }
+  std::vector<Row> result;
+  result.reserve(leftPaths.size());
+  for (auto& path : leftPaths) {
+    Row row;
+    auto src = path.values.front();
+    path.values.erase(path.values.begin());
+    row.emplace_back(std::move(src));
+    row.emplace_back(std::move(path));
+    result.emplace_back(std::move(row));
+  }
+  return result;
+}
+
+std::vector<Row> ShortestPathExecutor::createRightPath(const Value& meetVid, bool oddStep) {
+  std::vector<Row> rightPaths;
+  auto& lastSteps = allRightSteps_.back();
+  if (oddStep) {
+    for (auto& steps : lastSteps) {
+      bool flag = false;
+      for (auto& step : steps.second) {
+        auto& vertex = step.values.front();
+        if (vertex.getVertex().vid == meetVid) {
+          rightPaths.emplace_back(Row({vertex}));
+          flag = true;
+          break;
+        }
+      }
+      if (flag) {
+        break;
+      }
+    }
+  } else {
+    auto findMeetVid = lastSteps.find(meetVid);
+    rightPaths = findMeetVid->second;
+  }
+  for (auto stepIter = allRightSteps_.rbegin() + 1; stepIter != allRightSteps_.rend() - 1;
+       ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& rightPath : rightPaths) {
+      Value id = rightPath.values.front().getVertex().vid;
+      auto findId = stepIter->find(id);
+      for (auto& step : findId->second) {
+        auto newPath = rightPath;
+        newPath.values.insert(newPath.values.begin(), step.values.begin(), step.values.end());
+        temp.emplace_back(std::move(newPath));
+      }
+    }
+    rightPaths.swap(temp);
+  }
+  for (auto& path : rightPaths) {
+    std::reverse(path.values.begin(), path.values.end());
+  }
+  return rightPaths;
+}
+
+folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<Value>& meetVids,
+                                                             std::vector<Value>& meetVertices) {
+  SCOPED_TIMER(&execTime_);
+  nebula::DataSet vertices({kVid});
+  vertices.rows.reserve(meetVids.size());
+  for (auto& vid : meetVids) {
+    vertices.emplace_back(Row({vid}));
+  }
+
+  time::Duration getPropsTime;
+  StorageClient* storageClient = qctx()->getStorageClient();
+  StorageClient::CommonRequestParam param(pathNode_->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
+  auto* vFilter = pathNode_->vFilter();
+  return DCHECK_NOTNULL(storageClient)
+      ->getProps(param,
+                 std::move(vertices),
+                 pathNode_->vertexProps(),
+                 nullptr,
+                 nullptr,
+                 false,
+                 {},
+                 -1,
+                 vFilter)
+      .via(runner())
+      .ensure([this, getPropsTime]() {
+        SCOPED_TIMER(&execTime_);
+        otherStats_.emplace("get_prop_total_rpc",
+                            folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
+      })
+      .thenValue([this, &meetVertices](PropRpcResponse&& resp) {
+        SCOPED_TIMER(&execTime_);
+        // addStats(resp, otherStats_);
+        return handlePropResp(std::move(resp), meetVertices);
+      });
+}
+
+Status ShortestPathExecutor::handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices) {
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
-  auto& responses = resps.responses();
-  List list;
-  for (auto& resp : responses) {
-    auto dataset = resp.get_vertices();
-    if (dataset == nullptr) {
-      LOG(INFO) << "Empty dataset in response";
-      continue;
+  nebula::DataSet v;
+  for (auto& resp : resps.responses()) {
+    if (resp.props_ref().has_value()) {
+      if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
+        // it's impossible according to the interface
+        LOG(WARNING) << "Heterogeneous props dataset";
+      }
+    } else {
+      LOG(WARNING) << "GetProp partial success";
     }
-    list.values.emplace_back(std::move(*dataset));
   }
-  auto listVal = std::make_shared<Value>(std::move(list));
-  auto iter = std::make_unique<GetNeighborsIter>(listVal);
-  return doBuildPath(iter.get(), reverse);
-}
-
-folly::Future<Status> ShortestPathExecutor::handleResponse(std::vector<RpcResponse>&& resps,
-                                                           size_t i) {
-  NG_RETURN_IF_ERROR(buildPath(resps.front()));
-  NG_RETURN_IF_ERROR(buildPath(resps.back()));
-  if (conjunctPath()) {
-    if (i < cartesianProduct_.size()) {
-      leftVids_.rows.swap({Row({std::move(cartesianProduct_[i + 1].first)})});
-      rightVids_.rows.swap({Row({std::move(cartesianProduct_[i + 1].second)})});
-    }
-    leftVisitedVids_.clear();
-    rightVisitedVids_.clear();
-    allLeftSteps_.clear();
-    allRightSteps_.clear();
-    return Status::OK();
+  auto val = std::make_shared<Value>(std::move(v));
+  auto iter = std::make_unique<PropIter>(val);
+  vertices.reserve(iter->size());
+  for (; iter->valid(); iter->next()) {
+    vertices.emplace_back(iter->getVertex());
   }
-  step_++;
-  if (step_ > 10) {
-    return Status::OK();
-  }
-  return shortestPath(i);
+  return Status::OK();
 }
-
-folly::Future<RpcResponse> ShortestPathExecutor::getNeighbors(bool reverse) {
-  StorageClient* storageClient = qctx_->getStorageClient();
-  storage::StorageClient::CommonRequestParam param(pathNode_->space(),
-                                                   qctx()->rctx()->session()->id(),
-                                                   qctx()->plan()->id(),
-                                                   qctx()->plan()->isProfileEnabled());
-  return storageClient->getNeighbors(
-      param,
-      {nebula::kVid},
-      reverse ? std::move(rightVids_.rows) : std::move(leftVids_.rows),
-      {},
-      pathNode_->edgeDirection(),
-      nullptr,
-      pathNode_->vertexProps(),
-      reverse ? pathNode_->reverseEdgeProps() : pathNode_->edgeProps(),
-      nullptr,
-      false,
-      false,
-      {},
-      -1,
-      nullptr);
-}
-
-folly::Future<Status> ShortestPathExecutor::shortestPath(size_t i) {
-  std::vector<folly::Future<RpcResponse>> futures;
-  futures.emplace_back(getNeighbors(false));
-  futures.emplace_back(getNeighbors(true));
-  return folly::collect(futures).via(runner()).thenValue(
-      [i](std::vector<RpcResponse>&& resps) { return handleResponse(resps, i); });
-}
-
-folly::Future<Status> ShortestPathExecutor::execute() {
-  SCOPED_TIMER(&execTime_);
-  NG_RETURN_IF_ERROR(buildRequestDataSet());
-  std::vector<folly::Future<Status>> futures;
-  for (size_t i = 0; i < cartesianProduct_.size(); ++i) {
-    futures.emplace_back(shortestPath(i));
-  }
-  folly::collect(futures).via(runner()).thenValue([this](std::vector<Status>&& resps) {
-    for (auto& resp : resps) {
-      NG_RETURN_IF_ERROR(resp);
-    }
-    return finish(ResultBuilder().value(Value(std::move(resultDs_))).build());
-  });
-}
-
 }  // namespace graph
 }  // namespace nebula
