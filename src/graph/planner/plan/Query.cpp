@@ -914,7 +914,6 @@ void ShortestPath::cloneMembers(const ShortestPath& g) {
   SingleInputNode::cloneMembers(g);
   setSingle(g.single_);
   setStepRange(g.range_);
-  setSrcs(std::vector<Expression*>{g.srcs_[0]->clone(), g.srcs_[1]->clone()});
   setEdgeDirection(g.edgeDirection_);
   if (g.vFilter_ != nullptr) {
     setVertexFilter(g.vFilter_->clone());

@@ -24,7 +24,7 @@ Status ShortestPathExecutor::buildRequestDataSet() {
     auto end = iter->getColumn(1);
     if (!SchemaUtil::isValidVid(start, vidType) || !SchemaUtil::isValidVid(end, vidType)) {
       return Status::Error("Mismatched vid type, space vid type: %s",
-                           SchemaUtil::typeToString(vidType));
+                           SchemaUtil::typeToString(vidType).c_str());
     }
     if (start == end) {
       // continue or return error
@@ -41,8 +41,7 @@ Status ShortestPathExecutor::buildRequestDataSet() {
   return Status::OK();
 }
 
-Status ShortestPathExecutor::handlePropResp(StorageRpcResponse<GetPropResponse>&& resps,
-                                            std::vector<Vertex>& vertices) {
+Status ShortestPathExecutor::handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices) {
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   nebula::DataSet v;
@@ -60,13 +59,13 @@ Status ShortestPathExecutor::handlePropResp(StorageRpcResponse<GetPropResponse>&
   auto iter = std::make_unique<PropIter>(val);
   vertices.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
-    vertices.emplace(iter->getVertex());
+    vertices.emplace_back(iter->getVertex());
   }
   return Status::OK();
 }
 
 folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<Value>& meetVids,
-                                                             std::vector<Vertex>& meetVertices) {
+                                                             std::vector<Value>& meetVertices) {
   SCOPED_TIMER(&execTime_);
   nebula::DataSet vertices({kVid});
   vertices.rows.reserve(meetVids.size());
@@ -97,7 +96,7 @@ folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<V
         otherStats_.emplace("get_prop_total_rpc",
                             folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
-      .thenValue([this, &meetVertices](StorageRpcResponse<GetPropResponse>&& resp) {
+      .thenValue([this, &meetVertices](PropRpcResponse&& resp) {
         SCOPED_TIMER(&execTime_);
         // addStats(resp, otherStats_);
         return handlePropResp(std::move(resp), meetVertices);
@@ -106,18 +105,18 @@ folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<V
 
 std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
   std::vector<Row> leftPaths;
-  std::vector<Row> interimPaths({meetVid});
+  std::vector<Row> interimPaths({Row({meetVid})});
   for (auto stepIter = allLeftSteps_.rbegin(); stepIter < allLeftSteps_.rend(); ++stepIter) {
     std::vector<Row> temp;
     for (auto& interimPath : interimPaths) {
       Value id = meetVid;
       if (interimPath.size() != 1) {
-        auto& row = interimPath.back();
+        auto& row = interimPath.values.back();
         id = row.values.front().getVertex().vid;
       }
 
-      auto findStep = stepIter.find(id);
-      for (auto step : findStep.second) {
+      auto findStep = stepIter->find(id);
+      for (auto step : findStep->second) {
         Row path = interimPath;
         path.emplace_back(step);
         if (stepIter == allLeftSteps_.rend() - 1) {
@@ -135,13 +134,13 @@ std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
   result.reserve(leftPaths.size());
   for (auto& path : leftPaths) {
     Row row, steps;
-    auto& fistStep = path.values.back();
+    auto& firstStep = path.values.back();
     row.emplace_back(firstStep.values.front());
     steps.emplace_back(firstStep.values.back());
-    for (auto iter = path.rbegin() + 1; iter != path.rend() - 1; ++iter) {
+    for (auto iter = path.values.rbegin() + 1; iter != path.values.rend() - 1; ++iter) {
       steps.values.insert(steps.values.end(),
-                          std::make_move_iterator(iter->values.begin()),
-                          std::make_move_iterator(iter->values.end()));
+                          std::make_move_iterator(iter->begin()),
+                          std::make_move_iterator(iter->end()));
     }
     row.emplace_back(std::move(steps));
     result.emplace_back(std::move(row));
@@ -149,9 +148,9 @@ std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
   return result;
 }
 
-std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddStep) {
+std::vector<Row> ShortestPathExecutor::createRightPath(const Value& meetVid, bool oddStep) {
   std::vector<Row> rightPaths;
-  std::vector<Row> interimPaths({meetVid});
+  std::vector<Row> interimPaths({Row({meetVid})});
 
   auto stepIter = oddStep ? allRightSteps_.rbegin() + 1 : allRightSteps_.rbegin();
   for (; stepIter < allRightSteps_.rend() - 1; ++stepIter) {
@@ -159,11 +158,11 @@ std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddS
     for (auto& interimPath : interimPaths) {
       Value id = meetVid;
       if (interimPath.size() != 1) {
-        auto& row = interimPath.back();
+        auto& row = interimPath.values.back();
         id = row.values.front().getVertex().vid;
       }
-      auto findStep = stepIter.find(id);
-      for (auto step : findStep.second) {
+      auto findStep = stepIter->find(id);
+      for (auto step : findStep->second) {
         Row path = interimPath;
         path.emplace_back(step);
         if (stepIter == allRightSteps_.rend() - 2) {
@@ -182,7 +181,7 @@ std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddS
     auto& lastSteps = allRightSteps_.back();
     for (auto& steps : lastSteps) {
       bool flag = false;
-      for (auto& step : steps->second) {
+      for (auto& step : steps.second) {
         auto& vertex = step.values.front();
         if (vertex.getVertex().vid == meetVid) {
           meetVertex = vertex;
@@ -209,8 +208,8 @@ std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddS
     path.values.erase(path.values.begin());
     for (auto iter = path.values.begin() + 1; iter != path.values.end(); ++iter) {
       row.values.insert(row.values.end(),
-                        std::make_move_iterator(iter->values.rbegin()),
-                        std::make_move_iterator(iter->values.rend()));
+                        std::make_move_iterator(iter->rbegin()),
+                        std::make_move_iterator(iter->rend()));
     }
     result.emplace_back(std::move(row));
   }
@@ -233,14 +232,15 @@ void ShortestPathExecutor::buildOddPath(const std::vector<Value>& meetVids) {
 }
 
 bool ShortestPathExecutor::buildEvenPath(const std::vector<Value>& meetVids) {
-  std::vector<Vertex> meetVertices;
+  std::vector<Value> meetVertices;
   auto status = getMeetVidsProps(meetVids, meetVertices).get();
   if (!status.ok() || meetVertices.empty()) {
     return false;
   }
   for (auto& meetVertex : meetVertices) {
-    auto leftPaths = createLeftPath(meetVertex.vid);
-    auto rightPaths = createRightPath(meetVertx.vid, false);
+    auto meetVid = meetVertex.getVertex().vid;
+    auto leftPaths = createLeftPath(meetVid);
+    auto rightPaths = createRightPath(meetVid, false);
     for (auto& leftPath : leftPaths) {
       for (auto& rightPath : rightPaths) {
         Row path = leftPath;
@@ -394,7 +394,7 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(std::vector<RpcRespon
   return shortestPath(i);
 }
 
-folly::Future<GetNeighborsResponse> ShortestPathExecutor::getNeighbors(bool reverse) {
+folly::Future<RpcResponse> ShortestPathExecutor::getNeighbors(bool reverse) {
   StorageClient* storageClient = qctx_->getStorageClient();
   storage::StorageClient::CommonRequestParam param(pathNode_->space(),
                                                    qctx()->rctx()->session()->id(),
@@ -418,11 +418,11 @@ folly::Future<GetNeighborsResponse> ShortestPathExecutor::getNeighbors(bool reve
 }
 
 folly::Future<Status> ShortestPathExecutor::shortestPath(size_t i) {
-  std::vector<GetNeighborsResponse> futures;
+  std::vector<folly::Future<RpcResponse>> futures;
   futures.emplace_back(getNeighbors(false));
   futures.emplace_back(getNeighbors(true));
   return folly::collect(futures).via(runner()).thenValue(
-      [](std::vector<RpcResponse>&& resps) { return handleResponse(resps, i); });
+      [i](std::vector<RpcResponse>&& resps) { return handleResponse(resps, i); });
 }
 
 folly::Future<Status> ShortestPathExecutor::execute() {
@@ -432,8 +432,12 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   for (size_t i = 0; i < cartesianProduct_.size(); ++i) {
     futures.emplace_back(shortestPath(i));
   }
-  folly::collect(futures).via(runner()).thenValue(
-      []() { return finish(ResultBuilder().value(Value(std::move(resultDs_))).build()); });
+  folly::collect(futures).via(runner()).thenValue([this](std::vector<Status>&& resps) {
+    for (auto& resp : resps) {
+      NG_RETURN_IF_ERROR(resp);
+    }
+    return finish(ResultBuilder().value(Value(std::move(resultDs_))).build());
+  });
 }
 
 }  // namespace graph

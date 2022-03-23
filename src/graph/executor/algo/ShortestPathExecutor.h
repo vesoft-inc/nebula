@@ -9,8 +9,6 @@
 
 namespace nebula {
 namespace graph {
-using nebula::storage::cpp2::GetNeighborsResponse;
-
 class ShortestPathExecutor final : public StorageAccessExecutor {
  public:
   ShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
@@ -26,22 +24,23 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
  private:
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
+  using PropRpcResponse = storage::StorageRpcResponse<storage::cpp2::GetPropResponse>;
 
   Status buildRequestDataSet();
-  folly::Future<GetNeighborsResponse> getNeighbors(bool reverse);
+  folly::Future<RpcResponse> getNeighbors(bool reverse);
 
   folly::Future<Status> shortestPath(size_t i);
   folly::Future<Status> handleResponse(std::vector<RpcResponse>&& resps, size_t i);
-  Status handlePropResp(StorageRpcResponse<GetPropResponse>&& resps, std::vector<Vertex>& vertices);
+  Status handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices);
   Status buildPath(RpcResponse& resp, bool reverse);
   folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
-                                         std::vector<Vertex>& meetVertices);
+                                         std::vector<Value>& meetVertices);
   Status doBuildPath(GetNeighborsIter* iter, bool reverse);
   bool conjunctPath();
   bool buildEvenPath(const std::vector<Value>& meetVids);
   void buildOddPath(const std::vector<Value>& meetVids);
-  std::vector<Row> createRightPath(Value& meetVid, bool evenStep);
-  std::vector<Row> createLeftPath(Value& meetVid);
+  std::vector<Row> createRightPath(const Value& meetVid, bool evenStep);
+  std::vector<Row> createLeftPath(const Value& meetVid);
 
  private:
   const ShortestPath* pathNode_{nullptr};
