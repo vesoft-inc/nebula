@@ -131,11 +131,21 @@ std::vector<Row> ShortestPathExecutor::createLeftPath(Value& meetVid) {
       interimPaths.swap(temp);
     }
   }  // stepIter
+  std::vector<Row> result;
+  result.reserve(leftPaths.size());
   for (auto& path : leftPaths) {
-    std::reverse(path.values.begin(), path.values.end());
-    path.pop_back();
+    Row row, steps;
+    auto& fistStep = path.values.back();
+    row.emplace_back(firstStep.values.front());
+    steps.emplace_back(firstStep.values.back());
+    for (auto iter = path.rbegin() + 1; iter != path.rend() - 1; ++iter) {
+      steps.values.insert(std::make_move_iterator(iter->values.begin()),
+                          std::make_move_iterator(iter->values.end()));
+    }
+    row.emplace_back(std::move(steps));
+    result.emplace_back(std::move(row));
   }
-  return leftPaths;
+  return result;
 }
 
 std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddStep) {
@@ -145,15 +155,15 @@ std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddS
   auto stepIter = oddStep ? allRightSteps_.rbegin() + 1 : allRightSteps_.rbegin();
   for (; stepIter < allRightSteps_.rend() - 1; ++stepIter) {
     std::vector<Row> temp;
-    for (auto& iterimPath : interimPaths) {
+    for (auto& interimPath : interimPaths) {
       Value id = meetVid;
-      if (iterimPath.size() != 1) {
+      if (interimPath.size() != 1) {
         auto& row = interimPath.back();
         id = row.values.front().getVertex().vid;
       }
       auto findStep = stepIter.find(id);
       for (auto step : findStep.second) {
-        Row path = iterimPath;
+        Row path = interimPath;
         path.emplace_back(step);
         if (stepIter == allRightSteps_.rend() - 2) {
           rightPaths.emplace_back(std::move(path));
@@ -166,16 +176,39 @@ std::vector<Row> ShortestPathExecutor::createRightPath(Value& meetVid, bool oddS
       interimPaths.swap(temp);
     }
   }
+  Value meetVertex;
   if (oddStep) {
-    auto& lastStep = allRightSteps_.back();
-  }
-  for (auto& path : rightPaths) {
-    path.values.erase(path.values.begin());
-    for (auto& edge : path.values) {
-      std::reverse(edge.values.begin(), edge.values.end());
+    auto& lastSteps = allRightSteps_.back();
+    for (auto& steps : lastSteps) {
+      bool flag = false;
+      for (auto& step : steps->second) {
+        auto& vertex = step.values.front();
+        if (vertex.getVertex().vid == meetVid) {
+          meetVertex = vertex;
+          flag = true;
+          break;
+        }
+      }
+      if (flag) {
+        break;
+      }
     }
   }
-  return rightPaths;
+  std::vector<Row> result;
+  result.reserve(rightPaths.size());
+  for (auto& path : rightPaths) {
+    Row row;
+    if (oddStep) {
+      row.emplace_back(meetVertex);
+    }
+    path.values.erase(path.values.begin());
+    for (auto& edge : path.values) {
+      row.values.insert(std::make_move_iterator(edge.values.rbegin()),
+                        std::make_move_iterator(edge.values.rend()));
+    }
+    result.emplace_back(std::move(row));
+  }
+  return result;
 }
 
 void ShortestPathExecutor::buildOddPath(const std::vector<Value>& meetVids) {
