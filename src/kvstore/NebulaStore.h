@@ -581,8 +581,10 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partId
+   * @param needLock if lock_ has already been locked, we need
+   * to set needLock as false, or we set it as true
    */
-  void removePart(GraphSpaceID spaceId, PartitionID partId) override;
+  void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) override;
 
   /**
    * @brief Retrive the leader distribution
