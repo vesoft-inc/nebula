@@ -161,7 +161,7 @@ jobs:
             ;;
           esac
         working-directory: tests/
-        timeout-minutes: 2
+        timeout-minutes: 4
       - name: Pytest
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
@@ -270,7 +270,7 @@ jobs:
         run: |
           make standalone-up
         working-directory: tests/
-        timeout-minutes: 60
+        timeout-minutes: 4
       - name: TCK
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck

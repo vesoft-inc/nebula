@@ -10,7 +10,6 @@
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/job/JobStatus.h"
-#include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -18,11 +17,13 @@ namespace meta {
 using Status = cpp2::JobStatus;
 using Host = std::pair<int, int>;
 
-TaskDescription::TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst)
-    : TaskDescription(iJob, iTask, dst.host, dst.port) {}
+TaskDescription::TaskDescription(GraphSpaceID space, JobID iJob, TaskID iTask, const HostAddr& dst)
+    : TaskDescription(space, iJob, iTask, dst.host, dst.port) {}
 
-TaskDescription::TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port)
-    : iJob_(iJob),
+TaskDescription::TaskDescription(
+    GraphSpaceID space, JobID iJob, TaskID iTask, std::string addr, int32_t port)
+    : space_(space),
+      iJob_(iJob),
       iTask_(iTask),
       dest_(addr, port),
       status_(cpp2::JobStatus::RUNNING),
@@ -30,89 +31,28 @@ TaskDescription::TaskDescription(JobID iJob, TaskID iTask, std::string addr, int
       stopTime_(0) {}
 
 /*
+ * task key:
+ * GraphSpaceID                    space_;
  * JobID                           iJob_;
  * TaskID                          iTask_;
+ *
+ * task val:
  * HostAddr                        dest_;
  * cpp2::JobStatus                 status_;
  * int64_t                         startTime_;
  * int64_t                         stopTime_;
  * */
 TaskDescription::TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val) {
-  auto tupKey = parseKey(key);
-  iJob_ = std::get<0>(tupKey);
-  iTask_ = std::get<1>(tupKey);
+  auto tupKey = MetaKeyUtils::parseTaskKey(key);
+  space_ = std::get<0>(tupKey);
+  iJob_ = std::get<1>(tupKey);
+  iTask_ = std::get<2>(tupKey);
 
-  auto tupVal = parseVal(val);
+  auto tupVal = MetaKeyUtils::parseTaskVal(val);
   dest_ = std::get<0>(tupVal);
   status_ = std::get<1>(tupVal);
   startTime_ = std::get<2>(tupVal);
   stopTime_ = std::get<3>(tupVal);
-}
-
-std::string TaskDescription::taskKey() {
-  std::string str;
-  str.reserve(32);
-  str.append(reinterpret_cast<const char*>(JobUtil::jobPrefix().data()),
-             JobUtil::jobPrefix().size())
-      .append(reinterpret_cast<const char*>(&iJob_), sizeof(JobID))
-      .append(reinterpret_cast<const char*>(&iTask_), sizeof(TaskID));
-  return str;
-}
-
-std::pair<JobID, TaskID> TaskDescription::parseKey(const folly::StringPiece& rawKey) {
-  auto offset = JobUtil::jobPrefix().size();
-  JobID iJob = *reinterpret_cast<const JobID*>(rawKey.begin() + offset);
-  offset += sizeof(JobID);
-  TaskID iTask = *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
-  return std::make_pair(iJob, iTask);
-}
-
-std::string TaskDescription::archiveKey() {
-  std::string str;
-  str.reserve(32);
-  str.append(reinterpret_cast<const char*>(JobUtil::archivePrefix().data()),
-             JobUtil::archivePrefix().size())
-      .append(reinterpret_cast<const char*>(&iJob_), sizeof(JobID))
-      .append(reinterpret_cast<const char*>(&iTask_), sizeof(TaskID));
-  return str;
-}
-
-std::string TaskDescription::taskVal() {
-  std::string str;
-  str.reserve(128);
-  str.append(MetaKeyUtils::serializeHostAddr(dest_))
-      .append(reinterpret_cast<const char*>(&status_), sizeof(Status))
-      .append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_))
-      .append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
-  return str;
-}
-
-/*
- * HostAddr                        dest_;
- * cpp2::JobStatus                 status_;
- * int64_t                         startTime_;
- * int64_t                         stopTime_;
- * */
-// std::tuple<Host, Status, int64_t, int64_t>
-std::tuple<HostAddr, Status, int64_t, int64_t> TaskDescription::parseVal(
-    const folly::StringPiece& rawVal) {
-  size_t offset = 0;
-
-  folly::StringPiece raw = rawVal;
-  HostAddr host = MetaKeyUtils::deserializeHostAddr(raw);
-  offset += sizeof(size_t);
-  offset += host.host.size();
-  offset += sizeof(uint32_t);
-
-  auto status = JobUtil::parseFixedVal<Status>(rawVal, offset);
-  offset += sizeof(Status);
-
-  auto tStart = JobUtil::parseFixedVal<int64_t>(rawVal, offset);
-  offset += sizeof(int64_t);
-
-  auto tStop = JobUtil::parseFixedVal<int64_t>(rawVal, offset);
-
-  return std::make_tuple(host, status, tStart, tStop);
 }
 
 /*
@@ -125,6 +65,7 @@ std::tuple<HostAddr, Status, int64_t, int64_t> TaskDescription::parseVal(
  * */
 cpp2::TaskDesc TaskDescription::toTaskDesc() {
   cpp2::TaskDesc ret;
+  ret.space_id_ref() = space_;
   ret.job_id_ref() = iJob_;
   ret.task_id_ref() = iTask_;
   ret.host_ref() = dest_;

@@ -916,7 +916,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
-      return Status::Error("Job not in chosen space!");
+      return Status::Error("Job not existed in chosen space!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -1149,8 +1149,9 @@ PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
 }
 
 folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
-    cpp2::JobOp op, cpp2::JobType type, std::vector<std::string> paras) {
+    GraphSpaceID spaceId, cpp2::JobOp op, cpp2::JobType type, std::vector<std::string> paras) {
   cpp2::AdminJobReq req;
+  req.space_id_ref() = spaceId;
   req.op_ref() = op;
   req.type_ref() = type;
   req.paras_ref() = std::move(paras);
@@ -3235,12 +3236,14 @@ folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID space
 }
 
 folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
+    GraphSpaceID spaceId,
     int32_t jobId,
     int32_t taskId,
     nebula::cpp2::ErrorCode taskErrCode,
     cpp2::StatsItem* statisticItem) {
   cpp2::ReportTaskReq req;
   req.code_ref() = taskErrCode;
+  req.space_id_ref() = spaceId;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
   if (statisticItem) {

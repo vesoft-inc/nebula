@@ -28,7 +28,8 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
   FRIEND_TEST(BalanceTest, LeaderBalanceWithComplexZoneTest);
 
  public:
-  LeaderBalanceJobExecutor(JobID jobId,
+  LeaderBalanceJobExecutor(GraphSpaceID space,
+                           JobID jobId,
                            kvstore::KVStore* kvstore,
                            AdminClient* adminClient,
                            const std::vector<std::string>& params);

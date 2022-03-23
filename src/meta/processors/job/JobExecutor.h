@@ -19,7 +19,7 @@ namespace meta {
 class JobExecutor {
  public:
   JobExecutor() = default;
-  explicit JobExecutor(kvstore::KVStore* kv) : kvstore_(kv) {}
+  explicit JobExecutor(kvstore::KVStore* kv, GraphSpaceID space) : kvstore_(kv), space_(space) {}
   virtual ~JobExecutor() = default;
 
   /**
@@ -66,13 +66,6 @@ class JobExecutor {
    */
   virtual nebula::cpp2::ErrorCode recovery() = 0;
 
-  /**
-   * @brief Set id of the space
-   *
-   * @param spaceId
-   */
-  virtual void setSpaceId(GraphSpaceID spaceId) = 0;
-
   virtual bool isMetaJob() = 0;
 
   /**
@@ -93,10 +86,12 @@ class JobExecutor {
   virtual nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) = 0;
 
  protected:
-  ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceIdFromName(const std::string& spaceName);
+  nebula::cpp2::ErrorCode spaceExist();
 
  protected:
   kvstore::KVStore* kvstore_{nullptr};
+
+  GraphSpaceID space_;
 };
 
 class JobExecutorFactory {
