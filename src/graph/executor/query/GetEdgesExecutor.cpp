@@ -18,7 +18,6 @@ folly::Future<Status> GetEdgesExecutor::execute() {
 
 DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();
-  VLOG(1) << "GE input var:" << ge->inputVar() << " iter kind: " << valueIter->kind();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   nebula::DataSet edges({kSrc, kType, kRank, kDst});
