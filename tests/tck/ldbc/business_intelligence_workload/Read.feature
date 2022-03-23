@@ -265,42 +265,68 @@ Feature: LDBC Business Intelligence Workload - Read
 
   @skip
   Scenario: 10. Central person for a tag
-    # TODO: 100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
+    # TODO: The execution plan has scan at the last query part. This is not in expectation.
     When executing query:
       """
       MATCH (`tag`:`Tag`)
       WHERE id(`tag`) == "John_Rhys-Davies"
+      /* score */
       OPTIONAL MATCH (`tag`)<-[interest:HAS_INTEREST]-(person:Person)
       WITH `tag`, collect(person) AS interestedPersons
       OPTIONAL MATCH (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person:Person)
-               WHERE message.creationDate > "20120122000000000"
+               WHERE message.Message.creationDate > 20120122000000000
       WITH `tag`, interestedPersons + collect(person) AS persons
       UNWIND persons AS person
+      /* poor man's disjunct union (should be changed to UNION + post-union processing in the future) */
       WITH DISTINCT `tag`, person
+      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(person)
+      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.Message.creationDate > 20120122000000000
+      WITH `tag`,
+           person,
+           CASE p1
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP1,
+           CASE p2
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP2
       WITH
         `tag`,
         person,
-        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(person) | interest])
-          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(person) WHERE message.creationDate > $date | message])
-        AS score
+        100 * count(hasP1) + count(hasP2) AS score
       OPTIONAL MATCH (person)-[:KNOWS]-(friend)
+      OPTIONAL MATCH p1 = (`tag`)<-[interest:HAS_INTEREST]-(friend)
+      OPTIONAL MATCH p2 = (`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.Message.creationDate > 2012012200000000
+      WITH person,
+           score,
+           CASE p1
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP1,
+           CASE p2
+            WHEN NOT NULL THEN true
+            ELSE NULL
+           END AS hasP2
       WITH
         person,
         score,
-        100 * length([(`tag`)<-[interest:HAS_INTEREST]-(friend) | interest])
-          + length([(`tag`)<-[:HAS_TAG]-(message:Message)-[:HAS_CREATOR]->(friend) WHERE message.creationDate > $date | message])
-        AS friendScore
-      RETURN
-        person.id,
+        100 * count(hasP1) + count(hasP2) AS friendScore
+      WITH
+        person.Person.id AS personId,
         score,
         sum(friendScore) AS friendsScore
+      RETURN
+        personId,
+        score,
+        friendsScore,
+        score + friendsScore AS sumScore
       ORDER BY
-        score + friendsScore DESC,
-        person.id ASC
+        sumScore DESC,
+        personId ASC
       LIMIT 100
       """
-    Then the result should be, in order:
-      | person.id | score | friendsScore |
+    Then a SyntaxError should be raised at runtime:
 
   Scenario: 11. Unrelated replies
     When executing query:
