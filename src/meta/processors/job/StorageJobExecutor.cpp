@@ -153,21 +153,26 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
   auto addresses = nebula::value(addressesRet);
 
   // write all tasks first.
+  std::vector<kvstore::KV> data;
   for (auto i = 0U; i != addresses.size(); ++i) {
-    TaskDescription task(jobId_, i, addresses[i].first);
-    std::vector<kvstore::KV> data{{task.taskKey(), task.taskVal()}};
-    folly::Baton<true, std::atomic> baton;
-    auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kvstore_->asyncMultiPut(
-        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-          rc = code;
-          baton.post();
-        });
-    baton.wait();
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
-      return rc;
-    }
+    TaskDescription task(space_, jobId_, i, addresses[i].first);
+    auto taskKey = MetaKeyUtils::taskKey(task.getSpace(), task.getJobId(), task.getTaskId());
+    auto taskVal = MetaKeyUtils::taskVal(
+        task.getHost(), task.getStatus(), task.getStartTime(), task.getStopTime());
+    data.emplace_back(std::move(taskKey), std::move(taskVal));
+  }
+
+  folly::Baton<true, std::atomic> baton;
+  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+  kvstore_->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        rc = code;
+        baton.post();
+      });
+  baton.wait();
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
+    return rc;
   }
 
   std::vector<folly::SemiFuture<Status>> futures;
@@ -176,7 +181,6 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
     futures.emplace_back(executeInternal(std::move(address.first), std::move(address.second)));
   }
 
-  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
   auto tries = folly::collectAll(std::move(futures)).get();
   for (auto& t : tries) {
     if (t.hasException()) {

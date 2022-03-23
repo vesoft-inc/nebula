@@ -11,24 +11,23 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
 namespace meta {
 
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
-  auto spaceRet = getSpaceIdFromName(paras_.back());
-  if (!nebula::ok(spaceRet)) {
-    LOG(INFO) << "Can't find the space: " << paras_.back();
-    return nebula::error(spaceRet);
+  auto spaceRet = spaceExist();
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Can't find the space, spaceId " << space_;
+    return spaceRet;
   }
-  GraphSpaceID spaceId = nebula::value(spaceRet);
-  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(spaceId, kvstore_);
+
+  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(space_, kvstore_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }
-  lostZones_.reserve(paras_.size() - 1);
-  for (size_t i = 0; i < paras_.size() - 1; i++) {
+  lostZones_.reserve(paras_.size());
+  for (size_t i = 0; i < paras_.size(); i++) {
     lostZones_.emplace_back(paras_[i]);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;

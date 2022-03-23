@@ -9,7 +9,6 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
 
 DEFINE_double(leader_balance_deviation,
               0.05,
@@ -213,11 +212,12 @@ void LeaderBalanceJobExecutor::calDiff(const HostParts& hostParts,
   }
 }
 
-LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(JobID jobId,
+LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(GraphSpaceID space,
+                                                   JobID jobId,
                                                    kvstore::KVStore* kvstore,
                                                    AdminClient* adminClient,
                                                    const std::vector<std::string>& params)
-    : MetaJobExecutor(jobId, kvstore, adminClient, params),
+    : MetaJobExecutor(space, jobId, kvstore, adminClient, params),
       inLeaderBalance_(false),
       hostLeaderMap_(nullptr) {
   executor_.reset(new folly::CPUThreadPoolExecutor(1));
