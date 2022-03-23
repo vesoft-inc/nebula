@@ -29,6 +29,7 @@ static constexpr size_t MAX_STRING = 4096;
  * <LB_STR> accent quoted label, eg. `v2`
  * <COMMENT> comment
  */
+
 %x DQ_STR
 %x SQ_STR
 %x LB_STR
