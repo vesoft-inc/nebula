@@ -51,8 +51,6 @@ DECLARE_bool(enable_optimizer);
 
 DECLARE_int64(max_allowed_connections);
 
-DECLARE_string(local_ip);
-
 DECLARE_bool(enable_experimental_feature);
 
 DECLARE_bool(enable_client_white_list);
