@@ -253,32 +253,34 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | messageId | messageContent | messageCreationDate |
 
-  @skip
   Scenario: 10. Friend recommendation
     # TODO support local defined variable in expression
     # personId: 4398046511333, moth:5
     When executing query:
       """
-      MATCH (person:Person {id: 4398046511333})-[:KNOWS*2..2]-(friend),
-             (friend)-[:IS_LOCATED_IN]->(city:City)
-      WHERE NOT friend==person AND
-            NOT (friend)-[:KNOWS]-(person)
-      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday
-      WHERE  (birthday.month==5 AND birthday.day>=21) OR
-              (birthday.month==(5%12)+1 AND birthday.day<22)
+      MATCH (person:Person)-[:KNOWS*2..2]-(friend)-[:IS_LOCATED_IN]->(city:City)
+      WHERE id(person)=="4398046511333" AND
+            NOT friend==person
+      OPTIONAL MATCH p = (friend)-[:KNOWS]-(person)
+      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday, p
+      WHERE  p IS NULL AND
+             ((birthday.month==5 AND birthday.day>=21) OR
+             (birthday.month==(5%12)+1 AND birthday.day<22))
       WITH DISTINCT friend, city, person
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)
-      WITH friend, city, collect(post) AS posts, person
+      OPTIONAL MATCH p = (post)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)
+      WITH friend, city, post, person, p
+      WITH friend, city, collect(post) AS posts, person, collect(p) AS paths
       WITH friend,
            city,
            size(posts) AS postCount,
-           size([p IN posts WHERE (p)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)]) AS commonPostCount
+           size([p IN paths WHERE p IS NOT NULL ]) AS commonPostCount
       RETURN friend.Person.id AS personId,
              friend.Person.firstName AS personFirstName,
              friend.Person.lastName AS personLastName,
              commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
-             friend.gender AS personGender,
-             city.name AS personCityName
+             friend.Person.gender AS personGender,
+             city.City.name AS personCityName
       ORDER BY commonInterestScore DESC, personId ASC
       LIMIT 10
       """
