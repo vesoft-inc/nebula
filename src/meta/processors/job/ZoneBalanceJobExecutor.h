@@ -25,7 +25,8 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
                          kvstore::KVStore* kvstore,
                          AdminClient* adminClient,
                          const std::vector<std::string>& params)
-      : BalanceJobExecutor(jobDescription.getJobId(), kvstore, adminClient, params),
+      : BalanceJobExecutor(
+            jobDescription.getSpace(), jobDescription.getJobId(), kvstore, adminClient, params),
         jobDescription_(jobDescription) {}
 
   nebula::cpp2::ErrorCode prepare() override;

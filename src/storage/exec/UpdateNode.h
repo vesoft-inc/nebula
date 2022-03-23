@@ -384,7 +384,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
    *
    * @param partId
    * @param vId
-   * @return folly::Optional<std::string> BatchHolder encode value.
+   * @return std::Optional<std::string> BatchHolder encode value.
    * @see BatchHolder
    */
 

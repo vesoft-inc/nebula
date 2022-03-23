@@ -30,17 +30,14 @@ DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 
-ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobExecutor::getSpaceIdFromName(
-    const std::string& spaceName) {
-  auto indexKey = MetaKeyUtils::indexSpaceKey(spaceName);
+nebula::cpp2::ErrorCode JobExecutor::spaceExist() {
+  auto spaceKey = MetaKeyUtils::spaceKey(space_);
   std::string val;
-  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Get space failed, space name: " << spaceName
-              << " error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
+  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &val);
+  if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    retCode = nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
   }
-  return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+  return retCode;
 }
 
 std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDescription& jd,
@@ -49,7 +46,7 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
   std::unique_ptr<JobExecutor> ret;
   switch (jd.getJobType()) {
     case cpp2::JobType::COMPACT:
-      ret.reset(new CompactJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(new CompactJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::DATA_BALANCE:
       ret.reset(new DataBalanceJobExecutor(jd, store, client, jd.getParas()));
@@ -58,22 +55,26 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
       ret.reset(new ZoneBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
     case cpp2::JobType::LEADER_BALANCE:
-      ret.reset(new LeaderBalanceJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(
+          new LeaderBalanceJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::FLUSH:
-      ret.reset(new FlushJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(new FlushJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_TAG_INDEX:
-      ret.reset(new RebuildTagJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(
+          new RebuildTagJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_EDGE_INDEX:
-      ret.reset(new RebuildEdgeJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(
+          new RebuildEdgeJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_FULLTEXT_INDEX:
-      ret.reset(new RebuildFTJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(
+          new RebuildFTJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::STATS:
-      ret.reset(new StatsJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(new StatsJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     default:
       break;

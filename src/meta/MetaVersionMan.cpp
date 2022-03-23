@@ -8,7 +8,6 @@
 #include "common/fs/FileUtils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/job/JobDescription.h"
-#include "meta/processors/job/JobUtils.h"
 #include "meta/upgrade/MetaDataUpgrade.h"
 #include "meta/upgrade/v2/MetaServiceUtilsV2.h"
 

@@ -8,11 +8,12 @@
 namespace nebula {
 namespace meta {
 
-FlushJobExecutor::FlushJobExecutor(JobID jobId,
+FlushJobExecutor::FlushJobExecutor(GraphSpaceID space,
+                                   JobID jobId,
                                    kvstore::KVStore* kvstore,
                                    AdminClient* adminClient,
                                    const std::vector<std::string>& paras)
-    : SimpleConcurrentJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : SimpleConcurrentJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 folly::Future<Status> FlushJobExecutor::executeInternal(HostAddr&& address,
                                                         std::vector<PartitionID>&& parts) {

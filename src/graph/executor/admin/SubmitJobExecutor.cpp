@@ -19,13 +19,14 @@ folly::Future<Status> SubmitJobExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto *sjNode = asNode<SubmitJob>(node());
+  auto spaceId = qctx()->rctx()->session()->space().id;
   auto jobOp = sjNode->jobOp();
   auto jobType = sjNode->jobType();
   auto params = sjNode->params();
 
   return qctx()
       ->getMetaClient()
-      ->submitJob(jobOp, jobType, params)
+      ->submitJob(spaceId, jobOp, jobType, params)
       .via(runner())
       .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
         SCOPED_TIMER(&execTime_);
@@ -82,7 +83,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
       const auto &jobsDesc = *resp.job_desc_ref();
       for (const auto &jobDesc : jobsDesc) {
         v.emplace_back(nebula::Row({
-            jobDesc.get_id(),
+            jobDesc.get_job_id(),
             apache::thrift::util::enumNameSafe(jobDesc.get_type()),
             apache::thrift::util::enumNameSafe(jobDesc.get_status()),
             convertJobTimestampToDateTime(jobDesc.get_start_time()),
@@ -117,7 +118,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     size_t index = std::stoul(paras.back());
     uint32_t total = paras.size() - index - 1, succeeded = 0, failed = 0, inProgress = 0,
              invalid = 0;
-    v.emplace_back(Row({jd.get_id(),
+    v.emplace_back(Row({jd.get_job_id(),
                         apache::thrift::util::enumNameSafe(jd.get_type()),
                         apache::thrift::util::enumNameSafe(jd.get_status()),
                         convertJobTimestampToDateTime(jd.get_start_time()).toString(),
@@ -154,7 +155,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
   } else {
     nebula::DataSet v({"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"});
     v.emplace_back(nebula::Row({
-        jd.get_id(),
+        jd.get_job_id(),
         apache::thrift::util::enumNameSafe(jd.get_type()),
         apache::thrift::util::enumNameSafe(jd.get_status()),
         convertJobTimestampToDateTime(jd.get_start_time()),
