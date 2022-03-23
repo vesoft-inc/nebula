@@ -215,15 +215,18 @@ Feature: LDBC Business Intelligence Workload - Read
 
   Scenario: 8. Related topics
     # NOTICE: I had rewrite the original query
+    # TODO where clause with pattern expression will be delay to next clause
     When executing query:
       """
       MATCH
-        (`tag`:`Tag`)<-[:HAS_TAG]-(message:Message),
-        (message)<-[:REPLY_OF]-(comment:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
-      WHERE id(`tag`) == "Genghis_Khan" AND NOT `tag` == relatedTag
+        (`tag`:`Tag` {name: "Genghis_Khan"})<-[:HAS_TAG]-(message:Message),
+        (message)<-[:REPLY_OF]-(`comment`:`Comment`)-[:HAS_TAG]->(relatedTag:`Tag`)
+      WHERE id(`tag`) == "Genghis_Khan"
+      WITH relatedTag, `comment`, `tag`
+      WHERE NOT (`comment`)-[:HAS_TAG]->(`tag`)
       RETURN
         relatedTag.`Tag`.name AS relatedTagName,
-        count(DISTINCT comment) AS count
+        count(DISTINCT `comment`) AS count
       ORDER BY
         count DESC,
         relatedTagName ASC
@@ -508,27 +511,24 @@ Feature: LDBC Business Intelligence Workload - Read
     When executing query:
       """
       MATCH
-        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (tagClass:TagClass {name: "MusicalArtist"})<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum1:Forum)-[:HAS_MEMBER]->(stranger:Person)
       WHERE id(tagClass) == "MusicalArtist"
       WITH DISTINCT stranger
       MATCH
-        (tagClass:TagClass)<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
+        (:TagClass {name: "OfficeHolder"})<-[:HAS_TYPE]-(:`Tag`)<-[:HAS_TAG]-
         (forum2:Forum)-[:HAS_MEMBER]->(stranger)
-      WHERE id(tagClass) == "OfficeHolder"
       WITH DISTINCT stranger
       MATCH
-        (person:Person)<-[:HAS_CREATOR]-(comment:`Comment`)-[:REPLY_OF*100]->(message:Message)-[:HAS_CREATOR]->(stranger)
-      OPTIONAL MATCH (person)-[knows:KNOWS]-(stranger)
-      OPTIONAL MATCH (message)-[replyOf:REPLY_OF*100]->(:Message)-[hasCreator:HAS_CREATOR]->(stranger)
+        (person:Person)<-[:HAS_CREATOR]-(`comment`:`Comment`)-[:REPLY_OF*]->(message:Message)-[:HAS_CREATOR]->(stranger)
       WHERE person.Person.birthday > "19890101"
         AND person <> stranger
-        AND knows IS NULL
-        AND (replyOf IS NULL OR hasCreator IS NULL)
+        AND NOT (person)-[:KNOWS]-(stranger)
+        AND NOT (message)-[:REPLY_OF*]->(:Message)-[:HAS_CREATOR]->(stranger)
       RETURN
         person.Person.id AS personId,
         count(DISTINCT stranger) AS strangersCount,
-        count(comment) AS interactionCount
+        count(`comment`) AS interactionCount
       ORDER BY
         interactionCount DESC,
         personId ASC
