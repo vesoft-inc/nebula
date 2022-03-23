@@ -21,6 +21,8 @@ DECLARE_uint32(task_concurrency);
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
 DECLARE_double(leader_balance_deviation);
+DECLARE_int32(catch_up_retry);
+DECLARE_int32(catch_up_interval_in_secs);
 
 namespace nebula {
 namespace meta {
@@ -47,6 +49,12 @@ TEST(BalanceTest, BalanceTaskTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   GraphSpaceID space = 0;
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    nebula::storage::cpp2::CatchUpResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    resp.status_ref() = nebula::storage::cpp2::CatchUpStatus::CAUGHT_UP;
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(resp);
+  });
   {
     StrictMock<MockAdminClient> client;
     EXPECT_CALL(client, checkPeers(space, 0)).Times(2);
@@ -132,6 +140,13 @@ void checkConflic(const Zone& zone) {
     totalNum += p.second.parts_.size();
   }
   EXPECT_EQ(totalNum, zone.partNum_);
+}
+
+nebula::storage::cpp2::CatchUpResp makeSuccessResp() {
+  nebula::storage::cpp2::CatchUpResp resp;
+  resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+  resp.status_ref() = nebula::storage::cpp2::CatchUpStatus::CAUGHT_UP;
+  return resp;
 }
 
 TEST(BalanceTest, RemoveZonePlanTest) {
@@ -557,6 +572,9 @@ TEST(BalanceTest, BalancePlanTest) {
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp());
+  });
   {
     LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
     NiceMock<MockAdminClient> client;
@@ -765,6 +783,9 @@ TEST(BalanceTest, NormalZoneTest) {
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp());
+  });
   NiceMock<MockAdminClient> client;
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
@@ -803,6 +824,9 @@ TEST(BalanceTest, NormalDataTest) {
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp());
+  });
   NiceMock<MockAdminClient> client;
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
@@ -832,15 +856,26 @@ TEST(BalanceTest, RecoveryTest) {
   TestUtils::assembleSpaceWithZone(kv, space, 24, 1, 1, 8);
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp());
+  });
   NiceMock<MockAdminClient> client;
+  FLAGS_catch_up_retry = 1;
+  FLAGS_catch_up_interval_in_secs = 0;
   EXPECT_CALL(client, waitingForCatchUpData(space, _, _))
       .Times(12)
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))))
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))))
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))))
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))))
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))))
+      .WillOnce(Return(ByMove(folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(
+          Status::Error("catch up failed")))));
 
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
@@ -875,37 +910,57 @@ TEST(BalanceTest, RecoveryTest) {
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
+folly::IOThreadPoolExecutor* getExecutor() {
+  static std::unique_ptr<folly::IOThreadPoolExecutor> executor(new folly::IOThreadPoolExecutor(
+      1, std::make_shared<folly::NamedThreadFactory>("balance-test-worker")));
+  return executor.get();
+}
+
 TEST(BalanceTest, StopPlanTest) {
   fs::TempDir rootPath("/tmp/StopAndRecoverTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
   GraphSpaceID space = 1;
-
+  std::unique_ptr<folly::IOThreadPoolExecutor> executor(new folly::IOThreadPoolExecutor(
+      1, std::make_shared<folly::NamedThreadFactory>("balance-test-worker")));
   TestUtils::createSomeHosts(kv);
   TestUtils::assembleSpaceWithZone(kv, space, 24, 3, 5, 5);
+  std::function<folly::Future<Status>()> func;
   DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
+      [] { return folly::Future<Status>(Status::OK()).via(getExecutor()); });
+  DefaultValue<folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>>::SetFactory([] {
+    return folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp());
+  });
   NiceMock<MockAdminClient> delayClient;
   EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
       .Times(8)
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))))
+      .WillOnce(Return(
+          ByMove(folly::makeFuture<StatusOr<nebula::storage::cpp2::CatchUpResp>>(makeSuccessResp())
+                     .delayed(std::chrono::seconds(3)))));
   FLAGS_task_concurrency = 8;
+  FLAGS_catch_up_interval_in_secs = 0;
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
   balancer.spaceInfo_.loadInfo(space, kv);

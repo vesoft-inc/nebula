@@ -68,9 +68,16 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     RETURN_OK(req);
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_waitingForCatchUpData(
+  folly::Future<storage::cpp2::CatchUpResp> future_getCatchUpState(
       const storage::cpp2::CatchUpDataReq& req) override {
-    RETURN_OK(req);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::CatchUpResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::CatchUpResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    resp.status_ref() = nebula::storage::cpp2::CatchUpStatus::CAUGHT_UP;
+    pro.setValue(std::move(resp));
+    return f;
   }
 
   folly::Future<storage::cpp2::AdminExecResp> future_removePart(
@@ -133,9 +140,17 @@ class TestStorageServiceRetry : public TestStorageService {
     RETURN_LEADER_CHANGED(req, leader_);
   }
 
-  folly::Future<storage::cpp2::AdminExecResp> future_waitingForCatchUpData(
+  folly::Future<storage::cpp2::CatchUpResp> future_getCatchUpState(
       const storage::cpp2::CatchUpDataReq& req) override {
-    RETURN_LEADER_CHANGED(req, leader_);
+    UNUSED(req);
+    folly::Promise<storage::cpp2::CatchUpResp> pro;
+    auto f = pro.getFuture();
+    storage::cpp2::CatchUpResp resp;
+    resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    resp.status_ref() = nebula::storage::cpp2::CatchUpStatus::WAITING_FOR_SNAPSHOT;
+    resp.snapshotRows_ref() = 1;
+    pro.setValue(std::move(resp));
+    return f;
   }
 
   folly::Future<storage::cpp2::AdminExecResp> future_memberChange(
@@ -258,10 +273,11 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test waitingForCatchUpData...";
     folly::Baton<true, std::atomic> baton;
-    client->waitingForCatchUpData(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
-      CHECK(st.ok()) << st;
-      baton.post();
-    });
+    client->waitingForCatchUpData(0, 1, HostAddr(localIp, rpcServer2->port_ + 1))
+        .thenValue([&baton](auto&& st) {
+          CHECK(st.ok()) << st;
+          baton.post();
+        });
     baton.wait();
   }
   FLAGS_max_retry_times_admin_op = 1;

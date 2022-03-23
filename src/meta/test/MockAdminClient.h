@@ -20,7 +20,9 @@ class MockAdminClient : public AdminClient {
   MOCK_METHOD4(addPart, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, bool));
   MOCK_METHOD3(addLearner, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
   MOCK_METHOD3(waitingForCatchUpData,
-               folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
+               folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>>(GraphSpaceID,
+                                                                           PartitionID,
+                                                                           const HostAddr&));
   MOCK_METHOD4(memberChange,
                folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, bool));
   MOCK_METHOD4(updateMeta,

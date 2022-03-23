@@ -95,9 +95,8 @@ class AdminClient {
    * @param target partition peer address
    * @return folly::Future<Status>
    */
-  virtual folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
-                                                      PartitionID partId,
-                                                      const HostAddr& target);
+  virtual folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>> waitingForCatchUpData(
+      GraphSpaceID spaceId, PartitionID partId, const HostAddr& target);
 
   /**
    * @brief Add/Remove one peer for partition (spaceId, partId). The rpc will be sent to the

@@ -287,7 +287,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @param peer The peer to check if it has catched up
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer);
+  std::tuple<nebula::cpp2::ErrorCode, cpp2::Status, int64_t, LogID> catchedUpState();
 
   /**
    * @brief Hard link the wal files to a new path

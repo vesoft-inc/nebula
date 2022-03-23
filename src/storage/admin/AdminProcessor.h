@@ -315,7 +315,7 @@ class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  * @brief Processor class to handle waiting data catching up.
  *
  */
-class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::CatchUpResp> {
  public:
   /**
    * @brief Construct new instance of WaitingForCatchUpDataProcessor.
@@ -341,51 +341,32 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
               << partId;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
-      this->pushResultCode(error(ret), partId);
-      onFinished();
+      resp_.code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
+      promise_.setValue(resp_);
       return;
     }
     auto part = nebula::value(ret);
-    auto peer = kvstore::NebulaStore::getRaftAddr(req.get_target());
-
-    folly::async([this, part, peer, spaceId, partId] {
-      int retry = FLAGS_waiting_catch_up_retry_times;
-      while (retry-- > 0) {
-        auto res = part->isCatchedUp(peer);
-        LOG(INFO) << "Waiting for catching up data, peer " << peer << ", space " << spaceId
-                  << ", part " << partId << ", remaining " << retry << " retry times"
-                  << ", result " << static_cast<int32_t>(res);
-        switch (res) {
-          case nebula::cpp2::ErrorCode::SUCCEEDED:
-            onFinished();
-            return;
-          case nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER:
-            this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_PEER, partId);
-            onFinished();
-            return;
-          case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
-            handleLeaderChanged(spaceId, partId);
-            onFinished();
-            return;
-          }
-          case nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT:
-            LOG(INFO) << "Space " << spaceId << ", partId " << partId
-                      << " is still sending snapshot, please wait...";
-            break;
-          default:
-            LOG(INFO) << "Unknown error " << static_cast<int32_t>(res);
-            break;
-        }
-        sleep(FLAGS_waiting_catch_up_interval_in_secs);
-      }
-      this->pushResultCode(nebula::cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
-      onFinished();
-    });
+    auto tup = part->catchedUpState();
+    auto code = std::get<0>(tup);
+    auto status = std::get<1>(tup);
+    if (code == nebula::cpp2::ErrorCode::E_RAFT_CAUGHT_UP) {
+      resp_.status_ref() = nebula::storage::cpp2::CatchUpStatus::CAUGHT_UP;
+    } else if (status == nebula::raftex::cpp2::Status::RUNNING) {
+      resp_.status_ref() = nebula::storage::cpp2::CatchUpStatus::RUNNING;
+    } else if (status == nebula::raftex::cpp2::Status::WAITING_SNAPSHOT) {
+      resp_.status_ref() = nebula::storage::cpp2::CatchUpStatus::WAITING_FOR_SNAPSHOT;
+    } else if (status == nebula::raftex::cpp2::Status::STARTING) {
+      resp_.status_ref() = nebula::storage::cpp2::CatchUpStatus::STARTING;
+    }
+    resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    resp_.snapshotRows_ref() = std::get<2>(tup);
+    resp_.commitLogId_ref() = std::get<3>(tup);
+    promise_.setValue(resp_);
   }
 
  private:
   explicit WaitingForCatchUpDataProcessor(StorageEnv* env)
-      : BaseProcessor<cpp2::AdminExecResp>(env) {}
+      : BaseProcessor<cpp2::CatchUpResp>(env) {}
 };
 
 /**

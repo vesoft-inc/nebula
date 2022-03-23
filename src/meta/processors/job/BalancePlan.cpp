@@ -9,6 +9,7 @@
 
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
+#include "storage/StorageFlags.h"
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
 
@@ -131,6 +132,7 @@ void BalancePlan::invoke() {
   uint32 bucketSize = buckets_.size();
   int32_t concurrency = std::min(FLAGS_task_concurrency, bucketSize);
   curIndex_.store(concurrency, std::memory_order_relaxed);
+  LOG(INFO) << "bucketSize: " << bucketSize << ", concurrency: " << concurrency;
   for (int32_t i = 0; i < concurrency; i++) {
     if (!buckets_[i].empty()) {
       tasks_[buckets_[i][0]].invoke();

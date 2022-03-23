@@ -9,6 +9,10 @@
 
 #include "meta/processors/Common.h"
 
+DEFINE_int32(catch_up_retry, 10, "retry count when catch up failed.");
+
+DEFINE_int32(catch_up_interval_in_secs, 30, "interval between two requests for catching up state");
+
 namespace nebula {
 namespace meta {
 
@@ -122,15 +126,64 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::CATCH_UP_DATA: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Waiting for the data catch up.";
       SAVE_STATE();
-      client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
-        if (!resp.ok()) {
-          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
-          ret_ = BalanceTaskResult::FAILED;
+      int32_t retry = FLAGS_catch_up_retry;
+      auto retryFunc = [&retry, this](bool ifError, const std::string& messageLog = "") {
+        if (ifError) {
+          if (!messageLog.empty()) {
+            LOG(INFO) << taskIdStr_ + "," + commandStr_ + " " << messageLog << ", retry "
+                      << FLAGS_catch_up_retry - retry + 1 << " time";
+          }
+          retry--;
         } else {
-          status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
+          if (!messageLog.empty()) {
+            LOG(INFO) << taskIdStr_ + "," + commandStr_ + " " << messageLog;
+          }
         }
-        invoke();
-      });
+        sleep(FLAGS_catch_up_interval_in_secs);
+      };
+      while (retry) {
+        client_->waitingForCatchUpData(spaceId_, partId_, dst_)
+            .thenValue([this, &retry, &retryFunc](auto&& statusOrResp) {
+              if (!statusOrResp.ok()) {
+                Status status = statusOrResp.status();
+                retryFunc(true, status.message());
+                return;
+              }
+              auto resp = statusOrResp.value();
+              auto status = resp.get_status();
+              if (status == nebula::storage::cpp2::CatchUpStatus::CAUGHT_UP) {
+                LOG(INFO) << taskIdStr_ + "," + commandStr_ << " has already caught up";
+                status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
+                retry = 0;
+              } else if (status == nebula::storage::cpp2::CatchUpStatus::WAITING_FOR_SNAPSHOT) {
+                int64_t snapshotRows = resp.get_snapshotRows();
+                if (snapshotRows > lastSnapshotRows_) {
+                  lastSnapshotRows_ = snapshotRows;
+                  retryFunc(false, "snapshotRows increasing, continue waiting...");
+                } else if (snapshotRows == lastSnapshotRows_) {
+                  retryFunc(true, "snapshotRows did not increase");
+                } else if (snapshotRows < lastSnapshotRows_) {
+                  retryFunc(true, "snapshotRows has been reset, maybe leader changed");
+                }
+              } else if (status == nebula::storage::cpp2::CatchUpStatus::STARTING) {
+                retryFunc(true, "the part is starting");
+              } else if (status == nebula::storage::cpp2::CatchUpStatus::RUNNING) {
+                int64_t logId = resp.get_commitLogId();
+                if (logId > 0) {
+                  LOG(INFO) << taskIdStr_ + "," + commandStr_
+                            << " logId > 0 means it has caught up";
+                  status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
+                  retry = 0;
+                }
+              }
+            })
+            .wait();
+      }
+      if (status_ != BalanceTaskStatus::MEMBER_CHANGE_ADD) {
+        LOG(INFO) << taskIdStr_ + "," + commandStr_ << " catch up failed";
+        ret_ = BalanceTaskResult::FAILED;
+      }
+      invoke();
       break;
     }
     case BalanceTaskStatus::MEMBER_CHANGE_ADD: {

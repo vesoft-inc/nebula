@@ -137,6 +137,7 @@ class BalanceTask {
   int64_t endTimeMs_ = 0;
   std::function<void()> onFinished_;
   std::function<void()> onError_;
+  int64_t lastSnapshotRows_ = 0;
 };
 
 }  // namespace meta

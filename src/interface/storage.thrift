@@ -13,6 +13,7 @@ namespace py nebula3.storage
 
 include "common.thrift"
 include "meta.thrift"
+include "raftex.thrift"
 
 /*
  *
@@ -707,6 +708,21 @@ struct AdminExecResp {
     2: optional meta.StatsItem  stats,
 }
 
+enum CatchUpStatus {
+    CAUGHT_UP = 1,
+    WAITING_FOR_SNAPSHOT = 2,
+    RUNNING = 3,
+    STARTING = 4,
+} (cpp.enum_strict)
+
+struct CatchUpResp {
+    1: common.ErrorCode code,
+    2: CatchUpStatus status,
+    3: i64 snapshotRows,
+    4: i64 commitLogId,
+    5: ResponseCommon  result
+}
+
 
 struct TransLeaderReq {
     1: common.GraphSpaceID space_id,
@@ -748,7 +764,6 @@ struct MemberChangeReq {
 struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
-    3: common.HostAddr     target,
 }
 
 struct GetLeaderReq {
@@ -851,7 +866,7 @@ service StorageAdminService {
     AdminExecResp addLearner(1: AddLearnerReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
-    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
+    CatchUpResp getCatchUpState(1: CatchUpDataReq req);
 
     // Interfaces for nebula cluster checkpoint
     CreateCPResp  createCheckpoint(1: CreateCPRequest req);

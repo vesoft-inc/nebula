@@ -24,8 +24,7 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
 
   folly::Future<cpp2::AdminExecResp> future_addLearner(const cpp2::AddLearnerReq& req) override;
 
-  folly::Future<cpp2::AdminExecResp> future_waitingForCatchUpData(
-      const cpp2::CatchUpDataReq& req) override;
+  folly::Future<cpp2::CatchUpResp> future_getCatchUpState(const cpp2::CatchUpDataReq& req) override;
 
   folly::Future<cpp2::AdminExecResp> future_removePart(const cpp2::RemovePartReq& req) override;
 

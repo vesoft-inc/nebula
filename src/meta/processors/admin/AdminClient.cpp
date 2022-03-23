@@ -132,31 +132,20 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
   return f;
 }
 
-folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
-                                                         PartitionID partId,
-                                                         const HostAddr& target) {
+folly::Future<StatusOr<nebula::storage::cpp2::CatchUpResp>> AdminClient::waitingForCatchUpData(
+    GraphSpaceID spaceId, PartitionID partId, const HostAddr& target) {
   storage::cpp2::CatchUpDataReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
-  req.target_ref() = target;
-  auto partHosts = getPeers(spaceId, partId);
-  if (!nebula::ok(partHosts)) {
-    LOG(INFO) << "Get peers failed: "
-              << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
-    return Status::Error("Get peers failed");
-  }
 
-  auto peers = std::move(nebula::value(partHosts));
-  folly::Promise<Status> pro;
+  folly::Promise<StatusOr<nebula::storage::cpp2::CatchUpResp>> pro;
   auto f = pro.getFuture();
-  getResponseFromLeader(
-      getAdminAddrFromPeers(peers),
-      0,
+  getResponseFromHost(
+      Utils::getAdminAddrFromStoreAddr(target),
       std::move(req),
-      [](auto client, auto request) { return client->future_waitingForCatchUpData(request); },
-      0,
-      std::move(pro),
-      FLAGS_max_retry_times_admin_op);
+      [](auto client, auto request) { return client->future_getCatchUpState(request); },
+      [](auto&& resp) -> decltype(resp) { return std::move(resp); },
+      std::move(pro));
   return f;
 }
 

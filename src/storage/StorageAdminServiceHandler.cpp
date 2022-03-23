@@ -40,7 +40,7 @@ folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_addLearner
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_waitingForCatchUpData(
+folly::Future<cpp2::CatchUpResp> StorageAdminServiceHandler::future_getCatchUpState(
     const cpp2::CatchUpDataReq& req) {
   auto* processor = WaitingForCatchUpDataProcessor::instance(env_);
   RETURN_FUTURE(processor);

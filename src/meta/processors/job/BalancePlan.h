@@ -93,6 +93,7 @@ class BalancePlan {
 
   void stop() {
     std::lock_guard<std::mutex> lg(lock_);
+    LOG(INFO) << "balance plan stop";
     stopped_ = true;
   }
 

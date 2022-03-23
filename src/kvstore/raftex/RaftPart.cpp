@@ -2033,30 +2033,18 @@ void RaftPart::reset() {
   lastLogTerm_ = committedLogTerm_ = 0;
 }
 
-nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {
+std::tuple<nebula::cpp2::ErrorCode, cpp2::Status, int64_t, LogID> RaftPart::catchedUpState() {
   std::lock_guard<std::mutex> lck(raftLock_);
   VLOG(2) << idStr_ << "Check whether I catch up";
-  if (role_ != Role::LEADER) {
-    VLOG(2) << idStr_ << "I am not the leader";
-    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+  if (role_ != Role::LEARNER) {
+    VLOG(2) << idStr_ << "I am not a learner";
+    return std::make_tuple(nebula::cpp2::ErrorCode::E_RAFT_CAUGHT_UP,
+                           cpp2::Status::RUNNING,
+                           lastTotalCount_,
+                           lastLogId_);
   }
-  if (peer == addr_) {
-    VLOG(2) << idStr_ << "I am the leader";
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
-  }
-  for (auto& host : hosts_) {
-    if (host->addr_ == peer) {
-      if (host->followerCommittedLogId_ == 0 ||
-          host->followerCommittedLogId_ < wal_->firstLogId()) {
-        VLOG(2) << idStr_ << "The committed log id of peer is " << host->followerCommittedLogId_
-                << ", which is invalid or less than my first wal log id";
-        return nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT;
-      }
-      return host->sendingSnapshot_ ? nebula::cpp2::ErrorCode::E_RAFT_SENDING_SNAPSHOT
-                                    : nebula::cpp2::ErrorCode::SUCCEEDED;
-    }
-  }
-  return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
+  return std::make_tuple(
+      nebula::cpp2::ErrorCode::SUCCEEDED, this->status_, lastTotalCount_, lastLogId_);
 }
 
 bool RaftPart::linkCurrentWAL(const char* newPath) {
