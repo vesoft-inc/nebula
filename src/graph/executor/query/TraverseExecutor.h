@@ -8,7 +8,7 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
-// Traverse only used in match statement
+// only used in match scenarios
 // invoke the getNeighbors interface, according to the number of times specified by the user,
 // and assemble the result into paths
 //
