@@ -32,7 +32,10 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> shortestPath(size_t i);
   folly::Future<Status> handleResponse(std::vector<RpcResponse>&& resps, size_t i);
+  Status handlePropResp(StorageRpcResponse<GetPropResponse>&& resps, std::vector<Vertex>& vertices);
   Status buildPath(RpcResponse& resp, bool reverse);
+  folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
+                                         std::vector<Vertex>& meetVertices);
   Status doBuildPath(GetNeighborsIter* iter, bool reverse);
   bool conjunctPath();
   bool buildEvenPath(const std::vector<Value>& meetVids);

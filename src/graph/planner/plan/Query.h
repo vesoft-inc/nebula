@@ -1724,10 +1724,6 @@ class ShortestPath final : public SingleInputNode {
     return space_;
   }
 
-  std::vector<Expression*> srcs() const {
-    return srcs_;
-  }
-
   bool single() const {
     return single_;
   }
@@ -1760,10 +1756,6 @@ class ShortestPath final : public SingleInputNode {
     eFilter_ = eFilter;
   }
 
-  void setSrcs(std::vector<Expression*>&& srcs) {
-    srcs_ = srcs;
-  }
-
   void setSingle(bool single) {
     single_ = single;
   }
@@ -1776,7 +1768,6 @@ class ShortestPath final : public SingleInputNode {
 
  private:
   bool single_;
-  std::vector<Expression*> srcs_;
   GraphSpaceID space_;
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
