@@ -8,20 +8,27 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
-// Subgraph receive result from GetNeighbors
-// There are two Main functions
-// First : Extract the deduplicated destination VID from GetNeighbors
-// Second: Delete previously visited edges and save the result(iter) to the variable `resultVar`
+// Traverse only used in match statement
+// invoke the getNeighbors interface, according to the number of times specified by the user,
+// and assemble the result into paths
+//
+//  The definition of path is : array of vertex and edges
+//  Eg a->b->c. path is [Vertex(a), [Edge(a->b), Vertex(b), Edge(b->c), Vertex(c)]]
+//  the purpose is to extract the path by pathBuildExpression
+// `resDs_` : keep result dataSet
 //
 // Member:
-// `paths_` : a list of hash table
-//    KEY in the hash table   : the VID of the visited destination Vertex
-//    VALUE in the hash table : the number of steps to visit the KEY (starting vertex is 0)
-// since each vertex will only be visited once, if it is a one-way edge expansion, there will be no
-// duplicate edges. we only need to focus on the case of two-way expansion
+// `paths_` : hash table array, paths_[i] means that the length that paths in the i-th array
+//  element is i
+//    KEY in the hash table   : the vid of the destination Vertex
+//    VALUE in the hash table : collection of paths that destionation vid is `KEY`
 //
-// How to delete edges:
-//  is judged that a loop is formed, the edge needs to be deleted
+// Functions:
+// `buildRequestDataSet` : constructs the input DataSet for getNeightbors
+// `buildInterimPath` : construct collection of paths after expanded and put it into the paths_
+// `getNeighbors` : invoke the getNeightbors interface
+// `releasePrevPaths` : deleted The path whose length does not meet the user-defined length
+// `hasSameEdge` : check if there are duplicate edges in path
 namespace nebula {
 namespace graph {
 
