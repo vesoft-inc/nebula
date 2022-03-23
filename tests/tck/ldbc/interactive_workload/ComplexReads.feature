@@ -259,28 +259,27 @@ Feature: LDBC Interactive Workload - Complex Reads
     # personId: 4398046511333, moth:5
     When executing query:
       """
-      MATCH (person:Person)-[:KNOWS*2..2]-(friend:Person)-[:IS_LOCATED_IN]->(city:Place)
-      WHERE id(person) == "" AND
-        ((friend.Person.birthday/100%100 == "$month" AND friend.Person.birthday%100 >= 21) OR
-        (friend.Person.birthday/100%100 == "$nextMonth" AND friend.Person.birthday%100 < 22))
-        AND not(friend==person)
-        AND not((friend)-[:KNOWS]-(person))
+      MATCH (person:Person {id: 4398046511333})-[:KNOWS*2..2]-(friend),
+             (friend)-[:IS_LOCATED_IN]->(city:City)
+      WHERE NOT friend==person AND
+            NOT (friend)-[:KNOWS]-(person)
+      WITH person, city, friend, datetime({epochMillis: friend.Person.birthday}) as birthday
+      WHERE  (birthday.month==5 AND birthday.day>=21) OR
+              (birthday.month==(5%12)+1 AND birthday.day<22)
       WITH DISTINCT friend, city, person
       OPTIONAL MATCH (friend)<-[:HAS_CREATOR]-(post:Post)
       WITH friend, city, collect(post) AS posts, person
-      WITH
-        friend,
-        city,
-        length(posts) AS postCount,
-        length([p IN posts WHERE (p)-[:HAS_TAG]->(:`Tag`)<-[:HAS_INTEREST]-(person)]) AS commonPostCount
-      RETURN
-        friend.Person.id AS personId,
-        friend.Person.firstName AS personFirstName,
-        friend.Person.lastName AS personLastName,
-        commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
-        friend.Person.gender AS personGender,
-        city.City.name AS personCityName
-      ORDER BY commonInterestScore DESC, toInteger(personId) ASC
+      WITH friend,
+           city,
+           size(posts) AS postCount,
+           size([p IN posts WHERE (p)-[:HAS_TAG]->()<-[:HAS_INTEREST]-(person)]) AS commonPostCount
+      RETURN friend.Person.id AS personId,
+             friend.Person.firstName AS personFirstName,
+             friend.Person.lastName AS personLastName,
+             commonPostCount - (postCount - commonPostCount) AS commonInterestScore,
+             friend.gender AS personGender,
+             city.name AS personCityName
+      ORDER BY commonInterestScore DESC, personId ASC
       LIMIT 10
       """
     Then the result should be, in any order:
