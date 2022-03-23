@@ -732,12 +732,8 @@ def execution_should_be_succ(exec_ctx):
     check_resp(rs, stmt)
 
 
-@then(
-    rparse(
-        r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"
-    )
-)
-def raised_type_error(unit, err_type, time, sym, msg, exec_ctx,class_fixture_variables):
+@then(rparse(r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
+def raised_type_error(unit, err_type, time, sym, msg, exec_ctx):
     res = exec_ctx["result_set"]
     ngql = exec_ctx['ngql']
     assert not res.is_succeeded(), f"Response should be failed: nGQL:{ngql}"
@@ -750,9 +746,7 @@ def raised_type_error(unit, err_type, time, sym, msg, exec_ctx,class_fixture_var
     else:
         expect_msg = "{}: {}".format(err_type, msg)
     m = res_msg.startswith(expect_msg)
-    assert (
-        m
-    ), f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
+    assert m, f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
 
 
 @then("drop the used space")
