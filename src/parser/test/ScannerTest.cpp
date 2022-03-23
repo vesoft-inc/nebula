@@ -603,33 +603,31 @@ TEST(Scanner, Basic) {
   }
 }
 
-// TODO failed in docker environment
-// TEST(Scanner, LexColumnCount) {
-// using TokenType = nebula::GraphParser::token_type;
-// nebula::GraphParser::semantic_type yylval;
-// nebula::GraphParser::location_type yyloc;
-// GraphScanner scanner;
-// std::string stream("datetime 2..");
+TEST(Scanner, LexColumnCount) {
+  using TokenType = nebula::GraphParser::token_type;
+  nebula::GraphParser::semantic_type yylval;
+  nebula::GraphParser::location_type yyloc;
+  yyloc.initialize();
+  GraphScanner scanner;
+  std::string stream("2..");
 
-// auto input = [&](char *buf, int maxSize) {
-// static int copied = 0;
-// int left = stream.size() - copied;
-// if (left == 0) {
-// return 0;
-// }
-// int n = left < maxSize ? left : maxSize;
-// ::memcpy(buf, &stream[copied], n);
-// copied += n;
-// return n;
-// };
-// scanner.setReadBuffer(input);
-// auto type = scanner.yylex(&yylval, &yyloc);
-// ASSERT_EQ(type, TokenType::KW_DATETIME);
-// type = scanner.yylex(&yylval, &yyloc);
-// ASSERT_EQ(type, TokenType::INTEGER);
-// type = scanner.yylex(&yylval, &yyloc);
-// ASSERT_EQ(type, TokenType::DOT_DOT);
-// ASSERT_EQ(yyloc.begin.column, 10);
-// }
+  auto input = [&](char *buf, int maxSize) {
+    static int copied = 0;
+    int left = stream.size() - copied;
+    if (left == 0) {
+      return 0;
+    }
+    int n = left < maxSize ? left : maxSize;
+    ::memcpy(buf, &stream[copied], n);
+    copied += n;
+    return n;
+  };
+  scanner.setReadBuffer(input);
+  auto type = scanner.yylex(&yylval, &yyloc);
+  ASSERT_EQ(type, TokenType::INTEGER);
+  type = scanner.yylex(&yylval, &yyloc);
+  ASSERT_EQ(type, TokenType::DOT_DOT);
+  ASSERT_EQ(yyloc.begin.column, 2);
+}
 
 }  // namespace nebula
