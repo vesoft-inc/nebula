@@ -36,11 +36,8 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.7'
-      - name: Set github sha outputs
-        id: github_sha
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
       - name: package
-        run: ./package/package.sh -v nightly-${{ steps.github_sha.outputs.sha_short }}
+        run: ./package/package.sh
       - name: output some vars
         id: vars
         env:
@@ -65,14 +62,6 @@ jobs:
   docker:
     name: build docker image
     runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - graphd
-          - metad
-          - storaged
-          - tools
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -87,10 +76,38 @@ jobs:
       - uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
+          file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-${{ matrix.service }}:nightly
+            vesoft/nebula-graphd:nightly
+          target: graphd
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-storaged:nightly
+          target: storaged
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-metad:nightly
+          target: metad
+          push: true
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-tools:nightly
+          target: tools
           push: true
 
   coverage:

@@ -8,24 +8,20 @@
 namespace nebula {
 namespace meta {
 
-FlushJobExecutor::FlushJobExecutor(JobID jobId,
+FlushJobExecutor::FlushJobExecutor(GraphSpaceID space,
+                                   JobID jobId,
                                    kvstore::KVStore* kvstore,
                                    AdminClient* adminClient,
                                    const std::vector<std::string>& paras)
-    : SimpleConcurrentJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : SimpleConcurrentJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 folly::Future<Status> FlushJobExecutor::executeInternal(HostAddr&& address,
                                                         std::vector<PartitionID>&& parts) {
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::FLUSH,
-                jobId_,
-                taskId_++,
-                space_,
-                std::move(address),
-                {},
-                std::move(parts))
+      ->addTask(
+          cpp2::JobType::FLUSH, jobId_, taskId_++, space_, std::move(address), {}, std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();

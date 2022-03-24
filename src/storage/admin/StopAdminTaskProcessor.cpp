@@ -13,7 +13,7 @@ namespace storage {
 
 void StopAdminTaskProcessor::process(const cpp2::StopTaskRequest& req) {
   auto taskManager = AdminTaskManager::instance();
-  auto rc = taskManager->cancelJob(req.get_job_id());
+  auto rc = taskManager->cancelTask(req.get_job_id());
 
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     resp_.code_ref() = rc;

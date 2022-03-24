@@ -88,7 +88,8 @@ struct SpaceInfo {
  */
 class BalanceJobExecutor : public MetaJobExecutor {
  public:
-  BalanceJobExecutor(JobID jobId,
+  BalanceJobExecutor(GraphSpaceID space,
+                     JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& params);

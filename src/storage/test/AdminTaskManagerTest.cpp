@@ -128,7 +128,7 @@ TEST(TaskManagerTest, component_IOThreadPool) {
 
   {
     int totalTask = 100;
-    using Para = folly::Optional<std::thread::id>;
+    using Para = std::optional<std::thread::id>;
     std::mutex mu;
     int completed = 0;
     auto pool = std::make_unique<ThreadPool>(numThreads);
@@ -150,7 +150,7 @@ TEST(TaskManagerTest, component_IOThreadPool) {
     };
 
     for (int i = 0; i < totalTask; ++i) {
-      pool->add(std::bind(f, folly::none));
+      pool->add(std::bind(f, std::nullopt));
     }
     pool->join();
 
@@ -680,10 +680,10 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
 
   taskMgr->addAsyncTask(vtask0);
 
-  LOG(INFO) << "before taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("Before taskMgr->cancelTask({}).", jobId);
   fRunTask.wait();
   taskMgr->cancelTask(jobId);
-  LOG(INFO) << "after taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("After taskMgr->cancelTask({}).", jobId);
   pCancelTask.setValue(0);
 
   fFiniTask0.wait();
@@ -786,9 +786,9 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
   taskMgr->addAsyncTask(vtask0);
 
   subtask_run_f.wait();
-  LOG(INFO) << "before taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("Before taskMgr->cancelTask({}).", jobId);
   taskMgr->cancelTask(jobId);
-  LOG(INFO) << "after taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("After taskMgr->cancelTask({}).", jobId);
   cancel_p.setValue(0);
 
   task1_f.wait();

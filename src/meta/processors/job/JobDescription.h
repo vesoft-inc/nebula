@@ -18,29 +18,15 @@ namespace nebula {
 namespace meta {
 
 class JobDescription {
-  FRIEND_TEST(JobDescriptionTest, ParseKey);
-  FRIEND_TEST(JobDescriptionTest, ParseVal);
-  FRIEND_TEST(JobManagerTest, BuildJobDescription);
-  FRIEND_TEST(JobManagerTest, AddJob);
-  FRIEND_TEST(JobManagerTest, StatsJob);
-  FRIEND_TEST(JobManagerTest, LoadJobDescription);
-  FRIEND_TEST(JobManagerTest, ShowJobs);
-  FRIEND_TEST(JobManagerTest, ShowJob);
-  FRIEND_TEST(JobManagerTest, ShowJobsFromMultiSpace);
-  FRIEND_TEST(JobManagerTest, ShowJobInOtherSpace);
-  FRIEND_TEST(JobManagerTest, BackupJob);
-  FRIEND_TEST(JobManagerTest, RecoverJob);
-  FRIEND_TEST(GetStatsTest, StatsJob);
-  FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
-  FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
-
   using Status = cpp2::JobStatus;
 
  public:
   JobDescription() = default;
-  JobDescription(JobID id,
-                 cpp2::AdminCmd cmd,
-                 std::vector<std::string> paras,
+
+  JobDescription(GraphSpaceID space,
+                 JobID id,
+                 cpp2::JobType type,
+                 std::vector<std::string> paras = {},
                  Status status = Status::QUEUE,
                  int64_t startTime = 0,
                  int64_t stopTime = 0);
@@ -55,8 +41,22 @@ class JobDescription {
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> makeJobDescription(
       folly::StringPiece key, folly::StringPiece val);
 
+  /**
+   * @brief Get the SpaceId
+   *
+   * @return GraphSpaceID
+   */
+  GraphSpaceID getSpace() const {
+    return space_;
+  }
+
+  /**
+   * @brief Get the Job Id
+   *
+   * @return JobID
+   */
   JobID getJobId() const {
-    return id_;
+    return jobId_;
   }
 
   /**
@@ -64,8 +64,8 @@ class JobDescription {
    *
    * @return
    */
-  cpp2::AdminCmd getCmd() const {
-    return cmd_;
+  cpp2::JobType getJobType() const {
+    return type_;
   }
 
   /**
@@ -87,27 +87,6 @@ class JobDescription {
   }
 
   /**
-   * @brief Return the key write to kv store
-   *
-   * @return
-   */
-  std::string jobKey() const;
-
-  /**
-   * @brief Return the val write to kv store
-   *
-   * @return
-   */
-  std::string jobVal() const;
-
-  /**
-   * @brief Return the key write to kv store, while calling "backup job"
-   *
-   * @return
-   */
-  std::string archiveKey();
-
-  /**
    * @brief
    * Set the internal status
    * Will check if newStatus is later than curr Status
@@ -123,24 +102,34 @@ class JobDescription {
   bool setStatus(Status newStatus, bool force = false);
 
   /**
+   * @brief Get the Start Time
+   *
+   * @return int64_t
+   */
+  int64_t getStartTime() {
+    return startTime_;
+  }
+
+  /**
+   * @brief Get the Stop Time
+   *
+   * @return int64_t
+   */
+  int64_t getStopTime() {
+    return stopTime_;
+  }
+
+  /**
    * @brief
    * Get a existed job from kvstore, return folly::none if there isn't
    *
+   * @param space the spaceId of the job we would load
    * @param iJob Id of the job we would load
    * @param kv Where we load the job from
    * @return
    */
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> loadJobDescription(
-      JobID iJob, nebula::kvstore::KVStore* kv);
-
-  /**
-   * @brief
-   * Compose a key write to kvstore, according to the given job id
-   *
-   * @param iJob
-   * @return
-   */
-  static std::string makeJobKey(JobID iJob);
+      GraphSpaceID space, JobID iJob, nebula::kvstore::KVStore* kv);
 
   /**
    * @brief
@@ -160,36 +149,9 @@ class JobDescription {
    */
   cpp2::JobDesc toJobDesc();
 
-  /**
-   * @brief Decode key from kvstore, return job id
-   *
-   * @param rawKey
-   * @return
-   */
-  static int32_t parseKey(const folly::StringPiece& rawKey);
-
-  /**
-   * @brief
-   * Decode val from kvstore, return
-   * {command, paras, status, start time, stop time}
-   *
-   * @param rawVal
-   * @return
-   */
-  static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> parseVal(
-      const folly::StringPiece& rawVal);
-
-  /**
-   * @brief
-   * Check if the given rawKey is a valid JobKey
-   *
-   * @param rawKey
-   * @return
-   */
-  static bool isJobKey(const folly::StringPiece& rawKey);
-
   bool operator==(const JobDescription& that) const {
-    return this->cmd_ == that.cmd_ && this->paras_ == that.paras_ && this->status_ == that.status_;
+    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_ &&
+           status_ == that.status_;
   }
 
   bool operator!=(const JobDescription& that) const {
@@ -197,32 +159,14 @@ class JobDescription {
   }
 
  private:
-  static bool isSupportedValue(const folly::StringPiece& val);
-
-  /**
-   * @brief
-   * Decode val if it stored in data ver.1, return
-   * {command, paras, status, start time, stop time}
-   *
-   * @param rawVal
-   * @return
-   */
-  static std::tuple<cpp2::AdminCmd, std::vector<std::string>, Status, int64_t, int64_t> decodeValV1(
-      const folly::StringPiece& rawVal);
-
- private:
-  JobID id_;
-  cpp2::AdminCmd cmd_;
+  // Because all jobs are space-level, spaceName is not in paras_.
+  GraphSpaceID space_;
+  JobID jobId_;
+  cpp2::JobType type_;
   std::vector<std::string> paras_;
   Status status_;
   int64_t startTime_;
   int64_t stopTime_;
-
-  // old job may have different format,
-  // will ignore some job if it is too old
-  // use a hard coded int mark data ver
-  static int32_t minDataVer_;
-  static int32_t currDataVer_;
 };
 
 }  // namespace meta

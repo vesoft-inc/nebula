@@ -47,8 +47,9 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  auto version = MetaKeyUtils::parseTagVersion(iter->key()) + 1;
-  auto schema = MetaKeyUtils::parseSchema(iter->val());
+  folly::StringPiece iterVal;
+  auto version = MetaKeyUtils::getLatestTagScheInfo(iter, iterVal) + 1;
+  auto schema = MetaKeyUtils::parseSchema(iterVal);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
 
@@ -143,7 +144,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
-  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId;
+  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId << ", new version " << version;
   data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
                     MetaKeyUtils::schemaVal(tagName, schema));
   resp_.id_ref() = to(tagId, EntryType::TAG);

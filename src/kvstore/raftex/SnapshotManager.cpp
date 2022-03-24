@@ -29,7 +29,10 @@ SnapshotManager::SnapshotManager() {
 folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
     std::shared_ptr<RaftPart> part, const HostAddr& dst) {
   folly::Promise<StatusOr<std::pair<LogID, TermID>>> p;
-  auto fut = p.getFuture();
+  // if use getFuture(), the future's executor is InlineExecutor, and if the promise setValue first,
+  // the future's callback will be called directly in thenValue in the same thread, the Host::lock_
+  // would be locked twice in one thread, this will cause deadlock
+  auto fut = p.getSemiFuture().via(executor_.get());
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
     auto partId = part->partId_;
@@ -112,7 +115,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
   raftex::cpp2::SendSnapshotRequest req;
   req.space_ref() = spaceId;
   req.part_ref() = partId;
-  req.term_ref() = termId;
+  req.current_term_ref() = termId;
   req.committed_log_id_ref() = committedLogId;
   req.committed_log_term_ref() = committedLogTerm;
   req.leader_addr_ref() = localhost.host;

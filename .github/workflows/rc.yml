@@ -43,7 +43,7 @@ jobs:
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
-        run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE
+        run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE -k ON
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-graph-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
@@ -68,14 +68,6 @@ jobs:
   docker_build:
     name: docker-build
     runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - graphd
-          - metad
-          - storaged
-          - tools
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -101,15 +93,62 @@ jobs:
       - uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
+          file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.tag }}
           push: true
+          target: graphd
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
+
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.tag }}
+          push: true
+          target: storaged
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
+
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.tag }}
+          push: true
+          target: metad
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
+      
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.tag }}
+          push: true
+          target: tools
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
 
   test:
     name: test

@@ -672,7 +672,13 @@ void FileBasedWal::cleanWAL() {
 
 void FileBasedWal::cleanWAL(LogID id) {
   std::lock_guard<std::mutex> g(walFilesMutex_);
+  auto now = time::WallClock::fastNowInSec();
+  size_t index = 0;
   if (walFiles_.empty()) {
+    return;
+  }
+  auto size = walFiles_.size();
+  if (size < 2) {
     return;
   }
 
@@ -681,14 +687,15 @@ void FileBasedWal::cleanWAL(LogID id) {
             << walFiles_.rbegin()->second->lastId();
     return;
   }
-
+  int walTTL = FLAGS_wal_ttl;
   // remove wal file that lastId is less than target
   auto iter = walFiles_.begin();
   while (iter != walFiles_.end()) {
-    if (iter->second->lastId() < id) {
+    if (iter->second->lastId() < id && index < size - 2 && (now - iter->second->mtime() > walTTL)) {
       VLOG(3) << "Clean wals, Remove " << iter->second->path();
       unlink(iter->second->path());
       iter = walFiles_.erase(iter);
+      index++;
     } else {
       break;
     }
@@ -711,7 +718,7 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
 }
 
 TermID FileBasedWal::getLogTerm(LogID id) {
-  TermID term = -1;
+  TermID term = INVALID_TERM;
   auto iter = iterator(id, id);
   if (iter->valid()) {
     term = iter->logTerm();

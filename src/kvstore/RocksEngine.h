@@ -391,13 +391,23 @@ class RocksEngine : public KVEngine {
   /*********************
    * Non-data operation
    ********************/
-
   /**
    * @brief Write the part key into rocksdb for persistance
    *
    * @param partId
+   * @param raftPeers partition raft peers, including peers created during balance which are not in
+   * the meta
    */
-  void addPart(PartitionID partId) override;
+  void addPart(PartitionID partId, const Peers& raftPeers = {}) override;
+
+  /**
+   * @brief Update part info. Could only update the persist peers info now.
+   *
+   * @param partId
+   * @param raftPeer 1. if raftPeer.status is kDeleted, delete this peer.
+   *                 2. if raftPeer.status is others, add or update this peer
+   */
+  void updatePart(PartitionID partId, const Peer& raftPeer) override;
 
   /**
    * @brief Remove the part key from rocksdb
@@ -407,11 +417,18 @@ class RocksEngine : public KVEngine {
   void removePart(PartitionID partId) override;
 
   /**
-   * @brief Return all partitions in rocksdb instance by scanning system part key
+   * @brief Return all partitions in rocksdb instance by scanning system part key.
    *
-   * @return std::vector<PartitionID> Partition ids
+   * @return std::vector<PartitionID>
    */
   std::vector<PartitionID> allParts() override;
+
+  /**
+   * @brief Retrun all the part->raft peers in rocksdb engine by scanning system part key.
+   *
+   * @return std::map<Partition, Peers>
+   */
+  std::map<PartitionID, Peers> allPartPeers() override;
 
   /**
    * @brief Return total partition numbers
