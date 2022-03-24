@@ -301,6 +301,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "BiCartesianProduct";
     case Kind::kArgument:
       return "Argument";
+    case Kind::kRollUpApply:
+      return "RollUpApply";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

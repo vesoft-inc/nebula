@@ -72,6 +72,16 @@ class FunctionCallExpression final : public Expression {
                : pool->add(new FunctionCallExpression(pool, name, args));
   }
 
+  static FunctionCallExpression* make(ObjectPool* pool,
+                                      const std::string& name,
+                                      std::vector<Expression*> args) {
+    auto* argList = ArgumentList::make(pool, args.size());
+    for (auto* arg : args) {
+      argList->addArgument(arg);
+    }
+    return pool->add(new FunctionCallExpression(pool, name, argList));
+  }
+
   const Value& eval(ExpressionContext& ctx) override;
 
   bool operator==(const Expression& rhs) const override;
