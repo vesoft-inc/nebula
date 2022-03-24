@@ -281,6 +281,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   AdminClient* adminClient_{nullptr};
 
   std::map<GraphSpaceID, std::mutex> muReportFinish_;
+  // Start & stop & finish a job need mutual exclusion
   // The reason of using recursive_mutex is that, it's possible for a meta job try to get this lock
   // in finish-callback in the same thread with runJobInternal
   std::map<GraphSpaceID, std::recursive_mutex> muJobFinished_;
