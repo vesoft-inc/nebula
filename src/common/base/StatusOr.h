@@ -6,6 +6,8 @@
 #ifndef COMMON_BASE_STATUSOR_H_
 #define COMMON_BASE_STATUSOR_H_
 
+#include <type_traits>
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 
@@ -335,6 +337,21 @@ class StatusOr final {
   Variant variant_;
   uint8_t state_;
 };
+
+namespace internal {
+template <typename T>
+struct StatusOrValueType {
+  using type = T;
+};
+
+template <typename T>
+struct StatusOrValueType<StatusOr<T>> {
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+}  // namespace internal
+
+template <typename T>
+using status_or_value_t = typename internal::StatusOrValueType<T>::type;
 
 }  // namespace nebula
 
