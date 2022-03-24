@@ -275,7 +275,11 @@ class NebulaKeyUtils final {
     LOG(FATAL) << msg.str();
   }
 
-  static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
+  static std::string adminTaskKey(int32_t seqId, GraphSpaceID spaceId, JobID jobId, TaskID taskId);
+
+  static bool isAdminTaskKey(const folly::StringPiece& rawKey);
+
+  static std::tuple<int32_t, GraphSpaceID, JobID, TaskID> parseAdminTaskKey(folly::StringPiece key);
 
   static std::string dataVersionKey();
 

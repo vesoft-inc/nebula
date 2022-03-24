@@ -272,13 +272,35 @@ std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey) {
   return ret;
 }
 
-std::string NebulaKeyUtils::adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId) {
+std::string NebulaKeyUtils::adminTaskKey(int32_t seqId,
+                                         GraphSpaceID spaceId,
+                                         JobID jobId,
+                                         TaskID taskId) {
   std::string key;
-  key.reserve(sizeof(int32_t) + sizeof(JobID) + sizeof(TaskID));
-  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t));
-  key.append(reinterpret_cast<char*>(&jobId), sizeof(JobID));
-  key.append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
+  key.reserve(sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t))
+      .append(reinterpret_cast<char*>(&spaceId), sizeof(GraphSpaceID))
+      .append(reinterpret_cast<char*>(&jobId), sizeof(JobID))
+      .append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
   return key;
+}
+
+bool NebulaKeyUtils::isAdminTaskKey(const folly::StringPiece& rawKey) {
+  return rawKey.size() == sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID);
+}
+
+std::tuple<int32_t, GraphSpaceID, JobID, TaskID> NebulaKeyUtils::parseAdminTaskKey(
+    folly::StringPiece key) {
+  CHECK_EQ(key.size(), sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  size_t offset = 0;
+  int32_t seqId = *reinterpret_cast<const int32_t*>(key.data());
+  offset += sizeof(int32_t);
+  GraphSpaceID spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
+  offset += sizeof(GraphSpaceID);
+  JobID jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
+  offset += sizeof(JobID);
+  TaskID taskId = *reinterpret_cast<const TaskID*>(key.data() + offset);
+  return std::make_tuple(seqId, spaceId, jobId, taskId);
 }
 
 std::string NebulaKeyUtils::dataVersionKey() {

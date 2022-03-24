@@ -15,11 +15,12 @@ namespace meta {
 
 class StatsJobExecutor : public StorageJobExecutor {
  public:
-  StatsJobExecutor(JobID jobId,
+  StatsJobExecutor(GraphSpaceID space,
+                   JobID jobId,
                    kvstore::KVStore* kvstore,
                    AdminClient* adminClient,
                    const std::vector<std::string>& paras)
-      : StorageJobExecutor(jobId, kvstore, adminClient, paras) {
+      : StorageJobExecutor(space, jobId, kvstore, adminClient, paras) {
     toHost_ = TargetHosts::LEADER;
   }
 

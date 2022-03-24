@@ -16,22 +16,17 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace meta {
 
-bool RebuildJobExecutor::check() {
-  return paras_.size() >= 1;
-}
-
 nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
-  // the last value of paras_ is the space name, others are index name
-  auto spaceRet = getSpaceIdFromName(paras_.back());
-  if (!nebula::ok(spaceRet)) {
-    LOG(INFO) << "Can't find the space: " << paras_.back();
-    return nebula::error(spaceRet);
+  // The last value of paras_ are index name
+  auto spaceRet = spaceExist();
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Can't find the space, spaceId " << space_;
+    return spaceRet;
   }
-  space_ = nebula::value(spaceRet);
 
   std::string indexValue;
   IndexID indexId = -1;
-  for (auto i = 0u; i < paras_.size() - 1; i++) {
+  for (auto i = 0u; i < paras_.size(); i++) {
     auto indexKey = MetaKeyUtils::indexIndexKey(space_, paras_[i]);
     auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

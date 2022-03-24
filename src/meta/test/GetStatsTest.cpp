@@ -12,7 +12,6 @@
 #include "kvstore/Common.h"
 #include "meta/processors/job/GetStatsProcessor.h"
 #include "meta/processors/job/JobManager.h"
-#include "meta/processors/job/JobUtils.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/TestUtils.h"
 
@@ -26,14 +25,14 @@ using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 
-std::string toTempKey(int32_t space, int32_t jobId) {
+std::string toTempKey(GraphSpaceID space, JobID jobId) {
   std::string key = MetaKeyUtils::statsKey(space);
-  return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
+  return key.append(reinterpret_cast<const char*>(&jobId), sizeof(JobID));
 }
 
 void copyData(kvstore::KVStore* kv,
-              int32_t space,
-              int32_t part,
+              GraphSpaceID space,
+              PartitionID part,
               const std::string& keySrc,
               const std::string& keyDst) {
   std::string val;
@@ -45,19 +44,20 @@ void copyData(kvstore::KVStore* kv,
   b.wait();
 }
 
-void genTempData(int32_t spaceId, int jobId, kvstore::KVStore* kv) {
+void genTempData(GraphSpaceID spaceId, JobID jobId, kvstore::KVStore* kv) {
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
   copyData(kv, 0, 0, statsKey, tempKey);
 }
 
 struct JobCallBack {
-  JobCallBack(JobManager* jobMgr, int job, int task, int n)
-      : jobMgr_(jobMgr), jobId_(job), taskId_(task), n_(n) {}
+  JobCallBack(JobManager* jobMgr, GraphSpaceID space, JobID job, TaskID task, int n)
+      : jobMgr_(jobMgr), spaceId_(space), jobId_(job), taskId_(task), n_(n) {}
 
   folly::Future<nebula::Status> operator()() {
     cpp2::ReportTaskReq req;
     req.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    req.space_id_ref() = spaceId_;
     req.job_id_ref() = jobId_;
     req.task_id_ref() = taskId_;
 
@@ -67,14 +67,15 @@ struct JobCallBack {
     item.space_vertices_ref() = 2 * n_;
     item.space_edges_ref() = 2 * n_;
     req.stats_ref() = item;
-    jobMgr_->muJobFinished_.unlock();
+    jobMgr_->muJobFinished_[spaceId_].unlock();
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }
 
   JobManager* jobMgr_{nullptr};
-  int32_t jobId_{-1};
-  int32_t taskId_{-1};
+  GraphSpaceID spaceId_{-1};
+  JobID jobId_{-1};
+  TaskID taskId_{-1};
   int32_t n_{-1};
 };
 
@@ -101,10 +102,9 @@ class GetStatsTest : public ::testing::Test {
     rootPath_.reset();
   }
 
-  // using AllLeaders = std::unordered_map<GraphSpaceID,
-  // std::vector<cpp2::LeaderInfo>>;
+  // using AllLeaders = std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>
   using FakeHost = std::pair<HostAddr, ActiveHostsMan::AllLeaders>;
-  FakeHost fakeHost(std::string ip, int port, int space, std::vector<int> parts) {
+  FakeHost fakeHost(std::string ip, int port, GraphSpaceID space, std::vector<int> parts) {
     HostAddr host(ip, port);
     ActiveHostsMan::AllLeaders leaders;
     for (auto i = 0U; i != parts.size(); ++i) {
@@ -122,23 +122,32 @@ class GetStatsTest : public ::testing::Test {
 
 TEST_F(GetStatsTest, StatsJob) {
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
-  TestUtils::assembleSpace(kv_.get(), 1, 1);
   GraphSpaceID spaceId = 1;
-  std::vector<std::string> paras{"test_space"};
-  JobDescription statsJob(12, cpp2::JobType::STATS, paras);
+  int32_t partNum = 1;
+  JobID jobId1 = 12;
+  TestUtils::assembleSpace(kv_.get(), spaceId, partNum);
+
+  JobDescription statsJob(spaceId, jobId1, cpp2::JobType::STATS);
   NiceMock<MockAdminClient> adminClient;
   jobMgr->adminClient_ = &adminClient;
-  auto rc = jobMgr->save(statsJob.jobKey(), statsJob.jobVal());
+  auto jobKey1 = MetaKeyUtils::jobKey(statsJob.getSpace(), statsJob.getJobId());
+  auto jobVal1 = MetaKeyUtils::jobVal(statsJob.getJobType(),
+                                      statsJob.getParas(),
+                                      statsJob.getStatus(),
+                                      statsJob.getStartTime(),
+                                      statsJob.getStopTime());
+  auto rc = jobMgr->save(std::move(jobKey1), std::move(jobVal1));
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   {
     // Job is not executed, job status is QUEUE.
     // Stats data does not exist.
-    auto job1Ret = JobDescription::loadJobDescription(statsJob.id_, kv_.get());
+    auto job1Ret =
+        JobDescription::loadJobDescription(statsJob.getSpace(), statsJob.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(job1Ret));
-    auto job1 = nebula::value(job1Ret);
-    ASSERT_EQ(statsJob.id_, job1.id_);
-    ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
+    auto job11 = nebula::value(job1Ret);
+    ASSERT_EQ(statsJob.getJobId(), job11.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::QUEUE, job11.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;
@@ -154,9 +163,15 @@ TEST_F(GetStatsTest, StatsJob) {
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto res = job1.setStatus(cpp2::JobStatus::RUNNING);
+    auto res = job11.setStatus(cpp2::JobStatus::RUNNING);
     ASSERT_TRUE(res);
-    auto retsav = jobMgr->save(job1.jobKey(), job1.jobVal());
+    auto jobKey2 = MetaKeyUtils::jobKey(job11.getSpace(), job11.getJobId());
+    auto jobVal2 = MetaKeyUtils::jobVal(job11.getJobType(),
+                                        job11.getParas(),
+                                        job11.getStatus(),
+                                        job11.getStartTime(),
+                                        job11.getStopTime());
+    auto retsav = jobMgr->save(std::move(jobKey2), std::move(jobVal2));
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -169,19 +184,26 @@ TEST_F(GetStatsTest, StatsJob) {
   // JobManager does not set the job finished status in RunJobInternal function.
   // But set stats data.
   statsJob.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->save(statsJob.jobKey(), statsJob.jobVal());
-  auto jobId = statsJob.getJobId();
+  auto jobKey3 = MetaKeyUtils::jobKey(statsJob.getSpace(), statsJob.getJobId());
+  auto jobVal3 = MetaKeyUtils::jobVal(statsJob.getJobType(),
+                                      statsJob.getParas(),
+                                      statsJob.getStatus(),
+                                      statsJob.getStartTime(),
+                                      statsJob.getStopTime());
+  jobMgr->save(std::move(jobKey3), std::move(jobVal3));
+
   auto statsKey = MetaKeyUtils::statsKey(spaceId);
-  auto tempKey = toTempKey(spaceId, jobId);
+  auto tempKey = toTempKey(spaceId, jobId1);
 
   copyData(kv_.get(), 0, 0, statsKey, tempKey);
-  jobMgr->jobFinished(jobId, cpp2::JobStatus::FINISHED);
+  jobMgr->jobFinished(spaceId, statsJob.getJobId(), cpp2::JobStatus::FINISHED);
   {
-    auto job2Ret = JobDescription::loadJobDescription(statsJob.id_, kv_.get());
+    auto job2Ret =
+        JobDescription::loadJobDescription(statsJob.getSpace(), statsJob.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(job2Ret));
-    auto job2 = nebula::value(job2Ret);
-    ASSERT_EQ(statsJob.id_, job2.id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
+    auto job12 = nebula::value(job2Ret);
+    ASSERT_EQ(statsJob.getJobId(), job12.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, job12.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;
@@ -216,19 +238,26 @@ TEST_F(GetStatsTest, StatsJob) {
   }
 
   // Execute new stats job in same space.
-  std::vector<std::string> paras1{"test_space"};
-  JobDescription statsJob2(13, cpp2::JobType::STATS, paras1);
-  auto rc2 = jobMgr->save(statsJob2.jobKey(), statsJob2.jobVal());
+  JobID jobId2 = 13;
+  JobDescription statsJob2(spaceId, jobId2, cpp2::JobType::STATS);
+  auto jobKey4 = MetaKeyUtils::jobKey(statsJob2.getSpace(), statsJob2.getJobId());
+  auto jobVal4 = MetaKeyUtils::jobVal(statsJob2.getJobType(),
+                                      statsJob2.getParas(),
+                                      statsJob2.getStatus(),
+                                      statsJob2.getStartTime(),
+                                      statsJob2.getStopTime());
+  auto rc2 = jobMgr->save(std::move(jobKey4), std::move(jobVal4));
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
   {
     // Job is not executed, job status is QUEUE.
     // Stats data exists, but it is the result of the last stats job
     // execution.
-    auto job1Ret = JobDescription::loadJobDescription(statsJob2.id_, kv_.get());
-    ASSERT_TRUE(nebula::ok(job1Ret));
-    auto job1 = nebula::value(job1Ret);
-    ASSERT_EQ(statsJob2.id_, job1.id_);
-    ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
+    auto job2Ret =
+        JobDescription::loadJobDescription(statsJob2.getSpace(), statsJob2.getJobId(), kv_.get());
+    ASSERT_TRUE(nebula::ok(job2Ret));
+    auto job21 = nebula::value(job2Ret);
+    ASSERT_EQ(statsJob2.getJobId(), job21.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::QUEUE, job21.getStatus());
 
     // Success,  but stats data is the result of the last stats job.
     cpp2::GetStatsReq req;
@@ -259,9 +288,15 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem1.get_space_vertices());
     ASSERT_EQ(0, statsItem1.get_space_edges());
 
-    auto res = job1.setStatus(cpp2::JobStatus::RUNNING);
+    auto res = job21.setStatus(cpp2::JobStatus::RUNNING);
     ASSERT_TRUE(res);
-    auto retsav = jobMgr->save(job1.jobKey(), job1.jobVal());
+    auto jobKey5 = MetaKeyUtils::jobKey(job21.getSpace(), job21.getJobId());
+    auto jobVal5 = MetaKeyUtils::jobVal(job21.getJobType(),
+                                        job21.getParas(),
+                                        job21.getStatus(),
+                                        job21.getStartTime(),
+                                        job21.getStopTime());
+    auto retsav = jobMgr->save(std::move(jobKey5), std::move(jobVal5));
     ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -300,25 +335,31 @@ TEST_F(GetStatsTest, StatsJob) {
   // runJobInternal.
   auto result2 = jobMgr->runJobInternal(statsJob2, JobManager::JbOp::ADD);
 
-  auto jobId2 = statsJob2.getJobId();
   auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
   copyData(kv_.get(), 0, 0, statsKey2, tempKey2);
-  jobMgr->jobFinished(jobId2, cpp2::JobStatus::FINISHED);
+  jobMgr->jobFinished(spaceId, statsJob2.getJobId(), cpp2::JobStatus::FINISHED);
 
   ASSERT_TRUE(result2);
   // JobManager does not set the job finished status in RunJobInternal function.
   // But set stats data.
   statsJob2.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->save(statsJob2.jobKey(), statsJob2.jobVal());
+  auto jobKey6 = MetaKeyUtils::jobKey(statsJob2.getSpace(), statsJob2.getJobId());
+  auto jobVal6 = MetaKeyUtils::jobVal(statsJob2.getJobType(),
+                                      statsJob2.getParas(),
+                                      statsJob2.getStatus(),
+                                      statsJob2.getStartTime(),
+                                      statsJob2.getStopTime());
+  jobMgr->save(std::move(jobKey6), std::move(jobVal6));
 
   {
-    auto job2Ret = JobDescription::loadJobDescription(statsJob2.id_, kv_.get());
+    auto job2Ret =
+        JobDescription::loadJobDescription(statsJob2.getSpace(), statsJob2.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(job2Ret));
-    auto job2 = nebula::value(job2Ret);
-    ASSERT_EQ(statsJob2.id_, job2.id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
+    auto job22 = nebula::value(job2Ret);
+    ASSERT_EQ(statsJob2.getJobId(), job22.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, job22.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;
@@ -352,13 +393,14 @@ TEST_F(GetStatsTest, StatsJob) {
 
 TEST_F(GetStatsTest, MockSingleMachineTest) {
   GraphSpaceID spaceId = 1;
-  // // Because only send to leader, need to mock leader distribution
+  int32_t partNum = 1;
+  // Because only send to leader, need to mock leader distribution
   std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
-  auto storage = fakeHost("0", 0, 1, {1});
+  auto storage = fakeHost("0", 0, spaceId, {1});
   allStorage[storage.first] = storage.second;
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
-  TestUtils::assembleSpace(kv_.get(), 1, 1, 1, 1);
+  TestUtils::assembleSpace(kv_.get(), spaceId, partNum);
   std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
@@ -376,12 +418,11 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   // add stats job1
   JobID jobId1 = 1;
-  std::vector<std::string> paras{"test_space"};
-  JobDescription job1(jobId1, cpp2::JobType::STATS, paras);
+  JobDescription job1(spaceId, jobId1, cpp2::JobType::STATS);
   jobMgr->addJob(job1, &adminClient);
 
-  JobCallBack cb1(jobMgr, jobId1, 0, 100);
-  JobCallBack cb2(jobMgr, 2, 0, 200);
+  JobCallBack cb1(jobMgr, spaceId, jobId1, 0, 100);
+  JobCallBack cb2(jobMgr, spaceId, 2, 0, 200);
 
   EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(2)
@@ -391,11 +432,11 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   // check job result
   {
     sleep(1);
-    auto descRet = JobDescription::loadJobDescription(job1.id_, kv_.get());
+    auto descRet = JobDescription::loadJobDescription(job1.getSpace(), job1.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(descRet));
     auto desc = nebula::value(descRet);
-    ASSERT_EQ(job1.id_, desc.id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
+    ASSERT_EQ(job1.getJobId(), desc.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;
@@ -425,17 +466,17 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
 
   // add stats job2 of same space
   JobID jobId2 = 2;
-  JobDescription job2(jobId2, cpp2::JobType::STATS, paras);
+  JobDescription job2(spaceId, jobId2, cpp2::JobType::STATS);
   jobMgr->addJob(job2, &adminClient);
 
   // check job result
   {
     sleep(1);
-    auto descRet = JobDescription::loadJobDescription(job2.id_, kv_.get());
+    auto descRet = JobDescription::loadJobDescription(job2.getSpace(), job2.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(descRet));
     auto desc = nebula::value(descRet);
-    ASSERT_EQ(job2.id_, desc.id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
+    ASSERT_EQ(job2.getJobId(), desc.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;
@@ -468,15 +509,15 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   GraphSpaceID spaceId = 1;
   // Because only send to leader, need to mock leader distribution
   std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
-  auto s1 = fakeHost("0", 0, 1, {1, 2});
-  auto s2 = fakeHost("1", 1, 1, {3, 4});
-  auto s3 = fakeHost("2", 2, 1, {5, 6});
+  auto s1 = fakeHost("0", 0, spaceId, {1, 2});
+  auto s2 = fakeHost("1", 1, spaceId, {3, 4});
+  auto s3 = fakeHost("2", 2, spaceId, {5, 6});
   allStorage[s1.first] = s1.second;
   allStorage[s2.first] = s2.second;
   allStorage[s3.first] = s3.second;
 
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
-  TestUtils::assembleSpace(kv_.get(), 1, 6, 3, 3);
+  TestUtils::assembleSpace(kv_.get(), spaceId, 6, 3, 3);
   std::vector<kvstore::KV> data;
   for (const auto& entry : allStorage) {
     auto now = time::WallClock::fastNowInMilliSec();
@@ -494,13 +535,12 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
 
   // add stats job
   JobID jobId = 1;
-  std::vector<std::string> paras{"test_space"};
-  JobDescription job(jobId, cpp2::JobType::STATS, paras);
+  JobDescription job(spaceId, jobId, cpp2::JobType::STATS);
   jobMgr->addJob(job, &adminClient);
 
-  JobCallBack cb1(jobMgr, jobId, 0, 100);
-  JobCallBack cb2(jobMgr, jobId, 1, 200);
-  JobCallBack cb3(jobMgr, jobId, 2, 300);
+  JobCallBack cb1(jobMgr, spaceId, jobId, 0, 100);
+  JobCallBack cb2(jobMgr, spaceId, jobId, 1, 200);
+  JobCallBack cb3(jobMgr, spaceId, jobId, 2, 300);
 
   EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .Times(3)
@@ -511,11 +551,11 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   // check job result
   {
     sleep(1);
-    auto descRet = JobDescription::loadJobDescription(job.id_, kv_.get());
+    auto descRet = JobDescription::loadJobDescription(job.getSpace(), job.getJobId(), kv_.get());
     ASSERT_TRUE(nebula::ok(descRet));
     auto desc = nebula::value(descRet);
-    ASSERT_EQ(job.id_, desc.id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
+    ASSERT_EQ(job.getJobId(), desc.getJobId());
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.getStatus());
 
     cpp2::GetStatsReq req;
     req.space_id_ref() = spaceId;

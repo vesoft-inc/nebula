@@ -16,9 +16,12 @@ namespace storage {
 void AdminTaskProcessor::process(const cpp2::AddTaskRequest& req) {
   auto taskManager = AdminTaskManager::instance();
 
-  auto cb = [taskManager, jobId = req.get_job_id(), taskId = req.get_task_id()](
-                nebula::cpp2::ErrorCode errCode, nebula::meta::cpp2::StatsItem& result) {
-    taskManager->saveAndNotify(jobId, taskId, errCode, result);
+  auto cb = [taskManager,
+             spaceId = req.get_para().get_space_id(),
+             jobId = req.get_job_id(),
+             taskId = req.get_task_id()](nebula::cpp2::ErrorCode errCode,
+                                         nebula::meta::cpp2::StatsItem& result) {
+    taskManager->saveAndNotify(spaceId, jobId, taskId, errCode, result);
   };
 
   TaskContext ctx(req, std::move(cb));
@@ -27,8 +30,11 @@ void AdminTaskProcessor::process(const cpp2::AddTaskRequest& req) {
     nebula::meta::cpp2::StatsItem statsItem;
     statsItem.status_ref() = nebula::meta::cpp2::JobStatus::RUNNING;
     // write an initial state of task
-    taskManager->saveTaskStatus(
-        ctx.jobId_, ctx.taskId_, nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED, statsItem);
+    taskManager->saveTaskStatus(ctx.parameters_.get_space_id(),
+                                ctx.jobId_,
+                                ctx.taskId_,
+                                nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED,
+                                statsItem);
     taskManager->addAsyncTask(task);
   } else {
     resp_.code_ref() = nebula::cpp2::ErrorCode::E_INVALID_TASK_PARA;

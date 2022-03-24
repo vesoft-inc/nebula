@@ -259,7 +259,8 @@ class MetaClient : public BaseMetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(GraphSpaceID spaceId,
+                                                          cpp2::JobOp op,
                                                           cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
@@ -627,6 +628,7 @@ class MetaClient : public BaseMetaClient {
   folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
+      GraphSpaceID spaceId,
       int32_t jobId,
       int32_t taskId,
       nebula::cpp2::ErrorCode taskErrCode,
