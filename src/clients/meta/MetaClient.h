@@ -212,7 +212,14 @@ struct MetaClientOptions {
   std::string rootPath_;
 };
 
-class MetaClient {
+class BaseMetaClient {
+ public:
+  virtual folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) = 0;
+
+  virtual ~BaseMetaClient() = default;
+};
+
+class MetaClient : public BaseMetaClient {
   FRIEND_TEST(ConfigManTest, MetaConfigManTest);
   FRIEND_TEST(ConfigManTest, MockConfigTest);
   FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
@@ -231,7 +238,7 @@ class MetaClient {
              std::vector<HostAddr> addrs,
              const MetaClientOptions& options = MetaClientOptions());
 
-  virtual ~MetaClient();
+  ~MetaClient() override;
 
   bool isMetadReady();
 
@@ -252,7 +259,8 @@ class MetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(GraphSpaceID spaceId,
+                                                          cpp2::JobOp op,
                                                           cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
@@ -620,6 +628,7 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
+      GraphSpaceID spaceId,
       int32_t jobId,
       int32_t taskId,
       nebula::cpp2::ErrorCode taskErrCode,
@@ -633,6 +642,8 @@ class MetaClient {
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
+
+  folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) override;
 
   HostAddr getMetaLeader() {
     return leader_;

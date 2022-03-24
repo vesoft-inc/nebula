@@ -13,11 +13,12 @@ namespace meta {
 
 class RebuildFTJobExecutor : public RebuildJobExecutor {
  public:
-  RebuildFTJobExecutor(JobID jobId,
+  RebuildFTJobExecutor(GraphSpaceID space,
+                       JobID jobId,
                        kvstore::KVStore* kvstore,
                        AdminClient* adminClient,
                        const std::vector<std::string>& paras)
-      : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {
+      : RebuildJobExecutor(space, jobId, kvstore, adminClient, std::move(paras)) {
     toHost_ = TargetHosts::LISTENER;
   }
 

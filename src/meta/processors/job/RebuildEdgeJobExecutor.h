@@ -13,11 +13,12 @@ namespace meta {
 
 class RebuildEdgeJobExecutor : public RebuildJobExecutor {
  public:
-  RebuildEdgeJobExecutor(JobID jobId,
+  RebuildEdgeJobExecutor(GraphSpaceID space,
+                         JobID jobId,
                          kvstore::KVStore* kvstore,
                          AdminClient* adminClient,
                          const std::vector<std::string>& paras)
-      : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {}
+      : RebuildJobExecutor(space, jobId, kvstore, adminClient, std::move(paras)) {}
 
  protected:
   folly::Future<Status> executeInternal(HostAddr&& address,

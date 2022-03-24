@@ -6,70 +6,25 @@
 #ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 #define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
+#include <folly/ExceptionWrapper.h>
 #include <folly/Try.h>
+#include <folly/futures/Future.h>
+
+#include <optional>
+#include <unordered_map>
 
 #include "clients/storage/stats/StorageClientStats.h"
+#include "common/base/Logging.h"
+#include "common/base/StatusOr.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
+#include "common/thrift/ThriftTypes.h"
 #include "common/time/WallClock.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 namespace storage {
-
-template <class Request, class RemoteFunc, class Response>
-struct ResponseContext {
- public:
-  ResponseContext(size_t reqsSent, RemoteFunc&& remoteFunc)
-      : resp(reqsSent), serverMethod(std::move(remoteFunc)) {}
-
-  // Return true if processed all responses
-  bool finishSending() {
-    std::lock_guard<std::mutex> g(lock_);
-    finishSending_ = true;
-    if (ongoingRequests_.empty() && !fulfilled_) {
-      fulfilled_ = true;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  std::pair<const Request*, bool> insertRequest(HostAddr host, Request&& req) {
-    std::lock_guard<std::mutex> g(lock_);
-    auto res = ongoingRequests_.emplace(host, std::move(req));
-    return std::make_pair(&res.first->second, res.second);
-  }
-
-  const Request& findRequest(HostAddr host) {
-    std::lock_guard<std::mutex> g(lock_);
-    auto it = ongoingRequests_.find(host);
-    DCHECK(it != ongoingRequests_.end());
-    return it->second;
-  }
-
-  // Return true if processed all responses
-  bool removeRequest(HostAddr host) {
-    std::lock_guard<std::mutex> g(lock_);
-    ongoingRequests_.erase(host);
-    if (finishSending_ && !fulfilled_ && ongoingRequests_.empty()) {
-      fulfilled_ = true;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
- public:
-  folly::Promise<StorageRpcResponse<Response>> promise;
-  StorageRpcResponse<Response> resp;
-  RemoteFunc serverMethod;
-
- private:
-  std::mutex lock_;
-  std::unordered_map<HostAddr, Request> ongoingRequests_;
-  bool finishSending_{false};
-  bool fulfilled_{false};
-};
 
 template <typename ClientType, typename ClientManagerType>
 StorageClientBase<ClientType, ClientManagerType>::StorageClientBase(
@@ -120,180 +75,138 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
     folly::EventBase* evb,
     std::unordered_map<HostAddr, Request> requests,
     RemoteFunc&& remoteFunc) {
-  using TransportException = apache::thrift::transport::TTransportException;
-  auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
-      requests.size(), std::move(remoteFunc));
+  std::vector<folly::Future<StatusOr<Response>>> respFutures;
+  respFutures.reserve(requests.size());
 
-  DCHECK(!!ioThreadPool_);
+  auto hosts = std::make_shared<std::vector<HostAddr>>(requests.size());
+  auto totalLatencies = std::make_shared<std::vector<int32_t>>(requests.size());
 
-  for (auto& req : requests) {
-    auto& host = req.first;
-    auto spaceId = req.second.get_space_id();
-    auto res = context->insertRequest(host, std::move(req.second));
-    DCHECK(res.second);
-    evb = ioThreadPool_->getEventBase();
-    // Invoke the remote method
-    folly::via(evb, [this, evb, context, host, spaceId, res]() mutable {
-      auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
-      // Result is a pair of <Request&, bool>
-      auto start = time::WallClock::fastNowInMicroSec();
-      context
-          ->serverMethod(client.get(), *res.first)
-          // Future process code will be executed on the IO thread
-          // Since all requests are sent using the same eventbase, all
-          // then-callback will be executed on the same IO thread
-          .via(evb)
-          .thenValue([this, context, host, spaceId, start](Response&& resp) {
-            auto& result = resp.get_result();
-            bool hasFailure{false};
-            for (auto& code : result.get_failed_parts()) {
-              VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
-                      << static_cast<int32_t>(code.get_code());
-              hasFailure = true;
-              context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
-              if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-                auto* leader = code.get_leader();
-                if (isValidHostPtr(leader)) {
-                  updateLeader(spaceId, code.get_part_id(), *leader);
-                } else {
-                  invalidLeader(spaceId, code.get_part_id());
-                }
-              } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
-                         code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-                invalidLeader(spaceId, code.get_part_id());
-              } else {
-                // do nothing
-              }
-            }
-            if (hasFailure) {
-              context->resp.markFailure();
-            }
+  for (const auto& req : requests) {
+    auto start = time::WallClock::fastNowInMicroSec();
 
-            // Adjust the latency
-            auto latency = result.get_latency_in_us();
-            context->resp.setLatency(host, latency, time::WallClock::fastNowInMicroSec() - start);
+    size_t i = respFutures.size();
+    (*hosts)[i] = req.first;
+    // Future process code will be executed on the IO thread
+    // Since all requests are sent using the same eventbase, all
+    // then-callback will be executed on the same IO thread
+    auto fut = getResponse(evb, req.first, req.second, std::move(remoteFunc))
+                   .ensure([totalLatencies, i, start]() {
+                     (*totalLatencies)[i] = time::WallClock::fastNowInMicroSec() - start;
+                   });
 
-            // Keep the response
-            context->resp.addResponse(std::move(resp));
-          })
-          .thenError(folly::tag_t<TransportException>{},
-                     [this, context, host, spaceId](TransportException&& ex) {
-                       auto& r = context->findRequest(host);
-                       auto parts = getReqPartsId(r);
-                       if (ex.getType() == TransportException::TIMED_OUT) {
-                         LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
-                       } else {
-                         invalidLeader(spaceId, parts);
-                         LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
-                       }
-                       context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
-                       context->resp.markFailure();
-                     })
-          .thenError(folly::tag_t<std::exception>{},
-                     [this, context, host, spaceId](std::exception&& ex) {
-                       auto& r = context->findRequest(host);
-                       auto parts = getReqPartsId(r);
-                       LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
-                       invalidLeader(spaceId, parts);
-                       context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
-                       context->resp.markFailure();
-                     })
-          .ensure([context, host] {
-            if (context->removeRequest(host)) {
-              // Received all responses
-              context->promise.setValue(std::move(context->resp));
-            }
-          });
-    });  // via
-  }      // for
-
-  if (context->finishSending()) {
-    // Received all responses, most likely, all rpc failed
-    context->promise.setValue(std::move(context->resp));
+    respFutures.emplace_back(std::move(fut));
   }
 
-  return context->promise.getSemiFuture();
+  return folly::collectAll(respFutures)
+      .deferValue([this, requests = std::move(requests), totalLatencies, hosts](
+                      std::vector<folly::Try<StatusOr<Response>>>&& resps) {
+        StorageRpcResponse<Response> rpcResp(resps.size());
+        for (size_t i = 0; i < resps.size(); i++) {
+          auto& host = hosts->at(i);
+          auto& tryResp = resps[i];
+          std::optional<std::string> errMsg;
+          if (tryResp.hasException()) {
+            errMsg = std::string(tryResp.exception().what().c_str());
+          } else {
+            auto status = std::move(tryResp).value();
+            if (status.ok()) {
+              auto resp = std::move(status).value();
+              auto result = resp.get_result();
+
+              if (!result.get_failed_parts().empty()) {
+                rpcResp.markFailure();
+                for (auto& part : result.get_failed_parts()) {
+                  rpcResp.emplaceFailedPart(part.get_part_id(), part.get_code());
+                }
+              }
+
+              // Adjust the latency
+              auto latency = result.get_latency_in_us();
+              rpcResp.setLatency(host, latency, totalLatencies->at(i));
+              // Keep the response
+              rpcResp.addResponse(std::move(resp));
+            } else {
+              errMsg = std::move(status).status().message();
+            }
+          }
+
+          if (errMsg) {
+            rpcResp.markFailure();
+            LOG(ERROR) << "There some RPC errors: " << errMsg.value();
+            auto req = requests.at(host);
+            auto parts = getReqPartsId(req);
+            rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+          }
+        }
+
+        return rpcResp;
+      });
 }
 
 template <typename ClientType, typename ClientManagerType>
 template <class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerType>::getResponse(
-    folly::EventBase* evb, std::pair<HostAddr, Request>&& request, RemoteFunc&& remoteFunc) {
-  auto pro = std::make_shared<folly::Promise<StatusOr<Response>>>();
-  auto f = pro->getFuture();
-  getResponseImpl(
-      evb, std::forward<decltype(request)>(request), std::forward<RemoteFunc>(remoteFunc), pro);
-  return f;
-}
+    folly::EventBase* evb, const HostAddr& host, const Request& request, RemoteFunc&& remoteFunc) {
+  static_assert(
+      folly::isFuture<std::invoke_result_t<RemoteFunc, ClientType*, const Request&>>::value);
 
-template <typename ClientType, typename ClientManagerType>
-template <class Request, class RemoteFunc, class Response>
-void StorageClientBase<ClientType, ClientManagerType>::getResponseImpl(
-    folly::EventBase* evb,
-    std::pair<HostAddr, Request> request,
-    RemoteFunc remoteFunc,
-    std::shared_ptr<folly::Promise<StatusOr<Response>>> pro) {
   stats::StatsManager::addValue(kNumRpcSentToStoraged);
-  using TransportException = apache::thrift::transport::TTransportException;
   if (evb == nullptr) {
-    DCHECK(!!ioThreadPool_);
-    evb = ioThreadPool_->getEventBase();
+    evb = DCHECK_NOTNULL(ioThreadPool_)->getEventBase();
   }
-  auto reqPtr = std::make_shared<std::pair<HostAddr, Request>>(std::move(request.first),
-                                                               std::move(request.second));
-  folly::via(
-      evb,
-      [evb, request = std::move(reqPtr), remoteFunc = std::move(remoteFunc), pro, this]() mutable {
-        auto host = request->first;
+
+  auto spaceId = request.get_space_id();
+  return folly::via(evb)
+      .thenValue([remoteFunc = std::move(remoteFunc), request, evb, host, this](auto&&) {
+        // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
-        auto spaceId = request->second.get_space_id();
-        auto partsId = getReqPartsId(request->second);
-        remoteFunc(client.get(), request->second)
-            .via(evb)
-            .thenValue([spaceId, pro, request, this](Response&& resp) mutable {
-              auto& result = resp.get_result();
-              for (auto& code : result.get_failed_parts()) {
-                VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
-                        << static_cast<int32_t>(code.get_code());
-                if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-                  auto* leader = code.get_leader();
-                  if (isValidHostPtr(leader)) {
-                    updateLeader(spaceId, code.get_part_id(), *leader);
-                  } else {
-                    invalidLeader(spaceId, code.get_part_id());
-                  }
-                } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
-                           code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-                  invalidLeader(spaceId, code.get_part_id());
-                }
+        return remoteFunc(client.get(), request);
+      })
+      .thenValue([spaceId, this](Response&& resp) mutable -> StatusOr<Response> {
+        auto& result = resp.get_result();
+        for (auto& part : result.get_failed_parts()) {
+          auto partId = part.get_part_id();
+          auto code = part.get_code();
+
+          VLOG(3) << "Failure! Failed part " << partId << ", failed part "
+                  << static_cast<int32_t>(code);
+
+          switch (code) {
+            case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
+              auto* leader = part.get_leader();
+              if (isValidHostPtr(leader)) {
+                updateLeader(spaceId, partId, *leader);
+              } else {
+                invalidLeader(spaceId, partId);
               }
-              pro->setValue(std::move(resp));
-            })
-            .thenError(folly::tag_t<TransportException>{},
-                       [spaceId, partsId = std::move(partsId), host, pro, this](
-                           TransportException&& ex) mutable {
-                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
-                         if (ex.getType() == TransportException::TIMED_OUT) {
-                           LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
-                         } else {
-                           invalidLeader(spaceId, partsId);
-                           LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
-                         }
-                         pro->setValue(Status::Error(
-                             folly::stringPrintf("RPC failure in StorageClient: %s", ex.what())));
-                       })
-            .thenError(folly::tag_t<std::exception>{},
-                       [spaceId, partsId = std::move(partsId), host, pro, this](
-                           std::exception&& ex) mutable {
-                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
-                         // exception occurred during RPC
-                         pro->setValue(Status::Error(
-                             folly::stringPrintf("RPC failure in StorageClient: %s", ex.what())));
-                         invalidLeader(spaceId, partsId);
-                       });
-      });  // via
+              break;
+            }
+            case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND: {
+              invalidLeader(spaceId, partId);
+              break;
+            }
+            default:
+              break;
+          }
+        }
+        return std::move(resp);
+      })
+      .thenError([request, host, spaceId, this](
+                     folly::exception_wrapper&& exWrapper) mutable -> StatusOr<Response> {
+        stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
+
+        using TransportException = apache::thrift::transport::TTransportException;
+        auto ex = exWrapper.get_exception<TransportException>();
+        if (ex && ex->getType() == TransportException::TIMED_OUT) {
+          LOG(ERROR) << "Request to " << host << " time out: " << ex->what();
+        } else {
+          auto partsId = getReqPartsId(request);
+          invalidLeader(spaceId, partsId);
+          LOG(ERROR) << "Request to " << host << " failed: " << ex->what();
+        }
+        return Status::Error("RPC failure in StorageClient: %s", ex->what());
+      });
 }
 
 template <typename ClientType, typename ClientManagerType>
