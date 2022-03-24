@@ -2101,6 +2101,28 @@ Value Value::equal(const Value& v) const {
   return Value::kNullBadType;
 }
 
+bool Value::isImplicitBool() const {
+  switch (type_) {
+    case Type::BOOL:
+    case Type::LIST:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool Value::implicitBool() const {
+  DCHECK(isImplicitBool());
+  switch (type_) {
+    case Type::BOOL:
+      return getBool();
+    case Type::LIST:
+      return !getList().empty();
+    default:
+      LOG(FATAL) << "Impossible to reach here!";
+  }
+}
+
 void swap(Value& a, Value& b) {
   Value temp(std::move(a));
   a = std::move(b);
@@ -2760,11 +2782,11 @@ Value operator!(const Value& rhs) {
     return rhs;
   }
 
-  if (rhs.type() != Value::Type::BOOL) {
+  if (!rhs.isImplicitBool()) {
     return Value::kNullBadType;
   }
 
-  auto val = rhs.getBool();
+  auto val = rhs.implicitBool();
   return !val;
 }
 
@@ -2973,8 +2995,8 @@ Value operator&&(const Value& lhs, const Value& rhs) {
     return Value::kEmpty;
   }
 
-  if (lhs.type() == Value::Type::BOOL && rhs.type() == Value::Type::BOOL) {
-    return lhs.getBool() && rhs.getBool();
+  if (lhs.isImplicitBool() && rhs.isImplicitBool()) {
+    return lhs.implicitBool() && rhs.implicitBool();
   } else {
     return Value::kNullBadType;
   }
@@ -2993,8 +3015,8 @@ Value operator||(const Value& lhs, const Value& rhs) {
     return Value::kEmpty;
   }
 
-  if (lhs.type() == Value::Type::BOOL && rhs.type() == Value::Type::BOOL) {
-    return lhs.getBool() || rhs.getBool();
+  if (lhs.isImplicitBool() && rhs.isImplicitBool()) {
+    return lhs.implicitBool() || rhs.implicitBool();
   } else {
     return Value::kNullBadType;
   }

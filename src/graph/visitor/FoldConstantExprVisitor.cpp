@@ -527,5 +527,9 @@ void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
   canBeFolded_ = canBeFolded;
 }
 
+void FoldConstantExprVisitor::visit(MatchPathPatternExpression *) {
+  canBeFolded_ = false;
+}
+
 }  // namespace graph
 }  // namespace nebula

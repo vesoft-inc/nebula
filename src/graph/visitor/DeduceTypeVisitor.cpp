@@ -779,6 +779,11 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
 void DeduceTypeVisitor::visit(PathBuildExpression *) {
   type_ = Value::Type::PATH;
 }
+
+void DeduceTypeVisitor::visit(MatchPathPatternExpression *) {
+  type_ = Value::Type::LIST;
+}
+
 #undef DETECT_NARYEXPR_TYPE
 #undef DETECT_UNARYEXPR_TYPE
 #undef DETECT_BIEXPR_TYPE
