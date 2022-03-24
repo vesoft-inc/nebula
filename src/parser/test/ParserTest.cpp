@@ -2776,6 +2776,24 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
   }
 }
 
+TEST_F(ParserTest, MatchPathPatternExpression) {
+  {
+    std::string query = "WITH ()-[:like]->() AS l RETURN l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "RETURN (v:player)-[:like*0..2]->() AS l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "UNWIND (v)-[]->(v) AS l RETURN l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 TEST_F(ParserTest, HOST) {
   {
     std::string query = "ADD HOSTS 127.0.0.1:8989";

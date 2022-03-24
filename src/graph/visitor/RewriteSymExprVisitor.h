@@ -79,6 +79,8 @@ class RewriteSymExprVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
  private:
   void visitBinaryExpr(BinaryExpression *expr);

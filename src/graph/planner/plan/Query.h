@@ -1637,6 +1637,52 @@ class BiInnerJoin final : public BiJoin {
   void cloneMembers(const BiInnerJoin&);
 };
 
+// Roll Up Apply two results from two inputs.
+class RollUpApply : public BinaryInputNode {
+ public:
+  static RollUpApply* make(QueryContext* qctx,
+                           PlanNode* left,
+                           PlanNode* right,
+                           std::vector<Expression*> compareCols,
+                           InputPropertyExpression* collectCol) {
+    return qctx->objPool()->add(
+        new RollUpApply(qctx, Kind::kRollUpApply, left, right, std::move(compareCols), collectCol));
+  }
+
+  const std::vector<Expression*>& compareCols() const {
+    return compareCols_;
+  }
+
+  const InputPropertyExpression* collectCol() const {
+    return collectCol_;
+  }
+
+  InputPropertyExpression* collectCol() {
+    return collectCol_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ protected:
+  RollUpApply(QueryContext* qctx,
+              Kind kind,
+              PlanNode* left,
+              PlanNode* right,
+              std::vector<Expression*> compareCols,
+              InputPropertyExpression* collectCol);
+
+  void cloneMembers(const RollUpApply&);
+
+ protected:
+  // Collect columns when compare column equal
+  std::vector<Expression*> compareCols_;
+  // Collect column to List
+  InputPropertyExpression* collectCol_;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

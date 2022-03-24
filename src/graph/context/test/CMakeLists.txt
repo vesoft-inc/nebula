@@ -6,6 +6,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
@@ -34,6 +35,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:graph_session_obj>

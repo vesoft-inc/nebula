@@ -561,5 +561,6 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
   }
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

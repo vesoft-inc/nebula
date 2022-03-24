@@ -1,6 +1,7 @@
 // Bison options
 %language "C++"
-%skeleton "lalr1.cc"
+%skeleton "glr.cc"
+%glr-parser
 %no-lines
 %locations
 %define api.namespace { nebula }
@@ -43,6 +44,8 @@ class GraphScanner;
 
 static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 static constexpr size_t kCommentLengthLimit = 256;
+
+using namespace nebula;
 
 }
 
@@ -253,6 +256,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> text_search_expression
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
+%type <expr> match_path_pattern_expression
+%type <expr> parenthesized_expression
 %type <argument_list> argument_list opt_argument_list
 %type <geo_shape> geo_shape_type
 %type <type> type_spec
@@ -314,7 +319,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> case_condition
 %type <expr> case_default
 
-%type <match_path> match_path_pattern
+%type <match_path> match_path_pattern match_relationships_pattern
 %type <match_path> match_path
 %type <match_path_list> match_path_list
 %type <match_node> match_node
@@ -422,9 +427,12 @@ static constexpr size_t kCommentLengthLimit = 256;
 %left KW_AND
 %right KW_NOT
 %left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
+%nonassoc DUMMY_LOWER_THAN_MINUS
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT
+%nonassoc DUMMY_LOWER_THAN_L_BRACE
+%nonassoc L_BRACE KW_MAP
 %nonassoc UNARY_PLUS
 %nonassoc UNARY_MINUS
 %nonassoc CASTING
@@ -739,8 +747,11 @@ constant_expression
     ;
 
 compound_expression
-    : L_PAREN expression_internal R_PAREN {
-        $$ = $2;
+    : match_path_pattern_expression %dprec 2 {
+        $$ = $1;
+    }
+    | parenthesized_expression %dprec 1 {
+        $$ = $1;
     }
     | property_expression {
         $$ = $1;
@@ -759,6 +770,11 @@ compound_expression
     }
     | attribute_expression {
         $$ = $1;
+    }
+    ;
+parenthesized_expression
+    : L_PAREN expression_internal R_PAREN {
+        $$ = $2;
     }
     ;
 
@@ -1130,6 +1146,12 @@ function_call_expression
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
         $$ = UUIDExpression::make(qctx->objPool());
+    }
+    ;
+
+match_path_pattern_expression
+    : match_relationships_pattern %prec DUMMY_LOWER_THAN_MINUS {
+        $$ = MatchPathPatternExpression::make(qctx->objPool(), std::unique_ptr<MatchPath>($1));
     }
     ;
 
@@ -1720,6 +1742,17 @@ match_sentence
     }
     ;
 
+match_relationships_pattern
+    : match_node match_edge match_node {
+        $$ = new MatchPath($1);
+        $$->add($2, $3);
+    }
+    | match_relationships_pattern match_edge match_node {
+        $$ = $1;
+        $$->add($2, $3);
+    }
+    ;
+
 match_path_pattern
     : match_node {
         $$ = new MatchPath($1);
@@ -1785,7 +1818,7 @@ match_node_label_list
     ;
 
 match_alias
-    : %empty {
+    : %empty %prec DUMMY_LOWER_THAN_L_BRACE {
         $$ = new std::string();
     }
     | name_label {
@@ -2407,22 +2440,13 @@ create_schema_prop_item
 
 create_tag_sentence
     : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($7 == nullptr) {
-            $7 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7, $3);
+        $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7 == nullptr ? new SchemaPropList() : $7, $3);
     }
     | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
-        if ($8 == nullptr) {
-            $8 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, $6, $8, $3);
+        $$ = new CreateTagSentence($4, $6, $8 == nullptr ? new SchemaPropList() : $8, $3);
     }
     | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
-        if ($9 == nullptr) {
-            $9 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, $6, $9, $3);
+        $$ = new CreateTagSentence($4, $6, $9 == nullptr ? new SchemaPropList() : $9, $3);
     }
     ;
 
@@ -2488,22 +2512,13 @@ alter_schema_prop_item
 
 create_edge_sentence
     : KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($7 == nullptr) {
-            $7 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7, $3);
+        $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7 == nullptr ? new SchemaPropList() : $7, $3);
     }
     | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
-        if ($8 == nullptr) {
-            $8 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4, $6, $8, $3);
+        $$ = new CreateEdgeSentence($4, $6, $8 == nullptr ? new SchemaPropList() : $8, $3);
     }
     | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
-        if ($9 == nullptr) {
-            $9 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4, $6, $9, $3);
+        $$ = new CreateEdgeSentence($4, $6, $9 == nullptr ? new SchemaPropList() : $9, $3);
     }
     ;
 

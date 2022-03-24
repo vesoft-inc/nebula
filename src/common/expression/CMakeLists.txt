@@ -31,6 +31,7 @@ nebula_add_library(
     PredicateExpression.cpp
     ListComprehensionExpression.cpp
     ReduceExpression.cpp
+    MatchPathPatternExpression.cpp
 )
 
 nebula_add_subdirectory(test)

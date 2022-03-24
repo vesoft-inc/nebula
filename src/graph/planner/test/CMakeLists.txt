@@ -21,6 +21,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -52,6 +53,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_session_obj>
         ${EXEC_PLAN_TEST_FLAG_DEPS}
         $<TARGET_OBJECTS:parser_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:planner_obj>
