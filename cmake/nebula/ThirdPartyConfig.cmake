@@ -78,9 +78,7 @@ endif()
 
 message("")
 
-find_package(Bzip2 REQUIRED)
 find_package(DoubleConversion REQUIRED)
-find_package(Fatal REQUIRED)
 find_package(Fbthrift REQUIRED)
 find_package(Folly REQUIRED)
 find_package(Gflags REQUIRED)
