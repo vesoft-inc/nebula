@@ -161,7 +161,6 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
     result = probe(rollUpApplyNode->compareCols(), lhsIter_.get(), hashTable);
   }
   result.colNames = rollUpApplyNode->colNames();
-  DLOG(ERROR) << "DEBUG POINT result of roll up apply: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 

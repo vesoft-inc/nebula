@@ -32,7 +32,6 @@ folly::Future<Status> FilterExecutor::execute() {
   auto condition = filter->condition();
   while (iter->valid()) {
     auto val = condition->eval(ctx(iter));
-    DLOG(ERROR) << "DEBUG POINT: filter val: " << val;
     if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
       return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
     }
