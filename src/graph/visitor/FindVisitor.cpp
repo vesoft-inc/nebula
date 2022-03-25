@@ -242,6 +242,15 @@ void FindVisitor::visit(SubscriptRangeExpression* expr) {
   }
 }
 
+void FindVisitor::visit(MatchPathPatternExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  if (expr->inputProp() != nullptr) {
+    expr->inputProp()->accept(this);
+    if (!needFindAll_ && !foundExprs_.empty()) return;
+  }
+}
+
 void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
   findInCurrentExpr(expr);
   if (!needFindAll_ && !foundExprs_.empty()) return;

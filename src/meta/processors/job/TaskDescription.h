@@ -62,8 +62,7 @@ class TaskDescription {
   cpp2::TaskDesc toTaskDesc();
 
   /**
-   * @brief
-   * Set the internal status
+   * @brief Set the internal status
    * Will check if newStatus is later than curr Status
    * e.g. set running to a finished job is forbidden
    *
@@ -77,6 +76,14 @@ class TaskDescription {
 
   cpp2::JobStatus getStatus() {
     return status_;
+  }
+
+  void setErrorCode(nebula::cpp2::ErrorCode errCode) {
+    errCode_ = errCode;
+  }
+
+  nebula::cpp2::ErrorCode getErrorCode() {
+    return errCode_;
   }
 
   GraphSpaceID getSpace() {
@@ -111,6 +118,7 @@ class TaskDescription {
   cpp2::JobStatus status_;
   int64_t startTime_;
   int64_t stopTime_;
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
 };
 
 }  // namespace meta

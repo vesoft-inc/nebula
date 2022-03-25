@@ -6,13 +6,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 if(ENABLE_ERROR)
   if(ENABLE_VERBOSE_BISON)
-      set(bison_flags "-Werror -v")
+      set(bison_flags "-Werror -v -Wcex")
   else()
       set(bison_flags "-Werror")
   endif()
 else()
   if(ENABLE_VERBOSE_BISON)
-      set(bison_flags "-v")
+      set(bison_flags "-v -Wcex")
   else()
       set(bison_flags "")
   endif()
@@ -41,6 +41,11 @@ nebula_add_library(
     ProcessControlSentences.cpp
     ExplainSentence.cpp
     MatchSentence.cpp
+)
+
+nebula_add_library(
+    ast_match_path_obj OBJECT
+    MatchPath.cpp
 )
 
 nebula_add_subdirectory(test)

@@ -53,6 +53,7 @@ TaskDescription::TaskDescription(const folly::StringPiece& key, const folly::Str
   status_ = std::get<1>(tupVal);
   startTime_ = std::get<2>(tupVal);
   stopTime_ = std::get<3>(tupVal);
+  errCode_ = std::get<4>(tupVal);
 }
 
 /*
@@ -72,6 +73,7 @@ cpp2::TaskDesc TaskDescription::toTaskDesc() {
   ret.status_ref() = status_;
   ret.start_time_ref() = startTime_;
   ret.stop_time_ref() = stopTime_;
+  ret.code_ref() = errCode_;
   return ret;
 }
 

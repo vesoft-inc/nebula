@@ -29,7 +29,8 @@ class JobDescription {
                  std::vector<std::string> paras = {},
                  Status status = Status::QUEUE,
                  int64_t startTime = 0,
-                 int64_t stopTime = 0);
+                 int64_t stopTime = 0,
+                 nebula::cpp2::ErrorCode errCode = nebula::cpp2::ErrorCode::E_UNKNOWN);
 
   /**
    * @brief Return the JobDescription if both key & val is valid
@@ -119,6 +120,14 @@ class JobDescription {
     return stopTime_;
   }
 
+  void setErrorCode(nebula::cpp2::ErrorCode errCode) {
+    errCode_ = errCode;
+  }
+
+  nebula::cpp2::ErrorCode getErrorCode() {
+    return errCode_;
+  }
+
   /**
    * @brief
    * Get a existed job from kvstore, return folly::none if there isn't
@@ -167,6 +176,7 @@ class JobDescription {
   Status status_;
   int64_t startTime_;
   int64_t stopTime_;
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
 };
 
 }  // namespace meta
