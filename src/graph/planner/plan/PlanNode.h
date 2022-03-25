@@ -68,6 +68,7 @@ class PlanNode {
     kBiLeftJoin,
     kBiInnerJoin,
     kBiCartesianProduct,
+    kRollUpApply,
     kArgument,
 
     // Logic

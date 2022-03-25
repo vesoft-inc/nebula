@@ -87,7 +87,7 @@ bool JobDescription::setStatus(Status newStatus, bool force) {
     return false;
   }
   status_ = newStatus;
-  if (newStatus == Status::RUNNING) {
+  if (newStatus == Status::RUNNING || (newStatus == Status::STOPPED && startTime_ == 0)) {
     startTime_ = std::time(nullptr);
   }
   if (JobStatus::laterThan(newStatus, Status::RUNNING)) {

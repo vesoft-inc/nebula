@@ -616,7 +616,7 @@ Feature: Basic match
       """
       MATCH (v:player) where v.player.name return v
       """
-    Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY or BOOL
+    Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY, BOOL
 
   Scenario: Unimplemented features
     When executing query:
@@ -708,4 +708,13 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | n                                                   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  Scenario: parse match node vs parenthesized expression
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Boris Diaw' RETURN (v)
+      """
+    Then the result should be, in any order:
+      | v                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |

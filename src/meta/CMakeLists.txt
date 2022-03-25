@@ -153,6 +153,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:segment_id_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>

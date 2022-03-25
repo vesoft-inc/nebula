@@ -519,6 +519,10 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       LOG(FATAL) << "Should not decode text search expression";
       return exp;
     }
+    case Expression::Kind::kMatchPathPattern: {
+      LOG(FATAL) << "Should not decode match path pattern expression.";
+      return exp;
+    }
       // no default so the compiler will warning when lack
   }
 
@@ -736,6 +740,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kReduce:
       os << "Reduce";
+      break;
+    case Expression::Kind::kMatchPathPattern:
+      os << "MatchPathPattern";
       break;
   }
   return os;

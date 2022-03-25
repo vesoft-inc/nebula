@@ -200,5 +200,15 @@ void ExprVisitorImpl::visit(SubscriptRangeExpression *expr) {
   }
 }
 
+void ExprVisitorImpl::visit(MatchPathPatternExpression *expr) {
+  DCHECK(ok()) << expr->toString();
+  if (expr->inputProp() != nullptr) {
+    expr->inputProp()->accept(this);
+    if (!ok()) {
+      return;
+    }
+  }
+}
+
 }  // namespace graph
 }  // namespace nebula

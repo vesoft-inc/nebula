@@ -4,6 +4,7 @@
 
 set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>

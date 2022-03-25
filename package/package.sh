@@ -12,6 +12,7 @@
 #   -r: Whether to enable compressed debug info, default ON
 #   -p: Whether to dump the symbols from binary by dump_syms
 #   -c: Whether to enable console building, default ON
+#   -k: Whether to enable breakpad, default OFF
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -c <ON/OFF>
 #
@@ -35,8 +36,9 @@ dump_symbols="OFF"
 dump_syms_tool_dir=
 system_name=
 install_prefix=/usr/local/nebula
+enable_breakpad="OFF"
 
-while getopts v:n:s:b:d:t:r:p:j:c: opt;
+while getopts v:n:s:b:d:t:r:p:j:c:k: opt;
 do
     case $opt in
         v)
@@ -69,6 +71,9 @@ do
             ;;
         p)
             dump_symbols=$OPTARG
+            ;;
+        k)
+            enable_breakpad=$OPTARG
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -122,6 +127,7 @@ function _build_graph {
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           -DENABLE_PACKAGE_TAR=${package_tar} \
+          -DENABLE_BREAKPAD=${enable_breakpad} \
           ${project_dir}
 
     if ! ( make -j ${jobs} ); then

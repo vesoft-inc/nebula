@@ -45,6 +45,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>

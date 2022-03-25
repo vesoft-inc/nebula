@@ -106,7 +106,7 @@ find_package(FLEX REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(Fizz REQUIRED)
 find_package(Sodium REQUIRED)
-if (${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
+if (ENABLE_BREAKPAD)
     find_package(Breakpad REQUIRED)
 endif()
 

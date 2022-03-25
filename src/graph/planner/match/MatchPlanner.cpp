@@ -35,7 +35,6 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       auto matchPlan = std::move(matchPlanStatus).value();
       connectMatch(match.get(), matchPlan, queryPartPlan);
     }
-
     NG_RETURN_IF_ERROR(connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan));
   }
 
@@ -68,6 +67,12 @@ void MatchPlanner::connectMatch(const MatchClauseContext* match,
                                 SubPlan& queryPartPlan) {
   if (queryPartPlan.root == nullptr) {
     queryPartPlan = matchPlan;
+    return;
+  }
+  const auto& path = match->paths.back();
+  if (path.rollUpApply) {
+    queryPartPlan = SegmentsConnector::rollUpApply(
+        match->qctx, queryPartPlan, matchPlan, path.compareVariables, path.collectVariable);
     return;
   }
   std::unordered_set<std::string> intersectedAliases;
@@ -140,5 +145,6 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
   queryPlan = SegmentsConnector::addInput(boundaryPlan.value(), queryPlan);
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula
