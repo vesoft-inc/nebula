@@ -110,6 +110,7 @@ jobs:
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSON=${{ steps.tagname.outputs.tagnum }}
 
   test:
     name: test
