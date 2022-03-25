@@ -1399,7 +1399,8 @@ std::string MetaKeyUtils::jobVal(const meta::cpp2::JobType& type,
                                  std::vector<std::string> paras,
                                  meta::cpp2::JobStatus jobStatus,
                                  int64_t startTime,
-                                 int64_t stopTime) {
+                                 int64_t stopTime,
+                                 nebula::cpp2::ErrorCode errCode) {
   std::string val;
   val.reserve(256);
   val.append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::JobType));
@@ -1412,11 +1413,17 @@ std::string MetaKeyUtils::jobVal(const meta::cpp2::JobType& type,
   }
   val.append(reinterpret_cast<const char*>(&jobStatus), sizeof(meta::cpp2::JobStatus))
       .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
-      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
+      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t))
+      .append(reinterpret_cast<const char*>(&errCode), sizeof(nebula::cpp2::ErrorCode));
   return val;
 }
 
-std::tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
+std::tuple<meta::cpp2::JobType,
+           std::vector<std::string>,
+           meta::cpp2::JobStatus,
+           int64_t,
+           int64_t,
+           nebula::cpp2::ErrorCode>
 MetaKeyUtils::parseJobVal(folly::StringPiece rawVal) {
   CHECK_GE(rawVal.size(),
            sizeof(meta::cpp2::JobType) + sizeof(size_t) + sizeof(meta::cpp2::JobStatus) +
@@ -1439,7 +1446,9 @@ MetaKeyUtils::parseJobVal(folly::StringPiece rawVal) {
   auto tStart = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
   offset += sizeof(int64_t);
   auto tStop = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
-  return std::make_tuple(type, paras, status, tStart, tStop);
+  offset += sizeof(int64_t);
+  auto errCode = *reinterpret_cast<const nebula::cpp2::ErrorCode*>(rawVal.data() + offset);
+  return std::make_tuple(type, paras, status, tStart, tStop, errCode);
 }
 
 std::pair<GraphSpaceID, JobID> MetaKeyUtils::parseJobKey(folly::StringPiece key) {
@@ -1473,20 +1482,23 @@ std::tuple<GraphSpaceID, JobID, TaskID> MetaKeyUtils::parseTaskKey(folly::String
 std::string MetaKeyUtils::taskVal(HostAddr host,
                                   meta::cpp2::JobStatus jobStatus,
                                   int64_t startTime,
-                                  int64_t stopTime) {
+                                  int64_t stopTime,
+                                  nebula::cpp2::ErrorCode errCode) {
   std::string val;
   val.reserve(128);
   val.append(MetaKeyUtils::serializeHostAddr(host))
       .append(reinterpret_cast<const char*>(&jobStatus), sizeof(meta::cpp2::JobStatus))
       .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
-      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
+      .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t))
+      .append(reinterpret_cast<const char*>(&errCode), sizeof(nebula::cpp2::ErrorCode));
   return val;
 }
 
-std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t> MetaKeyUtils::parseTaskVal(
-    folly::StringPiece rawVal) {
+std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t, nebula::cpp2::ErrorCode>
+MetaKeyUtils::parseTaskVal(folly::StringPiece rawVal) {
   CHECK_GE(rawVal.size(),
-           sizeof(size_t) + sizeof(Port) + sizeof(meta::cpp2::JobStatus) + sizeof(int64_t) * 2);
+           sizeof(size_t) + sizeof(Port) + sizeof(meta::cpp2::JobStatus) + sizeof(int64_t) * 2 +
+               sizeof(nebula::cpp2::ErrorCode));
   size_t offset = 0;
   HostAddr host = MetaKeyUtils::deserializeHostAddr(rawVal);
   offset += sizeof(size_t);
@@ -1498,7 +1510,9 @@ std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t> MetaKeyUtils::pars
   auto tStart = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
   offset += sizeof(int64_t);
   auto tStop = *reinterpret_cast<const int64_t*>(rawVal.data() + offset);
-  return std::make_tuple(host, status, tStart, tStop);
+  offset += sizeof(int64_t);
+  auto errCode = *reinterpret_cast<const nebula::cpp2::ErrorCode*>(rawVal.data() + offset);
+  return std::make_tuple(host, status, tStart, tStop, errCode);
 }
 
 }  // namespace nebula

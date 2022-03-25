@@ -17,7 +17,7 @@ namespace nebula {
 namespace meta {
 
 nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
-  // The last value of paras_ are index name
+  // The value of paras_ are index name
   auto spaceRet = spaceExist();
   if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Can't find the space, spaceId " << space_;
