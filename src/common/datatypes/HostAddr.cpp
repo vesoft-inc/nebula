@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/datatypes/HostAddr.h"
@@ -16,7 +15,15 @@ bool HostAddr::operator==(const HostAddr& rhs) const {
   return host == rhs.host && port == rhs.port;
 }
 
-bool HostAddr::operator!=(const HostAddr& rhs) const { return !(*this == rhs); }
+bool HostAddr::operator!=(const HostAddr& rhs) const {
+  return !(*this == rhs);
+}
+
+HostAddr& HostAddr::operator=(const HostAddr& rhs) {
+  host = rhs.host;
+  port = rhs.port;
+  return *this;
+}
 
 bool HostAddr::operator<(const HostAddr& rhs) const {
   if (host == rhs.host) {

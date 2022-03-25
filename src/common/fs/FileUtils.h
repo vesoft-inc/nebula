@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_FS_FILEUTILS_H_
@@ -51,7 +50,7 @@ class FileUtils final {
 
   // Tell if stdin attached to a TTY
   static bool isStdinTTY();
-  // Tell if stdout atached to a TTY
+  // Tell if stdout attached to a TTY
   static bool isStdoutTTY();
   // Tell if stderr attached to a TTY
   static bool isStderrTTY();
@@ -180,7 +179,9 @@ class FileUtils final {
     ~Iterator();
 
     // Whether this iterator is valid
-    bool valid() const { return status_.ok(); }
+    bool valid() const {
+      return status_.ok();
+    }
 
     // Step to the next line or entry
     void next();
@@ -225,7 +226,9 @@ class FileUtils final {
     }
 
     // Status to indicates the error
-    const Status& status() const { return status_; }
+    const Status& status() const {
+      return status_;
+    }
 
    private:
     void openFileOrDirectory();

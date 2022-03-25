@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -89,11 +88,11 @@ TEST(LogAppend, MultiThreadAppend) {
       for (int j = 1; j <= numLogs; ++j) {
         do {
           auto fut = leader->appendAsync(0, folly::stringPrintf("Log %03d for t%d", j, i));
-          if (fut.isReady() && fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
+          if (fut.isReady() && fut.value() == nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW) {
             LOG(FATAL) << "Should not reach here";
           } else if (j == numLogs) {
-            // Only wait on the last log messaage
-            ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
+            // Only wait on the last log message
+            ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, std::move(fut).get());
           }
           break;
         } while (true);

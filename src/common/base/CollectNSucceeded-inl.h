@@ -1,10 +1,10 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_BASE_COLLECTNSUCCEEDED_INL_H
+#define COMMON_BASE_COLLECTNSUCCEEDED_INL_H
 
 #include <folly/ExceptionWrapper.h>
 
@@ -68,3 +68,4 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(FutureIter firs
 }
 
 }  // namespace nebula
+#endif

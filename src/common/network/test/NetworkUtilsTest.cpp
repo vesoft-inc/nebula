@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -35,7 +34,7 @@ TEST(NetworkUtils, getIPv4FromDevice) {
     ASSERT_EQ("0.0.0.0", result.value());
   }
   {
-    auto result = NetworkUtils::getIPv4FromDevice("non-existence");
+    auto result = NetworkUtils::getIPv4FromDevice("nonexistent");
     ASSERT_FALSE(result.ok()) << result.status();
   }
 }
@@ -84,6 +83,40 @@ TEST(NetworkUtils, toHosts) {
 
   s = NetworkUtils::toHosts("1.1.2.3:123, a.b.c.d:a23");
   ASSERT_FALSE(s.ok());
+}
+
+TEST(NetworkUtils, ValidateHostOrIp) {
+  std::string hostOrIp = "127.0.0.1";
+  auto result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "127.0.1.1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "0.0.0.0";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "000.000.000.000";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "0.0.0.0.0";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "127.0.0.0.1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "localhost";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "NonvalidHostName";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
 }
 
 }  // namespace network

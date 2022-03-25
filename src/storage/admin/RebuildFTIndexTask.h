@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_REBUILDFTINDEXTASK_H_
@@ -15,10 +14,18 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Task class to rebuild FT index.
+ *
+ */
 class RebuildFTIndexTask : public AdminTask {
  public:
   RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
-
+  /**
+   * @brief Generate subtasks for rebuilding FT index.
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
  protected:

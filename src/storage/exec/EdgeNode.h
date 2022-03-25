@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_EDGENODE_H_
@@ -10,8 +9,6 @@
 #include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
 #include "storage/exec/StorageIterator.h"
-#include "storage/transaction/TossEdgeIterator.h"
-#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace storage {
@@ -29,7 +26,13 @@ class EdgeNode : public IterateNode<T> {
     return valueHandler(this->key(), this->reader(), props_);
   }
 
-  const std::string& getEdgeName() { return edgeName_; }
+  const std::string& getEdgeName() const {
+    return edgeName_;
+  }
+
+  EdgeType edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   EdgeNode(RuntimeContext* context,
@@ -52,9 +55,12 @@ class EdgeNode : public IterateNode<T> {
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
+    IterateNode<T>::name_ = "EdgeNode";
   }
 
-  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {}
+  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {
+    IterateNode<T>::name_ = "EdgeNode";
+  }
 
   RuntimeContext* context_;
   EdgeContext* edgeContext_;
@@ -64,14 +70,14 @@ class EdgeNode : public IterateNode<T> {
   Expression* exp_;
 
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-  folly::Optional<std::pair<std::string, int64_t>> ttl_;
+  std::optional<std::pair<std::string, int64_t>> ttl_;
   std::string edgeName_;
 };
 
 // FetchEdgeNode is used to fetch a single edge
 class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   FetchEdgeNode(RuntimeContext* context,
                 EdgeContext* edgeContext,
@@ -79,21 +85,33 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
                 const std::vector<PropContext>* props,
                 StorageExpressionContext* expCtx = nullptr,
                 Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
+    name_ = "FetchEdgeNode";
+  }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
-  void next() override { valid_ = false; }
-
-  folly::StringPiece key() const override { return key_; }
-
-  folly::StringPiece val() const override { return val_; }
-
-  RowReader* reader() const override { return reader_.get(); }
-
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
+  void next() override {
     valid_ = false;
-    auto ret = RelNode::execute(partId, edgeKey);
+  }
+
+  folly::StringPiece key() const override {
+    return key_;
+  }
+
+  folly::StringPiece val() const override {
+    return val_;
+  }
+
+  RowReader* reader() const override {
+    return reader_.get();
+  }
+
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
+    valid_ = false;
+    auto ret = RelNode::doExecute(partId, edgeKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -111,8 +129,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
                                    (*edgeKey.dst_ref()).getStr());
     ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &val_);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      resetReader();
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return doExecute(key_, val_);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       // regard key not found as succeed as well, upper node will handle it
       return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -120,11 +137,25 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     return ret;
   }
 
+  nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
+    key_ = key;
+    val_ = value;
+    resetReader();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  void clear() {
+    valid_ = false;
+    key_.clear();
+    val_.clear();
+    reader_.reset();
+  }
+
  private:
   void resetReader() {
     reader_.reset(*schemas_, val_);
     if (!reader_ ||
-        (ttl_.hasValue() &&
+        (ttl_.has_value() &&
          CommonUtils::checkDataExpiredForTTL(
              schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
       reader_.reset();
@@ -143,29 +174,43 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 // srcId
 class SingleEdgeNode final : public EdgeNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
   SingleEdgeNode(RuntimeContext* context,
                  EdgeContext* edgeContext,
                  EdgeType edgeType,
                  const std::vector<PropContext>* props,
                  StorageExpressionContext* expCtx = nullptr,
                  Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
+    name_ = "SingleEdgeNode";
+  }
 
-  SingleEdgeIterator* iter() { return iter_.get(); }
+  SingleEdgeIterator* iter() {
+    return iter_.get();
+  }
 
-  bool valid() const override { return iter_ && iter_->valid(); }
+  bool valid() const override {
+    return iter_ && iter_->valid();
+  }
 
-  void next() override { iter_->next(); }
+  void next() override {
+    iter_->next();
+  }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return iter_->reader(); }
+  RowReader* reader() const override {
+    return iter_->reader();
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-    auto ret = RelNode::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }

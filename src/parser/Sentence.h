@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_SENTENCE_H_
 #define PARSER_SENTENCE_H_
@@ -56,6 +55,8 @@ class Sentence {
     kUpdateVertex,
     kInsertEdges,
     kUpdateEdge,
+    kAddHosts,
+    kDropHosts,
     kShowHosts,
     kShowSpaces,
     kShowParts,
@@ -78,13 +79,15 @@ class Sentence {
     kShowGroups,
     kShowZones,
     kShowStats,
-    kShowTSClients,
+    kShowServiceClients,
     kShowFTIndexes,
+    kDescribeUser,
     kDeleteVertices,
     kDeleteTags,
     kDeleteEdges,
     kLookup,
     kCreateSpace,
+    kCreateSpaceAs,
     kDropSpace,
     kDescribeSpace,
     kYield,
@@ -102,7 +105,6 @@ class Sentence {
     kGetConfig,
     kFetchVertices,
     kFetchEdges,
-    kBalance,
     kFindPath,
     kLimit,
     kGroupBy,
@@ -110,32 +112,33 @@ class Sentence {
     kCreateSnapshot,
     kDropSnapshot,
     kAdminJob,
+    kAdminShowJobs,
     kGetSubgraph,
-    kAddGroup,
-    kDropGroup,
-    kDescribeGroup,
-    kListGroups,
-    kAddZoneIntoGroup,
-    kDropZoneFromGroup,
-    kAddZone,
+    kMergeZone,
+    kRenameZone,
     kDropZone,
+    kDivideZone,
     kDescribeZone,
     kListZones,
-    kAddHostIntoZone,
-    kDropHostFromZone,
+    kAddHostsIntoZone,
     kAddListener,
     kRemoveListener,
     kShowListener,
-    kSignInTSService,
-    kSignOutTSService,
+    kSignInService,
+    kSignOutService,
     kCreateFTIndex,
     kDropFTIndex,
     kShowSessions,
     kShowQueries,
     kKillQuery,
+    kShowMetaLeader,
+    kAlterSpace,
+    kClearSpace,
   };
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
  protected:
   Sentence() = default;
@@ -149,7 +152,9 @@ class CreateSentence : public Sentence {
   explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
   virtual ~CreateSentence() {}
 
-  bool isIfNotExist() const { return ifNotExist_; }
+  bool isIfNotExist() const {
+    return ifNotExist_;
+  }
 
  private:
   bool ifNotExist_{false};
@@ -160,7 +165,9 @@ class DropSentence : public Sentence {
   explicit DropSentence(bool ifExists) : ifExists_{ifExists} {}
   virtual ~DropSentence() = default;
 
-  bool isIfExists() { return ifExists_; }
+  bool isIfExists() {
+    return ifExists_;
+  }
 
  private:
   bool ifExists_{false};
@@ -168,7 +175,9 @@ class DropSentence : public Sentence {
 
 class HostList final {
  public:
-  void addHost(HostAddr *addr) { hosts_.emplace_back(addr); }
+  void addHost(HostAddr *addr) {
+    hosts_.emplace_back(addr);
+  }
 
   std::string toString() const;
 
@@ -188,6 +197,108 @@ class HostList final {
 inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
+
+class ZoneNameList final {
+ public:
+  ZoneNameList() = default;
+
+  void addZone(std::string *zone) {
+    zones_.emplace_back(zone);
+  }
+
+  std::vector<std::string> zoneNames() const {
+    std::vector<std::string> result;
+    result.resize(zones_.size());
+    auto get = [](auto &ptr) { return *ptr.get(); };
+    std::transform(zones_.begin(), zones_.end(), result.begin(), get);
+    return result;
+  }
+
+  std::string toString() const {
+    std::string buf;
+    for (const auto &zone : zones_) {
+      buf += "`";
+      buf += *zone;
+      buf += "`";
+      buf += ",";
+    }
+    if (!zones_.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
+
+ private:
+  std::vector<std::unique_ptr<std::string>> zones_;
+};
+
+class ZoneItem final {
+ public:
+  ZoneItem(std::string *zone, HostList *hosts) {
+    zone_.reset(zone);
+    hosts_.reset(hosts);
+  }
+
+  explicit ZoneItem(ZoneItem *other)
+      : zone_(std::move(other->zone_)), hosts_(std::move(other->hosts_)) {}
+
+  std::string toString() const {
+    std::string buf;
+    buf += "`";
+    buf += *zone_;
+    buf += "`";
+    buf += " (";
+    buf += hosts_->toString();
+    buf += ")";
+    return buf;
+  }
+
+  std::string *zone() {
+    return zone_.get();
+  }
+
+  HostList *hosts() {
+    return hosts_.get();
+  }
+
+ private:
+  std::unique_ptr<std::string> zone_;
+  std::unique_ptr<HostList> hosts_;
+};
+
+class ZoneItemList final {
+ public:
+  ZoneItemList() = default;
+
+  void addZoneItem(ZoneItem *zoneItem) {
+    zoneItems_.emplace_back(zoneItem);
+  }
+
+  std::unordered_map<std::string, std::vector<HostAddr>> zoneItems() const {
+    std::unordered_map<std::string, std::vector<HostAddr>> result;
+    for (const auto &item : zoneItems_) {
+      result.emplace(*item->zone(), item->hosts()->hosts());
+    }
+    return result;
+  }
+
+  std::string toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : zoneItems_) {
+      buf += item->toString();
+      buf += " ";
+    }
+
+    if (!buf.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
+
+ private:
+  std::vector<std::unique_ptr<ZoneItem>> zoneItems_;
+};
 
 }  // namespace nebula
 

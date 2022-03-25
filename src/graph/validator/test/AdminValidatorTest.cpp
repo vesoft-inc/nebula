@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/test/ValidatorTestBase.h"
 
@@ -18,8 +17,7 @@ TEST_F(AdminValidatorTest, SpaceTest) {
         checkResult("CREATE SPACE TEST(vid_type = fixed_string(2)); DESC SPACE TEST;", expected));
   }
   {
-    std::vector<PlanNode::Kind> expected = {
-        PK::kUpdateSession, PK::kSwitchSpace, PK::kCreateSpace, PK::kStart};
+    std::vector<PlanNode::Kind> expected = {PK::kSwitchSpace, PK::kCreateSpace, PK::kStart};
     ASSERT_TRUE(checkResult("CREATE SPACE TEST(vid_type = fixed_string(2)); USE TEST;", expected));
   }
 }

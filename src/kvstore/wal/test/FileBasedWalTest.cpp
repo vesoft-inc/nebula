@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -559,7 +558,7 @@ TEST(FileBasedWal, CleanWalBeforeIdTest) {
     CHECK_LE(wal->firstLogId(), logToKeep);
     CHECK(!wal->walFiles_.empty());
     CHECK_LE(wal->walFiles_.begin()->second->firstId(), logToKeep);
-    CHECK_GE(wal->walFiles_.begin()->second->lastId(), logToKeep);
+    CHECK_GE(wal->walFiles_.rbegin()->second->lastId(), logToKeep);
     logToKeep += folly::Random::rand64(10);
   }
   CHECK_EQ(1000, wal->lastLogId());
@@ -567,6 +566,40 @@ TEST(FileBasedWal, CleanWalBeforeIdTest) {
   // try to clean not existed log
   wal->cleanWAL(1L);
   CHECK_EQ(1000, wal->lastLogId());
+}
+
+TEST(FileBasedWal, getLogTermTest) {
+  TempDir walDir("/tmp/testWal.XXXXXX");
+  FileBasedWalInfo info;
+  FileBasedWalPolicy policy;
+  policy.fileSize = 1024L * 1024L;
+  policy.bufferSize = 1024L * 1024L;
+
+  auto wal = FileBasedWal::getWal(
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        return true;
+      });
+
+  // Append > 10MB logs in total
+  for (int i = 1; i <= 10000; i++) {
+    ASSERT_TRUE(
+        wal->appendLog(i /*id*/, i /*term*/, 0 /*cluster*/, folly::stringPrintf(kLongMsg, i)));
+  }
+
+  // in the memory buffer
+  ASSERT_EQ(10000, wal->getLogTerm(10000));
+  // in the file
+  ASSERT_EQ(4, wal->getLogTerm(4));
+
+  // Close the wal
+  wal.reset();
+
+  // Now let's open it to read
+  wal = FileBasedWal::getWal(
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        return true;
+      });
+  EXPECT_EQ(10, wal->getLogTerm(10));
 }
 
 }  // namespace wal

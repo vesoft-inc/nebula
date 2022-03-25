@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_HASHJOINNODE_H_
@@ -16,14 +15,14 @@
 namespace nebula {
 namespace storage {
 
-// HashJoinNode has input of serveral TagNode and EdgeNode, the EdgeNode is
+// HashJoinNode has input of several TagNode and EdgeNode, the EdgeNode is
 // several SingleEdgeNode of different edge types all edges of a vertex. The
 // output would be the result of tag, it is a List, each cell save a list of
 // property values, if tag not found, it will be a empty value. Also it will
 // return a iterator of edges which can pass ttl check and ready to be read.
 class HashJoinNode : public IterateNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   HashJoinNode(RuntimeContext* context,
                const std::vector<TagNode*>& tagNodes,
@@ -38,10 +37,11 @@ class HashJoinNode : public IterateNode<VertexID> {
         edgeContext_(edgeContext),
         expCtx_(expCtx) {
     UNUSED(tagContext_);
+    IterateNode::name_ = "HashJoinNode";
   }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-    auto ret = RelNode::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -57,6 +57,9 @@ class HashJoinNode : public IterateNode<VertexID> {
 
     // add result of each tag node to tagResult
     for (auto* tagNode : tagNodes_) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       ret = tagNode->collectTagPropsIfValid(
           [&result](const std::vector<PropContext>*) -> nebula::cpp2::ErrorCode {
             result.values.emplace_back(Value());
@@ -69,19 +72,16 @@ class HashJoinNode : public IterateNode<VertexID> {
             nebula::List list;
             list.reserve(props->size());
             const auto& tagName = tagNode->getTagName();
-            for (const auto& prop : *props) {
-              VLOG(2) << "Collect prop " << prop.name_;
-              auto value = QueryUtils::readVertexProp(
-                  key, context_->vIdLen(), context_->isIntId(), reader, prop);
-              if (!value.ok()) {
-                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-              }
-              if (prop.filtered_ && expCtx_ != nullptr) {
-                expCtx_->setTagProp(tagName, prop.name_, value.value());
-              }
-              if (prop.returned_) {
-                list.emplace_back(std::move(value).value());
-              }
+            auto status = QueryUtils::collectVertexProps(key,
+                                                         context_->vIdLen(),
+                                                         context_->isIntId(),
+                                                         reader,
+                                                         props,
+                                                         list,
+                                                         expCtx_,
+                                                         tagName);
+            if (!status.ok()) {
+              return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
             result.values.emplace_back(std::move(list));
             return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -93,6 +93,9 @@ class HashJoinNode : public IterateNode<VertexID> {
 
     std::vector<SingleEdgeIterator*> iters;
     for (auto* edgeNode : edgeNodes_) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       iters.emplace_back(edgeNode->iter());
     }
     iter_.reset(new MultiEdgeIterator(std::move(iters)));
@@ -102,7 +105,9 @@ class HashJoinNode : public IterateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  bool valid() const override { return iter_->valid(); }
+  bool valid() const override {
+    return iter_->valid();
+  }
 
   void next() override {
     iter_->next();
@@ -111,12 +116,18 @@ class HashJoinNode : public IterateNode<VertexID> {
     }
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override { return iter_->reader(); }
+  RowReader* reader() const override {
+    return iter_->reader();
+  }
 
  private:
   // return true when the value iter points to a value which can pass ttl and

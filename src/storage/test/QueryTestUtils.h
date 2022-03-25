@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_TEST_QUERYTESTUTILS_H_
@@ -46,7 +45,7 @@ class QueryTestUtils {
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;
@@ -260,9 +259,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen, partId, indexId, vId, std::move(row));
+    auto indexes =
+        IndexKeyUtils::vertexIndexKeys(spaceVidLen, partId, indexId, vId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), std::move(val));
+    }
   }
 
   static void encodeEdgeIndex(size_t spaceVidLen,
@@ -283,10 +285,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::edgeIndexKey(
-        spaceVidLen, partId, indexId, srcId, rank, dstId, std::move(row));
+    auto indexes = IndexKeyUtils::edgeIndexKeys(
+        spaceVidLen, partId, indexId, srcId, rank, dstId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), val);
+    }
   }
 
   static cpp2::GetNeighborsRequest buildRequest(
@@ -299,7 +303,7 @@ class QueryTestUtils {
     std::hash<std::string> hash;
     cpp2::GetNeighborsRequest req;
     nebula::storage::cpp2::TraverseSpec traverseSpec;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     (*req.column_names_ref()).emplace_back(kVid);
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex) % totalParts) + 1;
@@ -313,36 +317,37 @@ class QueryTestUtils {
 
     std::vector<cpp2::VertexProp> vertexProps;
     if (tags.empty() && !returnNoneProps) {
-      traverseSpec.set_vertex_props(std::move(vertexProps));
+      traverseSpec.vertex_props_ref() = std::move(vertexProps);
     } else if (!returnNoneProps) {
       for (const auto& tag : tags) {
         TagID tagId = tag.first;
         cpp2::VertexProp tagProp;
-        tagProp.set_tag(tagId);
+        tagProp.tag_ref() = tagId;
         for (const auto& prop : tag.second) {
           (*tagProp.props_ref()).emplace_back(std::move(prop));
         }
         vertexProps.emplace_back(std::move(tagProp));
       }
-      traverseSpec.set_vertex_props(std::move(vertexProps));
+      traverseSpec.vertex_props_ref() = std::move(vertexProps);
     }
 
     std::vector<cpp2::EdgeProp> edgeProps;
     if (edges.empty() && !returnNoneProps) {
-      traverseSpec.set_edge_props(std::move(edgeProps));
+      traverseSpec.edge_props_ref() = std::move(edgeProps);
     } else if (!returnNoneProps) {
       for (const auto& edge : edges) {
         EdgeType edgeType = edge.first;
         cpp2::EdgeProp edgeProp;
-        edgeProp.set_type(edgeType);
+        edgeProp.type_ref() = edgeType;
         for (const auto& prop : edge.second) {
           (*edgeProp.props_ref()).emplace_back(std::move(prop));
         }
         edgeProps.emplace_back(std::move(edgeProp));
       }
-      traverseSpec.set_edge_props(std::move(edgeProps));
+      traverseSpec.edge_props_ref() = std::move(edgeProps);
     }
-    req.set_traverse_spec(std::move(traverseSpec));
+
+    req.traverse_spec_ref() = std::move(traverseSpec);
     return req;
   }
 
@@ -406,6 +411,16 @@ class QueryTestUtils {
     std::sort(actualRows.begin(), actualRows.end(), Descending());
     std::sort(expectRows.begin(), expectRows.end(), Descending());
     EXPECT_EQ(expectRows, actualRows);
+  }
+
+  static void checkStatResponse(const cpp2::LookupIndexResp& resp,
+                                const std::vector<std::string>& expectCols,
+                                const Row& expectRow) {
+    auto columns = (*resp.stat_data_ref()).colNames;
+    EXPECT_EQ(expectCols, columns);
+    auto actualRows = (*resp.stat_data_ref()).rows;
+    EXPECT_EQ(1, actualRows.size());
+    EXPECT_EQ(actualRows[0], expectRow);
   }
 
   static void checkColNames(
@@ -775,7 +790,7 @@ class QueryTestUtils {
       if (cols.size() < 2) {
         LOG(FATAL) << "Invalid column name";
       }
-      // cols[1] is the tagName, which can be transfromed to entryId
+      // cols[1] is the tagName, which can be transformed to entryId
       auto entryId = folly::to<int32_t>(cols[1]);
       auto props = findExpectProps(entryId, tags, edges);
       switch (entryId) {
@@ -873,7 +888,7 @@ class QueryTestUtils {
                           return teammate.player1_ == player2 && teammate.player2_ == player1;
                         });
     if (iter == mock::MockData::teammates_.end()) {
-      LOG(FATAL) << "Can't find speicied teammate";
+      LOG(FATAL) << "Can't find specified teammate";
     }
     return *iter;
   }

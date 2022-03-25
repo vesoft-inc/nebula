@@ -1,8 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/ToJson.h"
 
@@ -25,25 +23,45 @@
 namespace nebula {
 namespace util {
 
-std::string toJson(const std::string &str) { return str; }
+std::string toJson(const std::string &str) {
+  return str;
+}
 
-std::string toJson(int32_t i) { return folly::to<std::string>(i); }
+std::string toJson(int32_t i) {
+  return folly::to<std::string>(i);
+}
 
-std::string toJson(int64_t i) { return folly::to<std::string>(i); }
+std::string toJson(int64_t i) {
+  return folly::to<std::string>(i);
+}
 
-std::string toJson(size_t i) { return folly::to<std::string>(i); }
+std::string toJson(size_t i) {
+  return folly::to<std::string>(i);
+}
 
-std::string toJson(bool b) { return b ? "true" : "false"; }
+std::string toJson(bool b) {
+  return b ? "true" : "false";
+}
 
-std::string toJson(const HostAddr &addr) { return addr.toString(); }
+std::string toJson(const HostAddr &addr) {
+  return addr.toString();
+}
 
-std::string toJson(const List &list) { return list.toString(); }
+std::string toJson(const List &list) {
+  return list.toString();
+}
 
-std::string toJson(const Value &value) { return value.toString(); }
+std::string toJson(const Value &value) {
+  return value.toString();
+}
 
-std::string toJson(const EdgeKeyRef *ref) { return ref->toString(); }
+std::string toJson(const EdgeKeyRef *ref) {
+  return ref->toString();
+}
 
-std::string toJson(const Expression *expr) { return expr->toString(); }
+std::string toJson(const Expression *expr) {
+  return expr->toString();
+}
 
 folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
   folly::dynamic obj = folly::dynamic::object();
@@ -93,6 +111,17 @@ folly::dynamic toJson(const meta::cpp2::SchemaProp &prop) {
   }
   if (prop.ttl_duration_ref()) {
     object.insert("ttlDuration", *prop.ttl_duration_ref());
+  }
+  return object;
+}
+
+folly::dynamic toJson(const meta::cpp2::IndexParams &params) {
+  folly::dynamic object = folly::dynamic::object();
+  if (params.s2_max_level_ref().has_value()) {
+    object.insert("s2_max_level", *params.s2_max_level_ref());
+  }
+  if (params.s2_max_cells_ref().has_value()) {
+    object.insert("s2_max_cells", *params.s2_max_cells_ref());
   }
   return object;
 }
@@ -243,6 +272,10 @@ folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints) {
   obj.insert("beginValue", rtrim(begin));
   auto end = toJson(hints.get_end_value());
   obj.insert("endValue", rtrim(end));
+  auto includeBegin = toJson(hints.get_include_begin());
+  obj.insert("includeBegin", includeBegin);
+  auto includeEnd = toJson(hints.get_include_end());
+  obj.insert("includeEnd", includeEnd);
   return obj;
 }
 

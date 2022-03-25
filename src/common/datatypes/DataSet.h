@@ -1,11 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_DATASET_H_
 #define COMMON_DATATYPES_DATASET_H_
+
+#include <folly/dynamic.h>
 
 #include <iostream>
 #include <iterator>
@@ -48,9 +49,13 @@ struct DataSet {
     return *this;
   }
 
-  const std::vector<std::string>& keys() const { return colNames; }
+  const std::vector<std::string>& keys() const {
+    return colNames;
+  }
 
-  const std::vector<Value>& rowValues(std::size_t index) const { return rows[index].values; }
+  const std::vector<Value>& rowValues(std::size_t index) const {
+    return rows[index].values;
+  }
 
   std::vector<Value> colValues(const std::string& colName) const {
     std::vector<Value> col;
@@ -69,13 +74,21 @@ struct DataSet {
   using iterator = std::vector<Row>::iterator;
   using const_iterator = std::vector<Row>::const_iterator;
 
-  iterator begin() { return rows.begin(); }
+  iterator begin() {
+    return rows.begin();
+  }
 
-  const_iterator begin() const { return rows.begin(); }
+  const_iterator begin() const {
+    return rows.begin();
+  }
 
-  iterator end() { return rows.end(); }
+  iterator end() {
+    return rows.end();
+  }
 
-  const_iterator end() const { return rows.end(); }
+  const_iterator end() const {
+    return rows.end();
+  }
 
   template <typename T,
             typename = typename std::enable_if<std::is_convertible<T, Row>::value, T>::type>
@@ -126,13 +139,21 @@ struct DataSet {
     rows.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
-  std::size_t size() const { return rowSize(); }
+  std::size_t size() const {
+    return rowSize();
+  }
 
-  std::size_t rowSize() const { return rows.size(); }
+  std::size_t rowSize() const {
+    return rows.size();
+  }
 
-  std::size_t colSize() const { return colNames.size(); }
+  std::size_t colSize() const {
+    return colNames.size();
+  }
 
   std::string toString() const {
     std::stringstream os;
@@ -153,10 +174,52 @@ struct DataSet {
     return os.str();
   }
 
-  bool operator==(const DataSet& rhs) const { return colNames == rhs.colNames && rows == rhs.rows; }
+  // format:
+  // [
+  //   {
+  //     "row": [ row-data ],
+  //     "meta": [ metadata ]
+  //   },
+  // ]
+  folly::dynamic toJson() const {
+    // parse rows to json
+    auto dataBody = folly::dynamic::array();
+    for (auto& row : rows) {
+      dataBody.push_back(rowToJson(row));
+    }
+
+    return dataBody;
+  }
+
+  // parse Nebula::Row to json
+  // format:
+  // {
+  //   "row": [ row-data ],
+  //   "meta": [ metadata ]
+  // }
+  folly::dynamic rowToJson(const Row& row) const {
+    folly::dynamic rowJsonObj = folly::dynamic::object();
+    auto rowDataList = folly::dynamic::array();
+    auto metaDataList = folly::dynamic::array();
+
+    for (const auto& ele : row.values) {
+      rowDataList.push_back(ele.toJson());
+      metaDataList.push_back(ele.getMetaData());
+    }
+
+    rowJsonObj.insert("row", rowDataList);
+    rowJsonObj.insert("meta", metaDataList);
+    return rowJsonObj;
+  }
+
+  bool operator==(const DataSet& rhs) const {
+    return colNames == rhs.colNames && rows == rhs.rows;
+  }
 };
 
-inline std::ostream& operator<<(std::ostream& os, const DataSet& d) { return os << d.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const DataSet& d) {
+  return os << d.toString();
+}
 
 }  // namespace nebula
 #endif  // COMMON_DATATYPES_DATASET_H_

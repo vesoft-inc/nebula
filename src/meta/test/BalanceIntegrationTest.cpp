@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
@@ -10,7 +9,6 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 #include "storage/client/StorageClient.h"
 #include "storage/test/TestUtils.h"
@@ -177,7 +175,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         newMetaClient.get(), dataPath.c_str(), localIp, storagePort, true);
     LOG(INFO) << "Start a new storage server on " << storageAddr;
   }
-  LOG(INFO) << "Let's stop the last storage servcie " << storagePorts.back();
+  LOG(INFO) << "Let's stop the last storage service " << storagePorts.back();
   {
     metaClients.back()->stop();
     serverContexts.back().reset();
@@ -205,7 +203,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     int num = 0;
     std::string lastKey = "";
     while (iter->valid()) {
-      // filter the multipule versions for data.
+      // filter the multiple versions for data.
       auto key = NebulaKeyUtils::keyWithNoVersion(iter->key());
       if (lastKey == key) {
         iter->next();

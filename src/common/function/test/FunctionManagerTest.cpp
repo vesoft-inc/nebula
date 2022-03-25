@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -33,14 +32,16 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     auto res = result.value()(argsRef);
     if (res.type() != expect.type()) {
-      return ::testing::AssertionFailure() << "function return type check failed: " << expr;
+      return ::testing::AssertionFailure() << "function return type check failed, expect "
+                                           << expect.type() << ", got " << res.type();
     }
     if (res != expect) {
-      return ::testing::AssertionFailure() << "function return value check failed: " << expr;
+      return ::testing::AssertionFailure()
+             << "function return value check failed, expect " << expect << ", got " << res;
     }
     return ::testing::AssertionSuccess();
   }
@@ -52,7 +53,7 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     auto res = result.value()(argsRef);
     if (res.type() != expectType) {
@@ -67,7 +68,7 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     return ::testing::AssertionSuccess();
   }
@@ -102,6 +103,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"one", {-1.2}},
     {"two", {2, 4}},
     {"pow", {2, 3}},
+    {"round1", {11111.11111, 2}},
+    {"round2", {11111.11111, -1}},
+    {"round3", {11111.11111, -5}},
     {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
@@ -268,6 +272,11 @@ TEST_F(FunctionManagerTest, functionCall) {
     TEST_FUNCTION(log2, args_["int"], 2.0);
   }
   {
+    TEST_FUNCTION(round, args_["round1"], 11111.11);
+    TEST_FUNCTION(round, args_["round2"], 11110.0);
+    TEST_FUNCTION(round, args_["round3"], 0.0);
+  }
+  {
     TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));
     TEST_FUNCTION(range, args_["range2"], Value(List({1, 3, 5})));
     TEST_FUNCTION(range, args_["range3"], Value(List({5, 3, 1})));
@@ -309,7 +318,7 @@ TEST_F(FunctionManagerTest, functionCall) {
     TEST_FUNCTION(toString, args_["toString_bool"], "true");
     TEST_FUNCTION(toString, args_["string"], "AbcDeFG");
     TEST_FUNCTION(toString, args_["date"], "1984-10-11");
-    TEST_FUNCTION(toString, args_["datetime"], "1984-10-11T12:31:14.341");
+    TEST_FUNCTION(toString, args_["datetime"], "1984-10-11T12:31:14.000341000");
     TEST_FUNCTION(toString, args_["nullvalue"], Value::kNullValue);
   }
   {
@@ -318,8 +327,9 @@ TEST_F(FunctionManagerTest, functionCall) {
     DateTime dateTime(2021, 10, 31, 8, 5, 34, 29);
     TEST_FUNCTION(concat, std::vector<Value>({"hello", 1, "world"}), "hello1world");
     TEST_FUNCTION(concat, std::vector<Value>({true, 2, date}), "true22021-10-31");
-    TEST_FUNCTION(concat, std::vector<Value>({true, dateTime}), "true2021-10-31T08:05:34.29");
-    TEST_FUNCTION(concat, std::vector<Value>({2.3, time}), "2.309:39:21.000012");
+    TEST_FUNCTION(
+        concat, std::vector<Value>({true, dateTime}), "true2021-10-31T08:05:34.000029000");
+    TEST_FUNCTION(concat, std::vector<Value>({2.3, time}), "2.309:39:21.000012000");
     TEST_FUNCTION(concat, args_["two"], "24");
     TEST_FUNCTION(concat_ws, std::vector<Value>({",", 1}), "1");
     TEST_FUNCTION(concat_ws, std::vector<Value>({"@", 1, "world"}), "1@world");
@@ -328,7 +338,7 @@ TEST_F(FunctionManagerTest, functionCall) {
                   "1ABtrueABworld");
     TEST_FUNCTION(concat_ws,
                   std::vector<Value>({".", 1, true, Value::kNullValue, "world", time}),
-                  "1.true.world.09:39:21.000012");
+                  "1.true.world.09:39:21.000012000");
   }
   {
     TEST_FUNCTION(toBoolean, args_["int"], Value::kNullBadType);
@@ -443,6 +453,9 @@ TEST_F(FunctionManagerTest, functionCall) {
     auto res = std::move(result).value()(genArgsRef({true}));
     EXPECT_EQ(res, Value::kNullBadType);
   }
+}
+
+TEST_F(FunctionManagerTest, time) {
   // current time
   static constexpr std::size_t kCurrentTimeParaNumber = 0;
   // time from literal
@@ -519,6 +532,42 @@ TEST_F(FunctionManagerTest, functionCall) {
                   {Map({{"hour", 20}, {"minute", 9}, {"second", 15}})},
                   Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
   }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 10},
+                        {"microsecond", 15}})},
+                  Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 10015))));
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 999}})},
+                  Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 999999))));
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 1000},
+                        {"microsecond", 999}})},
+                  Value::kNullBadData);
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 1000}})},
+                  Value::kNullBadData);
+  }
   // range [(0, 0, 0, 0), (23, 59, 59, 999999)]
   {
     TEST_FUNCTION(time,
@@ -566,8 +615,46 @@ TEST_F(FunctionManagerTest, functionCall) {
                         {"day", 15},
                         {"hour", 20},
                         {"minute", 9},
-                        {"second", 15}})},
-                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+                        {"second", 15},
+                        {"millisecond", 10},
+                        {"microsecond", 15}})},
+                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 10015))));
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 999}})},
+                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 999999))));
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 1000},
+                        {"microsecond", 999}})},
+                  Value::kNullBadData);
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 1000}})},
+                  Value::kNullBadData);
   }
   {
     TEST_FUNCTION(datetime,
@@ -839,7 +926,17 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
+    auto result = FunctionManager::getReturnType("round", {Value::Type::INT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
     auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT, Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
@@ -1393,7 +1490,7 @@ TEST_F(FunctionManagerTest, returnType) {
   }
 }
 
-TEST_F(FunctionManagerTest, SchemaReleated) {
+TEST_F(FunctionManagerTest, SchemaRelated) {
   Vertex vertex;
   Edge edge;
 
@@ -1551,26 +1648,29 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
     TEST_FUNCTION(last, args_["nullvalue"], Value::kNullValue);
     TEST_FUNCTION(coalesce, args_["nullvalue"], Value::kNullValue);
 
+    TEST_FUNCTION(coalesce, args_["range1"], 1);
+    TEST_FUNCTION(coalesce, args_["float"], 1.1);
+
     std::vector<Value> args;
     List list;
     list.values.emplace_back(Value::kNullValue);
-    args.push_back(list);
+    args.emplace_back(list);
 
     TEST_FUNCTION(head, args, Value::kNullValue);
     TEST_FUNCTION(last, args, Value::kNullValue);
-    TEST_FUNCTION(coalesce, args, Value::kNullValue);
+    TEST_FUNCTION(coalesce, args, list);
 
     list.values.insert(list.values.begin(), "head");
     args[0] = list;
     TEST_FUNCTION(head, args, "head");
     TEST_FUNCTION(last, args, Value::kNullValue);
-    TEST_FUNCTION(coalesce, args, "head");
+    TEST_FUNCTION(coalesce, args, list);
 
     list.values.emplace_back("last");
     args[0] = list;
     TEST_FUNCTION(head, args, "head")
     TEST_FUNCTION(last, args, "last");
-    TEST_FUNCTION(coalesce, args, "head");
+    TEST_FUNCTION(coalesce, args, list);
   }
   {
     // length(null) return null

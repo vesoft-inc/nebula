@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/UpdateVertexProcessor.h"
@@ -50,7 +49,8 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     onFinished();
     return;
   }
-  planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
   context_ = std::make_unique<RuntimeContext>(planContext_.get());
 
   retCode = checkAndBuildContexts(req);
@@ -81,6 +81,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
       onProcessFinished();
     }
   } else {
+    profilePlan(plan);
     onProcessFinished();
   }
   onFinished();
@@ -270,7 +271,9 @@ nebula::cpp2::ErrorCode UpdateVertexProcessor::buildTagContext(
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void UpdateVertexProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void UpdateVertexProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

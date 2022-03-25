@@ -330,42 +330,42 @@ Feature: Yield Sentence
       """
       YIELD 9223372036854775807+1
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807-2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807+-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807+-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807+-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*2
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807*2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807*-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 1/0
       """
-    Then a ExecutionError should be raised at runtime: / by zero
+    Then a SemanticError should be raised at runtime: Divide by 0
     When executing query:
       """
       YIELD 2%0
       """
-    Then a ExecutionError should be raised at runtime: / by zero
+    Then a SemanticError should be raised at runtime: Divide by 0
     When executing query:
       """
       YIELD -9223372036854775808
@@ -377,7 +377,7 @@ Feature: Yield Sentence
       """
       YIELD --9223372036854775808
       """
-    Then a ExecutionError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775809
@@ -420,14 +420,14 @@ Feature: Yield Sentence
       | 34.666666666666664 | 270          | 3        | 2     |
     When executing query:
       """
-      GO FROM "Carmelo Anthony" OVER like | YIELD COUNT(*)
+      GO FROM "Carmelo Anthony" OVER like YIELD like._dst| YIELD COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
       | 3        |
     When executing query:
       """
-      GO FROM "Carmelo Anthony" OVER like | YIELD 1
+      GO FROM "Carmelo Anthony" OVER like YIELD edge as e| YIELD 1
       """
     Then the result should be, in any order, with relax comparison:
       | 1 |
@@ -436,7 +436,7 @@ Feature: Yield Sentence
       | 1 |
     When executing query:
       """
-      GO FROM "Nobody" OVER like | YIELD 1
+      GO FROM "Nobody" OVER like YIELD like._dst| YIELD 1
       """
     Then the result should be, in any order, with relax comparison:
       | 1 |
@@ -467,6 +467,16 @@ Feature: Yield Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | name |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst as id, $$ as dst | YIELD $-.dst where count($-.id) > 2
+      """
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($-.id) > 2'
+    When executing query:
+      """
+      $var = go from "Tim Duncan" over like yield like._dst as id, $$ as dst; yield $var.dst where count($var.id) > 2
+      """
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in where clause. near `count($var.id) > 2'
 
   Scenario: DuplicateColumn
     When executing query:

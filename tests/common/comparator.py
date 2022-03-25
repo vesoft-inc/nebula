@@ -1,14 +1,13 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import math
 import re
 
 from enum import Enum
 from typing import Union, Dict, List
-from nebula2.common.ttypes import (
+from nebula3.common.ttypes import (
     DataSet,
     Edge,
     Path,
@@ -29,11 +28,13 @@ class DataSetComparator:
                  strict=True,
                  order=False,
                  contains=CmpType.EQUAL,
+                 first_n_records=-1,
                  decode_type='utf-8',
                  vid_fn=None):
         self._strict = strict
         self._order = order
         self._contains = contains
+        self._first_n_records=first_n_records
         self._decode_type = decode_type
         self._vid_fn = vid_fn
 
@@ -48,6 +49,7 @@ class DataSetComparator:
 
     def _whether_return(self, cmp: bool) -> bool:
         return ((self._contains == CmpType.EQUAL and not cmp)
+                or (self._contains == CmpType.CONTAINS and not cmp)
                 or (self._contains == CmpType.NOT_CONTAINS and cmp))
 
     def compare(self, resp: DataSet, expect: DataSet):
@@ -65,13 +67,16 @@ class DataSetComparator:
             if ln != self.bstr(rn):
                 return False, -2
         if self._order:
-            for i in range(0, len(expect.rows)):
-                cmp = self.compare_row(resp.rows[i], expect.rows[i])
-                if self._whether_return(cmp):
-                    return False, i
-            if self._contains == CmpType.CONTAINS:
+            if self._contains == CmpType.CONTAINS and self._first_n_records < 0:
+                for i in range(0, len(expect.rows)):
+                    cmp = self.compare_row(resp.rows[i], expect.rows[i])
+                    if self._whether_return(cmp):
+                        return False, i
                 return True, None
-            return len(resp.rows) == len(expect.rows), -1
+            elif self._contains == CmpType.CONTAINS and self._first_n_records > 0:
+                return self._compare_list(resp.rows[0:self._first_n_records], expect.rows, self.compare_row)
+            else:
+                return len(resp.rows) == len(expect.rows), -1
         return self._compare_list(resp.rows, expect.rows, self.compare_row,
                                   self._contains)
 

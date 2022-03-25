@@ -1,10 +1,10 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef CODEC_INCLUDE_NEBULACODEC_H
+#define CODEC_INCLUDE_NEBULACODEC_H
 
 #include "common/base/StatusOr.h"
 #include "common/meta/SchemaProviderIf.h"
@@ -13,7 +13,7 @@ namespace nebula {
 
 class NebulaCodec {
  public:
-  typedef boost::any Value;
+  using Value = std::any;
 
   virtual ~NebulaCodec() = default;
 
@@ -25,3 +25,4 @@ class NebulaCodec {
 };
 
 }  // namespace nebula
+#endif

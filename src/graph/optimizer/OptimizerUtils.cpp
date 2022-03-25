@@ -1,563 +1,23 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/OptimizerUtils.h"
 
-#include <algorithm>
-#include <iterator>
-#include <memory>
-#include <unordered_set>
-
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/PropertyExpression.h"
-#include "common/expression/RelationalExpression.h"
 #include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::meta::cpp2::ColumnDef;
 using nebula::meta::cpp2::IndexItem;
 using nebula::storage::cpp2::IndexColumnHint;
 using nebula::storage::cpp2::IndexQueryContext;
 
-using BVO = nebula::graph::OptimizerUtils::BoundValueOperator;
 using ExprKind = nebula::Expression::Kind;
 
 namespace nebula {
 namespace graph {
-
-Value OptimizerUtils::boundValue(const meta::cpp2::ColumnDef& col,
-                                 BoundValueOperator op,
-                                 const Value& v) {
-  switch (op) {
-    case BoundValueOperator::GREATER_THAN: {
-      return boundValueWithGT(col, v);
-    }
-    case BoundValueOperator::LESS_THAN: {
-      return boundValueWithLT(col, v);
-    }
-    case BoundValueOperator::MAX: {
-      return boundValueWithMax(col);
-    }
-    case BoundValueOperator::MIN: {
-      return boundValueWithMin(col);
-    }
-  }
-  return Value::kNullBadType;
-}
-
-Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const Value& v) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT: {
-      if (v.getInt() == std::numeric_limits<int64_t>::max()) {
-        return v;
-      } else {
-        return v + 1;
-      }
-    }
-    case Value::Type::FLOAT: {
-      if (v.getFloat() > 0.0) {
-        if (v.getFloat() == std::numeric_limits<double_t>::max()) {
-          return v;
-        }
-      } else if (v.getFloat() == 0.0) {
-        return Value(std::numeric_limits<double_t>::min());
-      } else {
-        if (v.getFloat() == -std::numeric_limits<double_t>::min()) {
-          return Value(0.0);
-        }
-      }
-      return v.getFloat() + kEpsilon;
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-      bytes.resize(*col.get_type().type_length_ref());
-      for (size_t i = bytes.size();; i--) {
-        if (i > 0) {
-          if (bytes[i - 1]++ != 255) break;
-        } else {
-          return Value(std::string(*col.get_type().type_length_ref(), '\377'));
-        }
-      }
-      return Value(std::string(bytes.begin(), bytes.end()));
-    }
-    case Value::Type::DATE: {
-      if (Date(std::numeric_limits<int16_t>::max(), 12, 31) == v.getDate()) {
-        return v.getDate();
-      } else if (Date() == v.getDate()) {
-        return Date(0, 1, 2);
-      }
-      auto d = v.getDate();
-      if (d.day < 31) {
-        d.day += 1;
-      } else {
-        d.day = 1;
-        if (d.month < 12) {
-          d.month += 1;
-        } else {
-          d.month = 1;
-          if (d.year < std::numeric_limits<int16_t>::max()) {
-            d.year += 1;
-          } else {
-            return v.getDate();
-          }
-        }
-      }
-      return Value(d);
-    }
-    case Value::Type::TIME: {
-      auto t = v.getTime();
-      // Ignore the time zone.
-      if (t.microsec < 999999) {
-        t.microsec = t.microsec + 1;
-      } else {
-        t.microsec = 0;
-        if (t.sec < 59) {
-          t.sec += 1;
-        } else {
-          t.sec = 0;
-          if (t.minute < 59) {
-            t.minute += 1;
-          } else {
-            t.minute = 0;
-            if (t.hour < 23) {
-              t.hour += 1;
-            } else {
-              return v.getTime();
-            }
-          }
-        }
-      }
-      return Value(t);
-    }
-    case Value::Type::DATETIME: {
-      auto dt = v.getDateTime();
-      // Ignore the time zone.
-      if (dt.microsec < 999999) {
-        dt.microsec = dt.microsec + 1;
-      } else {
-        dt.microsec = 0;
-        if (dt.sec < 59) {
-          dt.sec += 1;
-        } else {
-          dt.sec = 0;
-          if (dt.minute < 59) {
-            dt.minute += 1;
-          } else {
-            dt.minute = 0;
-            if (dt.hour < 23) {
-              dt.hour += 1;
-            } else {
-              dt.hour = 0;
-              if (dt.day < 31) {
-                dt.day += 1;
-              } else {
-                dt.day = 1;
-                if (dt.month < 12) {
-                  dt.month += 1;
-                } else {
-                  dt.month = 1;
-                  if (dt.year < std::numeric_limits<int16_t>::max()) {
-                    dt.year += 1;
-                  } else {
-                    return v.getDateTime();
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      return Value(dt);
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::BOOL:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
-  }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
-}
-
-Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const Value& v) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT: {
-      if (v.getInt() == std::numeric_limits<int64_t>::min()) {
-        return v;
-      } else {
-        return v - 1;
-      }
-    }
-    case Value::Type::FLOAT: {
-      if (v.getFloat() < 0.0) {
-        if (v.getFloat() == -std::numeric_limits<double_t>::max()) {
-          return v;
-        } else if (v.getFloat() == -std::numeric_limits<double_t>::min()) {
-          return Value(0.0);
-        }
-      } else if (v.getFloat() == 0.0) {
-        return Value(-std::numeric_limits<double_t>::min());
-      }
-      return v.getFloat() - kEpsilon;
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-      bytes.resize(*col.get_type().type_length_ref());
-      for (size_t i = bytes.size();; i--) {
-        if (i > 0) {
-          if (bytes[i - 1]-- != 0) break;
-        } else {
-          return Value(std::string(*col.get_type().type_length_ref(), '\0'));
-        }
-      }
-      return Value(std::string(bytes.begin(), bytes.end()));
-    }
-    case Value::Type::DATE: {
-      if (Date() == v.getDate()) {
-        return v.getDate();
-      }
-      auto d = v.getDate();
-      if (d.day > 1) {
-        d.day -= 1;
-      } else {
-        d.day = 31;
-        if (d.month > 1) {
-          d.month -= 1;
-        } else {
-          d.month = 12;
-          if (d.year > 1) {
-            d.year -= 1;
-          } else {
-            return v.getDate();
-          }
-        }
-      }
-      return Value(d);
-    }
-    case Value::Type::TIME: {
-      if (Time() == v.getTime()) {
-        return v.getTime();
-      }
-      auto t = v.getTime();
-      if (t.microsec >= 1) {
-        t.microsec -= 1;
-      } else {
-        t.microsec = 999999;
-        if (t.sec >= 1) {
-          t.sec -= 1;
-        } else {
-          t.sec = 59;
-          if (t.minute >= 1) {
-            t.minute -= 1;
-          } else {
-            t.minute = 59;
-            if (t.hour >= 1) {
-              t.hour -= 1;
-            } else {
-              return v.getTime();
-            }
-          }
-        }
-      }
-      return Value(t);
-    }
-    case Value::Type::DATETIME: {
-      if (DateTime() == v.getDateTime()) {
-        return v.getDateTime();
-      }
-      auto dt = v.getDateTime();
-      if (dt.microsec >= 1) {
-        dt.microsec -= 1;
-      } else {
-        dt.microsec = 999999;
-        if (dt.sec >= 1) {
-          dt.sec -= 1;
-        } else {
-          dt.sec = 59;
-          if (dt.minute >= 1) {
-            dt.minute -= 1;
-          } else {
-            dt.minute = 59;
-            if (dt.hour >= 1) {
-              dt.hour -= 1;
-            } else {
-              dt.hour = 23;
-              if (dt.day > 1) {
-                dt.day -= 1;
-              } else {
-                dt.day = 31;
-                if (dt.month > 1) {
-                  dt.month -= 1;
-                } else {
-                  dt.month = 12;
-                  if (dt.year > 1) {
-                    dt.year -= 1;
-                  } else {
-                    return v.getDateTime();
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      return Value(dt);
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::BOOL:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
-  }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
-}
-
-Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT: {
-      return Value(std::numeric_limits<int64_t>::max());
-    }
-    case Value::Type::FLOAT: {
-      return Value(std::numeric_limits<double>::max());
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      return Value(std::string(*col.get_type().type_length_ref(), '\377'));
-    }
-    case Value::Type::DATE: {
-      Date d;
-      d.year = std::numeric_limits<int16_t>::max();
-      d.month = 12;
-      d.day = 31;
-      return Value(d);
-    }
-    case Value::Type::TIME: {
-      Time dt;
-      dt.hour = 23;
-      dt.minute = 59;
-      dt.sec = 59;
-      dt.microsec = 999999;
-      return Value(dt);
-    }
-    case Value::Type::DATETIME: {
-      DateTime dt;
-      dt.year = std::numeric_limits<int16_t>::max();
-      dt.month = 12;
-      dt.day = 31;
-      dt.hour = 23;
-      dt.minute = 59;
-      dt.sec = 59;
-      dt.microsec = 999999;
-      return Value(dt);
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::BOOL:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
-  }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
-}
-
-Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT: {
-      return Value(std::numeric_limits<int64_t>::min());
-    }
-    case Value::Type::FLOAT: {
-      return Value(-std::numeric_limits<double>::max());
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      return Value(std::string(*col.get_type().type_length_ref(), '\0'));
-    }
-    case Value::Type::DATE: {
-      return Value(Date());
-    }
-    case Value::Type::TIME: {
-      return Value(Time());
-    }
-    case Value::Type::DATETIME: {
-      return Value(DateTime());
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::BOOL:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
-  }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
-}
-
-Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Value& v) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT:
-    case Value::Type::FLOAT:
-    case Value::Type::BOOL:
-    case Value::Type::DATE:
-    case Value::Type::TIME:
-    case Value::Type::DATETIME: {
-      return v;
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      if (!v.isStr()) {
-        return v;
-      }
-      auto len = static_cast<size_t>(*col.get_type().get_type_length());
-      if (v.getStr().size() > len) {
-        return Value(v.getStr().substr(0, len));
-      } else {
-        std::string s;
-        s.reserve(len);
-        s.append(v.getStr()).append(len - v.getStr().size(), '\0');
-        return Value(std::move(s));
-      }
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
-  }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
-}
-
-Status OptimizerUtils::boundValue(Expression::Kind kind,
-                                  const Value& val,
-                                  const meta::cpp2::ColumnDef& col,
-                                  Value& begin,
-                                  Value& end) {
-  if (val.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
-    return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
-  }
-  switch (kind) {
-    case Expression::Kind::kRelLE: {
-      // if c1 <= int(5) , the range pair should be (min, 6)
-      // if c1 < int(5), the range pair should be (min, 5)
-      auto v = OptimizerUtils::boundValue(col, BoundValueOperator::GREATER_THAN, val);
-      if (v == Value::kNullBadType) {
-        LOG(ERROR) << "Get bound value error. field : " << col.get_name();
-        return Status::Error("Get bound value error. field : %s", col.get_name().c_str());
-      }
-      // where c <= 1 and c <= 2 , 1 should be valid.
-      if (end.empty()) {
-        end = v;
-      } else {
-        end = v < end ? v : end;
-      }
-      break;
-    }
-    case Expression::Kind::kRelGE: {
-      // where c >= 1 and c >= 2 , 2 should be valid.
-      if (begin.empty()) {
-        begin = val;
-      } else {
-        begin = val < begin ? begin : val;
-      }
-      break;
-    }
-    case Expression::Kind::kRelLT: {
-      // c < 5 and c < 6 , 5 should be valid.
-      if (end.empty()) {
-        end = val;
-      } else {
-        end = val < end ? val : end;
-      }
-      break;
-    }
-    case Expression::Kind::kRelGT: {
-      // if c >= 5, the range pair should be (5, max)
-      // if c > 5, the range pair should be (6, max)
-      auto v = OptimizerUtils::boundValue(col, BoundValueOperator::GREATER_THAN, val);
-      if (v == Value::kNullBadType) {
-        LOG(ERROR) << "Get bound value error. field : " << col.get_name();
-        return Status::Error("Get bound value error. field : %s", col.get_name().c_str());
-      }
-      // where c > 1 and c > 2 , 2 should be valid.
-      if (begin.empty()) {
-        begin = v;
-      } else {
-        begin = v < begin ? begin : v;
-      }
-      break;
-    }
-    default: {
-      // TODO(yee): Semantic error
-      return Status::Error("Invalid expression kind.");
-    }
-  }
-  return Status::OK();
-}
-
 namespace {
 
 // IndexScore is used to find the optimal index. The larger the score, the
@@ -596,38 +56,41 @@ struct IndexResult {
   }
 };
 
-Status checkValue(const ColumnDef& field, BVO bvo, Value* value) {
-  if (value->empty()) {
-    *value = OptimizerUtils::boundValue(field, bvo, Value());
-    if (value->isBadNull()) {
-      return Status::Error("Get bound value error. field : %s", field.get_name().c_str());
-    }
-  }
-  return Status::OK();
-}
-
 Status handleRangeIndex(const meta::cpp2::ColumnDef& field,
                         const Expression* expr,
                         const Value& value,
                         IndexColumnHint* hint) {
-  if (field.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+  if (field.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
     return Status::Error("Range scan for bool type is illegal");
   }
-  Value begin, end;
-  NG_RETURN_IF_ERROR(OptimizerUtils::boundValue(expr->kind(), value, field, begin, end));
-  NG_RETURN_IF_ERROR(checkValue(field, BVO::MIN, &begin));
-  NG_RETURN_IF_ERROR(checkValue(field, BVO::MAX, &end));
-  hint->set_begin_value(std::move(begin));
-  hint->set_end_value(std::move(end));
-  hint->set_scan_type(storage::cpp2::ScanType::RANGE);
-  hint->set_column_name(field.get_name());
+  bool include = false;
+  switch (expr->kind()) {
+    case Expression::Kind::kRelGE:
+      include = true;
+      [[fallthrough]];
+    case Expression::Kind::kRelGT:
+      hint->begin_value_ref() = value;
+      hint->include_begin_ref() = include;
+      break;
+    case Expression::Kind::kRelLE:
+      include = true;
+      [[fallthrough]];
+    case Expression::Kind::kRelLT:
+      hint->end_value_ref() = value;
+      hint->include_end_ref() = include;
+      break;
+    default:
+      break;
+  }
+  hint->scan_type_ref() = storage::cpp2::ScanType::RANGE;
+  hint->column_name_ref() = field.get_name();
   return Status::OK();
 }
 
 void handleEqualIndex(const ColumnDef& field, const Value& value, IndexColumnHint* hint) {
-  hint->set_scan_type(storage::cpp2::ScanType::PREFIX);
-  hint->set_column_name(field.get_name());
-  hint->set_begin_value(OptimizerUtils::normalizeValue(field, value));
+  hint->scan_type_ref() = storage::cpp2::ScanType::PREFIX;
+  hint->column_name_ref() = field.get_name();
+  hint->begin_value_ref() = value;
 }
 
 StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
@@ -642,7 +105,12 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
   }
 
   auto right = expr->right();
-  DCHECK(right->kind() == Expression::Kind::kConstant);
+  if (expr->kind() == Expression::Kind::kRelIn) {  // container expressions
+    DCHECK(right->isContainerExpr());
+  } else {  // other expressions
+    DCHECK(right->kind() == Expression::Kind::kConstant);
+  }
+
   const auto& value = static_cast<const ConstantExpression*>(right)->value();
 
   ScoredColumnHint hint;
@@ -684,40 +152,42 @@ StatusOr<IndexResult> selectRelExprIndex(const RelationalExpression* expr, const
   return result;
 }
 
-bool mergeRangeColumnHints(const ColumnDef& field,
-                           const std::vector<ScoredColumnHint>& hints,
-                           Value* begin,
-                           Value* end) {
+bool mergeRangeColumnHints(const std::vector<ScoredColumnHint>& hints,
+                           std::pair<Value, bool>* begin,
+                           std::pair<Value, bool>* end) {
   for (auto& h : hints) {
     switch (h.score) {
       case IndexScore::kRange: {
         if (h.hint.begin_value_ref().is_set()) {
-          const auto& value = h.hint.get_begin_value();
-          if (begin->empty() || *begin < value) {
-            *begin = value;
+          auto tmp = std::make_pair(h.hint.get_begin_value(), h.hint.get_include_begin());
+          if (begin->first.empty()) {
+            *begin = std::move(tmp);
+          } else {
+            OptimizerUtils::compareAndSwapBound(tmp, *begin);
           }
         }
         if (h.hint.end_value_ref().is_set()) {
-          const auto& value = h.hint.get_end_value();
-          if (end->empty() || *end > value) {
-            *end = value;
+          auto tmp = std::make_pair(h.hint.get_end_value(), h.hint.get_include_end());
+          if (end->first.empty()) {
+            *end = std::move(tmp);
+          } else {
+            OptimizerUtils::compareAndSwapBound(*end, tmp);
           }
         }
         break;
       }
       case IndexScore::kPrefix: {
-        // Prefix value <=> range [value, value]
-        const auto& value = h.hint.get_begin_value();
-        Value b, e;
-        auto status = OptimizerUtils::boundValue(ExprKind::kRelGE, value, field, b, e);
-        if (!status.ok()) return false;
-        if (begin->empty() || *begin < b) {
-          *begin = b;
+        auto tmp = std::make_pair(h.hint.get_begin_value(), true);
+        if (begin->first.empty()) {
+          *begin = tmp;
+        } else {
+          OptimizerUtils::compareAndSwapBound(tmp, *begin);
         }
-        status = OptimizerUtils::boundValue(ExprKind::kRelLE, value, field, b, e);
-        if (!status.ok()) return false;
-        if (end->empty() || *end > e) {
-          *end = e;
+        tmp = std::make_pair(h.hint.get_begin_value(), true);
+        if (end->first.empty()) {
+          *end = std::move(tmp);
+        } else {
+          OptimizerUtils::compareAndSwapBound(*end, tmp);
         }
         break;
       }
@@ -726,7 +196,15 @@ bool mergeRangeColumnHints(const ColumnDef& field,
       }
     }
   }
-  return !(*begin >= *end);
+  bool ret = true;
+  if (begin->first > end->first) {
+    ret = false;
+  } else if (begin->first == end->first) {
+    if (!(begin->second && end->second)) {
+      ret = false;
+    }
+  }
+  return ret;
 }
 
 bool getIndexColumnHintInExpr(const ColumnDef& field,
@@ -750,34 +228,33 @@ bool getIndexColumnHintInExpr(const ColumnDef& field,
     *hint = hints.front();
     return true;
   }
-  Value begin, end;
-  if (!mergeRangeColumnHints(field, hints, &begin, &end)) {
+  std::pair<Value, bool> begin, end;
+  if (!mergeRangeColumnHints(hints, &begin, &end)) {
     return false;
   }
   ScoredColumnHint h;
-  h.hint.set_column_name(field.get_name());
-  // Change scan type to prefix if begin + 1 == end
-  Value newBegin, newEnd;
-  auto status = OptimizerUtils::boundValue(ExprKind::kRelGT, begin, field, newBegin, newEnd);
-  if (!status.ok()) {
-    // TODO(yee): differentiate between empty set and invalid index to use
-    return false;
-  }
-  if (newBegin < end) {
-    // end > newBegin > begin
-    h.hint.set_scan_type(storage::cpp2::ScanType::RANGE);
-    h.hint.set_begin_value(std::move(begin));
-    h.hint.set_end_value(std::move(end));
+  h.hint.column_name_ref() = field.get_name();
+  if (begin.first < end.first) {
+    h.hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
+    h.hint.begin_value_ref() = std::move(begin.first);
+    h.hint.end_value_ref() = std::move(end.first);
+    h.hint.include_begin_ref() = begin.second;
+    h.hint.include_end_ref() = end.second;
     h.score = IndexScore::kRange;
-  } else if (newBegin == end) {
-    // end == neBegin == begin + 1
-    h.hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
-    h.hint.set_begin_value(std::move(begin));
-    h.score = IndexScore::kPrefix;
+  } else if (begin.first == end.first) {
+    if (begin.second == false && end.second == false) {
+      return false;
+    } else {
+      h.hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
+      h.hint.begin_value_ref() = std::move(begin.first);
+      h.hint.end_value_ref() = std::move(end.first);
+      h.hint.include_begin_ref() = begin.second;
+      h.hint.include_end_ref() = end.second;
+      h.score = IndexScore::kRange;
+    }
   } else {
     return false;
   }
-
   *hint = std::move(h);
   return true;
 }
@@ -905,15 +382,42 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
   }
   // The filter can always be pushed down for lookup query
   if (iter != index.hints.end() || !index.unusedExprs.empty()) {
-    ictx->set_filter(condition->encode());
+    ictx->filter_ref() = condition->encode();
   }
-  ictx->set_index_id(index.index->get_index_id());
-  ictx->set_column_hints(std::move(hints));
+  ictx->index_id_ref() = index.index->get_index_id();
+  ictx->column_hints_ref() = std::move(hints);
   return true;
 }
 
+// Check if the relational expression has a valid index
+// The left operand should either be a kEdgeProperty or kTagProperty expr
+bool OptimizerUtils::relExprHasIndex(
+    const Expression* expr,
+    const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems) {
+  DCHECK(expr->isRelExpr());
+
+  for (auto& index : indexItems) {
+    const auto& fields = index->get_fields();
+    if (fields.empty()) {
+      return false;
+    }
+
+    auto left = static_cast<const RelationalExpression*>(expr)->left();
+    DCHECK(left->kind() == Expression::Kind::kEdgeProperty ||
+           left->kind() == Expression::Kind::kTagProperty);
+
+    auto propExpr = static_cast<const PropertyExpression*>(left);
+    if (propExpr->prop() == fields[0].get_name()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
-                                       nebula::graph::IndexScan* to) {
+                                       nebula::graph::IndexScan* to,
+                                       QueryContext* qctx) {
   to->setEmptyResultSet(from->isEmptyResultSet());
   to->setSpace(from->space());
   to->setReturnCols(from->returnColumns());
@@ -921,8 +425,19 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setSchemaId(from->schemaId());
   to->setDedup(from->dedup());
   to->setOrderBy(from->orderBy());
-  to->setLimit(from->limit());
-  to->setFilter(from->filter());
+  to->setLimit(from->limit(qctx));
+  to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
+  to->setYieldColumns(from->yieldColumns());
+}
+
+Status OptimizerUtils::compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b) {
+  if (a.first > b.first) {
+    std::swap(a, b);
+  } else if (a.first < b.first) {  // do nothing
+  } else if (a.second > b.second) {
+    std::swap(a, b);
+  }
+  return Status::OK();
 }
 
 }  // namespace graph

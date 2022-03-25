@@ -1,18 +1,26 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
+  <img src="https://nebula-website-cn.oss-cn-hangzhou.aliyuncs.com/nebula-website/images/nebulagraph-logo.png"/>
   <br>中文 | <a href="README.md">English</a>
   <br>世界上唯一能够容纳千亿个顶点和万亿条边，并提供毫秒级查询延时的图数据库解决方案<br>
 </p>
 
 <p align="center">
-  <a href="https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg"><img src="https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen" alt="WeiXin"></a>
-  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu"></a>
-  <a href="https://segmentfault.com/t/nebula"><img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault"></a>
-  <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo"></a>
-  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg">
+    <img src="https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen" alt="WeiXin">
+  </a>
+  <a href="https://www.zhihu.com/org/nebulagraph/activities">
+    <img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu">
+  </a>
+  <a href="https://segmentfault.com/t/nebula">
+    <img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault">
+  </a>
+  <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place">
+    <img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo">
+  </a>
+  <a href="https://github.com/vesoft-inc/nebula/stargazers">
     <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
   </a>
-  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/network/members">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
 </p>
@@ -34,7 +42,9 @@
 
 ## 发布通告
 
-Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，更多新特性正在开发中。欢迎加入我们，一同开发Nebula Graph 2.0。
+v1.x和v2.5.x之后的版本，Nebula Graph在这个repo管理。如需获取v2.0.0到v2.5.x之间的版本，请访问[Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph)。
+
+Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。Nebula Graph内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
 
 <!--
 如需使用稳定版本，请参见[Nebula Graph 1.0](https://github.com/vesoft-inc/nebula)。
@@ -62,7 +72,7 @@ Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，�
 
 ## 文档
 
-* 简体中文(TODO)
+* [简体中文](https://docs.nebula-graph.com.cn/)
 * [English](https://docs.nebula-graph.io/)
 
 ## Nebula Graph 产品架构图
@@ -80,11 +90,9 @@ Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，�
 
 **Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的 SaaS 部署。
 
-为防止云供应商从项目赢利而不回馈，**Nebula Graph** 在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，**Nebula Graph** 是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 **Nebula Graph** 社区更好地发展。
-
 ## 联系方式
 
-* 访问[官网](http://nebula-graph.com/)
+* 访问[官网](http://nebula-graph.com.cn/)
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
 * [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)

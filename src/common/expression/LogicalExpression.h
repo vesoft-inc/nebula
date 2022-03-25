@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_LOGICALEXPRESSION_H_
@@ -61,27 +60,51 @@ class LogicalExpression final : public Expression {
 
   bool operator==(const Expression& rhs) const override;
 
-  auto& operands() { return operands_; }
+  auto& operands() {
+    return operands_;
+  }
 
-  const auto& operands() const { return operands_; }
+  const auto& operands() const {
+    return operands_;
+  }
 
-  auto* operand(size_t index) { return operands_[index]; }
+  auto* operand(size_t index) {
+    return operands_[index];
+  }
 
-  const auto* operand(size_t index) const { return operands_[index]; }
+  const auto* operand(size_t index) const {
+    return operands_[index];
+  }
 
-  void addOperand(Expression* expr) { operands_.emplace_back(expr); }
+  void addOperand(Expression* expr) {
+    operands_.emplace_back(expr);
+  }
 
   void setOperand(size_t i, Expression* operand) {
     DCHECK_LT(i, operands_.size());
     operands_[i] = operand;
   }
 
-  void setOperands(std::vector<Expression*> operands) { operands_ = operands; }
+  void setOperands(std::vector<Expression*> operands) {
+    operands_ = operands;
+  }
 
-  bool isLogicalExpr() const override { return true; }
+  bool isLogicalExpr() const override {
+    return true;
+  }
+
+  void reverseLogicalKind() {
+    if (kind_ == Kind::kLogicalAnd) {
+      kind_ = Kind::kLogicalOr;
+    } else if (kind_ == Kind::kLogicalOr) {
+      kind_ = Kind::kLogicalAnd;
+    } else {
+      LOG(FATAL) << "Should not reverse logical expression except and/or kind.";
+    }
+  }
 
  private:
-  explicit LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
+  LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
 
   LogicalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : Expression(pool, kind) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef PARSER_MATCHSENTENCE_H_
@@ -9,225 +8,63 @@
 
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/SubscriptExpression.h"
-#include "parser/Clauses.h"
+#include "parser/MatchPath.h"
 #include "parser/Sentence.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
 
-class MatchEdgeTypeList final {
+class MatchPathList final {
  public:
-  MatchEdgeTypeList() = default;
+  explicit MatchPathList(MatchPath* path);
 
-  void add(std::string* item) { items_.emplace_back(item); }
+  void add(MatchPath* path);
 
-  auto items() && { return std::move(items_); }
-
- private:
-  std::vector<std::unique_ptr<std::string>> items_;
-};
-
-class MatchStepRange final {
- public:
-  explicit MatchStepRange(int64_t min, int64_t max = std::numeric_limits<int64_t>::max()) {
-    min_ = min;
-    max_ = max;
+  size_t pathSize() const {
+    return pathList_.size();
   }
 
-  auto min() const { return min_; }
-
-  auto max() const { return max_; }
-
- private:
-  int64_t min_{1};
-  int64_t max_{1};
-};
-
-class MatchEdgeProp final {
- public:
-  MatchEdgeProp(const std::string& alias,
-                MatchEdgeTypeList* types,
-                MatchStepRange* range,
-                Expression* props = nullptr) {
-    alias_ = alias;
-    range_.reset(range);
-    props_ = static_cast<MapExpression*>(props);
-    if (types != nullptr) {
-      types_ = std::move(*types).items();
-      delete types;
-    }
+  const MatchPath* path(size_t i) const {
+    return pathList_[i].get();
   }
-
-  auto get() && {
-    return std::make_tuple(
-        std::move(alias_), std::move(types_), std::move(range_), std::move(props_));
-  }
-
- private:
-  std::string alias_;
-  std::vector<std::unique_ptr<std::string>> types_;
-  MapExpression* props_{nullptr};
-  std::unique_ptr<MatchStepRange> range_;
-};
-
-class MatchEdge final {
- public:
-  using Direction = nebula::storage::cpp2::EdgeDirection;
-  MatchEdge(MatchEdgeProp* prop, Direction direction) {
-    if (prop != nullptr) {
-      auto tuple = std::move(*prop).get();
-      alias_ = std::move(std::get<0>(tuple));
-      types_ = std::move(std::get<1>(tuple));
-      range_ = std::move(std::get<2>(tuple));
-      props_ = std::move(std::get<3>(tuple));
-      delete prop;
-    }
-    direction_ = direction;
-  }
-
-  auto direction() const { return direction_; }
-
-  const std::string& alias() const { return alias_; }
-
-  auto& types() const { return types_; }
-
-  const MapExpression* props() const { return props_; }
-
-  auto* range() const { return range_.get(); }
 
   std::string toString() const;
 
  private:
-  Direction direction_;
-  std::string alias_;
-  std::vector<std::unique_ptr<std::string>> types_;
-  std::unique_ptr<MatchStepRange> range_;
-  MapExpression* props_{nullptr};
-};
-
-class MatchNodeLabel final {
- public:
-  explicit MatchNodeLabel(std::string* label, Expression* props = nullptr)
-      : label_(label), props_(static_cast<MapExpression*>(props)) {
-    DCHECK(props == nullptr || props->kind() == Expression::Kind::kMap);
-  }
-
-  const std::string* label() const { return label_.get(); }
-
-  const MapExpression* props() const { return props_; }
-
-  MapExpression* props() { return props_; }
-
-  std::string toString() const {
-    std::stringstream ss;
-    ss << ":" << *label_;
-    if (props_ != nullptr) {
-      ss << props_->toString();
-    }
-    return ss.str();
-  }
-
- private:
-  std::unique_ptr<std::string> label_;
-  MapExpression* props_{nullptr};
-};
-
-class MatchNodeLabelList final {
- public:
-  void add(MatchNodeLabel* label) { labels_.emplace_back(label); }
-
-  const auto& labels() const { return labels_; }
-
-  std::string toString() const {
-    std::stringstream ss;
-    for (const auto& label : labels_) {
-      ss << label->toString();
-    }
-    return ss.str();
-  }
-
- private:
-  std::vector<std::unique_ptr<MatchNodeLabel>> labels_;
-};
-
-class MatchNode final {
- public:
-  MatchNode(const std::string& alias, MatchNodeLabelList* labels, Expression* props = nullptr) {
-    alias_ = alias;
-    labels_.reset(labels);
-    props_ = static_cast<MapExpression*>(props);
-  }
-
-  const std::string& alias() const { return alias_; }
-
-  const auto* labels() const { return labels_.get(); }
-
-  const MapExpression* props() const { return props_; }
-
-  std::string toString() const;
-
- private:
-  std::string alias_;
-  std::unique_ptr<MatchNodeLabelList> labels_;
-  MapExpression* props_{nullptr};
-};
-
-class MatchPath final {
- public:
-  explicit MatchPath(MatchNode* node) { nodes_.emplace_back(node); }
-
-  void add(MatchEdge* edge, MatchNode* node) {
-    edges_.emplace_back(edge);
-    nodes_.emplace_back(node);
-  }
-
-  void setAlias(std::string* alias) { alias_.reset(alias); }
-
-  const std::string* alias() const { return alias_.get(); }
-
-  const auto& nodes() const { return nodes_; }
-
-  const auto& edges() const { return edges_; }
-
-  size_t steps() const { return edges_.size(); }
-
-  const MatchNode* node(size_t i) const { return nodes_[i].get(); }
-
-  const MatchEdge* edge(size_t i) const { return edges_[i].get(); }
-
-  std::string toString() const;
-
- private:
-  std::unique_ptr<std::string> alias_;
-  std::vector<std::unique_ptr<MatchNode>> nodes_;
-  std::vector<std::unique_ptr<MatchEdge>> edges_;
+  std::vector<std::unique_ptr<MatchPath>> pathList_;
 };
 
 class MatchReturnItems final {
  public:
-  explicit MatchReturnItems(bool includeExisting, YieldColumns* columns = nullptr)
-      : includeExisting_(includeExisting), columns_(columns) {}
+  explicit MatchReturnItems(bool allNamedAliases, YieldColumns* columns = nullptr)
+      : allNamedAliases_(allNamedAliases), columns_(columns) {}
 
-  bool includeExisting() const { return includeExisting_; }
+  bool allNamedAliases() const {
+    return allNamedAliases_;
+  }
 
-  YieldColumns* columns() { return columns_.get(); }
+  YieldColumns* columns() {
+    return columns_.get();
+  }
 
-  const YieldColumns* columns() const { return columns_.get(); }
+  const YieldColumns* columns() const {
+    return columns_.get();
+  }
 
   std::string toString() const;
 
  private:
-  bool includeExisting_{false};  // `*` indicates include all existing variables
+  bool allNamedAliases_{false};  // `*` indicates include all existing variables
   std::unique_ptr<YieldColumns> columns_;
 };
 
 class MatchReturn final {
  public:
-  explicit MatchReturn(MatchReturnItems* returnItems = nullptr,
-                       OrderFactors* orderFactors = nullptr,
-                       Expression* skip = nullptr,
-                       Expression* limit = nullptr,
-                       bool distinct = false) {
+  MatchReturn(MatchReturnItems* returnItems = nullptr,
+              OrderFactors* orderFactors = nullptr,
+              Expression* skip = nullptr,
+              Expression* limit = nullptr,
+              bool distinct = false) {
     returnItems_.reset(returnItems);
     orderFactors_.reset(orderFactors);
     skip_ = skip;
@@ -235,19 +72,33 @@ class MatchReturn final {
     isDistinct_ = distinct;
   }
 
-  MatchReturnItems* returnItems() { return returnItems_.get(); }
+  MatchReturnItems* returnItems() {
+    return returnItems_.get();
+  }
 
-  const MatchReturnItems* returnItems() const { return returnItems_.get(); }
+  const MatchReturnItems* returnItems() const {
+    return returnItems_.get();
+  }
 
-  bool isDistinct() const { return isDistinct_; }
+  bool isDistinct() const {
+    return isDistinct_;
+  }
 
-  const Expression* skip() const { return skip_; }
+  const Expression* skip() const {
+    return skip_;
+  }
 
-  const Expression* limit() const { return limit_; }
+  const Expression* limit() const {
+    return limit_;
+  }
 
-  OrderFactors* orderFactors() { return orderFactors_.get(); }
+  OrderFactors* orderFactors() {
+    return orderFactors_.get();
+  }
 
-  const OrderFactors* orderFactors() const { return orderFactors_.get(); }
+  const OrderFactors* orderFactors() const {
+    return orderFactors_.get();
+  }
 
   std::string toString() const;
 
@@ -266,16 +117,26 @@ class ReadingClause {
     kUnwind,
     kWith,
   };
-  explicit ReadingClause(Kind kind) { kind_ = kind; }
+  explicit ReadingClause(Kind kind) {
+    kind_ = kind;
+  }
   virtual ~ReadingClause() = default;
 
-  auto kind() const { return kind_; }
+  auto kind() const {
+    return kind_;
+  }
 
-  bool isMatch() const { return kind() == Kind::kMatch; }
+  bool isMatch() const {
+    return kind() == Kind::kMatch;
+  }
 
-  bool isUnwind() const { return kind() == Kind::kUnwind; }
+  bool isUnwind() const {
+    return kind() == Kind::kUnwind;
+  }
 
-  bool isWith() const { return kind() == Kind::kWith; }
+  bool isWith() const {
+    return kind() == Kind::kWith;
+  }
 
   virtual std::string toString() const = 0;
 
@@ -285,27 +146,38 @@ class ReadingClause {
 
 class MatchClause final : public ReadingClause {
  public:
-  MatchClause(MatchPath* path, WhereClause* where, bool optional) : ReadingClause(Kind::kMatch) {
-    path_.reset(path);
+  MatchClause(MatchPathList* pathList, WhereClause* where, bool optional)
+      : ReadingClause(Kind::kMatch) {
+    pathList_.reset(pathList);
     where_.reset(where);
     isOptional_ = optional;
   }
 
-  MatchPath* path() { return path_.get(); }
+  MatchPathList* pathList() {
+    return pathList_.get();
+  }
 
-  const MatchPath* path() const { return path_.get(); }
+  const MatchPathList* path() const {
+    return pathList_.get();
+  }
 
-  WhereClause* where() { return where_.get(); }
+  WhereClause* where() {
+    return where_.get();
+  }
 
-  const WhereClause* where() const { return where_.get(); }
+  const WhereClause* where() const {
+    return where_.get();
+  }
 
-  bool isOptional() const { return isOptional_; }
+  bool isOptional() const {
+    return isOptional_;
+  }
 
   std::string toString() const override;
 
  private:
   bool isOptional_{false};
-  std::unique_ptr<MatchPath> path_;
+  std::unique_ptr<MatchPathList> pathList_;
   std::unique_ptr<WhereClause> where_;
 };
 
@@ -316,11 +188,17 @@ class UnwindClause final : public ReadingClause {
     alias_ = alias;
   }
 
-  Expression* expr() { return expr_; }
+  Expression* expr() {
+    return expr_;
+  }
 
-  const Expression* expr() const { return expr_; }
+  const Expression* expr() const {
+    return expr_;
+  }
 
-  const std::string& alias() const { return alias_; }
+  const std::string& alias() const {
+    return alias_;
+  }
 
   std::string toString() const override;
 
@@ -346,27 +224,49 @@ class WithClause final : public ReadingClause {
     isDistinct_ = distinct;
   }
 
-  MatchReturnItems* returnItems() { return returnItems_.get(); }
+  MatchReturnItems* returnItems() {
+    return returnItems_.get();
+  }
 
-  const MatchReturnItems* returnItems() const { return returnItems_.get(); }
+  const MatchReturnItems* returnItems() const {
+    return returnItems_.get();
+  }
 
-  OrderFactors* orderFactors() { return orderFactors_.get(); }
+  OrderFactors* orderFactors() {
+    return orderFactors_.get();
+  }
 
-  const OrderFactors* orderFactors() const { return orderFactors_.get(); }
+  const OrderFactors* orderFactors() const {
+    return orderFactors_.get();
+  }
 
-  Expression* skip() { return skip_; }
+  Expression* skip() {
+    return skip_;
+  }
 
-  const Expression* skip() const { return skip_; }
+  const Expression* skip() const {
+    return skip_;
+  }
 
-  Expression* limit() { return limit_; }
+  Expression* limit() {
+    return limit_;
+  }
 
-  const Expression* limit() const { return limit_; }
+  const Expression* limit() const {
+    return limit_;
+  }
 
-  WhereClause* where() { return where_.get(); }
+  WhereClause* where() {
+    return where_.get();
+  }
 
-  const WhereClause* where() const { return where_.get(); }
+  const WhereClause* where() const {
+    return where_.get();
+  }
 
-  bool isDistinct() const { return isDistinct_; }
+  bool isDistinct() const {
+    return isDistinct_;
+  }
 
   std::string toString() const override;
 
@@ -381,7 +281,9 @@ class WithClause final : public ReadingClause {
 
 class MatchClauseList final {
  public:
-  void add(ReadingClause* clause) { clauses_.emplace_back(clause); }
+  void add(ReadingClause* clause) {
+    clauses_.emplace_back(clause);
+  }
 
   void add(MatchClauseList* list) {
     DCHECK(list != nullptr);
@@ -391,7 +293,9 @@ class MatchClauseList final {
     delete list;
   }
 
-  auto clauses() && { return std::move(clauses_); }
+  auto clauses() && {
+    return std::move(clauses_);
+  }
 
  private:
   std::vector<std::unique_ptr<ReadingClause>> clauses_;
@@ -405,13 +309,21 @@ class MatchSentence final : public Sentence {
     return_.reset(ret);
   }
 
-  auto& clauses() { return clauses_; }
+  auto& clauses() {
+    return clauses_;
+  }
 
-  const auto& clauses() const { return clauses_; }
+  const auto& clauses() const {
+    return clauses_;
+  }
 
-  const MatchReturn* ret() const { return return_.get(); }
+  const MatchReturn* ret() const {
+    return return_.get();
+  }
 
-  MatchReturn* ret() { return return_.get(); }
+  MatchReturn* ret() {
+    return return_.get();
+  }
 
   std::string toString() const override;
 

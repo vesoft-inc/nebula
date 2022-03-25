@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/KillQueryExecutor.h"
@@ -13,8 +12,6 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> KillQueryExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-
-  // TODO: permision check
 
   QueriesMap toBeVerifiedQueries;
   QueriesMap killQueries;
@@ -93,9 +90,15 @@ Status KillQueryExecutor::verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQ
       auto sessionPtr = sessionMgr->findSessionFromCache(sessionId);
       if (sessionPtr == nullptr) {
         toBeVerifiedQueries[sessionId].emplace(epId);
-      } else if (!sessionPtr->findQuery(epId)) {
-        return Status::Error(
-            "ExecutionPlanId[%ld] does not exist in Session[%ld].", epId, sessionId);
+      } else {  // Sessions in current host
+        // Only GOD role could kill others' queries.
+        if (sessionPtr->user() != session->user() && !session->isGod()) {
+          return Status::PermissionError("Only GOD role could kill others' queries.");
+        }
+        if (!sessionPtr->findQuery(epId)) {
+          return Status::Error(
+              "ExecutionPlanId[%ld] does not exist in Session[%ld].", epId, sessionId);
+        }
       }
       killQueries[sessionId].emplace(epId);
     }
@@ -126,6 +129,7 @@ void KillQueryExecutor::killCurrentHostQueries(const QueriesMap& killQueries,
 
 Status KillQueryExecutor::verifyTheQueriesByMetaInfo(
     const QueriesMap& toBeVerifiedQueries, const std::vector<meta::cpp2::Session>& sessionsInMeta) {
+  auto* currentSession = qctx()->rctx()->session();
   for (auto& s : toBeVerifiedQueries) {
     auto sessionId = s.first;
     auto found = std::find_if(sessionsInMeta.begin(), sessionsInMeta.end(), [sessionId](auto& val) {
@@ -139,6 +143,10 @@ Status KillQueryExecutor::verifyTheQueriesByMetaInfo(
         return Status::Error(
             "ExecutionPlanId[%ld] does not exist in Session[%ld].", epId, sessionId);
       }
+    }
+    // Only GOD role could kill others' queries.
+    if (found->get_user_name() != currentSession->user() && !currentSession->isGod()) {
+      return Status::PermissionError("Only GOD role could kill others' queries.");
     }
   }
   return Status::OK();

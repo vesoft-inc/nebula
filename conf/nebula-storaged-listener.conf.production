@@ -23,6 +23,8 @@
 --stderr_log_file=storaged-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
 --stderrthreshold=2
+# Wether logging files' name contain timestamp.
+--timestamp_in_logfile_name=true
 
 ########## networking ##########
 # Meta server address
@@ -35,8 +37,6 @@
 --ws_ip=192.168.2.4
 # HTTP service port
 --ws_http_port=19789
-# HTTP2 service port
---ws_h2_port=19790
 # heartbeat with meta service
 --heartbeat_interval_secs=10
 

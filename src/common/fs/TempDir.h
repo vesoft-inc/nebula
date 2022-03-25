@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_FS_TEMPDIR_H_
@@ -31,7 +30,9 @@ class TempDir final {
 
   ~TempDir();
 
-  const char* path() const { return dirPath_.get(); }
+  const char* path() const {
+    return dirPath_.get();
+  }
 
  private:
   std::unique_ptr<char[]> dirPath_;

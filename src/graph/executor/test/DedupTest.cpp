@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -16,10 +15,12 @@ namespace graph {
 
 class DedupTest : public QueryTestBase {
  public:
-  void SetUp() override { QueryTestBase::SetUp(); }
+  void SetUp() override {
+    QueryTestBase::SetUp();
+  }
 };
 
-#define DEDUP_RESUTL_CHECK(inputName, outputName, sentence, expected)                   \
+#define DEDUP_RESULT_CHECK(inputName, outputName, sentence, expected)                   \
   do {                                                                                  \
     qctx_->symTable()->newVariable(outputName);                                         \
     auto yieldSentence = getYieldSentence(sentence, qctx_.get());                       \
@@ -44,10 +45,10 @@ class DedupTest : public QueryTestBase {
                                                                                         \
     auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());              \
     EXPECT_TRUE(proExe->execute().get().ok());                                          \
-    auto& proSesult = qctx_->ectx()->getResult(project->outputVar());                   \
+    auto& proResult = qctx_->ectx()->getResult(project->outputVar());                   \
                                                                                         \
-    EXPECT_EQ(proSesult.value().getDataSet(), expected);                                \
-    EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                              \
+    EXPECT_EQ(proResult.value().getDataSet(), expected);                                \
+    EXPECT_EQ(proResult.state(), Result::State::kSuccess);                              \
   } while (false)
 
 TEST_F(DedupTest, TestSequential) {
@@ -61,17 +62,17 @@ TEST_F(DedupTest, TestSequential) {
   auto sentence =
       "YIELD DISTINCT $-.vid as vid, $-.v_name as name, $-.v_age as age, "
       "$-.v_dst as dst, $-.e_start_year as start, $-.e_end_year as end";
-  DEDUP_RESUTL_CHECK("input_sequential", "dedup_sequential", sentence, expected);
+  DEDUP_RESULT_CHECK("input_sequential", "dedup_sequential", sentence, expected);
 }
 
 TEST_F(DedupTest, TestEmpty) {
   DataSet expected({"name"});
-  DEDUP_RESUTL_CHECK("empty", "dedup_sequential", "YIELD DISTINCT $-.v_dst as name", expected);
+  DEDUP_RESULT_CHECK("empty", "dedup_sequential", "YIELD DISTINCT $-.v_dst as name", expected);
 }
 
 TEST_F(DedupTest, WrongTypeIterator) {
   DataSet expected;
-  DEDUP_RESUTL_CHECK(
+  DEDUP_RESULT_CHECK(
       "input_neighbor", "dedup_sequential", "YIELD DISTINCT $-.v_dst as name", expected);
 }
 }  // namespace graph

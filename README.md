@@ -1,16 +1,19 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
+  <img src="https://nebula-website-cn.oss-cn-hangzhou.aliyuncs.com/nebula-website/images/nebulagraph-logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
 <p align="center">
+  <a href="https://app.codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/github/vesoft-inc/nebula/coverage.svg?branch=master" alt="code coverage"/>
+  </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=nightly">
     <img src="https://github.com/vesoft-inc/nebula/workflows/nightly/badge.svg" alt="nightly build"/>
   </a>
-  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/stargazers">
     <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
   </a>
-  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/network/members">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
   <br>
@@ -31,7 +34,9 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Notice of Release
 
-The Nebula Graph team is glad to announce the Nebula Graph 2.0.0 GA. This is a brand new start with several important updates, and more of them are on the way. Welcome to join us.
+This repository hosts the source code of Nebula Graph versions before 2.0.0-alpha and after v2.5.x. If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph).
+
+Nebula Graph 1.x is not actively maintained. Please move to Nebula Graph 2.x. The data format, rpc protocols, clients, etc. are not compatible between Nebula Graph v1.x and v2.x, but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
 
 <!--
 To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
@@ -53,7 +58,7 @@ Please note that you need to install **Nebula Graph**, either by [installing sou
 ## Getting help
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 * [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
-* [Forum](https://discuss.nebula-graph.io/)
+* [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 
 ## Documentation
 
@@ -72,8 +77,6 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 ## Licensing
 
 **Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
-
-In order to prevent cloud providers monetizing from the project without contributing back, we added [Commons Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
 
 ## Contact
 

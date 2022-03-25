@@ -4,17 +4,18 @@
         "v",
         "heartbeat_interval_secs",
         "meta_client_retry_times",
-        "slow_op_threshhold_ms",
         "clean_wal_interval_secs",
         "wal_ttl",
         "clean_wal_interval_secs",
         "custom_filter_interval_secs",
         "accept_partial_success",
         "system_memory_high_watermark_ratio",
+        "num_rows_to_check_memory",
         "session_idle_timeout_secs",
         "session_reclaim_interval_secs",
         "max_allowed_connections",
-        "disable_octal_escape_char"
+        "disable_octal_escape_char",
+        "max_sessions_per_ip_per_user"
     ],
     "NESTED": [
         "rocksdb_db_options",
@@ -22,3 +23,4 @@
         "rocksdb_block_based_table_options"
     ]
 }
+

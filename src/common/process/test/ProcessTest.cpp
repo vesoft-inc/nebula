@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -73,7 +72,9 @@ TEST(ProcessUtils, isPidAvailable) {
       }
     };
     auto pidFile = folly::stringPrintf("/tmp/process_test-%d.pid", ::getpid());
-    SCOPE_EXIT { ::unlink(pidFile.c_str()); };
+    SCOPE_EXIT {
+      ::unlink(pidFile.c_str());
+    };
     auto status = ProcessUtils::makePidFile(pidFile, genPid());
     ASSERT_TRUE(status.ok()) << status;
     // there are chances that the chosen pid was occupied already,

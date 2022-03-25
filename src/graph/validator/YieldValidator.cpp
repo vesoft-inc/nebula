@@ -1,16 +1,14 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/YieldValidator.h"
 
-#include "common/expression/Expression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
-#include "parser/Clauses.h"
+#include "graph/util/ValidateUtil.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
@@ -20,6 +18,7 @@ YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx) : Validat
   setNoSpaceRequired();
 }
 
+// Check validity of clauses, and disable invalid input/variable.
 Status YieldValidator::validateImpl() {
   if (qctx_->vctx()->spaceChosen()) {
     space_ = vctx_->whichSpace();
@@ -60,6 +59,8 @@ Status YieldValidator::validateImpl() {
   return Status::OK();
 }
 
+// Collect properties of yield expression, check type, fold expression,
+// and set output columns.
 Status YieldValidator::makeOutputColumn(YieldColumn *column) {
   columns_->addColumn(column);
 
@@ -83,6 +84,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
   return Status::OK();
 }
 
+// Create GroupByValidator according to implicit group by in yield sentence.
 Status YieldValidator::makeImplicitGroupByValidator() {
   auto *groupSentence = qctx()->objPool()->add(new GroupBySentence(
       static_cast<YieldSentence *>(sentence_)->yield()->clone().release(), nullptr, nullptr));
@@ -92,6 +94,7 @@ Status YieldValidator::makeImplicitGroupByValidator() {
   return Status::OK();
 }
 
+// Validate implicit group by according to group by validator.
 Status YieldValidator::validateImplicitGroupBy() {
   NG_RETURN_IF_ERROR(groupByValidator_->validateImpl());
   inputs_ = groupByValidator_->inputCols();
@@ -105,13 +108,15 @@ Status YieldValidator::validateImplicitGroupBy() {
   return Status::OK();
 }
 
+// Validate and build output columns.
+// Rewrite '*' to all properties of input/variable.
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   auto columns = clause->columns();
   auto *pool = qctx_->objPool();
   columns_ = pool->add(new YieldColumns);
   for (auto column : columns) {
     auto expr = DCHECK_NOTNULL(column->expr());
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(expr));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(expr));
 
     if (expr->kind() == Expression::Kind::kInputProperty) {
       auto ipe = static_cast<const InputPropertyExpression *>(expr);
@@ -148,20 +153,26 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   return Status::OK();
 }
 
-Status YieldValidator::validateWhere(const WhereClause *clause) {
-  Expression *filter = nullptr;
-  if (clause != nullptr) {
-    filter = clause->filter();
+// Validate filter expression.
+// Disable aggregate expression in filter, collect properties in expression,
+// fold filter expression.
+Status YieldValidator::validateWhere(const WhereClause *where) {
+  if (where == nullptr) {
+    return Status::OK();
   }
-  if (filter != nullptr) {
-    NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
-    auto foldRes = ExpressionUtils::foldConstantExpr(filter);
-    NG_RETURN_IF_ERROR(foldRes);
-    filterCondition_ = foldRes.value();
+  auto filter = where->filter();
+  if (graph::ExpressionUtils::findAny(filter, {Expression::Kind::kAggregate})) {
+    return Status::SemanticError("`%s', not support aggregate function in where sentence.",
+                                 filter->toString().c_str());
   }
+  NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
+  auto foldRes = ExpressionUtils::foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(foldRes);
+  filterCondition_ = foldRes.value();
   return Status::OK();
 }
 
+// Generate plan according to input, implicit group by and yield columns.
 Status YieldValidator::toPlan() {
   auto yield = static_cast<const YieldSentence *>(sentence_);
 

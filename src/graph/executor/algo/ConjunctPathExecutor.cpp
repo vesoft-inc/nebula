@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/executor/algo/ConjunctPathExecutor.h"
 
@@ -369,9 +368,6 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
         Row row;
         auto forward = i.getPath();
         Path backward = path.getPath();
-        if (forward.src == backward.src) {
-          continue;
-        }
         VLOG(1) << "Forward path:" << forward;
         VLOG(1) << "Backward path:" << backward;
         backward.reverse();

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -55,7 +54,7 @@ TEST(LeaderTransferTest, SimpleTest) {
   finishRaft(services, copies, workers, leader);
 }
 
-TEST(LeaderTransferTest, ChangeLeaderServalTimesTest) {
+TEST(LeaderTransferTest, DISABLED_ChangeLeaderServalTimesTest) {
   fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
   std::vector<std::string> wals;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_STORAGESERVER_H_
@@ -12,11 +11,14 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/hdfs/HdfsHelper.h"
+#include "common/log/LogMonitor.h"
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
+#include "storage/GraphStorageLocalServer.h"
 #include "storage/admin/AdminTaskManager.h"
+#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 
@@ -39,16 +41,37 @@ class StorageServer final {
 
   void stop();
 
+  // used for signal handler to set an internal stop flag
+  // not allow any wait() in this
+  void notifyStop();
+
   void waitUntilStop();
 
  private:
-  enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STTOPED = 2 };
+  enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };
 
  private:
   std::unique_ptr<kvstore::KVStore> getStoreInstance();
 
-  bool initWebService();
+  /**
+   * @brief Get the Admin Store Instance object (used for task manager)
+   *
+   * @return std::unique_ptr<kvstore::KVEngine>
+   */
+  std::unique_ptr<kvstore::KVEngine> getAdminStoreInstance();
 
+  /**
+   * @brief Get the Admin Store Seq Id object
+   *
+   * @return int32_t
+   */
+  int32_t getAdminStoreSeqId();
+
+  bool initWebService();
+  /**
+   * @brief used by all thrift client, and kvstore.
+   *        default num is 16
+   */
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
 
@@ -57,7 +80,11 @@ class StorageServer final {
   std::atomic<ServiceStatus> storageSvcStatus_{STATUS_UNINITIALIZED};
   std::atomic<ServiceStatus> adminSvcStatus_{STATUS_UNINITIALIZED};
 
+#ifndef BUILD_STANDALONE
   std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
+#else
+  std::shared_ptr<GraphStorageLocalServer> storageServer_;
+#endif
   std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
 
   std::unique_ptr<std::thread> internalStorageThread_;
@@ -81,7 +108,15 @@ class StorageServer final {
   std::string listenerPath_;
 
   AdminTaskManager* taskMgr_{nullptr};
-  std::unique_ptr<TransactionManager> txnMan_;
+  std::unique_ptr<TransactionManager> txnMan_{nullptr};
+  // used for communicate between one storaged to another
+  std::unique_ptr<InternalStorageClient> interClient_;
+
+  std::unique_ptr<LogMonitor> logMonitor_;
+
+  ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
+  std::mutex muStop_;
+  std::condition_variable cvStop_;
 };
 
 }  // namespace storage

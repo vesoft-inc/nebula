@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_STORAGEFLAGS_H_
@@ -19,13 +18,9 @@ DECLARE_int32(waiting_new_leader_retry_times);
 
 DECLARE_int32(waiting_new_leader_interval_in_secs);
 
-DECLARE_int32(rebuild_index_batch_num);
+DECLARE_uint32(rebuild_index_part_rate_limit);
 
-DECLARE_int32(rebuild_index_locked_threshold);
-
-DECLARE_int32(rebuild_index_process_interval);
-
-DECLARE_bool(enable_vertex_cache);
+DECLARE_uint32(rebuild_index_batch_size);
 
 DECLARE_int32(reader_handlers);
 

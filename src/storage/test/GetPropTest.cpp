@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -17,10 +16,16 @@ namespace storage {
 cpp2::GetPropRequest buildVertexRequest(
     int32_t totalParts,
     const std::vector<VertexID>& vertices,
-    const std::vector<std::pair<TagID, std::vector<std::string>>>& tags) {
+    const std::vector<std::pair<TagID, std::vector<std::string>>>& tags,
+    Expression* filter = nullptr,
+    int64_t limit = -1) {
   std::hash<std::string> hash;
   cpp2::GetPropRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
+  if (filter != nullptr) {
+    req.filter_ref() = Expression::encode(*filter);
+  }
+  req.limit_ref() = limit;
   for (const auto& vertex : vertices) {
     PartitionID partId = (hash(vertex) % totalParts) + 1;
     nebula::Row row;
@@ -30,18 +35,18 @@ cpp2::GetPropRequest buildVertexRequest(
 
   std::vector<cpp2::VertexProp> vertexProps;
   if (tags.empty()) {
-    req.set_vertex_props(std::move(vertexProps));
+    req.vertex_props_ref() = std::move(vertexProps);
   } else {
     for (const auto& tag : tags) {
       TagID tagId = tag.first;
       cpp2::VertexProp tagProp;
-      tagProp.set_tag(tagId);
+      tagProp.tag_ref() = tagId;
       for (const auto& prop : tag.second) {
         (*tagProp.props_ref()).emplace_back(std::move(prop));
       }
       vertexProps.emplace_back(std::move(tagProp));
     }
-    req.set_vertex_props(std::move(vertexProps));
+    req.vertex_props_ref() = std::move(vertexProps);
   }
   return req;
 }
@@ -49,9 +54,15 @@ cpp2::GetPropRequest buildVertexRequest(
 cpp2::GetPropRequest buildEdgeRequest(
     int32_t totalParts,
     const std::vector<cpp2::EdgeKey>& edgeKeys,
-    const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges) {
+    const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges,
+    Expression* filter = nullptr,
+    int64_t limit = -1) {
   cpp2::GetPropRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
+  if (filter != nullptr) {
+    req.filter_ref() = Expression::encode(*filter);
+  }
+  req.limit_ref() = limit;
   for (const auto& edge : edgeKeys) {
     PartitionID partId = (std::hash<Value>()(edge.get_src()) % totalParts) + 1;
     nebula::Row row;
@@ -64,18 +75,18 @@ cpp2::GetPropRequest buildEdgeRequest(
 
   std::vector<cpp2::EdgeProp> edgeProps;
   if (edges.empty()) {
-    req.set_edge_props(std::move(edgeProps));
+    req.edge_props_ref() = std::move(edgeProps);
   } else {
     for (const auto& edge : edges) {
       EdgeType edgeType = edge.first;
       cpp2::EdgeProp edgeProp;
-      edgeProp.set_type(edgeType);
+      edgeProp.type_ref() = edgeType;
       for (const auto& prop : edge.second) {
         (*edgeProp.props_ref()).emplace_back(std::move(prop));
       }
       edgeProps.emplace_back(std::move(edgeProp));
     }
-    req.set_edge_props(std::move(edgeProps));
+    req.edge_props_ref() = std::move(edgeProps);
   }
   return req;
 }
@@ -227,10 +238,10 @@ TEST(GetPropTest, PropertyTest) {
     std::vector<cpp2::EdgeKey> edgeKeys;
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tim Duncan");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(1997);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
@@ -254,10 +265,10 @@ TEST(GetPropTest, PropertyTest) {
     std::vector<cpp2::EdgeKey> edgeKeys;
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tim Duncan");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(1997);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
@@ -289,18 +300,18 @@ TEST(GetPropTest, PropertyTest) {
     std::vector<cpp2::EdgeKey> edgeKeys;
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tim Duncan");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(1997);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tony Parker");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(2001);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
@@ -375,10 +386,10 @@ TEST(GetPropTest, AllPropertyInOneSchemaTest) {
     std::vector<cpp2::EdgeKey> edgeKeys;
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tim Duncan");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(1997);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
@@ -450,10 +461,10 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
     std::vector<cpp2::EdgeKey> edgeKeys;
     {
       cpp2::EdgeKey edgeKey;
-      edgeKey.set_src("Tim Duncan");
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(1997);
-      edgeKey.set_dst("Spurs");
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
@@ -669,7 +680,7 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
   for (const auto& vId : vertices) {
     PartitionID partId = (hash(vId) % totalParts) + 1;
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
+    auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, vId, player);
     auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
@@ -702,6 +713,260 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
 
   FLAGS_enable_rocksdb_statistics = false;
   FLAGS_enable_rocksdb_prefix_filtering = false;
+}
+
+TEST(GetPropTest, FilterTest) {
+  fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  EdgeType serve = 101;
+
+  ObjectPool pool;
+
+  // vertex
+  {
+    LOG(INFO) << "GetVertexPropInValue";
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    // 1.age == 44
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        TagPropertyExpression::make(&pool, std::to_string(player), "age"),
+        ConstantExpression::make(&pool, 44));
+    auto req = buildVertexRequest(totalParts, vertices, tags, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    expected.emplace_back(Row({"Tim Duncan", "Tim Duncan", 44, 19.0}));
+    // Filtered
+    //  expected.emplace_back(Row({"Tony Parker", "Tony Parker", 38, 15.5}));
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  // edge
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    // Filter 101.startYear == 2001
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        EdgePropertyExpression::make(&pool, std::to_string(serve), "startYear"),
+        ConstantExpression::make(&pool, 2001));
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    {
+      nebula::Row row({"Spurs", 2001, 2018});
+      expected.rows.emplace_back(std::move(row));
+    }
+    // Filtered
+    // {
+    // nebula::Row row({"Spurs", 1997, 2016});
+    // expected.rows.emplace_back(std::move(row));
+    // }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+}
+
+TEST(GetPropTest, LimitTest) {
+  fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  EdgeType serve = 101;
+
+  // vertex
+  {
+    std::vector<VertexID> vertices = {"Tim Duncan"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 0);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 1);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    ASSERT_EQ((*resp.props_ref()).size(), 1);
+  }
+  {
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = buildVertexRequest(totalParts, vertices, tags, nullptr, 3);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    expected.emplace_back(Row({"Tim Duncan", "Tim Duncan", 44, 19.0}));
+    expected.emplace_back(Row({"Tony Parker", "Tony Parker", 38, 15.5}));
+  }
+  // edge
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 0);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 1);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    ASSERT_EQ((*resp.props_ref()).size(), 1);
+  }
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tony Parker";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 2001;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, nullptr, 3);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    {
+      nebula::Row row({"Spurs", 2001, 2018});
+      expected.rows.emplace_back(std::move(row));
+    }
+    {
+      nebula::Row row({"Spurs", 1997, 2016});
+      expected.rows.emplace_back(std::move(row));
+    }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
 }
 
 }  // namespace storage

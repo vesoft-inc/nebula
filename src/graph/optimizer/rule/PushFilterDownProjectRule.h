@@ -1,18 +1,51 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNPROJECTRULE_H_
 #define GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNPROJECTRULE_H_
 
-#include <memory>
-
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
+
+//  Push down the filter items
+//  Required conditions:
+//   1. Match the pattern
+//  Benefits:
+//   1. Filter data early to optimize performance
+//
+//  Tranformation:
+//  Before:
+//
+//  +-------------+-------------+
+//  |           Filter          |
+//  |($p1>3 and $p2<4 and $p1<9)|
+//  +-------------+-------------+
+//                |
+//      +---------+---------+
+//      |      Project      |
+//      |(log($p) AS p1,$p2)|
+//      +---------+---------+
+//
+//  After:
+//
+//  +--------+--------+
+//  |      Filter     |
+//  |($p1>3 and $p1<9)|
+//  +--------+--------+
+//           |
+// +---------+---------+
+// |      Project      |
+// |(log($p) AS p1,$p2)|
+// +---------+---------+
+//           |
+//    +------+------+
+//    |   Filter    |
+//    |   ($p2<4)   |
+//    +------+------+
 
 class PushFilterDownProjectRule final : public OptRule {
  public:

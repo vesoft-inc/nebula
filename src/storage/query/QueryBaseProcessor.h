@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_QUERY_QUERYBASEPROCESSOR_H_
@@ -30,7 +29,10 @@
 namespace nebula {
 namespace storage {
 
-// The PropContext stores the info about property to be returned or filtered
+/**
+ * @brief The PropContext stores the info about property to be returned or filtered
+ *
+ */
 struct PropContext {
  public:
   enum class PropInKeyType {
@@ -43,7 +45,9 @@ struct PropContext {
     DST = 0x06,
   };
 
-  explicit PropContext(const char* name) : name_(name) { setPropInKey(); }
+  explicit PropContext(const char* name) : name_(name) {
+    setPropInKey();
+  }
 
   PropContext(const char* name,
               const meta::SchemaProviderIf::Field* field,
@@ -57,6 +61,10 @@ struct PropContext {
     }
   }
 
+  /**
+   * @brief Set the prop type in edge key by prop name.
+   *
+   */
   void setPropInKey() {
     if (name_ == kVid) {
       propInKeyType_ = PropContext::PropInKeyType::VID;
@@ -73,6 +81,11 @@ struct PropContext {
     }
   }
 
+  /**
+   * @brief Add statistics info of prop index from request
+   *
+   * @param statInfo
+   */
   void addStat(const std::pair<size_t, cpp2::StatType>* statInfo) {
     hasStat_ = true;
     statIndex_.emplace_back(statInfo->first);
@@ -97,7 +110,7 @@ struct PropContext {
 
 struct TagContext {
   std::vector<std::pair<TagID, std::vector<PropContext>>> propContexts_;
-  // indicates whether TagID is in propContxts_
+  // indicates whether TagID is in propContexts_
   std::unordered_map<TagID, size_t> indexMap_;
   // tagId -> tagName
   std::unordered_map<TagID, std::string> tagNames_;
@@ -111,7 +124,7 @@ struct TagContext {
 struct EdgeContext {
   // propContexts_, indexMap_, edgeNames_ will contain both +/- edges
   std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
-  // indicates whether EdgeType is in propContxts_
+  // indicates whether EdgeType is in propContexts_
   std::unordered_map<EdgeType, size_t> indexMap_;
   // EdgeType -> edgeName
   std::unordered_map<EdgeType, std::string> edgeNames_;
@@ -125,6 +138,10 @@ struct EdgeContext {
   // offset is the start index of first edge type in a response row
   size_t offset_;
   size_t statCount_ = 0;
+
+  // additional operator for eventually-consistent edges
+  std::vector<std::pair<std::string, std::string>> kvAppend;
+  std::vector<std::string> kvErased;
 };
 
 template <typename REQ, typename RESP>
@@ -135,9 +152,9 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   virtual void process(const REQ& req) = 0;
 
  protected:
-  explicit QueryBaseProcessor(StorageEnv* env,
-                              const ProcessorCounters* counters,
-                              folly::Executor* executor = nullptr)
+  QueryBaseProcessor(StorageEnv* env,
+                     const ProcessorCounters* counters,
+                     folly::Executor* executor = nullptr)
       : BaseProcessor<RESP>(env, counters), executor_(executor) {}
 
   virtual nebula::cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;
@@ -151,7 +168,8 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   // build edgeContexts_ according to return props
   nebula::cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
 
-  nebula::cpp2::ErrorCode buildFilter(const REQ& req);
+  nebula::cpp2::ErrorCode buildFilter(
+      const REQ& req, std::function<const std::string*(const REQ& req)>&& getFilter);
   nebula::cpp2::ErrorCode buildYields(const REQ& req);
 
   // build ttl info map

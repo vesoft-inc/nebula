@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_MUTATE_UPDATEVERTEXROCESSOR_H_
@@ -57,6 +56,12 @@ class UpdateVertexProcessor
     // std::transform(returnPropsExp_.begin(), returnPropsExp_.end(),
     // result.begin(), get); return result;
     return returnPropsExp_;
+  }
+  void profilePlan(StoragePlan<VertexID>& plan) {
+    auto& nodes = plan.getNodes();
+    for (auto& node : nodes) {
+      profileDetail(node->name_, node->duration_.elapsedInUSec());
+    }
   }
 
  private:

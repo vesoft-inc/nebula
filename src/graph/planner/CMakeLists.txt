@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     planner_obj OBJECT
@@ -10,10 +9,6 @@ nebula_add_library(
     SequentialPlanner.cpp
     match/MatchSolver.cpp
     match/SegmentsConnector.cpp
-    match/InnerJoinStrategy.cpp
-    match/AddDependencyStrategy.cpp
-    match/AddInputStrategy.cpp
-    match/CartesianProductStrategy.cpp
     match/MatchPlanner.cpp
     match/MatchClausePlanner.cpp
     match/UnwindClausePlanner.cpp
@@ -26,8 +21,20 @@ nebula_add_library(
     match/StartVidFinder.cpp
     match/PropIndexSeek.cpp
     match/VertexIdSeek.cpp
-    match/Expand.cpp
     match/LabelIndexSeek.cpp
+    match/ScanSeek.cpp
+    match/ArgumentFinder.cpp
+    ngql/PathPlanner.cpp
+    ngql/GoPlanner.cpp
+    ngql/SubgraphPlanner.cpp
+    ngql/LookupPlanner.cpp
+    ngql/FetchVerticesPlanner.cpp
+    ngql/FetchEdgesPlanner.cpp
+    ngql/MaintainPlanner.cpp
+)
+
+nebula_add_library(
+    plan_obj OBJECT
     plan/PlanNode.cpp
     plan/ExecutionPlan.cpp
     plan/Algo.cpp
@@ -36,8 +43,4 @@ nebula_add_library(
     plan/Query.cpp
     plan/Mutate.cpp
     plan/Maintain.cpp
-    ngql/PathPlanner.cpp
-    ngql/GoPlanner.cpp
-    ngql/SubgraphPlanner.cpp
-    ngql/LookupPlanner.cpp
 )

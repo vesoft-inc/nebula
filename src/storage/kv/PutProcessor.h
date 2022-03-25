@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_KV_PUTPROCESSOR_H_
@@ -14,7 +13,9 @@ namespace nebula {
 namespace storage {
 
 extern ProcessorCounters kPutCounters;
-
+/**
+ * @brief this is a simple put() interface when storage run in KV mode.
+ */
 class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:
   static PutProcessor* instance(StorageEnv* env,
@@ -25,7 +26,7 @@ class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
   void process(const cpp2::KVPutRequest& req);
 
  private:
-  explicit PutProcessor(StorageEnv* env, const ProcessorCounters* counters)
+  PutProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 

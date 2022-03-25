@@ -2,12 +2,11 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 
-from nebula2.common import ttypes
+from nebula3.common import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -22,51 +21,51 @@ class TestPermission(NebulaTestSuite):
             return False, None
 
     @classmethod
-    def prepare(self):
+    def prepare(cls):
         query = 'CREATE USER test WITH PASSWORD "test"'
-        resp = self.execute(query)
-        self.check_resp_succeeded(resp)
-        time.sleep(self.delay)
+        resp = cls.execute(query)
+        cls.check_resp_succeeded(resp)
+        time.sleep(cls.delay * 2)
 
     @classmethod
     def cleanup(self):
-        query = 'DROP USER test'
+        query = 'DROP USER IF EXISTS test'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER dba'
+        query = 'DROP USER IF EXISTS dba'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER user'
+        query = 'DROP USER IF EXISTS user'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP USER guest'
+        query = 'DROP USER IF EXISTS guest'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE test_permission_space'
+        query = 'DROP SPACE IF EXISTS test_permission_space'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space1'
+        query = 'DROP SPACE IF EXISTS space1'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space2'
+        query = 'DROP SPACE IF EXISTS space2'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space3'
+        query = 'DROP SPACE IF EXISTS space3'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DROP SPACE space4'
+        query = 'DROP SPACE IF EXISTS space4'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -164,11 +163,11 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.adminClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'DROP USER admin'
+        query = 'DROP USER IF EXISTS admin'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -573,7 +572,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -590,7 +589,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -607,7 +606,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -624,7 +623,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -641,7 +640,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -762,6 +761,8 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
+        ret, self.testClient = self.spawn_nebula_client_and_auth('test', 'test')
+        assert ret
         ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
         assert ret
         ret, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
@@ -770,6 +771,11 @@ class TestPermission(NebulaTestSuite):
         assert ret
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
         assert ret
+
+        query = 'SHOW ROLES IN space5'
+        expected_result = []
+        resp = self.testClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = 'SHOW ROLES IN space5'
         expected_result = [['guest', 'GUEST'],
@@ -800,6 +806,6 @@ class TestPermission(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_result)
 
         # clean up
-        query = 'DROP SPACE space5'
+        query = 'DROP SPACE IF EXISTS space5'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)

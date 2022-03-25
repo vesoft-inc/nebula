@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
@@ -23,10 +22,14 @@ class InternalStorageServiceHandler final : public cpp2::InternalStorageServiceS
  public:
   explicit InternalStorageServiceHandler(StorageEnv* env);
 
-  folly::Future<cpp2::ExecResponse> future_forwardTransaction(
-      const cpp2::InternalTxnRequest& req) override;
+  folly::Future<cpp2::ExecResponse> future_chainAddEdges(
+      const cpp2::ChainAddEdgesRequest& p_req) override;
 
-  folly::Future<cpp2::GetValueResponse> future_getValue(const cpp2::GetValueRequest& req) override;
+  folly::Future<cpp2::UpdateResponse> future_chainUpdateEdge(
+      const cpp2::ChainUpdateEdgeRequest& p_req) override;
+
+  folly::Future<cpp2::ExecResponse> future_chainDeleteEdges(
+      const cpp2::ChainDeleteEdgesRequest& p_req) override;
 
  private:
   StorageEnv* env_{nullptr};

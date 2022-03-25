@@ -1,10 +1,10 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef STORAGE_BASEPROCESSOR_INL_H
+#define STORAGE_BASEPROCESSOR_INL_H
 
 #include "storage/BaseProcessor.h"
 
@@ -59,10 +59,10 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 
 template <typename RESP>
 meta::cpp2::ColumnDef BaseProcessor<RESP>::columnDef(std::string name,
-                                                     meta::cpp2::PropertyType type) {
+                                                     nebula::cpp2::PropertyType type) {
   nebula::meta::cpp2::ColumnDef column;
-  column.set_name(std::move(name));
-  column.set_type(type);
+  column.name_ref() = std::move(name);
+  column.type_ref()->type_ref() = type;
   return column;
 }
 
@@ -72,10 +72,10 @@ void BaseProcessor<RESP>::pushResultCode(nebula::cpp2::ErrorCode code,
                                          HostAddr leader) {
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(code);
-    thriftRet.set_part_id(partId);
+    thriftRet.code_ref() = code;
+    thriftRet.part_id_ref() = partId;
     if (leader != HostAddr("", 0)) {
-      thriftRet.set_leader(leader);
+      thriftRet.leader_ref() = leader;
     }
     codes_.emplace_back(std::move(thriftRet));
   }
@@ -118,23 +118,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
-nebula::cpp2::ErrorCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
-                                                       PartitionID partId,
-                                                       std::vector<kvstore::KV>&& data) {
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  env_->kvstore_->asyncMultiPut(
-      spaceId, partId, std::move(data), [&ret, &baton](nebula::cpp2::ErrorCode code) {
-        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-          ret = code;
-        }
-        baton.post();
-      });
-  baton.wait();
-  return ret;
-}
-
-template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    std::vector<std::string>&& keys) {
@@ -167,25 +150,53 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
     for (size_t i = 0; i < propNames.size(); i++) {
       wRet = rowWrite.setValue(propNames[i], props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   } else {
     for (size_t i = 0; i < props.size(); i++) {
       wRet = rowWrite.setValue(i, props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   }
 
   wRet = rowWrite.finish();
   if (wRet != WriteResult::SUCCEEDED) {
-    return Status::Error("Add field faild");
+    return Status::Error("Add field failed");
   }
 
   return std::move(rowWrite).moveEncodedStr();
 }
 
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
+    const meta::SchemaProviderIf::Field& field, cpp2::StatType statType) {
+  // todo(doodle): how to deal with nullable fields? For now, null add anything
+  // is null, if there is even one null, the result will be invalid
+  auto fType = field.type();
+  switch (statType) {
+    case cpp2::StatType::SUM:
+    case cpp2::StatType::AVG:
+    case cpp2::StatType::MIN:
+    case cpp2::StatType::MAX: {
+      if (fType == nebula::cpp2::PropertyType::INT64 ||
+          fType == nebula::cpp2::PropertyType::INT32 ||
+          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
+          fType == nebula::cpp2::PropertyType::FLOAT ||
+          fType == nebula::cpp2::PropertyType::DOUBLE) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+      }
+      return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;
+    }
+    case cpp2::StatType::COUNT: {
+      break;
+    }
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 }  // namespace storage
 }  // namespace nebula
+#endif

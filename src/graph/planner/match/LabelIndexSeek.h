@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_MATCH_LABELINDEXSEEK_H_
@@ -12,10 +11,7 @@
 namespace nebula {
 namespace graph {
 
-/*
- * The LabelIndexSeek was designed to find if could get the starting vids by tag
- * index.
- */
+// The LabelIndexSeek finds if a plan could get the starting vids by tag index.
 class LabelIndexSeek final : public StartVidFinder {
  public:
   static std::unique_ptr<LabelIndexSeek> make() {

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Slow Query Test
 
   # There should be a least 2 thread to run this test case suite.
@@ -10,33 +9,33 @@ Feature: Slow Query Test
     Given a graph with space named "nba"
     When executing query via graph 0:
       """
-      GO 100000 STEPS FROM "Tim Duncan" OVER like
+      GO 100000 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
       """
     Then an ExecutionError should be raised at runtime: Execution had been killed
 
   Scenario: Show all queries and kill all slow queries at second graph service
     When executing query via graph 1:
       """
-      SHOW QUERIES
+      SHOW LOCAL QUERIES
       """
     Then the execution should be successful
     When executing query via graph 1:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       """
     Then the execution should be successful
     # In case that rebuild indexes cost too much time.
     And wait 10 seconds
     When executing query via graph 1:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       """
     Then the result should be, in order:
-      | SessionID | ExecutionPlanID | User   | Host | StartTime | DurationInUSec | Status    | Query                                           |
-      | /\d+/     | /\d+/           | "root" | /.*/ | /.*/      | /\d+/          | "RUNNING" | "GO 100000 STEPS FROM \"Tim Duncan\" OVER like" |
+      | SessionID | ExecutionPlanID | User   | Host | StartTime | DurationInUSec | Status    | Query                                                           |
+      | /\d+/     | /\d+/           | "root" | /.*/ | /.*/      | /\d+/          | "RUNNING" | "GO 100000 STEPS FROM \"Tim Duncan\" OVER like YIELD like._dst" |
     When executing query via graph 1:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
       """
@@ -75,7 +74,7 @@ Feature: Slow Query Test
     Then an SemanticError should be raised at runtime: `$-.eid', not exist prop `eid'
     When executing query via graph 1:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.`Query` AS eid, $-.DurationInUSec AS dur WHERE $-.DurationInUSec > 10000000
       | ORDER BY $-.dur
       | KILL QUERY (session=$-.sid, plan=$-.eid)
@@ -83,7 +82,7 @@ Feature: Slow Query Test
     Then an SemanticError should be raised at runtime: $-.eid, Session ID must be an integer but was STRING
     When executing query via graph 1:
       """
-      SHOW ALL QUERIES
+      SHOW QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO"
       | ORDER BY $-.dur

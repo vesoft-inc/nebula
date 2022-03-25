@@ -29,29 +29,29 @@ Feature: Test lookup on edge index 2
   Scenario Outline: [edge] Simple test cases
     When executing query:
       """
-      LOOKUP ON lookup_edge_1 WHERE col1 == 201
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col2 == 201 AND lookup_edge_1.col3 == 202 YIELD edge as e
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_1 WHERE col1 == 201 YIELD edge as e
       """
     Then a SemanticError should be raised at runtime: Expression (col1==201) not supported yet
     When executing query:
       """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col5 == 201
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col5 == 201 YIELD edge as e
       """
     Then a SemanticError should be raised at runtime: Invalid column: col5
     When executing query:
       """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col2 == 201 AND lookup_edge_1.col3 == 202
-      """
-    Then a SemanticError should be raised at runtime: Not supported filter
-    When executing query:
-      """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 300
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 300 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
+      | src | dst | rank |
     When executing query:
       """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 AND lookup_edge_1.col2 > 200 AND lookup_edge_1.col1 > 201
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 AND lookup_edge_1.col2 > 200 AND lookup_edge_1.col1 > 201 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
+      | src | dst | rank |
     Then drop the used space

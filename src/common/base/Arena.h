@@ -8,6 +8,7 @@
 
 #include <folly/Likely.h>
 
+#include <boost/core/noncopyable.hpp>
 #include <cstddef>
 #include <limits>
 #include <type_traits>
@@ -19,7 +20,7 @@ namespace nebula {
 
 // MT-unsafe arena allocator
 // It's optimized for many small objects construct/destruct
-class Arena : public cpp::NonCopyable, cpp::NonMovable {
+class Arena : public boost::noncopyable, cpp::NonMovable {
  public:
   ~Arena() {
     while (LIKELY(currentChunk_ != nullptr)) {

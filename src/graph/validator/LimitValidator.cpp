@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/LimitValidator.h"
@@ -11,6 +10,7 @@
 
 namespace nebula {
 namespace graph {
+// Validate limit number
 Status LimitValidator::validateImpl() {
   auto limitSentence = static_cast<LimitSentence *>(sentence_);
   offset_ = limitSentence->offset();

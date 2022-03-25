@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -25,7 +24,6 @@ class StorageHttpAdminHandlerTestEnv : public ::testing::Environment {
   void SetUp() override {
     FLAGS_ws_ip = "127.0.0.1";
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpAdminHandler.XXXXXX");
     cluster_ = std::make_unique<mock::MockCluster>();
     cluster_->initStorageKV(rootPath_->path());
@@ -66,14 +64,14 @@ static void checkInvalidRequest(const std::string& url, const std::string& errMs
   ASSERT_EQ(0, request(url).find(errMsg));
 }
 
-TEST(StoragehHttpAdminHandlerTest, TestInvalidRequests) {
+TEST(StorageHttpAdminHandlerTest, TestInvalidRequests) {
   checkInvalidRequest("/admin", "Space should not be empty");
   checkInvalidRequest("/admin?space=xx", "Op should not be empty");
   checkInvalidRequest("/admin?space=xx&op=yy", "Can't find space xx");
   checkInvalidRequest("/admin?space=1&op=yy", "Unknown operation yy");
 }
 
-TEST(StoragehHttpAdminHandlerTest, TestSupportedOperations) {
+TEST(StorageHttpAdminHandlerTest, TestSupportedOperations) {
   ASSERT_EQ("ok", request("/admin?space=1&op=flush"));
   ASSERT_EQ("ok", request("/admin?space=1&op=compact"));
 }

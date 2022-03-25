@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/maintain/FTIndexExecutor.h"
@@ -75,7 +74,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
             continue;
           }
           auto shmId = index.second.get_depend_schema();
-          auto isEdge = shmId.getType() == meta::cpp2::SchemaID::Type::edge_type;
+          auto isEdge = shmId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
           auto shmNameRet =
               isEdge ? this->qctx_->schemaMng()->toEdgeName(spaceId, shmId.get_edge_type())
                      : this->qctx_->schemaMng()->toTagName(spaceId, shmId.get_tag_id());

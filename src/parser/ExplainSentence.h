@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef PARSER_EXPLAINSENTENCE_H_
@@ -24,11 +23,17 @@ class ExplainSentence final : public Sentence {
 
   std::string toString() const override;
 
-  bool isProfile() const { return isProfile_; }
+  bool isProfile() const {
+    return isProfile_;
+  }
 
-  const std::string& formatType() const { return *formatType_; }
+  const std::string& formatType() const {
+    return *formatType_;
+  }
 
-  SequentialSentences* seqSentences() const { return seqSentences_.get(); }
+  SequentialSentences* seqSentences() const {
+    return seqSentences_.get();
+  }
 
  private:
   bool isProfile_{false};

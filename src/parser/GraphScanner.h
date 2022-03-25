@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_GRAPHSCANNER_H_
 #define PARSER_GRAPHSCANNER_H_
@@ -32,7 +31,9 @@ class GraphScanner : public yyFlexLexer {
  public:
   // Called by GQLParser to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
-  void setReadBuffer(std::function<int(char *, int)> readBuffer) { readBuffer_ = readBuffer; }
+  void setReadBuffer(std::function<int(char *, int)> readBuffer) {
+    readBuffer_ = readBuffer;
+  }
 
   // Manually invoked by GQLParser to recover from a failure state.
   // This makes the scanner reentrant.
@@ -40,21 +41,35 @@ class GraphScanner : public yyFlexLexer {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
   }
 
-  void setQuery(std::string *query) { query_ = query; }
+  void setQuery(std::string *query) {
+    query_ = query;
+  }
 
-  std::string *query() { return query_; }
+  std::string *query() {
+    return query_;
+  }
 
-  void setUnaryMinus(bool v) { hasUnaryMinus_ = v; }
+  void setUnaryMinus(bool v) {
+    hasUnaryMinus_ = v;
+  }
 
-  bool hasUnaryMinus() const { return hasUnaryMinus_; }
+  bool hasUnaryMinus() const {
+    return hasUnaryMinus_;
+  }
 
-  void setIsIntMin(bool v) { isIntMin_ = v; }
+  void setIsIntMin(bool v) {
+    isIntMin_ = v;
+  }
 
-  bool isIntMin() const { return isIntMin_; }
+  bool isIntMin() const {
+    return isIntMin_;
+  }
 
  protected:
   // Called when YY_INPUT is invoked
-  int LexerInput(char *buf, int maxSize) override { return readBuffer_(buf, maxSize); }
+  int LexerInput(char *buf, int maxSize) override {
+    return readBuffer_(buf, maxSize);
+  }
 
   void makeSpaceForString(size_t len) {
     constexpr auto defaultSize = 256UL;
@@ -75,7 +90,9 @@ class GraphScanner : public yyFlexLexer {
     sbufSize_ = newSize;
   }
 
-  char *sbuf() { return sbuf_.get(); }
+  char *sbuf() {
+    return sbuf_.get();
+  }
 
   using TokenType = nebula::GraphParser::token;
   auto parseDecimal() {

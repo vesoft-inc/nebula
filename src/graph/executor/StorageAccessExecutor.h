@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
@@ -80,7 +79,8 @@ class StorageAccessExecutor : public Executor {
         return Status::Error(std::move(error));
       }
       case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
-        return Status::Error("Storage Error: The leader has changed. Try again later");
+        return Status::Error(
+            folly::sformat("Storage Error: Not the leader of {}. Please retry later.", partId));
       case nebula::cpp2::ErrorCode::E_INVALID_FILTER:
         return Status::Error("Storage Error: Invalid filter.");
       case nebula::cpp2::ErrorCode::E_INVALID_UPDATER:
@@ -89,6 +89,8 @@ class StorageAccessExecutor : public Executor {
         return Status::Error("Storage Error: Invalid space vid len.");
       case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
         return Status::Error("Storage Error: Space not found.");
+      case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND:
+        return Status::Error(folly::sformat("Storage Error: Part {} not found.", partId));
       case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
         return Status::Error("Storage Error: Tag not found.");
       case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
@@ -109,14 +111,25 @@ class StorageAccessExecutor : public Executor {
             "The not null field doesn't have a default value.");
       case nebula::cpp2::ErrorCode::E_OUT_OF_RANGE:
         return Status::Error("Storage Error: Out of range value.");
-      case nebula::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
-        return Status::Error("Storage Error: Atomic operation failed.");
       case nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
         return Status::Error(
             "Storage Error: More than one request trying to "
             "add/update/delete one edge/vertex at the same time.");
       case nebula::cpp2::ErrorCode::E_FILTER_OUT:
         return Status::OK();
+      case nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE:
+        return Status::Error(folly::sformat(
+            "Storage Error: Term of part {} is out of date. Please retry later.", partId));
+      case nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL:
+        return Status::Error("Storage Error: Write wal failed. Probably disk is almost full.");
+      case nebula::cpp2::ErrorCode::E_RAFT_WRITE_BLOCKED:
+        return Status::Error(
+            "Storage Error: Write is blocked when creating snapshot. Please retry later.");
+      case nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW:
+        return Status::Error(folly::sformat(
+            "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
+      case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
+        return Status::Error("Storage Error: Atomic operation failed.");
       default:
         auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
                                     partId,
@@ -133,10 +146,17 @@ class StorageAccessExecutor : public Executor {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
       auto &info = hostLatency[i];
-      stats.emplace(folly::stringPrintf("%s exec/total", std::get<0>(info).toString().c_str()),
-                    folly::stringPrintf("%d(us)/%d(us)", std::get<1>(info), std::get<2>(info)));
+      stats.emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
+                    folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
+      auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
+      if (!detail.empty()) {
+        stats.emplace("storage_detail", detail);
+      }
     }
   }
+
+  std::string getStorageDetail(
+      apache::thrift::optional_field_ref<const std::map<std::string, int32_t> &> ref) const;
 
   bool isIntVidType(const SpaceInfo &space) const;
 

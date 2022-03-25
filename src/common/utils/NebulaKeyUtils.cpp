@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/utils/NebulaKeyUtils.h"
@@ -35,13 +34,13 @@ std::string NebulaKeyUtils::lastKey(const std::string& prefix, size_t count) {
 }
 
 // static
-std::string NebulaKeyUtils::vertexKey(
+std::string NebulaKeyUtils::tagKey(
     size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad) {
   CHECK_GE(vIdLen, vId.size());
-  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kTag_);
 
   std::string key;
-  key.reserve(kVertexLen + vIdLen);
+  key.reserve(kTagLen + vIdLen);
   key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
       .append(vId.data(), vId.size())
       .append(vIdLen - vId.size(), pad)
@@ -71,6 +70,30 @@ std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
       .append(dstId.data(), dstId.size())
       .append(vIdLen - dstId.size(), '\0')
       .append(1, ev);
+  return key;
+}
+
+// static
+std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
+                                      PartitionID partId,
+                                      const VertexID& vId,
+                                      char pad) {
+  CHECK_GE(vIdLen, vId.size());
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+  std::string key;
+  key.reserve(kTagLen + vIdLen);
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+      .append(vId.data(), vId.size())
+      .append(vIdLen - vId.size(), pad);
+  return key;
+}
+
+// static
+std::string NebulaKeyUtils::vertexPrefix(PartitionID partId) {
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+  std::string key;
+  key.reserve(sizeof(PartitionID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
   return key;
 }
 
@@ -106,13 +129,21 @@ std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& 
   return key;
 }
 
+std::string NebulaKeyUtils::kvPrefix(PartitionID partId) {
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kKeyValue);
+  std::string key;
+  key.reserve(sizeof(PartitionID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+  return key;
+}
+
 // static
-std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen,
-                                         PartitionID partId,
-                                         const VertexID& vId,
-                                         TagID tagId) {
+std::string NebulaKeyUtils::tagPrefix(size_t vIdLen,
+                                      PartitionID partId,
+                                      const VertexID& vId,
+                                      TagID tagId) {
   CHECK_GE(vIdLen, vId.size());
-  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kTag_);
 
   std::string key;
   key.reserve(sizeof(PartitionID) + vIdLen + sizeof(TagID));
@@ -124,9 +155,9 @@ std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen,
 }
 
 // static
-std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId) {
+std::string NebulaKeyUtils::tagPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId) {
   CHECK_GE(vIdLen, vId.size());
-  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kTag_);
   std::string key;
   key.reserve(sizeof(PartitionID) + vIdLen);
   key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
@@ -136,8 +167,8 @@ std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId, cons
 }
 
 // static
-std::string NebulaKeyUtils::vertexPrefix(PartitionID partId) {
-  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
+std::string NebulaKeyUtils::tagPrefix(PartitionID partId) {
+  PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kTag_);
   std::string key;
   key.reserve(sizeof(PartitionID));
   key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
@@ -211,9 +242,10 @@ std::vector<std::string> NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
   if (partId == 0) {
     result.emplace_back("");
   } else {
-    result.emplace_back(vertexPrefix(partId));
+    result.emplace_back(tagPrefix(partId));
     result.emplace_back(edgePrefix(partId));
     result.emplace_back(IndexKeyUtils::indexPrefix(partId));
+    result.emplace_back(kvPrefix(partId));
     // kSystem will be written when balance data
     // kOperation will be blocked by jobmanager later
   }
@@ -238,6 +270,45 @@ std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey) {
   std::string ret = lockKey.str();
   ret.back() = 1;
   return ret;
+}
+
+std::string NebulaKeyUtils::adminTaskKey(int32_t seqId,
+                                         GraphSpaceID spaceId,
+                                         JobID jobId,
+                                         TaskID taskId) {
+  std::string key;
+  key.reserve(sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t))
+      .append(reinterpret_cast<char*>(&spaceId), sizeof(GraphSpaceID))
+      .append(reinterpret_cast<char*>(&jobId), sizeof(JobID))
+      .append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
+  return key;
+}
+
+bool NebulaKeyUtils::isAdminTaskKey(const folly::StringPiece& rawKey) {
+  return rawKey.size() == sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID);
+}
+
+std::tuple<int32_t, GraphSpaceID, JobID, TaskID> NebulaKeyUtils::parseAdminTaskKey(
+    folly::StringPiece key) {
+  CHECK_EQ(key.size(), sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  size_t offset = 0;
+  int32_t seqId = *reinterpret_cast<const int32_t*>(key.data());
+  offset += sizeof(int32_t);
+  GraphSpaceID spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
+  offset += sizeof(GraphSpaceID);
+  JobID jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
+  offset += sizeof(JobID);
+  TaskID taskId = *reinterpret_cast<const TaskID*>(key.data() + offset);
+  return std::make_tuple(seqId, spaceId, jobId, taskId);
+}
+
+std::string NebulaKeyUtils::dataVersionKey() {
+  return "\xFF\xFF\xFF\xFF";
+}
+
+std::string NebulaKeyUtils::dataVersionValue() {
+  return "3.0";
 }
 
 }  // namespace nebula

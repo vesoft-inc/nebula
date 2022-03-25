@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/test/RaftexTestBase.h"
@@ -37,7 +36,6 @@ std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
     }
     index++;
   }
-
   return peers;
 }
 
@@ -199,7 +197,7 @@ void setupRaft(int32_t numCopies,
     copies.back()->start(getPeers(allHosts, allHosts[i], isLearner), isLearner[i]);
   }
 
-  // Wait untill all copies agree on the same leader
+  // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader, isLearner);
 }
 
@@ -283,7 +281,7 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     std::vector<std::string>& msgs) {
   int32_t count = 0;
   for (; count < 3; count++) {
-    bool concensus = true;
+    bool consensus = true;
     // Sleep a while to make sure the last log has been committed on followers
     sleep(FLAGS_raft_heartbeat_interval_secs);
 
@@ -291,12 +289,12 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
     for (auto& c : copies) {
       if (c != nullptr && c->isRunning()) {
         if (msgs.size() != c->getNumLogs() || !checkLog(c, start, end, msgs)) {
-          concensus = false;
+          consensus = false;
           break;
         }
       }
     }
-    if (concensus == true) {
+    if (consensus == true) {
       return true;
     }
   }
@@ -343,7 +341,7 @@ std::vector<std::shared_ptr<SnapshotManager>> snapshots(
     const std::vector<std::shared_ptr<RaftexService>>& services) {
   std::vector<std::shared_ptr<SnapshotManager>> snapshots;
   for (auto& service : services) {
-    std::shared_ptr<SnapshotManager> snapshot(new test::SnapshotManagerImpl(service.get()));
+    std::shared_ptr<SnapshotManager> snapshot(new test::NebulaSnapshotManager(service.get()));
     snapshots.emplace_back(std::move(snapshot));
   }
   return snapshots;

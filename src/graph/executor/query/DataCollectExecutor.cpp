@@ -1,13 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/DataCollectExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -62,47 +61,49 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
+  const auto* dc = asNode<DataCollect>(node());
+  const auto& colType = dc->colType();
   DataSet ds;
   ds.colNames = std::move(colNames_);
-  // the subgraph not need duplicate vertices or edges, so dedup here directly
-  std::unordered_set<Value> uniqueVids;
-  std::unordered_set<std::tuple<Value, EdgeType, EdgeRanking, Value>> uniqueEdges;
-  for (auto i = vars.begin(); i != vars.end(); ++i) {
-    const auto& hist = ectx_->getHistory(*i);
-    for (auto j = hist.begin(); j != hist.end(); ++j) {
-      if (i == vars.begin() && j == hist.end() - 1) {
-        continue;
-      }
-      auto iter = (*j).iter();
-      if (!iter->isGetNeighborsIter()) {
-        std::stringstream msg;
-        msg << "Iterator should be kind of GetNeighborIter, but was: " << iter->kind();
-        return Status::Error(msg.str());
-      }
-      List vertices;
-      List edges;
-      auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-      auto originVertices = gnIter->getVertices();
-      for (auto& v : originVertices.values) {
-        if (!v.isVertex()) {
-          continue;
-        }
-        if (uniqueVids.emplace(v.getVertex().vid).second) {
+  const auto& hist = ectx_->getHistory(vars[0]);
+  for (const auto& result : hist) {
+    auto iter = result.iter();
+    auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
+    List vertices;
+    List edges;
+    Row row;
+    bool notEmpty = false;
+    for (const auto& type : colType) {
+      if (type == Value::Type::VERTEX) {
+        auto originVertices = gnIter->getVertices();
+        vertices.reserve(originVertices.size());
+        for (auto& v : originVertices.values) {
+          if (UNLIKELY(!v.isVertex())) {
+            continue;
+          }
           vertices.emplace_back(std::move(v));
         }
-      }
-      auto originEdges = gnIter->getEdges();
-      for (auto& edge : originEdges.values) {
-        if (!edge.isEdge()) {
-          continue;
+        if (!vertices.empty()) {
+          notEmpty = true;
+          row.emplace_back(std::move(vertices));
         }
-        const auto& e = edge.getEdge();
-        auto edgeKey = std::make_tuple(e.src, e.type, e.ranking, e.dst);
-        if (uniqueEdges.emplace(std::move(edgeKey)).second) {
+      } else {
+        auto originEdges = gnIter->getEdges();
+        edges.reserve(originEdges.size());
+        for (auto& edge : originEdges.values) {
+          if (UNLIKELY(!edge.isEdge())) {
+            continue;
+          }
           edges.emplace_back(std::move(edge));
         }
+        if (!edges.empty()) {
+          notEmpty = true;
+        }
+        row.emplace_back(std::move(edges));
       }
-      ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
+    }
+    if (notEmpty) {
+      ds.rows.emplace_back(std::move(row));
     }
   }
   result_.setDataSet(std::move(ds));
@@ -278,7 +279,6 @@ Status DataCollectExecutor::collectMultiplePairShortestPath(const std::vector<st
 Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars) {
   DataSet ds;
   ds.colNames = colNames_;
-  DCHECK(!ds.colNames.empty());
   // 0: vertices's props, 1: Edges's props 2: paths without prop
   DCHECK_EQ(vars.size(), 3);
 
@@ -288,7 +288,7 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
   DCHECK(vIter->isPropIter());
   for (; vIter->valid(); vIter->next()) {
     const auto& vertexVal = vIter->getVertex();
-    if (!vertexVal.isVertex()) {
+    if (UNLIKELY(!vertexVal.isVertex())) {
       continue;
     }
     const auto& vertex = vertexVal.getVertex();
@@ -300,8 +300,8 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
   edgeMap.reserve(eIter->size());
   DCHECK(eIter->isPropIter());
   for (; eIter->valid(); eIter->next()) {
-    auto edgeVal = eIter->getEdge();
-    if (!edgeVal.isEdge()) {
+    const auto& edgeVal = eIter->getEdge();
+    if (UNLIKELY(!edgeVal.isEdge())) {
       continue;
     }
     auto& edge = edgeVal.getEdge();
@@ -312,8 +312,8 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
   auto pIter = ectx_->getResult(vars[2]).iter();
   DCHECK(pIter->isSequentialIter());
   for (; pIter->valid(); pIter->next()) {
-    auto& pathVal = pIter->getColumn(0);
-    if (!pathVal.isPath()) {
+    const auto& pathVal = pIter->getColumn(0);
+    if (UNLIKELY(!pathVal.isPath())) {
       continue;
     }
     auto path = pathVal.getPath();
@@ -324,13 +324,15 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
     }
     for (auto& step : path.steps) {
       auto dst = step.dst.vid;
-      step.dst = vertexMap[dst];
+      found = vertexMap.find(dst);
+      if (found != vertexMap.end()) {
+        step.dst = found->second;
+      }
 
       auto type = step.type;
       auto ranking = step.ranking;
       if (type < 0) {
-        dst = src;
-        src = step.dst.vid;
+        std::swap(src, dst);
         type = -type;
       }
       auto edgeKey = std::make_tuple(src, type, ranking, dst);

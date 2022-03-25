@@ -1,13 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_PIPEVALIDATOR_H_
 #define GRAPH_VALIDATOR_PIPEVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
 
 namespace nebula {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_GQLPARSER_H_
 #define PARSER_GQLPARSER_H_
@@ -11,6 +10,7 @@
 #include "parser/GraphParser.hpp"
 #include "parser/GraphScanner.h"
 
+DECLARE_uint32(max_allowed_query_size);
 namespace nebula {
 
 class GQLParser {
@@ -39,8 +39,12 @@ class GQLParser {
   }
 
   StatusOr<std::unique_ptr<Sentence>> parse(std::string query) {
-    // Since GraphScanner needs a writable buffer, we have to copy the query
-    // string
+    // Since GraphScanner needs a writable buffer, we have to copy the query string
+    size_t querySize = query.size();
+    size_t maxAllowedQuerySize = static_cast<size_t>(FLAGS_max_allowed_query_size);
+    if (querySize > maxAllowedQuerySize) {
+      return Status::SyntaxError("Query is too large (%ld > %ld).", querySize, maxAllowedQuerySize);
+    }
     buffer_ = std::move(query);
     pos_ = &buffer_[0];
     end_ = pos_ + buffer_.size();

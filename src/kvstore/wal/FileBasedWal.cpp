@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/wal/FileBasedWal.h"
@@ -64,8 +63,8 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     auto& info = walFiles_.rbegin()->second;
     lastLogId_ = info->lastId();
     lastLogTerm_ = info->lastTerm();
-    LOG(INFO) << idStr_ << "lastLogId in wal is " << lastLogId_ << ", lastLogTerm is "
-              << lastLogTerm_ << ", path is " << info->path();
+    VLOG(2) << idStr_ << "lastLogId in wal is " << lastLogId_ << ", lastLogTerm is " << lastLogTerm_
+            << ", path is " << info->path();
     currFd_ = open(info->path(), O_WRONLY | O_APPEND);
     currInfo_ = info;
     if (currFd_ < 0) {
@@ -80,7 +79,7 @@ FileBasedWal::~FileBasedWal() {
   // moment, there should have no other thread holding this WAL object
   // Close the last file
   closeCurrFile();
-  LOG(INFO) << idStr_ << "~FileBasedWal, dir = " << dir_;
+  VLOG(2) << idStr_ << "~FileBasedWal, dir = " << dir_;
 }
 
 void FileBasedWal::scanAllWalFiles() {
@@ -91,7 +90,7 @@ void FileBasedWal::scanAllWalFiles() {
     std::vector<std::string> parts;
     folly::split('.', fn, parts);
     if (parts.size() != 2) {
-      LOG(ERROR) << "Ignore unknown file \"" << fn << "\"";
+      LOG(WARNING) << "Ignore unknown file \"" << fn << "\"";
       continue;
     }
 
@@ -99,7 +98,7 @@ void FileBasedWal::scanAllWalFiles() {
     try {
       startIdFromName = folly::to<int64_t>(parts[0]);
     } catch (const std::exception& ex) {
-      LOG(ERROR) << "Ignore bad file name \"" << fn << "\"";
+      LOG(WARNING) << "Ignore bad file name \"" << fn << "\"";
       continue;
     }
 
@@ -110,7 +109,7 @@ void FileBasedWal::scanAllWalFiles() {
     // Get the size of the file and the mtime
     struct stat st;
     if (lstat(info->path(), &st) < 0) {
-      LOG(ERROR) << "Failed to get the size and mtime for \"" << fn << "\", ignore it";
+      LOG(WARNING) << "Failed to get the size and mtime for \"" << fn << "\", ignore it";
       continue;
     }
     info->setSize(st.st_size);
@@ -127,58 +126,58 @@ void FileBasedWal::scanAllWalFiles() {
     // Open the file
     int32_t fd = open(info->path(), O_RDONLY);
     if (fd < 0) {
-      LOG(ERROR) << "Failed to open the file \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to open the file \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       continue;
     }
 
     // Read the first log id
     LogID firstLogId = -1;
     if (read(fd, &firstLogId, sizeof(LogID)) != sizeof(LogID)) {
-      LOG(ERROR) << "Failed to read the first log id from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to read the first log id from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
 
     if (firstLogId != startIdFromName) {
-      LOG(ERROR) << "The first log id " << firstLogId << " does not match the file name \"" << fn
-                 << "\", ignore it!";
+      LOG(WARNING) << "The first log id " << firstLogId << " does not match the file name \"" << fn
+                   << "\", ignore it!";
       close(fd);
       continue;
     }
 
     // Read the last log length
     if (lseek(fd, -sizeof(int32_t), SEEK_END) < 0) {
-      LOG(ERROR) << "Failed to seek the last log length from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to seek the last log length from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
     int32_t succMsgLen;
     if (read(fd, &succMsgLen, sizeof(int32_t)) != sizeof(int32_t)) {
-      LOG(ERROR) << "Failed to read the last log length from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to read the last log length from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
 
     // Verify the last log length
     if (lseek(fd, -(sizeof(int32_t) * 2 + succMsgLen + sizeof(ClusterID)), SEEK_END) < 0) {
-      LOG(ERROR) << "Failed to seek the last log length from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to seek the last log length from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
     int32_t precMsgLen;
     if (read(fd, &precMsgLen, sizeof(int32_t)) != sizeof(int32_t)) {
-      LOG(ERROR) << "Failed to read the last log length from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to read the last log length from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
     if (precMsgLen != succMsgLen) {
-      LOG(ERROR) << "It seems the wal file \"" << fn << "\" is corrupted. Ignore it";
+      LOG(WARNING) << "It seems the wal file \"" << fn << "\" is corrupted. Ignore it";
       // TODO We might want to fix it as much as possible
       close(fd);
       continue;
@@ -188,15 +187,15 @@ void FileBasedWal::scanAllWalFiles() {
     if (lseek(fd,
               -(sizeof(int32_t) * 2 + succMsgLen + sizeof(ClusterID) + sizeof(TermID)),
               SEEK_END) < 0) {
-      LOG(ERROR) << "Failed to seek the last log term from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to seek the last log term from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
     TermID term = -1;
     if (read(fd, &term, sizeof(TermID)) != sizeof(TermID)) {
-      LOG(ERROR) << "Failed to read the last log term from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to read the last log term from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
@@ -207,15 +206,15 @@ void FileBasedWal::scanAllWalFiles() {
               -(sizeof(int32_t) * 2 + succMsgLen + sizeof(ClusterID) + sizeof(TermID) +
                 sizeof(LogID)),
               SEEK_END) < 0) {
-      LOG(ERROR) << "Failed to seek the last log id from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to seek the last log id from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
     LogID lastLogId = -1;
     if (read(fd, &lastLogId, sizeof(LogID)) != sizeof(LogID)) {
-      LOG(ERROR) << "Failed to read the last log id from \"" << fn << "\" (" << errno
-                 << "): " << strerror(errno);
+      LOG(WARNING) << "Failed to read the last log id from \"" << fn << "\" (" << errno
+                   << "): " << strerror(errno);
       close(fd);
       continue;
     }
@@ -227,7 +226,7 @@ void FileBasedWal::scanAllWalFiles() {
 
   if (!walFiles_.empty()) {
     auto it = walFiles_.rbegin();
-    // Try to scan last wal, if it is invalid or empty, scan the privous one
+    // Try to scan last wal, if it is invalid or empty, scan the previous one
     scanLastWal(it->second, it->second->firstId());
     if (it->second->lastId() <= 0) {
       unlink(it->second->path());
@@ -243,8 +242,8 @@ void FileBasedWal::scanAllWalFiles() {
     for (++it; it != walFiles_.end(); ++it) {
       if (it->second->firstId() > prevLastId + 1) {
         // Found a gap
-        LOG(ERROR) << "Found a log id gap before " << it->second->firstId()
-                   << ", the previous log id is " << prevLastId;
+        LOG(WARNING) << "Found a log id gap before " << it->second->firstId()
+                     << ", the previous log id is " << prevLastId;
         logIdAfterLastGap = it->second->firstId();
       }
       prevLastId = it->second->lastId();
@@ -253,7 +252,7 @@ void FileBasedWal::scanAllWalFiles() {
       // Found gap, remove all logs before the last gap
       it = walFiles_.begin();
       while (it->second->firstId() < logIdAfterLastGap) {
-        LOG(INFO) << "Removing the wal file \"" << it->second->path() << "\"";
+        LOG(WARNING) << "Removing the wal file \"" << it->second->path() << "\"";
         unlink(it->second->path());
         it = walFiles_.erase(it);
       }
@@ -285,7 +284,7 @@ void FileBasedWal::closeCurrFile() {
   struct utimbuf timebuf;
   timebuf.modtime = currInfo_->mtime();
   timebuf.actime = currInfo_->mtime();
-  VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
+  VLOG(4) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
   utime(currInfo_->path(), &timebuf);
   currInfo_.reset();
 }
@@ -296,7 +295,7 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
   // Prepare the last entry in walFiles_
   WalFileInfoPtr info = std::make_shared<WalFileInfo>(
       FileUtils::joinPath(dir_, folly::stringPrintf("%019ld.wal", startLogId)), startLogId);
-  VLOG(1) << idStr_ << "Write new file " << info->path();
+  VLOG(4) << idStr_ << "Write new file " << info->path();
   walFiles_.emplace(std::make_pair(startLogId, info));
 
   // Create the file for write
@@ -354,11 +353,10 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
   }
   lastLogId_ = logId;
   lastLogTerm_ = term;
-  LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
   CHECK_GT(pos, 0) << "This wal should have been deleted";
   if (pos < FileUtils::fileSize(path)) {
-    LOG(INFO) << idStr_ << "Need to truncate from offset " << pos;
+    VLOG(4) << idStr_ << "Need to truncate from offset " << pos;
     if (ftruncate(fd, pos) < 0) {
       LOG(FATAL) << "Failed to truncate file \"" << path << "\" (errno: " << errno
                  << "): " << strerror(errno);
@@ -391,7 +389,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (id != curLogId) {
-      LOG(ERROR) << "LogId is not consistent" << id << " " << curLogId;
+      LOG(WARNING) << "LogId is not consistent" << id << " " << curLogId;
       break;
     }
 
@@ -415,7 +413,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (head != foot) {
-      LOG(ERROR) << "Message size doen't match: " << head << " != " << foot;
+      LOG(WARNING) << "Message size doesn't match: " << head << " != " << foot;
       break;
     }
 
@@ -442,19 +440,14 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
 }
 
 bool FileBasedWal::appendLogInternal(LogID id, TermID term, ClusterID cluster, std::string msg) {
-  if (stopped_) {
-    LOG(ERROR) << idStr_ << "WAL has stopped. Do not accept logs any more";
-    return false;
-  }
-
   if (lastLogId_ != 0 && firstLogId_ != 0 && id != lastLogId_ + 1) {
-    LOG(ERROR) << idStr_ << "There is a gap in the log id. The last log id is " << lastLogId_
-               << ", and the id being appended is " << id;
+    VLOG(3) << idStr_ << "There is a gap in the log id. The last log id is " << lastLogId_
+            << ", and the id being appended is " << id;
     return false;
   }
 
   if (!preProcessor_(id, term, cluster, msg)) {
-    LOG(ERROR) << idStr_ << "Pre process failed for log " << id;
+    VLOG(3) << idStr_ << "Pre process failed for log " << id;
     return false;
   }
 
@@ -506,11 +499,11 @@ bool FileBasedWal::appendLogInternal(LogID id, TermID term, ClusterID cluster, s
 
 bool FileBasedWal::appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) {
   if (diskMan_ && !diskMan_->hasEnoughSpace(spaceId_, partId_)) {
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to appendLogs because of no more space";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to appendLogs because of no more space";
     return false;
   }
   if (!appendLogInternal(id, term, cluster, std::move(msg))) {
-    LOG(ERROR) << "Failed to append log for logId " << id;
+    VLOG(3) << "Failed to append log for logId " << id;
     return false;
   }
   return true;
@@ -518,13 +511,13 @@ bool FileBasedWal::appendLog(LogID id, TermID term, ClusterID cluster, std::stri
 
 bool FileBasedWal::appendLogs(LogIterator& iter) {
   if (diskMan_ && !diskMan_->hasEnoughSpace(spaceId_, partId_)) {
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to appendLogs because of no more space";
+    VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to appendLogs because of no more space";
     return false;
   }
   for (; iter.valid(); ++iter) {
     if (!appendLogInternal(
             iter.logId(), iter.logTerm(), iter.logSource(), iter.logMsg().toString())) {
-      LOG(ERROR) << idStr_ << "Failed to append log for logId " << iter.logId();
+      VLOG(3) << idStr_ << "Failed to append log for logId " << iter.logId();
       return false;
     }
   }
@@ -544,15 +537,15 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
   closeCurrFile();
   std::lock_guard<std::mutex> g(walFilesMutex_);
   if (walFiles_.empty()) {
-    LOG(INFO) << idStr_ << "No wal files found, skip link";
+    VLOG(3) << idStr_ << "No wal files found, skip link";
     return true;
   }
   if (fs::FileUtils::exist(newPath) && !fs::FileUtils::remove(newPath, true)) {
-    LOG(ERROR) << "Remove exist dir failed of wal : " << newPath;
+    VLOG(3) << "Remove exist dir failed of wal : " << newPath;
     return false;
   }
   if (!fs::FileUtils::makeDir(newPath)) {
-    LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;
+    VLOG(3) << idStr_ << "Link file parent dir make failed : " << newPath;
     return false;
   }
 
@@ -561,11 +554,11 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
     auto targetFile = fs::FileUtils::joinPath(newPath, folly::stringPrintf("%019ld.wal", f.first));
 
     if (link(f.second->path(), targetFile.data()) != 0) {
-      LOG(INFO) << idStr_ << "Create link failed for " << f.second->path() << " on " << newPath
-                << ", error:" << strerror(errno);
+      VLOG(3) << idStr_ << "Create link failed for " << f.second->path() << " on " << newPath
+              << ", error:" << strerror(errno);
       return false;
     }
-    LOG(INFO) << idStr_ << "Create link success for " << f.second->path() << " on " << newPath;
+    VLOG(3) << idStr_ << "Create link success for " << f.second->path() << " on " << newPath;
   }
 
   return true;
@@ -573,8 +566,8 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
 
 bool FileBasedWal::rollbackToLog(LogID id) {
   if (id < firstLogId_ - 1 || id > lastLogId_) {
-    LOG(ERROR) << idStr_ << "Rollback target id " << id << " is not in the range of ["
-               << firstLogId_ << "," << lastLogId_ << "] of WAL";
+    VLOG(4) << idStr_ << "Rollback target id " << id << " is not in the range of [" << firstLogId_
+            << "," << lastLogId_ << "] of WAL";
     return false;
   }
 
@@ -595,7 +588,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
       // are rolled back
       while (it != walFiles_.end()) {
         // Need to remove the file
-        VLOG(1) << "Removing file " << it->second->path();
+        VLOG(4) << "Removing file " << it->second->path();
         unlink(it->second->path());
         it = walFiles_.erase(it);
       }
@@ -608,9 +601,11 @@ bool FileBasedWal::rollbackToLog(LogID id) {
       lastLogId_ = 0;
       lastLogTerm_ = 0;
     } else {
-      VLOG(1) << "Roll back to log " << id << ", the last WAL file is now \""
+      VLOG(4) << "Roll back to log " << id << ", the last WAL file is now \""
               << walFiles_.rbegin()->second->path() << "\"";
       rollbackInFile(walFiles_.rbegin()->second, id);
+      CHECK_EQ(lastLogId_, id);
+      CHECK_EQ(walFiles_.rbegin()->second->lastId(), id);
     }
   }
 
@@ -632,7 +627,7 @@ bool FileBasedWal::reset() {
   std::vector<std::string> files = FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
   for (auto& fn : files) {
     auto absFn = FileUtils::joinPath(dir_, fn);
-    LOG(INFO) << "Removing " << absFn;
+    VLOG(3) << "Removing " << absFn;
     unlink(absFn.c_str());
   }
   lastLogId_ = firstLogId_ = 0;
@@ -645,7 +640,7 @@ void FileBasedWal::cleanWAL() {
     return;
   }
   auto now = time::WallClock::fastNowInSec();
-  // In theory we only need to keep the latest wal file because it is beging
+  // In theory we only need to keep the latest wal file because it is being
   // written now. However, sometimes will trigger raft snapshot even only a
   // small amount of logs is missing, especially when we reboot all storage, so
   // se keep one more wal.
@@ -660,7 +655,7 @@ void FileBasedWal::cleanWAL() {
   while (it != walFiles_.end()) {
     // keep at least two wal
     if (index++ < size - 2 && (now - it->second->mtime() > walTTL)) {
-      VLOG(1) << "Clean wals, Remove " << it->second->path() << ", now: " << now
+      VLOG(3) << "Clean wals, Remove " << it->second->path() << ", now: " << now
               << ", mtime: " << it->second->mtime();
       unlink(it->second->path());
       it = walFiles_.erase(it);
@@ -670,30 +665,37 @@ void FileBasedWal::cleanWAL() {
     }
   }
   if (count > 0) {
-    LOG(INFO) << idStr_ << "Clean wals number " << count;
+    VLOG(2) << idStr_ << "Clean wals number " << count;
   }
   firstLogId_ = walFiles_.begin()->second->firstId();
 }
 
 void FileBasedWal::cleanWAL(LogID id) {
   std::lock_guard<std::mutex> g(walFilesMutex_);
+  auto now = time::WallClock::fastNowInSec();
+  size_t index = 0;
   if (walFiles_.empty()) {
+    return;
+  }
+  auto size = walFiles_.size();
+  if (size < 2) {
     return;
   }
 
   if (walFiles_.rbegin()->second->lastId() < id) {
-    LOG(WARNING) << "Try to clean wal not existed " << id << ", lastWal is "
-                 << walFiles_.rbegin()->second->lastId();
+    VLOG(3) << "Try to clean wal not existed " << id << ", lastWal is "
+            << walFiles_.rbegin()->second->lastId();
     return;
   }
-
+  int walTTL = FLAGS_wal_ttl;
   // remove wal file that lastId is less than target
   auto iter = walFiles_.begin();
   while (iter != walFiles_.end()) {
-    if (iter->second->lastId() < id) {
-      VLOG(1) << "Clean wals, Remove " << iter->second->path();
+    if (iter->second->lastId() < id && index < size - 2 && (now - iter->second->mtime() > walTTL)) {
+      VLOG(3) << "Clean wals, Remove " << iter->second->path();
       unlink(iter->second->path());
       iter = walFiles_.erase(iter);
+      index++;
     } else {
       break;
     }
@@ -713,6 +715,15 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
   }
 
   return count;
+}
+
+TermID FileBasedWal::getLogTerm(LogID id) {
+  TermID term = INVALID_TERM;
+  auto iter = iterator(id, id);
+  if (iter->valid()) {
+    term = iter->logTerm();
+  }
+  return term;
 }
 
 }  // namespace wal

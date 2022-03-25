@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_DEDUCETYPEVISITOR_H_
@@ -28,11 +27,17 @@ class DeduceTypeVisitor final : public ExprVisitor {
                     GraphSpaceID space);
   ~DeduceTypeVisitor() = default;
 
-  bool ok() const { return status_.ok(); }
+  bool ok() const {
+    return status_.ok();
+  }
 
-  Status status() && { return std::move(status_); }
+  Status status() && {
+    return std::move(status_);
+  }
 
-  Value::Type type() const { return type_; }
+  Value::Type type() const {
+    return type_;
+  }
 
  private:
   void visit(ConstantExpression *expr) override;
@@ -58,6 +63,7 @@ class DeduceTypeVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;
@@ -85,6 +91,8 @@ class DeduceTypeVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
   void visitVertexPropertyExpr(PropertyExpression *expr);
 
@@ -93,8 +101,8 @@ class DeduceTypeVisitor final : public ExprVisitor {
     return type == Value::Type::NULLVALUE || type == Value::Type::__EMPTY__;
   }
 
-  const QueryContext *qctx_;
-  const ValidateContext *vctx_;
+  const QueryContext *qctx_{nullptr};
+  const ValidateContext *vctx_{nullptr};
   const ColsDef &inputs_;
   GraphSpaceID space_;
   Status status_;

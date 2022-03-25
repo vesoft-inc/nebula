@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_LISTCONFIGPROCESSOR_H
@@ -12,6 +11,10 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief List all registered configs in given module
+ *
+ */
 class ListConfigsProcessor : public BaseProcessor<cpp2::ListConfigsResp> {
  public:
   static ListConfigsProcessor* instance(kvstore::KVStore* kvstore) {

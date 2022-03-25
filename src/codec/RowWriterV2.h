@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_ROWWRITERV2_H_
@@ -36,7 +35,7 @@ enum class WriteResult {
   Version 1:
                  v v v 0 0 b b b
     In version 1, the middle two bits are always zeros. The left three bits
-    indicats the number of bytes used for the schema version, while the right
+    indicates the number of bytes used for the schema version, while the right
     three bits indicates the number of bytes used for the block offsets
 
   Version 2:
@@ -63,6 +62,7 @@ enum class WriteResult {
         TIMESTAMP       (8 bytes)
         DATE            (4 bytes)
         DATETIME        (15 bytes)
+        GEOGRAPHY       (8 bytes) *
 
   All except STRING typed properties are stored in-place. The STRING property
   stored the offset of the string content in the first 4 bytes and the length
@@ -95,24 +95,60 @@ class RowWriterV2 {
 
   ~RowWriterV2() = default;
 
-  // Return the exact length of the encoded binary array
-  int64_t size() const noexcept { return buf_.size(); }
+  /**
+   * @brief Return the exact length of the encoded binary array
+   *
+   * @return int64_t
+   */
+  int64_t size() const noexcept {
+    return buf_.size();
+  }
 
-  const meta::SchemaProviderIf* schema() const { return schema_; }
+  /**
+   * @brief Return the related schema
+   *
+   * @return const meta::SchemaProviderIf*
+   */
+  const meta::SchemaProviderIf* schema() const {
+    return schema_;
+  }
 
+  /**
+   * @brief Get the encoded string
+   *
+   * @return const std::string&
+   */
   const std::string& getEncodedStr() const noexcept {
     CHECK(finished_) << "You need to call finish() first";
     return buf_;
   }
 
+  /**
+   * @brief Get the encoded string with move
+   *
+   * @return std::string
+   */
   std::string moveEncodedStr() noexcept {
     CHECK(finished_) << "You need to call finish() first";
     return std::move(buf_);
   }
 
+  /**
+   * @brief Finish setting fields, begin to encode
+   *
+   * @return WriteResult Whether encode succeed
+   */
   WriteResult finish() noexcept;
 
   // Data write
+  /**
+   * @brief Set propertyfield value by index
+   *
+   * @tparam T
+   * @param index Field index
+   * @param v Value to write
+   * @return WriteResult
+   */
   template <typename T>
   WriteResult set(size_t index, T&& v) noexcept {
     CHECK(!finished_) << "You have called finish()";
@@ -123,6 +159,14 @@ class RowWriterV2 {
   }
 
   // Data write
+  /**
+   * @brief Set property value by property name
+   *
+   * @tparam T
+   * @param name Property name
+   * @param v Value to write
+   * @return WriteResult
+   */
   template <typename T>
   WriteResult set(const std::string& name, T&& v) noexcept {
     CHECK(!finished_) << "You have called finish()";
@@ -134,17 +178,45 @@ class RowWriterV2 {
     }
   }
 
+  /**
+   * @brief Set the value by index
+   *
+   * @param index
+   * @param val
+   * @return WriteResult
+   */
   WriteResult setValue(ssize_t index, const Value& val) noexcept;
+
+  /**
+   * @brief Set the value by index
+   *
+   * @param index
+   * @param val
+   * @return WriteResult
+   */
   WriteResult setValue(const std::string& name, const Value& val) noexcept;
 
+  /**
+   * @brief Set null by index
+   *
+   * @param index
+   * @return WriteResult
+   */
   WriteResult setNull(ssize_t index) noexcept;
+
+  /**
+   * @brief Set null by property name
+   *
+   * @param name
+   * @return WriteResult
+   */
   WriteResult setNull(const std::string& name) noexcept;
 
  private:
   const meta::SchemaProviderIf* schema_;
   std::string buf_;
   std::vector<bool> isSet_;
-  // Ther number of bytes ocupied by header and the schema version
+  // The number of bytes occupied by header and the schema version
   size_t headerLen_;
   size_t numNullBytes_;
   size_t approxStrLen_;
@@ -188,6 +260,9 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Date& v) noexcept;
   WriteResult write(ssize_t index, const Time& v) noexcept;
   WriteResult write(ssize_t index, const DateTime& v) noexcept;
+  WriteResult write(ssize_t index, const Duration& v) noexcept;
+
+  WriteResult write(ssize_t index, const Geography& v) noexcept;
 };
 
 }  // namespace nebula

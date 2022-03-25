@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/AssignmentValidator.h"
@@ -22,6 +21,7 @@ Status AssignmentValidator::validateImpl() {
   return Status::OK();
 }
 
+// Plan to process assignment in nGQL, e.g. $a = GO FROM <vid_list> OVER <edge_type> YIELD ...
 Status AssignmentValidator::toPlan() {
   root_ = validator_->root();
   auto *var = qctx_->symTable()->newVariable(var_);

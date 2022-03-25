@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/EdgeExpression.h"
@@ -15,6 +14,8 @@ const Value &EdgeExpression::eval(ExpressionContext &ctx) {
   return result_;
 }
 
-void EdgeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void EdgeExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_UPDATERESULTNODE_H_
@@ -14,11 +13,29 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief UpdateResNode is used to calcaute the expressions whose results are need to return to
+ * graphd
+ *
+ * UpdateResNode is used to evaluate the expression in the yield clause
+ *
+ * @tparam T
+ *
+ * @see RelNode<T>
+ */
 template <typename T>
 class UpdateResNode : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
+  /**
+   * @brief Construct a new Update Res Node object
+   *
+   * @param context  Runtime context.
+   * @param updateNode UpdateNode may be UpdateTagNode or UpdateEdgeNode.
+   * @param returnPropsExp Expressions in yield clause.
+   * @param expCtx Expression context
+   */
   UpdateResNode(RuntimeContext* context,
                 RelNode<T>* updateNode,
                 std::vector<Expression*> returnPropsExp,
@@ -28,10 +45,12 @@ class UpdateResNode : public RelNode<T> {
         updateNode_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
-        result_(result) {}
+        result_(result) {
+    RelNode<T>::name_ = "UpdateResNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const T& vId) override {
-    auto ret = RelNode<T>::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
+    auto ret = RelNode<T>::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED && ret != nebula::cpp2::ErrorCode::E_FILTER_OUT) {
       return ret;
     }
@@ -65,7 +84,10 @@ class UpdateResNode : public RelNode<T> {
   std::vector<Expression*> returnPropsExp_;
   StorageExpressionContext* expCtx_;
 
-  // return prop sets
+  /**
+   * @brief return prop sets
+   *
+   */
   nebula::DataSet* result_;
   bool insert_{false};
 };

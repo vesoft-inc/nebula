@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
@@ -14,7 +13,7 @@
 namespace nebula {
 namespace graph {
 /**
- * This is an scheluder implementation based on asynchronous message
+ * This is an scheduler implementation based on asynchronous message
  * notification and bread first search. Each node in execution plan would be
  * triggered to run when the node itself receives all the messages that send by
  * its dependencies. And once the node is done running, it will send a message
@@ -32,34 +31,28 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
   folly::Future<Status> doSchedule(Executor* root) const;
 
   /**
-   *  futures: current executor will be triggered when all the futures are
+   * futures: current executor will be triggered when all the futures are
    * notified. exe: current executor runner: a thread-pool promises: the
    * promises will be set a value which triggers the other executors if current
    * executor is done working.
    */
-  void scheduleExecutor(std::vector<folly::Future<Status>>&& futures,
-                        Executor* exe,
-                        folly::Executor* runner,
-                        std::vector<folly::Promise<Status>>&& promises) const;
+  folly::Future<Status> scheduleExecutor(std::vector<folly::Future<Status>>&& futures,
+                                         Executor* exe,
+                                         folly::Executor* runner) const;
 
-  void runSelect(std::vector<folly::Future<Status>>&& futures,
-                 SelectExecutor* select,
-                 folly::Executor* runner,
-                 std::vector<folly::Promise<Status>>&& promises) const;
+  folly::Future<Status> runSelect(std::vector<folly::Future<Status>>&& futures,
+                                  SelectExecutor* select,
+                                  folly::Executor* runner) const;
 
-  void runExecutor(std::vector<folly::Future<Status>>&& futures,
-                   Executor* exe,
-                   folly::Executor* runner,
-                   std::vector<folly::Promise<Status>>&& promises) const;
+  folly::Future<Status> runExecutor(std::vector<folly::Future<Status>>&& futures,
+                                    Executor* exe,
+                                    folly::Executor* runner) const;
 
-  void runLeafExecutor(Executor* exe,
-                       folly::Executor* runner,
-                       std::vector<folly::Promise<Status>>&& promises) const;
+  folly::Future<Status> runLeafExecutor(Executor* exe, folly::Executor* runner) const;
 
-  void runLoop(std::vector<folly::Future<Status>>&& futures,
-               LoopExecutor* loop,
-               folly::Executor* runner,
-               std::vector<folly::Promise<Status>>&& promises) const;
+  folly::Future<Status> runLoop(std::vector<folly::Future<Status>>&& futures,
+                                LoopExecutor* loop,
+                                folly::Executor* runner) const;
 
   Status checkStatus(std::vector<Status>&& status) const;
 

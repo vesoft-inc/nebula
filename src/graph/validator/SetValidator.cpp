@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/SetValidator.h"
@@ -12,6 +11,8 @@
 namespace nebula {
 namespace graph {
 
+// Validate sub-sentences of SET statement.
+// Check columns of sub-sentences are the same.
 Status SetValidator::validateImpl() {
   NG_RETURN_IF_ERROR(lValidator_->validate());
   NG_RETURN_IF_ERROR(rValidator_->validate());
@@ -34,6 +35,7 @@ Status SetValidator::validateImpl() {
   return Status::OK();
 }
 
+// Combine two sub-plans by parallel dependencies.
 Status SetValidator::toPlan() {
   auto setSentence = static_cast<const SetSentence *>(sentence_);
   auto lRoot = DCHECK_NOTNULL(lValidator_->root());
@@ -71,6 +73,10 @@ Status SetValidator::toPlan() {
   bNode->setLeftVar(lRoot->outputVar());
   bNode->setRightVar(rRoot->outputVar());
 
+  if (!lValidator_->tail()->isSingleInput() && !rValidator_->tail()->isSingleInput()) {
+    tail_ = lValidator_->tail();
+    return Status::OK();
+  }
   tail_ = PassThroughNode::make(qctx_, nullptr);
   NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));
   NG_RETURN_IF_ERROR(rValidator_->appendPlan(tail_));

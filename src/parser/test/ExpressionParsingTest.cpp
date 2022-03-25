@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -39,7 +38,9 @@ class ExpressionParsingTest : public ::testing::Test {
     return expr_;
   }
 
-  void add(std::string expr, Expression *ast) { items_.emplace_back(std::move(expr), ast); }
+  void add(std::string expr, Expression *ast) {
+    items_.emplace_back(std::move(expr), ast);
+  }
 
   void run() {
     if (items_.empty()) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_BINARYEXPRESSION_H_
@@ -20,17 +19,29 @@ class BinaryExpression : public Expression {
  public:
   bool operator==(const Expression& rhs) const override;
 
-  const Expression* left() const { return lhs_; }
+  const Expression* left() const {
+    return lhs_;
+  }
 
-  Expression* left() { return lhs_; }
+  Expression* left() {
+    return lhs_;
+  }
 
-  void setLeft(Expression* expr) { lhs_ = expr; }
+  void setLeft(Expression* expr) {
+    lhs_ = expr;
+  }
 
-  const Expression* right() const { return rhs_; }
+  const Expression* right() const {
+    return rhs_;
+  }
 
-  Expression* right() { return rhs_; }
+  Expression* right() {
+    return rhs_;
+  }
 
-  void setRight(Expression* expr) { rhs_ = expr; }
+  void setRight(Expression* expr) {
+    rhs_ = expr;
+  }
 
  protected:
   BinaryExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_STATSTASK_H_
@@ -16,20 +15,34 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Task class to handle statistics.
+ *
+ */
 class StatsTask : public AdminTask {
  public:
   using AdminTask::finish;
   StatsTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-  ~StatsTask() { LOG(INFO) << "Release Stats Task"; }
+  ~StatsTask() {
+    LOG(INFO) << "Release Stats Task";
+  }
 
+  /**
+   * @brief Generate sub tasks for StatsTask.
+   *
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> Task vector or errorcode.
+   */
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
+  /**
+   * @brief Handle task execution result.
+   *
+   * @param rc Errorcode of task.
+   */
   void finish(nebula::cpp2::ErrorCode rc) override;
 
  protected:
-  void cancel() override { canceled_ = true; }
-
   nebula::cpp2::ErrorCode genSubTask(GraphSpaceID space,
                                      PartitionID part,
                                      std::unordered_map<TagID, std::string> tags,
@@ -39,7 +52,6 @@ class StatsTask : public AdminTask {
   nebula::cpp2::ErrorCode getSchemas(GraphSpaceID spaceId);
 
  protected:
-  std::atomic<bool> canceled_{false};
   GraphSpaceID spaceId_;
 
   // All tagIds and tagName of the spaceId

@@ -1,16 +1,15 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ShowHostsExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -22,16 +21,18 @@ folly::Future<Status> ShowHostsExecutor::execute() {
 
 folly::Future<Status> ShowHostsExecutor::showHosts() {
   static constexpr char kNoPartition[] = "No valid partition";
-  static constexpr char kPartitionDelimeter[] = ", ";
+  static constexpr char kPartitionDelimiter[] = ", ";
 
   auto *shNode = asNode<ShowHosts>(node());
   auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
     DataSet v({"Host",
                "Port",
+               "HTTP port",
                "Status",
                "Leader count",
                "Leader distribution",
-               "Partition distribution"});
+               "Partition distribution",
+               "Version"});
 
     std::map<std::string, int64_t> leaderPartsCount;
     std::map<std::string, int64_t> allPartsCount;
@@ -40,6 +41,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     for (const auto &host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
+                     FLAGS_ws_http_port,
                      apache::thrift::util::enumNameSafe(host.get_status())});
       int64_t leaderCount = 0;
       for (const auto &spaceEntry : host.get_leader_parts()) {
@@ -57,7 +59,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         leaderPartsCount[l.first] += l.second.size();
         leaders << l.first << ":" << l.second.size();
         if (i < lPartsCount.size() - 1) {
-          leaders << kPartitionDelimeter;
+          leaders << kPartitionDelimiter;
         }
         ++i;
       }
@@ -72,7 +74,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         allPartsCount[p.first] += p.second.size();
         parts << p.first << ":" << p.second.size();
         if (i < aPartsCount.size() - 1) {
-          parts << kPartitionDelimeter;
+          parts << kPartitionDelimiter;
         }
         ++i;
       }
@@ -83,6 +85,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       r.emplace_back(leaderCount);
       r.emplace_back(leaders.str());
       r.emplace_back(parts.str());
+      r.emplace_back(host.version_ref().has_value() ? Value(*host.version_ref()) : Value());
       v.emplace_back(std::move(r));
     }  // row loop
     {
@@ -96,7 +99,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       for (const auto &spaceEntry : leaderPartsCount) {
         leaders << spaceEntry.first << ":" << spaceEntry.second;
         if (i < leaderPartsCount.size() - 1) {
-          leaders << kPartitionDelimeter;
+          leaders << kPartitionDelimiter;
         }
         ++i;
       }
@@ -104,7 +107,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       for (const auto &spaceEntry : allPartsCount) {
         parts << spaceEntry.first << ":" << spaceEntry.second;
         if (i < allPartsCount.size() - 1) {
-          parts << kPartitionDelimeter;
+          parts << kPartitionDelimiter;
         }
         ++i;
       }
@@ -149,7 +152,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
           LOG(ERROR) << resp.status();
           return resp.status();
         }
-        auto value = std::move(resp).value();
+        auto value = std::forward<decltype(resp)>(resp).value();
         if (type == meta::cpp2::ListHostType::ALLOC) {
           return finish(makeTraditionalResult(value));
         }

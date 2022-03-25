@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/hdfs/HdfsCommandHelper.h"
@@ -43,7 +42,9 @@ StatusOr<std::string> HdfsCommandHelper::copyToLocal(const std::string& hdfsHost
   }
 }
 
-bool HdfsCommandHelper::checkHadoopPath() { return std::getenv("HADOOP_HOME") != nullptr; }
+bool HdfsCommandHelper::checkHadoopPath() {
+  return std::getenv("HADOOP_HOME") != nullptr;
+}
 
 }  // namespace hdfs
 }  // namespace nebula

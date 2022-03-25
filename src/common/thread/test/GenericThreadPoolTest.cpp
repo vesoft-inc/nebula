@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -78,7 +77,9 @@ TEST(GenericThreadPool, addTask) {
   // member function as task
   {
     struct X {
-      std::string itos(size_t i) { return std::to_string(i); }
+      std::string itos(size_t i) {
+        return std::to_string(i);
+      }
     } x;
     ASSERT_EQ("918", pool.addTask(&X::itos, &x, 918).get());
     ASSERT_EQ("918", pool.addTask(&X::itos, std::make_shared<X>(), 918).get());

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/visitor/FoldConstantExprVisitor.h"
@@ -45,17 +44,28 @@ void FoldConstantExprVisitor::visit(LabelExpression *expr) {
   canBeFolded_ = false;
 }
 
+void FoldConstantExprVisitor::visit(LabelTagPropertyExpression *expr) {
+  UNUSED(expr);
+  canBeFolded_ = false;
+}
+
 void FoldConstantExprVisitor::visit(LabelAttributeExpression *expr) {
   UNUSED(expr);
   canBeFolded_ = false;
 }
 
 // binary expression
-void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void FoldConstantExprVisitor::visit(SubscriptExpression *expr) { visitBinaryExpr(expr); }
+void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
   UNUSED(expr);
@@ -338,21 +348,34 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
 }
 
 Expression *FoldConstantExprVisitor::fold(Expression *expr) {
+  // Container expression should remain the same type after being folded
+  if (expr->isContainerExpr()) {
+    return expr;
+  }
+
   QueryExpressionContext ctx;
   auto value = expr->eval(ctx(nullptr));
   if (value.type() == Value::Type::NULLVALUE) {
     switch (value.getNull()) {
-      case NullType::DIV_BY_ZERO:
+      case NullType::DIV_BY_ZERO: {
         canBeFolded_ = false;
-        status_ = Status::Error("/ by zero");
+        status_ = Status::SemanticError("Divide by 0");
         break;
-      case NullType::ERR_OVERFLOW:
+      }
+      case NullType::ERR_OVERFLOW: {
         canBeFolded_ = false;
-        status_ = Status::Error("result of %s cannot be represented as an integer",
-                                expr->toString().c_str());
+        status_ = Status::SemanticError("result of %s cannot be represented as an integer",
+                                        expr->toString().c_str());
         break;
-      default:
+      }
+      case NullType::BAD_TYPE: {
+        canBeFolded_ = false;
+        status_ = Status::SemanticError("Type error `%s'", expr->toString().c_str());
         break;
+      }
+      default: {
+        break;
+      }
     }
   } else {
     status_ = Status::OK();
@@ -502,6 +525,10 @@ void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
     }
   }
   canBeFolded_ = canBeFolded;
+}
+
+void FoldConstantExprVisitor::visit(MatchPathPatternExpression *) {
+  canBeFolded_ = false;
 }
 
 }  // namespace graph

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_TIME_TIMECONVERSION_H_
@@ -10,6 +9,7 @@
 #include <cstdint>
 
 #include "common/datatypes/Date.h"
+#include "common/time/Constants.h"
 
 namespace nebula {
 namespace time {
@@ -82,27 +82,7 @@ class TimeConversion {
     return t;
   }
 
-  // https://en.wikipedia.org/wiki/Leap_year#Leap_day
-  static bool isLeapYear(int16_t year) {
-    if (year % 4 != 0) {
-      return false;
-    } else if (year % 100 != 0) {
-      return true;
-    } else if (year % 400 != 0) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
   static const DateTime kEpoch;
-
-  static constexpr int kDayOfLeapYear = 366;
-  static constexpr int kDayOfCommonYear = 365;
-
-  static constexpr int64_t kSecondsOfMinute = 60;
-  static constexpr int64_t kSecondsOfHour = 60 * kSecondsOfMinute;
-  static constexpr int64_t kSecondsOfDay = 24 * kSecondsOfHour;
 
  private:
   // The result of a right-shift of a signed negative number is
@@ -110,7 +90,7 @@ class TimeConversion {
   // https://en.cppreference.com/w/cpp/language/operator_arithmetic). So make
   // sure the result is what we expected, if right shift not filled highest bit
   // by the sign bit that the process will falls back to procedure which fill
-  // hightest bit by the sign bit value.
+  // highest bit by the sign bit value.
   static int64_t shr(int64_t a, int b) {
     int64_t one = 1;
     return (-one >> 1 == -1 ? a >> b : (a + (a < 0)) / (one << b) - (a < 0));

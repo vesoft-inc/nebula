@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_PATHBUILDEXPRESSION_H_
@@ -42,11 +41,17 @@ class PathBuildExpression final : public Expression {
     items_[index] = item;
   }
 
-  size_t size() const { return items_.size(); }
+  size_t size() const {
+    return items_.size();
+  }
 
-  size_t length() const { return size() - 1; }
+  size_t length() const {
+    return size() - 1;
+  }
 
-  const auto& items() const { return items_; }
+  const auto& items() const {
+    return items_;
+  }
 
  private:
   explicit PathBuildExpression(ObjectPool* pool) : Expression(pool, Kind::kPathBuild) {}
@@ -57,7 +62,9 @@ class PathBuildExpression final : public Expression {
 
   bool getVertex(const Value& value, Vertex& vertex) const;
 
-  bool getEdge(const Value& value, Step& step) const;
+  bool getEdge(const Value& value, const Value& lastStepVid, Step& step) const;
+
+  bool buildPath(const Value& value, Path& path) const;
 
  private:
   std::vector<Expression*> items_;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "webservice/SetFlagsHandler.h"
@@ -89,7 +88,9 @@ void SetFlagsHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void SetFlagsHandler::requestComplete() noexcept { delete this; }
+void SetFlagsHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void SetFlagsHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service SetFlagsHandler got error: " << proxygen::getErrorString(err);

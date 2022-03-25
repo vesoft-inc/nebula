@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_RELNODE_H_
@@ -9,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/context/ExpressionContext.h"
+#include "common/time/Duration.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/context/StorageExpressionContext.h"
@@ -27,14 +27,32 @@ using PropHandler = std::function<nebula::cpp2::ErrorCode(
 template <typename T>
 class StoragePlan;
 
-// RelNode is shortcut for relational algebra node, each RelNode has an execute
-// method, which will be invoked in dag when all its dependencies have finished
+/**
+ * @brief RelNode is the abbreviation for relational algebra node, each RelNode has an execute
+ * method, which will be invoked in DAG when all its dependencies have finished
+ *
+ * @tparam T is input data type of plan
+ */
 template <typename T>
 class RelNode {
   friend class StoragePlan<T>;
 
  public:
+  /**
+   * @brief start execution with `input` and `partId`
+   *
+   * `execute` function is a warpper of `doExecute`. It add some hook before and after `doExecute`.
+   * And derived class only need override `doExecute`.
+   *
+   *
+   */
   virtual nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) {
+    duration_.resume();
+    auto ret = doExecute(partId, input);
+    duration_.pause();
+    return ret;
+  }
+  virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& input) {
     for (auto* dependency : dependencies_) {
       auto ret = dependency->execute(partId, input);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -45,6 +63,12 @@ class RelNode {
   }
 
   virtual nebula::cpp2::ErrorCode execute(PartitionID partId) {
+    duration_.resume();
+    auto ret = doExecute(partId);
+    duration_.pause();
+    return ret;
+  }
+  virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId) {
     for (auto* dependency : dependencies_) {
       auto ret = dependency->execute(partId);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -56,7 +80,7 @@ class RelNode {
 
   void addDependency(RelNode<T>* dep) {
     dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dep->isDependent_ = true;
   }
 
   RelNode() = default;
@@ -65,9 +89,14 @@ class RelNode {
 
   explicit RelNode(const std::string& name) : name_(name) {}
 
-  std::string name_;
+  const std::string& name() const {
+    return name_;
+  }
+
+  std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isDependent_ = false;
+  time::Duration duration_{true};
 };
 
 // QueryNode is the node which would read data from kvstore, it usually generate
@@ -75,9 +104,13 @@ class RelNode {
 template <typename T>
 class QueryNode : public RelNode<T> {
  public:
-  const Value& result() { return result_; }
+  const Value& result() {
+    return result_;
+  }
 
-  Value& mutableResult() { return result_; }
+  Value& mutableResult() {
+    return result_;
+  }
 
  protected:
   Value result_;
@@ -99,7 +132,9 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
 
   explicit IterateNode(IterateNode* node) : upstream_(node) {}
 
-  bool valid() const override { return upstream_->valid(); }
+  bool valid() const override {
+    return upstream_->valid();
+  }
 
   void next() override {
     do {
@@ -107,16 +142,24 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
     } while (upstream_->valid() && !check());
   }
 
-  folly::StringPiece key() const override { return upstream_->key(); }
+  folly::StringPiece key() const override {
+    return upstream_->key();
+  }
 
-  folly::StringPiece val() const override { return upstream_->val(); }
+  folly::StringPiece val() const override {
+    return upstream_->val();
+  }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override { return upstream_->reader(); }
+  RowReader* reader() const override {
+    return upstream_->reader();
+  }
 
  protected:
   // return true when the iterator points to a valid value
-  virtual bool check() { return true; }
+  virtual bool check() {
+    return true;
+  }
 
   IterateNode* upstream_;
 };

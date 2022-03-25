@@ -1,10 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#pragma once
+#ifndef COMMON_BASE_ICORD_H
+#define COMMON_BASE_ICORD_H
 
 #include "common/base/Base.h"
 
@@ -17,11 +17,17 @@ class ICord {
                 "kBlockContentSize must be power of 2");
   ICord() : head_(inlineBlock_), tail_(head_) {}
 
-  virtual ~ICord() { clear(); }
+  virtual ~ICord() {
+    clear();
+  }
 
-  size_t size() const noexcept { return len_; }
+  size_t size() const noexcept {
+    return len_;
+  }
 
-  bool empty() const noexcept { return len_ == 0; }
+  bool empty() const noexcept {
+    return len_ == 0;
+  }
 
   void clear() {
     auto alloc = next(head_);
@@ -149,7 +155,9 @@ class ICord {
     return write(reinterpret_cast<char*>(&value), sizeof(uint64_t));
   }
 
-  ICord<kBlockContentSize>& operator<<(char value) { return write(&value, sizeof(char)); }
+  ICord<kBlockContentSize>& operator<<(char value) {
+    return write(&value, sizeof(char));
+  }
 
   ICord<kBlockContentSize>& operator<<(bool value) {
     return write(reinterpret_cast<char*>(&value), sizeof(bool));
@@ -167,7 +175,9 @@ class ICord {
     return write(value.data(), value.size());
   }
 
-  ICord<kBlockContentSize>& operator<<(const char* value) { return write(value, strlen(value)); }
+  ICord<kBlockContentSize>& operator<<(const char* value) {
+    return write(value, strlen(value));
+  }
 
   ICord<kBlockContentSize>& operator<<(const ICord& rhs) {
     char* n = rhs.head_;
@@ -188,13 +198,19 @@ class ICord {
   void* operator new(std::size_t) = delete;
 
   // Is the capacity full filled
-  bool isFull() const { return len_ != 0 && lengthMod() == 0; }
+  bool isFull() const {
+    return len_ != 0 && lengthMod() == 0;
+  }
 
   // Used size in last block
-  std::size_t lengthMod() const { return len_ & (kBlockContentSize - 1); }
+  std::size_t lengthMod() const {
+    return len_ & (kBlockContentSize - 1);
+  }
 
   // Is there only inline allocation
-  bool isInline() const { return len_ < kBlockContentSize; }
+  bool isInline() const {
+    return len_ < kBlockContentSize;
+  }
 
   // return next block pointer
   char* next(char* p) const {
@@ -229,3 +245,4 @@ class ICord {
 };
 
 }  // namespace nebula
+#endif

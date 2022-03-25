@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/json.h>
@@ -25,7 +24,6 @@ class StorageHttpStatsHandlerTestEnv : public ::testing::Environment {
   void SetUp() override {
     FLAGS_ws_ip = "127.0.0.1";
     FLAGS_ws_http_port = 0;
-    FLAGS_ws_h2_port = 0;
     FLAGS_enable_rocksdb_statistics = true;
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpStatsHandler.XXXXXX");
     cluster_ = std::make_unique<mock::MockCluster>();
@@ -71,7 +69,7 @@ TEST(StorageHttpStatsHandlerTest, GetStatsTest) {
     const std::string expect = "rocksdb.bytes.read=0\n";
     ASSERT_STREQ(expect.c_str(), resp.value().c_str());
   }
-  // Get multipple stats
+  // Get multiple stats
   {
     auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add";
     auto request =

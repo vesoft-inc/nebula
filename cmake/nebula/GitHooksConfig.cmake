@@ -1,4 +1,4 @@
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
+if(ENABLE_CREATE_GIT_HOOKS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     # Create the pre-commit hook every time we run cmake
     message(STATUS "Create the pre-commit hook")
     set(PRE_COMMIT_HOOK ${CMAKE_CURRENT_SOURCE_DIR}/.git/hooks/pre-commit)

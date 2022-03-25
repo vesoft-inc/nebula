@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
@@ -17,7 +16,7 @@ bool NebulaKeyUtilsV2::isValidVidLen(size_t vIdLen, VertexID srcVId, VertexID ds
 }
 
 // static
-std::string NebulaKeyUtilsV2::vertexKey(
+std::string NebulaKeyUtilsV2::tagKey(
     size_t vIdLen, PartitionID partId, VertexID vId, TagID tagId, TagVersion tv) {
   CHECK_GE(vIdLen, vId.size());
   tagId &= kTagMaskSet;

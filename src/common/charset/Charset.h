@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_CHARSET_CHARSET_H_
@@ -60,10 +59,14 @@ class CharsetInfo final {
   /**
    * Get all supported charsets description information
    */
-  std::unordered_map<std::string, CharsetDesc> getCharsetDesc() { return charsetDesc_; }
+  std::unordered_map<std::string, CharsetDesc> getCharsetDesc() {
+    return charsetDesc_;
+  }
 
  private:
-  CharsetInfo() { charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4}; }
+  CharsetInfo() {
+    charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
+  }
 
   /**
    * List of supported charsets

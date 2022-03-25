@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_TYPECASTINGEXPRESSION_H_
@@ -33,13 +32,21 @@ class TypeCastingExpression final : public Expression {
     return TypeCastingExpression::make(pool_, type(), operand()->clone());
   }
 
-  const Expression* operand() const { return operand_; }
+  const Expression* operand() const {
+    return operand_;
+  }
 
-  Expression* operand() { return operand_; }
+  Expression* operand() {
+    return operand_;
+  }
 
-  void setOperand(Expression* expr) { operand_ = expr; }
+  void setOperand(Expression* expr) {
+    operand_ = expr;
+  }
 
-  Value::Type type() const { return vType_; }
+  Value::Type type() const {
+    return vType_;
+  }
 
   static bool validateTypeCast(Value::Type operandType, Value::Type type);
 

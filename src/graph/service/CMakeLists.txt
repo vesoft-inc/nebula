@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     graph_flags_obj OBJECT
@@ -11,6 +10,7 @@ nebula_add_library(
 nebula_add_library(
     service_obj OBJECT
     GraphService.cpp
+    GraphServer.cpp
 )
 
 nebula_add_library(
@@ -27,3 +27,4 @@ nebula_add_library(
     CloudAuthenticator.cpp
 )
 
+nebula_add_subdirectory(test)

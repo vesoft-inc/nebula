@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/RemoveNoopProjectRule.h"
@@ -20,7 +19,9 @@ namespace opt {
 std::unique_ptr<OptRule> RemoveNoopProjectRule::kInstance =
     std::unique_ptr<RemoveNoopProjectRule>(new RemoveNoopProjectRule());
 
-RemoveNoopProjectRule::RemoveNoopProjectRule() { RuleSet::QueryRules().addRule(this); }
+RemoveNoopProjectRule::RemoveNoopProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& RemoveNoopProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kProject);
@@ -94,7 +95,9 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
   return true;
 }
 
-std::string RemoveNoopProjectRule::toString() const { return "RemoveNoopProjectRule"; }
+std::string RemoveNoopProjectRule::toString() const {
+  return "RemoveNoopProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

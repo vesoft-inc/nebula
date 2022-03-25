@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_GETSTATISPROCESSOR_H_
@@ -12,6 +11,9 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get stats of a job, return error if the job is running or failed
+ */
 class GetStatsProcessor : public BaseProcessor<cpp2::GetStatsResp> {
  public:
   static GetStatsProcessor* instance(kvstore::KVStore* kvstore) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_BASEPROCESSOR_H_
@@ -31,7 +30,9 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   virtual void onFinished() {
@@ -42,9 +43,12 @@ class BaseProcessor {
       }
     }
 
-    this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
-    this->result_.set_failed_parts(this->codes_);
-    this->resp_.set_result(std::move(this->result_));
+    this->result_.latency_in_us_ref() = this->duration_.elapsedInUSec();
+    if (!profileDetail_.empty()) {
+      this->result_.latency_detail_us_ref() = std::move(profileDetail_);
+    }
+    this->result_.failed_parts_ref() = this->codes_;
+    this->resp_.result_ref() = std::move(this->result_);
     this->promise_.setValue(std::move(this->resp_));
 
     if (counters_) {
@@ -65,16 +69,12 @@ class BaseProcessor {
     if (!vIdType.ok()) {
       return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
-    isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+    isIntId_ = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
-
-  nebula::cpp2::ErrorCode doSyncPut(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    std::vector<kvstore::KV>&& data);
 
   void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string>&& keys);
 
@@ -85,7 +85,7 @@ class BaseProcessor {
 
   nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
 
-  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::meta::cpp2::PropertyType type);
+  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::PropertyType type);
 
   void pushResultCode(nebula::cpp2::ErrorCode code,
                       PartitionID partId,
@@ -97,10 +97,21 @@ class BaseProcessor {
 
   void handleAsync(GraphSpaceID spaceId, PartitionID partId, nebula::cpp2::ErrorCode code);
 
+  nebula::cpp2::ErrorCode checkStatType(const meta::SchemaProviderIf::Field& field,
+                                        cpp2::StatType statType);
+
   StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                      const std::vector<std::string>& propNames,
                                      const std::vector<Value>& props,
                                      WriteResult& wRet);
+
+  virtual void profileDetail(const std::string& name, int32_t latency) {
+    if (!profileDetail_.count(name)) {
+      profileDetail_[name] = latency;
+    } else {
+      profileDetail_[name] += latency;
+    }
+  }
 
  protected:
   StorageEnv* env_{nullptr};
@@ -116,6 +127,9 @@ class BaseProcessor {
   int32_t callingNum_{0};
   int32_t spaceVidLen_;
   bool isIntId_;
+  std::map<std::string, int32_t> profileDetail_;
+  std::mutex profileMut_;
+  bool profileDetailFlag_{false};
 };
 
 }  // namespace storage

@@ -1,12 +1,10 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/SequentialValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
@@ -16,6 +14,9 @@ DECLARE_uint32(max_allowed_statements);
 
 namespace nebula {
 namespace graph {
+
+// Validator of sequential sentences which combine multiple sentences, e.g. GO ...; GO ...;
+// Call validator of sub-sentences.
 Status SequentialValidator::validateImpl() {
   Status status;
   if (sentence_->kind() != Sentence::Kind::kSequential) {
@@ -43,6 +44,7 @@ Status SequentialValidator::validateImpl() {
   return Status::OK();
 }
 
+// Get first sentence in nested sentence.
 const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) const {
   if (sentence->kind() != Sentence::Kind::kPipe) {
     return sentence;
@@ -50,5 +52,6 @@ const Sentence* SequentialValidator::getFirstSentence(const Sentence* sentence) 
   auto pipe = static_cast<const PipedSentence*>(sentence);
   return getFirstSentence(pipe->left());
 }
+
 }  // namespace graph
 }  // namespace nebula

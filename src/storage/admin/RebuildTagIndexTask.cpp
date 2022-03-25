@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildTagIndexTask.h"
@@ -12,6 +11,8 @@
 
 namespace nebula {
 namespace storage {
+
+const int32_t kReserveNum = 1024 * 4;
 
 StatusOr<IndexItems> RebuildTagIndexTask::getIndexes(GraphSpaceID space) {
   return env_->indexMan_->getTagIndexes(space);
@@ -24,15 +25,16 @@ StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> RebuildTagIndexTask::getIndex(G
 
 nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                               PartitionID part,
-                                                              const IndexItems& items) {
-  if (canceled_) {
-    LOG(ERROR) << "Rebuild Tag Index is Canceled";
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+                                                              const IndexItems& items,
+                                                              kvstore::RateLimiter* rateLimiter) {
+  if (UNLIKELY(canceled_)) {
+    LOG(INFO) << "Rebuild Tag Index is Canceled";
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   auto vidSizeRet = env_->schemaMan_->getSpaceVidLen(space);
   if (!vidSizeRet.ok()) {
-    LOG(ERROR) << "Get VID Size Failed";
+    LOG(INFO) << "Get VID Size Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
   }
 
@@ -41,33 +43,40 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
     tagIds.emplace(item->get_schema_id().get_tag_id());
   }
 
+  auto schemasRet = env_->schemaMan_->getAllLatestVerTagSchema(space);
+  if (!schemasRet.ok()) {
+    LOG(INFO) << "Get space tag schema failed";
+    return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+  }
+  auto schemas = schemasRet.value();
+
   auto vidSize = vidSizeRet.value();
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = NebulaKeyUtils::vertexPrefix(part);
+  auto prefix = NebulaKeyUtils::tagPrefix(part);
   auto ret = env_->kvstore_->prefix(space, part, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Processing Part " << part << " Failed";
+    LOG(INFO) << "Processing Part " << part << " Failed";
     return ret;
   }
 
-  VertexID currentVertex = "";
   std::vector<kvstore::KV> data;
-  data.reserve(FLAGS_rebuild_index_batch_num);
+  data.reserve(kReserveNum);
   RowReaderWrapper reader;
+  size_t batchSize = 0;
   while (iter && iter->valid()) {
-    if (canceled_) {
-      LOG(ERROR) << "Rebuild Tag Index is Canceled";
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    if (UNLIKELY(canceled_)) {
+      LOG(INFO) << "Rebuild Tag Index is Canceled";
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
     }
 
-    if (static_cast<int32_t>(data.size()) == FLAGS_rebuild_index_batch_num) {
-      auto result = writeData(space, part, data);
+    if (batchSize >= FLAGS_rebuild_index_batch_size) {
+      auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
         return result;
       }
-
       data.clear();
+      batchSize = 0;
     }
 
     auto key = iter->key();
@@ -77,19 +86,13 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     // Check whether this record contains the index of indexId
     if (tagIds.find(tagID) == tagIds.end()) {
-      VLOG(3) << "This record is not built index.";
+      VLOG(1) << "This record is not built index.";
       iter->next();
       continue;
     }
 
     auto vertex = NebulaKeyUtils::getVertexId(vidSize, key);
-    VLOG(3) << "Tag ID " << tagID << " Vertex ID " << vertex;
-    if (currentVertex == vertex) {
-      iter->next();
-      continue;
-    } else {
-      currentVertex = vertex.toString();
-    }
+    VLOG(1) << "Tag ID " << tagID << " Vertex ID " << vertex;
 
     reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_, space, tagID, val);
     if (reader == nullptr) {
@@ -97,18 +100,18 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
       continue;
     }
 
-    auto schema = env_->schemaMan_->getTagSchema(space, tagID);
-    if (!schema) {
+    auto schemaIter = schemas.find(tagID);
+    if (schemaIter == schemas.end()) {
       LOG(WARNING) << "Space " << space << ", tag " << tagID << " invalid";
       iter->next();
       continue;
     }
+    auto* schema = schemaIter->second.get();
 
-    auto ttlProp = CommonUtils::ttlProps(schema.get());
-    if (ttlProp.first &&
-        CommonUtils::checkDataExpiredForTTL(
-            schema.get(), reader.get(), ttlProp.second.second, ttlProp.second.first)) {
-      VLOG(3) << "ttl expired : "
+    auto ttlProp = CommonUtils::ttlProps(schema);
+    if (ttlProp.first && CommonUtils::checkDataExpiredForTTL(
+                             schema, reader.get(), ttlProp.second.second, ttlProp.second.first)) {
+      VLOG(1) << "ttl expired : "
               << "Tag ID " << tagID << " Vertex ID " << vertex;
       iter->next();
       continue;
@@ -116,7 +119,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     std::string indexVal = "";
     if (ttlProp.first) {
-      auto ttlValRet = CommonUtils::ttlValue(schema.get(), reader.get());
+      auto ttlValRet = CommonUtils::ttlValue(schema, reader.get());
       if (ttlValRet.ok()) {
         indexVal = IndexKeyUtils::indexVal(std::move(ttlValRet).value());
       }
@@ -124,23 +127,25 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_tag_id() == tagID) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get(), schema);
         if (!valuesRet.ok()) {
-          LOG(WARNING) << "Collect index value failed";
+          LOG(INFO) << "Collect index value failed";
           continue;
         }
-        auto indexKey = IndexKeyUtils::vertexIndexKey(
+        auto indexKeys = IndexKeyUtils::vertexIndexKeys(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
-        data.emplace_back(std::move(indexKey), indexVal);
+        for (auto& indexKey : indexKeys) {
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
+        }
       }
     }
     iter->next();
-    usleep(FLAGS_rebuild_index_process_interval);
   }
 
-  auto result = writeData(space, part, std::move(data));
+  auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Write Part " << part << " Index Failed";
+    LOG(INFO) << "Write Part " << part << " Index Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;

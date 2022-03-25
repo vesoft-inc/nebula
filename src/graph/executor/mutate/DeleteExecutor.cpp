@@ -1,16 +1,18 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "DeleteExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/mutate/DeleteExecutor.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
+
+using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
@@ -61,9 +63,12 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
   }
   auto spaceId = spaceInfo.id;
   time::Duration deleteVertTime;
+  auto plan = qctx()->plan();
+  StorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->deleteVertices(spaceId, std::move(vertices))
+      ->deleteVertices(param, std::move(vertices))
       .via(runner())
       .ensure([deleteVertTime]() {
         VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
@@ -107,16 +112,19 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
       ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
       return Status::Error(ss.str());
     }
-    delTag.set_id(val);
-    delTag.set_tags(dtNode->tagIds());
+    delTag.id_ref() = val;
+    delTag.tags_ref() = dtNode->tagIds();
     delTags.emplace_back(std::move(delTag));
   }
 
   auto spaceId = spaceInfo.id;
   time::Duration deleteTagTime;
+  auto plan = qctx()->plan();
+  StorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->deleteTags(spaceId, std::move(delTags))
+      ->deleteTags(param, std::move(delTags))
       .via(runner())
       .ensure([deleteTagTime]() {
         VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
@@ -128,7 +136,9 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
       });
 }
 
-folly::Future<Status> DeleteEdgesExecutor::execute() { return deleteEdges(); }
+folly::Future<Status> DeleteEdgesExecutor::execute() {
+  return deleteEdges();
+}
 
 folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   SCOPED_TIMER(&execTime_);
@@ -176,16 +186,16 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
     }
 
     // out edge
-    edgeKey.set_src(srcId);
-    edgeKey.set_dst(dstId);
-    edgeKey.set_ranking(rank.getInt());
-    edgeKey.set_edge_type(type.getInt());
+    edgeKey.src_ref() = srcId;
+    edgeKey.dst_ref() = dstId;
+    edgeKey.ranking_ref() = rank.getInt();
+    edgeKey.edge_type_ref() = type.getInt();
     edgeKeys.emplace_back(edgeKey);
 
     // in edge
-    edgeKey.set_src(std::move(dstId));
-    edgeKey.set_dst(std::move(srcId));
-    edgeKey.set_edge_type(-type.getInt());
+    edgeKey.src_ref() = std::move(dstId);
+    edgeKey.dst_ref() = std::move(srcId);
+    edgeKey.edge_type_ref() = -type.getInt();
     edgeKeys.emplace_back(std::move(edgeKey));
   }
 
@@ -196,9 +206,13 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
 
   auto spaceId = spaceInfo.id;
   time::Duration deleteEdgeTime;
+  auto plan = qctx()->plan();
+  StorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
+  param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
-      ->deleteEdges(spaceId, std::move(edgeKeys))
+      ->deleteEdges(param, std::move(edgeKeys))
       .via(runner())
       .ensure([deleteEdgeTime]() {
         VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";

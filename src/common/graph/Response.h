@@ -1,11 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_GRAPH_RESPONSE_H
 #define COMMON_GRAPH_RESPONSE_H
+
+#include <folly/DynamicConverter.h>
+#include <folly/dynamic.h>
 
 #include <algorithm>
 #include <memory>
@@ -33,7 +35,7 @@
   X(E_TAG_PROP_NOT_FOUND, -10)                                                \
   X(E_ROLE_NOT_FOUND, -11)                                                    \
   X(E_CONFIG_NOT_FOUND, -12)                                                  \
-  X(E_GROUP_NOT_FOUND, -13)                                                   \
+  X(E_MACHINE_NOT_FOUND, -13)                                                 \
   X(E_ZONE_NOT_FOUND, -14)                                                    \
   X(E_LISTENER_NOT_FOUND, -15)                                                \
   X(E_PART_NOT_FOUND, -16)                                                    \
@@ -73,6 +75,8 @@
   X(E_CONFLICT, -2008)                                                        \
   X(E_INVALID_PARM, -2009)                                                    \
   X(E_WRONGCLUSTER, -2010)                                                    \
+  X(E_ZONE_NOT_ENOUGH, -2011)                                                 \
+  X(E_ZONE_IS_EMPTY, -2012)                                                   \
                                                                               \
   X(E_STORE_FAILURE, -2021)                                                   \
   X(E_STORE_SEGMENT_ILLEGAL, -2022)                                           \
@@ -80,7 +84,7 @@
   X(E_BALANCED, -2024)                                                        \
   X(E_NO_RUNNING_BALANCE_PLAN, -2025)                                         \
   X(E_NO_VALID_HOST, -2026)                                                   \
-  X(E_CORRUPTTED_BALANCE_PLAN, -2027)                                         \
+  X(E_CORRUPTED_BALANCE_PLAN, -2027)                                          \
   X(E_NO_INVALID_BALANCE_PLAN, -2028)                                         \
                                                                               \
   /* Authentication Failure */                                                \
@@ -115,9 +119,10 @@
   /* ListClusterInfo Failure */                                               \
   X(E_LIST_CLUSTER_FAILURE, -2070)                                            \
   X(E_LIST_CLUSTER_GET_ABS_PATH_FAILURE, -2071)                               \
-  X(E_GET_META_DIR_FAILURE, -2072)                                            \
+  X(E_LIST_CLUSTER_NO_AGENT_FAILURE, -2072)                                   \
                                                                               \
   X(E_QUERY_NOT_FOUND, -2073)                                                 \
+  X(E_AGENT_HB_FAILUE, -2074)                                                 \
   /* 3xxx for storaged */                                                     \
   X(E_CONSENSUS_ERROR, -3001)                                                 \
   X(E_KEY_HAS_EXISTS, -3002)                                                  \
@@ -173,20 +178,23 @@
   X(E_USER_CANCEL, -3052)                                                     \
   X(E_TASK_EXECUTION_FAILED, -3053)                                           \
                                                                               \
+  X(E_PLAN_IS_KILLED, -3060)                                                  \
+  X(E_CLIENT_SERVER_INCOMPATIBLE, -3061)                                      \
+                                                                              \
   X(E_UNKNOWN, -8000)
 
 namespace nebula {
 
-#define X(EnumName, EnumNumber) EnumName = EnumNumber,
+#define X(EnumName, EnumNumber) EnumName = (EnumNumber),
 
 enum class ErrorCode { ErrorCodeEnums };
 
 #undef X
 
-const char *errorCode(ErrorCode code);
+const char *getErrorCode(ErrorCode code);
 
 static inline std::ostream &operator<<(std::ostream &os, ErrorCode code) {
-  os << errorCode(code);
+  os << getErrorCode(code);
   return os;
 }
 
@@ -210,7 +218,9 @@ struct AuthResponse {
     errorMsg = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
   bool operator==(const AuthResponse &rhs) const {
     if (errorCode != rhs.errorCode) {
@@ -225,7 +235,7 @@ struct AuthResponse {
     if (!checkPointer(timeZoneOffsetSeconds.get(), rhs.timeZoneOffsetSeconds.get())) {
       return false;
     }
-    return checkPointer(timeZoneName.get(), timeZoneName.get());
+    return checkPointer(timeZoneName.get(), rhs.timeZoneName.get());
   }
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
@@ -236,6 +246,9 @@ struct AuthResponse {
 };
 
 struct ProfilingStats {
+  ProfilingStats() = default;
+  ProfilingStats(ProfilingStats &&) = default;
+
   void __clear() {
     rows = 0;
     execDurationInUs = 0;
@@ -243,7 +256,17 @@ struct ProfilingStats {
     otherStats = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(ProfilingStats &&rhs) {
+    this->rows = rhs.rows;
+    this->execDurationInUs = rhs.execDurationInUs;
+    this->totalDurationInUs = rhs.totalDurationInUs;
+    this->otherStats = std::move(rhs.otherStats);
+    return *this;
+  }
 
   bool operator==(const ProfilingStats &rhs) const {
     if (rows != rhs.rows) {
@@ -266,6 +289,18 @@ struct ProfilingStats {
   int64_t totalDurationInUs{0};
   // Other profiling stats data map
   std::unique_ptr<std::unordered_map<std::string, std::string>> otherStats;
+
+  folly::dynamic toJson() const {
+    folly::dynamic ProfilingStatsObj = folly::dynamic::object();
+    ProfilingStatsObj.insert("rows", rows);
+    ProfilingStatsObj.insert("execDurationInUs", execDurationInUs);
+    ProfilingStatsObj.insert("totalDurationInUs", totalDurationInUs);
+    if (otherStats) {
+      ProfilingStatsObj.insert("otherStats", folly::toDynamic(*otherStats));
+    }
+
+    return ProfilingStatsObj;
+  }
 };
 
 // The info used for select/loop.
@@ -275,16 +310,32 @@ struct PlanNodeBranchInfo {
     conditionNodeId = -1;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(const PlanNodeBranchInfo &rhs) {
+    this->isDoBranch = rhs.isDoBranch;
+    this->conditionNodeId = rhs.conditionNodeId;
+    return *this;
+  }
 
   bool operator==(const PlanNodeBranchInfo &rhs) const {
     return isDoBranch == rhs.isDoBranch && conditionNodeId == rhs.conditionNodeId;
   }
 
   // True if loop body or then branch of select
-  bool isDoBranch{0};
+  bool isDoBranch{false};
   // select/loop node id
   int64_t conditionNodeId{-1};
+
+  folly::dynamic toJson() const {
+    folly::dynamic PlanNodeBranchInfoObj = folly::dynamic::object();
+    PlanNodeBranchInfoObj.insert("isDoBranch", isDoBranch);
+    PlanNodeBranchInfoObj.insert("conditionNodeId", conditionNodeId);
+
+    return PlanNodeBranchInfoObj;
+  }
 };
 
 struct Pair {
@@ -293,15 +344,27 @@ struct Pair {
     value.clear();
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
-  bool operator==(const Pair &rhs) const { return key == rhs.key && value == rhs.value; }
+  bool operator==(const Pair &rhs) const {
+    return key == rhs.key && value == rhs.value;
+  }
 
   std::string key;
   std::string value;
+
+  folly::dynamic toJson() const {
+    folly::dynamic pairObj = folly::dynamic::object(key, value);
+    return pairObj;
+  }
 };
 
 struct PlanNodeDescription {
+  PlanNodeDescription() = default;
+  PlanNodeDescription(PlanNodeDescription &&) = default;
+
   void __clear() {
     name.clear();
     id = -1;
@@ -312,7 +375,20 @@ struct PlanNodeDescription {
     dependencies = nullptr;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(PlanNodeDescription &&rhs) {
+    this->name = std::move(rhs.name);
+    this->id = rhs.id;
+    this->outputVar = std::move(rhs.outputVar);
+    this->description = std::move(rhs.description);
+    this->profiles = std::move(rhs.profiles);
+    this->branchInfo = std::move(rhs.branchInfo);
+    this->dependencies = std::move(rhs.dependencies);
+    return *this;
+  }
 
   bool operator==(const PlanNodeDescription &rhs) const;
 
@@ -326,9 +402,45 @@ struct PlanNodeDescription {
   std::unique_ptr<std::vector<ProfilingStats>> profiles{nullptr};
   std::unique_ptr<PlanNodeBranchInfo> branchInfo{nullptr};
   std::unique_ptr<std::vector<int64_t>> dependencies{nullptr};
+
+  folly::dynamic toJson() const {
+    folly::dynamic planNodeDescObj = folly::dynamic::object();
+    planNodeDescObj.insert("name", name);
+    planNodeDescObj.insert("id", id);
+    planNodeDescObj.insert("outputVar", outputVar);
+
+    if (description) {
+      auto descriptionObj = folly::dynamic::array();
+      descriptionObj.resize(description->size());
+      std::transform(
+          description->begin(), description->end(), descriptionObj.begin(), [](const auto &ele) {
+            return ele.toJson();
+          });
+      planNodeDescObj.insert("description", descriptionObj);
+    }
+    if (profiles) {
+      auto profilesObj = folly::dynamic::array();
+      profilesObj.resize(profiles->size());
+      std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto &ele) {
+        return ele.toJson();
+      });
+      planNodeDescObj.insert("profiles", profilesObj);
+    }
+    if (branchInfo) {
+      planNodeDescObj.insert("branchInfo", branchInfo->toJson());
+    }
+    if (dependencies) {
+      planNodeDescObj.insert("dependencies", folly::toDynamic(*dependencies));
+    }
+
+    return planNodeDescObj;
+  }
 };
 
 struct PlanDescription {
+  PlanDescription() = default;
+  PlanDescription(PlanDescription &&rhs) = default;
+
   void __clear() {
     planNodeDescs.clear();
     nodeIndexMap.clear();
@@ -336,7 +448,17 @@ struct PlanDescription {
     optimize_time_in_us = 0;
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
+
+  auto &operator=(PlanDescription &&rhs) {
+    this->planNodeDescs = std::move(rhs.planNodeDescs);
+    this->nodeIndexMap = std::move(rhs.nodeIndexMap);
+    this->format = std::move(rhs.format);
+    this->optimize_time_in_us = rhs.optimize_time_in_us;
+    return *this;
+  }
 
   bool operator==(const PlanDescription &rhs) const {
     return planNodeDescs == rhs.planNodeDescs && nodeIndexMap == rhs.nodeIndexMap &&
@@ -350,6 +472,29 @@ struct PlanDescription {
   std::string format;
   // the optimization spent time
   int32_t optimize_time_in_us{0};
+
+  folly::dynamic toJson() const {
+    folly::dynamic PlanDescObj = folly::dynamic::object();
+
+    auto planNodeDescsObj = folly::dynamic::array();
+    planNodeDescsObj.resize(planNodeDescs.size());
+    std::transform(planNodeDescs.begin(),
+                   planNodeDescs.end(),
+                   planNodeDescsObj.begin(),
+                   [](const PlanNodeDescription &ele) { return ele.toJson(); });
+    PlanDescObj.insert("planNodeDescs", planNodeDescsObj);
+    // nodeIndexMap uses int as the key of the map, but strict json format only accepts string as
+    // the key, so convert the int to string here.
+    folly::dynamic nodeIndexMapObj = folly::dynamic::object();
+    for (const auto &kv : nodeIndexMap) {
+      nodeIndexMapObj.insert(folly::to<std::string>(kv.first), kv.second);
+    }
+    PlanDescObj.insert("nodeIndexMap", nodeIndexMapObj);
+    PlanDescObj.insert("format", format);
+    PlanDescObj.insert("optimize_time_in_us", optimize_time_in_us);
+
+    return PlanDescObj;
+  }
 };
 
 struct ExecutionResponse {
@@ -363,7 +508,9 @@ struct ExecutionResponse {
     comment.reset();
   }
 
-  void clear() { __clear(); }
+  void clear() {
+    __clear();
+  }
 
   bool operator==(const ExecutionResponse &rhs) const {
     if (errorCode != rhs.errorCode) {
@@ -391,12 +538,109 @@ struct ExecutionResponse {
   }
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
-  int32_t latencyInUs{0};
+  int64_t latencyInUs{0};
   std::unique_ptr<nebula::DataSet> data{nullptr};
   std::unique_ptr<std::string> spaceName{nullptr};
   std::unique_ptr<std::string> errorMsg{nullptr};
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
+
+  // Returns the response as a JSON string
+  // only errorCode and latencyInUs are required fields, the rest are optional
+  // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
+  //
+  // JSON struct:
+  // {
+  //   "results": [
+  //     {
+  //       "columns": [],
+  //       "data": [
+  //         {
+  //           "row": [
+  //             "row-data"
+  //           ],
+  //           "meta": [
+  //             "metadata"
+  //           ]
+  //         }
+  //       ],
+  //       "latencyInUs": 0,
+  //       "spaceName": "",
+  //       "planDesc ": {
+  //         "planNodeDescs": [
+  //           {
+  //             "name": "",
+  //             "id": 0,
+  //             "outputVar": "",
+  //             "description": {
+  //               "key": ""
+  //             },
+  //             "profiles": [
+  //               {
+  //                 "rows": 1,
+  //                 "execDurationInUs": 0,
+  //                 "totalDurationInUs": 0,
+  //                 "otherStats": {}
+  //               }
+  //             ],
+  //             "branchInfo": {
+  //               "isDoBranch": false,
+  //               "conditionNodeId": -1
+  //             },
+  //             "dependencies": []
+  //           }
+  //         ],
+  //         "nodeIndexMap": {},
+  //         "format": "",
+  //         "optimize_time_in_us": 0
+  //       },
+  //       "comment ": ""
+  //     }
+  //   ],
+  //   "errors": [
+  //     {
+  //       "code": 0,
+  //       "message": ""
+  //     }
+  //   ]
+  // }
+
+  folly::dynamic toJson() const {
+    folly::dynamic respJsonObj = folly::dynamic::object();
+    folly::dynamic resultBody = folly::dynamic::object();
+
+    // required fields
+    folly::dynamic errorsBody = folly::dynamic::object();
+    errorsBody.insert("code", static_cast<int>(errorCode));
+    resultBody.insert("latencyInUs", latencyInUs);
+
+    // optional fields
+    if (errorMsg) {
+      errorsBody.insert("message", *errorMsg);
+    }
+    resultBody.insert("errors", errorsBody);
+
+    if (data) {
+      resultBody.insert("columns", folly::toDynamic(data->keys()));
+      resultBody.insert("data", data->toJson());
+    }
+    if (spaceName) {
+      resultBody.insert("spaceName", *spaceName);
+    }
+    if (planDesc) {
+      resultBody.insert("planDesc", planDesc->toJson());
+    }
+    if (comment) {
+      resultBody.insert("comment", *comment);
+    }
+
+    auto resultArray = folly::dynamic::array();
+    resultArray.push_back(resultBody);
+    respJsonObj.insert("results", resultArray);
+    respJsonObj.insert("errors", folly::dynamic::array(errorsBody));
+
+    return respJsonObj;
+  }
 };
 
 }  // namespace nebula

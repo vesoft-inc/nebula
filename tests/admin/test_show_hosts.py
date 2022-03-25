@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 import re
@@ -24,16 +23,20 @@ class TestShowHosts(NebulaTestSuite):
         query = "SHOW HOSTS";
         expected_column_names = ['Host',
                                  'Port',
+                                 'HTTP port',
                                  'Status',
                                  'Leader count',
                                  'Leader distribution',
-                                 'Partition distribution']
+                                 'Partition distribution',
+                                 'Version']
         expected_result_format = [[re.compile(r'\S+'),
+                                   re.compile(r'\d+'),
                                    re.compile(r'\d+'),
                                    re.compile(r'ONLINE|OFFLINE'),
                                    re.compile(r'\d+'),
                                    re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+'),
-                                   re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+')]]
+                                   re.compile(r'No valid partition|(\S+:\d+, )*\S+:\d+'),
+                                   re.compile(r'(^$)|(v\d+\.\d+\.\d+)')]]
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)

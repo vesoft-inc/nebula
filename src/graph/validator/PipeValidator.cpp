@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/PipeValidator.h"
@@ -13,6 +12,8 @@
 namespace nebula {
 namespace graph {
 
+// Validate pipe sentence which combine two sentence by input/output, e.g. GO ... | LIMIT 3
+// Set input, and call validator of sub-sentence.
 Status PipeValidator::validateImpl() {
   lValidator_->setInputCols(std::move(inputs_));
   lValidator_->setInputVarName(inputVarName_);
@@ -26,6 +27,7 @@ Status PipeValidator::validateImpl() {
   return Status::OK();
 }
 
+// Concat two sub-plans by input/output
 Status PipeValidator::toPlan() {
   root_ = rValidator_->root();
   tail_ = lValidator_->tail();

@@ -1,16 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/ACLValidator.h"
 
-#include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
-#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {
@@ -73,9 +69,13 @@ Status UpdateUserValidator::toPlan() {
 }
 
 // show users
-Status ShowUsersValidator::validateImpl() { return Status::OK(); }
+Status ShowUsersValidator::validateImpl() {
+  return Status::OK();
+}
 
-Status ShowUsersValidator::toPlan() { return genSingleNodePlan<ListUsers>(); }
+Status ShowUsersValidator::toPlan() {
+  return genSingleNodePlan<ListUsers>();
+}
 
 // change password
 Status ChangePasswordValidator::validateImpl() {
@@ -104,9 +104,17 @@ Status ChangePasswordValidator::toPlan() {
 // grant role
 Status GrantRoleValidator::validateImpl() {
   const auto *sentence = static_cast<const GrantSentence *>(sentence_);
-  if (sentence->getAccount()->size() > kUsernameMaxLength) {
+  const std::string *account = sentence->getAccount();
+  if (account->size() > kUsernameMaxLength) {
     return Status::SemanticError("Username exceed maximum length %ld characters.",
                                  kUsernameMaxLength);
+  }
+  auto metaClient = qctx_->getMetaClient();
+  auto roles = metaClient->getRolesByUserFromCache(*account);
+  for (const auto &role : roles) {
+    if (role.get_role_type() == meta::cpp2::RoleType::GOD) {
+      return Status::SemanticError("User '%s' is GOD, cannot be granted.", account->c_str());
+    }
   }
   return Status::OK();
 }
@@ -135,6 +143,31 @@ Status RevokeRoleValidator::toPlan() {
                                        sentence->getAclItemClause()->getRoleType());
 }
 
+// describe user
+Status DescribeUserValidator::validateImpl() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  if (sentence->account()->size() > kUsernameMaxLength) {
+    return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                 kUsernameMaxLength);
+  }
+  if (!inputs_.empty()) {
+    return Status::SemanticError("Show queries sentence do not support input");
+  }
+  outputs_.emplace_back("role", Value::Type::STRING);
+  outputs_.emplace_back("space", Value::Type::STRING);
+  return Status::OK();
+}
+
+Status DescribeUserValidator::checkPermission() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  return PermissionManager::canReadUser(qctx_->rctx()->session(), *sentence->account());
+}
+
+Status DescribeUserValidator::toPlan() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  return genSingleNodePlan<DescribeUser>(sentence->account());
+}
+
 // show roles in space
 Status ShowRolesInSpaceValidator::validateImpl() {
   auto sentence = static_cast<ShowRolesSentence *>(sentence_);
@@ -148,7 +181,9 @@ Status ShowRolesInSpaceValidator::checkPermission() {
   return PermissionManager::canReadSpace(qctx_->rctx()->session(), targetSpaceId_);
 }
 
-Status ShowRolesInSpaceValidator::toPlan() { return genSingleNodePlan<ListRoles>(targetSpaceId_); }
+Status ShowRolesInSpaceValidator::toPlan() {
+  return genSingleNodePlan<ListRoles>(targetSpaceId_);
+}
 
 }  // namespace graph
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_EXPRVISITORIMPL_H_
@@ -42,6 +41,8 @@ class ExprVisitorImpl : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
  protected:
   using ExprVisitor::visit;

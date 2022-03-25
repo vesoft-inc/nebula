@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_HOSTADDR_H_
@@ -9,6 +8,7 @@
 
 #include <sstream>
 
+#include "common/base/Logging.h"
 #include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
@@ -26,13 +26,17 @@ struct HostAddr {
    * */
   HostAddr(int h, int p) = delete;
   HostAddr(std::string h, Port p) : host(std::move(h)), port(p) {}
+  HostAddr(const HostAddr& other) : host(other.host), port(other.port) {}
+  HostAddr(HostAddr&& other) : host(std::move(other.host)), port(std::move(other.port)) {}
 
   void clear() {
     host.clear();
     port = 0;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const {
     std::stringstream os;
@@ -41,11 +45,29 @@ struct HostAddr {
     return os.str();
   }
 
+  HostAddr& operator=(const HostAddr& rhs);
+
   bool operator==(const HostAddr& rhs) const;
 
   bool operator!=(const HostAddr& rhs) const;
 
   bool operator<(const HostAddr& rhs) const;
+
+  static HostAddr fromString(const std::string& str) {
+    HostAddr ha;
+    auto pos = str.find(":");
+    if (pos == std::string::npos) {
+      LOG(ERROR) << "HostAddr: parse string error";
+      return ha;
+    }
+    ha.host = str.substr(1, pos - 2);
+    ha.port = std::stoi(str.substr(pos + 1));
+    return ha;
+  }
+
+  static HostAddr nullAddr() {
+    return HostAddr("", 0);
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const HostAddr& addr) {

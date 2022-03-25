@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_LOGIC_H_
@@ -12,9 +11,12 @@
 namespace nebula {
 namespace graph {
 
+// StartNode is a spetial leaf node that helps the scheduler to work properly.
 class StartNode final : public PlanNode {
  public:
-  static StartNode* make(QueryContext* qctx) { return qctx->objPool()->add(new StartNode(qctx)); }
+  static StartNode* make(QueryContext* qctx) {
+    return qctx->objPool()->add(new StartNode(qctx));
+  }
 
   PlanNode* clone() const override;
 
@@ -26,7 +28,9 @@ class StartNode final : public PlanNode {
 
 class BinarySelect : public SingleInputNode {
  public:
-  Expression* condition() const { return condition_; }
+  Expression* condition() const {
+    return condition_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -44,6 +48,7 @@ class BinarySelect : public SingleInputNode {
   Expression* condition_{nullptr};
 };
 
+// Select the if branch or else branch at runtime
 class Select final : public BinarySelect {
  public:
   static Select* make(QueryContext* qctx,
@@ -54,13 +59,21 @@ class Select final : public BinarySelect {
     return qctx->objPool()->add(new Select(qctx, input, ifBranch, elseBranch, condition));
   }
 
-  void setIf(PlanNode* ifBranch) { if_ = ifBranch; }
+  void setIf(PlanNode* ifBranch) {
+    if_ = ifBranch;
+  }
 
-  void setElse(PlanNode* elseBranch) { else_ = elseBranch; }
+  void setElse(PlanNode* elseBranch) {
+    else_ = elseBranch;
+  }
 
-  const PlanNode* then() const { return if_; }
+  const PlanNode* then() const {
+    return if_;
+  }
 
-  const PlanNode* otherwise() const { return else_; }
+  const PlanNode* otherwise() const {
+    return else_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -81,6 +94,7 @@ class Select final : public BinarySelect {
   PlanNode* else_{nullptr};
 };
 
+// Executing the branch multi times at runtime.
 class Loop final : public BinarySelect {
  public:
   static Loop* make(QueryContext* qctx,
@@ -90,9 +104,13 @@ class Loop final : public BinarySelect {
     return qctx->objPool()->add(new Loop(qctx, input, body, condition));
   }
 
-  void setBody(PlanNode* body) { body_ = body; }
+  void setBody(PlanNode* body) {
+    body_ = body;
+  }
 
-  const PlanNode* body() const { return body_; }
+  const PlanNode* body() const {
+    return body_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -108,9 +126,7 @@ class Loop final : public BinarySelect {
   PlanNode* body_{nullptr};
 };
 
-/**
- * This operator is used for pass through situation.
- */
+// This operator is used for pass through situation.
 class PassThroughNode final : public SingleInputNode {
  public:
   static PassThroughNode* make(QueryContext* qctx, PlanNode* input) {
@@ -124,6 +140,30 @@ class PassThroughNode final : public SingleInputNode {
       : SingleInputNode(qctx, Kind::kPassThrough, input) {}
 
   void cloneMembers(const PassThroughNode&);
+};
+
+// This operator is used for getting a named alias from another executed operator.
+class Argument final : public PlanNode {
+ public:
+  static Argument* make(QueryContext* qctx, std::string alias) {
+    return qctx->objPool()->add(new Argument(qctx, alias));
+  }
+
+  PlanNode* clone() const override;
+
+  const std::string& getAlias() const {
+    return alias_;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  Argument(QueryContext* qctx, std::string alias);
+
+  void cloneMembers(const Argument&);
+
+ private:
+  std::string alias_;
 };
 }  // namespace graph
 }  // namespace nebula

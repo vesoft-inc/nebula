@@ -71,21 +71,6 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      REBUILD TAG INDEX single_tag_index;
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD TAG INDEX single_tag_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD TAG INDEX multi_tag_index;
-      """
-    Then the execution should be successful
-    When executing query:
-      """
       REBUILD TAG INDEX multi_tag_index OFFLINE;
       """
     Then a SyntaxError should be raised at runtime:
@@ -220,21 +205,6 @@ Feature: IndexTest_Vid_Int
         hash("Tim")  ->  hash("Tony"): ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         hash("Tony") ->  hash("May"):  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         hash("May")  ->  hash("Tim"):  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00"))
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD EDGE INDEX multi_edge_1_index
       """
     Then the execution should be successful
     When executing query:
@@ -584,15 +554,15 @@ Feature: IndexTest_Vid_Int
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col5, tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col5 | tag_1.col1 |
-      | 100      | 5          | true       |
+      | tag_1.col5 | tag_1.col1 |
+      | 5          | true       |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col1, tag_1.col5
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 | tag_1.col5 |
-      | 100      | true       | 5          |
+      | tag_1.col1 | tag_1.col5 |
+      | true       | 5          |
     Then drop the used space
 
   Scenario: IndexTest IntVid RebuildTagIndexStatusInfo
@@ -618,7 +588,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX tag_index_status
@@ -666,7 +636,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX edge_index_status

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_PATH_H_
@@ -44,7 +43,9 @@ struct Step {
     props.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const {
     std::stringstream os;
@@ -117,7 +118,9 @@ struct Path {
     steps.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const {
     std::stringstream os;
@@ -128,6 +131,55 @@ struct Path {
       os << " ";
     }
     return os.str();
+  }
+
+  folly::dynamic toJson() const {
+    folly::dynamic pathJsonObj = folly::dynamic::array();
+    auto srcVertex = src;
+    pathJsonObj.push_back(srcVertex.toJson());
+
+    for (const auto& s : steps) {
+      folly::dynamic edgeJsonObj = folly::dynamic::object();
+      // parse edge props map as json
+      for (const auto& iter : s.props) {
+        edgeJsonObj.insert(iter.first, iter.second.toJson());
+      }
+      // add edge json obj to path
+      pathJsonObj.push_back(edgeJsonObj);
+
+      // reset src vertex and add vertex json obj to path
+      srcVertex = s.dst;
+      pathJsonObj.push_back(srcVertex.toJson());
+    }
+
+    return pathJsonObj;
+  }
+
+  // Used in Json form query result
+  // format:
+  // [vertex1_metadata, edge1_metadata, vertex2_metadata, edge2_metadata,....]
+  folly::dynamic getMetaData() const {
+    auto dynamicObj = folly::dynamic::array();
+    auto srcVertex = src;
+    dynamicObj.push_back(srcVertex.getMetaData());
+
+    // Construct edge metadata
+    for (const auto& s : steps) {
+      folly::dynamic edgeIdObj = folly::dynamic::object();
+      edgeIdObj.insert("src", srcVertex.vid.toJson());
+      edgeIdObj.insert("dst", s.dst.vid.toJson());
+      edgeIdObj.insert("type", s.type);
+      edgeIdObj.insert("name", s.name);
+      edgeIdObj.insert("ranking", s.ranking);
+
+      folly::dynamic edgeMetadataObj = folly::dynamic::object("id", edgeIdObj)("type", "edge");
+      dynamicObj.push_back(edgeMetadataObj);
+      dynamicObj.push_back(s.dst.getMetaData());
+      // reset src vertex
+      srcVertex = s.dst;
+    }
+
+    return dynamicObj;
   }
 
   Path& operator=(Path&& rhs) noexcept {
@@ -146,9 +198,13 @@ struct Path {
     return *this;
   }
 
-  bool operator==(const Path& rhs) const { return src == rhs.src && steps == rhs.steps; }
+  bool operator==(const Path& rhs) const {
+    return src == rhs.src && steps == rhs.steps;
+  }
 
-  void addStep(Step step) { steps.emplace_back(std::move(step)); }
+  void addStep(Step step) {
+    steps.emplace_back(std::move(step));
+  }
 
   void reverse();
 
@@ -176,7 +232,9 @@ inline void swap(Step& a, Step& b) {
   b = std::move(tmp);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Path& p) { return os << p.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const Path& p) {
+  return os << p.toString();
+}
 
 }  // namespace nebula
 

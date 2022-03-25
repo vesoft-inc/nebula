@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 #
 
 import re
@@ -13,7 +12,7 @@ if __name__ == "__main__":
 else:
     from tests.tck.utils.mmh2 import mmh2
 
-from nebula2.common.ttypes import (
+from nebula3.common.ttypes import (
     Value,
     NullType,
     NMap,
@@ -563,11 +562,11 @@ def register_function(name, func):
 register_function('hash', murmurhash2)
 
 
-parser = yacc.yacc()
+parser = yacc.yacc(write_tables=False)
 
 
 def parse(s):
-    return parser.parse(s)
+    return parser.parse(s, lexer=lexer)
 
 
 def parse_row(row):

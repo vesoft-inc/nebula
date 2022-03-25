@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/Expression.h"
@@ -43,9 +42,13 @@ using serializer = apache::thrift::CompactSerializer;
  *  class Expression::Encoder
  *
  ***************************************/
-Expression::Encoder::Encoder(size_t bufSizeHint) { buf_.reserve(bufSizeHint); }
+Expression::Encoder::Encoder(size_t bufSizeHint) {
+  buf_.reserve(bufSizeHint);
+}
 
-std::string Expression::Encoder::moveStr() { return std::move(buf_); }
+std::string Expression::Encoder::moveStr() {
+  return std::move(buf_);
+}
 
 Expression::Encoder& Expression::Encoder::operator<<(Kind kind) noexcept {
   buf_.append(reinterpret_cast<const char*>(&kind), sizeof(uint8_t));
@@ -89,9 +92,13 @@ Expression::Encoder& Expression::Encoder::operator<<(const Expression& exp) noex
 Expression::Decoder::Decoder(folly::StringPiece encoded)
     : encoded_(encoded), ptr_(encoded_.begin()) {}
 
-bool Expression::Decoder::finished() const { return ptr_ >= encoded_.end(); }
+bool Expression::Decoder::finished() const {
+  return ptr_ >= encoded_.end();
+}
 
-std::string Expression::Decoder::getHexStr() const { return toHexStr(encoded_); }
+std::string Expression::Decoder::getHexStr() const {
+  return toHexStr(encoded_);
+}
 
 Expression::Kind Expression::Decoder::readKind() noexcept {
   CHECK_LE(ptr_ + sizeof(uint8_t), encoded_.end());
@@ -153,7 +160,9 @@ Expression* Expression::Decoder::readExpression(ObjectPool* pool) noexcept {
 Expression::Expression(ObjectPool* pool, Kind kind) : pool_(DCHECK_NOTNULL(pool)), kind_(kind) {}
 
 // static
-std::string Expression::encode(const Expression& exp) { return exp.encode(); }
+std::string Expression::encode(const Expression& exp) {
+  return exp.encode();
+}
 
 std::string Expression::encode() const {
   Encoder encoder;
@@ -345,6 +354,11 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
+    case Expression::Kind::kLabelTagProperty: {
+      exp = LabelTagPropertyExpression::make(pool);
+      exp->resetFrom(decoder);
+      return exp;
+    }
     case Expression::Kind::kLabelAttribute: {
       exp = LabelAttributeExpression::make(pool);
       exp->resetFrom(decoder);
@@ -385,7 +399,8 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kVarProperty: {
-      LOG(FATAL) << "Should not decode variable property expression";
+      exp = VariablePropertyExpression::make(pool);
+      exp->resetFrom(decoder);
       return exp;
     }
     case Expression::Kind::kDstProperty: {
@@ -504,6 +519,10 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       LOG(FATAL) << "Should not decode text search expression";
       return exp;
     }
+    case Expression::Kind::kMatchPathPattern: {
+      LOG(FATAL) << "Should not decode match path pattern expression.";
+      return exp;
+    }
       // no default so the compiler will warning when lack
   }
 
@@ -561,7 +580,7 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       os << "Equal";
       break;
     case Expression::Kind::kRelNE:
-      os << "NotEuqal";
+      os << "NotEqual";
       break;
     case Expression::Kind::kRelLT:
       os << "LessThan";
@@ -616,6 +635,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kLabelAttribute:
       os << "LabelAttribute";
+      break;
+    case Expression::Kind::kLabelTagProperty:
+      os << "LabelTagProperty";
       break;
     case Expression::Kind::kLogicalAnd:
       os << "LogicalAnd";
@@ -718,6 +740,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kReduce:
       os << "Reduce";
+      break;
+    case Expression::Kind::kMatchPathPattern:
+      os << "MatchPathPattern";
       break;
   }
   return os;

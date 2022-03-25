@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_H_
@@ -13,6 +12,7 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/meta/Common.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -61,7 +61,7 @@ class StorageRpcResponse final {
     ++failedReqs_;
   }
 
-  // A value between [0, 100], representing a precentage
+  // A value between [0, 100], representing a percentage
   int32_t completeness() const {
     std::lock_guard<std::mutex> g(*lock_);
     DCHECK_NE(totalReqsSent_, 0);
@@ -93,7 +93,9 @@ class StorageRpcResponse final {
   }
 
   // Not thread-safe.
-  std::vector<Response>& responses() { return responses_; }
+  std::vector<Response>& responses() {
+    return responses_;
+  }
 
   // Not thread-safe.
   const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
@@ -115,7 +117,7 @@ class StorageRpcResponse final {
 /**
  * A base class for all storage clients
  */
-template <typename ClientType>
+template <typename ClientType, typename ClientManagerType>
 class StorageClientBase {
  public:
   StatusOr<HostAddr> getLeader(GraphSpaceID spaceId, PartitionID partId) const;
@@ -142,20 +144,10 @@ class StorageClientBase {
             class RemoteFunc,
             class Response = typename std::result_of<RemoteFunc(ClientType* client,
                                                                 const Request&)>::type::value_type>
-  folly::Future<StatusOr<Response>> getResponse(
-      folly::EventBase* evb,
-      std::pair<HostAddr, Request>&& request,
-      RemoteFunc&& remoteFunc,
-      folly::Promise<StatusOr<Response>> pro = folly::Promise<StatusOr<Response>>());
-
-  template <class Request,
-            class RemoteFunc,
-            class Response = typename std::result_of<RemoteFunc(ClientType* client,
-                                                                const Request&)>::type::value_type>
-  void getResponseImpl(folly::EventBase* evb,
-                       std::pair<HostAddr, Request> request,
-                       RemoteFunc remoteFunc,
-                       folly::Promise<StatusOr<Response>> pro);
+  folly::Future<StatusOr<Response>> getResponse(folly::EventBase* evb,
+                                                const HostAddr& host,
+                                                const Request& request,
+                                                RemoteFunc&& remoteFunc);
 
   // Cluster given ids into the host they belong to
   // The method returns a map
@@ -166,6 +158,9 @@ class StorageClientBase {
       HostAddr,
       std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>>
   clusterIdsToHosts(GraphSpaceID spaceId, const Container& ids, GetIdFunc f) const;
+
+  StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+  getHostPartsWithCursor(GraphSpaceID spaceId) const;
 
   virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId, PartitionID partId) const {
     CHECK(metaClient_ != nullptr);
@@ -209,22 +204,6 @@ class StorageClientBase {
     return {req.get_part_id()};
   }
 
-  std::vector<PartitionID> getReqPartsId(const cpp2::InternalTxnRequest& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::GetValueRequest& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanEdgeRequest& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanVertexRequest& req) const {
-    return {req.get_part_id()};
-  }
-
   bool isValidHostPtr(const HostAddr* addr) {
     return addr != nullptr && !addr->host.empty() && addr->port != 0;
   }
@@ -234,7 +213,7 @@ class StorageClientBase {
 
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-  std::unique_ptr<thrift::ThriftClientManager<ClientType>> clientsMan_;
+  std::unique_ptr<ClientManagerType> clientsMan_;
 };
 
 }  // namespace storage

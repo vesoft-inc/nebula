@@ -16,7 +16,7 @@ Feature: Match seek by tag
     When executing query:
       """
       MATCH (v:bachelor)
-      RETURN id(v) AS vid, v.age AS age
+      RETURN id(v) AS vid, v.player.age AS age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | vid          | age |
@@ -65,7 +65,7 @@ Feature: Match seek by tag
     When executing query:
       """
       MATCH (v:team)
-      RETURN id(v) AS vid, v.name AS name
+      RETURN id(v) AS vid, v.team.name AS name
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | vid             | name            |
@@ -105,7 +105,7 @@ Feature: Match seek by tag
     When executing query:
       """
       MATCH (p:bachelor)-[:serve]->(t)
-      RETURN t.name AS team
+      RETURN t.team.name AS team
       """
     Then the result should be, in any order:
       | team    |

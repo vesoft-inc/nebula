@@ -1,17 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/logic/LoopExecutor.h"
 
 #include <folly/String.h>
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/common_types.h"
 
 using folly::stringPrintf;
@@ -32,6 +31,7 @@ folly::Future<Status> LoopExecutor::execute() {
   auto value = expr->eval(ctx);
   VLOG(1) << "Loop condition: " << expr->toString() << " val: " << value;
   DCHECK(value.isBool());
+  finally_ = !(value.isBool() && value.getBool());
   return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_GETMETADIRINFOPROCESSOR_H_
@@ -13,6 +12,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Get meta dir info for each metad service, now only used in BR
+ *        Dir info contains root dir path and kv store data dir path.
+ *
+ */
 class GetMetaDirInfoProcessor : public BaseProcessor<cpp2::GetMetaDirInfoResp> {
  public:
   static GetMetaDirInfoProcessor* instance(kvstore::KVStore* kvstore) {

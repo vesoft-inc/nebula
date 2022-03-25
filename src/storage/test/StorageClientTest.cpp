@@ -1,12 +1,11 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
@@ -347,7 +346,9 @@ class TestStorageClient : public StorageClient {
   explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
       : StorageClient(ioThreadPool, nullptr) {}
 
-  StatusOr<int32_t> partsNum(GraphSpaceID) const override { return parts_.size(); }
+  StatusOr<int32_t> partsNum(GraphSpaceID) const override {
+    return parts_.size();
+  }
 
   StatusOr<PartMeta> getPartMeta(GraphSpaceID, PartitionID partId) const override {
     auto it = parts_.find(partId);

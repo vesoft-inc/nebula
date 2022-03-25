@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TASKDESCRIPTION_H_
@@ -17,7 +16,11 @@
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/job/JobStatus.h"
 
+namespace nebula {
+namespace meta {
+
 /*
+ * Task is described as follows:
  * =====================================================================================
  * | Job Id(TaskId) | Command(Dest) | Status   | Start Time        | Stop Time |
  * =====================================================================================
@@ -28,55 +31,21 @@
  * 11:09:40 |
  * -------------------------------------------------------------------------------------
  * */
-
-namespace nebula {
-namespace meta {
-
 class TaskDescription {
-  FRIEND_TEST(TaskDescriptionTest, ctor);
-  FRIEND_TEST(TaskDescriptionTest, parseKey);
-  FRIEND_TEST(TaskDescriptionTest, parseVal);
-  FRIEND_TEST(TaskDescriptionTest, dump);
-  FRIEND_TEST(TaskDescriptionTest, ctor2);
-  FRIEND_TEST(JobManagerTest, showJob);
+  FRIEND_TEST(TaskDescriptionTest, Ctor);
+  FRIEND_TEST(TaskDescriptionTest, Dump);
+  FRIEND_TEST(TaskDescriptionTest, Ctor2);
+  FRIEND_TEST(JobManagerTest, ShowJob);
   friend class JobManager;
 
  public:
-  TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst);
-  TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port);
+  TaskDescription(GraphSpaceID space, JobID iJob, TaskID iTask, const HostAddr& dst);
+  TaskDescription(GraphSpaceID space, JobID iJob, TaskID iTask, std::string addr, int32_t port);
   TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
-  /*
-   * encoded key going to write to kvstore
-   * kJobKey+jobid+taskid
-   * */
-  std::string taskKey();
-
-  /*
-   * decode jobid and taskid from kv store
-   * */
-  static std::pair<JobID, TaskID> parseKey(const folly::StringPiece& rawKey);
-
-  /*
-   * encode task val to write to kvstore
-   * */
-  std::string taskVal();
-
-  /*
-   * decode task val from kvstore
-   * should be
-   * {host, status, start time, stop time}
-   * */
-  static std::tuple<HostAddr, cpp2::JobStatus, int64_t, int64_t> parseVal(
-      const folly::StringPiece& rawVal);
-
-  /*
-   * encoded key when dba called "backup jobs"
-   * */
-  std::string archiveKey();
-
-  /*
-   * write out task details in human readable strings
+  /**
+   * @brief
+   * Write out task details in human readable strings
    * if a task is
    * =====================================================================================
    * | Job Id(TaskId) | Command(Dest) | Status   | Start Time        | Stop Time
@@ -87,30 +56,69 @@ class TaskDescription {
    * -------------------------------------------------------------------------------------
    *  then the vector should be
    * {27-0, 192.168.8.5, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
-   * */
+   *
+   * @return
+   */
   cpp2::TaskDesc toTaskDesc();
 
-  /*
-   * set the internal status
-   * will check if newStatus is later than curr Status
+  /**
+   * @brief Set the internal status
+   * Will check if newStatus is later than curr Status
    * e.g. set running to a finished job is forbidden
    *
-   * will set start time if newStatus is running
-   * will set stop time if newStatus is finished / failed / stopped
-   * */
+   * Will set start time if newStatus is running
+   * Will set stop time if newStatus is finished / failed / stopped
+   *
+   * @param newStatus
+   * @return
+   */
   bool setStatus(cpp2::JobStatus newStatus);
 
-  JobID getJobId() { return iJob_; }
+  cpp2::JobStatus getStatus() {
+    return status_;
+  }
 
-  TaskID getTaskId() { return iTask_; }
+  void setErrorCode(nebula::cpp2::ErrorCode errCode) {
+    errCode_ = errCode;
+  }
+
+  nebula::cpp2::ErrorCode getErrorCode() {
+    return errCode_;
+  }
+
+  GraphSpaceID getSpace() {
+    return space_;
+  }
+
+  JobID getJobId() {
+    return iJob_;
+  }
+
+  TaskID getTaskId() {
+    return iTask_;
+  }
+
+  HostAddr getHost() {
+    return dest_;
+  }
+
+  int64_t getStartTime() {
+    return startTime_;
+  }
+
+  int64_t getStopTime() {
+    return stopTime_;
+  }
 
  private:
+  GraphSpaceID space_;
   JobID iJob_;
   TaskID iTask_;
   HostAddr dest_;
   cpp2::JobStatus status_;
   int64_t startTime_;
   int64_t stopTime_;
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
 };
 
 }  // namespace meta

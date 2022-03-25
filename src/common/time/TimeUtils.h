@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_TIME_TIME_H_
@@ -17,6 +16,7 @@
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Date.h"
+#include "common/datatypes/Duration.h"
 #include "common/datatypes/Map.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
@@ -26,7 +26,7 @@
 namespace nebula {
 namespace time {
 
-// In nebula only store UTC time, and the interpretion of time value based on
+// In nebula only store UTC time, and the interpretation of time value based on
 // the timezone configuration in current system.
 
 class TimeUtils {
@@ -40,36 +40,33 @@ class TimeUtils {
       typename D,
       typename = std::enable_if_t<std::is_same<D, Date>::value || std::is_same<D, DateTime>::value>>
   static Status validateDate(const D &date) {
-    const int64_t *p = TimeConversion::isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
+    const int64_t *p = isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
     if ((p[date.month] - p[date.month - 1]) < date.day) {
       return Status::Error("`%s' is not a valid date.", date.toString().c_str());
     }
     return Status::OK();
   }
 
-  // TODO(shylock) support more format
-  static StatusOr<DateTime> parseDateTime(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-    if (ss.fail()) {
-      std::istringstream ss2(str);
-      ss2 >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-      if (ss2.fail()) {
-        return Status::Error();
-      }
+  template <
+      typename D,
+      typename = std::enable_if_t<std::is_same<D, Time>::value || std::is_same<D, DateTime>::value>>
+  static Status validateTime(const D &time) {
+    if (time.hour < 0 || time.hour >= 24) {
+      return Status::Error("Invalid hour number %d.", time.hour);
     }
-    DateTime dt;
-    dt.year = tm.tm_year + 1900;
-    dt.month = tm.tm_mon + 1;
-    dt.day = tm.tm_mday;
-    dt.hour = tm.tm_hour;
-    dt.minute = tm.tm_min;
-    dt.sec = tm.tm_sec;
-    dt.microsec = 0;
-    NG_RETURN_IF_ERROR(validateDate(dt));
-    return dt;
+    if (time.minute < 0 || time.minute >= 60) {
+      return Status::Error("Invalid minute number %d.", time.minute);
+    }
+    if (time.sec < 0 || time.sec >= 60) {
+      return Status::Error("Invalid second number %d.", time.sec);
+    }
+    if (time.microsec < 0 || time.microsec >= 1000000) {
+      return Status::Error("Invalid microsecond number %d.", time.microsec);
+    }
+    return Status::OK();
   }
+
+  static StatusOr<DateTime> parseDateTime(const std::string &str);
 
   static StatusOr<DateTime> dateTimeFromMap(const Map &m);
 
@@ -120,21 +117,7 @@ class TimeUtils {
 
   static StatusOr<Date> dateFromMap(const Map &m);
 
-  // TODO(shylock) support more format
-  static StatusOr<Date> parseDate(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%d");
-    if (ss.fail()) {
-      return Status::Error();
-    }
-    Date d;
-    d.year = tm.tm_year + 1900;
-    d.month = tm.tm_mon + 1;
-    d.day = tm.tm_mday;
-    NG_RETURN_IF_ERROR(validateDate(d));
-    return d;
-  }
+  static StatusOr<Date> parseDate(const std::string &str);
 
   static StatusOr<Date> localDate() {
     Date d;
@@ -170,21 +153,7 @@ class TimeUtils {
 
   static StatusOr<Time> timeFromMap(const Map &m);
 
-  // TODO(shylock) support more format
-  static StatusOr<Time> parseTime(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%H:%M:%S");
-    if (ss.fail()) {
-      return Status::Error();
-    }
-    Time t;
-    t.hour = tm.tm_hour;
-    t.minute = tm.tm_min;
-    t.sec = tm.tm_sec;
-    t.microsec = 0;
-    return t;
-  }
+  static StatusOr<Time> parseTime(const std::string &str);
 
   // utc + offset = local
   static Time timeToUTC(const Time &time) {
@@ -227,6 +196,8 @@ class TimeUtils {
 
   static StatusOr<Value> toTimestamp(const Value &val);
 
+  static StatusOr<Duration> durationFromMap(const Map &m);
+
  private:
   struct UnixTime {
     int64_t seconds{0};
@@ -235,8 +206,9 @@ class TimeUtils {
 
   // <seconds, milliseconds>
   static UnixTime unixTime() {
-    auto ms = WallClock::fastNowInMilliSec();
-    return UnixTime{ms / 1000, ms % 1000};
+    ::timespec ts;
+    ::clock_gettime(CLOCK_REALTIME, &ts);
+    return UnixTime{ts.tv_sec, ::lround(ts.tv_nsec / 1000000)};
   }
 };  // class TimeUtils
 

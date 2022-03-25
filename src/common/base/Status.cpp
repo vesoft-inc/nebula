@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/Status.h"
@@ -98,6 +97,8 @@ const char *Status::toString(Code code) {
       return "PermissionError: ";
     case kListenerNotFound:
       return "ListenerNotFound";
+    case kSessionNotFound:
+      return "SessionNotFound";
   }
   DLOG(FATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
   return "";

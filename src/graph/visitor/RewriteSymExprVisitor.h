@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_REWRITESYMEXPRVISITOR_H_
@@ -21,9 +20,13 @@ class RewriteSymExprVisitor final : public ExprVisitor {
  public:
   RewriteSymExprVisitor(ObjectPool *objPool, const std::string &sym, bool isEdge);
 
-  bool hasWrongType() const { return hasWrongType_; }
+  bool hasWrongType() const {
+    return hasWrongType_;
+  }
 
-  Expression *expr() { return expr_; }
+  Expression *expr() {
+    return expr_;
+  }
 
   void visit(ConstantExpression *expr) override;
   void visit(UnaryExpression *expr) override;
@@ -48,6 +51,7 @@ class RewriteSymExprVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;
@@ -75,6 +79,8 @@ class RewriteSymExprVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
  private:
   void visitBinaryExpr(BinaryExpression *expr);

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/CreateSpaceProcessor.h"
@@ -10,14 +9,13 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
+DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
 
-const std::string defaultGroup = "default";  // NOLINT
-
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   auto properties = req.get_properties();
   auto spaceName = properties.get_space_name();
   auto spaceRet = getSpaceId(spaceName);
@@ -25,18 +23,18 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   if (nebula::ok(spaceRet)) {
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     if (!req.get_if_not_exists()) {
-      LOG(ERROR) << "Create Space Failed : Space " << spaceName << " have existed!";
+      LOG(INFO) << "Create Space Failed : Space " << spaceName << " have existed!";
       ret = nebula::cpp2::ErrorCode::E_EXISTED;
     }
-    resp_.set_id(to(nebula::value(spaceRet), EntryType::SPACE));
+    resp_.id_ref() = to(nebula::value(spaceRet), EntryType::SPACE);
     handleErrorCode(ret);
     onFinished();
     return;
   } else {
     auto retCode = nebula::error(spaceRet);
     if (retCode != nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-      LOG(ERROR) << "Create Space Failed : Space  " << spaceName
-                 << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Create Space Failed : Space  " << spaceName
+                << apache::thrift::util::enumNameSafe(retCode);
       handleErrorCode(retCode);
       onFinished();
       return;
@@ -55,51 +53,56 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   if (partitionNum == 0) {
     partitionNum = FLAGS_default_parts_num;
     if (partitionNum <= 0) {
-      LOG(ERROR) << "Create Space Failed : partition_num is illegal: " << partitionNum;
+      LOG(INFO) << "Create Space Failed : partition_num is illegal: " << partitionNum;
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_partition_num(partitionNum);
+    properties.partition_num_ref() = partitionNum;
   }
+
   if (replicaFactor == 0) {
     replicaFactor = FLAGS_default_replica_factor;
     if (replicaFactor <= 0) {
-      LOG(ERROR) << "Create Space Failed : replicaFactor is illegal: " << replicaFactor;
+      LOG(INFO) << "Create Space Failed : replicaFactor is illegal: " << replicaFactor;
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_replica_factor(replicaFactor);
+    properties.replica_factor_ref() = replicaFactor;
   }
+
   if (vidSize == 0) {
-    LOG(ERROR) << "Create Space Failed : vid_size is illegal: " << vidSize;
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-    onFinished();
-    return;
-  }
-  if (vidType != cpp2::PropertyType::INT64 && vidType != cpp2::PropertyType::FIXED_STRING) {
-    LOG(ERROR) << "Create Space Failed : vid_type is illegal: "
-               << apache::thrift::util::enumNameSafe(vidType);
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-    onFinished();
-    return;
-  }
-  if (vidType == cpp2::PropertyType::INT64 && vidSize != 8) {
-    LOG(ERROR) << "Create Space Failed : vid_size should be 8 if vid type is integer: " << vidSize;
+    LOG(INFO) << "Create Space Failed : vid_size is illegal: " << vidSize;
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
-  properties.vid_type_ref().value().set_type_length(vidSize);
+  if (vidType != nebula::cpp2::PropertyType::INT64 &&
+      vidType != nebula::cpp2::PropertyType::FIXED_STRING) {
+    LOG(INFO) << "Create Space Failed : vid_type is illegal: "
+              << apache::thrift::util::enumNameSafe(vidType);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  if (vidType == nebula::cpp2::PropertyType::INT64 && vidSize != 8) {
+    LOG(INFO) << "Create Space Failed : vid_size should be 8 if vid type is integer: " << vidSize;
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  properties.vid_type_ref().value().type_length_ref() = vidSize;
   auto idRet = autoIncrementId();
   if (!nebula::ok(idRet)) {
-    LOG(ERROR) << "Create Space Failed : Get space id failed";
+    LOG(INFO) << "Create Space Failed : Get space id failed";
     handleErrorCode(nebula::error(idRet));
     onFinished();
     return;
@@ -107,65 +110,99 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
   auto spaceId = nebula::value(idRet);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
-                    std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
-  data.emplace_back(MetaServiceUtils::spaceKey(spaceId), MetaServiceUtils::spaceVal(properties));
+  std::vector<::std::string> zones;
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  if (properties.get_zone_names().empty()) {
+    // If zone names is emtpy, then this space could use all zones.
+    const auto& zonePrefix = MetaKeyUtils::zonePrefix();
+    auto zoneIterRet = doPrefix(zonePrefix);
+    if (!nebula::ok(zoneIterRet)) {
+      code = nebula::error(zoneIterRet);
+      LOG(INFO) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(code);
+      handleErrorCode(code);
+      onFinished();
+      return;
+    }
 
-  if (properties.group_name_ref().has_value()) {
-    auto& groupName = *properties.group_name_ref();
-    LOG(INFO) << "Create Space on group: " << groupName;
-    auto groupKey = MetaServiceUtils::groupKey(groupName);
-    auto ret = doGet(groupKey);
+    auto zoneIter = nebula::value(zoneIterRet).get();
+    while (zoneIter->valid()) {
+      auto zoneName = MetaKeyUtils::parseZoneName(zoneIter->key());
+      zones.emplace_back(std::move(zoneName));
+      zoneIter->next();
+    }
+
+    properties.zone_names_ref() = zones;
+  } else {
+    zones = properties.get_zone_names();
+  }
+
+  auto it = std::unique(zones.begin(), zones.end());
+  if (it != zones.end()) {
+    LOG(INFO) << "Zones have duplicated.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+    onFinished();
+    return;
+  }
+
+  int32_t zoneNum = zones.size();
+  if (replicaFactor > zoneNum) {
+    LOG(INFO) << "Replication number should less than or equal to zone number.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH);
+    onFinished();
+    return;
+  }
+
+  data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
+                    std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
+  data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
+  for (auto& zone : zones) {
+    auto zoneKey = MetaKeyUtils::zoneKey(zone);
+    auto ret = doGet(zoneKey);
     if (!nebula::ok(ret)) {
       auto retCode = nebula::error(ret);
       if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-        retCode = nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND;
+        code = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
       }
-      LOG(ERROR) << " Get Group Name: " << groupName << " failed.";
-      handleErrorCode(retCode);
-      onFinished();
-      return;
+      LOG(INFO) << " Get Zone Name: " << zone << " failed.";
+      break;
+    }
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create space failed";
+    handleErrorCode(code);
+    onFinished();
+    return;
+  }
+
+  int32_t activeZoneSize = 0;
+  std::unordered_map<std::string, Hosts> zoneHosts;
+  for (auto& zone : zones) {
+    auto zoneKey = MetaKeyUtils::zoneKey(zone);
+    auto zoneValueRet = doGet(std::move(zoneKey));
+    if (!nebula::ok(zoneValueRet)) {
+      code = nebula::error(zoneValueRet);
+      if (code == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+        code = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
+      }
+      LOG(INFO) << "Get zone " << zone << " failed.";
+      break;
     }
 
-    auto zones = MetaServiceUtils::parseZoneNames(nebula::value(ret));
-    int32_t zoneNum = zones.size();
-    if (replicaFactor > zoneNum) {
-      LOG(ERROR) << "Replication number should less than or equal to zone number.";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-      onFinished();
-      return;
-    }
-
-    auto hostLoadingRet = getHostLoading();
-    if (!nebula::ok(hostLoadingRet)) {
-      LOG(ERROR) << "Get host loading failed.";
-      auto retCode = nebula::error(hostLoadingRet);
-      if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-        retCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
-      }
-      handleErrorCode(retCode);
-      onFinished();
-      return;
-    }
-
-    hostLoading_ = std::move(nebula::value(hostLoadingRet));
-    std::unordered_map<std::string, Hosts> zoneHosts;
-    for (auto& zone : zones) {
-      auto zoneKey = MetaServiceUtils::zoneKey(zone);
-      auto zoneValueRet = doGet(std::move(zoneKey));
-      if (!nebula::ok(zoneValueRet)) {
-        auto retCode = nebula::error(zoneValueRet);
-        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-          retCode = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
-        }
-        LOG(ERROR) << "Get zone " << zone << " failed.";
-        handleErrorCode(retCode);
-        onFinished();
-        return;
+    auto now = time::WallClock::fastNowInMilliSec();
+    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+    for (auto& host : hosts) {
+      auto key = MetaKeyUtils::hostKey(host.host, host.port);
+      auto ret = doGet(key);
+      if (!nebula::ok(ret)) {
+        LOG(ERROR) << "Get host " << host << " failed.";
+        continue;
       }
 
-      auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
-      for (auto& host : hosts) {
+      HostInfo info = HostInfo::decode(nebula::value(ret));
+      if (now - info.lastHBTimeInMilliSec_ <
+          FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
+        activeZoneSize += 1;
         auto hostIter = hostLoading_.find(host);
         if (hostIter == hostLoading_.end()) {
           hostLoading_[host] = 0;
@@ -173,129 +210,103 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         } else {
           zoneLoading_[zone] += hostIter->second;
         }
+      } else {
+        LOG(WARNING) << "Host " << host << " expired";
       }
-      zoneHosts[zone] = std::move(hosts);
     }
 
-    for (auto partId = 1; partId <= partitionNum; partId++) {
-      auto pickedZonesRet = pickLightLoadZones(replicaFactor);
-      if (!pickedZonesRet.ok()) {
-        LOG(ERROR) << "Pick zone failed.";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
-      }
-
-      auto pickedZones = std::move(pickedZonesRet).value();
-      auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
-      if (!partHostsRet.ok()) {
-        LOG(ERROR) << "Pick hosts with zone failed.";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
-      }
-
-      auto partHosts = std::move(partHostsRet).value();
-
-      std::stringstream ss;
-      for (const auto& host : partHosts) {
-        ss << host << ", ";
-      }
-
-      VLOG(3) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
-      data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
-                        MetaServiceUtils::partVal(partHosts));
-    }
-  } else {
-    auto hostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
-    if (!nebula::ok(hostsRet)) {
-      auto retCode = nebula::error(hostsRet);
-      LOG(ERROR) << "Create Space Failed when get active host, error "
-                 << apache::thrift::util::enumNameSafe(retCode);
-      handleErrorCode(retCode);
-      onFinished();
-      return;
-    }
-    auto hosts = std::move(nebula::value(hostsRet));
-    if (hosts.empty()) {
-      LOG(ERROR) << "Create Space Failed : No Hosts!";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
-      onFinished();
-      return;
-    }
-
-    if ((int32_t)hosts.size() < replicaFactor) {
-      LOG(ERROR) << "Not enough hosts existed for replica " << replicaFactor << ", hosts num "
-                 << hosts.size();
-      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
-      onFinished();
-      return;
-    }
-
-    for (auto partId = 1; partId <= partitionNum; partId++) {
-      auto partHosts = pickHosts(partId, hosts, replicaFactor);
-      data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
-                        MetaServiceUtils::partVal(partHosts));
-    }
+    CHECK_CODE_AND_BREAK();
+    zoneHosts[zone] = std::move(hosts);
   }
 
-  resp_.set_id(to(spaceId, EntryType::SPACE));
-  doSyncPutAndUpdate(std::move(data));
+  if (replicaFactor > activeZoneSize) {
+    LOG(ERROR) << "Replication number should less than or equal to active zone number.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH);
+    onFinished();
+    return;
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create space failed";
+    handleErrorCode(code);
+    onFinished();
+    return;
+  }
+
+  for (auto partId = 1; partId <= partitionNum; partId++) {
+    auto pickedZonesRet = pickLightLoadZones(replicaFactor);
+    if (!pickedZonesRet.ok()) {
+      LOG(INFO) << "Pick zone failed.";
+      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      break;
+    }
+
+    auto pickedZones = std::move(pickedZonesRet).value();
+    auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
+    if (!nebula::ok(partHostsRet)) {
+      LOG(INFO) << "Pick hosts with zone failed.";
+      code = nebula::error(partHostsRet);
+      break;
+    }
+
+    auto partHosts = nebula::value(partHostsRet);
+    if (partHosts.empty()) {
+      LOG(INFO) << "Pick hosts is empty.";
+      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+      break;
+    }
+
+    std::stringstream ss;
+    for (const auto& host : partHosts) {
+      ss << host << ", ";
+    }
+
+    VLOG(2) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
+    data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(partHosts));
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create space failed";
+    handleErrorCode(code);
+    onFinished();
+    return;
+  }
+
+  resp_.id_ref() = to(spaceId, EntryType::SPACE);
   LOG(INFO) << "Create space " << spaceName;
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(data, timeInMilliSec);
+  auto result = doSyncPut(std::move(data));
+  handleErrorCode(result);
+  onFinished();
 }
 
-Hosts CreateSpaceProcessor::pickHosts(PartitionID partId,
-                                      const Hosts& hosts,
-                                      int32_t replicaFactor) {
-  auto startIndex = partId;
-  Hosts pickedHosts;
-  for (int32_t i = 0; i < replicaFactor; i++) {
-    pickedHosts.emplace_back(toThriftHost(hosts[startIndex++ % hosts.size()]));
-  }
-  return pickedHosts;
-}
-
-ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>>
-CreateSpaceProcessor::getHostLoading() {
-  const auto& prefix = MetaServiceUtils::partPrefix();
-  auto iterRet = doPrefix(prefix);
-
-  if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "Prefix Parts Failed";
-    return nebula::error(iterRet);
-  }
-
-  std::unordered_map<HostAddr, int32_t> result;
-  auto iter = nebula::value(iterRet).get();
-  while (iter->valid()) {
-    auto hosts = MetaServiceUtils::parsePartVal(iter->val());
-    for (auto& host : hosts) {
-      result[host]++;
-    }
-    iter->next();
-  }
-  return result;
-}
-
-StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
+ErrorOr<nebula::cpp2::ErrorCode, Hosts> CreateSpaceProcessor::pickHostsWithZone(
     const std::vector<std::string>& zones,
     const std::unordered_map<std::string, Hosts>& zoneHosts) {
   Hosts pickedHosts;
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneHosts.begin(); iter != zoneHosts.end(); iter++) {
+    if (iter->second.empty()) {
+      LOG(INFO) << "Zone " << iter->first << " is empty";
+      code = nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY;
+      break;
+    }
+
     auto zoneIter = std::find(std::begin(zones), std::end(zones), iter->first);
     if (zoneIter == std::end(zones)) {
       continue;
     }
 
+    // pick the host with the least load
     HostAddr picked;
     int32_t size = INT_MAX;
     for (auto& host : iter->second) {
       auto hostIter = hostLoading_.find(host);
       if (hostIter == hostLoading_.end()) {
-        LOG(ERROR) << "Host " << host << " not found";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
-        onFinished();
-        return Status::Error("Host not found");
+        LOG(INFO) << "Host " << host << " not found";
+        code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+        break;
       }
 
       if (size > hostIter->second) {
@@ -304,8 +315,13 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
       }
     }
 
+    CHECK_CODE_AND_BREAK();
     hostLoading_[picked] += 1;
     pickedHosts.emplace_back(toThriftHost(std::move(picked)));
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return code;
   }
   return pickedHosts;
 }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -36,7 +35,7 @@ TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExpr) {
     auto expected = ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(-1)));
     ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
   }
-  // (label1 + label2 < 40)  =>  (label1 + label2 < 40) Unchaged
+  // (label1 + label2 < 40)  =>  (label1 + label2 < 40) Unchanged
   // TODO: replace list with set in object pool and avoid copy
   {
     auto expr = ltExpr(addExpr(laExpr("v", "age"), laExpr("v2", "age2")), constantExpr(40));
@@ -231,6 +230,24 @@ TEST_F(RewriteRelExprVisitorTest, TestContainer) {
                  {"k2",
                   ltExpr(laExpr("v", "age"),
                          minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))}});
+    ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
+  }
+}
+
+TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExprWithStr) {
+  // Do not rewrite if the arithmetic expression contains string/char constant
+  {
+    // (v.name - "ab" < "name")  =>  Unchanged
+    auto expr = ltExpr(minusExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
+    auto res = ExpressionUtils::rewriteRelExpr(expr);
+    auto expected = expr;
+    ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
+  }
+  {
+    // (v.name + "ab" < "name")  =>  Unchanged
+    auto expr = ltExpr(addExpr(laExpr("v", "name"), constantExpr("ab")), constantExpr("name"));
+    auto res = ExpressionUtils::rewriteRelExpr(expr);
+    auto expected = expr;
     ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
   }
 }

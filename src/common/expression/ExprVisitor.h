@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef EXPRESSION_EXPRVISITOR_H_
@@ -21,6 +20,7 @@
 #include "common/expression/LabelExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/MatchPathPatternExpression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/PropertyExpression.h"
@@ -63,6 +63,7 @@ class ExprVisitor {
   virtual void visit(MapExpression *expr) = 0;
   // property Expression
   virtual void visit(TagPropertyExpression *expr) = 0;
+  virtual void visit(LabelTagPropertyExpression *expr) = 0;
   virtual void visit(EdgePropertyExpression *expr) = 0;
   virtual void visit(InputPropertyExpression *expr) = 0;
   virtual void visit(VariablePropertyExpression *expr) = 0;
@@ -89,6 +90,8 @@ class ExprVisitor {
   virtual void visit(ReduceExpression *expr) = 0;
   // subscript range expression
   virtual void visit(SubscriptRangeExpression *expr) = 0;
+  // match path pattern expression
+  virtual void visit(MatchPathPatternExpression *expr) = 0;
 };
 
 }  // namespace nebula

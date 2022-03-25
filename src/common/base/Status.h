@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_STATUS_H_
@@ -29,7 +28,7 @@ class Status final {
   ~Status() = default;
 
   Status(const Status &rhs) {
-    state_ = rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get());
+    state_ = (rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get()));
   }
 
   Status &operator=(const Status &rhs) {
@@ -41,7 +40,9 @@ class Status final {
     return *this;
   }
 
-  Status(Status &&rhs) noexcept { state_ = std::move(rhs.state_); }
+  Status(Status &&rhs) noexcept {
+    state_ = std::move(rhs.state_);
+  }
 
   Status &operator=(Status &&rhs) noexcept {
     // `state_ == rhs.state_' means either `this == &rhs',
@@ -52,7 +53,9 @@ class Status final {
     return *this;
   }
 
-  static Status from(const Status &s) { return s; }
+  static Status from(const Status &s) {
+    return s;
+  }
 
   template <typename T>
   static Status from(StatusOr<T> &&s) {
@@ -73,16 +76,26 @@ class Status final {
     return code() == rhs.code();
   }
 
-  bool operator!=(const Status &rhs) const { return !(*this == rhs); }
+  bool operator!=(const Status &rhs) const {
+    return !(*this == rhs);
+  }
 
-  bool ok() const { return state_ == nullptr; }
+  bool ok() const {
+    return state_ == nullptr;
+  }
 
-  static Status OK() { return Status(); }
+  static Status OK() {
+    return Status();
+  }
 
 #define STATUS_GENERATOR(ERROR)                                                     \
-  static Status ERROR() { return Status(k##ERROR, ""); }                            \
+  static Status ERROR() {                                                           \
+    return Status(k##ERROR, "");                                                    \
+  }                                                                                 \
                                                                                     \
-  static Status ERROR(folly::StringPiece msg) { return Status(k##ERROR, msg); }     \
+  static Status ERROR(folly::StringPiece msg) {                                     \
+    return Status(k##ERROR, msg);                                                   \
+  }                                                                                 \
                                                                                     \
   static Status ERROR(const char *fmt, ...) __attribute__((format(printf, 1, 2))) { \
     va_list args;                                                                   \
@@ -92,7 +105,9 @@ class Status final {
     return Status(k##ERROR, msg);                                                   \
   }                                                                                 \
                                                                                     \
-  bool is##ERROR() const { return code() == k##ERROR; }
+  bool is##ERROR() const {                                                          \
+    return code() == k##ERROR;                                                      \
+  }
   // Some succeeded codes
   STATUS_GENERATOR(Inserted);
 
@@ -125,7 +140,7 @@ class Status final {
   STATUS_GENERATOR(Balanced);
   STATUS_GENERATOR(PartNotFound);
   STATUS_GENERATOR(ListenerNotFound);
-
+  STATUS_GENERATOR(SessionNotFound);
   // User or permission errors
   STATUS_GENERATOR(PermissionError);
 
@@ -137,7 +152,7 @@ class Status final {
 
   // If some kind of error really needs to be distinguished with others using a
   // specific code, other than a general code and specific msg, you could add a
-  // new code below, e.g. kSomeError, and add the cooresponding
+  // new code below, e.g. kSomeError, and add the corresponding
   // STATUS_GENERATOR(SomeError)
   enum Code : uint16_t {
     // OK
@@ -167,6 +182,7 @@ class Status final {
     kGroupNotFound = 413,
     kZoneNotFound = 414,
     kListenerNotFound = 415,
+    kSessionNotFound = 416,
     // 5xx for user or permission error
     kPermissionError = 501,
   };
@@ -182,7 +198,9 @@ class Status final {
 
  private:
   // REQUIRES: stat_ != nullptr
-  uint16_t size() const { return reinterpret_cast<const Header *>(state_.get())->size_; }
+  uint16_t size() const {
+    return reinterpret_cast<const Header *>(state_.get())->size_;
+  }
 
   Status(Code code, folly::StringPiece msg);
 

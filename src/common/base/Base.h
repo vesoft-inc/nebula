@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_BASE_H_
@@ -17,9 +16,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <any>
 #include <atomic>
-#include <boost/any.hpp>
-#include <boost/variant.hpp>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
@@ -48,6 +46,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 #if defined(__clang__) && defined(__aarch64__)
@@ -67,7 +66,7 @@
 
 #include "common/base/Logging.h"
 
-#define MUST_USE_RESULT __attribute__((warn_unused_result))
+#define NG_MUST_USE_RESULT __attribute__((warn_unused_result))
 #define DONT_OPTIMIZE __attribute__((optimize("O0")))
 
 #define ALWAYS_INLINE __attribute__((always_inline))
@@ -108,7 +107,7 @@
 
 namespace nebula {
 
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
+using VariantType = std::variant<int64_t, double, bool, std::string>;
 
 #ifndef VAR_INT64
 #define VAR_INT64 0

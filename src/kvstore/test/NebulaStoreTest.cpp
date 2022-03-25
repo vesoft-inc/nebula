@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -40,8 +39,8 @@ void dump(const std::vector<T>& v) {
 }
 
 std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getHandlers() {
-  auto handlersPool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      1, true /*stats*/);
+  auto handlersPool =
+      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
   handlersPool->setNamePrefix("executor");
   handlersPool->start();
   return handlersPool;
@@ -139,11 +138,12 @@ TEST(NebulaStoreTest, PartsTest) {
   auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
   auto partMan = std::make_unique<MemPartManager>();
 
+  auto space1 = 1;  // 0 is system space, then we could not use it
   // GraphSpaceID =>  {PartitionIDs}
-  // 0 => {0, 1, 2, 3...9}
+  // 1 => {0, 1, 2, 3...9}
   // The parts on PartMan is 0...9
   for (auto partId = 0; partId < 10; partId++) {
-    partMan->addPart(0, partId);
+    partMan->addPart(space1, partId);
   }
 
   std::vector<std::string> paths;
@@ -151,7 +151,7 @@ TEST(NebulaStoreTest, PartsTest) {
   paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
   for (size_t i = 0; i < paths.size(); i++) {
-    auto db = std::make_unique<RocksEngine>(0, /* spaceId */
+    auto db = std::make_unique<RocksEngine>(space1, /* spaceId */
                                             kDefaultVidLen,
                                             paths[i]);
     for (auto partId = 0; partId < 3; partId++) {
@@ -181,13 +181,13 @@ TEST(NebulaStoreTest, PartsTest) {
       ASSERT_EQ(5, parts.size());
     }
   };
-  check(0);
+  check(space1);
   // After init, the parts should be 0-9, and the distribution should be
   // disk1: 0, 1, 2, 3, 8
   // disk2: 4, 5, 6, 7, 9
   // After restart, the original order should not been broken.
   {
-    auto parts = store->spaces_[0]->engines_[0]->allParts();
+    auto parts = store->spaces_[space1]->engines_[0]->allParts();
     ASSERT_EQ(0, parts[0]);
     ASSERT_EQ(1, parts[1]);
     ASSERT_EQ(2, parts[2]);
@@ -195,7 +195,7 @@ TEST(NebulaStoreTest, PartsTest) {
     ASSERT_EQ(8, parts[4]);
   }
   {
-    auto parts = store->spaces_[0]->engines_[1]->allParts();
+    auto parts = store->spaces_[space1]->engines_[1]->allParts();
     ASSERT_EQ(4, parts[0]);
     ASSERT_EQ(5, parts[1]);
     ASSERT_EQ(6, parts[2]);
@@ -205,12 +205,13 @@ TEST(NebulaStoreTest, PartsTest) {
 
   auto* pm = dynamic_cast<MemPartManager*>(store->options_.partMan_.get());
   // Let's create another space with 10 parts.
+  auto space2 = 2;
   for (auto partId = 0; partId < 10; partId++) {
-    pm->addPart(1, partId);
+    pm->addPart(space2, partId);
   }
-  check(1);
+  check(space2);
   {
-    auto parts = store->spaces_[1]->engines_[0]->allParts();
+    auto parts = store->spaces_[space2]->engines_[0]->allParts();
     ASSERT_EQ(0, parts[0]);
     ASSERT_EQ(2, parts[1]);
     ASSERT_EQ(4, parts[2]);
@@ -218,7 +219,7 @@ TEST(NebulaStoreTest, PartsTest) {
     ASSERT_EQ(8, parts[4]);
   }
   {
-    auto parts = store->spaces_[1]->engines_[1]->allParts();
+    auto parts = store->spaces_[space2]->engines_[1]->allParts();
     ASSERT_EQ(1, parts[0]);
     ASSERT_EQ(3, parts[1]);
     ASSERT_EQ(5, parts[2]);
@@ -226,25 +227,113 @@ TEST(NebulaStoreTest, PartsTest) {
     ASSERT_EQ(9, parts[4]);
   }
 
-  // Let's remove space some parts in GraphSpace 0
+  // Let's remove space some parts in GraphSpace 1
   for (auto partId = 0; partId < 5; partId++) {
-    pm->removePart(0, partId);
+    pm->removePart(space1, partId);
   }
 
   int32_t totalParts = 0;
   for (auto i = 0; i < 2; i++) {
-    ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/0", rootPath.path(), i + 1),
-              store->spaces_[0]->engines_[i]->getDataRoot());
-    auto parts = store->spaces_[0]->engines_[i]->allParts();
+    ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, space1),
+              store->spaces_[space1]->engines_[i]->getDataRoot());
+    auto parts = store->spaces_[space1]->engines_[i]->allParts();
     dump(parts);
     totalParts += parts.size();
   }
   ASSERT_EQ(5, totalParts);
 
   for (auto partId = 5; partId < 10; partId++) {
-    pm->removePart(0, partId);
+    pm->removePart(space1, partId);
   }
-  ASSERT_TRUE(store->spaces_.find(0) == store->spaces_.end());
+  ASSERT_TRUE(store->spaces_.find(space1) == store->spaces_.end());
+}
+
+TEST(NebulaStoreTest, PersistPeersTest) {
+  fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+  auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+  auto partMan = std::make_unique<MemPartManager>();
+
+  // GraphSpaceID =>  {PartitionIDs}
+  // 1 => {0, 1, 2, 3...9}
+  // The parts on PartMan is 0...9
+  auto space1 = 1;
+  for (auto partId = 0; partId < 10; partId++) {
+    partMan->addPart(space1, partId);
+  }
+
+  std::vector<std::string> paths;
+  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+  paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+
+  HostAddr local = {"", 0};
+  for (size_t i = 0; i < paths.size(); i++) {
+    auto db = std::make_unique<RocksEngine>(space1, /* spaceId */
+                                            kDefaultVidLen,
+                                            paths[i]);
+    for (auto partId = 0; partId < 3; partId++) {
+      db->addPart(5 * i + partId);
+    }
+
+    if (i == 0) {
+      Peers peers;
+      peers.addOrUpdate(Peer(local, Peer::Status::kLearner));
+      db->addPart(5 * i + 10, peers);
+    } else {
+      Peers peers;
+      peers.addOrUpdate(Peer(local, Peer::Status::kPromotedPeer));
+      db->addPart(5 * i + 10, peers);
+    }
+    auto parts = db->allParts();
+    dump(parts);
+  }
+  // Currently, the disks hold parts as below:
+  // disk1: 0, 1, 2, 10
+  // disk2: 5, 6, 7, 15
+
+  KVOptions options;
+  options.dataPaths_ = std::move(paths);
+  options.partMan_ = std::move(partMan);
+  auto store =
+      std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+  store->init();
+  auto check = [&](GraphSpaceID spaceId) {
+    for (int i = 0; i < static_cast<int>(paths.size()); i++) {
+      ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, spaceId),
+                store->spaces_[spaceId]->engines_[i]->getDataRoot());
+      auto parts = store->spaces_[spaceId]->engines_[i]->allParts();
+      dump(parts);
+      if (i == 0) {
+        ASSERT_EQ(6, parts.size());
+      } else {
+        ASSERT_EQ(6, parts.size());
+      }
+    }
+  };
+  check(space1);
+  // After init, the parts should be 0-9, and the distribution should be
+  // disk1: 0, 1, 2, 3, 8, 10
+  // disk2: 4, 5, 6, 7, 9, 15
+  // After restart, the original order should not been broken.
+  {
+    auto parts = store->spaces_[space1]->engines_[0]->allParts();
+    dump(parts);
+    ASSERT_EQ(0, parts[0]);
+    ASSERT_EQ(1, parts[1]);
+    ASSERT_EQ(2, parts[2]);
+    ASSERT_EQ(3, parts[3]);
+    ASSERT_EQ(8, parts[4]);
+    ASSERT_EQ(10, parts[5]);
+  }
+  {
+    auto parts = store->spaces_[space1]->engines_[1]->allParts();
+    dump(parts);
+    ASSERT_EQ(4, parts[0]);
+    ASSERT_EQ(5, parts[1]);
+    ASSERT_EQ(6, parts[2]);
+    ASSERT_EQ(7, parts[3]);
+    ASSERT_EQ(9, parts[4]);
+    ASSERT_EQ(15, parts[5]);
+  }
 }
 
 TEST(NebulaStoreTest, ThreeCopiesTest) {
@@ -437,7 +526,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   };
 
   LOG(INFO) << "Transfer leader to first copy";
-  // all parttition tranfer leaders to first replica
+  // all partition transfer leaders to first replica
   GraphSpaceID spaceId = 0;
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;
@@ -761,6 +850,78 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   }
 }
 
+TEST(NebulaStoreTest, ReadSnapshotTest) {
+  auto partMan = std::make_unique<MemPartManager>();
+  auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+  // space id : 1 , part id : 0
+  partMan->partsMap_[1][0] = PartHosts();
+
+  VLOG(1) << "Total space num is " << partMan->partsMap_.size()
+          << ", total local partitions num is " << partMan->parts(HostAddr("", 0)).size();
+
+  fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+  std::vector<std::string> paths;
+  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+
+  KVOptions options;
+  options.dataPaths_ = std::move(paths);
+  options.partMan_ = std::move(partMan);
+  HostAddr local = {"", 0};
+  auto store =
+      std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+  store->init();
+  sleep(FLAGS_raft_heartbeat_interval_secs);
+  // put kv
+  {
+    std::vector<std::pair<std::string, std::string>> expected, result;
+    auto atomic = [&]() -> std::string {
+      std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+      for (auto i = 0; i < 20; i++) {
+        auto key = folly::stringPrintf("key_%d", i);
+        auto val = folly::stringPrintf("val_%d", i);
+        batchHolder->put(key.data(), val.data());
+        expected.emplace_back(std::move(key), std::move(val));
+      }
+      return encodeBatchValue(batchHolder->getBatch());
+    };
+
+    folly::Baton<true, std::atomic> baton;
+    auto callback = [&](nebula::cpp2::ErrorCode code) {
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton.post();
+    };
+    store->asyncAtomicOp(1, 0, atomic, callback);
+    baton.wait();
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    std::string prefix("key");
+    const void* snapshot = store->GetSnapshot(1, 0);
+    SCOPE_EXIT {
+      store->ReleaseSnapshot(1, 0, snapshot);
+    };
+    std::vector<KV> data;
+    for (auto i = 20; i < 40; i++) {
+      auto key = folly::stringPrintf("key_%d", i);
+      auto val = folly::stringPrintf("val_%d", i);
+      data.emplace_back(key, val);
+    }
+    folly::Baton<true, std::atomic> baton2;
+    store->asyncMultiPut(1, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+      EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton2.post();
+    });
+    baton2.wait();
+    auto ret = store->prefix(1, 0, prefix, &iter, false, snapshot);
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+    while (iter->valid()) {
+      result.emplace_back(iter->key(), iter->val());
+      iter->next();
+    }
+    std::sort(expected.begin(), expected.end());
+    EXPECT_EQ(expected, result);
+  }
+}
+
 TEST(NebulaStoreTest, AtomicOpBatchTest) {
   auto partMan = std::make_unique<MemPartManager>();
   auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
@@ -917,6 +1078,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
   FLAGS_rocksdb_table_format = "PlainTable";
   FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
   FLAGS_rocksdb_backup_dir = backupPath.path();
+  FLAGS_enable_rocksdb_prefix_filtering = true;
 
   auto waitLeader = [](const std::unique_ptr<NebulaStore>& store) {
     while (true) {
@@ -950,7 +1112,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     if (insertData) {
       std::vector<KV> data;
       for (auto tagId = 0; tagId < 10; tagId++) {
-        data.emplace_back(NebulaKeyUtils::vertexKey(vIdLen, partId, "vertex", tagId),
+        data.emplace_back(NebulaKeyUtils::tagKey(vIdLen, partId, "vertex", tagId),
                           folly::stringPrintf("val_%d", tagId));
       }
       folly::Baton<true, std::atomic> baton;
@@ -962,7 +1124,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     }
 
     {
-      std::string prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, "vertex");
+      std::string prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, "vertex");
       std::unique_ptr<KVIterator> iter;
       auto code = store->prefix(spaceId, partId, prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);

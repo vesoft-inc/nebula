@@ -1,10 +1,11 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/DropEdgeProcessor.h"
+
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace meta {
@@ -14,27 +15,27 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-  auto edgeName = req.get_edge_name();
+  folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  const auto& edgeName = req.get_edge_name();
 
   EdgeType edgeType;
-  auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, edgeName);
+  auto indexKey = MetaKeyUtils::indexEdgeKey(spaceId, edgeName);
   auto iRet = doGet(indexKey);
   if (nebula::ok(iRet)) {
     edgeType = *reinterpret_cast<const EdgeType*>(nebula::value(iRet).c_str());
-    resp_.set_id(to(edgeType, EntryType::EDGE));
+    resp_.id_ref() = to(edgeType, EntryType::EDGE);
   } else {
     auto retCode = nebula::error(iRet);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       if (req.get_if_exists()) {
         retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
-        LOG(ERROR) << "Drop edge failed :" << edgeName << " not found.";
+        LOG(INFO) << "Drop edge failed :" << edgeName << " not found.";
         retCode = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
       }
     } else {
-      LOG(ERROR) << "Get edgetype failed, edge name " << edgeName
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      LOG(INFO) << "Get edgetype failed, edge name " << edgeName
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
     }
     handleErrorCode(retCode);
     onFinished();
@@ -48,7 +49,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     return;
   }
   if (!nebula::value(indexes).empty()) {
-    LOG(ERROR) << "Drop edge error, index conflict, please delete index first.";
+    LOG(INFO) << "Drop edge error, index conflict, please delete index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -56,8 +57,8 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
-    LOG(ERROR) << "Drop edge error, fulltext index conflict, "
-               << "please delete fulltext index first.";
+    LOG(INFO) << "Drop edge error, fulltext index conflict, "
+              << "please delete fulltext index first.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
     onFinished();
     return;
@@ -77,18 +78,26 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   }
 
   auto keys = nebula::value(ret);
-  keys.emplace_back(std::move(indexKey));
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  for (auto key : keys) {
+    batchHolder->remove(std::move(key));
+  }
+  batchHolder->remove(std::move(indexKey));
+
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
   LOG(INFO) << "Drop Edge " << edgeName;
-  doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(
     GraphSpaceID id, EdgeType edgeType) {
   std::vector<std::string> keys;
-  auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
+  auto key = MetaKeyUtils::schemaEdgePrefix(id, edgeType);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
-    LOG(ERROR) << "Edge schema prefix failed, edgetype " << edgeType;
+    LOG(INFO) << "Edge schema prefix failed, edgetype " << edgeType;
     return nebula::error(iterRet);
   }
 

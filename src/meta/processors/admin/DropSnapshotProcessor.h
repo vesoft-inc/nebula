@@ -1,13 +1,10 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_DROPSNAPSHOTPROCESSOR_H_
 #define META_DROPSNAPSHOTPROCESSOR_H_
-
-#include <gtest/gtest_prod.h>
 
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
@@ -15,6 +12,11 @@
 namespace nebula {
 namespace meta {
 
+/**
+ * @brief Drop snapshot for all spaces. It could drop snapshots
+ *        created by CreateBackupProcessor or CreateCheckpointProcessor.
+ *
+ */
 class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static DropSnapshotProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
@@ -24,7 +26,7 @@ class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
   void process(const cpp2::DropSnapshotReq& req);
 
  private:
-  explicit DropSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
+  DropSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
       : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
  private:

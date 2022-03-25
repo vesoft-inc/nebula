@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_STORAGEPLAN_H_
@@ -14,34 +13,34 @@
 namespace nebula {
 namespace storage {
 
-/*
-Origined from folly::FutureDAG, not thread-safe.
-
-The StoragePlan contains a set of RelNode, all you need to do is define a
-RelNode, add it to plan by calling addNode, which will return the index of the
-RelNode in this plan. The denpendencies between different nodes is defined by
-calling addDependency in RelNode.
-
-To run the plan, call the go method, you could get the final result.
-
-For simplicity, StoragePlan has not detect if has cycle in it for now, user must
-make sure no cycle dependency in it.
-
-For this version, if there are more than one node depends on the same node, that
-node will be executed **more than once**. If you want to make sure each node
-would be executed exactly once, StoragePlan would be inappropriate. In that
-case, please refer to the previous implement, FutureDAG in
-StorageDAGBenchmark.cpp
-*/
+/**
+ * @brief Storage query plan
+ *
+ * The StoragePlan contains a set of RelNode, all you need to do is define a RelNode, add it to plan
+ * by calling addNode, which will return the index of the RelNode in this plan. The dependencies
+ * between different nodes is defined by calling addDependency in RelNode.
+ *
+ * To run the plan, call the go method, you could get the final result.
+ *
+ * For simplicity, StoragePlan has not detect if has cycle in it for now, user must make sure no
+ * cycle dependency in it.
+ *
+ * For this version, if there are more than one node depends on the same node, that node will be
+ * executed **more than once**. If you want to make sure each node would be executed exactly once,
+ * StoragePlan would be inappropriate. In that case, please refer to the previous implement,
+ * FutureDAG in StorageDAGBenchmark.cpp
+ *
+ * @tparam T Iterated data type
+ */
 template <typename T>
 class StoragePlan {
  public:
   nebula::cpp2::ErrorCode go(PartitionID partId, const T& input) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all end nodes (without dependents), and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -55,11 +54,11 @@ class StoragePlan {
   }
 
   nebula::cpp2::ErrorCode go(PartitionID partId) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all end nodes (without dependents), and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -80,6 +79,9 @@ class StoragePlan {
   RelNode<T>* getNode(size_t idx) {
     CHECK_LT(idx, nodes_.size());
     return nodes_[idx].get();
+  }
+  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() {
+    return nodes_;
   }
 
  private:

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_VERTEX_H_
@@ -31,9 +30,12 @@ struct Tag {
     props.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const;
+  folly::dynamic toJson() const;
 
   Tag& operator=(Tag&& rhs) noexcept {
     if (&rhs != this) {
@@ -51,7 +53,9 @@ struct Tag {
     return *this;
   }
 
-  bool operator==(const Tag& rhs) const { return name == rhs.name && props == rhs.props; }
+  bool operator==(const Tag& rhs) const {
+    return name == rhs.name && props == rhs.props;
+  }
 };
 
 struct Vertex {
@@ -68,15 +72,22 @@ struct Vertex {
     tags.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Used in Json form query result
+  folly::dynamic getMetaData() const;
 
   Vertex& operator=(Vertex&& rhs) noexcept;
 
   Vertex& operator=(const Vertex& rhs);
 
-  bool operator==(const Vertex& rhs) const { return vid == rhs.vid && tags == rhs.tags; }
+  bool operator==(const Vertex& rhs) const {
+    return vid == rhs.vid && tags == rhs.tags;
+  }
 
   bool operator<(const Vertex& rhs) const;
 
@@ -91,7 +102,9 @@ inline void swap(Vertex& a, Vertex& b) {
   b = std::move(temp);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Vertex& v) { return os << v.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const Vertex& v) {
+  return os << v.toString();
+}
 
 }  // namespace nebula
 

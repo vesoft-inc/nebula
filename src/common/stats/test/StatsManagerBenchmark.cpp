@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -32,19 +31,31 @@ void statsBM(const CounterId& counterId, uint32_t numThreads, uint32_t iters) {
   }
 }
 
-BENCHMARK(add_stats_value_1t, iters) { statsBM(kCounterStats, 1, iters); }
+BENCHMARK(add_stats_value_1t, iters) {
+  statsBM(kCounterStats, 1, iters);
+}
 
-BENCHMARK(add_stats_value_4t, iters) { statsBM(kCounterStats, 4, iters); }
+BENCHMARK(add_stats_value_4t, iters) {
+  statsBM(kCounterStats, 4, iters);
+}
 
-BENCHMARK(add_stats_value_8t, iters) { statsBM(kCounterStats, 8, iters); }
+BENCHMARK(add_stats_value_8t, iters) {
+  statsBM(kCounterStats, 8, iters);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(add_histogram_value_1t, iters) { statsBM(kCounterHisto, 1, iters); }
+BENCHMARK(add_histogram_value_1t, iters) {
+  statsBM(kCounterHisto, 1, iters);
+}
 
-BENCHMARK(add_histogram_value_4t, iters) { statsBM(kCounterHisto, 4, iters); }
+BENCHMARK(add_histogram_value_4t, iters) {
+  statsBM(kCounterHisto, 4, iters);
+}
 
-BENCHMARK(add_histogram_value_8t, iters) { statsBM(kCounterHisto, 8, iters); }
+BENCHMARK(add_histogram_value_8t, iters) {
+  statsBM(kCounterHisto, 8, iters);
+}
 
 int main(int argc, char** argv) {
   folly::init(&argc, &argv, true);

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_RESULT_H_
@@ -29,31 +28,56 @@ class Result final {
   static const Result& EmptyResult();
   static const std::vector<Result>& EmptyResultList();
 
-  std::shared_ptr<Value> valuePtr() const { return core_.value; }
+  std::shared_ptr<Value> valuePtr() const {
+    return core_.value;
+  }
 
-  const Value& value() const { return *core_.value; }
+  const Value& value() const {
+    return *core_.value;
+  }
 
-  State state() const { return core_.state; }
+  State state() const {
+    return core_.state;
+  }
 
-  size_t size() const { return core_.iter->size(); }
+  size_t size() const {
+    return core_.iter->size();
+  }
 
-  std::unique_ptr<Iterator> iter() const& { return core_.iter->copy(); }
+  std::unique_ptr<Iterator> iter() const& {
+    return core_.iter->copy();
+  }
 
-  std::unique_ptr<Iterator> iter() && { return std::move(core_.iter); }
+  std::unique_ptr<Iterator> iter() && {
+    return std::move(core_.iter);
+  }
 
-  Iterator* iterRef() { return core_.iter.get(); }
+  Iterator* iterRef() {
+    return core_.iter.get();
+  }
+
+  void checkMemory(bool checkMemory) {
+    core_.checkMemory = checkMemory;
+    if (core_.iter) {
+      core_.iter->setCheckMemory(checkMemory);
+    }
+  }
 
  private:
   friend class ResultBuilder;
   friend class ExecutionContext;
 
-  Value&& moveValue() { return std::move(*core_.value); }
+  Value&& moveValue() {
+    return std::move(*core_.value);
+  }
 
   struct Core {
     Core() = default;
     Core(Core&&) = default;
     Core& operator=(Core&&) = default;
-    Core(const Core& c) { *this = c; }
+    Core(const Core& c) {
+      *this = c;
+    }
     Core& operator=(const Core& c) {
       if (&c != this) {
         state = c.state;
@@ -64,6 +88,7 @@ class Result final {
       return *this;
     }
 
+    bool checkMemory{false};
     State state;
     std::string msg;
     std::shared_ptr<Value> value;
@@ -78,12 +103,19 @@ class Result final {
 // Default iterator type is sequential.
 class ResultBuilder final {
  public:
-  ResultBuilder() { core_.state = Result::State::kSuccess; }
+  ResultBuilder() {
+    core_.state = Result::State::kSuccess;
+  }
 
   Result build() {
     if (!core_.iter) iter(Iterator::Kind::kSequential);
     if (!core_.value && core_.iter) value(core_.iter->valuePtr());
     return Result(std::move(core_));
+  }
+
+  ResultBuilder& checkMemory(bool checkMemory = false) {
+    core_.checkMemory = checkMemory;
+    return *this;
   }
 
   ResultBuilder& value(Value&& value) {

@@ -1,18 +1,17 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/DownloadValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {
 namespace graph {
 
+// Plan to download SST file from HDFS
 Status DownloadValidator::toPlan() {
   auto sentence = static_cast<DownloadSentence *>(sentence_);
   if (sentence->host() == nullptr || sentence->port() == 0 || sentence->path() == nullptr) {

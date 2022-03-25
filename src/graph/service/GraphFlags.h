@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SERVICE_GRAPHFLAGS_H_
@@ -37,13 +36,26 @@ DECLARE_bool(enable_authorize);
 DECLARE_string(auth_type);
 DECLARE_string(cloud_http_url);
 DECLARE_uint32(max_allowed_statements);
-DECLARE_double(system_memory_high_watermark_ratio);
+DECLARE_int32(max_sessions_per_ip_per_user);
 
-// optimizer
+// Failed login attempt
+// value of failed_login_attempts is in the range from 0 to 32767.
+// The deault value is 0. A value of 0 disables the option.
+DECLARE_uint32(failed_login_attempts);
+// value of password_lock_time_in_secs is in the range from 0 to 32767[secs].
+// The deault value is 0. A value of 0 disables the option.
+DECLARE_uint32(password_lock_time_in_secs);
+
+// Optimizer
 DECLARE_bool(enable_optimizer);
 
 DECLARE_int64(max_allowed_connections);
 
-DECLARE_string(local_ip);
+DECLARE_bool(enable_experimental_feature);
+
+DECLARE_bool(enable_client_white_list);
+DECLARE_string(client_white_list);
+
+DECLARE_int32(num_rows_to_check_memory);
 
 #endif  // GRAPH_GRAPHFLAGS_H_

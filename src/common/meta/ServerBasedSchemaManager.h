@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_META_SERVERBASEDSCHEMAMANAGER_H_
@@ -23,7 +22,7 @@ class ServerBasedSchemaManager : public SchemaManager {
 
   StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID space) override;
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID space) override;
 
   StatusOr<int32_t> getPartsNum(GraphSpaceID space) override;
 
@@ -69,7 +68,8 @@ class ServerBasedSchemaManager : public SchemaManager {
   // get all latest version of all edges
   StatusOr<EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) override;
 
-  StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() override;
+  StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
+      cpp2::ExternalServiceType type) override;
 
   StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) override;

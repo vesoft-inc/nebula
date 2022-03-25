@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/kv/GetProcessor.h"
@@ -48,7 +47,7 @@ void GetProcessor::process(const cpp2::KVGetRequest& req) {
     }
   }
 
-  resp_.set_key_values(std::move(pairs));
+  resp_.key_values_ref() = std::move(pairs);
   this->onFinished();
 }
 

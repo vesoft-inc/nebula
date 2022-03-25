@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_FINDVISITOR_H_
@@ -24,13 +23,21 @@ class FindVisitor final : public ExprVisitorImpl {
     return true;
   }
 
-  bool needFindAll() const { return needFindAll_; }
+  bool needFindAll() const {
+    return needFindAll_;
+  }
 
-  void setNeedFindAll(bool needFindAll) { needFindAll_ = needFindAll; }
+  void setNeedFindAll(bool needFindAll) {
+    needFindAll_ = needFindAll;
+  }
 
-  bool found() const { return !foundExprs_.empty(); }
+  bool found() const {
+    return !foundExprs_.empty();
+  }
 
-  std::vector<const Expression*> results() const { return foundExprs_; }
+  std::vector<const Expression*> results() const {
+    return foundExprs_;
+  }
 
  private:
   using ExprVisitorImpl::visit;
@@ -48,6 +55,7 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(ConstantExpression* expr) override;
   void visit(EdgePropertyExpression* expr) override;
   void visit(TagPropertyExpression* expr) override;
+  void visit(LabelTagPropertyExpression* expr) override;
   void visit(InputPropertyExpression* expr) override;
   void visit(VariablePropertyExpression* expr) override;
   void visit(SourcePropertyExpression* expr) override;
@@ -63,9 +71,13 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(LabelAttributeExpression* expr) override;
   void visit(VertexExpression* expr) override;
   void visit(EdgeExpression* expr) override;
+  void visit(PathBuildExpression* expr) override;
   void visit(ColumnExpression* expr) override;
   void visit(ListComprehensionExpression* expr) override;
   void visit(SubscriptRangeExpression* expr) override;
+  void visit(LogicalExpression* expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression* expr) override;
 
   void visitBinaryExpr(BinaryExpression* expr) override;
   void findInCurrentExpr(Expression* expr);

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_EITHEROR_H_
@@ -117,7 +116,9 @@ class EitherOr {
   static constexpr State convert_to_s = TypeConverter<Args...>::state;
 
  public:
-  virtual ~EitherOr() { destruct(); }
+  virtual ~EitherOr() {
+    destruct();
+  }
 
   /***********************************************
    *
@@ -159,7 +160,7 @@ class EitherOr {
   template <typename U,
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, V>::value> >
+                                        std::is_constructible<RIGHT, V>::value>>
   EitherOr(const EitherOr<U, V>& rhs) noexcept {
     switch (rhs.state_) {
       case State::VOID:
@@ -178,7 +179,7 @@ class EitherOr {
   template <typename U,
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, V>::value> >
+                                        std::is_constructible<RIGHT, V>::value>>
   EitherOr(EitherOr<U, V>&& rhs) noexcept {
     switch (rhs.state_) {
       case State::VOID:
@@ -218,7 +219,7 @@ class EitherOr {
   // LEFT or RIGHT, not both
   template <class... Args,
             typename = std::enable_if_t<std::is_constructible<LEFT, Args...>::value ||
-                                        std::is_constructible<RIGHT, Args...>::value> >
+                                        std::is_constructible<RIGHT, Args...>::value>>
   EitherOr(Args&&... v) noexcept {  // NOLINT
     new (&val_) Variant(convert_to_t<Args...>, std::forward<Args>(v)...);
     state_ = convert_to_s<Args...>;
@@ -228,7 +229,7 @@ class EitherOr {
   // So we use a type tag to force selecting LEFT
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, U>::value> >
+                                        std::is_constructible<RIGHT, U>::value>>
   EitherOr(const LeftType*, U&& v) noexcept {
     new (&val_) Variant(kConstructLeft, std::forward<U>(v));
     state_ = State::LEFT_TYPE;
@@ -238,7 +239,7 @@ class EitherOr {
   // So we use a type tag to force selecting RIGHT
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, U>::value> >
+                                        std::is_constructible<RIGHT, U>::value>>
   EitherOr(const RightType*, U&& v) noexcept {
     new (&val_) Variant(kConstructRight, std::forward<U>(v));
     state_ = State::RIGHT_TYPE;
@@ -381,11 +382,17 @@ class EitherOr {
    * State check
    *
    **********************************************/
-  bool isVoid() const { return state_ == State::VOID; }
+  bool isVoid() const {
+    return state_ == State::VOID;
+  }
 
-  bool isLeftType() const { return state_ == State::LEFT_TYPE; }
+  bool isLeftType() const {
+    return state_ == State::LEFT_TYPE;
+  }
 
-  bool isRightType() const { return state_ == State::RIGHT_TYPE; }
+  bool isRightType() const {
+    return state_ == State::RIGHT_TYPE;
+  }
 
   /***********************************************
    *

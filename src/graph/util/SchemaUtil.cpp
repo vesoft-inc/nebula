@@ -1,14 +1,13 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/util/SchemaUtil.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 
@@ -55,19 +54,20 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem *> &schemaProp
 
 // static
 std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProvider(
-    ObjectPool *pool, const SchemaVer ver, const meta::cpp2::Schema &schema) {
+    const SchemaVer ver, const meta::cpp2::Schema &schema) {
   auto schemaPtr = std::make_shared<meta::NebulaSchemaProvider>(ver);
   for (auto col : schema.get_columns()) {
     bool hasDef = col.default_value_ref().has_value();
-    Expression *defaultValueExpr = nullptr;
+    std::string exprStr;
     if (hasDef) {
-      defaultValueExpr = Expression::decode(pool, *col.default_value_ref());
+      exprStr = *col.default_value_ref();
     }
     schemaPtr->addField(col.get_name(),
                         col.get_type().get_type(),
                         col.type.type_length_ref().value_or(0),
                         col.nullable_ref().value_or(false),
-                        hasDef ? defaultValueExpr : nullptr);
+                        exprStr,
+                        col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
   }
   return schemaPtr;
 }
@@ -80,7 +80,7 @@ Status SchemaUtil::setTTLDuration(SchemaPropItem *schemaProp, meta::cpp2::Schema
   }
 
   auto ttlDuration = ret.value();
-  schema.schema_prop_ref().value().set_ttl_duration(ttlDuration);
+  schema.schema_prop_ref().value().ttl_duration_ref() = ttlDuration;
   return Status::OK();
 }
 
@@ -93,7 +93,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
 
   auto ttlColName = ret.value();
   if (ttlColName.empty()) {
-    schema.schema_prop_ref().value().set_ttl_col("");
+    schema.schema_prop_ref().value().ttl_col_ref() = "";
     return Status::OK();
   }
   // Check the legality of the ttl column name
@@ -101,11 +101,11 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
     if (col.name == ttlColName) {
       // Only integer columns and timestamp columns can be used as ttl_col
       // TODO(YT) Ttl_duration supports datetime type
-      if (col.type.type != meta::cpp2::PropertyType::INT64 &&
-          col.type.type != meta::cpp2::PropertyType::TIMESTAMP) {
+      if (col.type.type != nebula::cpp2::PropertyType::INT64 &&
+          col.type.type != nebula::cpp2::PropertyType::TIMESTAMP) {
         return Status::Error("Ttl column type illegal");
       }
-      schema.schema_prop_ref().value().set_ttl_col(ttlColName);
+      schema.schema_prop_ref().value().ttl_col_ref() = ttlColName;
       return Status::OK();
     }
   }
@@ -116,7 +116,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
 Status SchemaUtil::setComment(SchemaPropItem *schemaProp, meta::cpp2::Schema &schema) {
   auto ret = schemaProp->getComment();
   if (ret.ok()) {
-    schema.schema_prop_ref()->set_comment(std::move(ret).value());
+    schema.schema_prop_ref()->comment_ref() = std::move(ret).value();
   }
   return Status::OK();
 }
@@ -257,8 +257,14 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
 
 std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
   auto type = apache::thrift::util::enumNameSafe(col.get_type());
-  if (col.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
+  if (col.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
     return folly::stringPrintf("%s(%d)", type.c_str(), *col.get_type_length());
+  } else if (col.get_type() == nebula::cpp2::PropertyType::GEOGRAPHY) {
+    auto geoShape = *col.get_geo_shape();
+    if (geoShape == meta::cpp2::GeoShape::ANY) {
+      return type;
+    }
+    return folly::sformat("{}({})", type, apache::thrift::util::enumNameSafe(geoShape));
   }
   return type;
 }
@@ -270,31 +276,35 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
   return str;
 }
 
-Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
+Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType) {
   switch (propType) {
-    case meta::cpp2::PropertyType::BOOL:
+    case nebula::cpp2::PropertyType::BOOL:
       return Value::Type::BOOL;
-    case meta::cpp2::PropertyType::INT8:
-    case meta::cpp2::PropertyType::INT16:
-    case meta::cpp2::PropertyType::INT32:
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP:
+    case nebula::cpp2::PropertyType::INT8:
+    case nebula::cpp2::PropertyType::INT16:
+    case nebula::cpp2::PropertyType::INT32:
+    case nebula::cpp2::PropertyType::INT64:
+    case nebula::cpp2::PropertyType::TIMESTAMP:
       return Value::Type::INT;
-    case meta::cpp2::PropertyType::TIME:
+    case nebula::cpp2::PropertyType::TIME:
       return Value::Type::TIME;
-    case meta::cpp2::PropertyType::VID:
+    case nebula::cpp2::PropertyType::VID:
       return Value::Type::STRING;
-    case meta::cpp2::PropertyType::FLOAT:
-    case meta::cpp2::PropertyType::DOUBLE:
+    case nebula::cpp2::PropertyType::FLOAT:
+    case nebula::cpp2::PropertyType::DOUBLE:
       return Value::Type::FLOAT;
-    case meta::cpp2::PropertyType::STRING:
-    case meta::cpp2::PropertyType::FIXED_STRING:
+    case nebula::cpp2::PropertyType::STRING:
+    case nebula::cpp2::PropertyType::FIXED_STRING:
       return Value::Type::STRING;
-    case meta::cpp2::PropertyType::DATE:
+    case nebula::cpp2::PropertyType::DATE:
       return Value::Type::DATE;
-    case meta::cpp2::PropertyType::DATETIME:
+    case nebula::cpp2::PropertyType::DATETIME:
       return Value::Type::DATETIME;
-    case meta::cpp2::PropertyType::UNKNOWN:
+    case nebula::cpp2::PropertyType::GEOGRAPHY:
+      return Value::Type::GEOGRAPHY;
+    case nebula::cpp2::PropertyType::DURATION:
+      return Value::Type::DURATION;
+    case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }
   return Value::Type::__EMPTY__;
@@ -304,7 +314,7 @@ bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef 
   return isValidVid(value, type.get_type());
 }
 
-bool SchemaUtil::isValidVid(const Value &value, meta::cpp2::PropertyType type) {
+bool SchemaUtil::isValidVid(const Value &value, nebula::cpp2::PropertyType type) {
   return isValidVid(value) && value.type() == propTypeToValueType(type);
 }
 
@@ -314,9 +324,9 @@ bool SchemaUtil::isValidVid(const Value &value) {
 }
 
 StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::getAllVertexProp(
-    QueryContext *qctx, const SpaceInfo &space, bool withProp) {
+    QueryContext *qctx, GraphSpaceID spaceId, bool withProp) {
   // Get all tags in the space
-  const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
+  const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(spaceId);
   NG_RETURN_IF_ERROR(allTagsResult);
   // allTags: std::unordered_map<TagID, std::shared_ptr<const
   // meta::NebulaSchemaProvider>>
@@ -338,9 +348,9 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::ge
     }
     storage::cpp2::VertexProp vProp;
     const auto tagId = tag.first;
-    vProp.set_tag(tagId);
+    vProp.tag_ref() = tagId;
     propNames.emplace_back(nebula::kTag);  // "_tag"
-    vProp.set_props(std::move(propNames));
+    vProp.props_ref() = std::move(propNames);
     vertexProps->emplace_back(std::move(vProp));
   }
   return vertexProps;
@@ -362,8 +372,8 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>> SchemaUtil::getE
       }
     }
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
-    prop.set_props(std::move(propNames));
+    prop.type_ref() = edgeType;
+    prop.props_ref() = std::move(propNames);
     edgeProps->emplace_back(std::move(prop));
   }
   return edgeProps;

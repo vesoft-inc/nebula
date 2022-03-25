@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/UpdateEdgeProcessor.h"
@@ -34,7 +33,9 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
   if (req.insertable_ref().has_value()) {
     insertable_ = *req.insertable_ref();
   }
-
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     pushResultCode(retCode, partId);
@@ -51,12 +52,9 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     onFinished();
     return;
   }
-
-  planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
   context_ = std::make_unique<RuntimeContext>(planContext_.get());
-  if (env_->txnMan_ && env_->txnMan_->enableToss(spaceId_)) {
-    planContext_->defaultEdgeVer_ = 1L;
-  }
   retCode = checkAndBuildContexts(req);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Failure build contexts: " << apache::thrift::util::enumNameSafe(retCode);
@@ -88,10 +86,17 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
       onProcessFinished();
     }
   } else {
+    if (UNLIKELY(profileDetailFlag_)) {
+      profilePlan(plan);
+    }
     onProcessFinished();
   }
   onFinished();
   return;
+}
+
+void UpdateEdgeProcessor::adjustContext(UpdateEdgeProcessor::ContextAdjuster fn) {
+  ctxAdjuster_.emplace_back(std::move(fn));
 }
 
 nebula::cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
@@ -110,12 +115,15 @@ nebula::cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
 
   // Build edgeContext_.ttlInfo_
   buildEdgeTTLInfo();
+
+  for (auto& adjuster : ctxAdjuster_) {
+    adjuster(edgeContext_);
+  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 /*
 The storage plan of update(upsert) edge looks like this:
-             +--------+----------+
              | UpdateEdgeResNode |
              +--------+----------+
                       |
@@ -281,7 +289,9 @@ nebula::cpp2::ErrorCode UpdateEdgeProcessor::buildEdgeContext(const cpp2::Update
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void UpdateEdgeProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void UpdateEdgeProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

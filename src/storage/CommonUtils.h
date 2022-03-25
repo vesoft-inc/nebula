@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_COMMON_H_
@@ -17,6 +16,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/utils/MemoryLockWrapper.h"
 #include "interface/gen-cpp2/storage_types.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -61,6 +61,7 @@ using VerticesMemLock = MemoryLockCore<VMLI>;
 using EdgesMemLock = MemoryLockCore<EMLI>;
 
 class TransactionManager;
+class InternalStorageClient;
 
 // unify TagID, EdgeType
 using SchemaID = TagID;
@@ -74,9 +75,12 @@ class StorageEnv {
   std::atomic<int32_t> onFlyingRequest_{0};
   std::unique_ptr<IndexGuard> rebuildIndexGuard_{nullptr};
   meta::MetaClient* metaClient_{nullptr};
+  InternalStorageClient* interClient_{nullptr};
   TransactionManager* txnMan_{nullptr};
   std::unique_ptr<VerticesMemLock> verticesML_{nullptr};
   std::unique_ptr<EdgesMemLock> edgesML_{nullptr};
+  std::unique_ptr<kvstore::KVEngine> adminStore_{nullptr};
+  int32_t adminSeqId_{0};
 
   IndexState getIndexState(GraphSpaceID space, PartitionID part) {
     auto key = std::make_tuple(space, part);
@@ -87,9 +91,13 @@ class StorageEnv {
     return IndexState::FINISHED;
   }
 
-  bool checkRebuilding(IndexState indexState) { return indexState == IndexState::BUILDING; }
+  bool checkRebuilding(IndexState indexState) {
+    return indexState == IndexState::BUILDING;
+  }
 
-  bool checkIndexLocked(IndexState indexState) { return indexState == IndexState::LOCKED; }
+  bool checkIndexLocked(IndexState indexState) {
+    return indexState == IndexState::LOCKED;
+  }
 };
 
 class IndexCountWrapper {
@@ -114,7 +122,9 @@ class IndexCountWrapper {
     return *this;
   }
 
-  ~IndexCountWrapper() { count_->fetch_sub(1, std::memory_order_release); }
+  ~IndexCountWrapper() {
+    count_->fetch_sub(1, std::memory_order_release);
+  }
 
  private:
   std::atomic<int32_t>* count_;
@@ -131,12 +141,35 @@ struct PropContext;
 // PlanContext stores information **unchanged** during the process.
 // All processor won't change them after request is parsed.
 class PlanContext {
+  using ReqCommonRef = ::apache::thrift::optional_field_ref<const cpp2::RequestCommon&>;
+
  public:
   PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId)
-      : env_(env), spaceId_(spaceId), vIdLen_(vIdLen), isIntId_(isIntId) {}
+      : env_(env),
+        spaceId_(spaceId),
+        sessionId_(0),
+        planId_(0),
+        vIdLen_(vIdLen),
+        isIntId_(isIntId) {}
+  PlanContext(
+      StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId, ReqCommonRef commonRef)
+      : env_(env),
+        spaceId_(spaceId),
+        sessionId_(0),
+        planId_(0),
+        vIdLen_(vIdLen),
+        isIntId_(isIntId) {
+    if (commonRef.has_value()) {
+      auto& common = commonRef.value();
+      sessionId_ = common.session_id_ref().value_or(0);
+      planId_ = common.plan_id_ref().value_or(0);
+    }
+  }
 
   StorageEnv* env_;
   GraphSpaceID spaceId_;
+  SessionID sessionId_;
+  ExecutionPlanID planId_;
   size_t vIdLen_;
   bool isIntId_;
 
@@ -145,6 +178,9 @@ class PlanContext {
 
   // used for toss version
   int64_t defaultEdgeVer_ = 0L;
+
+  // will be true if query is killed during execution
+  bool isKilled_ = false;
 
   // Manage expressions
   ObjectPool objPool_;
@@ -157,17 +193,37 @@ class PlanContext {
 struct RuntimeContext {
   explicit RuntimeContext(PlanContext* planContext) : planContext_(planContext) {}
 
-  StorageEnv* env() const { return planContext_->env_; }
+  StorageEnv* env() const {
+    return planContext_->env_;
+  }
 
-  GraphSpaceID spaceId() const { return planContext_->spaceId_; }
+  GraphSpaceID spaceId() const {
+    return planContext_->spaceId_;
+  }
 
-  size_t vIdLen() const { return planContext_->vIdLen_; }
+  size_t vIdLen() const {
+    return planContext_->vIdLen_;
+  }
 
-  bool isIntId() const { return planContext_->isIntId_; }
+  bool isIntId() const {
+    return planContext_->isIntId_;
+  }
 
-  bool isEdge() const { return planContext_->isEdge_; }
+  bool isEdge() const {
+    return planContext_->isEdge_;
+  }
 
-  ObjectPool* objPool() { return &planContext_->objPool_; }
+  ObjectPool* objPool() {
+    return &planContext_->objPool_;
+  }
+
+  bool isPlanKilled() {
+    if (env() == nullptr) {
+      return false;
+    }
+    return env()->metaClient_ &&
+           env()->metaClient_->checkIsPlanKilled(planContext_->sessionId_, planContext_->planId_);
+  }
 
   PlanContext* planContext_;
   TagID tagId_ = 0;
@@ -184,6 +240,10 @@ struct RuntimeContext {
 
   // used for update
   bool insert_ = false;
+
+  // some times, one line is filter out but still return (has edge)
+  // and some time, this line is just removed from the return result
+  bool filterInvalidResultOut = false;
 
   ResultStatus resultStat_{ResultStatus::NORMAL};
 };

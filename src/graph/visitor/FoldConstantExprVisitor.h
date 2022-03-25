@@ -1,14 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 #define GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 
 #include "common/expression/ExprVisitor.h"
-// #include "common/base/Status.h"
 
 namespace nebula {
 namespace graph {
@@ -17,13 +15,21 @@ class FoldConstantExprVisitor final : public ExprVisitor {
  public:
   explicit FoldConstantExprVisitor(ObjectPool *pool) : pool_(pool) {}
 
-  bool canBeFolded() const { return canBeFolded_; }
+  bool canBeFolded() const {
+    return canBeFolded_;
+  }
 
-  bool isConstant(Expression *expr) const { return expr->kind() == Expression::Kind::kConstant; }
+  bool isConstant(Expression *expr) const {
+    return expr->kind() == Expression::Kind::kConstant;
+  }
 
-  bool ok() const { return status_.ok(); }
+  bool ok() const {
+    return status_.ok();
+  }
 
-  Status status() && { return std::move(status_); }
+  Status status() && {
+    return std::move(status_);
+  }
 
   void visit(ConstantExpression *expr) override;
   void visit(UnaryExpression *expr) override;
@@ -48,6 +54,7 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   void visit(SetExpression *expr) override;
   void visit(MapExpression *expr) override;
   // property Expression
+  void visit(LabelTagPropertyExpression *expr) override;
   void visit(TagPropertyExpression *expr) override;
   void visit(EdgePropertyExpression *expr) override;
   void visit(InputPropertyExpression *expr) override;
@@ -75,12 +82,14 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
   void visitBinaryExpr(BinaryExpression *expr);
   Expression *fold(Expression *expr);
 
  private:
-  // Obejct pool used to manage expressions generated during visiting
+  // Object pool used to manage expressions generated during visiting
   ObjectPool *pool_;
   bool canBeFolded_{false};
   Status status_;

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_test(
     NAME cord_test
@@ -81,22 +80,8 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME slow_op_tracker_test
-    SOURCES SlowOpTrackerTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:time_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
     NAME lru_test
     SOURCES ConcurrentLRUCacheTest.cpp
-    OBJECTS $<TARGET_OBJECTS:base_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
-    NAME memory_test
-    SOURCES MemoryTest.cpp
     OBJECTS $<TARGET_OBJECTS:base_obj>
     LIBRARIES gtest gtest_main
 )
@@ -126,6 +111,9 @@ nebula_add_executable(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
     LIBRARIES
         follybenchmark
         ${THRIFT_LIBRARIES}

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_TEST_RESULTSCHEMAPROVIDER_H_
@@ -16,37 +15,42 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
  public:
   class ResultSchemaField : public meta::SchemaProviderIf::Field {
    public:
-    explicit ResultSchemaField(std::string name,
-                               meta::cpp2::PropertyType type,
-                               int16_t size,
-                               bool nullable,
-                               int32_t offset,
-                               size_t nullFlagPos,
-                               Expression* defaultValue = nullptr);
+    ResultSchemaField(std::string name,
+                      nebula::cpp2::PropertyType type,
+                      int16_t size,
+                      bool nullable,
+                      int32_t offset,
+                      size_t nullFlagPos,
+                      std::string defaultValue = "",
+                      meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
 
     const char* name() const override;
-    meta::cpp2::PropertyType type() const override;
+    nebula::cpp2::PropertyType type() const override;
     bool nullable() const override;
     bool hasDefault() const override;
-    Expression* defaultValue() const override;
+    const std::string& defaultValue() const override;
     size_t size() const override;
     size_t offset() const override;
     size_t nullFlagPos() const override;
+    meta::cpp2::GeoShape geoShape() const override;
 
    private:
     std::string name_;
-    meta::cpp2::PropertyType type_;
+    nebula::cpp2::PropertyType type_;
     int16_t size_;
     bool nullable_;
     int32_t offset_;
     size_t nullFlagPos_;
-    Expression* defaultValue_;
+    std::string defaultValue_;
+    meta::cpp2::GeoShape geoShape_;
   };
 
  public:
   virtual ~ResultSchemaProvider() = default;
 
-  SchemaVer getVersion() const noexcept override { return schemaVer_; }
+  SchemaVer getVersion() const noexcept override {
+    return schemaVer_;
+  }
 
   size_t getNumFields() const noexcept override;
 
@@ -57,8 +61,8 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
   int64_t getFieldIndex(const std::string& name) const override;
   const char* getFieldName(int64_t index) const override;
 
-  meta::cpp2::PropertyType getFieldType(int64_t index) const override;
-  meta::cpp2::PropertyType getFieldType(const std::string& name) const override;
+  nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
+  nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
 
   const meta::SchemaProviderIf::Field* field(int64_t index) const override;
   const meta::SchemaProviderIf::Field* field(const std::string& name) const override;

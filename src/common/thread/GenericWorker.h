@@ -1,13 +1,14 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef COMMON_THREAD_GENERICWORKER_H_
 #define COMMON_THREAD_GENERICWORKER_H_
 
 #include <folly/Unit.h>
 #include <folly/futures/Future.h>
+
+#include <boost/core/noncopyable.hpp>
 
 #include "common/base/Base.h"
 #include "common/cpp/helpers.h"
@@ -32,7 +33,7 @@ struct event_base;
 namespace nebula {
 namespace thread {
 
-class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class GenericWorker final : public boost::noncopyable, public nebula::cpp::NonMovable {
  public:
   friend class GenericThreadPool;
 
@@ -40,7 +41,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   ~GenericWorker();
 
   /**
-   * To allocate resouces and launch the internal thread which executes
+   * To allocate resources and launch the internal thread which executes
    * the event loop to make this worker usable.
    *
    * Optionally, you could give the internal thread a specific name,
@@ -52,10 +53,10 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    * A GenericWorker MUST be `start'ed successfully before invoking
    * any other interfaces.
    */
-  bool MUST_USE_RESULT start(std::string name = "");
+  bool NG_MUST_USE_RESULT start(std::string name = "");
 
   /**
-   * Asynchronouly to notify the worker to stop handling further new tasks.
+   * Asynchronously to notify the worker to stop handling further new tasks.
    */
   bool stop();
 
@@ -161,7 +162,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   std::vector<std::function<void()>> pendingTasks_;
   using TimerPtr = std::unique_ptr<Timer>;
   std::vector<TimerPtr> pendingTimers_;
-  std::vector<uint64_t> purgingingTimers_;
+  std::vector<uint64_t> purgingTimers_;
   std::unordered_map<uint64_t, TimerPtr> activeTimers_;
   std::unique_ptr<NamedThread> thread_;
 };

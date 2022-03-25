@@ -1,48 +1,50 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_JOBMANAGER_H_
 #define META_JOBMANAGER_H_
 
 #include <folly/concurrency/ConcurrentHashMap.h>
-#include <folly/concurrency/UnboundedQueue.h>
+#include <folly/concurrency/PriorityUnboundedQueueSet.h>
 #include <gtest/gtest_prod.h>
 
 #include <boost/core/noncopyable.hpp>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
+#include "common/stats/StatsManager.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobStatus.h"
-#include "meta/processors/job/MetaJobExecutor.h"
+#include "meta/processors/job/StorageJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
 
 namespace nebula {
 namespace meta {
+extern stats::CounterId kNumRunningJobs;
 
-class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
+class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
   friend class GetStatsTest;
-  FRIEND_TEST(JobManagerTest, reserveJobId);
-  FRIEND_TEST(JobManagerTest, buildJobDescription);
-  FRIEND_TEST(JobManagerTest, addJob);
+  FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, JobPriority);
   FRIEND_TEST(JobManagerTest, JobDeduplication);
-  FRIEND_TEST(JobManagerTest, loadJobDescription);
-  FRIEND_TEST(JobManagerTest, showJobs);
-  FRIEND_TEST(JobManagerTest, showJob);
-  FRIEND_TEST(JobManagerTest, recoverJob);
+  FRIEND_TEST(JobManagerTest, LoadJobDescription);
+  FRIEND_TEST(JobManagerTest, ShowJobs);
+  FRIEND_TEST(JobManagerTest, ShowJobsFromMultiSpace);
+  FRIEND_TEST(JobManagerTest, ShowJob);
+  FRIEND_TEST(JobManagerTest, ShowJobInOtherSpace);
+  FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
+  friend struct JobCallBack;
 
  public:
   ~JobManager();
@@ -55,95 +57,235 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
     STOPPED,
   };
 
-  bool init(nebula::kvstore::KVStore* store);
+  enum class JbOp {
+    ADD,
+    RECOVER,
+  };
 
-  void shutDown();
-
-  /*
-   * Load job description from kvstore
-   * */
-  nebula::cpp2::ErrorCode addJob(const JobDescription& jobDesc, AdminClient* client);
-
-  /*
-   * The same job is in jobMap
-   */
-  bool checkJobExist(const cpp2::AdminCmd& cmd, const std::vector<std::string>& paras, JobID& iJob);
-
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs();
-
-  ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(
-      JobID iJob);
-
-  nebula::cpp2::ErrorCode stopJob(JobID iJob);
-
-  ErrorOr<nebula::cpp2::ErrorCode, JobID> recoverJob();
+  enum class JbPriority : size_t {
+    kHIGH = 0x00,
+    kLOW = 0x01,
+  };
 
   /**
-   * @brief persist job executed result, and do the cleanup
+   * @brief Init task queue, kvStore and schedule thread
+   *
+   * @param store
+   * @return true if the init is successful
+   */
+  bool init(nebula::kvstore::KVStore* store);
+
+  /**
+   * @brief Called when receive a system signal
+   */
+  void shutDown();
+
+  /**
+   * @brief Load job description from kvstore
+   *
+   * @param jobDesc
+   * @param client
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode addJob(JobDescription& jobDesc, AdminClient* client);
+
+  /**
+   * @brief The same job is in jobMap
+   *
+   * @param spaceId
+   * @param type
+   * @param paras
+   * @param jobId If the job exists, jobId is the id of the existing job
+   * @return
+   */
+  bool checkJobExist(GraphSpaceID spaceId,
+                     const cpp2::JobType& type,
+                     const std::vector<std::string>& paras,
+                     JobID& jobId);
+
+  /**
+   * @brief Load all jobs of the space from kvStore and convert to cpp2::JobDesc
+   *
+   * @param spaceId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>>
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs(GraphSpaceID spaceId);
+
+  /**
+   * @brief Load one job and related tasks from kvStore and convert to cpp2::JobDesc
+   *
+   * @param spaceId
+   * @param jobId
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(
+      GraphSpaceID spaceId, JobID jobId);
+
+  /**
+   * @brief Stop a job when user cancel it
+   *
+   * @param spaceId
+   * @param jobId
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode stopJob(GraphSpaceID spaceId, JobID jobId);
+
+  /**
+   * @brief Number of recovered jobs
+   *
+   * @param spaceId
+   * @param client
+   * @param jobIds
+   * @return Return error/recovered job num
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, uint32_t> recoverJob(GraphSpaceID spaceId,
+                                                        AdminClient* client,
+                                                        const std::vector<int32_t>& jobIds = {});
+
+  /**
+   * @brief Persist job executed result, and do the cleanup
+   *
+   * @param spaceId
+   * @param jobId
+   * @param jobStatus
    * @return cpp2::ErrorCode if error when write to kv store
    */
-  nebula::cpp2::ErrorCode jobFinished(JobID jobId, cpp2::JobStatus jobStatus);
+  nebula::cpp2::ErrorCode jobFinished(GraphSpaceID spaceId, JobID jobId, cpp2::JobStatus jobStatus);
 
-  // report task finished.
+  /**
+   * @brief Report task finished.
+   *
+   * @param req
+   * @return cpp2::ErrorCode
+   */
   nebula::cpp2::ErrorCode reportTaskFinish(const cpp2::ReportTaskReq& req);
 
-  // Only used for Test
-  // The number of jobs in lowPriorityQueue_ a and highPriorityQueue_
+  /**
+   * @brief Only used for Test
+   * The number of jobs in all spaces
+   *
+   * @return
+   */
   size_t jobSize() const;
 
-  // Tries to extract an element from the front of the highPriorityQueue_,
-  // if faild, then extract an element from lowPriorityQueue_.
-  // If the element is obtained, return true, otherwise return false.
-  bool try_dequeue(JobID& jobId);
+  /**
+   * @brief Traverse from priorityQueues_, and find the priorityQueue of the space
+   * that is not executing the job. Then take a job from the queue according to the priority.
+   *
+   * @param opJobId
+   * @return return true if the element is obtained, otherwise return false.
+   */
+  bool tryDequeue(std::tuple<JbOp, JobID, GraphSpaceID>& opJobId);
 
-  // Enter different priority queues according to the command type
-  void enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd);
+  /**
+   * @brief Enter different priority queues according to the command type and space
+   *
+   * @param spaceId SpaceId of the job
+   * @param jobId Id of the job
+   * @param op Recover a job or add a new one
+   * @param jobType Type of the job
+   */
+  void enqueue(GraphSpaceID spaceId, JobID jobId, const JbOp& op, const cpp2::JobType& jobType);
 
-  ErrorOr<nebula::cpp2::ErrorCode, bool> checkIndexJobRuning();
+  /**
+   * @brief Check whether the job of the specified type in all spaces is running
+   *
+   * @param jobTypes Cmd types of the job
+   * @return ErrorOr<nebula::cpp2::ErrorCode, bool>
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, bool> checkTypeJobRunning(
+      std::unordered_set<cpp2::JobType>& jobTypes);
+
+  /**
+   * @brief Load jobs that are running before crashed, set status to QUEUE
+   * Notice: Only the meta leader can save successfully.
+   * Set the QUEUE state for later recover this job.
+   */
+  nebula::cpp2::ErrorCode handleRemainingJobs();
 
  private:
   JobManager() = default;
 
   void scheduleThread();
-  void scheduleThreadOld();
 
-  bool runJobInternal(const JobDescription& jobDesc);
-  bool runJobInternalOld(const JobDescription& jobDesc);
+  /**
+   * @brief Dispatch all tasks of one job
+   *
+   * @param jobDesc
+   * @param op
+   * @return true if all task dispatched, else false.
+   */
+  bool runJobInternal(const JobDescription& jobDesc, JbOp op);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
   nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
-  static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
+  static bool isExpiredJob(JobDescription& jobDesc);
 
-  static bool isRunningJob(const JobDescription& jobDesc);
-
+  /**
+   * @brief Remove jobs of the given keys
+   *
+   * @param jobKeys
+   * @return
+   */
   nebula::cpp2::ErrorCode removeExpiredJobs(std::vector<std::string>&& jobKeys);
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::list<TaskDescription>> getAllTasks(JobID jobId);
+  /**
+   * @brief Get all tasks of this job
+   *
+   * @param jobId
+   * @return
+   */
+  ErrorOr<nebula::cpp2::ErrorCode, std::list<TaskDescription>> getAllTasks(GraphSpaceID spaceId,
+                                                                           JobID jobId);
 
+  /**
+   * @brief Remove a job from the queue and running map
+   *
+   * @param jobId
+   */
   void cleanJob(JobID jobId);
 
+  /**
+   * @brief Save a task into kvStore
+   *
+   * @param td
+   * @param req
+   * @return
+   */
   nebula::cpp2::ErrorCode saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
 
- private:
-  // Todo(pandasheep)
-  // When folly is upgraded, PriorityUMPSCQueueSet can be used
-  // Use two queues to simulate priority queue, Divide by job cmd
-  std::unique_ptr<folly::UMPSCQueue<JobID, true>> lowPriorityQueue_;
-  std::unique_ptr<folly::UMPSCQueue<JobID, true>> highPriorityQueue_;
+  /**
+   * @brief Cas operation to set status
+   *
+   * @param expected
+   * @param desired
+   */
+  void compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired);
 
+ private:
+  using PriorityQueue = folly::PriorityUMPSCQueueSet<std::tuple<JbOp, JobID, GraphSpaceID>, true>;
+  // Each PriorityQueue contains high and low priority queues.
+  // The lower the value, the higher the priority.
+  folly::ConcurrentHashMap<GraphSpaceID, std::unique_ptr<PriorityQueue>> priorityQueues_;
+
+  // Identify whether the current space is running a job
+  folly::ConcurrentHashMap<GraphSpaceID, std::atomic<bool>> spaceRunningJobs_;
+
+  std::map<JobID, std::unique_ptr<JobExecutor>> runningJobs_;
   // The job in running or queue
   folly::ConcurrentHashMap<JobID, JobDescription> inFlightJobs_;
-
   std::thread bgThread_;
-  std::mutex statusGuard_;
-  JbmgrStatus status_{JbmgrStatus::NOT_START};
   nebula::kvstore::KVStore* kvStore_{nullptr};
   AdminClient* adminClient_{nullptr};
 
-  std::mutex muReportFinish_;
-  std::mutex muJobFinished_;
+  std::map<GraphSpaceID, std::mutex> muReportFinish_;
+  // Start & stop & finish a job need mutual exclusion
+  // The reason of using recursive_mutex is that, it's possible for a meta job try to get this lock
+  // in finish-callback in the same thread with runJobInternal
+  std::map<GraphSpaceID, std::recursive_mutex> muJobFinished_;
+  std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
 };
 
 }  // namespace meta

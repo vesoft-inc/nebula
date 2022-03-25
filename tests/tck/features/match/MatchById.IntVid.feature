@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Integer Vid Match By Id
 
   Background:
@@ -98,11 +97,11 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[r]-> (v2)
       WHERE id(v1) == hash("LeBron James")
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | 'Ray Allen' |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -111,11 +110,11 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[r:serve|:like]-> (v2)
       WHERE id(v1) == hash("LeBron James")
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | 'Ray Allen' |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -124,7 +123,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[r:serve]-> (v2)
       WHERE id(v1) == hash("LeBron James")
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
@@ -136,7 +135,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[r:serve]-> (v2 {name: "Cavaliers"})
       WHERE id(v1) == hash("LeBron James")
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
@@ -146,7 +145,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v2)
       WHERE id(v1) == hash("Danny Green")
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -157,7 +156,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) <-[:like]- (v2)
       WHERE id(v1) == hash("Danny Green")
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -167,7 +166,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) <-[:like]-> (v2)
       WHERE id(v1) == hash("Danny Green")
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -180,7 +179,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]- (v2)
       WHERE id(v1) == hash("Danny Green")
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -195,7 +194,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v2) -[:like]-> (v3)
       WHERE id(v1) == hash("Tim Duncan")
-      RETURN v1.name AS Player, v2.name AS Friend, v3.name AS FoF
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
       """
     Then the result should be, in any order, with relax comparison:
       | Player       | Friend          | FoF                 |
@@ -209,7 +208,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
       WHERE id(v1) == hash('Dwyane Wade')
-      RETURN v3.name AS Name
+      RETURN v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Name              |
@@ -224,7 +223,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
       WHERE id(v1) == hash('Dwyane Wade')
-      RETURN DISTINCT v3.name AS Name
+      RETURN DISTINCT v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Name              |
@@ -239,7 +238,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       """
     Then the result should be, in any order, with relax comparison:
@@ -259,7 +258,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASCENDING
       LIMIT 3
       """
@@ -272,7 +271,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESCENDING, Name ASC
       SKIP 3
       """
@@ -290,7 +289,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
       LIMIT 3
@@ -304,7 +303,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 11
       LIMIT 3
@@ -315,7 +314,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 0
       """
@@ -325,7 +324,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY v.age DESC, v.name ASC
       LIMIT 0
       """
@@ -345,19 +344,19 @@ Feature: Integer Vid Match By Id
       """
       MATCH p = (n)-[:like]->(m)
       WHERE id(n) == hash("LeBron James")
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                         | n.name         | m.name      |
-      | <("LeBron James")-[:like]->("Ray Allen")> | "LeBron James" | "Ray Allen" |
+      | p                                         | n.player.name  | m.player.name |
+      | <("LeBron James")-[:like]->("Ray Allen")> | "LeBron James" | "Ray Allen"   |
     When executing query:
       """
       MATCH p = (n)<-[:like]-(m)
       WHERE id(n) == hash("LeBron James")
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                               | n.name         | m.name            |
+      | p                                               | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -368,10 +367,10 @@ Feature: Integer Vid Match By Id
       """
       MATCH p = (n)-[:like]-(m)
       WHERE id(n) == hash("LeBron James")
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                               | n.name         | m.name            |
+      | p                                               | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -383,11 +382,11 @@ Feature: Integer Vid Match By Id
       """
       MATCH p = (n)-[:like]->(m)-[:like]->(k)
       WHERE id(n) == hash("LeBron James")
-      RETURN p, n.name, m.name, k.name
+      RETURN p, n.player.name, m.player.name, k.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                  | n.name         | m.name      | k.name        |
-      | <("LeBron James")-[:like]->("Ray Allen")-[:like]->("Rajon Rondo")> | "LeBron James" | "Ray Allen" | "Rajon Rondo" |
+      | p                                                                  | n.player.name  | m.player.name | k.player.name |
+      | <("LeBron James")-[:like]->("Ray Allen")-[:like]->("Rajon Rondo")> | "LeBron James" | "Ray Allen"   | "Rajon Rondo" |
     When executing query:
       """
       MATCH p = (n)-[:like]->()-[:like]->()
@@ -602,7 +601,7 @@ Feature: Integer Vid Match By Id
       | [[:like "Dejounte Murray"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Marco Belinelli"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]       | ("Tony Parker")       |
       | [[:like "Danny Green"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Danny Green"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]               | ("Tony Parker")       |
       | [[:like "Danny Green"->"Tim Duncan"@0],[:like "Danny Green"->"Marco Belinelli"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]               | ("Tony Parker")       |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquile O'Neal"@0],[:like "Yao Ming"->"Tracy McGrady"@0]]                   | ("Tracy McGrady")     |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquille O'Neal"@0],[:like "Yao Ming"->"Tracy McGrady"@0]]                 | ("Tracy McGrady")     |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan"@0],[:like "Tony Parker"->"LaMarcus Aldridge"@0],[:like "Boris Diaw"->"Tony Parker"@0]]            | ("Boris Diaw")        |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan"@0],[:like "LaMarcus Aldridge"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]            | ("Boris Diaw")        |
       | [[:like "Dejounte Murray"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                | ("Boris Diaw")        |
@@ -775,10 +774,10 @@ Feature: Integer Vid Match By Id
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                 | ("Marco Belinelli")   |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                     | ("Marco Belinelli")   |
       | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                     | ("Marco Belinelli")   |
-      | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                 | ("Shaquile O'Neal")   |
-      | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                 | ("Shaquile O'Neal")   |
-      | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                     | ("Shaquile O'Neal")   |
-      | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                     | ("Shaquile O'Neal")   |
+      | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                | ("Shaquille O'Neal")  |
+      | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                | ("Shaquille O'Neal")  |
+      | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                    | ("Shaquille O'Neal")  |
+      | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                    | ("Shaquille O'Neal")  |
       | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                  | ("Tiago Splitter")    |
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                  | ("Tiago Splitter")    |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                      | ("Tiago Splitter")    |
@@ -823,8 +822,8 @@ Feature: Integer Vid Match By Id
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Tony Parker"->"Manu Ginobili"@0]]                                                          | ("Tony Parker")       |
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0]]                                                           | ("Tim Duncan")        |
       | [[:like "Tiago Splitter"->"Tim Duncan"@0],[:like "Tiago Splitter"->"Manu Ginobili"@0]]                                                      | ("Manu Ginobili")     |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquile O'Neal"@0]]                                                         | ("Yao Ming")          |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"JaVale McGee"@0]]                                                     | ("JaVale McGee")      |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquille O'Neal"@0]]                                                       | ("Yao Ming")          |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"JaVale McGee"@0]]                                                   | ("JaVale McGee")      |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                                                               | ("Boris Diaw")        |
       | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                                                               | ("Boris Diaw")        |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Tony Parker"@0]]                                                          | ("Dejounte Murray")   |
@@ -905,7 +904,7 @@ Feature: Integer Vid Match By Id
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN 1 | YIELD COUNT(1)
+      RETURN COUNT(1)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(1) |
@@ -913,7 +912,7 @@ Feature: Integer Vid Match By Id
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN 1 | YIELD COUNT(1)
+      RETURN COUNT(1)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(1) |
@@ -935,8 +934,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v2) == hash('Tim Duncan')
-      RETURN v1, v3 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
@@ -945,8 +943,7 @@ Feature: Integer Vid Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v3) == hash('Spurs')
-      RETURN v1 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
@@ -976,3 +973,118 @@ Feature: Integer Vid Match By Id
       | ("Warriors" :team{name: "Warriors"})                                                                        |
       | ("Hornets" :team{name: "Hornets"})                                                                          |
       | ("Spurs" :team{name: "Spurs"})                                                                              |
+
+  Scenario: match by multiple id
+    When executing query:
+      """
+      MATCH (a)-[e:like]->(b)
+      WHERE id(a) == hash('Tim Duncan') OR id(b) == hash('Tony Parker')
+      RETURN id(a) as src, e, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0,2 should be hashed:
+      | src                 | e                                                            | dst             |
+      | "Tim Duncan"        | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | "Manu Ginobili" |
+      | "Tim Duncan"        | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        | "Tony Parker"   |
+      | "Boris Diaw"        | [:like "Boris Diaw"->"Tony Parker" @0 {likeness: 80}]        | "Tony Parker"   |
+      | "LaMarcus Aldridge" | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] | "Tony Parker"   |
+      | "Dejounte Murray"   | [:like "Dejounte Murray"->"Tony Parker" @0 {likeness: 99}]   | "Tony Parker"   |
+      | "Marco Belinelli"   | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}]   | "Tony Parker"   |
+    When executing query:
+      """
+      MATCH (a)-[e:like]->(b)
+      WHERE id(a) == hash('Tim Duncan') AND id(b) == hash('Tony Parker')
+      RETURN id(a) as src, e, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0,2 should be hashed:
+      | src          | e                                                     | dst           |
+      | "Tim Duncan" | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}] | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (a)--(b)
+      WHERE id(a) == hash('Tim Duncan') AND id(b) == hash('Tony Parker')
+      RETURN id(a) as src, id(b) as dst
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | src          | dst           |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+      | "Tim Duncan" | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (a)--(b)
+      WHERE id(a) == hash('Tim Duncan') OR id(b) == hash('Tony Parker')
+      RETURN id(a) as src, id(b) as dst
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v3) == hash('Spurs') AND id(v1) == hash('Tony Parker')
+      RETURN v1, v2, v3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v1                                                    | v2                                                                                                          | v3                             |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"}) |
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v3) == hash('Spurs') OR id(v1) == hash('Tony Parker')
+      RETURN v1, v2, v3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v1                                                                                                          | v2                                                                                                          | v3                                             |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Trail Blazers" :team{name: "Trail Blazers"}) |
+      | ("Rudy Gay" :player{age: 32, name: "Rudy Gay"})                                                             | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Damian Lillard" :player{age: 28, name: "Damian Lillard"})                                                 | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Kyle Anderson" :player{age: 25, name: "Kyle Anderson"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})                                                         | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | ("Rudy Gay" :player{age: 32, name: "Rudy Gay"})                                                             | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       | ("Spurs" :team{name: "Spurs"})                 |
+    When executing query:
+      """
+      MATCH (a)--(b) WHERE id(b) == hash('Tony Parker') RETURN DISTINCT id(a)
+      UNION
+      MATCH (a)--(b) WHERE id(b) == hash('Tony Parker') RETURN DISTINCT id(a)
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | id(a)               |
+      | "Hornets"           |
+      | "Marco Belinelli"   |
+      | "Spurs"             |
+      | "Dejounte Murray"   |
+      | "Tim Duncan"        |
+      | "Boris Diaw"        |
+      | "Manu Ginobili"     |
+      | "Kyle Anderson"     |
+      | "LaMarcus Aldridge" |

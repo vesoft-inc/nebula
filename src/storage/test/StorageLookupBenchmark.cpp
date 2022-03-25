@@ -1,12 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowWriter.h"
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
@@ -39,7 +38,7 @@ std::string indexStr(RowReader* reader, const std::string& col) {
     return "";
   }
   auto&& v = value(std::move(res));
-  return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
+  return NebulaKeyUtils::encodeInt64(std::get<int64_t>(v));
 }
 
 IndexValues collectIndexValues(RowReader* reader,

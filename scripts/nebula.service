@@ -18,7 +18,7 @@ SCRIPT_PATH=$(readlink -f $0)
 # Directory of this script
 SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
 # Installation directory, i.e. parent of SCRIPT_DIR
-# For now we assume that the directory hierachy of the nebula installation is:
+# For now we assume that the directory hierarchy of the nebula installation is:
 # root/bin, root/etc/, root/scripts, etc.
 INSTALL_ROOT=$(cd ${SCRIPT_DIR}/.. &>/dev/null; pwd)
 UTILS_PATH=${SCRIPT_DIR}/utils.sh
@@ -77,6 +77,13 @@ fi
 ACTION=${1}
 TARGET=${2}
 
+if [ -e ${INSTALL_ROOT}/bin/nebula-standalone ]
+then
+    ALLTARGET=(standalone)
+else
+    ALLTARGET=(metad graphd storaged)
+fi
+
 # Collect the daemons on which we perform the action on
 case ${TARGET} in
     metad)
@@ -88,8 +95,11 @@ case ${TARGET} in
     storaged)
         TARGETS=(${TARGET})
         ;;
+    standalone)
+        TARGETS=(${TARGET})
+        ;;
     all)
-        TARGETS=(metad graphd storaged)
+        TARGETS=${ALLTARGET[*]}
         ;;
     *)
         ERROR "Unknown daemon \`${DAEMON}'"

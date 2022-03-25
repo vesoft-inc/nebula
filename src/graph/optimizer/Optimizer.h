@@ -1,16 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_OPTIMIZER_OPTIMIZER_H_
 #define GRAPH_OPTIMIZER_OPTIMIZER_H_
 
-#include <memory>
-
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/thrift/ThriftTypes.h"
+
+DECLARE_bool(enable_optimizer_property_pruner_rule);
 
 namespace nebula {
 namespace graph {
@@ -33,7 +33,10 @@ class Optimizer final {
   StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
 
  private:
+  Status postprocess(graph::PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID);
+
   StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
+
   Status doExploration(OptContext *octx, OptGroup *rootGroup);
 
   OptGroup *convertToGroup(OptContext *ctx,

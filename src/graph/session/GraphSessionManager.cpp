@@ -1,18 +1,20 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+// Copyright (c) 2018 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/stats/GraphStats.h"
 
 namespace nebula {
 namespace graph {
 
+// During construction, GraphSessionManager will start a background thread to periodically
+// reclaim expired sessions and update session information to the meta server.
 GraphSessionManager::GraphSessionManager(meta::MetaClient* metaClient, const HostAddr& hostAddr)
     : SessionManager<ClientSession>(metaClient, hostAddr) {
   scavenger_->addDelayTask(
@@ -73,12 +75,17 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
       auto findPtr = activeSessions_.find(id);
       if (findPtr == activeSessions_.end()) {
         VLOG(1) << "Add session id: " << id << " from metad";
-        session.set_graph_addr(myAddr_);
+        session.graph_addr_ref() = myAddr_;
         auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
         sessionPtr->charge();
         auto ret = activeSessions_.emplace(id, sessionPtr);
         if (!ret.second) {
           return Status::Error("Insert session to local cache failed.");
+        }
+        std::string key = session.get_user_name() + session.get_client_ip();
+        bool addResp = addSessionCount(key);
+        if (!addResp) {
+          return Status::Error("Insert userIpSessionCount to local cache failed.");
         }
 
         // update the space info to sessionPtr
@@ -95,10 +102,33 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
   return metaClient_->getSession(id).via(runner).thenValue(addSession);
 }
 
+std::vector<meta::cpp2::Session> GraphSessionManager::getSessionFromLocalCache() const {
+  std::vector<meta::cpp2::Session> sessions;
+  sessions.reserve(activeSessions_.size());
+  for (auto& it : activeSessions_) {
+    sessions.emplace_back(it.second->getSession());
+  }
+  return sessions;
+}
+
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::createSession(
     const std::string userName, const std::string clientIp, folly::Executor* runner) {
-  auto createCB = [this,
-                   userName = userName](auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
+  // check the number of sessions per user per ip
+  std::string key = userName + clientIp;
+  auto maxSessions = FLAGS_max_sessions_per_ip_per_user;
+  auto uiscFindPtr = userIpSessionCount_.find(key);
+  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 &&
+      uiscFindPtr->second.get()->get() > maxSessions - 1) {
+    return Status::Error(
+        "Create Session failed: Too many sessions created from %s by user %s. "
+        "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf",
+        clientIp.c_str(),
+        userName.c_str(),
+        maxSessions,
+        "max_sessions_per_ip_per_user");
+  }
+  auto createCB = [this, userName = userName, clientIp = clientIp](
+                      auto&& resp) -> StatusOr<std::shared_ptr<ClientSession>> {
     if (!resp.ok()) {
       LOG(ERROR) << "Create session failed:" << resp.status();
       return Status::Error("Create session failed: %s", resp.status().toString().c_str());
@@ -115,6 +145,11 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
         auto ret = activeSessions_.emplace(sid, sessionPtr);
         if (!ret.second) {
           return Status::Error("Insert session to local cache failed.");
+        }
+        std::string sessionKey = userName + clientIp;
+        bool addResp = addSessionCount(sessionKey);
+        if (!addResp) {
+          return Status::Error("Insert userIpSessionCount to local cache failed.");
         }
         updateSessionInfo(sessionPtr.get());
         return sessionPtr;
@@ -133,13 +168,20 @@ void GraphSessionManager::removeSession(SessionID id) {
     return;
   }
 
+  // Before removing the session, all queries on the session
+  // need to be marked as killed.
   iter->second->markAllQueryKilled();
   auto resp = metaClient_->removeSession(id).get();
   if (!resp.ok()) {
     // it will delete by reclaim
     LOG(ERROR) << "Remove session `" << id << "' failed: " << resp.status();
+    return;
   }
+  auto sessionCopy = iter->second->getSession();
+  std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
   activeSessions_.erase(iter);
+  // delete session count from cache
+  subSessionCount(key);
 }
 
 void GraphSessionManager::threadFunc() {
@@ -152,7 +194,10 @@ void GraphSessionManager::threadFunc() {
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more
 // efficient.
 void GraphSessionManager::reclaimExpiredSessions() {
+  DCHECK_GT(FLAGS_session_idle_timeout_secs, 0);
   if (FLAGS_session_idle_timeout_secs == 0) {
+    LOG(ERROR) << "Program should not reach here, session_idle_timeout_secs should be an integer "
+                  "between 1 and 604800";
     return;
   }
 
@@ -178,8 +223,14 @@ void GraphSessionManager::reclaimExpiredSessions() {
       // TODO: Handle cases where the delete client failed
       LOG(ERROR) << "Remove session `" << iter->first << "' failed: " << resp.status();
     }
+    auto sessionCopy = iter->second->getSession();
+    std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
     iter = activeSessions_.erase(iter);
+    stats::StatsManager::decValue(kNumActiveSessions);
+    stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
     // TODO: Disconnect the connection of the session
+    // delete session count from cache
+    subSessionCount(key);
   }
 }
 
@@ -194,13 +245,15 @@ void GraphSessionManager::updateSessionsToMeta() {
       VLOG(3) << "Add Update session id: " << ses.second->getSession().get_session_id();
       auto sessionCopy = ses.second->getSession();
       for (auto& query : *sessionCopy.queries_ref()) {
-        query.second.set_duration(time::WallClock::fastNowInMicroSec() -
-                                  query.second.get_start_time());
+        query.second.duration_ref() =
+            time::WallClock::fastNowInMicroSec() - query.second.get_start_time();
       }
       sessions.emplace_back(std::move(sessionCopy));
     }
   }
 
+  // There may be expired queries, and the
+  // expired queries will be killed here.
   auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();
@@ -244,6 +297,7 @@ Status GraphSessionManager::init() {
   if (!listSessionsRet.ok()) {
     return Status::Error("Load sessions from meta failed.");
   }
+  int64_t loadSessionCount = 0;
   auto& sessions = *listSessionsRet.value().sessions_ref();
   for (auto& session : sessions) {
     if (session.get_graph_addr() != myAddr_) {
@@ -260,14 +314,46 @@ Status GraphSessionManager::init() {
       continue;
     }
     session.queries_ref()->clear();
+    std::string key = session.get_user_name() + session.get_client_ip();
     auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
     auto ret = activeSessions_.emplace(sessionId, sessionPtr);
     if (!ret.second) {
       return Status::Error("Insert session to local cache failed.");
     }
+    bool addResp = addSessionCount(key);
+    if (!addResp) {
+      return Status::Error("Insert userIpSessionCount to local cache failed.");
+    }
     updateSessionInfo(sessionPtr.get());
+    loadSessionCount++;
   }
+  LOG(INFO) << "Total of " << loadSessionCount << " sessions are loaded";
   return Status::OK();
+}
+
+bool GraphSessionManager::addSessionCount(std::string& key) {
+  auto countFindPtr = userIpSessionCount_.find(key);
+  if (countFindPtr != userIpSessionCount_.end()) {
+    countFindPtr->second.get()->fetch_add(1);
+  } else {
+    auto ret1 = userIpSessionCount_.emplace(key, std::make_shared<SessionCount>());
+    if (!ret1.second) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool GraphSessionManager::subSessionCount(std::string& key) {
+  auto countFindPtr = userIpSessionCount_.find(key);
+  if (countFindPtr == userIpSessionCount_.end()) {
+    return false;
+  }
+  auto count = countFindPtr->second.get()->fetch_sub(1);
+  if (count <= 0) {
+    userIpSessionCount_.erase(countFindPtr);
+  }
+  return true;
 }
 }  // namespace graph
 }  // namespace nebula

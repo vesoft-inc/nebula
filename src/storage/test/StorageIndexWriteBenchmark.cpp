@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -32,7 +31,7 @@ using NewTag = nebula::storage::cpp2::NewTag;
 enum class IndexENV : uint8_t {
   NO_INDEX = 1,
   ONE_INDEX = 2,
-  MULITPLE_INDEX = 3,
+  MULTIPLE_INDEX = 3,
   INVALID_INDEX = 4,
 };
 
@@ -62,7 +61,7 @@ std::vector<nebula::meta::cpp2::ColumnDef> mockTagIndexColumns() {
   for (int32_t i = 0; i < 3; i++) {
     nebula::meta::cpp2::ColumnDef col;
     col.name = folly::stringPrintf("col_%d", i);
-    col.type.type = meta::cpp2::PropertyType::INT64;
+    col.type.type = nebula::cpp2::PropertyType::INT64;
     cols.emplace_back(std::move(col));
   }
   return cols;
@@ -73,7 +72,7 @@ std::shared_ptr<meta::NebulaSchemaProvider> mockTagSchema() {
   for (int32_t i = 0; i < 3; i++) {
     nebula::meta::cpp2::ColumnDef col;
     col.name = folly::stringPrintf("col_%d", i);
-    col.type.type = meta::cpp2::PropertyType::INT64;
+    col.type.type = nebula::cpp2::PropertyType::INT64;
     schema->addField(col.name, col.type.type);
   }
   return schema;
@@ -98,7 +97,7 @@ std::unique_ptr<meta::IndexManager> memIndexMan(IndexENV type) {
       indexMan->addTagIndex(spaceId, -1, indexId, mockTagIndexColumns());
       break;
     }
-    case IndexENV::MULITPLE_INDEX: {
+    case IndexENV::MULTIPLE_INDEX: {
       indexMan->addTagIndex(spaceId, tagId, indexId, mockTagIndexColumns());
       indexMan->addTagIndex(spaceId, tagId, indexId + 1, mockTagIndexColumns());
       indexMan->addTagIndex(spaceId, tagId, indexId + 2, mockTagIndexColumns());
@@ -113,16 +112,16 @@ std::vector<NewVertex> genVertices(size_t vLen, int32_t& vId) {
   for (auto i = 0; i < FLAGS_bulk_insert_size; i++) {
     NewVertex newVertex;
     NewTag newTag;
-    newTag.set_tag_id(tagId);
+    newTag.tag_id_ref() = tagId;
     std::vector<Value> props;
     props.emplace_back(Value(1L + i));
     props.emplace_back(Value(2L + i));
     props.emplace_back(Value(3L + i));
-    newTag.set_props(std::move(props));
+    newTag.props_ref() = std::move(props);
     std::vector<nebula::storage::cpp2::NewTag> newTags;
     newTags.push_back(std::move(newTag));
-    newVertex.set_id(toVertexId(vLen, vId++));
-    newVertex.set_tags(std::move(newTags));
+    newVertex.id_ref() = toVertexId(vLen, vId++);
+    newVertex.tags_ref() = std::move(newTags);
     vertices.emplace_back(std::move(newVertex));
   }
   return vertices;
@@ -131,8 +130,8 @@ std::vector<NewVertex> genVertices(size_t vLen, int32_t& vId) {
 bool processVertices(StorageEnv* env, int32_t& vId) {
   cpp2::AddVerticesRequest req;
   BENCHMARK_SUSPEND {
-    req.set_space_id(1);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = 1;
+    req.if_not_exists_ref() = true;
     auto newVertex = genVertices(32, vId);
     (*req.parts_ref())[1] = std::move(newVertex);
   };
@@ -177,7 +176,7 @@ void initEnv(IndexENV type,
 }
 
 void verifyDataCount(storage::StorageEnv* env, int32_t expected) {
-  auto prefix = NebulaKeyUtils::vertexPrefix(1);
+  auto prefix = NebulaKeyUtils::tagPrefix(1);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto status = env->kvstore_->prefix(spaceId, 1, prefix, &iter);
   DCHECK(nebula::cpp2::ErrorCode::SUCCEEDED == status);
@@ -316,7 +315,7 @@ void insertVerticesMultIndex() {
   int32_t vId = 0;
   BENCHMARK_SUSPEND {
     std::string dataPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "multIndex");
-    initEnv(IndexENV::MULITPLE_INDEX, dataPath, env, kv, sm, im);
+    initEnv(IndexENV::MULTIPLE_INDEX, dataPath, env, kv, sm, im);
   };
 
   while (vId < FLAGS_total_vertices_size) {
@@ -339,15 +338,25 @@ void insertVerticesMultIndex() {
   };
 }
 
-BENCHMARK(withoutIndex) { insertVertices(true); }
+BENCHMARK(withoutIndex) {
+  insertVertices(true);
+}
 
-BENCHMARK(unmatchIndex) { insertUnmatchIndex(); }
+BENCHMARK(unmatchIndex) {
+  insertUnmatchIndex();
+}
 
-BENCHMARK(attachIndex) { insertVertices(false); }
+BENCHMARK(attachIndex) {
+  insertVertices(false);
+}
 
-BENCHMARK(duplicateVerticesIndex) { insertDupVertices(); }
+BENCHMARK(duplicateVerticesIndex) {
+  insertDupVertices();
+}
 
-BENCHMARK(multipleIndex) { insertVerticesMultIndex(); }
+BENCHMARK(multipleIndex) {
+  insertVerticesMultIndex();
+}
 
 }  // namespace storage
 }  // namespace nebula
@@ -362,7 +371,7 @@ int main(int argc, char** argv) {
  * withoutIndex: Without index, insert data only.
  * unmatchIndex: There are no matched indexes.
  * attachIndex: One index, the index contains all the columns of tag.
- * duplicateVerticesIndex: One index, and insert deplicate vertices.
+ * duplicateVerticesIndex: One index, and insert duplicate vertices.
  * multipleIndex: Three indexes by one tag.
  *
  * 56 processors, Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_QUERY_JOINEXECUTOR_H_
@@ -17,11 +16,13 @@ class JoinExecutor : public Executor {
   JoinExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
       : Executor(name, node, qctx) {}
 
+ protected:
   Status checkInputDataSets();
 
   void buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter);
 
- protected:
+  Status checkBiInputDataSets();
+
   void buildHashTable(const std::vector<Expression*>& hashKeys,
                       Iterator* iter,
                       std::unordered_map<List, std::vector<const Row*>>& hashTable) const;

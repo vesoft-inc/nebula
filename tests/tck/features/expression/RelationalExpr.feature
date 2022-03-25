@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: RelationalExpression
 
   Background:
@@ -118,10 +117,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 OR n.start_year <= 2010.0
-            OR e.likeness <> 90 OR n.nonExistTag <> null
-            OR e.likeness >= "12" OR n.age <= true
-      RETURN DISTINCT m.name AS player, m.age AS age
+      WHERE n.player.age >= 33 OR n.player.start_year <= 2010.0
+            OR e.likeness <> 90 OR n.player.nonExistTag <> null
+            OR e.likeness >= "12" OR n.player.age <= true
+      RETURN DISTINCT m.player.name AS player, m.player.age AS age
              ORDER BY player, age
       """
     Then the result should be, in any order, with relax comparison:
@@ -154,7 +153,7 @@ Feature: RelationalExpression
       | "Rajon Rondo"       | 33  |
       | "Ray Allen"         | 43  |
       | "Rudy Gay"          | 32  |
-      | "Shaquile O'Neal"   | 47  |
+      | "Shaquille O'Neal"  | 47  |
       | "Steve Nash"        | 45  |
       | "Tiago Splitter"    | 34  |
       | "Tim Duncan"        | 42  |
@@ -165,10 +164,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 OR n.name <= "2010.0"
-            AND e.likeness <> 90 OR n.nonExistTag <> null
-            OR e.likeness >= "12" OR n.age <= true
-      RETURN DISTINCT m.name AS player, m.age AS age
+      WHERE n.player.age >= 33 OR n.player.name <= "2010.0"
+            AND e.likeness <> 90 OR n.player.nonExistTag <> null
+            OR e.likeness >= "12" OR n.player.age <= true
+      RETURN DISTINCT m.player.name AS player, m.player.age AS age
              ORDER BY player, age
       """
     Then the result should be, in any order, with relax comparison:
@@ -197,7 +196,7 @@ Feature: RelationalExpression
       | "Rajon Rondo"       | 33  |
       | "Ray Allen"         | 43  |
       | "Rudy Gay"          | 32  |
-      | "Shaquile O'Neal"   | 47  |
+      | "Shaquille O'Neal"  | 47  |
       | "Steve Nash"        | 45  |
       | "Tiago Splitter"    | 34  |
       | "Tim Duncan"        | 42  |
@@ -208,10 +207,10 @@ Feature: RelationalExpression
     When executing query:
       """
       MATCH p = (n:player)<-[e:like]-(m)
-      WHERE n.age >= 33 AND n.name <> "2010.0"
-            AND e.likeness == 90 AND n.nonExistTag <> null
+      WHERE n.player.age >= 33 AND n.player.name <> "2010.0"
+            AND e.likeness == 90 AND n.player.nonExistTag <> null
             AND e.likeness >= "12"
-      RETURN n.name AS player, n.age AS age
+      RETURN n.player.name AS player, n.player.age AS age
       """
     Then the result should be, in any order, with relax comparison:
       | player | age |
@@ -219,21 +218,18 @@ Feature: RelationalExpression
   Scenario: Transform Relational expr in MATCH clause
     When profiling query:
       """
-      MATCH (v:player) WHERE v.age - 5 >= 40 RETURN v
+      MATCH (v:player) WHERE v.player.age - 5 >= 40 RETURN v
       """
     Then the result should be, in any order:
-      | v                                                             |
-      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})           |
-      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})           |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"}) |
-      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})           |
+      | v                                                               |
+      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})             |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})             |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"}) |
+      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 13           |                                                    |
-      | 13 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 13           |                                                    |
-      | 15 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info                                      |
+      | 9  | Project        | 8            |                                                    |
+      | 8  | Filter         | 2            |                                                    |
+      | 2  | AppendVertices | 6            |                                                    |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
+      | 0  | Start          |              |                                                    |

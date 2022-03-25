@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "common/datatypes/Value.h"
 
@@ -15,6 +14,7 @@
 
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Geography.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
@@ -64,11 +64,17 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
     case nebula::Value::Type::LIST: {
       return hash<nebula::List>()(v.getList());
     }
+    case nebula::Value::Type::GEOGRAPHY: {
+      return hash<nebula::Geography>()(v.getGeography());
+    }
     case nebula::Value::Type::MAP: {
-      LOG(FATAL) << "Hash for MAP has not been implemented";
+      return hash<nebula::Map>()(v.getMap());
     }
     case nebula::Value::Type::SET: {
-      LOG(FATAL) << "Hash for SET has not been implemented";
+      return hash<nebula::Set>()(v.getSet());
+    }
+    case nebula::Value::Type::DURATION: {
+      return hash<nebula::Duration>()(v.getDuration());
     }
     case nebula::Value::Type::DATASET: {
       LOG(FATAL) << "Hash for DATASET has not been implemented";
@@ -164,6 +170,14 @@ Value::Value(Value&& rhs) noexcept : type_(Value::Type::__EMPTY__) {
       setG(std::move(rhs.value_.gVal));
       break;
     }
+    case Type::GEOGRAPHY: {
+      setGG(std::move(rhs.value_.ggVal));
+      break;
+    }
+    case Type::DURATION: {
+      setDU(std::move(rhs.value_.duVal));
+      break;
+    }
     default: {
       assert(false);
       break;
@@ -240,6 +254,14 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
       setG(rhs.value_.gVal);
       break;
     }
+    case Type::GEOGRAPHY: {
+      setGG(rhs.value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      setDU(rhs.value_.duVal);
+      break;
+    }
     default: {
       assert(false);
       break;
@@ -247,91 +269,173 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
   }
 }
 
-Value::Value(const NullType& v) { setN(v); }
+Value::Value(const NullType& v) {
+  setN(v);
+}
 
-Value::Value(NullType&& v) { setN(std::move(v)); }
+Value::Value(NullType&& v) {
+  setN(std::move(v));
+}
 
-Value::Value(const bool& v) { setB(v); }
+Value::Value(const bool& v) {
+  setB(v);
+}
 
-Value::Value(bool&& v) { setB(std::move(v)); }
+Value::Value(bool&& v) {
+  setB(std::move(v));
+}
 
-Value::Value(const int8_t& v) { setI(v); }
+Value::Value(const int8_t& v) {
+  setI(v);
+}
 
-Value::Value(int8_t&& v) { setI(std::move(v)); }
+Value::Value(int8_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int16_t& v) { setI(v); }
+Value::Value(const int16_t& v) {
+  setI(v);
+}
 
-Value::Value(int16_t&& v) { setI(std::move(v)); }
+Value::Value(int16_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int32_t& v) { setI(v); }
+Value::Value(const int32_t& v) {
+  setI(v);
+}
 
-Value::Value(int32_t&& v) { setI(std::move(v)); }
+Value::Value(int32_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int64_t& v) { setI(v); }
+Value::Value(const int64_t& v) {
+  setI(v);
+}
 
-Value::Value(int64_t&& v) { setI(std::move(v)); }
+Value::Value(int64_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const double& v) { setF(v); }
+Value::Value(const double& v) {
+  setF(v);
+}
 
-Value::Value(double&& v) { setF(std::move(v)); }
+Value::Value(double&& v) {
+  setF(std::move(v));
+}
 
-Value::Value(const std::string& v) { setS(v); }
+Value::Value(const std::string& v) {
+  setS(v);
+}
 
-Value::Value(std::string&& v) { setS(std::move(v)); }
+Value::Value(std::string&& v) {
+  setS(std::move(v));
+}
 
-Value::Value(const char* v) { setS(v); }
+Value::Value(const char* v) {
+  setS(v);
+}
 
-Value::Value(const Date& v) { setD(v); }
+Value::Value(const Date& v) {
+  setD(v);
+}
 
-Value::Value(Date&& v) { setD(std::move(v)); }
+Value::Value(Date&& v) {
+  setD(std::move(v));
+}
 
-Value::Value(const Time& v) { setT(v); }
+Value::Value(const Time& v) {
+  setT(v);
+}
 
-Value::Value(Time&& v) { setT(std::move(v)); }
+Value::Value(Time&& v) {
+  setT(std::move(v));
+}
 
-Value::Value(const DateTime& v) { setDT(v); }
+Value::Value(const DateTime& v) {
+  setDT(v);
+}
 
-Value::Value(DateTime&& v) { setDT(std::move(v)); }
+Value::Value(DateTime&& v) {
+  setDT(std::move(v));
+}
 
-Value::Value(const Vertex& v) { setV(v); }
+Value::Value(const Vertex& v) {
+  setV(v);
+}
 
-Value::Value(Vertex&& v) { setV(std::move(v)); }
+Value::Value(Vertex&& v) {
+  setV(std::move(v));
+}
 
-Value::Value(const Edge& v) { setE(v); }
+Value::Value(const Edge& v) {
+  setE(v);
+}
 
-Value::Value(Edge&& v) { setE(std::move(v)); }
+Value::Value(Edge&& v) {
+  setE(std::move(v));
+}
 
-Value::Value(const Path& v) { setP(v); }
+Value::Value(const Path& v) {
+  setP(v);
+}
 
-Value::Value(Path&& v) { setP(std::move(v)); }
+Value::Value(Path&& v) {
+  setP(std::move(v));
+}
 
 Value::Value(const List& v) {
   auto c = std::make_unique<List>(v);
   setL(std::move(c));
 }
 
-Value::Value(List&& v) { setL(std::make_unique<List>(std::move(v))); }
+Value::Value(List&& v) {
+  setL(std::make_unique<List>(std::move(v)));
+}
 
 Value::Value(const Map& v) {
   auto c = std::make_unique<Map>(v);
   setM(std::move(c));
 }
 
-Value::Value(Map&& v) { setM(std::make_unique<Map>(std::move(v))); }
+Value::Value(Map&& v) {
+  setM(std::make_unique<Map>(std::move(v)));
+}
 
 Value::Value(const Set& v) {
   auto c = std::make_unique<Set>(v);
   setU(std::move(c));
 }
 
-Value::Value(Set&& v) { setU(std::make_unique<Set>(std::move(v))); }
+Value::Value(Set&& v) {
+  setU(std::make_unique<Set>(std::move(v)));
+}
 
 Value::Value(const DataSet& v) {
   auto c = std::make_unique<DataSet>(v);
   setG(std::move(c));
 }
 
-Value::Value(DataSet&& v) { setG(std::make_unique<DataSet>(std::move(v))); }
+Value::Value(DataSet&& v) {
+  setG(std::make_unique<DataSet>(std::move(v)));
+}
+
+Value::Value(const Geography& v) {
+  setGG(std::make_unique<Geography>(v));
+}
+
+Value::Value(Geography&& v) {
+  setGG(std::make_unique<Geography>(std::move(v)));
+}
+
+Value::Value(const Duration& v) {
+  setDU(std::make_unique<Duration>(v));
+}
+
+Value::Value(Duration&& v) {
+  setDU(std::make_unique<Duration>(std::move(v)));
+}
 
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
@@ -351,6 +455,8 @@ const std::string& Value::typeName() const {
       {Type::MAP, "map"},
       {Type::SET, "set"},
       {Type::DATASET, "dataset"},
+      {Type::GEOGRAPHY, "geography"},
+      {Type::DURATION, "duration"},
   };
 
   static const std::unordered_map<NullType, std::string> nullTypes = {
@@ -599,6 +705,36 @@ void Value::setDataSet(std::unique_ptr<DataSet>&& v) {
   setG(std::move(v));
 }
 
+void Value::setGeography(const Geography& v) {
+  clear();
+  setGG(v);
+}
+
+void Value::setGeography(Geography&& v) {
+  clear();
+  setGG(std::move(v));
+}
+
+void Value::setGeography(std::unique_ptr<Geography>&& v) {
+  clear();
+  setGG(std::move(v));
+}
+
+void Value::setDuration(const Duration& v) {
+  clear();
+  setDU(v);
+}
+
+void Value::setDuration(Duration&& v) {
+  clear();
+  setDU(std::move(v));
+}
+
+void Value::setDuration(std::unique_ptr<Duration>&& v) {
+  clear();
+  setDU(std::move(v));
+}
+
 const NullType& Value::getNull() const {
   CHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
@@ -709,6 +845,26 @@ const DataSet* Value::getDataSetPtr() const {
   return value_.gVal.get();
 }
 
+const Geography& Value::getGeography() const {
+  CHECK_EQ(type_, Type::GEOGRAPHY);
+  return *(value_.ggVal);
+}
+
+const Geography* Value::getGeographyPtr() const {
+  CHECK_EQ(type_, Type::GEOGRAPHY);
+  return value_.ggVal.get();
+}
+
+const Duration& Value::getDuration() const {
+  CHECK_EQ(type_, Type::DURATION);
+  return *value_.duVal;
+}
+
+const Duration* Value::getDurationPtr() const {
+  CHECK_EQ(type_, Type::DURATION);
+  return value_.duVal.get();
+}
+
 NullType& Value::mutableNull() {
   CHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
@@ -782,6 +938,16 @@ Set& Value::mutableSet() {
 DataSet& Value::mutableDataSet() {
   CHECK_EQ(type_, Type::DATASET);
   return *(value_.gVal);
+}
+
+Geography& Value::mutableGeography() {
+  CHECK_EQ(type_, Type::GEOGRAPHY);
+  return *(value_.ggVal);
+}
+
+Duration& Value::mutableDuration() {
+  CHECK_EQ(type_, Type::DURATION);
+  return *value_.duVal;
 }
 
 NullType Value::moveNull() {
@@ -889,6 +1055,20 @@ DataSet Value::moveDataSet() {
   return ds;
 }
 
+Geography Value::moveGeography() {
+  CHECK_EQ(type_, Type::GEOGRAPHY);
+  Geography v = std::move(*(value_.ggVal));
+  clear();
+  return v;
+}
+
+Duration Value::moveDuration() {
+  CHECK_EQ(type_, Type::DURATION);
+  Duration v = std::move(*value_.duVal);
+  clear();
+  return v;
+}
+
 void Value::clear() {
   switch (type_) {
     case Type::__EMPTY__: {
@@ -952,6 +1132,14 @@ void Value::clear() {
     }
     case Type::DATASET: {
       destruct(value_.gVal);
+      break;
+    }
+    case Type::GEOGRAPHY: {
+      destruct(value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      destruct(value_.duVal);
       break;
     }
   }
@@ -1025,6 +1213,14 @@ Value& Value::operator=(Value&& rhs) noexcept {
     }
     case Type::DATASET: {
       setG(std::move(rhs.value_.gVal));
+      break;
+    }
+    case Type::GEOGRAPHY: {
+      setGG(std::move(rhs.value_.ggVal));
+      break;
+    }
+    case Type::DURATION: {
+      setDU(std::move(rhs.value_.duVal));
       break;
     }
     default: {
@@ -1103,6 +1299,14 @@ Value& Value::operator=(const Value& rhs) {
     }
     case Type::DATASET: {
       setG(rhs.value_.gVal);
+      break;
+    }
+    case Type::GEOGRAPHY: {
+      setGG(rhs.value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      setDU(rhs.value_.duVal);
       break;
     }
     default: {
@@ -1344,6 +1548,163 @@ void Value::setG(DataSet&& v) {
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
 }
 
+void Value::setGG(const std::unique_ptr<Geography>& v) {
+  type_ = Type::GEOGRAPHY;
+  new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(*v));
+}
+
+void Value::setGG(std::unique_ptr<Geography>&& v) {
+  type_ = Type::GEOGRAPHY;
+  new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(std::move(v));
+}
+
+void Value::setGG(const Geography& v) {
+  type_ = Type::GEOGRAPHY;
+  new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(v));
+}
+
+void Value::setGG(Geography&& v) {
+  type_ = Type::GEOGRAPHY;
+  new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(std::move(v)));
+}
+
+void Value::setDU(const std::unique_ptr<Duration>& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(*v));
+}
+
+void Value::setDU(std::unique_ptr<Duration>&& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(std::move(v));
+}
+
+void Value::setDU(const Duration& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(v));
+}
+
+void Value::setDU(Duration&& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(std::move(v)));
+}
+
+// Convert Nebula::Value to a value compatible with Json standard
+// DATE, TIME, DATETIME will be converted to strings in UTC
+// VERTEX, EDGES, PATH will be converted to objects
+folly::dynamic Value::toJson() const {
+  switch (type_) {
+    case Value::Type::__EMPTY__: {
+      return "__EMPTY__";
+    }
+    // Json null
+    case Value::Type::NULLVALUE: {
+      return folly::dynamic(nullptr);
+    }
+    // Json bool
+    case Value::Type::BOOL: {
+      return folly::dynamic(getBool());
+    }
+    // Json int
+    case Value::Type::INT: {
+      return folly::dynamic(getInt());
+    }
+    // json double
+    case Value::Type::FLOAT: {
+      return folly::dynamic(getFloat());
+    }
+    // json string
+    case Value::Type::STRING: {
+      return folly::dynamic(getStr());
+    }
+    // Json array
+    case Value::Type::LIST: {
+      return getList().toJson();
+    }
+    case Value::Type::SET: {
+      return getSet().toJson();
+    }
+    // Json object
+    case Value::Type::MAP: {
+      return getMap().toJson();
+    }
+    case Value::Type::DATE: {
+      return getDate().toJson();
+    }
+    case Value::Type::TIME: {
+      return getTime().toJson();
+    }
+    case Value::Type::DATETIME: {
+      return getDateTime().toJson();
+    }
+    case Value::Type::EDGE: {
+      return getEdge().toJson();
+    }
+    case Value::Type::VERTEX: {
+      return getVertex().toJson();
+    }
+    case Value::Type::PATH: {
+      return getPath().toJson();
+    }
+    case Value::Type::DATASET: {
+      return getDataSet().toJson();
+    }
+    case Value::Type::GEOGRAPHY: {
+      return getGeography().toJson();
+    }
+    case Value::Type::DURATION: {
+      return getDuration().toJson();
+    }
+      // no default so the compiler will warning when lack
+  }
+
+  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+}
+
+folly::dynamic Value::getMetaData() const {
+  auto dynamicObj = folly::dynamic();
+  switch (type_) {
+    // Privative datatypes has no meta data
+    case Value::Type::__EMPTY__:
+    case Value::Type::BOOL:
+    case Value::Type::INT:
+    case Value::Type::FLOAT:
+    case Value::Type::STRING:
+    case Value::Type::DATASET:
+    case Value::Type::NULLVALUE: {
+      return folly::dynamic(nullptr);
+    }
+    // Extract the meta info of each element as the metadata of the container
+    case Value::Type::LIST: {
+      return getList().getMetaData();
+    }
+    case Value::Type::SET: {
+      return getSet().getMetaData();
+    }
+    case Value::Type::MAP: {
+      return getMap().getMetaData();
+    }
+    case Value::Type::DURATION:
+    case Value::Type::DATE:
+    case Value::Type::TIME:
+    case Value::Type::DATETIME: {
+      return folly::dynamic::object("type", typeName());
+    }
+    case Value::Type::VERTEX: {
+      return getVertex().getMetaData();
+    }
+    case Value::Type::EDGE: {
+      return getEdge().getMetaData();
+    }
+    case Value::Type::PATH: {
+      return getPath().getMetaData();
+    }
+    default:
+      break;
+  }
+
+  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+}
+
 std::string Value::toString() const {
   switch (type_) {
     case Value::Type::__EMPTY__: {
@@ -1411,6 +1772,12 @@ std::string Value::toString() const {
     }
     case Value::Type::DATASET: {
       return getDataSet().toString();
+    }
+    case Value::Type::GEOGRAPHY: {
+      return getGeography().toString();
+    }
+    case Value::Type::DURATION: {
+      return getDuration().toString();
     }
       // no default so the compiler will warning when lack
   }
@@ -1526,6 +1893,27 @@ Value Value::toInt() const {
   }
 }
 
+Value Value::toSet() const {
+  switch (type_) {
+    case Value::Type::__EMPTY__:
+    case Value::Type::NULLVALUE: {
+      return Value::kNullValue;
+    }
+    case Value::Type::SET: {
+      return *this;
+    }
+    case Value::Type::LIST: {
+      Set set;
+      for (auto& item : getList().values) {
+        set.values.emplace(item);
+      }
+      return set;
+    }
+    default: {
+      return Value::kNullBadType;
+    }
+  }
+}
 Value Value::lessThan(const Value& v) const {
   if (empty() || v.empty()) {
     return (v.isNull() || isNull()) ? Value::kNullValue : Value::kEmpty;
@@ -1602,6 +1990,14 @@ Value Value::lessThan(const Value& v) const {
     }
     case Value::Type::DATASET: {
       return getDataSet() < v.getDataSet();
+    }
+    case Value::Type::GEOGRAPHY: {
+      return getGeography() < v.getGeography();
+    }
+    case Value::Type::DURATION: {
+      // Duration can't compare,
+      // e.g. What is the result of `duration('P1M') < duration('P30D')`?
+      return kNullBadType;
     }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
@@ -1690,6 +2086,12 @@ Value Value::equal(const Value& v) const {
     case Value::Type::DATASET: {
       return getDataSet() == v.getDataSet();
     }
+    case Value::Type::GEOGRAPHY: {
+      return getGeography() == v.getGeography();
+    }
+    case Value::Type::DURATION: {
+      return getDuration() == v.getDuration();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -1699,84 +2101,98 @@ Value Value::equal(const Value& v) const {
   return Value::kNullBadType;
 }
 
+bool Value::isImplicitBool() const {
+  switch (type_) {
+    case Type::BOOL:
+    case Type::LIST:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool Value::implicitBool() const {
+  DCHECK(isImplicitBool());
+  switch (type_) {
+    case Type::BOOL:
+      return getBool();
+    case Type::LIST:
+      return !getList().empty();
+    default:
+      LOG(FATAL) << "Impossible to reach here!";
+  }
+}
+
 void swap(Value& a, Value& b) {
   Value temp(std::move(a));
   a = std::move(b);
   b = std::move(temp);
 }
 
-std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
+/*static*/ const std::string Value::toString(Type type) {
   switch (type) {
     case Value::Type::__EMPTY__: {
-      os << "__EMPTY__";
-      break;
+      return "__EMPTY__";
     }
     case Value::Type::NULLVALUE: {
-      os << "NULL";
-      break;
+      return "NULL";
     }
     case Value::Type::BOOL: {
-      os << "BOOL";
-      break;
+      return "BOOL";
     }
     case Value::Type::INT: {
-      os << "INT";
-      break;
+      return "INT";
     }
     case Value::Type::FLOAT: {
-      os << "FLOAT";
-      break;
+      return "FLOAT";
     }
     case Value::Type::STRING: {
-      os << "STRING";
-      break;
+      return "STRING";
     }
     case Value::Type::DATE: {
-      os << "DATE";
-      break;
+      return "DATE";
     }
     case Value::Type::TIME: {
-      os << "TIME";
-      break;
+      return "TIME";
     }
     case Value::Type::DATETIME: {
-      os << "DATETIME";
-      break;
+      return "DATETIME";
     }
     case Value::Type::VERTEX: {
-      os << "VERTEX";
-      break;
+      return "VERTEX";
     }
     case Value::Type::EDGE: {
-      os << "EDGE";
-      break;
+      return "EDGE";
     }
     case Value::Type::PATH: {
-      os << "PATH";
-      break;
+      return "PATH";
     }
     case Value::Type::LIST: {
-      os << "LIST";
-      break;
+      return "LIST";
     }
     case Value::Type::MAP: {
-      os << "MAP";
-      break;
+      return "MAP";
     }
     case Value::Type::SET: {
-      os << "SET";
-      break;
+      return "SET";
     }
     case Value::Type::DATASET: {
-      os << "DATASET";
-      break;
+      return "DATASET";
+    }
+    case Value::Type::GEOGRAPHY: {
+      return "GEOGRAPHY";
+    }
+    case Value::Type::DURATION: {
+      return "DURATION";
     }
     default: {
-      os << "__UNKNOWN__";
-      break;
+      return "__UNKNOWN__";
     }
   }
+}
 
+std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
+  os << Value::toString(type);
   return os;
 }
 
@@ -1903,6 +2319,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
         }
+        case Value::Type::DURATION: {
+          return lhs.getDate() + rhs.getDuration();
+        }
         default: {
           return Value::kNullBadType;
         }
@@ -1918,6 +2337,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
         }
+        case Value::Type::DURATION: {
+          return lhs.getTime() + rhs.getDuration();
+        }
         default: {
           return Value::kNullBadType;
         }
@@ -1932,6 +2354,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
           auto ret = rhs.getList();
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
+        }
+        case Value::Type::DURATION: {
+          return lhs.getDateTime() + rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -1953,6 +2378,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
         case Value::Type::DATE:
         case Value::Type::TIME:
         case Value::Type::DATETIME:
+        case Value::Type::DURATION:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
         case Value::Type::PATH:
@@ -1963,6 +2389,9 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return ret;
         }
         case Value::Type::DATASET: {
+          return Value::kNullBadType;
+        }
+        case Value::Type::GEOGRAPHY: {
           return Value::kNullBadType;
         }
         case Value::Type::__EMPTY__: {
@@ -2034,6 +2463,16 @@ Value operator+(const Value& lhs, const Value& rhs) {
         }
       }
     }
+    case Value::Type::DURATION: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getDuration() + rhs.getDuration();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
     default: {
       return Value::kNullBadType;
     }
@@ -2088,6 +2527,39 @@ Value operator-(const Value& lhs, const Value& rhs) {
         }
         case Value::Type::DATE: {
           return lhs.getDate().toInt() - rhs.getDate().toInt();
+        }
+        case Value::Type::DURATION: {
+          return lhs.getDate() - rhs.getDuration();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::TIME: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getTime() - rhs.getDuration();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::DATETIME: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getDateTime() - rhs.getDuration();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::DURATION: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getDuration() - rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2295,6 +2767,10 @@ Value operator-(const Value& rhs) {
       auto val = -rhs.getFloat();
       return val;
     }
+    case Value::Type::DURATION: {
+      auto val = -rhs.getDuration();
+      return val;
+    }
     default: {
       return Value::kNullBadType;
     }
@@ -2306,11 +2782,11 @@ Value operator!(const Value& rhs) {
     return rhs;
   }
 
-  if (rhs.type() != Value::Type::BOOL) {
+  if (!rhs.isImplicitBool()) {
     return Value::kNullBadType;
   }
 
-  auto val = rhs.getBool();
+  auto val = rhs.implicitBool();
   return !val;
 }
 
@@ -2382,6 +2858,13 @@ bool operator<(const Value& lhs, const Value& rhs) {
     case Value::Type::SET:
     case Value::Type::DATASET: {
       // TODO:
+      return false;
+    }
+    case Value::Type::GEOGRAPHY: {
+      return lhs.getGeography() < rhs.getGeography();
+    }
+    case Value::Type::DURATION: {
+      DLOG(FATAL) << "Duration is not comparable.";
       return false;
     }
     case Value::Type::NULLVALUE:
@@ -2468,6 +2951,12 @@ bool operator==(const Value& lhs, const Value& rhs) {
     case Value::Type::DATASET: {
       return lhs.getDataSet() == rhs.getDataSet();
     }
+    case Value::Type::GEOGRAPHY: {
+      return lhs.getGeography() == rhs.getGeography();
+    }
+    case Value::Type::DURATION: {
+      return lhs.getDuration() == rhs.getDuration();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -2477,13 +2966,21 @@ bool operator==(const Value& lhs, const Value& rhs) {
   return false;
 }
 
-bool operator!=(const Value& lhs, const Value& rhs) { return !(lhs == rhs); }
+bool operator!=(const Value& lhs, const Value& rhs) {
+  return !(lhs == rhs);
+}
 
-bool operator>(const Value& lhs, const Value& rhs) { return rhs < lhs; }
+bool operator>(const Value& lhs, const Value& rhs) {
+  return rhs < lhs;
+}
 
-bool operator<=(const Value& lhs, const Value& rhs) { return !(rhs < lhs); }
+bool operator<=(const Value& lhs, const Value& rhs) {
+  return !(rhs < lhs);
+}
 
-bool operator>=(const Value& lhs, const Value& rhs) { return !(lhs < rhs); }
+bool operator>=(const Value& lhs, const Value& rhs) {
+  return !(lhs < rhs);
+}
 
 Value operator&&(const Value& lhs, const Value& rhs) {
   if (lhs.isNull()) {
@@ -2498,8 +2995,8 @@ Value operator&&(const Value& lhs, const Value& rhs) {
     return Value::kEmpty;
   }
 
-  if (lhs.type() == Value::Type::BOOL && rhs.type() == Value::Type::BOOL) {
-    return lhs.getBool() && rhs.getBool();
+  if (lhs.isImplicitBool() && rhs.isImplicitBool()) {
+    return lhs.implicitBool() && rhs.implicitBool();
   } else {
     return Value::kNullBadType;
   }
@@ -2518,8 +3015,8 @@ Value operator||(const Value& lhs, const Value& rhs) {
     return Value::kEmpty;
   }
 
-  if (lhs.type() == Value::Type::BOOL && rhs.type() == Value::Type::BOOL) {
-    return lhs.getBool() || rhs.getBool();
+  if (lhs.isImplicitBool() && rhs.isImplicitBool()) {
+    return lhs.implicitBool() || rhs.implicitBool();
   } else {
     return Value::kNullBadType;
   }

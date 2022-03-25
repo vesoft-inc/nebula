@@ -1,13 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/Base.h"
 #include "graph/validator/test/ValidatorTestBase.h"
 
 DECLARE_uint32(max_allowed_statements);
+DECLARE_uint32(max_allowed_query_size);
 
 namespace nebula {
 namespace graph {
@@ -48,14 +48,14 @@ TEST_F(QueryValidatorTest, TestFirstSentence) {
 
 TEST_F(QueryValidatorTest, GoZeroStep) {
   {
-    std::string query = "GO 0 STEPS FROM \"1\" OVER serve";
+    std::string query = "GO 0 STEPS FROM \"1\" OVER serve YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {PK::kPassThrough, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
     std::string query =
         "GO 0 STEPS FROM \"1\" OVER like YIELD like._dst as id"
-        "| GO FROM $-.id OVER serve";
+        "| GO FROM $-.id OVER serve YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kInnerJoin,
                                             PK::kProject,
@@ -67,7 +67,7 @@ TEST_F(QueryValidatorTest, GoZeroStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO 0 TO 0 STEPS FROM \"1\" OVER serve";
+    std::string query = "GO 0 TO 0 STEPS FROM \"1\" OVER serve YIELD $$ as dst";
     std::vector<PlanNode::Kind> expected = {PK::kPassThrough, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -75,7 +75,7 @@ TEST_F(QueryValidatorTest, GoZeroStep) {
 
 TEST_F(QueryValidatorTest, GoNSteps) {
   {
-    std::string query = "GO 2 STEPS FROM \"1\" OVER like";
+    std::string query = "GO 2 STEPS FROM \"1\" OVER like YIELD $^ as src";
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kGetNeighbors,
                                             PK::kLoop,
@@ -87,7 +87,8 @@ TEST_F(QueryValidatorTest, GoNSteps) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO 3 STEPS FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90";
+    std::string query =
+        "GO 3 STEPS FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90 YIELD $^ as src";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
@@ -143,7 +144,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
   {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
-        "id | GO 2 STEPS FROM $-.id OVER like";
+        "id | GO 2 STEPS FROM $-.id OVER like YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,      PK::kInnerJoin,    PK::kInnerJoin, PK::kProject, PK::kGetNeighbors,
         PK::kLoop,         PK::kDedup,        PK::kDedup,     PK::kProject, PK::kProject,
@@ -155,7 +156,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
   {
     std::string query =
         "GO 2 STEPS FROM \"1\" OVER like YIELD like._dst AS id"
-        "| GO 1 STEPS FROM $-.id OVER like";
+        "| GO 1 STEPS FROM $-.id OVER like YIELD src(edge) as src";
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kInnerJoin,
                                             PK::kProject,
@@ -173,7 +174,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "YIELD \"1\" AS id | GO FROM $-.id OVER like";
+    std::string query = "YIELD \"1\" AS id | GO FROM $-.id OVER like YIELD id($^) as id";
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kInnerJoin,
                                             PK::kProject,
@@ -182,6 +183,23 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                                             PK::kProject,
                                             PK::kProject,
                                             PK::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
+  }
+  {
+    std::string query = "YIELD \"1\" AS id | GO FROM $-.id OVER like YIELD id($$) as id";
+    std::vector<PlanNode::Kind> expected = {PK::kProject,
+                                            PK::kInnerJoin,
+                                            PK::kProject,
+                                            PK::kGetNeighbors,
+                                            PK::kDedup,
+                                            PK::kProject,
+                                            PK::kProject,
+                                            PK::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
+  }
+  {
+    std::string query = "GO FROM 'Tim' OVER * YIELD id($$) as id";
+    std::vector<PlanNode::Kind> expected = {PK::kProject, PK::kGetNeighbors, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -422,9 +440,7 @@ TEST_F(QueryValidatorTest, GoWithVariable) {
 
 TEST_F(QueryValidatorTest, GoReversely) {
   {
-    std::string query =
-        "GO FROM \"1\" OVER like REVERSELY "
-        "YIELD $$.person.name";
+    std::string query = "GO FROM \"1\" OVER like REVERSELY YIELD $$.person.name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kLeftJoin,
@@ -437,9 +453,7 @@ TEST_F(QueryValidatorTest, GoReversely) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query =
-        "GO 2 STEPS FROM \"1\" OVER like REVERSELY "
-        "YIELD $$.person.name";
+    std::string query = "GO 2 STEPS FROM \"1\" OVER like REVERSELY YIELD $$.person.name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kLeftJoin,
@@ -460,7 +474,7 @@ TEST_F(QueryValidatorTest, GoReversely) {
 
 TEST_F(QueryValidatorTest, GoBidirectly) {
   {
-    std::string query = "GO FROM \"1\" OVER like BIDIRECT";
+    std::string query = "GO FROM \"1\" OVER like BIDIRECT YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -487,7 +501,7 @@ TEST_F(QueryValidatorTest, GoBidirectly) {
 
 TEST_F(QueryValidatorTest, GoOneStep) {
   {
-    std::string query = "GO FROM \"1\" OVER like";
+    std::string query = "GO FROM \"1\" OVER like YIELD src(edge) as src";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -496,7 +510,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\" OVER like REVERSELY";
+    std::string query = "GO FROM \"1\" OVER like REVERSELY YIELD dst(edge) as dst";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -505,7 +519,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\" OVER like BIDIRECT";
+    std::string query = "GO FROM \"1\" OVER like BIDIRECT YIELD dst(edge) as dst";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -603,7 +617,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like";
+    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -612,7 +626,8 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90";
+    std::string query =
+        "GO FROM \"1\",\"2\",\"3\" OVER like WHERE like.likeness > 90 YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
@@ -636,7 +651,8 @@ TEST_F(QueryValidatorTest, GoOneStep) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name == \"me\"";
+    std::string query =
+        "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.name == \"me\" YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
@@ -648,7 +664,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
   {
     std::string query =
         "GO FROM \"1\" OVER like YIELD like._dst AS id"
-        "| GO FROM $-.id OVER like";
+        "| GO FROM $-.id OVER like YIELD dst(edge) as dst";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kInnerJoin,
@@ -666,9 +682,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
 
 TEST_F(QueryValidatorTest, GoOverAll) {
   {
-    std::string query =
-        "GO FROM \"1\" OVER * REVERSELY "
-        "YIELD serve._src, like._src";
+    std::string query = "GO FROM \"1\" OVER * REVERSELY YIELD serve._src, like._src";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -677,7 +691,7 @@ TEST_F(QueryValidatorTest, GoOverAll) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\" OVER * REVERSELY";
+    std::string query = "GO FROM \"1\" OVER * REVERSELY YIELD edge as e";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -686,7 +700,7 @@ TEST_F(QueryValidatorTest, GoOverAll) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GO FROM \"1\" OVER *";
+    std::string query = "GO FROM \"1\" OVER * YIELD src(edge) as src";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kGetNeighbors,
@@ -714,7 +728,7 @@ TEST_F(QueryValidatorTest, OutputToAPipe) {
     std::string query =
         "GO FROM '1' OVER like YIELD like._dst as id "
         "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id "
-        "OVER serve )";
+        "OVER serve YIELD dst(edge) as dst )";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kInnerJoin,
@@ -873,35 +887,30 @@ TEST_F(QueryValidatorTest, GoMToN) {
 TEST_F(QueryValidatorTest, GoInvalid) {
   {
     // friend not exist.
-    std::string query = "GO FROM \"1\" OVER friend";
+    std::string query = "GO FROM \"1\" OVER friend YIELD $$ as dst";
     EXPECT_FALSE(checkResult(query));
   }
   {
     // manager not exist
-    std::string query =
-        "GO FROM \"1\" OVER like "
-        "YIELD $^.manager.name,$^.person.age";
+    std::string query = "GO FROM \"1\" OVER like YIELD $^.manager.name,$^.person.age";
     EXPECT_FALSE(checkResult(query));
   }
   {
     // manager not exist
-    std::string query =
-        "GO FROM \"1\" OVER like "
-        "YIELD $$.manager.name,$$.person.age";
+    std::string query = "GO FROM \"1\" OVER like YIELD $$.manager.name,$$.person.age";
     EXPECT_FALSE(checkResult(query));
   }
   {
     // column not exist
     std::string query =
-        "GO FROM \"1\" OVER like YIELD like._dst AS id"
-        "| GO FROM $-.col OVER like";
+        "GO FROM \"1\" OVER like YIELD like._dst AS id | GO FROM $-.col OVER like YIELD edge as e";
     EXPECT_FALSE(checkResult(query));
   }
   {
     // invalid id type
     std::string query =
         "GO FROM \"1\" OVER like YIELD like.likeness AS id"
-        "| GO FROM $-.id OVER like";
+        "| GO FROM $-.id OVER like YIELD edge as e";
     EXPECT_FALSE(checkResult(query));
   }
   {
@@ -909,35 +918,35 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     std::string query =
         "$var = GO FROM \"2\" OVER like;"
         "GO FROM \"1\" OVER like YIELD like._dst AS id"
-        "| GO FROM $-.id OVER like WHERE $var.id == \"\"";
+        "| GO FROM $-.id OVER like WHERE $var.id == \"\" YIELD edge as e";
     EXPECT_FALSE(checkResult(query));
   }
   {
     // yield agg without groupBy is not supported
     std::string query = "GO FROM \"2\" OVER like YIELD COUNT(123);";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `COUNT(123)', "
-              "not support aggregate function in go sentence.");
+    EXPECT_EQ(
+        std::string(result.message()),
+        "SyntaxError: Invalid use of aggregating function in yield clause. near `COUNT(123)'");
   }
   {
     std::string query =
         "GO FROM \"1\" OVER like YIELD like._dst AS id, like._src AS id | GO "
-        "FROM $-.id OVER like";
+        "FROM $-.id OVER like YIELD like._dst as dst";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
   }
   {
     std::string query =
         "$a = GO FROM \"1\" OVER like YIELD like._dst AS id, like._src AS id; "
-        "GO FROM $a.id OVER like";
+        "GO FROM $a.id OVER like YIELD dst(edge) as dst";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
   }
   {
     std::string query =
         "GO FROM \"1\" OVER like, serve YIELD like._dst AS id, serve._src AS "
-        "id, serve._dst AS DST | GO FROM $-.DST OVER like";
+        "id, serve._dst AS DST | GO FROM $-.DST OVER like YIELD $$ as dstNode";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
   }
@@ -945,9 +954,51 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     std::string query =
         "$a = GO FROM \"1\" OVER * YIELD like._dst AS id, like._src AS id, "
         "serve._dst as DST; "
-        "GO FROM $a.DST OVER like";
+        "GO FROM $a.DST OVER like YIELD $^ as srcNode";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
+  }
+  {
+    std::string query = "GO FROM id(vertex) OVER *  YIELD edge as e";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `id(VERTEX)' is not an evaluable expression.");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD vertex as v";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `VERTEX AS v' is not support in go sentence.");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD path";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `path'. near `path'");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $$";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `$$'. near `$$'");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $^";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `$^'. near `$^'");
+  }
+  {
+    std::string query = "GO 1 TO 4 STEPS FROM \"Tim\" OVER * YIELD id(vertex) as id";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `id(VERTEX) AS id' is not support in go sentence.");
+  }
+  {
+    std::string query = "GO 2 STEPS FROM \"Tim\" OVER * YIELD vertex as v";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `VERTEX AS v' is not support in go sentence.");
   }
 }
 
@@ -983,7 +1034,7 @@ TEST_F(QueryValidatorTest, OrderBy) {
   }
 }
 
-TEST_F(QueryValidatorTest, OrderByAndLimt) {
+TEST_F(QueryValidatorTest, OrderByAndLimit) {
   {
     std::string query =
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
@@ -1118,26 +1169,36 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
             "exceeded");
 }
 
+TEST_F(QueryValidatorTest, TestMaxAllowedQuerySize) {
+  FLAGS_max_allowed_query_size = 256;
+  std::string query = "INSERT VERTEX person(name, age) VALUES ";
+  std::string value = "\"person_1\":(\"person_1\", 1),";
+  int count = (FLAGS_max_allowed_query_size - query.size()) / value.size();
+  std::string values;
+  values.reserve(FLAGS_max_allowed_query_size);
+  for (int i = 0; i < count; ++i) {
+    values.append(value);
+  }
+  values.erase(values.size() - 1);
+  query += values;
+  EXPECT_TRUE(checkResult(query));
+  query.append(",\"person_2\":(\"person_2\", 2);");
+  auto result = checkResult(query);
+  EXPECT_FALSE(result);
+  EXPECT_EQ(std::string(result.message()), "SyntaxError: Query is too large (282 > 256).");
+  FLAGS_max_allowed_query_size = 4194304;
+}
+
 TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (v1:person{name: \"LeBron James\"}) -[r]-> (v2) "
-        "RETURN type(r) AS Type, v2.name AS Name";
+        "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
-        PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kFilter,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kIndexScan,
         PK::kStart,
     };
@@ -1146,13 +1207,17 @@ TEST_F(QueryValidatorTest, TestMatch) {
   {
     std::string query =
         "MATCH (:person{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3) "
-        "RETURN DISTINCT v3.name AS Name";
+        "RETURN DISTINCT v3.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kDedup,   PK::kProject,     PK::kFilter,       PK::kProject,
-        PK::kInnerJoin,   PK::kProject, PK::kGetVertices, PK::kDedup,        PK::kProject,
-        PK::kInnerJoin,   PK::kFilter,  PK::kProject,     PK::kGetNeighbors, PK::kDedup,
-        PK::kProject,     PK::kFilter,  PK::kProject,     PK::kFilter,       PK::kGetNeighbors,
-        PK::kDedup,       PK::kProject, PK::kIndexScan,   PK::kStart,
+        PK::kDataCollect,
+        PK::kDedup,
+        PK::kProject,
+        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
+        PK::kTraverse,
+        PK::kIndexScan,
+        PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -1160,22 +1225,14 @@ TEST_F(QueryValidatorTest, TestMatch) {
     std::string query =
         "MATCH (v1) -[r]-> (v2) "
         "WHERE id(v1) == \"LeBron James\""
-        "RETURN type(r) AS Type, v2.name AS Name";
+        "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
         PK::kPassThrough,
         PK::kStart,
     };
@@ -1186,53 +1243,25 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "MATCH (v1)-[e:serve*2..3{start_year: 2000}]-(v2) "
         "WHERE id(v1) == \"LeBron James\""
         "RETURN v1, v2";
-    std::vector<PlanNode::Kind> expected = {PK::kProject,
-                                            PK::kFilter,
-                                            PK::kFilter,
-                                            PK::kProject,
-                                            PK::kInnerJoin,
-                                            PK::kProject,
-                                            PK::kGetVertices,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kUnionAllVersionVar,
-                                            PK::kLoop,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kFilter,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
-                                            PK::kInnerJoin,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kPassThrough,
-                                            PK::kGetNeighbors,
-                                            PK::kStart,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kStart};
+    std::vector<PlanNode::Kind> expected = {
+        PK::kProject,
+        PK::kFilter,
+        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
+        PK::kDedup,
+        PK::kPassThrough,
+        PK::kStart,
+    };
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
     std::string query = "MATCH p = (n)-[]-(m:person{name:\"LeBron James\"}) RETURN p";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
-        PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kFilter,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kIndexScan,
         PK::kStart,
     };
