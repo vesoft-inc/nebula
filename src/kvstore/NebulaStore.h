@@ -664,14 +664,21 @@ class NebulaStore : public KVStore, public Handler {
   void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
 
   /**
-   * @brief Write data to local storage engine only
+   * @brief return a WriteBatch object to do batch operation
+   *
+   * @return std::unique_ptr<WriteBatch>
+   */
+  std::unique_ptr<WriteBatch> startBatchWrite() override;
+
+  /**
+   * @brief Write batch to local storage engine only
    *
    * @param spaceId
-   * @param keyValues Key/values to write into only local storage engine instead of multiple replica
+   * @param batch
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                                    std::vector<KV> keyValues) override;
+  nebula::cpp2::ErrorCode batchWriteWithoutReplicator(GraphSpaceID spaceId,
+                                                      std::unique_ptr<WriteBatch> batch) override;
 
   /**
    * @brief Get the kvstore propery, only used in rocksdb

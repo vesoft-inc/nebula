@@ -120,7 +120,7 @@ TEST(GenericWorker, addRepeatTask) {
   }
 }
 
-TEST(GenericWorker, purgeRepeatTask) {
+TEST(GenericWorker, DISABLE_purgeRepeatTask) {
   GenericWorker worker;
   ASSERT_TRUE(worker.start());
   {
