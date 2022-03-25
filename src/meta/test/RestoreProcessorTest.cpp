@@ -13,20 +13,19 @@
 namespace nebula {
 namespace meta {
 
+// backup given space
 TEST(RestoreProcessorTest, RestoreTest) {
   fs::TempDir rootPath("/tmp/RestoreOriginTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   auto now = time::WallClock::fastNowInMilliSec();
 
+  // initial three storaged
   HostAddr host1("127.0.0.1", 3360);
   HostAddr host2("127.0.0.2", 3360);
   HostAddr host3("127.0.0.3", 3360);
+  std::vector<HostAddr> hosts{host1, host2, host3};
 
-  std::vector<HostAddr> hosts;
-  hosts.emplace_back(host1);
-  hosts.emplace_back(host2);
-  hosts.emplace_back(host3);
-
+  // register them
   std::vector<kvstore::KV> times;
   for (auto h : hosts) {
     ActiveHostsMan::updateHostInfo(
@@ -35,8 +34,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
   TestUtils::doPut(kv.get(), times);
   TestUtils::registerHB(kv.get(), hosts);
 
-  // mock admin client
-  bool ret = false;
+  // mock two spaces
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
   properties.space_name_ref() = "test_space";
@@ -60,24 +58,25 @@ TEST(RestoreProcessorTest, RestoreTest) {
                     std::string(reinterpret_cast<const char*>(&id2), sizeof(GraphSpaceID)));
   data.emplace_back(MetaKeyUtils::spaceKey(id2), MetaKeyUtils::spaceVal(properties2));
 
-  std::unordered_map<HostAddr, std::vector<size_t>> partInfo;
-
+  // mock part distribution for "test_space"
+  std::unordered_map<HostAddr, std::vector<size_t>> fromHostParts;
   for (auto partId = 1; partId <= partNum; partId++) {
-    std::vector<HostAddr> hosts4;
+    std::vector<HostAddr> partHosts;
     size_t idx = partId;
     for (int32_t i = 0; i < 3; i++, idx++) {
       auto h = hosts[idx % 3];
-      hosts4.emplace_back(h);
-      partInfo[h].emplace_back(partId);
+      partHosts.emplace_back(h);
+      fromHostParts[h].emplace_back(partId);
     }
-    data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
+    data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(partHosts));
   }
 
-  std::string zoneName = "test_zone";
-  std::vector<std::string> zoneNames = {zoneName};
-
+  // mock an root user
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
+  // mock an zone with {host1, host2, host3}
+  std::string zoneName = "test_zone";
+  std::vector<std::string> zoneNames = {zoneName};
   auto zoneId = 1;
   data.emplace_back(MetaKeyUtils::indexZoneKey(zoneName),
                     std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
@@ -91,14 +90,9 @@ TEST(RestoreProcessorTest, RestoreTest) {
   data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
                     MetaKeyUtils::lastUpdateTimeVal(lastUpdateTime));
 
-  folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(
-      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-        baton.post();
-      });
-  baton.wait();
+  TestUtils::doPut(kv.get(), data);
 
+  // mock an meta backup files, only backup specified space instead of full space
   std::unordered_set<GraphSpaceID> spaces = {id};
   auto backupName = folly::sformat("BACKUP_{}", MetaKeyUtils::genTimestampStr());
   auto spaceNames = std::make_unique<std::vector<std::string>>();
@@ -111,73 +105,67 @@ TEST(RestoreProcessorTest, RestoreTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix() + ".sst") {
         return true;
       }
       return false;
     });
-    ASSERT_EQ(it, files.cend());
+    ASSERT_EQ(it, files.cend());  // should not include system tables
     req.files_ref() = std::move(files);
+
+    // mock an new cluster {host4, host5. host6}, and constuct restore pairs
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);
     HostAddr host6("127.0.0.6", 3360);
     std::unordered_map<HostAddr, HostAddr> hostMap = {
         {host1, host4}, {host2, host5}, {host3, host6}};
-
-    for (auto hm : hostMap) {
-      hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
+    for (auto [from, to] : hostMap) {
+      hostPairs.emplace_back(apache::thrift::FragileConstructor(), from, to);
     }
-
     req.hosts_ref() = std::move(hostPairs);
+
+    // mock an new cluster to restore
     fs::TempDir restoreTootPath("/tmp/RestoreTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;
     restoreData.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("password"));
+    TestUtils::doPut(kvRestore.get(), restoreData);
 
-    folly::Baton<true, std::atomic> restoreBaton;
-    kvRestore->asyncMultiPut(
-        kDefaultSpaceId, kDefaultPartId, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
-          ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-          restoreBaton.post();
-        });
-    restoreBaton.wait();
-
+    // call the restore processor
     auto* processor = RestoreProcessor::instance(kvRestore.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    nebula::cpp2::ErrorCode result;
-    std::unique_ptr<kvstore::KVIterator> iter;
-
+    // verify host->parts info
     const auto& partPrefix = MetaKeyUtils::partPrefix(id);
-    result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
 
-    std::unordered_map<HostAddr, std::vector<size_t>> toPartInfo;
-
+    std::unordered_map<HostAddr, std::vector<size_t>> toHostParts;
     while (iter->valid()) {
       auto key = iter->key();
       auto partId = MetaKeyUtils::parsePartKeyPartId(key);
       auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
       for (auto& host : partHosts) {
         LOG(INFO) << "partHost: " << host.toString();
-        toPartInfo[host].emplace_back(partId);
+        toHostParts[host].emplace_back(partId);
       }
       iter->next();
     }
-    for (auto pi : partInfo) {
-      auto parts = toPartInfo[hostMap[pi.first]];
+    for (auto pi : fromHostParts) {
+      auto parts = toHostParts[hostMap[pi.first]];
       ASSERT_EQ(parts.size(), pi.second.size());
       ASSERT_TRUE(std::equal(parts.cbegin(), parts.cend(), pi.second.cbegin()));
     }
 
+    // verify zone info, zone info has not been replaced with ingesting
     auto prefix = MetaKeyUtils::zonePrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-
     std::vector<cpp2::Zone> zones;
     std::vector<HostAddr> restoredHosts = {host4, host5, host6};
     while (iter->valid()) {
@@ -230,31 +218,26 @@ TEST(RestoreProcessorTest, RestoreTest) {
   }
 }
 
+// backup full space
 TEST(RestoreProcessorTest, RestoreFullTest) {
   fs::TempDir rootPath("/tmp/RestoreFullOriginTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   auto now = time::WallClock::fastNowInMilliSec();
 
+  // mock three storaged and register them
   HostAddr host1("127.0.0.1", 3360);
   HostAddr host2("127.0.0.2", 3360);
   HostAddr host3("127.0.0.3", 3360);
-
-  std::vector<HostAddr> hosts;
-  hosts.emplace_back(host1);
-  hosts.emplace_back(host2);
-  hosts.emplace_back(host3);
-
+  std::vector<HostAddr> hosts{host1, host2, host3};
   std::vector<kvstore::KV> times;
   for (auto h : hosts) {
     ActiveHostsMan::updateHostInfo(
         kv.get(), h, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""), times);
   }
-
   TestUtils::doPut(kv.get(), times);
   TestUtils::registerHB(kv.get(), hosts);
 
-  // mock admin client
-  bool ret = false;
+  // mock two space with 10 partitions and 3 replicas for each
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
   properties.space_name_ref() = "test_space";
@@ -278,36 +261,51 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
                     std::string(reinterpret_cast<const char*>(&id2), sizeof(GraphSpaceID)));
   data.emplace_back(MetaKeyUtils::spaceKey(id2), MetaKeyUtils::spaceVal(properties2));
 
-  std::unordered_map<HostAddr, std::vector<size_t>> partInfo;
-
+  std::unordered_map<HostAddr, std::vector<size_t>> fromHostParts;
   for (auto partId = 1; partId <= partNum; partId++) {
-    std::vector<HostAddr> hosts4;
+    std::vector<HostAddr> partHosts;
     size_t idx = partId;
     for (int32_t i = 0; i < 3; i++, idx++) {
       auto h = hosts[idx % 3];
-      hosts4.emplace_back(h);
-      partInfo[h].emplace_back(partId);
+      partHosts.emplace_back(h);
+      fromHostParts[h].emplace_back(partId);
     }
-    data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
+    data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(partHosts));
   }
 
+  // mock an zone with {host1, host2, host3}
   std::string zoneName = "test_zone";
   std::vector<std::string> zoneNames = {zoneName};
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
-
   auto zoneId = 1;
   data.emplace_back(MetaKeyUtils::indexZoneKey(zoneName),
                     std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
   data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal(hosts));
+  TestUtils::doPut(kv.get(), data);
 
-  folly::Baton<true, std::atomic> baton;
-  kv->asyncMultiPut(
-      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-        baton.post();
-      });
-  baton.wait();
+  // check part data
+  std::unique_ptr<kvstore::KVIterator> iter1;
+  const auto& partPrefix = MetaKeyUtils::partPrefix(id);
+  auto result = kv->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter1);
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
+  while (iter1->valid()) {
+    auto key = iter1->key();
+    auto partId = MetaKeyUtils::parsePartKeyPartId(key);
+    auto partHosts = MetaKeyUtils::parsePartVal(iter1->val());
 
+    std::set<HostAddr> sortedHosts;
+    for (const auto& host : partHosts) {
+      sortedHosts.insert(host);
+    }
+    int idx = 0;
+    for (const auto& host : sortedHosts) {
+      LOG(INFO) << "partId:" << partId << ", host: " << host.toString();
+      ASSERT_EQ(host, hosts[idx++]);
+    }
+    iter1->next();
+  }
+
+  // mock backuping full meta tables
   std::unordered_set<GraphSpaceID> spaces = {id};
   auto backupName = folly::sformat("BACKUP_{}", MetaKeyUtils::genTimestampStr());
   auto backupFiles = MetaServiceUtils::backupTables(kv.get(), spaces, backupName, nullptr);
@@ -318,12 +316,12 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix() + ".sst") {
         return true;
       }
       return false;
     });
-    ASSERT_EQ(it, files.cend());
+    ASSERT_NE(it, files.cend());
     req.files_ref() = std::move(files);
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
@@ -331,9 +329,8 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     HostAddr host6("127.0.0.6", 3360);
     std::unordered_map<HostAddr, HostAddr> hostMap = {
         {host1, host4}, {host2, host5}, {host3, host6}};
-
-    for (auto hm : hostMap) {
-      hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
+    for (auto [from, to] : hostMap) {
+      hostPairs.emplace_back(apache::thrift::FragileConstructor(), from, to);
     }
 
     req.hosts_ref() = std::move(hostPairs);
@@ -341,13 +338,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;
     restoreData.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("password"));
-
-    folly::Baton<true, std::atomic> restoreBaton;
-    kvRestore->asyncMultiPut(0, 0, std::move(restoreData), [&](nebula::cpp2::ErrorCode code) {
-      ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
-      restoreBaton.post();
-    });
-    restoreBaton.wait();
+    TestUtils::doPut(kvRestore.get(), restoreData);
 
     auto* processor = RestoreProcessor::instance(kvRestore.get());
     auto f = processor->getFuture();
@@ -355,35 +346,31 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    nebula::cpp2::ErrorCode result;
+    // verify part distribution
     std::unique_ptr<kvstore::KVIterator> iter;
-
-    const auto& partPrefix = MetaKeyUtils::partPrefix(id);
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-
-    std::unordered_map<HostAddr, std::vector<size_t>> toPartInfo;
-
+    std::unordered_map<HostAddr, std::vector<size_t>> toHostParts;
     while (iter->valid()) {
       auto key = iter->key();
       auto partId = MetaKeyUtils::parsePartKeyPartId(key);
       auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
       for (auto& host : partHosts) {
-        LOG(INFO) << "partHost: " << host.toString();
-        toPartInfo[host].emplace_back(partId);
+        LOG(INFO) << "partId:" << partId << ", host: " << host.toString();
+        toHostParts[host].emplace_back(partId);
       }
       iter->next();
     }
-    for (auto pi : partInfo) {
-      auto parts = toPartInfo[hostMap[pi.first]];
-      ASSERT_EQ(parts.size(), pi.second.size());
-      ASSERT_TRUE(std::equal(parts.cbegin(), parts.cend(), pi.second.cbegin()));
+    for (auto [host, fromParts] : fromHostParts) {
+      auto toParts = toHostParts[hostMap[host]];
+      ASSERT_EQ(fromParts.size(), toParts.size());
+      ASSERT_TRUE(std::equal(fromParts.cbegin(), fromParts.cend(), toParts.cbegin()));
     }
 
+    // verify zone hosts
     auto prefix = MetaKeyUtils::zonePrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-
     std::vector<cpp2::Zone> zones;
     std::vector<HostAddr> restoredHosts = {host4, host5, host6};
     while (iter->valid()) {

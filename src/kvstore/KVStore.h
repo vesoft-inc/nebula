@@ -15,6 +15,7 @@
 #include "common/meta/SchemaManager.h"
 #include "kvstore/Common.h"
 #include "kvstore/CompactionFilter.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/raftex/RaftPart.h"
@@ -429,14 +430,21 @@ class KVStore {
                                                    const std::vector<std::string>& files) = 0;
 
   /**
-   * @brief Write data to local storage engine only
+   * @brief return a WriteBatch object to do batch operation
+   *
+   * @return std::unique_ptr<WriteBatch>
+   */
+  virtual std::unique_ptr<WriteBatch> startBatchWrite() = 0;
+
+  /**
+   * @brief Write batch data to local storage only
    *
    * @param spaceId
-   * @param keyValues Key/values to write into only local storage engine instead of multiple replica
+   * @param batch
    * @return nebula::cpp2::ErrorCode
    */
-  virtual nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                                            std::vector<KV> keyValues) = 0;
+  virtual nebula::cpp2::ErrorCode batchWriteWithoutReplicator(
+      GraphSpaceID spaceId, std::unique_ptr<WriteBatch> batch) = 0;
 
   /**
    * @brief Get the data paths

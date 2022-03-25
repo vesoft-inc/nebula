@@ -74,15 +74,18 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
 
     // join the service host info and dir info
     auto services = std::move(nebula::value(servicesRet));
+    size_t agentCnt = 0;
     std::vector<cpp2::ServiceInfo> serviceList;
     for (const auto& [addr, role] : services) {
       if (addr == agentAddr) {
         // skip iteself
+        agentCnt++;
         continue;
       }
 
       if (role == cpp2::HostRole::AGENT) {
         LOG(INFO) << folly::sformat("there is another agent: {} in the host", addr.toString());
+        agentCnt++;
         continue;
       }
 
@@ -98,12 +101,12 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
       serviceInfo.role_ref() = role;
       serviceList.emplace_back(serviceInfo);
     }
-    if (serviceList.size() != services.size() - 1) {
+    if (serviceList.size() != services.size() - agentCnt) {
       ret = nebula::cpp2::ErrorCode::E_AGENT_HB_FAILUE;
       // missing some services' dir info
       LOG(INFO) << folly::sformat(
           "Missing some services's dir info, excepted service {}, but only got {}",
-          services.size() - 1,
+          services.size() - agentCnt,
           serviceList.size());
       break;
     }
