@@ -23,47 +23,45 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
   folly::Future<Status> execute() override;
 
  private:
-  Status buildRequestDataSet();
+  size_t buildRequestDataSet();
 
-  folly::Future<Status> getNeighbors(bool reverse);
+  folly::Future<Status> getNeighbors(size_t rowNum, bool reverse);
 
-  folly::Future<Status> shortestPath(size_t i);
+  folly::Future<Status> shortestPath(size_t rowNum, size_t stepNum);
 
-  folly::Future<Status> handleResponse(size_t i);
+  folly::Future<Status> handleResponse(size_t rowNum, size_t stepNum);
 
   Status handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices);
 
-  Status buildPath(RpcResponse&& resp, bool reverse);
+  Status buildPath(size_t rowNum, RpcResponse&& resp, bool reverse);
 
   folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
                                          std::vector<Value>& meetVertices);
 
-  Status doBuildPath(GetNeighborsIter* iter, bool reverse);
+  Status doBuildPath(size_t rowNum, GetNeighborsIter* iter, bool reverse);
 
-  bool conjunctPath();
+  bool conjunctPath(size_t rowNum, size_t stepNum);
 
-  bool buildEvenPath(const std::vector<Value>& meetVids);
+  bool buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids);
 
-  void buildOddPath(const std::vector<Value>& meetVids);
+  void buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
 
-  std::vector<Row> createRightPath(const Value& meetVid, bool evenStep);
+  std::vector<Row> createRightPath(size_t rowNum, const Value& meetVid, bool evenStep);
 
-  std::vector<Row> createLeftPath(const Value& meetVid);
+  std::vector<Row> createLeftPath(size_t rowNum, const Value& meetVid);
 
  private:
   const ShortestPath* pathNode_{nullptr};
-  size_t step_{0};
   std::pair<size_t, size_t> range_;
   bool single_{true};
 
-  std::vector<std::pair<Value, Value>> cartesianProduct_;
-  DataSet resultDs_;
-  DataSet leftVids_;
-  DataSet rightVids_;
-  std::unordered_set<Value> leftVisitedVids_;
-  std::unordered_set<Value> rightVisitedVids_;
-  std::vector<std::unordered_map<Value, std::vector<Row>>> allLeftSteps_;
-  std::vector<std::unordered_map<Value, std::vector<Row>>> allRightSteps_;
+  std::vector<DataSet> resultDs_;
+  std::vector<DataSet> leftVids_;
+  std::vector<DataSet> rightVids_;
+  std::vector<std::unordered_set<Value>> leftVisitedVids_;
+  std::vector<std::unordered_set<Value>> rightVisitedVids_;
+  std::vector<std::vector<std::unordered_map<Value, std::vector<Row>>>> allLeftSteps_;
+  std::vector<std::vector<std::unordered_map<Value, std::vector<Row>>>> allRightSteps_;
 };
 
 }  // namespace graph

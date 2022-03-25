@@ -1681,7 +1681,7 @@ class RollUpApply : public BinaryInputNode {
   std::vector<Expression*> compareCols_;
   // Collect column to List
   InputPropertyExpression* collectCol_;
-}
+};
 
 class ShortestPath final : public SingleInputNode {
  public:

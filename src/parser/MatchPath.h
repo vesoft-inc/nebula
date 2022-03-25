@@ -301,6 +301,19 @@ class MatchPath final {
     return edges_[i].get();
   }
 
+  void setShortestPath() {
+    shortestPath_.first = true;
+    shortestPath_.second = true;
+  }
+
+  void setAllShortestPaths() {
+    shortestPath_.first = true;
+  }
+
+  std::pair<bool, bool> shortestPath() const {
+    return shortestPath_;
+  }
+
   std::string toString() const;
 
   MatchPath clone() const {
@@ -318,6 +331,8 @@ class MatchPath final {
   std::unique_ptr<std::string> alias_;
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
+  // First is `shortest` flag, second is `single` flag
+  std::pair<bool, bool> shortestPath_{false, false};
 };
 
 }  // namespace nebula
