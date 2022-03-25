@@ -442,14 +442,19 @@ class MetaKeyUtils final {
                             std::vector<std::string> paras,
                             meta::cpp2::JobStatus jobStatus,
                             int64_t startTime,
-                            int64_t stopTime);
+                            int64_t stopTime,
+                            nebula::cpp2::ErrorCode errCode);
   /**
    * @brief Decode val from kvstore, return
-   * {jobType, paras, status, start time, stop time}
+   * {jobType, paras, status, start time, stop time, error code}
    */
-  static std::
-      tuple<meta::cpp2::JobType, std::vector<std::string>, meta::cpp2::JobStatus, int64_t, int64_t>
-      parseJobVal(folly::StringPiece rawVal);
+  static std::tuple<meta::cpp2::JobType,
+                    std::vector<std::string>,
+                    meta::cpp2::JobStatus,
+                    int64_t,
+                    int64_t,
+                    nebula::cpp2::ErrorCode>
+  parseJobVal(folly::StringPiece rawVal);
 
   static std::pair<GraphSpaceID, JobID> parseJobKey(folly::StringPiece key);
 
@@ -464,14 +469,15 @@ class MetaKeyUtils final {
   static std::string taskVal(HostAddr host,
                              meta::cpp2::JobStatus jobStatus,
                              int64_t startTime,
-                             int64_t stopTime);
+                             int64_t stopTime,
+                             nebula::cpp2::ErrorCode errCode);
 
   /**
    * @brief Decode task val，it should be
-   * {host, status, start time, stop time}
+   * {host, status, start time, stop time, error code}
    */
-  static std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t> parseTaskVal(
-      folly::StringPiece rawVal);
+  static std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t, nebula::cpp2::ErrorCode>
+  parseTaskVal(folly::StringPiece rawVal);
 };
 
 }  // namespace nebula

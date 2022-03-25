@@ -742,8 +742,12 @@ JobDescription makeJobDescription(GraphSpaceID space, kvstore::KVStore* kv, cpp2
   JobDescription jd(space, testJobId.fetch_add(1, std::memory_order_relaxed), jobType, {});
   std::vector<nebula::kvstore::KV> data;
   auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
-  auto jobVal = MetaKeyUtils::jobVal(
-      jd.getJobType(), jd.getParas(), jd.getStatus(), jd.getStartTime(), jd.getStopTime());
+  auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
+                                     jd.getParas(),
+                                     jd.getStatus(),
+                                     jd.getStartTime(),
+                                     jd.getStopTime(),
+                                     jd.getErrorCode());
   data.emplace_back(jobKey, jobVal);
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
