@@ -99,8 +99,7 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          # platforms: linux/amd64,linux/arm64
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
@@ -108,6 +107,7 @@ jobs:
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSON=${{ steps.tagname.outputs.tagnum }}
 
   test:
     name: test
