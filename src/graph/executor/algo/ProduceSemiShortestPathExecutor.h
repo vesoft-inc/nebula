@@ -17,48 +17,19 @@ class ProduceSemiShortestPathExecutor final : public Executor {
 
   folly::Future<Status> execute() override;
 
-  struct CostPaths {
-    double cost_;
-    std::vector<Path> paths_;
-    CostPaths() = default;
-    CostPaths(double cost, std::vector<Path>& paths) : cost_(cost) {
-      paths_.swap(paths);
-    }
-    CostPaths(double cost, std::vector<Path>&& paths) : cost_(cost) {
-      paths_.swap(paths);
-    }
-  };
+ private:
+  // k: dst, v: paths to dst
+  using Interims = std::unordered_map<Value, std::vector<Path>>;
 
-  struct CostPathsPtr {
-    CostPathsPtr() = default;
-    CostPathsPtr(double cost, std::vector<const Path*>& paths) : cost_(cost) {
-      paths_.swap(paths);
-    }
-    double cost_;
-    std::vector<const Path*> paths_;
-  };
-
-  using CostPathMapType = std::unordered_map<Value, std::unordered_map<Value, CostPaths>>;
-  using CostPathMapPtr = std::unordered_map<Value, std::unordered_map<Value, CostPathsPtr>>;
+  void buildPath(Iterator* iter, Interims& currentPaths, bool reverse);
+  void conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
+  void setNextStepVid(Interims& paths, const string& var);
 
  private:
-  void dstNotInHistory(const Edge& edge, CostPathMapType&);
-
-  void dstInHistory(const Edge& edge, CostPathMapType&);
-
-  void dstInCurrent(const Edge& edge, CostPathMapType&);
-
-  void updateHistory(const Value& dst, const Value& src, double cost, Value& paths);
-
-  std::vector<Path> createPaths(const std::vector<const Path*>& paths, const Edge& edge);
-
-  void removeSamePath(std::vector<Path>& paths, std::vector<const Path*>& historyPaths);
-
- private:
-  // dst : {src : <cost, {Path*}>}
-  CostPathMapPtr historyCostPathMap_;
-
-  // std::unique_ptr<IWeight> weight_;
+  size_t step_{1};
+  std::string terminationVar_;
+  Interims preLeftPaths_;
+  Interims preRightPaths_;
 };
 
 }  // namespace graph
