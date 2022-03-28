@@ -2,6 +2,7 @@ FROM vesoft/nebula-dev:centos7 as builder
 
 ARG BRANCH=master
 ARG VERSION=
+
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \

@@ -62,6 +62,14 @@ jobs:
   docker:
     name: build docker image
     runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - graphd
+          - metad
+          - storaged
+          - tools
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -76,38 +84,10 @@ jobs:
       - uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/Dockerfile.${{ matrix.service }}
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-graphd:nightly
-          target: graphd
-          push: true
-      - uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            vesoft/nebula-storaged:nightly
-          target: storaged
-          push: true
-      - uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            vesoft/nebula-metad:nightly
-          target: metad
-          push: true
-      - uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            vesoft/nebula-tools:nightly
-          target: tools
+            vesoft/nebula-${{ matrix.service }}:nightly
           push: true
 
   coverage:
