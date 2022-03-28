@@ -160,55 +160,130 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
     if (dataset == nullptr) {
       continue;
     }
+    VLOG(1) << "resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
   auto listVal = std::make_shared<Value>(std::move(list));
-  auto iter = std::make_unique<GetNeighborsIter>(listVal);
+  VLOG(1) << "storage response:" << *listVal;
 
-  auto status = buildInterimPath(iter.get());
-  if (!status.ok()) {
-    return folly::makeFuture<Status>(std::move(status));
-  }
-  if (!isFinalStep()) {
-    if (reqDs_.rows.empty()) {
-      if (range_ != nullptr) {
-        return folly::makeFuture<Status>(buildResult());
-      } else {
-        return folly::makeFuture<Status>(Status::OK());
-      }
-    } else {
-      return getNeighbors();
-    }
-  } else {
-    return folly::makeFuture<Status>(buildResult());
-  }
+  return std::move(buildInterimPath(std::make_unique<GetNeighborsIter>(listVal)))
+      .via(runner())
+      .thenValue([this](auto&& status) {
+        if (!status.ok()) {
+          return folly::makeFuture<Status>(std::move(status));
+        }
+        if (!isFinalStep()) {
+          if (reqDs_.rows.empty()) {
+            if (range_ != nullptr) {
+              return folly::makeFuture<Status>(buildResult());
+            } else {
+              return folly::makeFuture<Status>(Status::OK());
+            }
+          } else {
+            return getNeighbors();
+          }
+        } else {
+          return folly::makeFuture<Status>(buildResult());
+        }
+      });
 }
 
-Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
-  const auto& spaceInfo = qctx()->rctx()->session()->space();
-  DataSet reqDs;
-  reqDs.colNames = reqDs_.colNames;
-  size_t count = 0;
-
+folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeighborsIter> iter) {
+  size_t pathCnt = 0;
   const std::unordered_map<Value, Paths>& prev = paths_.back();
   if (currentStep_ == 1 && zeroStep()) {
     paths_.emplace_back();
-    NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
+    NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), pathCnt));
     // If 0..0 case, release memory and return immediately.
     if (range_ != nullptr && range_->max() == 0) {
-      releasePrevPaths(count);
+      releasePrevPaths(pathCnt);
       return Status::OK();
     }
   }
   paths_.emplace_back();
-  std::unordered_map<Value, Paths>& current = paths_.back();
 
-  auto* vFilter = traverse_->vFilter();
-  auto* eFilter = traverse_->eFilter();
+  size_t jobSize = FLAGS_max_job_size;
+  size_t minBatchSize = FLAGS_min_batch_size;
+  size_t totalSize = iter->size();
+  size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);
+  size_t batchSize = batchSizeTmp > minBatchSize ? batchSizeTmp : minBatchSize;
+  VLOG(1) << "totalSize: " << totalSize << " batchSize:" << batchSize;
+
+  // Start multiple jobs for handling the results
+  std::vector<folly::Future<StatusOr<JobResult>>> futures;
+  size_t begin = 0, end = 0, dispathedCnt = 0;
+  while (dispathedCnt < totalSize) {
+    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+    auto f =
+        folly::makeFuture<Status>(Status::OK())
+            .via(runner())
+            .thenValue([this, begin, end, tmpIter = iter->copy(), prev](auto&& result) mutable {
+              UNUSED(result);
+              return handleJob(begin, end, tmpIter.get(), prev);
+            });
+    futures.emplace_back(std::move(f));
+    VLOG(1) << "begin: " << begin << " end:" << end;
+    begin = end;
+    dispathedCnt += batchSize;
+  }
+
+  // Gather all results and do post works
+  return folly::collect(futures).via(runner()).thenValue(
+      [this, total = pathCnt](auto&& results) mutable {
+        VLOG(1) << "path cnt: " << total;
+        reqDs_.clear();
+        std::unordered_map<Value, Paths>& current = paths_.back();
+        size_t mapCnt = 0;
+        for (auto& r : results) {
+          if (!r.ok()) {
+            return r.status();
+          } else {
+            mapCnt += r.value().newPaths.size();
+          }
+        }
+        current.reserve(mapCnt);
+        for (auto& r : results) {
+          auto jobResult = std::move(r).value();
+          total += jobResult.pathCnt;
+          if (!jobResult.reqDs.rows.empty()) {
+            reqDs_.rows.insert(reqDs_.rows.end(),
+                               std::make_move_iterator(jobResult.reqDs.rows.begin()),
+                               std::make_move_iterator(jobResult.reqDs.rows.end()));
+          }
+          for (auto& kv : jobResult.newPaths) {
+            auto& paths = current[kv.first];
+            paths.insert(paths.end(),
+                         std::make_move_iterator(kv.second.begin()),
+                         std::make_move_iterator(kv.second.end()));
+          }
+        }
+        releasePrevPaths(total);
+        return Status::OK();
+      });
+}
+
+StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
+                                                size_t end,
+                                                Iterator* iter,
+                                                const std::unordered_map<Value, Paths>& prev) {
+  // Iterates to the begin pos
+  size_t tmp = 0;
+  while (iter->valid() && ++tmp < begin) {
+    iter->next();
+  }
+
+  // Handle edges from begin to end, [begin, end)
+  JobResult jobResult;
+  size_t& pathCnt = jobResult.pathCnt;
+  DataSet& reqDs = jobResult.reqDs;
+  reqDs.colNames = reqDs_.colNames;
   QueryExpressionContext ctx(ectx_);
   std::unordered_set<Value> uniqueDst;
-
-  for (; iter->valid(); iter->next()) {
+  auto* vFilter = traverse_->vFilter() ? traverse_->vFilter()->clone() : nullptr;
+  auto* eFilter = traverse_->eFilter() ? traverse_->eFilter()->clone() : nullptr;
+  const auto& spaceInfo = qctx()->rctx()->session()->space();
+  std::unordered_map<Value, Paths>& current = jobResult.newPaths;
+  for (; iter->valid() && tmp++ < end; iter->next()) {
     auto& dst = iter->getEdgeProp("*", kDst);
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
@@ -249,25 +324,24 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         List neighbors;
         neighbors.values.emplace_back(e);
         path.values.emplace_back(std::move(neighbors));
+        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
-        ++count;
+        ++pathCnt;
       } else {
         auto path = prevPath;
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
+        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
-        ++count;
+        ++pathCnt;
       }
     }  // `prevPath'
   }    // `iter'
-
-  releasePrevPaths(count);
-  reqDs_ = std::move(reqDs);
-  return Status::OK();
+  return jobResult;
 }
 
-void TraverseExecutor::buildPath(std::unordered_map<Value, std::vector<Row>>& currentPaths,
+void TraverseExecutor::buildPath(std::unordered_map<Dst, std::vector<Row>>& currentPaths,
                                  const Value& dst,
                                  Row&& path) {
   auto pathToDstFound = currentPaths.find(dst);
@@ -289,12 +363,13 @@ Status TraverseExecutor::buildResult() {
 
   DataSet result;
   result.colNames = traverse_->colNames();
-  result.rows.reserve(cnt_);
+  result.rows.reserve(totalPathCnt_);
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
+  VLOG(1) << "result: " << result;
 
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
@@ -323,11 +398,11 @@ void TraverseExecutor::releasePrevPaths(size_t cnt) {
     }
 
     if (currentStep_ >= range_->min()) {
-      cnt_ += cnt;
+      totalPathCnt_ += cnt;
     }
   } else {
     paths_.pop_front();
-    cnt_ = cnt;
+    totalPathCnt_ = cnt;
   }
 }
 

@@ -89,3 +89,6 @@ static bool ValidateSessIdleTimeout(const char* flagname, int32_t value) {
 }
 DEFINE_validator(session_idle_timeout_secs, &ValidateSessIdleTimeout);
 DEFINE_validator(client_idle_timeout_secs, &ValidateSessIdleTimeout);
+
+DEFINE_int32(min_batch_size, 10000, "");
+DEFINE_int32(max_job_size, 10, "");
