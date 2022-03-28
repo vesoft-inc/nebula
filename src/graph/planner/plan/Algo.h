@@ -112,27 +112,50 @@ class ConjunctPath : public BinaryInputNode {
   bool noLoop_;
 };
 
-class ProduceAllPaths final : public SingleInputNode {
+class ProduceAllPaths final : public BinaryInputNode {
  public:
-  static ProduceAllPaths* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceAllPaths(qctx, input));
+  static ProduceAllPaths* make(
+      QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop) {
+    return qctx->objPool()->add(new ProduceAllPaths(qctx, left, right, steps, noLoop));
+  }
+
+  size_t steps() const {
+    return steps_;
   }
 
   bool noLoop() const {
     return noLoop_;
   }
 
-  void setNoLoop(bool noLoop) {
-    noLoop_ = noLoop;
+  std::string leftVidVar() const {
+    return leftVidVar_;
   }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
-  ProduceAllPaths(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kProduceAllPaths, input) {}
+  ProduceAllPaths(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop)
+      : BinaryInputNode(qctx, Kind::kProduceAllPaths, left, right),
+        steps_(steps),
+        noLoop_(noLoop) {}
 
  private:
+  size_t steps_{0};
   bool noLoop_{false};
+  std::string leftVidVar_;
+  std::string rightVidVar_;
 };
 
 class CartesianProduct final : public SingleDependencyNode {

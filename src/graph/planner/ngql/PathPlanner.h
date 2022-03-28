@@ -28,6 +28,8 @@ class PathPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
+  SubPlan loopDepPlan();
+
   SubPlan singlePairPlan(PlanNode* dep);
 
   SubPlan multiPairPlan(PlanNode* dep);

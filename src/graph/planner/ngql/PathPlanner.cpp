@@ -309,53 +309,109 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* dep) {
   return subPlan;
 }
 
-PlanNode* PathPlanner::allPairPath(PlanNode* dep, bool reverse) {
-  const auto& vidsVar = reverse ? pathCtx_->toVidsVar : pathCtx_->fromVidsVar;
-  auto qctx = pathCtx_->qctx;
+// PlanNode* PathPlanner::allPairPath(PlanNode* dep, bool reverse) {
+//   const auto& vidsVar = reverse ? pathCtx_->toVidsVar : pathCtx_->fromVidsVar;
+//   auto qctx = pathCtx_->qctx;
+//   auto* pool = qctx->objPool();
+//   auto* src = ColumnExpression::make(pool, 0);
+
+//   auto* gn = GetNeighbors::make(qctx, dep, pathCtx_->space.id);
+//   gn->setSrc(src);
+//   gn->setEdgeProps(buildEdgeProps(reverse));
+//   gn->setInputVar(vidsVar);
+//   gn->setDedup();
+
+//   PlanNode* pathDep = gn;
+//   if (pathCtx_->filter != nullptr) {
+//     auto* filterExpr = pathCtx_->filter->clone();
+//     auto* filter = Filter::make(qctx, gn, filterExpr);
+//     pathDep = filter;
+//   }
+
+//   auto* path = ProduceAllPaths::make(qctx, pathDep);
+//   path->setOutputVar(vidsVar);
+//   path->setColNames({kVid, kPathStr});
+//   return path;
+// }
+
+SubPlan PathPlanner::loopDepPlan() {
+  auto* qctx = pathCtx_->qctx;
   auto* pool = qctx->objPool();
-  auto* src = ColumnExpression::make(pool, 0);
-
-  auto* gn = GetNeighbors::make(qctx, dep, pathCtx_->space.id);
-  gn->setSrc(src);
-  gn->setEdgeProps(buildEdgeProps(reverse));
-  gn->setInputVar(vidsVar);
-  gn->setDedup();
-
-  PlanNode* pathDep = gn;
-  if (pathCtx_->filter != nullptr) {
-    auto* filterExpr = pathCtx_->filter->clone();
-    auto* filter = Filter::make(qctx, gn, filterExpr);
-    pathDep = filter;
+  SubPlan subPlan = buildRuntimeVidPlan();
+  {
+    auto* columns = pool->add(new YieldColumns());
+    auto* column = new YieldColumn(ColumnExpression::make(pool, 0), kVid);
+    columns->addColumn(column);
+    auto* project = Project::make(qctx, subPlan.root, columns);
+    project->setInputVar(pathCtx_->fromVidsVar);
+    project->setOutputVar(pathCtx_->fromVidsVar);
+    project->setColNames({nebula::kVid});
+    subPlan.root = project;
   }
-
-  auto* path = ProduceAllPaths::make(qctx, pathDep);
-  path->setOutputVar(vidsVar);
-  path->setColNames({kVid, kPathStr});
-  return path;
+  subPlan.tail = subPlan.tail == nullptr ? subPlan.root : subPlan.tail;
+  {
+    auto* columns = pool->add(new YieldColumns());
+    auto* column = new YieldColumn(ColumnExpression::make(pool, 0), kVid);
+    columns->addColumn(column);
+    auto* project = Project::make(qctx, subPlan.root, columns);
+    project->setInputVar(pathCtx_->toVidsVar);
+    project->setOutputVar(pathCtx_->toVidsVar);
+    project->setColNames({nebula::kVid});
+    subPlan.root = project;
+  }
+  return subPlan;
 }
 
 SubPlan PathPlanner::allPairPlan(PlanNode* dep) {
-  auto* forwardPath = allPairPath(dep, false);
-  auto* backwardPath = allPairPath(dep, true);
   auto qctx = pathCtx_->qctx;
+  auto* pool = qctx->objPool();
+  PlanNode* left = nullptr;
+  PlanNode* right = nullptr;
+  {
+    auto* gn = GetNeighbors::make(qctx, dep, pathCtx_->space.id);
+    gn->setSrc(ColumnExpression::make(pool, 0));
+    gn->setEdgeProps(buildEdgeProps(false));
+    gn->setInputVar(pathCtx_->fromVidsVar);
+    gn->setDedup();
+    left = gn;
+    if (pathCtx_->filter != nullptr) {
+      auto* filterExpr = pathCtx_->filter->clone();
+      auto* filter = Filter::make(qctx, gn, filterExpr);
+      left = filter;
+    }
+  }
+  {
+    auto* gn = GetNeighbors::make(qctx, dep, pathCtx_->space.id);
+    gn->setSrc(ColumnExpression::make(pool, 0));
+    gn->setEdgeProps(buildEdgeProps(true));
+    gn->setInputVar(pathCtx_->toVidsVar);
+    gn->setDedup();
+    right = gn;
+    if (pathCtx_->filter != nullptr) {
+      auto* filterExpr = pathCtx_->filter->clone();
+      auto* filter = Filter::make(qctx, gn, filterExpr);
+      right = filter;
+    }
+  }
 
-  auto* conjunct = ConjunctPath::make(
-      qctx, forwardPath, backwardPath, ConjunctPath::PathKind::kAllPaths, pathCtx_->steps.steps());
-  conjunct->setNoLoop(pathCtx_->noLoop);
-  conjunct->setColNames({kPathStr});
+  auto steps = pathCtx_->steps.steps();
+  auto* path = ProduceAllPaths::make(qctx, left, right, steps, pathCtx_->noLoop);
+  path->setLeftVidVar(pathCtx_->fromVidsVar);
+  path->setRightVidVar(pathCtx_->toVidsVar);
+  path->setColNames({kPathStr});
 
-  SubPlan loopDepPlan = allPairLoopDepPlan();
-  auto* loopCondition = allPairLoopCondition(pathCtx_->steps.steps());
-  auto* loop = Loop::make(qctx, loopDepPlan.root, conjunct, loopCondition);
+  SubPlan loopDep = loopDepPlan();
+  auto* loopCondition = allPairLoopCondition(steps);
+  auto* loop = Loop::make(qctx, loopDep.root, path, loopCondition);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kAllPaths);
   dc->addDep(loop);
-  dc->setInputVars({conjunct->outputVar()});
+  dc->setInputVars({path->outputVar()});
   dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
-  subPlan.tail = loopDepPlan.tail;
+  subPlan.tail = loopDep.tail;
   return subPlan;
 }
 

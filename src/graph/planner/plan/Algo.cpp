@@ -43,8 +43,11 @@ std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
-  auto desc = SingleDependencyNode::explain();
+  auto desc = BinaryInputNode::explain();
+  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
+  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
   addDescription("noloop ", util::toJson(noLoop_), desc.get());
+  addDescription("steps", util::toJson(steps_), desc.get());
   return desc;
 }
 

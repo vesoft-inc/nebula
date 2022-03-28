@@ -154,7 +154,9 @@ std::unordered_multimap<Value, Path> BFSShortestPathExecutor::createPath(
           }
         }  //  edgeIter
       }    // interimPath
-      interimPaths = std::move(temp);
+      if (iter != allEdges.rend() - 1) {
+        interimPaths = std::move(temp);
+      }
     }
   }
   return result;

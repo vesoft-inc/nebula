@@ -95,6 +95,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
 
     list.values.emplace_back(std::move(*dataset));
   }
+  VLOG(1) << "GetNeight out " << list;
   builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
   return finish(builder.build());
 }

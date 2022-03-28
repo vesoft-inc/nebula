@@ -96,6 +96,7 @@ def pytest_configure(config):
 
 def get_port():
     with open(NB_TMP_PATH, "r") as f:
+        import pdb; pdb.set_trace()
         data = json.loads(f.readline())
         port = data.get("port", None)
         if port is None:

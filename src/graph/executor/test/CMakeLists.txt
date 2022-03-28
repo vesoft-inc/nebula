@@ -100,8 +100,6 @@ nebula_add_test(
         AggregateTest.cpp
         JoinTest.cpp
         ConjunctPathTest.cpp
-        ProduceSemiShortestPathTest.cpp
-        ProduceAllPathsTest.cpp
         CartesianProductTest.cpp
         AssignTest.cpp
         ShowQueriesTest.cpp

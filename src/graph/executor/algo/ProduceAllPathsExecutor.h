@@ -19,18 +19,17 @@ class ProduceAllPathsExecutor final : public Executor {
 
  private:
   // k: dst, v: paths to dst
-  using HistoryPaths = std::unordered_map<Value, std::vector<const Path*>>;
+  using Interims = std::unordered_map<Value, std::vector<Path>>;
 
-  // k: dst, v: paths to dst
-  using Interims = std::unordered_map<Value, std::vector<Value>>;
+  void buildPath(Iterator* iter, Interims& currentPaths, bool reverse);
+  void conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
+  void setNextStepVid(Interims& paths, const string& var);
 
-  void createPaths(const Edge& edge, Interims& interims);
-
-  void buildPaths(const std::vector<const Path*>& history, const Edge& edge, Interims& interims);
-
-  size_t count_{0};
-  HistoryPaths historyPaths_;
+ private:
   bool noLoop_{false};
+  size_t step_{1};
+  Interims preLeftPaths_;
+  Interims preRightPaths_;
 };
 }  // namespace graph
 }  // namespace nebula
