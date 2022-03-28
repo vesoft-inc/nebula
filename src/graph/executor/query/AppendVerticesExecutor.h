@@ -27,6 +27,20 @@ class AppendVerticesExecutor final : public GetPropExecutor {
   folly::Future<Status> appendVertices();
 
   Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+
+  folly::Future<Status> handleRespMultiJobs(
+      storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+
+  DataSet handleJob(size_t begin, size_t end, Iterator *iter);
+
+  DataSet buildVerticesResult(size_t begin, size_t end, Iterator *iter);
+
+  void buildMap(size_t begin, size_t end, Iterator *iter);
+
+  // dsts_ and result_ are used for handling the response by multi jobs
+  // DstId -> Vertex
+  folly::ConcurrentHashMap<Value, Value> dsts_;
+  DataSet result_;
 };
 
 }  // namespace graph

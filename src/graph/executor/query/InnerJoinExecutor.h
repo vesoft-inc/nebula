@@ -19,6 +19,7 @@ class InnerJoinExecutor : public JoinExecutor {
   Status close() override;
 
  protected:
+  // join/probe/singleKeyProbe implemented for single job
   folly::Future<Status> join(const std::vector<Expression*>& hashKeys,
                              const std::vector<Expression*>& probeKeys,
                              const std::vector<std::string>& colNames);
@@ -30,6 +31,15 @@ class InnerJoinExecutor : public JoinExecutor {
   DataSet singleKeyProbe(Expression* probeKey,
                          Iterator* probeIter,
                          const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+
+  // joinMultiJobs/probe/singleKeyProbe implemented for multi jobs
+  folly::Future<Status> joinMultiJobs(const std::vector<Expression*>& hashKeys,
+                                      const std::vector<Expression*>& probeKeys,
+                                      const std::vector<std::string>& colNames);
+
+  folly::Future<Status> probe(const std::vector<Expression*>& probeKeys, Iterator* probeIter);
+
+  folly::Future<Status> singleKeyProbe(Expression* probeKey, Iterator* probeIter);
 
   template <class T>
   void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,

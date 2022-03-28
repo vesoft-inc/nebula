@@ -164,6 +164,7 @@ class NebulaService(object):
         self.ports_per_process = 4
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
+        self.concurrently_mode = concurrently_mode
 
         if use_standalone == False:
             self._make_params(**kwargs)
@@ -255,6 +256,7 @@ class NebulaService(object):
             p.update_meta_server_addrs(meta_server_addrs)
 
     def _make_params(self, **kwargs):
+        # common params for meta/storage/graph
         _params = {
             'heartbeat_interval_secs': 1,
             'expired_time_factor': 60,
@@ -272,6 +274,8 @@ class NebulaService(object):
         if self.debug_log:
             _params['v'] = '4'
 
+        query_concurrently = kwargs.pop("query_concurrently", None)
+        # params for graph only
         self.graphd_param = copy.copy(_params)
         self.graphd_param['local_config'] = 'false'
         self.graphd_param['enable_authorize'] = 'true'
@@ -283,16 +287,19 @@ class NebulaService(object):
         self.graphd_param['password_lock_time_in_secs'] = '10'
         # expression depth limit
         self.graphd_param['max_expression_depth'] = '128'
+        if query_concurrently:
+            self.graphd_param['max_job_size'] = '4'
 
+        # params for storage only
         self.storaged_param = copy.copy(_params)
-        # query_concurrently only work for storaged.
-        query_concurrently = kwargs.pop("query_concurrently", None)
         if query_concurrently:
             self.storaged_param["query_concurrently"] = "true"
 
         self.storaged_param['local_config'] = 'false'
         self.storaged_param['raft_heartbeat_interval_secs'] = '30'
         self.storaged_param['skip_wait_in_rate_limiter'] = 'true'
+
+        # params for meta only
         self.metad_param = copy.copy(_params)
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)
@@ -326,7 +333,10 @@ class NebulaService(object):
         self.graphd_param['password_lock_time_in_secs'] = '10'
         self.graphd_param['raft_heartbeat_interval_secs'] = '30'
         self.graphd_param['skip_wait_in_rate_limiter'] = 'true'
-        self.graphd_param['add_local_host'] = 'false'        
+        self.graphd_param['add_local_host'] = 'false'
+        if self.concurrently_mode:
+            self.graphd_param['max_job_size'] = '4'
+
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)
 

@@ -103,7 +103,7 @@ def init_parser():
         '--query_concurrently',
         dest='query_concurrently',
         default="false",
-        help='Whether enable storage query_concurrently.',
+        help='Whether enable graph/storage query_concurrently.',
     )
     return opt_parser
 

@@ -7,6 +7,7 @@
 #include <folly/String.h>
 #include <folly/executors/InlineExecutor.h>
 
+#include <algorithm>
 #include <atomic>
 
 #include "common/base/ObjectPool.h"
@@ -624,6 +625,7 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 void Executor::drop() {
+  time::Duration dur;
   if (node()->kind() == PlanNode::Kind::kLoop) {
     // Release body when loop exit
     const auto *loopExecutor = static_cast<const LoopExecutor *>(this);
@@ -665,7 +667,6 @@ void Executor::drop(const PlanNode *node) {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << node->kind() << " Drop variable " << inputVar->name;
       }
     }
   }
@@ -716,9 +717,11 @@ Status Executor::finish(Result &&result) {
   } else {
     VLOG(1) << "Drop variable " << node()->outputVar();
   }
+  // time::Duration dur;
   if (FLAGS_enable_lifetime_optimize) {
     drop();
   }
+  // LOG(ERROR) << "drop: " << dur.elapsedInUSec();
   return Status::OK();
 }
 
@@ -732,6 +735,14 @@ folly::Executor *Executor::runner() const {
     return &folly::InlineExecutor::instance();
   }
   return qctx()->rctx()->runner();
+}
+
+size_t Executor::getBatchSize(size_t totalSize) const {
+  size_t jobSize = FLAGS_max_job_size;
+  size_t minBatchSize = FLAGS_min_batch_size;
+  size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);
+  size_t batchSize = batchSizeTmp > minBatchSize ? batchSizeTmp : minBatchSize;
+  return batchSize;
 }
 
 }  // namespace graph

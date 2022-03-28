@@ -19,6 +19,9 @@ ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 CONTAINERIZED ?= false
+FAILED_LOGIN_ATTEMPTS ?= 0
+PASSWORD_LOCK_TIME_IN_SECS ?= 0
+# start up the graph/storage with multi-job mode
 QUERY_CONCURRENTLY ?= false
 
 # commands
@@ -86,7 +89,8 @@ standalone-up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--concurrently_mode=$(CONCURRENTLY_MODE)
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)

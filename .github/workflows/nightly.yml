@@ -194,6 +194,26 @@ jobs:
         with:
           files: fastcov.info
           fail_ci_if_error: false
+      - name: Setup concurrently mode cluster
+        run: |
+          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true CONCURRENTLY_MODE=true up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest on concurrently mode server
+        run: |
+          make RM_DIR=false DEBUG=false J=8 test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK on concurrently mode server
+        run: |
+          make RM_DIR=false DEBUG=false J=8 tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down concurrently mode cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
