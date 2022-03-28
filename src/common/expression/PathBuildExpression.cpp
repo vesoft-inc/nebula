@@ -39,10 +39,14 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
   switch (value.type()) {
     case Value::Type::EDGE: {
       Step step;
+      bool result = true;
       if (!path.steps.empty()) {
-        getEdge(value, path.steps.back().dst.vid, step);
+        result = getEdge(value, path.steps.back().dst.vid, step);
       } else {
-        getEdge(value, path.src.vid, step);
+        result = getEdge(value, path.src.vid, step);
+      }
+      if (!result) {
+        return result;
       }
       path.steps.emplace_back(std::move(step));
       break;
@@ -68,9 +72,20 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
       break;
     }
     case Value::Type::LIST: {
+      bool result = true;
       for (const auto& val : value.getList().values) {
         if (!buildPath(val, path)) {
-          return false;
+          result = false;
+          break;
+        }
+      }
+      if (!result) {
+        for (std::vector<Value>::const_reverse_iterator it = value.getList().values.rbegin();
+             it != value.getList().values.rend();
+             ++it) {
+          if (!buildPath(*it, path)) {
+            return false;
+          }
         }
       }
       break;
@@ -110,12 +125,14 @@ bool PathBuildExpression::getEdge(const Value& value, const Value& lastStepVid, 
     step.ranking = edge.ranking;
     step.props = edge.props;
     step.dst.vid = edge.dst;
-  } else {
+  } else if (lastStepVid == edge.dst) {
     step.type = -edge.type;
     step.name = edge.name;
     step.ranking = edge.ranking;
     step.props = edge.props;
     step.dst.vid = edge.src;
+  } else {
+    return false;
   }
   return true;
 }
