@@ -18,7 +18,21 @@ class BFSShortestPathExecutor final : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  std::unordered_set<Value> visited_;
+  void buildPath(Iterator* iter, bool reverse);
+
+  std::vector<Row> conjunctPath();
+
+  std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids, bool reverse);
+
+ private:
+  size_t step_{1};
+  size_t steps_{1};
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  std::unordered_set<Value> leftVisitedVids_;
+  std::unordered_set<Value> rightVisitedVids_;
+  std::vector<std::unordered_multimap<Value, Edge>> allLeftEdges_;
+  std::vector<std::unordered_multimap<Value, Edge>> allRightEdges_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -22,15 +22,42 @@ class ProduceSemiShortestPath : public SingleInputNode {
       : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
 };
 
-class BFSShortestPath : public SingleInputNode {
+class BFSShortestPath : public BinaryInputNode {
  public:
-  static BFSShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new BFSShortestPath(qctx, input));
+  static BFSShortestPath* make(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps) {
+    return qctx->objPool()->add(new BFSShortestPath(qctx, left, right, steps));
   }
 
+  size_t steps() const {
+    return steps_;
+  }
+
+  std::string leftVidVar() const {
+    return leftVidVar_;
+  }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
  private:
-  BFSShortestPath(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kBFSShortest, input) {}
+  BFSShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
+      : BinaryInputNode(qctx, Kind::kBFSShortest, left, right), steps_(steps) {}
+
+ private:
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  size_t steps_{0};
 };
 
 class ConjunctPath : public BinaryInputNode {
