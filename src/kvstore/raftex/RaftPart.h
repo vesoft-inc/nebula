@@ -176,15 +176,17 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Add a raft learner to its peers
    *
    * @param learner Learner address
+   * @param needLock Whether need to acquire lock in the function
    */
-  void addLearner(const HostAddr& learner);
+  void addLearner(const HostAddr& learner, bool needLock);
 
   /**
    * @brief When commit to state machine, old leader will step down as follower
    *
    * @param target Target new leader
+   * @param needLock Whether need to acquire lock in the function
    */
-  void commitTransLeader(const HostAddr& target);
+  void commitTransLeader(const HostAddr& target, bool needLock);
 
   /**
    * @brief Pre-process of transfer leader, target new leader will start election task to background
@@ -207,8 +209,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * preProcessRemovePeer, leader will remove in commitRemovePeer
    *
    * @param peer Target peer to remove
+   * @param needLock Whether need to acquire lock in the function
    */
-  void commitRemovePeer(const HostAddr& peer);
+  void commitRemovePeer(const HostAddr& peer, bool needLock);
 
   // All learner and listener are raft learner. The difference between listener and learner is that
   // learner could be promoted to follower, but listener could not. (learner are added to hosts_,
@@ -491,13 +494,16 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    *
    * @param iter Log iterator of all logs to commit
    * @param wait Whether wait until all logs has been applied to state machine
+   * @param needLock Whether need to acquire raftLock_ before operations. When the raftLock_ has
+   * been acquired before commitLogs is invoked, needLock is false (e.g. commitLogs by follower). If
+   * the lock has not been acquired, needLock is true (e.g. commitLogs by leader).
    * @return std::tuple<nebula::cpp2::ErrorCode, LogID, TermID>
    * Return {error code, last commit log id, last commit log term}. When no logs applied to state
    * machine or error occurs when calling commitLogs, kNoCommitLogId and kNoCommitLogTerm are
    * returned.
    */
   virtual std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(
-      std::unique_ptr<LogIterator> iter, bool wait) = 0;
+      std::unique_ptr<LogIterator> iter, bool wait, bool needLock) = 0;
 
   /**
    * @brief A interface to pre-process wal, mainly for membership change
