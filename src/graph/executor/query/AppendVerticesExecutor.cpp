@@ -62,6 +62,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
 
 Status AppendVerticesExecutor::handleResp(
     storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp) {
+  time::Duration dur;
   auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   auto state = std::move(result).value();
@@ -74,6 +75,8 @@ Status AppendVerticesExecutor::handleResp(
   DataSet ds;
   ds.colNames = av->colNames();
   ds.rows.reserve(inputIter->size());
+
+  LOG(ERROR) << "point1: " << dur.elapsedInSec();
 
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
@@ -95,6 +98,7 @@ Status AppendVerticesExecutor::handleResp(
       }
     }
   }
+  LOG(ERROR) << "point2: " << dur.elapsedInSec();
 
   if (!av->trackPrevPath()) {
     return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
@@ -111,6 +115,7 @@ Status AppendVerticesExecutor::handleResp(
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));
   }
+  LOG(ERROR) << "point3: " << dur.elapsedInSec();
   return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
 }
 

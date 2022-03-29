@@ -31,6 +31,7 @@ Status TraverseExecutor::close() {
 }
 
 Status TraverseExecutor::buildRequestDataSet() {
+  time::Duration dur;
   SCOPED_TIMER(&execTime_);
   auto inputVar = traverse_->inputVar();
   auto& inputResult = ectx_->getResult(inputVar);
@@ -65,6 +66,7 @@ Status TraverseExecutor::buildRequestDataSet() {
     reqDs_.emplace_back(Row({std::move(vid)}));
   }
   paths_.emplace_back(std::move(prev));
+  LOG(ERROR) << "buildRequestDataSet:" << dur.elapsedInUSec();
   return Status::OK();
 }
 
@@ -231,6 +233,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   return folly::collect(futures).via(runner()).thenValue(
       [this, total = pathCnt](auto&& results) mutable {
         VLOG(1) << "path cnt: " << total;
+        time::Duration dur;
         reqDs_.clear();
         std::unordered_map<Value, Paths>& current = paths_.back();
         size_t mapCnt = 0;
@@ -258,6 +261,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
           }
         }
         releasePrevPaths(total);
+        LOG(ERROR) << "collect paths:" << dur.elapsedInUSec();
         return Status::OK();
       });
 }
@@ -266,6 +270,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
                                                 size_t end,
                                                 Iterator* iter,
                                                 const std::unordered_map<Value, Paths>& prev) {
+  time::Duration dur;
   // Iterates to the begin pos
   size_t tmp = 0;
   while (iter->valid() && ++tmp < begin) {
@@ -338,6 +343,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
       }
     }  // `prevPath'
   }    // `iter'
+  LOG(ERROR) << "handleJob: " << dur.elapsedInUSec() << " begin:" << begin << " end:" << end;
   return jobResult;
 }
 
@@ -356,6 +362,7 @@ void TraverseExecutor::buildPath(std::unordered_map<Dst, std::vector<Row>>& curr
 }
 
 Status TraverseExecutor::buildResult() {
+  time::Duration dur;
   // This means we are reaching a dead end, return empty.
   if (range_ != nullptr && currentStep_ < range_->min()) {
     return finish(ResultBuilder().value(Value(DataSet())).build());
@@ -370,6 +377,7 @@ Status TraverseExecutor::buildResult() {
     }
   }
   VLOG(1) << "result: " << result;
+  LOG(ERROR) << "buildResult:" << dur.elapsedInUSec();
 
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
