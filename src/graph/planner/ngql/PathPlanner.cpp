@@ -155,6 +155,7 @@ SubPlan PathPlanner::multiPairPlan(PlanNode* left, PlanNode* right) {
   auto qctx = pathCtx_->qctx;
   auto steps = pathCtx_->steps.steps();
   auto terminationVar = qctx->vctx()->anonVarGen()->getVar();
+  qctx->ectx()->setValue(terminationVar, false);
   auto* path = MultiShortestPath::make(qctx, left, right, steps);
   path->setLeftVidVar(pathCtx_->fromVidsVar);
   path->setRightVidVar(pathCtx_->toVidsVar);

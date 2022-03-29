@@ -12,6 +12,7 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
   auto* path = asNode<MultiShortestPath>(node());
   auto leftIter = ectx_->getResult(path->leftInputVar()).iter();
   auto rightIter = ectx_->getResult(path->rightInputVar()).iter();
+  terminationVar_ = path->terminationVar();
   DCHECK(!!leftIter && !!rightIter);
   DataSet ds;
   ds.colNames = node()->colNames();
