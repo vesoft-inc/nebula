@@ -55,7 +55,7 @@ install(
     DESTINATION
         scripts
     COMPONENT
-        graph
+        standalone
 )
 
 endif()

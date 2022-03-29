@@ -264,7 +264,7 @@ install(
     DESTINATION
         bin
     COMPONENT
-        graph ## tmp use graph component
+        standalone
 )
 
 endif()

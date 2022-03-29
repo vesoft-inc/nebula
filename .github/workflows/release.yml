@@ -42,6 +42,7 @@ jobs:
           - metad
           - storaged
           - tools
+          - standalone
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:

@@ -13,6 +13,7 @@
 #   -p: Whether to dump the symbols from binary by dump_syms
 #   -c: Whether to enable console building, default ON
 #   -k: Whether to enable breakpad, default OFF
+#   -a: Whether to enable standalone, default OFF
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -c <ON/OFF>
 #
@@ -22,7 +23,7 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE> -a <ON/OFF>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
@@ -37,6 +38,7 @@ dump_syms_tool_dir=
 system_name=
 install_prefix=/usr/local/nebula
 enable_breakpad="OFF"
+enable_standalone="OFF"
 
 while getopts v:n:s:b:d:t:r:p:j:c:k: opt;
 do
@@ -75,6 +77,9 @@ do
         k)
             enable_breakpad=$OPTARG
             ;;
+        a)
+            enable_standalone=$OPTARG
+            ;;
         ?)
             echo "Invalid option, use default arguments"
             ;;
@@ -110,6 +115,7 @@ build_console: $build_console
 branch: $branch
 enable_compressed_debug_info: $enable_compressed_debug_info
 dump_symbols: $dump_symbols
+enable_standalone: $enable_standalone
 
 EOF
 
@@ -117,6 +123,7 @@ function _build_graph {
     pushd ${build_dir}
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
+          -DENABLE_STANDALONE_VERSION=${enable_standalone} \
           -DENABLE_ASAN=${san} \
           -DENABLE_UBSAN=${san} \
           -DENABLE_STATIC_ASAN=${ssan} \
@@ -189,7 +196,7 @@ function _find_dump_syms_tool {
 
 # This is only for releasing the disk resources.
 function _strip_unnecessary_binaries {
-    for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$] | sed -e '/nebula-metad/d;/nebula-graphd/d;/nebula-storaged/d'); do
+    for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$] | sed -e '/nebula-metad/d;/nebula-graphd/d;/nebula-storaged/d;/nebula-standalone/d'); do
         if ! (strip ${build_dir}/bin/${bin}); then
             echo ">>> strip ${bin} failed: $?. <<<"
             exit 1
@@ -209,7 +216,13 @@ function dump_syms {
     tmp=${pack#nebula-graph}
     ver=${tmp%.*}
 
-    for bin in nebula-graphd nebula-storaged nebula-metad; do
+    if [[ "$enable_standalone" == "ON" ]]; then
+        BIN_LIST=(nebula-standalone)
+    else
+        BIN_LIST=(nebula-graphd nebula-storaged nebula-metad)
+    fi
+
+    for bin in ${BIN_LIST[*]}; do
         if ! (${dump_syms} ${build_dir}/bin/${bin} > ${syms_dir}/${bin}${ver}.sym); then
             echo ">>> dump ${bin} symbols failed: $?. <<<"
             exit 1

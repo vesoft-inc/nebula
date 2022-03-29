@@ -1,6 +1,6 @@
 #!/bin/bash
 
-daemons=(metad graphd storaged)
+daemons=(metad graphd storaged standalone)
 for daemon in ${daemons[@]}
 do
     if [[ ! -f $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf ]] && [[ -f $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf.default ]]; then
