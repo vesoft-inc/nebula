@@ -15,15 +15,14 @@ namespace meta {
 
 class RebuildJobExecutor : public StorageJobExecutor {
  public:
-  RebuildJobExecutor(JobID jobId,
+  RebuildJobExecutor(GraphSpaceID space,
+                     JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& paras)
-      : StorageJobExecutor(jobId, kvstore, adminClient, paras) {
+      : StorageJobExecutor(space, jobId, kvstore, adminClient, paras) {
     toHost_ = TargetHosts::LEADER;
   }
-
-  bool check() override;
 
   nebula::cpp2::ErrorCode prepare() override;
 

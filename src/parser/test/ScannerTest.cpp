@@ -607,6 +607,7 @@ TEST(Scanner, LexColumnCount) {
   using TokenType = nebula::GraphParser::token_type;
   nebula::GraphParser::semantic_type yylval;
   nebula::GraphParser::location_type yyloc;
+  yyloc.initialize();
   GraphScanner scanner;
   std::string stream("2..");
 

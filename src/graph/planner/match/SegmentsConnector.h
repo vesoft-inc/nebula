@@ -39,6 +39,12 @@ class SegmentsConnector final {
    */
   static SubPlan cartesianProduct(QueryContext* qctx, const SubPlan& left, const SubPlan& right);
 
+  static SubPlan rollUpApply(QueryContext* qctx,
+                             const SubPlan& left,
+                             const SubPlan& right,
+                             const std::vector<std::string>& compareCols,
+                             const std::string& collectCol);
+
   /*
    * left->right
    */

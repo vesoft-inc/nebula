@@ -352,8 +352,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
     return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(cbStatus.status());
   }
 
-  std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
-
   DCHECK(!!metaClient_);
   auto status = metaClient_->partsNum(param.space);
   if (!status.ok()) {
@@ -370,7 +368,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
   if (!host.ok()) {
     return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(host.status());
   }
-  request.first = std::move(host).value();
   cpp2::UpdateVertexRequest req;
   req.space_id_ref() = param.space;
   req.vertex_id_ref() = vertexId;
@@ -383,10 +380,10 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
   if (condition.size() > 0) {
     req.condition_ref() = std::move(condition);
   }
-  request.second = std::move(req);
 
   return getResponse(param.evb,
-                     std::move(request),
+                     host.value(),
+                     req,
                      [](ThriftClientType* client, const cpp2::UpdateVertexRequest& r) {
                        return client->future_updateVertex(r);
                      });
@@ -405,8 +402,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
     return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(cbStatus.status());
   }
 
-  std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
-
   DCHECK(!!metaClient_);
   auto status = metaClient_->partsNum(space);
   if (!status.ok()) {
@@ -423,7 +418,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
   if (!host.ok()) {
     return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(host.status());
   }
-  request.first = std::move(host).value();
   cpp2::UpdateEdgeRequest req;
   req.space_id_ref() = space;
   req.edge_key_ref() = edgeKey;
@@ -435,10 +429,10 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
   if (condition.size() > 0) {
     req.condition_ref() = std::move(condition);
   }
-  request.second = std::move(req);
 
   return getResponse(param.evb,
-                     std::move(request),
+                     host.value(),
+                     req,
                      [useExperimentalFeature = param.useExperimentalFeature](
                          ThriftClientType* client, const cpp2::UpdateEdgeRequest& r) {
                        return useExperimentalFeature ? client->future_chainUpdateEdge(r)
@@ -449,7 +443,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
 folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID space,
                                                                   const std::string& name,
                                                                   folly::EventBase* evb) {
-  std::pair<HostAddr, cpp2::GetUUIDReq> request;
   DCHECK(!!metaClient_);
   auto status = metaClient_->partsNum(space);
   if (!status.ok()) {
@@ -466,15 +459,13 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID s
   if (!host.ok()) {
     return folly::makeFuture<StatusOr<storage::cpp2::GetUUIDResp>>(host.status());
   }
-  request.first = std::move(host).value();
   cpp2::GetUUIDReq req;
   req.space_id_ref() = space;
   req.part_id_ref() = part;
   req.name_ref() = name;
-  request.second = std::move(req);
 
   return getResponse(
-      evb, std::move(request), [](ThriftClientType* client, const cpp2::GetUUIDReq& r) {
+      evb, host.value(), req, [](ThriftClientType* client, const cpp2::GetUUIDReq& r) {
         return client->future_getUUID(r);
       });
 }

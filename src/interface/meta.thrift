@@ -244,9 +244,10 @@ enum JobType {
 } (cpp.enum_strict)
 
 struct AdminJobReq {
-    1: JobOp            op,
-    2: JobType          type,
-    3: list<binary>     paras,
+    1: common.GraphSpaceID  space_id,
+    2: JobOp                op,
+    3: JobType              type,
+    4: list<binary>         paras,
 }
 
 enum JobStatus {
@@ -259,27 +260,31 @@ enum JobStatus {
 } (cpp.enum_strict)
 
 struct JobDesc {
-    1: i32              id,
-    2: JobType          type,
-    3: list<string>     paras,
-    4: JobStatus        status,
-    5: i64              start_time,
-    6: i64              stop_time,
+    1: common.GraphSpaceID  space_id,
+    2: i32                  job_id,
+    3: JobType              type,
+    4: list<string>         paras,
+    5: JobStatus            status,
+    6: i64                  start_time,
+    7: i64                  stop_time,
+    8: common.ErrorCode     code,
 }
 
 struct TaskDesc {
-    1: i32              task_id,
-    2: common.HostAddr  host,
-    3: JobStatus        status,
-    4: i64              start_time,
-    5: i64              stop_time,
-    6: i32              job_id,
+    1: common.GraphSpaceID  space_id,
+    2: i32                  job_id,
+    3: i32                  task_id,
+    4: common.HostAddr      host,
+    5: JobStatus            status,
+    6: i64                  start_time,
+    7: i64                  stop_time,
+    8: common.ErrorCode     code,
 }
 
 struct AdminJobResult {
     // used in a new added job, e.g. "flush" "compact"
     // other job type which also need jobId in their result
-    // will use other filed. e.g. JobDesc::id
+    // will use other filed. e.g. JobDesc::job_id
     1: optional i32                 job_id,
 
     // used in "show jobs" and "show job <id>"
@@ -514,13 +519,23 @@ struct GetPartsAllocResp {
 
 // get workerid for snowflake
 struct GetWorkerIdReq {
-    1: binary host, 
+    1: binary host,
 }
 
 struct GetWorkerIdResp {
     1: common.ErrorCode code,
     2: common.HostAddr  leader,
     3: i64              workerid,
+}
+
+struct GetSegmentIdReq {
+    1: i64 length
+}
+
+struct GetSegmentIdResp {
+    1: common.ErrorCode code,
+    2: common.HostAddr  leader,
+    3: i64              segment_id,
 }
 
 struct HBResp {
@@ -1107,9 +1122,10 @@ struct KillQueryReq {
 
 struct ReportTaskReq {
     1: common.ErrorCode     code,
-    2: i32                  job_id,
-    3: i32                  task_id,
-    4: optional StatsItem   stats
+    2: common.GraphSpaceID  space_id,
+    3: i32                  job_id,
+    4: i32                  task_id,
+    5: optional StatsItem   stats
 }
 
 struct ListClusterInfoResp {
@@ -1247,4 +1263,6 @@ service MetaService {
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 
     VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
+
+    GetSegmentIdResp getSegmentId(1: GetSegmentIdReq req);
 }

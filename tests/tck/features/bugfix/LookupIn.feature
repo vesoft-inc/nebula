@@ -13,6 +13,7 @@ Feature: Lookup_In
       DROP TAG INDEX IF EXISTS player_age_index
       """
     Then the execution should be successful
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX

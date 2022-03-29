@@ -19,13 +19,14 @@ folly::Future<Status> SubmitJobExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto *sjNode = asNode<SubmitJob>(node());
+  auto spaceId = qctx()->rctx()->session()->space().id;
   auto jobOp = sjNode->jobOp();
   auto jobType = sjNode->jobType();
   auto params = sjNode->params();
 
   return qctx()
       ->getMetaClient()
-      ->submitJob(jobOp, jobType, params)
+      ->submitJob(spaceId, jobOp, jobType, params)
       .via(runner())
       .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
         SCOPED_TIMER(&execTime_);
@@ -82,7 +83,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
       const auto &jobsDesc = *resp.job_desc_ref();
       for (const auto &jobDesc : jobsDesc) {
         v.emplace_back(nebula::Row({
-            jobDesc.get_id(),
+            jobDesc.get_job_id(),
             apache::thrift::util::enumNameSafe(jobDesc.get_type()),
             apache::thrift::util::enumNameSafe(jobDesc.get_status()),
             convertJobTimestampToDateTime(jobDesc.get_start_time()),
@@ -111,17 +112,22 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     const nebula::meta::cpp2::JobDesc &jd, const std::vector<nebula::meta::cpp2::TaskDesc> &td) {
   if (jd.get_type() == meta::cpp2::JobType::DATA_BALANCE ||
       jd.get_type() == meta::cpp2::JobType::ZONE_BALANCE) {
-    nebula::DataSet v(
-        {"Job Id(spaceId:partId)", "Command(src->dst)", "Status", "Start Time", "Stop Time"});
+    nebula::DataSet v({"Job Id(spaceId:partId)",
+                       "Command(src->dst)",
+                       "Status",
+                       "Start Time",
+                       "Stop Time",
+                       "Error Code"});
     const auto &paras = jd.get_paras();
     size_t index = std::stoul(paras.back());
     uint32_t total = paras.size() - index - 1, succeeded = 0, failed = 0, inProgress = 0,
              invalid = 0;
-    v.emplace_back(Row({jd.get_id(),
+    v.emplace_back(Row({jd.get_job_id(),
                         apache::thrift::util::enumNameSafe(jd.get_type()),
                         apache::thrift::util::enumNameSafe(jd.get_status()),
                         convertJobTimestampToDateTime(jd.get_start_time()).toString(),
-                        convertJobTimestampToDateTime(jd.get_stop_time()).toString()}));
+                        convertJobTimestampToDateTime(jd.get_stop_time()).toString(),
+                        apache::thrift::util::enumNameSafe(jd.get_code())}));
     for (size_t i = index; i < paras.size() - 1; i++) {
       meta::cpp2::BalanceTask tsk;
       apache::thrift::CompactSerializer::deserialize(paras[i], tsk);
@@ -143,7 +149,8 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                           std::move(tsk).get_command(),
                           apache::thrift::util::enumNameSafe(tsk.get_result()),
                           convertJobTimestampToDateTime(std::move(tsk).get_start_time()),
-                          convertJobTimestampToDateTime(std::move(tsk).get_stop_time())}));
+                          convertJobTimestampToDateTime(std::move(tsk).get_stop_time()),
+                          apache::thrift::util::enumNameSafe(jd.get_code())}));
     }
     v.emplace_back(Row({folly::sformat("Total:{}", total),
                         folly::sformat("Succeeded:{}", succeeded),
@@ -152,13 +159,15 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                         folly::sformat("Invalid:{}", invalid)}));
     return v;
   } else {
-    nebula::DataSet v({"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"});
+    nebula::DataSet v(
+        {"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time", "Error Code"});
     v.emplace_back(nebula::Row({
-        jd.get_id(),
+        jd.get_job_id(),
         apache::thrift::util::enumNameSafe(jd.get_type()),
         apache::thrift::util::enumNameSafe(jd.get_status()),
         convertJobTimestampToDateTime(jd.get_start_time()),
         convertJobTimestampToDateTime(jd.get_stop_time()),
+        apache::thrift::util::enumNameSafe(jd.get_code()),
     }));
     // tasks desc
     for (const auto &taskDesc : td) {
@@ -168,6 +177,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
           apache::thrift::util::enumNameSafe(taskDesc.get_status()),
           convertJobTimestampToDateTime(taskDesc.get_start_time()),
           convertJobTimestampToDateTime(taskDesc.get_stop_time()),
+          apache::thrift::util::enumNameSafe(taskDesc.get_code()),
       }));
     }
     return v;

@@ -17,6 +17,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>

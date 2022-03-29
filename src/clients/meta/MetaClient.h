@@ -155,7 +155,6 @@ using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
 using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
 
-using clientAddrMap = folly::ConcurrentHashMap<HostAddr, int64_t>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -212,7 +211,14 @@ struct MetaClientOptions {
   std::string rootPath_;
 };
 
-class MetaClient {
+class BaseMetaClient {
+ public:
+  virtual folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) = 0;
+
+  virtual ~BaseMetaClient() = default;
+};
+
+class MetaClient : public BaseMetaClient {
   FRIEND_TEST(ConfigManTest, MetaConfigManTest);
   FRIEND_TEST(ConfigManTest, MockConfigTest);
   FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
@@ -231,7 +237,7 @@ class MetaClient {
              std::vector<HostAddr> addrs,
              const MetaClientOptions& options = MetaClientOptions());
 
-  virtual ~MetaClient();
+  ~MetaClient() override;
 
   bool isMetadReady();
 
@@ -252,7 +258,8 @@ class MetaClient {
     listener_ = nullptr;
   }
 
-  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(cpp2::JobOp op,
+  folly::Future<StatusOr<cpp2::AdminJobResult>> submitJob(GraphSpaceID spaceId,
+                                                          cpp2::JobOp op,
                                                           cpp2::JobType type,
                                                           std::vector<std::string> paras);
 
@@ -620,6 +627,7 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
+      GraphSpaceID spaceId,
       int32_t jobId,
       int32_t taskId,
       nebula::cpp2::ErrorCode taskErrCode,
@@ -634,6 +642,8 @@ class MetaClient {
 
   folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
 
+  folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) override;
+
   HostAddr getMetaLeader() {
     return leader_;
   }
@@ -644,10 +654,6 @@ class MetaClient {
 
   std::string getLocalIp() {
     return options_.localHost_.toString();
-  }
-
-  clientAddrMap& getClientAddrMap() {
-    return clientAddrMap_;
   }
 
  protected:
@@ -736,9 +742,6 @@ class MetaClient {
 
   Status verifyVersion();
 
-  // Removes expired keys in the clientAddrMap_
-  void clearClientAddrMap();
-
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
@@ -818,18 +821,6 @@ class MetaClient {
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
-
-  // TODO(Aiee) This is a walkaround to address the problem that using a lower version(< v2.6.0)
-  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
-  //
-  // The key here is the host of the client that sends the request, and the value indicates the
-  // expiration of the key because we don't want to keep the key forever.
-  //
-  // The assumption here is that there is ONLY ONE VERSION of the client in the host.
-  //
-  // This map will be updated when verifyVersion() is called. Only the clients since v2.6.0 will
-  // call verifyVersion(), thus we could determine whether the client version is lower than v2.6.0
-  clientAddrMap clientAddrMap_;
 
   // Global service client
   ServiceClientsList serviceClientList_;

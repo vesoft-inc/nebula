@@ -353,6 +353,12 @@ struct Value {
 
   Value equal(const Value& v) const;
 
+  // Whether the value can be converted to bool implicitly
+  bool isImplicitBool() const;
+
+  // Convert Value to bool implicitly
+  bool implicitBool() const;
+
  private:
   Type type_;
 

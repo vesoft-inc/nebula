@@ -39,12 +39,12 @@ NebulaStore::~NebulaStore() {
   raftService_->stop();
   LOG(INFO) << "Waiting for the raft service stop...";
   raftService_->waitUntilStop();
-  spaces_.clear();
-  spaceListeners_.clear();
   bgWorkers_->stop();
   bgWorkers_->wait();
   storeWorker_->stop();
   storeWorker_->wait();
+  spaces_.clear();
+  spaceListeners_.clear();
   LOG(INFO) << "~NebulaStore()";
 }
 
@@ -437,6 +437,13 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
   if (!isListener) {
     auto spaceIt = this->spaces_.find(spaceId);
     if (spaceIt != this->spaces_.end()) {
+      for (auto& [partId, part] : spaceIt->second->parts_) {
+        // before calling removeSpace, meta client would call removePart to remove all parts in
+        // meta cache, which do not contain learners, so we remove them here
+        if (part->isLearner()) {
+          removePart(spaceId, partId, false);
+        }
+      }
       auto& engines = spaceIt->second->engines_;
       for (auto& engine : engines) {
         auto parts = engine->allParts();
@@ -490,8 +497,11 @@ nebula::cpp2::ErrorCode NebulaStore::clearSpace(GraphSpaceID spaceId) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
-  folly::RWSpinLock::WriteHolder wh(&lock_);
+void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock) {
+  folly::RWSpinLock::WriteHolder wh(nullptr);
+  if (needLock) {
+    wh.reset(&lock_);
+  }
   auto spaceIt = this->spaces_.find(spaceId);
   if (spaceIt != this->spaces_.end()) {
     auto partIt = spaceIt->second->parts_.find(partId);
@@ -1265,8 +1275,6 @@ nebula::cpp2::ErrorCode NebulaStore::restoreFromFiles(GraphSpaceID spaceId,
   }
   auto space = nebula::value(spaceRet);
 
-  DCHECK_EQ(space->engines_.size(), 1);
-
   for (auto& engine : space->engines_) {
     auto ret = engine->ingest(files, true);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -1277,8 +1285,12 @@ nebula::cpp2::ErrorCode NebulaStore::restoreFromFiles(GraphSpaceID spaceId,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-nebula::cpp2::ErrorCode NebulaStore::multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                                               std::vector<KV> keyValues) {
+std::unique_ptr<WriteBatch> NebulaStore::startBatchWrite() {
+  return std::make_unique<RocksWriteBatch>();
+}
+
+nebula::cpp2::ErrorCode NebulaStore::batchWriteWithoutReplicator(
+    GraphSpaceID spaceId, std::unique_ptr<WriteBatch> batch) {
   auto spaceRet = space(spaceId);
   if (!ok(spaceRet)) {
     LOG(WARNING) << "Get Space " << spaceId << " Failed";
@@ -1286,10 +1298,9 @@ nebula::cpp2::ErrorCode NebulaStore::multiPutWithoutReplicator(GraphSpaceID spac
   }
   auto space = nebula::value(spaceRet);
 
-  DCHECK_EQ(space->engines_.size(), 1);
-
   for (auto& engine : space->engines_) {
-    auto ret = engine->multiPut(keyValues);
+    auto ret = engine->commitBatchWrite(
+        std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }

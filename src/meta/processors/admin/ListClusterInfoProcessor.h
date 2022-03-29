@@ -27,6 +27,8 @@ class ListClusterInfoProcessor : public BaseProcessor<cpp2::ListClusterInfoResp>
  private:
   explicit ListClusterInfoProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ListClusterInfoResp>(kvstore) {}
+
+  bool isAlive(const HostInfo& info);
 };
 }  // namespace meta
 }  // namespace nebula

@@ -680,10 +680,10 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
 
   taskMgr->addAsyncTask(vtask0);
 
-  LOG(INFO) << "before taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("Before taskMgr->cancelTask({}).", jobId);
   fRunTask.wait();
   taskMgr->cancelTask(jobId);
-  LOG(INFO) << "after taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("After taskMgr->cancelTask({}).", jobId);
   pCancelTask.setValue(0);
 
   fFiniTask0.wait();
@@ -786,9 +786,9 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
   taskMgr->addAsyncTask(vtask0);
 
   subtask_run_f.wait();
-  LOG(INFO) << "before taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("Before taskMgr->cancelTask({}).", jobId);
   taskMgr->cancelTask(jobId);
-  LOG(INFO) << "after taskMgr->cancelTask(1);";
+  LOG(INFO) << folly::sformat("After taskMgr->cancelTask({}).", jobId);
   cancel_p.setValue(0);
 
   task1_f.wait();

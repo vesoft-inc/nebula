@@ -59,12 +59,12 @@ Feature: Submit job space requirements
       """
       SHOW JOB 123456;
       """
-    Then a ExecutionError should be raised at runtime: Key not existed!
+    Then a ExecutionError should be raised at runtime: Job not existed in chosen space!
     When executing query:
       """
       STOP JOB 123456;
       """
-    Then a ExecutionError should be raised at runtime: Key not existed!
+    Then a ExecutionError should be raised at runtime: Job not existed in chosen space!
 
   Scenario: Submit and show jobs
     Given create a space with following options:
@@ -110,9 +110,9 @@ Feature: Submit job space requirements
       SHOW JOB {};
       """
     Then the result should be, in order:
-      | Job Id(TaskId) | Command(Dest) | Status     | Start Time | Stop Time |
-      | /\d+/          | "STATS"       | "FINISHED" | /\w+/      | /\w+/     |
-      | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     |
+      | Job Id(TaskId) | Command(Dest) | Status     | Start Time | Stop Time | Error Code  |
+      | /\d+/          | "STATS"       | "FINISHED" | /\w+/      | /\w+/     | "SUCCEEDED" |
+      | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     | "SUCCEEDED" |
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       STOP JOB {};
@@ -172,12 +172,12 @@ Feature: Submit job space requirements
       """
       SHOW JOB {};
       """
-    Then an ExecutionError should be raised at runtime:Job not in chosen space!
+    Then an ExecutionError should be raised at runtime:Job not existed in chosen space!
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       STOP JOB {};
       """
-    Then an ExecutionError should be raised at runtime:Job not in chosen space!
+    Then an ExecutionError should be raised at runtime:Job not existed in chosen space!
 
   # This is skipped because it is hard to simulate the situation
   # When executing query:

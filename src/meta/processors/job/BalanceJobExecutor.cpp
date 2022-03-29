@@ -9,15 +9,15 @@
 
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
 namespace meta {
-BalanceJobExecutor::BalanceJobExecutor(JobID jobId,
+BalanceJobExecutor::BalanceJobExecutor(GraphSpaceID space,
+                                       JobID jobId,
                                        kvstore::KVStore* kvstore,
                                        AdminClient* adminClient,
                                        const std::vector<std::string>& paras)
-    : MetaJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : MetaJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 bool BalanceJobExecutor::check() {
   return !paras_.empty();
@@ -43,7 +43,8 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
     // if not leader.
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  auto jobKey = JobDescription::makeJobKey(jobId_);
+
+  auto jobKey = MetaKeyUtils::jobKey(space_, jobId_);
   std::string value;
   auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

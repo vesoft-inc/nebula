@@ -472,6 +472,11 @@ void VidExtractVisitor::visit(SubscriptRangeExpression *expr) {
   vidPattern_ = VidPattern{};
 }
 
+void VidExtractVisitor::visit(MatchPathPatternExpression *expr) {
+  UNUSED(expr);
+  vidPattern_ = VidPattern{};
+}
+
 std::ostream &operator<<(std::ostream &os, const VidExtractVisitor::VidPattern &vp) {
   switch (vp.spec) {
     case VidExtractVisitor::VidPattern::Special::kIgnore:

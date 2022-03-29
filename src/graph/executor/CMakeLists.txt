@@ -39,6 +39,7 @@ nebula_add_library(
     query/ScanEdgesExecutor.cpp
     query/TraverseExecutor.cpp
     query/AppendVerticesExecutor.cpp
+    query/RollUpApplyExecutor.cpp
     algo/ConjunctPathExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
     algo/ProduceSemiShortestPathExecutor.cpp

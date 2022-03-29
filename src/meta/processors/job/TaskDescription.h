@@ -16,7 +16,11 @@
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/job/JobStatus.h"
 
+namespace nebula {
+namespace meta {
+
 /*
+ * Task is described as follows:
  * =====================================================================================
  * | Job Id(TaskId) | Command(Dest) | Status   | Start Time        | Stop Time |
  * =====================================================================================
@@ -27,64 +31,17 @@
  * 11:09:40 |
  * -------------------------------------------------------------------------------------
  * */
-
-namespace nebula {
-namespace meta {
-
 class TaskDescription {
   FRIEND_TEST(TaskDescriptionTest, Ctor);
-  FRIEND_TEST(TaskDescriptionTest, ParseKey);
-  FRIEND_TEST(TaskDescriptionTest, ParseVal);
   FRIEND_TEST(TaskDescriptionTest, Dump);
   FRIEND_TEST(TaskDescriptionTest, Ctor2);
   FRIEND_TEST(JobManagerTest, ShowJob);
   friend class JobManager;
 
  public:
-  TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst);
-  TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port);
+  TaskDescription(GraphSpaceID space, JobID iJob, TaskID iTask, const HostAddr& dst);
+  TaskDescription(GraphSpaceID space, JobID iJob, TaskID iTask, std::string addr, int32_t port);
   TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
-
-  /**
-   * @brief Encoded key going to write to kvstore
-   * kJobKey+jobid+taskid
-   *
-   * @return
-   */
-  std::string taskKey();
-
-  /**
-   * @brief Decode jobid and taskid from kv store
-   *
-   * @param rawKey
-   * @return
-   */
-  static std::pair<JobID, TaskID> parseKey(const folly::StringPiece& rawKey);
-
-  /**
-   * @brief Encode task val to write to kvstore
-   *
-   * @return
-   */
-  std::string taskVal();
-
-  /**
-   * @brief Decode task val from kvstore
-   * should be
-   * {host, status, start time, stop time}
-   *
-   * @param rawVal
-   * @return
-   */
-  static std::tuple<HostAddr, cpp2::JobStatus, int64_t, int64_t> parseVal(
-      const folly::StringPiece& rawVal);
-
-  /**
-   * @brief Encoded key when dba called "backup jobs"
-   *
-   * @return
-   */
-  std::string archiveKey();
 
   /**
    * @brief
@@ -105,8 +62,7 @@ class TaskDescription {
   cpp2::TaskDesc toTaskDesc();
 
   /**
-   * @brief
-   * Set the internal status
+   * @brief Set the internal status
    * Will check if newStatus is later than curr Status
    * e.g. set running to a finished job is forbidden
    *
@@ -118,6 +74,22 @@ class TaskDescription {
    */
   bool setStatus(cpp2::JobStatus newStatus);
 
+  cpp2::JobStatus getStatus() {
+    return status_;
+  }
+
+  void setErrorCode(nebula::cpp2::ErrorCode errCode) {
+    errCode_ = errCode;
+  }
+
+  nebula::cpp2::ErrorCode getErrorCode() {
+    return errCode_;
+  }
+
+  GraphSpaceID getSpace() {
+    return space_;
+  }
+
   JobID getJobId() {
     return iJob_;
   }
@@ -126,13 +98,27 @@ class TaskDescription {
     return iTask_;
   }
 
+  HostAddr getHost() {
+    return dest_;
+  }
+
+  int64_t getStartTime() {
+    return startTime_;
+  }
+
+  int64_t getStopTime() {
+    return stopTime_;
+  }
+
  private:
+  GraphSpaceID space_;
   JobID iJob_;
   TaskID iTask_;
   HostAddr dest_;
   cpp2::JobStatus status_;
   int64_t startTime_;
   int64_t stopTime_;
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
 };
 
 }  // namespace meta
