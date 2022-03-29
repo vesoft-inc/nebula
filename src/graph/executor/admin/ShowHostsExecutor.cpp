@@ -145,7 +145,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       .via(runner())
       .thenValue([=, type = shNode->getType()](auto &&resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Show host fail: " << resp.status();
           return resp.status();
         }
         auto value = std::forward<decltype(resp)>(resp).value();

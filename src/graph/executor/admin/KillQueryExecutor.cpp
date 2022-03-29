@@ -25,7 +25,7 @@ folly::Future<Status> KillQueryExecutor::execute() {
         if (listResp.ok()) {
           sessionsInMeta = std::move(listResp.value()).get_sessions();
         } else {
-          LOG(ERROR) << listResp.status();
+          LOG(WARNING) << "List session fail: " << listResp.status();
         }
 
         auto status = verifyTheQueriesByMetaInfo(toBeVerifiedQueries, sessionsInMeta);

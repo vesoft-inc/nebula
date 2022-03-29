@@ -89,7 +89,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
     if (dataset == nullptr) {
-      LOG(INFO) << "Empty dataset in response";
       continue;
     }
 

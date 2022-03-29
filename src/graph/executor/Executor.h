@@ -1,11 +1,10 @@
 // Copyright (c) 2022 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
-
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
 #define GRAPH_EXECUTOR_EXECUTOR_H_
-
 #include <folly/futures/Future.h>
+
 #include <boost/core/noncopyable.hpp>
 
 #include "common/cpp/helpers.h"
@@ -13,13 +12,10 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
-
 namespace nebula {
 namespace graph {
-
 class PlanNode;
 class QueryContext;
-
 class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node

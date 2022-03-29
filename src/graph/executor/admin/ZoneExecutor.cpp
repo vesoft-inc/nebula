@@ -18,7 +18,7 @@ folly::Future<Status> MergeZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Merge Zone Failed :" << resp.status();
+          LOG(WARNING) << "Merge Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -34,7 +34,7 @@ folly::Future<Status> RenameZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Rename Zone Failed :" << resp.status();
+          LOG(WARNING) << "Rename Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -50,7 +50,7 @@ folly::Future<Status> DropZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Drop Zone Failed :" << resp.status();
+          LOG(WARNING) << "Drop Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -66,7 +66,7 @@ folly::Future<Status> DivideZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Split Zone Failed :" << resp.status();
+          LOG(WARNING) << "Split Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -82,7 +82,7 @@ folly::Future<Status> DescribeZoneExecutor::execute() {
       .via(runner())
       .thenValue([this](StatusOr<std::vector<HostAddr>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Describe Zone Failed: " << resp.status();
+          LOG(WARNING) << "Describe Zone Failed: " << resp.status();
           return resp.status();
         }
 
@@ -109,7 +109,7 @@ folly::Future<Status> AddHostsIntoZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Add Host Into Zone Failed: " << resp.status();
+          LOG(WARNING) << "Add Host Into Zone Failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -121,7 +121,7 @@ folly::Future<Status> ListZonesExecutor::execute() {
   return qctx()->getMetaClient()->listZones().via(runner()).thenValue(
       [this](StatusOr<std::vector<meta::cpp2::Zone>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "List Zones Failed: " << resp.status();
+          LOG(WARNING) << "List Zones Failed: " << resp.status();
           return resp.status();
         }
 

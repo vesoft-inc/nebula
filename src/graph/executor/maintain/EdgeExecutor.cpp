@@ -20,8 +20,8 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
       .via(runner())
       .thenValue([ceNode, spaceId](StatusOr<EdgeType> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -39,13 +39,14 @@ folly::Future<Status> DescEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = SchemaUtil::toDescSchema(resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(ResultBuilder()
@@ -66,8 +67,8 @@ folly::Future<Status> DropEdgeExecutor::execute() {
       .via(runner())
       .thenValue([deNode, spaceId](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop edge `" << deNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge `" << deNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -81,7 +82,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
   return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show edges failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show edges failed: " << resp.status();
           return resp.status();
         }
         auto edgeItems = std::move(resp).value();
@@ -115,13 +116,14 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", ShowCreate edge `" << sceNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", ShowCreate edge `" << sceNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = SchemaUtil::toShowCreateSchema(false, sceNode->getName(), resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", ShowCreate edge `" << sceNode->getName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -140,8 +142,8 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, aeNode](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << aeNode->space() << ", Alter edge `" << aeNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << aeNode->space() << ", Alter edge `" << aeNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return finish(ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).build());

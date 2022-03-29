@@ -98,7 +98,6 @@ void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataS
 }
 
 folly::Future<Status> UpdateSessionExecutor::execute() {
-  VLOG(1) << "Update sessions to metad";
   SCOPED_TIMER(&execTime_);
   auto *updateNode = asNode<UpdateSession>(node());
   std::vector<meta::cpp2::Session> sessions;
@@ -107,7 +106,7 @@ folly::Future<Status> UpdateSessionExecutor::execute() {
       [this](auto &&resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Update session fail " << resp.status();
           return resp.status();
         }
         return Status::OK();

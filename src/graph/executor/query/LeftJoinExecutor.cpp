@@ -43,7 +43,6 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   }
 
   result.colNames = colNames;
-  VLOG(2) << node_->toString() << ", result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 

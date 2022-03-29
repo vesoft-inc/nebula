@@ -27,8 +27,9 @@ folly::Future<Status> CreateTagIndexExecutor::execute() {
       .via(runner())
       .thenValue([ctiNode, spaceId](StatusOr<IndexID> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Create index `" << ctiNode->getIndexName()
-                     << "' at tag: `" << ctiNode->getSchemaName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Create index `" << ctiNode->getIndexName()
+                       << "' at tag: `" << ctiNode->getSchemaName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -46,8 +47,8 @@ folly::Future<Status> DropTagIndexExecutor::execute() {
       .via(runner())
       .thenValue([dtiNode, spaceId](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop tag index `" << dtiNode->getIndexName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop tag index `" << dtiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -65,14 +66,15 @@ folly::Future<Status> DescTagIndexExecutor::execute() {
       .via(runner())
       .thenValue([this, dtiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc tag index `" << dtiNode->getIndexName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag index `" << dtiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
 
         auto ret = IndexUtil::toDescIndex(resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag index `" << dtiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -91,13 +93,14 @@ folly::Future<Status> ShowCreateTagIndexExecutor::execute() {
       .via(runner())
       .thenValue([this, sctiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show create tag index `"
-                     << sctiNode->getIndexName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag index `"
+                       << sctiNode->getIndexName() << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = IndexUtil::toShowCreateIndex(true, sctiNode->getIndexName(), resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag index `"
+                       << sctiNode->getIndexName() << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -113,7 +116,7 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
   return qctx()->getMetaClient()->listTagIndexes(spaceId).via(runner()).thenValue(
       [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show tag indexes failed" << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show tag indexes failed" << resp.status();
           return resp.status();
         }
 
@@ -166,7 +169,8 @@ folly::Future<Status> ShowTagIndexStatusExecutor::execute() {
   return qctx()->getMetaClient()->listTagIndexStatus(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show tag index status failed" << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId
+                       << ", Show tag index status failed: " << resp.status();
           return resp.status();
         }
 

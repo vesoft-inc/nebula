@@ -22,7 +22,7 @@ folly::Future<Status> AddListenerExecutor::execute() {
       .thenValue([this](StatusOr<bool> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Add listener fail: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -40,7 +40,7 @@ folly::Future<Status> RemoveListenerExecutor::execute() {
       .thenValue([this](StatusOr<bool> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Remove listener fail: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -54,7 +54,7 @@ folly::Future<Status> ShowListenerExecutor::execute() {
       [this](StatusOr<std::vector<meta::cpp2::ListenerInfo>> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Show listener fail: " << resp.status();
           return resp.status();
         }
 

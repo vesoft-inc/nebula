@@ -62,7 +62,6 @@ DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
   // Accept Table such as | $a | $b | $c |... as input which one column indicate
   // src
   auto valueIter = ectx_->getResult(gv->inputVar()).iter();
-  DLOG << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
   return buildRequestDataSetByVidType(valueIter.get(), gv->src(), gv->dedup());
 }
 

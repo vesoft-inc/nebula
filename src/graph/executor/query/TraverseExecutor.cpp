@@ -68,7 +68,6 @@ Status TraverseExecutor::buildRequestDataSet() {
 
 folly::Future<Status> TraverseExecutor::traverse() {
   if (reqDs_.rows.empty()) {
-    LOG(INFO) << "Empty input.";
     DataSet emptyResult;
     return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
@@ -142,7 +141,6 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
     if (dataset == nullptr) {
-      LOG(INFO) << "Empty dataset in response";
       continue;
     }
     list.values.emplace_back(std::move(*dataset));

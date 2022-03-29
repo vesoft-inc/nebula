@@ -27,8 +27,9 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
       .via(runner())
       .thenValue([ceiNode, spaceId](StatusOr<IndexID> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Create index `" << ceiNode->getIndexName()
-                     << "' at edge: `" << ceiNode->getSchemaName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Create index `" << ceiNode->getIndexName()
+                       << "' at edge: `" << ceiNode->getSchemaName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -46,8 +47,8 @@ folly::Future<Status> DropEdgeIndexExecutor::execute() {
       .via(runner())
       .thenValue([deiNode, spaceId](StatusOr<IndexID> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop edge index`" << deiNode->getIndexName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge index`" << deiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -65,14 +66,15 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
       .via(runner())
       .thenValue([this, deiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc edge index`" << deiNode->getIndexName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge index`" << deiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
 
         auto ret = IndexUtil::toDescIndex(resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge index`" << deiNode->getIndexName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -91,13 +93,14 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
       .via(runner())
       .thenValue([this, sceiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show create edge index `"
-                     << sceiNode->getIndexName() << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create edge index `"
+                       << sceiNode->getIndexName() << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = IndexUtil::toShowCreateIndex(false, sceiNode->getIndexName(), resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create edge index `"
+                       << sceiNode->getIndexName() << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -113,7 +116,7 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
   return qctx()->getMetaClient()->listEdgeIndexes(spaceId).via(runner()).thenValue(
       [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show edge indexes failed" << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge indexes failed" << resp.status();
           return resp.status();
         }
 
@@ -165,8 +168,8 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
   return qctx()->getMetaClient()->listEdgeIndexStatus(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show edge index status failed"
-                     << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge index status failed"
+                       << resp.status();
           return resp.status();
         }
 

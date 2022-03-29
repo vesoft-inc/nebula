@@ -19,9 +19,7 @@ folly::Future<Status> DedupExecutor::execute() {
   }
 
   if (UNLIKELY(iter->isGetNeighborsIter() || iter->isDefaultIter())) {
-    auto e = Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
-    LOG(ERROR) << e;
-    return e;
+    return Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
   }
   std::unordered_set<const Row*> unique;
   unique.reserve(iter->size());

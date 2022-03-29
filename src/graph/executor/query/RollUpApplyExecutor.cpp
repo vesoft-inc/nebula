@@ -21,7 +21,6 @@ Status RollUpApplyExecutor::checkBiInputDataSets() {
   auto* rollUpApply = asNode<RollUpApply>(node());
   lhsIter_ = ectx_->getResult(rollUpApply->leftInputVar()).iter();
   DCHECK(!!lhsIter_);
-  VLOG(1) << "lhs: " << rollUpApply->leftInputVar() << " " << lhsIter_->size();
   if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "RollUpApply executor does not support " << lhsIter_->kind();
@@ -29,7 +28,6 @@ Status RollUpApplyExecutor::checkBiInputDataSets() {
   }
   rhsIter_ = ectx_->getResult(rollUpApply->rightInputVar()).iter();
   DCHECK(!!rhsIter_);
-  VLOG(1) << "rhs: " << rollUpApply->rightInputVar() << " " << rhsIter_->size();
   if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "RollUpApply executor does not support " << rhsIter_->kind();
@@ -161,7 +159,6 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
     result = probe(rollUpApplyNode->compareCols(), lhsIter_.get(), hashTable);
   }
   result.colNames = rollUpApplyNode->colNames();
-  DLOG(ERROR) << "DEBUG POINT result of roll up apply: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 

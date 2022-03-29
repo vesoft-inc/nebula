@@ -20,7 +20,7 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
   return qctx()->getMetaClient()->getSpace(spaceName).via(runner()).thenValue(
       [spaceName, this](StatusOr<meta::cpp2::SpaceItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Switch space :`" << spaceName << "' fail: " << resp.status();
           return resp.status();
         }
 

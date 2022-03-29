@@ -33,7 +33,6 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
       inputVar = static_cast<const SingleInputNode*>(gn)->inputVar();
     }
     DCHECK(!inputVar.empty());
-    VLOG(2) << "inputVar: " << inputVar;
     auto& inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();
     vertices.reserve(iter->size());
@@ -41,7 +40,6 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
     for (; iter->valid(); iter->next()) {
       auto val = Expression::eval(vidRef, ctx(iter.get()));
       if (val.isNull() || val.empty()) {
-        VLOG(3) << "NULL or EMPTY vid";
         continue;
       }
       if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
@@ -99,7 +97,6 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
     DCHECK(!iter->row()->empty());
     auto val = Expression::eval(vidRef, ctx(iter.get()));
     if (val.isNull() || val.empty()) {
-      VLOG(3) << "NULL or EMPTY vid";
       continue;
     }
     if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
@@ -152,7 +149,6 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
     storage::cpp2::EdgeKey edgeKey;
     auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx(iter.get()));
     if (srcId.isNull() || srcId.empty()) {
-      VLOG(3) << "NULL or EMPTY vid";
       continue;
     }
     if (!SchemaUtil::isValidVid(srcId, *spaceInfo.spaceDesc.vid_type_ref())) {
@@ -195,7 +191,6 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   }
 
   if (edgeKeys.empty()) {
-    VLOG(2) << "Empty edgeKeys";
     return Status::OK();
   }
 

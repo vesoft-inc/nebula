@@ -35,7 +35,6 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
       continue;
     }
     if (!rank.isInt()) {
-      LOG(WARNING) << "wrong rank type";
       continue;
     }
     edges.emplace_back(Row({std::move(src), type, rank, std::move(dst)}));

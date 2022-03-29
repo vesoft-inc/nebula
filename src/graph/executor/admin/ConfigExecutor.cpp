@@ -45,7 +45,7 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
       .thenValue([this, scNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
         if (!resp.ok()) {
           auto module = apache::thrift::util::enumNameSafe(scNode->getModule());
-          LOG(ERROR) << "Show configs `" << module << "' failed: " << resp.status();
+          LOG(WARNING) << "Show configs `" << module << "' failed: " << resp.status();
           return Status::Error(
               "Show config `%s' failed: %s", module.c_str(), resp.status().toString().c_str());
         }
@@ -86,7 +86,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
       .via(runner())
       .thenValue([scNode](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Set config `" << scNode->getName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Set config `" << scNode->getName() << "' failed: " << resp.status();
           return Status::Error("Set config `%s' failed: %s",
                                scNode->getName().c_str(),
                                resp.status().toString().c_str());
@@ -105,7 +105,7 @@ folly::Future<Status> GetConfigExecutor::execute() {
       .via(runner())
       .thenValue([this, gcNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Get config `" << gcNode->getName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Get config `" << gcNode->getName() << "' failed: " << resp.status();
           return Status::Error("Get config `%s' failed: %s",
                                gcNode->getName().c_str(),
                                resp.status().toString().c_str());

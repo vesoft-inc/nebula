@@ -40,7 +40,8 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
               v.emplace_back(nebula::Row({apache::thrift::util::enumNameSafe(item.get_role_type()),
                                           spaceNameResult.value()}));
             } else {
-              LOG(ERROR) << " Space name of " << item.get_space_id() << " no found";
+              LOG(WARNING) << " Space name of " << item.get_space_id()
+                           << " no found: " << spaceNameResult.status();
               return Status::Error("Space not found");
             }
           }

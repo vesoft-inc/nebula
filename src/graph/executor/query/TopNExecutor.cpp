@@ -19,7 +19,6 @@ folly::Future<Status> TopNExecutor::execute() {
   if (UNLIKELY(!result.iter()->isSequentialIter())) {
     std::stringstream ss;
     ss << "Internal error: Sort executor does not supported " << iter->kind();
-    LOG(ERROR) << ss.str();
     return Status::Error(ss.str());
   }
 

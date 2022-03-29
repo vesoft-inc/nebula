@@ -24,7 +24,7 @@ folly::Future<Status> ShowServiceClientsExecutor::showServiceClients() {
   return qctx()->getMetaClient()->listServiceClients(type).via(runner()).thenValue(
       [this](auto &&resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Show service client fail: " << resp.status();
           return resp.status();
         }
         auto values = std::move(resp).value();

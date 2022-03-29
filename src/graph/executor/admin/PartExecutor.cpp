@@ -13,13 +13,14 @@ folly::Future<Status> ShowPartsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto* spNode = asNode<ShowParts>(node());
+  const auto& spaceId = spNode->getSpaceId();
   return qctx()
       ->getMetaClient()
-      ->listParts(spNode->getSpaceId(), spNode->getPartIds())
+      ->listParts(spaceId, spNode->getPartIds())
       .via(runner())
-      .thenValue([this](StatusOr<std::vector<meta::cpp2::PartItem>> resp) {
+      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::PartItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show Parts fail: " << resp.status();
           return resp.status();
         }
         auto partItems = std::move(resp).value();

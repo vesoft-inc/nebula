@@ -18,13 +18,12 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
     if (yieldNames_.empty()) {
       return Status::OK();
     }
-    LOG(ERROR) << "Empty return props";
     return Status::Error("Empty return props");
   }
 
   if (yieldNames_.size() != data.colNames.size() - 1) {
-    LOG(ERROR) << "Expect colName size is " << yieldNames_.size() << ", return colName size is "
-               << data.colNames.size() - 1;
+    LOG(WARNING) << "Expect colName size is " << yieldNames_.size() << ", return colName size is "
+                 << data.colNames.size() - 1;
     return Status::Error("Wrong return prop size");
   }
   DataSet result;
@@ -64,7 +63,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Update vertices fail: " << resp.status();
           return resp.status();
         }
         auto value = std::move(resp).value();
@@ -115,7 +114,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << "Update edge failed: " << resp.status();
+          LOG(WARNING) << "Update edge failed: " << resp.status();
           return resp.status();
         }
         auto value = std::move(resp).value();

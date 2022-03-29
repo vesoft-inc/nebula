@@ -16,7 +16,6 @@ folly::Future<Status> ProjectExecutor::execute() {
   DCHECK(!!iter);
   QueryExpressionContext ctx(ectx_);
 
-  VLOG(1) << "input: " << project->inputVar();
   DataSet ds;
   ds.colNames = project->colNames();
   ds.rows.reserve(!iter->isGetNeighborsIter() ? iter->size() : 0);
@@ -28,7 +27,6 @@ folly::Future<Status> ProjectExecutor::execute() {
     }
     ds.rows.emplace_back(std::move(row));
   }
-  VLOG(1) << node()->outputVar() << ":" << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

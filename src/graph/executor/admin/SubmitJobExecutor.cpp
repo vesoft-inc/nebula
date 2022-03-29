@@ -25,11 +25,11 @@ folly::Future<Status> SubmitJobExecutor::execute() {
       ->getMetaClient()
       ->submitJob(spaceId, jobOp, jobType, params)
       .via(runner())
-      .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
+      .thenValue([jobOp, spaceId, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
         SCOPED_TIMER(&execTime_);
 
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status().toString();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Submit job fail: " << resp.status();
           return std::move(resp).status();
         }
         auto status = buildResult(jobOp, std::move(resp).value());
@@ -96,7 +96,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
     }
       // no default so the compiler will warning when lack
   }
-  DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
+  LOG(ERROR) << "Unknown job operation " << static_cast<int>(jobOp);
   return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
 }
 
