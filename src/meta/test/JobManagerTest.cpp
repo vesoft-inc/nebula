@@ -20,8 +20,6 @@
 #include "meta/test/TestUtils.h"
 #include "webservice/WebService.h"
 
-DECLARE_int32(ws_storage_http_port);
-
 namespace nebula {
 namespace meta {
 

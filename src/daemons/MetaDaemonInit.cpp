@@ -43,7 +43,7 @@ DEFINE_int32(meta_num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_num_worker_threads, 32, "Number of workers");
 DEFINE_string(meta_data_path, "", "Root data path");
 DECLARE_string(meta_server_addrs);  // use define from grap flags.
-DECLARE_int32(ws_meta_http_port);
+DEFINE_int32(ws_meta_http_port, 11000, "Port to listen on Meta with HTTP protocol");
 #endif
 
 using nebula::web::PathParams;
