@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_ALGO_MULTISHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_MULTISHORTESTPATHEXECUTOR_H_
@@ -13,7 +12,7 @@ namespace graph {
 class MultiShortestPathExecutor final : public Executor {
  public:
   MultiShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
-      : Executor("ProduceSemiShortestPath", node, qctx) {}
+      : Executor("MultiShortestPath", node, qctx) {}
 
   folly::Future<Status> execute() override;
 

@@ -1,9 +1,7 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2022 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
-
 #include "graph/planner/plan/Algo.h"
 
 namespace nebula {
