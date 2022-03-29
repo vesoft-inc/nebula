@@ -30,7 +30,7 @@
 // `allLeftEdges_` : is a array, each element in the array is a hashTable
 //  hash table
 //    KEY   : the VID of the vertex
-//    VALUE : edges (the destination is KEY)
+//    VALUE : edges visited at the current step (the destination is KEY)
 //
 // `allRightEdges_` : same as allLeftEdges_
 //
