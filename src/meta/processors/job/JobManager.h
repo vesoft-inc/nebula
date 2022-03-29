@@ -41,6 +41,8 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
+  FRIEND_TEST(JobManagerTest, DownloadJob);
+  FRIEND_TEST(JobManagerTest, IngestJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);

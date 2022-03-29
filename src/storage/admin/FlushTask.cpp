@@ -10,12 +10,12 @@
 namespace nebula {
 namespace storage {
 
+bool FlushTask::check() {
+  return env_->kvstore_ != nullptr;
+}
+
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> FlushTask::genSubTasks() {
   std::vector<AdminSubTask> ret;
-  if (!env_->kvstore_) {
-    return ret;
-  }
-
   auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
   auto errOrSpace = store->space(*ctx_.parameters_.space_id_ref());
   if (!ok(errOrSpace)) {

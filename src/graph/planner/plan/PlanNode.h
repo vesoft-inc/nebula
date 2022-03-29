@@ -175,8 +175,6 @@ class PlanNode {
     kShowFTIndexes,
     kSignInService,
     kSignOutService,
-    kDownload,
-    kIngest,
     kShowSessions,
     kUpdateSession,
 

@@ -11,7 +11,7 @@ namespace graph {
 /**
  * Read space : kUse, kDescribeSpace
  * Write space : kCreateSpace, kDropSpace, kClearSpace, kCreateSnapshot,
- *               kDropSnapshot, kBalance, kAdmin, kConfig, kIngest, kDownload
+ *               kDropSnapshot, kBalance, kAdmin, kConfig
  * Read schema : kDescribeTag, kDescribeEdge,
  *               kDescribeTagIndex, kDescribeEdgeIndex
  * Write schema : kCreateTag, kAlterTag, kCreateEdge,
@@ -68,8 +68,6 @@ namespace graph {
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
-    case Sentence::Kind::kIngest:
-    case Sentence::Kind::kDownload:
     case Sentence::Kind::kSignOutService:
     case Sentence::Kind::kSignInService: {
       return PermissionManager::canWriteSpace(session);

@@ -2,12 +2,9 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-
 nebula_add_library(
   meta_http_handler OBJECT
-  MetaHttpIngestHandler.cpp
-  MetaHttpDownloadHandler.cpp
   MetaHttpReplaceHostHandler.cpp
-  )
+)
 
 nebula_add_subdirectory(test)

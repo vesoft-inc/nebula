@@ -37,14 +37,12 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::JobType::STATS:
           case meta::cpp2::JobType::COMPACT:
           case meta::cpp2::JobType::FLUSH:
+          case meta::cpp2::JobType::DOWNLOAD:
+          case meta::cpp2::JobType::INGEST:
           case meta::cpp2::JobType::DATA_BALANCE:
           case meta::cpp2::JobType::LEADER_BALANCE:
           case meta::cpp2::JobType::ZONE_BALANCE:
             return true;
-          // TODO: download and ingest need to be refactored to use the rpc protocol.
-          // Currently they are using their own validator
-          case meta::cpp2::JobType::DOWNLOAD:
-          case meta::cpp2::JobType::INGEST:
           case meta::cpp2::JobType::UNKNOWN:
             return false;
         }
