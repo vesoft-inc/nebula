@@ -26,7 +26,14 @@ class AppendVerticesExecutor final : public GetPropExecutor {
 
   folly::Future<Status> appendVertices();
 
-  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+  folly::Future<Status> handleResp(
+      storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+
+  DataSet handleJob(size_t begin, size_t end, Iterator *iter);
+
+  // DstId -> Vertex
+  std::unordered_map<Value, Value> dsts_;
+  DataSet result_;
 };
 
 }  // namespace graph

@@ -103,6 +103,8 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   // Store the default result which not used for later executor
   Status finish(Value &&value);
 
+  size_t getBatchSize(size_t totalSize) const;
+
   int64_t id_;
 
   // Executor name

@@ -593,6 +593,15 @@ void GetNeighborsIter::clearEdges() {
   }
 }
 
+SequentialIter::SequentialIter(const SequentialIter& iter)
+    : Iterator(iter.valuePtr(), Kind::kSequential) {
+  auto valuePtr = iter.valuePtr();
+  auto& ds = valuePtr->mutableDataSet();
+  iter_ = ds.rows.begin();
+  rows_ = &ds.rows;
+  colIndices_ = iter.getColIndices();
+}
+
 SequentialIter::SequentialIter(std::shared_ptr<Value> value, bool checkMemory)
     : Iterator(value, Kind::kSequential, checkMemory) {
   DCHECK(value->isDataSet());

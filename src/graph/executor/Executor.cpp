@@ -734,5 +734,14 @@ folly::Executor *Executor::runner() const {
   return qctx()->rctx()->runner();
 }
 
+size_t Executor::getBatchSize(size_t totalSize) const {
+  size_t jobSize = FLAGS_max_job_size;
+  size_t minBatchSize = FLAGS_min_batch_size;
+  size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);
+  size_t batchSize = batchSizeTmp > minBatchSize ? batchSizeTmp : minBatchSize;
+  VLOG(1) << "totalSize: " << totalSize << " batchSize:" << batchSize;
+  return batchSize;
+}
+
 }  // namespace graph
 }  // namespace nebula

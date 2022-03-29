@@ -204,12 +204,8 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   }
   paths_.emplace_back();
 
-  size_t jobSize = FLAGS_max_job_size;
-  size_t minBatchSize = FLAGS_min_batch_size;
   size_t totalSize = iter->size();
-  size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);
-  size_t batchSize = batchSizeTmp > minBatchSize ? batchSizeTmp : minBatchSize;
-  VLOG(1) << "totalSize: " << totalSize << " batchSize:" << batchSize;
+  size_t batchSize = getBatchSize(totalSize);
 
   // Start multiple jobs for handling the results
   std::vector<folly::Future<StatusOr<JobResult>>> futures;
