@@ -30,17 +30,15 @@ class PathPlanner final : public Planner {
  private:
   SubPlan loopDepPlan();
 
-  SubPlan singlePairPlan(PlanNode* dep);
+  PlanNode* getNeighbors(PlanNode* dep, bool reverse);
 
-  SubPlan multiPairPlan(PlanNode* dep);
+  SubPlan doPlan(PlanNode* dep);
 
-  SubPlan allPairPlan(PlanNode* dep);
+  SubPlan singlePairPlan(PlanNode* left, PlanNode* right);
 
-  PlanNode* singlePairPath(PlanNode* dep, bool reverse);
+  SubPlan multiPairPlan(PlanNode* left, PlanNode* right);
 
-  PlanNode* multiPairPath(PlanNode* dep, bool reverse);
-
-  PlanNode* allPairPath(PlanNode* dep, bool reverse);
+  SubPlan allPairPlan(PlanNode* left, PlanNode* right);
 
   PlanNode* buildPathProp(PlanNode* dep);
 
@@ -74,24 +72,6 @@ class PathPlanner final : public Planner {
    *  same as find path from <vid> to $-.dst OR find path from $-.src to <vid>
    */
   SubPlan buildRuntimeVidPlan();
-
-  /*
-   * When the number of steps is odd
-   * For example: A->B start: A,  end: B
-   * we start to expand from the starting point and the ending point at the same
-   * time expand from start is pathA : A->B expand from to is pathB : B->A When
-   * conjunct paths we should determine whether the end B and end point of pathA
-   * are equal first then determine whether the end point of pathB and the end
-   * point of pathA are equal so we should build path(B) and path(A)
-   */
-  PlanNode* allPairStartVidDataSet(PlanNode* dep, const std::string& input);
-
-  // refer to allPairStartVidDataSet
-  PlanNode* multiPairStartVidDataSet(PlanNode* dep, const std::string& input);
-
-  SubPlan multiPairLoopDepPlan();
-
-  SubPlan allPairLoopDepPlan();
 
  private:
   PathPlanner() = default;

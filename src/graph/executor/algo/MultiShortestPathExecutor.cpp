@@ -2,15 +2,15 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#include "graph/executor/algo/ProduceSemiShortestPathsExecutor.h"
+#include "graph/executor/algo/MultiShortestPathExecutor.h"
+
 #include "graph/planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {
-folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
+folly::Future<Status> MultiShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* path = asNode<ProduceSemiShortestPath>(node());
-  noLoop_ = path->noLoop();
+  auto* path = asNode<MultiShortestPath>(node());
   auto leftIter = ectx_->getResult(path->leftInputVar()).iter();
   auto rightIter = ectx_->getResult(path->rightInputVar()).iter();
   DCHECK(!!leftIter && !!rightIter);
@@ -18,14 +18,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
   ds.colNames = node()->colNames();
 
   if (step_ == 1) {
-    auto rIter = ectx_->getResult(path->rightVidVar()).iter();
-    std::unordered_set<Value> rightVids;
-    for (; rIter->valid(); rIter->next()) {
-      auto& vid = rIter->getColumn(0);
-      if (rightVids.emplace(vid).second) {
-        preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
-      }
-    }
+    init();
   }
 
   Interims leftPaths, rightPaths;
@@ -47,8 +40,8 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
-void ProduceSemiShortestPathExecutor::init() {
-  auto* path = asNode<ProduceSemiShortestPath>(node());
+void MultiShortestPathExecutor::init() {
+  auto* path = asNode<MultiShortestPath>(node());
   auto lIter = ectx_->getResult(path->leftVidVar()).iter();
   auto rIter = ectx_->getResult(path->rightVidVar()).iter();
   std::set<Value> rightVids;
@@ -73,9 +66,7 @@ void ProduceSemiShortestPathExecutor::init() {
   }
 }
 
-void ProduceSemiShortestPathExecutor::buildPath(Iterator* iter,
-                                                Interims& currentPaths,
-                                                bool reverse) {
+void MultiShortestPathExecutor::buildPath(Iterator* iter, Interims& currentPaths, bool reverse) {
   if (step_ == 1) {
     for (; iter->valid(); iter->next()) {
       auto edgeVal = iter->getEdge();
@@ -115,9 +106,9 @@ void ProduceSemiShortestPathExecutor::buildPath(Iterator* iter,
   }
 }
 
-bool ProduceSemiShortestPathExecutor::conjunctPath(Interims& leftPaths,
-                                                   Interims& rightPaths,
-                                                   DataSet& ds) {
+bool MultiShortestPathExecutor::conjunctPath(Interims& leftPaths,
+                                             Interims& rightPaths,
+                                             DataSet& ds) {
   for (auto& leftPath : leftPaths) {
     auto find = rightPaths.find(leftPath.first);
     if (find == rightPaths.end()) {
@@ -160,7 +151,7 @@ bool ProduceSemiShortestPathExecutor::conjunctPath(Interims& leftPaths,
   return false;
 }
 
-void ProduceSemiShortestPathExecutor::setNextStepVid(Interims& paths, const string& var) {
+void MultiShortestPathExecutor::setNextStepVid(Interims& paths, const string& var) {
   DataSet ds;
   ds.colNames = {nebula::kVid};
   for (const auto& path : paths) {

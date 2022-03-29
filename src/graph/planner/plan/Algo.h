@@ -11,15 +11,54 @@
 
 namespace nebula {
 namespace graph {
-class ProduceSemiShortestPath : public SingleInputNode {
+class MultiShortestPath : public BinaryInputNode {
  public:
-  static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceSemiShortestPath(qctx, input));
+  static MultiShortestPath* make(QueryContext* qctx,
+                                 PlanNode* left,
+                                 PlanNode* right,
+                                 size_t steps) {
+    return qctx->objPool()->add(new MultiShortestPath(qctx, left, right, steps));
   }
 
+  size_t steps() const {
+    return steps_;
+  }
+
+  std::string leftVidVar() const {
+    return leftVidVar_;
+  }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  std::string terminationVar() const {
+    return terminationVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
+  void setTerminationVar(const std::string& var) {
+    terminationVar_ = var;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
  private:
-  ProduceSemiShortestPath(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
+  MultiShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
+      : BinaryInputNode(qctx, Kind::kProduceSemiShortestPath, left, right), steps_(steps) {}
+
+ private:
+  size_t steps_{0};
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  std::string terminationVar_;
 };
 
 class BFSShortestPath : public BinaryInputNode {

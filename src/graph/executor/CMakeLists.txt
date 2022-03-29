@@ -42,7 +42,7 @@ nebula_add_library(
     query/RollUpApplyExecutor.cpp
     algo/ConjunctPathExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
-    algo/ProduceSemiShortestPathExecutor.cpp
+    algo/MultiShortestPathExecutor.cpp
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
