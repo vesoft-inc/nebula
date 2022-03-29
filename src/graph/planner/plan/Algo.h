@@ -52,7 +52,7 @@ class MultiShortestPath : public BinaryInputNode {
 
  private:
   MultiShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
-      : BinaryInputNode(qctx, Kind::kProduceSemiShortestPath, left, right), steps_(steps) {}
+      : BinaryInputNode(qctx, Kind::kMultiShortestPath, left, right), steps_(steps) {}
 
  private:
   size_t steps_{0};

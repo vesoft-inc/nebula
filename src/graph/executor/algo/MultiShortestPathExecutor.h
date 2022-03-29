@@ -23,7 +23,7 @@ class MultiShortestPathExecutor final : public Executor {
 
   void init();
   void buildPath(Iterator* iter, Interims& currentPaths, bool reverse);
-  void conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
+  bool conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
   void setNextStepVid(Interims& paths, const string& var);
 
  private:

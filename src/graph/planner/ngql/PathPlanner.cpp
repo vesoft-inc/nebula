@@ -223,7 +223,7 @@ SubPlan PathPlanner::multiPairPlan(PlanNode* left, PlanNode* right) {
   auto* loopCondition = multiPairLoopCondition(steps, terminationVar);
   auto* loop = Loop::make(qctx, loopDep.root, path, loopCondition);
 
-  auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMultiplePairShortest);
+  auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kAllPaths);
   dc->addDep(loop);
   dc->setInputVars({path->outputVar()});
   dc->setColNames(pathCtx_->colNames);
@@ -375,26 +375,6 @@ PlanNode* PathPlanner::getNeighbors(PlanNode* dep, bool reverse) {
   return result;
 }
 
-SubPlan PathPlanner::doPlan(PlanNode* dep) {
-  auto qctx = pathCtx_->qctx;
-  auto* pool = qctx->objPool();
-  bool isShortest = pathCtx_->isShortest;
-  bool noLoop = pathCtx_->noLoop;
-  auto steps = pathCtx_->steps.steps();
-  PlanNode* left = getNeighbors(dep, false);
-  PlanNode* right = getNeighbors(dep, true);
-
-  SubPlan subPlan;
-  if (!isShortest || noLoop) {
-    subPlan = allPairPlan(left, right);
-  } else if (pathCtx_->from.vids.size() == 1 && pathCtx_->to.vids.size() == 1) {
-    subPlan = singlePairPlan(left, right);
-  } else {
-    subPlan = multiPairPlan(left, right);
-  }
-  return subPlan;
-}
-
 StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   pathCtx_ = static_cast<PathContext*>(astCtx);
   auto qctx = pathCtx_->qctx;
@@ -406,12 +386,22 @@ StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   auto* startNode = StartNode::make(qctx);
   auto* pt = PassThroughNode::make(qctx, startNode);
 
-  SubPlan subPlan = doPlan(pt);
+  PlanNode* left = getNeighbors(pt, false);
+  PlanNode* right = getNeighbors(pt, true);
+
+  SubPlan subPlan;
+  if (!pathCtx_->isShortest || pathCtx_->noLoop) {
+    subPlan = allPairPlan(left, right);
+  } else if (from.vids.size() == 1 && to.vids.size() == 1) {
+    subPlan = singlePairPlan(left, right);
+  } else {
+    subPlan = multiPairPlan(left, right);
+  }
+
   // get path's property
   if (pathCtx_->withProp) {
     subPlan.root = buildPathProp(subPlan.root);
   }
-
   return subPlan;
 }
 

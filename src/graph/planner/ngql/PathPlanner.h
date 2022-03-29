@@ -32,8 +32,6 @@ class PathPlanner final : public Planner {
 
   PlanNode* getNeighbors(PlanNode* dep, bool reverse);
 
-  SubPlan doPlan(PlanNode* dep);
-
   SubPlan singlePairPlan(PlanNode* left, PlanNode* right);
 
   SubPlan multiPairPlan(PlanNode* left, PlanNode* right);
