@@ -17,6 +17,19 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   leftVidVar_ = path->leftVidVar();
   rightVidVar_ = path->rightVidVar();
   steps_ = path->steps();
+  if (step_ == 1) {
+    allRightEdges_.emplace_back();
+    auto& currentEdges = allRightEdges_.back();
+    auto rIter = ectx_->getResult(rightVidVar_).iter();
+    std::unordered_set<Value> rightVids;
+    for (; rIter->valid(); rIter->next()) {
+      auto& vid = rIter->getColumn(0);
+      if (rightVids.emplace(vid).second) {
+        Edge dummy;
+        currentEdges.emplace(vid, std::move(dummy));
+      }
+    }
+  }
 
   DataSet ds;
   ds.colNames = path->colNames();
@@ -41,14 +54,6 @@ void BFSShortestPathExecutor::buildPath(Iterator* iter, bool reverse) {
   DataSet nextStepVids;
   nextStepVids.colNames = {nebula::kVid};
   if (step_ == 1) {
-    if (reverse) {
-      auto vid = iter->getColumn(0);
-      Edge dumpy;
-      currentEdges.emplace(std::move(vid), std::move(dumpy));
-      allEdges.emplace_back();
-      currentEdges = allEdges.back();
-    }
-
     for (; iter->valid(); iter->next()) {
       auto edgeVal = iter->getEdge();
       if (UNLIKELY(!edgeVal.isEdge())) {
@@ -91,6 +96,7 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
   const auto& leftEdges = allLeftEdges_.back();
   const auto& preRightEdges = allRightEdges_[step_ - 1];
   std::vector<Value> meetVids;
+  bool oddStep = true;
   for (const auto& edge : leftEdges) {
     if (preRightEdges.find(edge.first) != preRightEdges.end()) {
       meetVids.push_back(edge.first);
@@ -101,13 +107,14 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
     for (const auto& edge : rightEdges) {
       if (rightEdges.find(edge.first) != rightEdges.end()) {
         meetVids.push_back(edge.first);
+        oddStep = false;
       }
     }
   }
   std::vector<Row> rows;
   if (!meetVids.empty()) {
-    auto leftPaths = createPath(meetVids, false);
-    auto rightPaths = createPath(meetVids, true);
+    auto leftPaths = createPath(meetVids, false, oddStep);
+    auto rightPaths = createPath(meetVids, true, oddStep);
     for (auto& leftPath : leftPaths) {
       auto range = rightPaths.equal_range(leftPath.first);
       for (auto& rightPath = range.first; rightPath != range.second; ++rightPath) {
@@ -124,14 +131,20 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
 }
 
 std::unordered_multimap<Value, Path> BFSShortestPathExecutor::createPath(
-    std::vector<Value> meetVids, bool reverse) {
+    std::vector<Value> meetVids, bool reverse, bool oddStep) {
   std::unordered_multimap<Value, Path> result;
   auto& allEdges = reverse ? allRightEdges_ : allLeftEdges_;
   for (auto& meetVid : meetVids) {
     Path start;
     start.src = Vertex(meetVid, {});
     std::vector<Path> interimPaths = {std::move(start)};
-    for (auto iter = allEdges.rbegin(); iter != allEdges.rend(); ++iter) {
+    auto iter = (reverse && oddStep) ? allEdges.rbegin() + 1 : allEdges.rbegin();
+    auto end = reverse ? allEdges.rend() - 1 : allEdges.rend();
+    if (iter == end) {
+      result.emplace(meetVid, std::move(start));
+      return result;
+    }
+    for (; iter != end; ++iter) {
       std::vector<Path> temp;
       for (auto& interimPath : interimPaths) {
         Value id;

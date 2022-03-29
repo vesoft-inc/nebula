@@ -21,7 +21,9 @@ class BFSShortestPathExecutor final : public Executor {
 
   std::vector<Row> conjunctPath();
 
-  std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids, bool reverse);
+  std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids,
+                                                  bool reverse,
+                                                  bool oddStep);
 
  private:
   size_t step_{1};
