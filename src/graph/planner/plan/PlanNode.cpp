@@ -233,8 +233,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "BFSShortest";
     case Kind::kMultiShortestPath:
       return "MultiShortestPath";
-    case Kind::kConjunctPath:
-      return "ConjunctPath";
     case Kind::kProduceAllPaths:
       return "ProduceAllPaths";
     case Kind::kCartesianProduct:

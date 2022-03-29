@@ -58,7 +58,6 @@ class PlanNode {
     kAssign,
     kBFSShortest,
     kMultiShortestPath,
-    kConjunctPath,
     kProduceAllPaths,
     kCartesianProduct,
     kSubgraph,

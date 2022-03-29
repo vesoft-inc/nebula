@@ -99,7 +99,6 @@ nebula_add_test(
         TopNTest.cpp
         AggregateTest.cpp
         JoinTest.cpp
-        ConjunctPathTest.cpp
         CartesianProductTest.cpp
         AssignTest.cpp
         ShowQueriesTest.cpp

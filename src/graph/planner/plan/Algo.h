@@ -99,58 +99,6 @@ class BFSShortestPath : public BinaryInputNode {
   size_t steps_{0};
 };
 
-class ConjunctPath : public BinaryInputNode {
- public:
-  enum class PathKind : uint8_t {
-    kBiBFS,
-    kBiDijkstra,
-    kFloyd,
-    kAllPaths,
-  };
-
-  static ConjunctPath* make(
-      QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps) {
-    return qctx->objPool()->add(new ConjunctPath(qctx, left, right, pathKind, steps));
-  }
-
-  PathKind pathKind() const {
-    return pathKind_;
-  }
-
-  size_t steps() const {
-    return steps_;
-  }
-
-  void setConditionalVar(std::string varName) {
-    conditionalVar_ = std::move(varName);
-  }
-
-  std::string conditionalVar() const {
-    return conditionalVar_;
-  }
-
-  bool noLoop() const {
-    return noLoop_;
-  }
-
-  void setNoLoop(bool noLoop) {
-    noLoop_ = noLoop;
-  }
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
- private:
-  ConjunctPath(QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps)
-      : BinaryInputNode(qctx, Kind::kConjunctPath, left, right) {
-    pathKind_ = pathKind;
-    steps_ = steps;
-  }
-
-  PathKind pathKind_;
-  size_t steps_{0};
-  std::string conditionalVar_;
-  bool noLoop_;
-};
-
 class ProduceAllPaths final : public BinaryInputNode {
  public:
   static ProduceAllPaths* make(

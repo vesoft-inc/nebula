@@ -25,31 +25,6 @@ std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
-  auto desc = BinaryInputNode::explain();
-  switch (pathKind_) {
-    case PathKind::kBiBFS: {
-      addDescription("kind", "BFS", desc.get());
-      break;
-    }
-    case PathKind::kBiDijkstra: {
-      addDescription("kind", "Dijkstra", desc.get());
-      break;
-    }
-    case PathKind::kFloyd: {
-      addDescription("kind", "Floyd", desc.get());
-      break;
-    }
-    case PathKind::kAllPaths: {
-      addDescription("kind", "AllPath", desc.get());
-      break;
-    }
-  }
-  addDescription("conditionalVar", util::toJson(conditionalVar_), desc.get());
-  addDescription("noloop", util::toJson(noLoop_), desc.get());
-  return desc;
-}
-
 std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
