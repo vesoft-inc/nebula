@@ -4,9 +4,40 @@
 
 #ifndef GRAPH_EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
-
 #include "graph/executor/Executor.h"
 
+// BFSShortestPath has two inputs.  GetNeighbors(From) & GetNeighbors(To)
+// There are two Main functions
+// First : Get the next vid for GetNeighbors to expand
+// Second: Extract edges from GetNeighbors to form path, concatenate the path(From) and the path(To)
+//         into a complete path
+//
+//
+// Functions:
+// `buildPath`: extract edges from GetNeighbors put it into allLeftEdges or allRightEdges
+//   and set the vid that needs to be expanded in the next step
+//
+// `conjunctPath`: concatenate the path(From) and the path(To) into a complete path
+//   allLeftEdges needs to match the previous step of the allRightEdges
+//   then current step of the allRightEdges each time
+//   Eg. a->b->c->d
+//   firstStep:  allLeftEdges [<b, a->b>]  allRightEdges [<c, d<-c>],   can't find common vid
+//   secondStep: allLeftEdges [<b, a->b>, <c, b->c>] allRightEdges [<b, c<-b>, <c, d<-c>]
+//   we should use allLeftEdges(secondStep) to match allRightEdges(firstStep) first
+//   if find common vid, no need to match allRightEdges(secondStep)
+//
+// Member:
+// `allLeftEdges_` : is a array, each element in the array is a hashTable
+//  hash table
+//    KEY   : the VID of the vertex
+//    VALUE : edges (the destination is KEY)
+//
+// `allRightEdges_` : same as allLeftEdges_
+//
+// `leftVisitedVids_` : keey already visited vid to avoid repeated visits (left)
+// `rightVisitedVids_` : keey already visited vid to avoid repeated visits (right)
+// `leftVidVar_` : getNeighbors(left)'s inputVar
+// `rightVidVar_` : getNeighbors(right)'s inputVar
 namespace nebula {
 namespace graph {
 class BFSShortestPathExecutor final : public Executor {

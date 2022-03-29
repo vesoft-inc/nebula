@@ -104,7 +104,7 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
   }
   if (meetVids.empty() && step_ * 2 <= steps_) {
     const auto& rightEdges = allRightEdges_.back();
-    for (const auto& edge : rightEdges) {
+    for (const auto& edge : leftEdges) {
       if (rightEdges.find(edge.first) != rightEdges.end()) {
         meetVids.push_back(edge.first);
         oddStep = false;
@@ -159,16 +159,14 @@ std::unordered_multimap<Value, Path> BFSShortestPathExecutor::createPath(
           auto& edge = edgeIter->second;
           p.steps.emplace_back(Step(Vertex(edge.src, {}), -edge.type, edge.name, edge.ranking, {}));
 
-          if (iter == allEdges.rend() - 1) {
+          if (iter == end - 1) {
             result.emplace(p.src.vid, std::move(p));
           } else {
             temp.emplace_back(std::move(p));
           }
         }  //  edgeIter
       }    // interimPath
-      if (iter != allEdges.rend() - 1) {
-        interimPaths = std::move(temp);
-      }
+      interimPaths = std::move(temp);
     }
   }
   return result;
