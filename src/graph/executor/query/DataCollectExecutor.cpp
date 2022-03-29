@@ -339,7 +339,6 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
     }
     ds.rows.emplace_back(Row({std::move(path)}));
   }
-  VLOG(2) << "Path with props : \n" << ds;
   result_.setDataSet(std::move(ds));
   return Status::OK();
 }

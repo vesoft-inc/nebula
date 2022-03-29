@@ -19,16 +19,12 @@ folly::Future<Status> FilterExecutor::execute() {
     return status;
   }
 
-  VLOG(2) << "Get input var: " << filter->inputVar()
-          << ", iterator type: " << static_cast<int16_t>(iter->kind());
-
   ResultBuilder builder;
   builder.value(result.valuePtr());
   QueryExpressionContext ctx(ectx_);
   auto condition = filter->condition();
   while (iter->valid()) {
     auto val = condition->eval(ctx(iter));
-    DLOG(ERROR) << "DEBUG POINT: filter val: " << val;
     if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
       return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
     }

@@ -68,7 +68,7 @@ Status TraverseExecutor::buildRequestDataSet() {
 
 folly::Future<Status> TraverseExecutor::traverse() {
   if (reqDs_.rows.empty()) {
-    VLOG(1) << "Empty input.";
+    LOG(INFO) << "Empty input.";
     DataSet emptyResult;
     return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
