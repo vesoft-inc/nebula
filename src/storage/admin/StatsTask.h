@@ -6,7 +6,6 @@
 #ifndef STORAGE_ADMIN_STATSTASK_H_
 #define STORAGE_ADMIN_STATSTASK_H_
 
-#include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
@@ -27,6 +26,8 @@ class StatsTask : public AdminTask {
   ~StatsTask() {
     LOG(INFO) << "Release Stats Task";
   }
+
+  bool check() override;
 
   /**
    * @brief Generate sub tasks for StatsTask.

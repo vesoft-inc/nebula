@@ -283,13 +283,4 @@ std::string DeleteEdgesSentence::toString() const {
   return buf;
 }
 
-std::string DownloadSentence::toString() const {
-  return folly::stringPrintf(
-      "DOWNLOAD HDFS \"hdfs://%s:%d%s\"", host_.get()->c_str(), port_, path_.get()->c_str());
-}
-
-std::string IngestSentence::toString() const {
-  return "INGEST";
-}
-
 }  // namespace nebula

@@ -10,6 +10,10 @@
 namespace nebula {
 namespace storage {
 
+bool CompactTask::check() {
+  return env_->kvstore_ != nullptr;
+}
+
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> CompactTask::genSubTasks() {
   std::vector<AdminSubTask> ret;
   if (!env_->kvstore_) {

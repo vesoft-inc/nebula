@@ -7,7 +7,6 @@
 #define STORAGE_ADMIN_ADMINTASKPROCESSOR_H_
 
 #include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"

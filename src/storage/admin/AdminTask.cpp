@@ -6,7 +6,9 @@
 #include "storage/admin/AdminTask.h"
 
 #include "storage/admin/CompactTask.h"
+#include "storage/admin/DownloadTask.h"
 #include "storage/admin/FlushTask.h"
+#include "storage/admin/IngestTask.h"
 #include "storage/admin/RebuildEdgeIndexTask.h"
 #include "storage/admin/RebuildFTIndexTask.h"
 #include "storage/admin/RebuildTagIndexTask.h"
@@ -36,6 +38,12 @@ std::shared_ptr<AdminTask> AdminTaskFactory::createAdminTask(StorageEnv* env, Ta
       break;
     case meta::cpp2::JobType::STATS:
       ret = std::make_shared<StatsTask>(env, std::move(ctx));
+      break;
+    case meta::cpp2::JobType::DOWNLOAD:
+      ret = std::make_shared<DownloadTask>(env, std::move(ctx));
+      break;
+    case meta::cpp2::JobType::INGEST:
+      ret = std::make_shared<IngestTask>(env, std::move(ctx));
       break;
     default:
       break;

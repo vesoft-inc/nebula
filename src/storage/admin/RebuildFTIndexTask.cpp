@@ -12,6 +12,10 @@ DECLARE_uint32(raft_heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
+bool RebuildFTIndexTask::check() {
+  return env_->kvstore_ != nullptr;
+}
+
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildFTIndexTask::genSubTasks() {
   std::vector<AdminSubTask> tasks;
   VLOG(1) << "Begin rebuild fulltext indexes, space : " << *ctx_.parameters_.space_id_ref();
@@ -47,8 +51,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildFTIndexTask::
     VLOG(1) << folly::sformat("Processing fulltext rebuild subtask, space={}, part={}",
                               *ctx_.parameters_.space_id_ref(),
                               part);
-    std::function<nebula::cpp2::ErrorCode()> task =
-        std::bind(&RebuildFTIndexTask::taskByPart, this, listener);
+    TaskFunction task = std::bind(&RebuildFTIndexTask::taskByPart, this, listener);
     tasks.emplace_back(std::move(task));
   }
   return tasks;

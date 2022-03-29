@@ -29,6 +29,8 @@ class RebuildIndexTask : public AdminTask {
     LOG(INFO) << "Release Rebuild Task";
   }
 
+  bool check() override;
+
   /**
    * @brief Generate subtasks for rebuilding index.
    *
