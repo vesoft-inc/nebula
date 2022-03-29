@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef META_KVJOBDESCRIPTION_H_
-#define META_KVJOBDESCRIPTION_H_
+#ifndef META_JOBDESCRIPTION_H_
+#define META_JOBDESCRIPTION_H_
 
 #include <gtest/gtest_prod.h>
 
@@ -182,4 +182,4 @@ class JobDescription {
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_KVJOBDESCRIPTION_H_
+#endif  // META_JOBDESCRIPTION_H_

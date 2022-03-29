@@ -7,7 +7,6 @@
 #define STORAGE_ADMIN_STOPADMINTASKPROCESSOR_H_
 
 #include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"

@@ -14,6 +14,10 @@ namespace storage {
 
 const int32_t kReserveNum = 1024 * 4;
 
+bool RebuildIndexTask::check() {
+  return env_->kvstore_ != nullptr;
+}
+
 RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
     : AdminTask(env, std::move(ctx)) {
   // Rebuild index rate is limited to FLAGS_rebuild_index_part_rate_limit * SubTaskConcurrency. As
@@ -26,7 +30,6 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::genSubTasks() {
-  CHECK_NOTNULL(env_->kvstore_);
   space_ = *ctx_.parameters_.space_id_ref();
   auto parts = *ctx_.parameters_.parts_ref();
 
@@ -67,8 +70,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
 
   for (const auto& part : parts) {
     env_->rebuildIndexGuard_->insert_or_assign(std::make_tuple(space_, part), IndexState::STARTING);
-    std::function<nebula::cpp2::ErrorCode()> task =
-        std::bind(&RebuildIndexTask::invoke, this, space_, part, items);
+    TaskFunction task = std::bind(&RebuildIndexTask::invoke, this, space_, part, items);
     tasks.emplace_back(std::move(task));
   }
   return tasks;

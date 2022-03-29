@@ -259,15 +259,6 @@ class SpaceOptItem final {
     }
   }
 
-  std::string getGroupName() const {
-    if (isString()) {
-      return asString();
-    } else {
-      LOG(ERROR) << "group name value illegal.";
-      return "";
-    }
-  }
-
   OptionType getOptType() const {
     return optType_;
   }
