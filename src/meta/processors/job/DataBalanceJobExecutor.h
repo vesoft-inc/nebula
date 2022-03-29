@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Executor for balance in zone, always called by job manager
+ * @brief Executor for balance in zone, always called by job manager.
  */
 class DataBalanceJobExecutor : public BalanceJobExecutor {
   FRIEND_TEST(BalanceTest, BalanceDataPlanTest);

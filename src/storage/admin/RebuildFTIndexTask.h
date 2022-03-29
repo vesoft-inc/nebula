@@ -6,7 +6,6 @@
 #ifndef STORAGE_ADMIN_REBUILDFTINDEXTASK_H_
 #define STORAGE_ADMIN_REBUILDFTINDEXTASK_H_
 
-#include "common/thrift/ThriftTypes.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"
@@ -21,6 +20,9 @@ namespace storage {
 class RebuildFTIndexTask : public AdminTask {
  public:
   RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
+
+  bool check() override;
+
   /**
    * @brief Generate subtasks for rebuilding FT index.
    *

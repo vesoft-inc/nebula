@@ -633,13 +633,6 @@ class MetaClient : public BaseMetaClient {
       nebula::cpp2::ErrorCode taskErrCode,
       cpp2::StatsItem* statisticItem);
 
-  folly::Future<StatusOr<bool>> download(const std::string& hdfsHost,
-                                         int32_t hdfsPort,
-                                         const std::string& hdfsPath,
-                                         GraphSpaceID spaceId);
-
-  folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
-
   folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
 
   folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) override;

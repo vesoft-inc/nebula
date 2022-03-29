@@ -14,8 +14,11 @@
 namespace nebula {
 namespace storage {
 
+bool StatsTask::check() {
+  return env_->kvstore_ != nullptr && env_->schemaMan_ != nullptr;
+}
+
 nebula::cpp2::ErrorCode StatsTask::getSchemas(GraphSpaceID spaceId) {
-  CHECK_NOTNULL(env_->schemaMan_);
   auto tags = env_->schemaMan_->getAllVerTagSchema(spaceId);
   if (!tags.ok()) {
     return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
@@ -61,8 +64,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> StatsTask::genSubTas
 
   std::vector<AdminSubTask> tasks;
   for (const auto& part : parts) {
-    std::function<nebula::cpp2::ErrorCode()> task =
-        std::bind(&StatsTask::genSubTask, this, spaceId_, part, tags_, edges_);
+    TaskFunction task = std::bind(&StatsTask::genSubTask, this, spaceId_, part, tags_, edges_);
     tasks.emplace_back(std::move(task));
   }
   return tasks;
@@ -100,7 +102,6 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   auto partitionNum = partitionNumRet.value();
   LOG(INFO) << "Start stats task";
-  CHECK_NOTNULL(env_->kvstore_);
   auto tagPrefix = NebulaKeyUtils::tagPrefix(part);
   std::unique_ptr<kvstore::KVIterator> tagIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);

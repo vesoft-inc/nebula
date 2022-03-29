@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Executor for compact job, always called by job manager
+ * @brief Executor for compact job, always called by job manager.
  */
 class CompactJobExecutor : public SimpleConcurrentJobExecutor {
  public:
