@@ -166,7 +166,8 @@ void TestShard::onLeaderReady(TermID term) {
 }
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
-    std::unique_ptr<LogIterator> iter, bool) {
+    std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
+  UNUSED(wait);
   LogID lastId = kNoCommitLogId;
   TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
@@ -178,12 +179,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::TRANSFER_LEADER: {
           auto nLeader = decodeTransferLeader(log);
-          commitTransLeader(nLeader);
+          commitTransLeader(nLeader, needLock);
           break;
         }
         case CommandType::REMOVE_PEER: {
           auto peer = decodeRemovePeer(log);
-          commitRemovePeer(peer);
+          commitRemovePeer(peer, needLock);
           break;
         }
         case CommandType::ADD_PEER:

@@ -383,28 +383,27 @@ nebula::cpp2::ErrorCode RaftPart::canAppendLogs(TermID termId) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void RaftPart::addLearner(const HostAddr& addr) {
-  bool acquiredHere = raftLock_.try_lock();  // because addLearner may be called in the
-                                             // NebulaStore, in which we could not access raftLock_
-  if (addr == addr_) {
-    if (acquiredHere) {
-      raftLock_.unlock();
+void RaftPart::addLearner(const HostAddr& addr, bool needLock) {
+  auto addLearner = [&] {
+    if (addr == addr_) {
+      VLOG(1) << idStr_ << "I am learner!";
+      return;
     }
-    VLOG(1) << idStr_ << "I am learner!";
-    return;
-  }
-  auto it = std::find_if(
-      hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
-  if (it == hosts_.end()) {
-    hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
-    VLOG(1) << idStr_ << "Add learner " << addr;
+    auto it = std::find_if(
+        hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
+    if (it == hosts_.end()) {
+      hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
+      VLOG(1) << idStr_ << "Add learner " << addr;
+    } else {
+      VLOG(1) << idStr_ << "The host " << addr << " has been existed as "
+              << ((*it)->isLearner() ? " learner " : " group member");
+    }
+  };
+  if (needLock) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    addLearner();
   } else {
-    VLOG(1) << idStr_ << "The host " << addr << " has been existed as "
-            << ((*it)->isLearner() ? " learner " : " group member");
-  }
-
-  if (acquiredHere) {
-    raftLock_.unlock();
+    addLearner();
   }
 }
 
@@ -437,40 +436,44 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
   }
 }
 
-void RaftPart::commitTransLeader(const HostAddr& target) {
-  bool needToUnlock = raftLock_.try_lock();
-  VLOG(1) << idStr_ << "Commit transfer leader to " << target;
-  switch (role_) {
-    case Role::LEADER: {
-      if (target != addr_ && !hosts_.empty()) {
-        auto iter = std::find_if(
-            hosts_.begin(), hosts_.end(), [](const auto& h) { return !h->isLearner(); });
-        if (iter != hosts_.end()) {
-          lastMsgRecvDur_.reset();
-          role_ = Role::FOLLOWER;
-          leader_ = HostAddr("", 0);
-          for (auto& host : hosts_) {
-            host->pause();
+void RaftPart::commitTransLeader(const HostAddr& target, bool needLock) {
+  auto transfer = [&] {
+    VLOG(1) << idStr_ << "Commit transfer leader to " << target;
+    switch (role_) {
+      case Role::LEADER: {
+        if (target != addr_ && !hosts_.empty()) {
+          auto iter = std::find_if(
+              hosts_.begin(), hosts_.end(), [](const auto& h) { return !h->isLearner(); });
+          if (iter != hosts_.end()) {
+            lastMsgRecvDur_.reset();
+            role_ = Role::FOLLOWER;
+            leader_ = HostAddr("", 0);
+            for (auto& host : hosts_) {
+              host->pause();
+            }
+            VLOG(1) << idStr_ << "Give up my leadership!";
           }
-          VLOG(1) << idStr_ << "Give up my leadership!";
+        } else {
+          VLOG(1) << idStr_ << "I am already the leader!";
         }
-      } else {
-        VLOG(1) << idStr_ << "I am already the leader!";
+        break;
       }
-      break;
+      case Role::FOLLOWER:
+      case Role::CANDIDATE: {
+        VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
+        break;
+      }
+      case Role::LEARNER: {
+        VLOG(1) << idStr_ << "I am learner, not in the raft group, skip the log";
+        break;
+      }
     }
-    case Role::FOLLOWER:
-    case Role::CANDIDATE: {
-      VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
-      break;
-    }
-    case Role::LEARNER: {
-      VLOG(1) << idStr_ << "I am learner, not in the raft group, skip the log";
-      break;
-    }
-  }
-  if (needToUnlock) {
-    raftLock_.unlock();
+  };
+  if (needLock) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    transfer();
+  } else {
+    transfer();
   }
 }
 
@@ -596,19 +599,21 @@ void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
   removePeer(peer);
 }
 
-void RaftPart::commitRemovePeer(const HostAddr& peer) {
-  bool needToUnlock = raftLock_.try_lock();
-  SCOPE_EXIT {
-    if (needToUnlock) {
-      raftLock_.unlock();
+void RaftPart::commitRemovePeer(const HostAddr& peer, bool needLock) {
+  auto remove = [&] {
+    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
+      VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", skip remove peer in commit";
+      return;
     }
+    CHECK(Role::LEADER == role_);
+    removePeer(peer);
   };
-  if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-    VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", skip remove peer in commit";
-    return;
+  if (needLock) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    remove();
+  } else {
+    remove();
   }
-  CHECK(Role::LEADER == role_);
-  removePeer(peer);
 }
 
 folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendAsync(ClusterID source, std::string log) {
@@ -932,7 +937,14 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     {
       auto walIt = wal_->iterator(committedId + 1, lastLogId);
       // Step 3: Commit the batch
-      auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true);
+      /*
+      As for leader, we did't acquire raftLock because it would block heartbeat. Instead, we
+      protect the partition by the logsLock_, there won't be another out-going logs. So the third
+      parameters need to be true, we would grab the lock for some special operations. Besides,
+      leader neet to wait all logs applied to state machine, so the second parameters need to be
+      true so the second parameters need to be true.
+      */
+      auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true, true);
       if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
         std::lock_guard<std::mutex> g(raftLock_);
@@ -1664,7 +1676,9 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
   if (lastLogIdCanCommit > committedLogId_) {
     auto walIt = wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit);
-    auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false);
+    // follower do not wait all logs applied to state machine, so second parameter is false. And the
+    // raftLock_ has been acquired, so the third parameter is false as well.
+    auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false, false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
       stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
       VLOG(4) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
