@@ -721,6 +721,11 @@ class NebulaStore : public KVStore, public Handler {
 
  private:
   /**
+   * @brief Backward compatible: fill old system part info with peers info.
+   *
+   */
+  void fillPartPeers();
+  /**
    * @brief Load partitions by reading system part keys in kv engine
    */
   void loadPartFromDataPath();

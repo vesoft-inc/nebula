@@ -13,6 +13,7 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
 
@@ -64,6 +65,7 @@ bool NebulaStore::init() {
   // todo(doodle): we could support listener and normal storage start at same
   // instance
   if (!isListener()) {
+    fillPartPeers();
     // TODO(spw): need to refactor, we could load data from local regardless of partManager,
     // then adjust the data in loadPartFromPartManager.
     loadPartFromDataPath();
@@ -79,6 +81,62 @@ bool NebulaStore::init() {
   LOG(INFO) << "Register handler...";
   options_.partMan_->registerHandler(this);
   return true;
+}
+
+void NebulaStore::fillPartPeers() {
+  CHECK(!!options_.partMan_);
+
+  auto partsMap = options_.partMan_->parts(storeSvcAddr_);
+
+  // fill empty parts with part manager
+  for (auto& path : options_.dataPaths_) {
+    auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
+    auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
+    for (auto& dir : dirs) {
+      LOG(INFO) << "Scan path \"" << rootPath << "/" << dir << "\"";
+      try {
+        GraphSpaceID spaceId;
+        try {
+          spaceId = folly::to<GraphSpaceID>(dir);
+        } catch (const std::exception& ex) {
+          LOG(ERROR) << folly::sformat("Data path {} invalid {}", dir, ex.what());
+          continue;
+        }
+
+        if (spaceId == 0) {
+          // skip the system space, only handle data space here.
+          continue;
+        }
+
+        if (partsMap.find(spaceId) == partsMap.end()) {
+          // skip if the space not in the part manager
+          continue;
+        }
+
+        std::vector<KV> data;
+        auto& partPeers = partsMap[spaceId];
+        auto engine = newEngine(spaceId, path, options_.walPath_);
+        for (auto& [partId, raftPeers] : engine->allPartPeers()) {
+          if (partPeers.find(partId) == partPeers.end()) {
+            continue;
+          }
+
+          if (raftPeers.size() == 0) {
+            Peers peersToPersist;
+            for (auto& peer : partPeers[partId].hosts_) {
+              peersToPersist.addOrUpdate(Peer(getRaftAddr(peer)));
+            }
+            data.emplace_back(NebulaKeyUtils::systemPartKey(partId), peersToPersist.toString());
+          }
+        }
+
+        auto code = engine->multiPut(data);
+        CHECK(code == nebula::cpp2::ErrorCode::SUCCEEDED);
+      } catch (std::exception& e) {
+        LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
+      }
+    }
+  }
 }
 
 void NebulaStore::loadPartFromDataPath() {
@@ -110,8 +168,9 @@ void NebulaStore::loadPartFromDataPath() {
         auto engine = newEngine(spaceId, path, options_.walPath_);
         std::map<PartitionID, Peers> partRaftPeers;
         for (auto& [partId, raftPeers] : engine->allPartPeers()) {
-          bool isNormalPeer = true;
+          CHECK_NE(raftPeers.size(), 0);
 
+          bool isNormalPeer = true;
           Peer raftPeer;
           bool exist = raftPeers.get(raftAddr_, &raftPeer);
           if (exist) {

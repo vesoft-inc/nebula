@@ -59,6 +59,7 @@ struct Peer {
   Status status;
 
   Peer() : addr(), status(Status::kNormalPeer) {}
+  explicit Peer(HostAddr a) : addr(a), status(Status::kNormalPeer) {}
   Peer(HostAddr a, Status s) : addr(a), status(s) {}
 
   std::string toString() const {
