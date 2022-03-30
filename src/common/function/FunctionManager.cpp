@@ -417,7 +417,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"duration",
      {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
-    {"extract", {TypeSignature({Value::Type::STRING}, Value::Type::LIST)}},
+    {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
 };
 
 // static
