@@ -18,6 +18,8 @@ class FilterExecutor final : public Executor {
       : Executor("FilterExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
+
+  DataSet handleJob(size_t begin, size_t end, Iterator *iter);
 };
 
 }  // namespace graph
