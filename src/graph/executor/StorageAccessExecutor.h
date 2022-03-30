@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
 #define GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
@@ -9,7 +8,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "clients/storage/StorageClientBase.h"
-#include "graph/context/QueryContext.h"
 #include "graph/executor/Executor.h"
 
 namespace nebula {

@@ -30,7 +30,7 @@ class GetPropExecutor : public StorageAccessExecutor {
       if (resp.props_ref().has_value()) {
         if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
           // it's impossible according to the interface
-          LOG(WARNING) << "Heterogeneous props dataset";
+          LOG(ERROR) << "Heterogeneous props dataset";
           state = Result::State::kPartialSuccess;
         }
       } else {

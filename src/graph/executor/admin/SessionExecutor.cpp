@@ -1,11 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/SessionExecutor.h"
 
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -100,7 +98,6 @@ void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataS
 }
 
 folly::Future<Status> UpdateSessionExecutor::execute() {
-  VLOG(1) << "Update sessions to metad";
   SCOPED_TIMER(&execTime_);
   auto *updateNode = asNode<UpdateSession>(node());
   std::vector<meta::cpp2::Session> sessions;
@@ -109,7 +106,7 @@ folly::Future<Status> UpdateSessionExecutor::execute() {
       [this](auto &&resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Update session fail " << resp.status();
           return resp.status();
         }
         return Status::OK();

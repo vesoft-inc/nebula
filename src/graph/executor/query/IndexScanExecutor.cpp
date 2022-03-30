@@ -1,14 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/IndexScanExecutor.h"
-
-#include <algorithm>
-
-#include "graph/context/QueryContext.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageClient;

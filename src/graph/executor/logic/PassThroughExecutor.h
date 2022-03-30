@@ -1,13 +1,12 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_LOGIC_PASSTHROUGHEXECUTOR_H_
 #define GRAPH_EXECUTOR_LOGIC_PASSTHROUGHEXECUTOR_H_
 
 #include "graph/executor/Executor.h"
-
+// merge two execution streams into one. do nothing
 namespace nebula {
 namespace graph {
 
