@@ -1,4 +1,4 @@
-// Copyright (c) 2022 vesoft inc. All rights reserved.
+// Copyright (c) 2020 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
 
@@ -96,7 +96,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
     }
       // no default so the compiler will warning when lack
   }
-  LOG(ERROR) << "Unknown job operation " << static_cast<int>(jobOp);
+  DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
   return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
 }
 
