@@ -417,6 +417,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"duration",
      {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
+    {"extract", {TypeSignature({Value::Type::STRING}, Value::Type::LIST)}},
 };
 
 // static
@@ -2699,6 +2700,25 @@ FunctionManager::FunctionManager() {
           return Value::kNullBadType;
         }
       }
+    };
+  }
+  {
+    auto &attr = functions_["extract"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+        if (!args[0].get().isStr() || !args[1].get().isStr()) {
+            return Value::kNullBadType;
+        }
+
+        const auto &s = args[0].get().getStr();
+        std::regex rgx(args[1].get().getStr());
+        List res;
+        for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
+            res.emplace_back(std::move(beg->str()));
+        }
+        return res;
     };
   }
 }  // NOLINT
