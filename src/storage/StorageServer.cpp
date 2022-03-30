@@ -280,8 +280,6 @@ void StorageServer::stop() {
   if (storageServer_) {
 #ifndef BUILD_STANDALONE
     storageServer_->cleanUp();
-#else
-    storageServer_->stop();
 #endif
   }
 
@@ -332,7 +330,6 @@ std::shared_ptr<GraphStorageLocalServer> StorageServer::getStorageServer() {
   auto server = GraphStorageLocalServer::getInstance();
   server->setThreadManager(workers_);
   server->setInterface(std::move(handler));
-  server->serve();
   return server;
 }
 #endif
