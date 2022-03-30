@@ -93,7 +93,7 @@ static testing::AssertionResult msAboutEqual(size_t expected, size_t actual) {
   return testing::AssertionFailure() << "actual: " << actual << ", expected: " << expected;
 }
 
-TEST(GenericThreadPool, addDelayTask) {
+TEST(GenericThreadPool, DISABLED_addDelayTask) {
   GenericThreadPool pool;
   ASSERT_TRUE(pool.start(1));
   {
@@ -108,7 +108,7 @@ TEST(GenericThreadPool, addDelayTask) {
   }
 }
 
-TEST(GenericThreadPool, addRepeatTask) {
+TEST(GenericThreadPool, DISABLED_addRepeatTask) {
   GenericThreadPool pool;
   ASSERT_TRUE(pool.start(1));
   {
