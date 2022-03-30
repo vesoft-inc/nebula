@@ -31,8 +31,12 @@ class AppendVerticesExecutor final : public GetPropExecutor {
 
   DataSet handleJob(size_t begin, size_t end, Iterator *iter);
 
+  DataSet buildVerticesResult(size_t begin, size_t end, Iterator *iter);
+
+  void buildMap(size_t begin, size_t end, Iterator *iter);
+
   // DstId -> Vertex
-  std::unordered_map<Value, Value> dsts_;
+  folly::ConcurrentHashMap<Value, Value> dsts_;
   DataSet result_;
 };
 

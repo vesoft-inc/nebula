@@ -73,8 +73,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
   auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   auto *av = asNode<AppendVertices>(node());
-  auto *vFilter = av->vFilter();
-  QueryExpressionContext ctx(qctx()->ectx());
 
   auto inputIter = qctx()->ectx()->getResult(av->inputVar()).iter();
   result_.colNames = av->colNames();
@@ -82,62 +80,158 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
 
   LOG(ERROR) << "point1: " << dur.elapsedInUSec();
 
+  nebula::DataSet v;
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
-      auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
-      for (; iter.valid(); iter.next()) {
-        if (vFilter != nullptr) {
-          auto &vFilterVal = vFilter->eval(ctx(&iter));
-          if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
-            continue;
-          }
-        }
-        if (!av->trackPrevPath()) {  // eg. MATCH (v:Person) RETURN v
-          Row row;
-          row.values.emplace_back(iter.getVertex());
-          result_.rows.emplace_back(std::move(row));
-        } else {
-          dsts_.emplace(iter.getColumn(kVid), iter.getVertex());
-        }
-      }
+      auto &&respV = std::move(*resp.props_ref());
+      v.colNames = respV.colNames;
+      v.rows.insert(v.rows.end(),
+                    std::make_move_iterator(respV.begin()),
+                    std::make_move_iterator(respV.end()));
     }
   }
+  auto propIter = PropIter(std::make_shared<Value>(std::move(v)));
   LOG(ERROR) << "point2: " << dur.elapsedInUSec();
 
+  folly::Future<Status> prepareF = folly::makeFuture<Status>(Status::OK());
   if (!av->trackPrevPath()) {
-    return finish(ResultBuilder().value(Value(std::move(result))).build());
-  }
+    size_t totalSize = propIter.size();
+    size_t batchSize = getBatchSize(totalSize);
+    // Start multiple jobs for handling the results
+    std::vector<folly::Future<StatusOr<DataSet>>> futures;
+    size_t begin = 0, end = 0, dispathedCnt = 0;
+    while (dispathedCnt < totalSize) {
+      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+      auto f = folly::makeFuture<Status>(Status::OK())
+                   .via(runner())
+                   .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
+                     UNUSED(r);
+                     return buildVerticesResult(begin, end, tmpIter.get());
+                   });
+      futures.emplace_back(std::move(f));
+      begin = end;
+      dispathedCnt += batchSize;
+    }
 
-  size_t totalSize = inputIter->size();
-  size_t batchSize = getBatchSize(totalSize);
-  // Start multiple jobs for handling the results
-  std::vector<folly::Future<StatusOr<DataSet>>> futures;
-  size_t begin = 0, end = 0, dispathedCnt = 0;
-  while (dispathedCnt < totalSize) {
-    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-    auto f = folly::makeFuture<Status>(Status::OK())
-                 .via(runner())
-                 .thenValue([this, begin, end, tmpIter = inputIter->copy()](auto &&r) mutable {
-                   UNUSED(r);
-                   return handleJob(begin, end, tmpIter.get());
-                 });
-    futures.emplace_back(std::move(f));
-    begin = end;
-    dispathedCnt += batchSize;
+    prepareF = folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
+      time::Duration dur1;
+      for (auto &r : results) {
+        auto &&rows = std::move(r).value();
+        result_.rows.insert(result_.rows.end(),
+                            std::make_move_iterator(rows.begin()),
+                            std::make_move_iterator(rows.end()));
+      }
+      LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
+      return finish(ResultBuilder().value(Value(std::move(result_))).build());
+    });
+  } else {
+    size_t totalSize = propIter.size();
+    size_t batchSize = getBatchSize(totalSize);
+    // Start multiple jobs for handling the results
+    std::vector<folly::Future<StatusOr<folly::Unit>>> futures;
+    size_t begin = 0, end = 0, dispathedCnt = 0;
+    while (dispathedCnt < totalSize) {
+      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+      auto f = folly::makeFuture<Status>(Status::OK())
+                   .via(runner())
+                   .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
+                     UNUSED(r);
+                     return buildMap(begin, end, tmpIter.get());
+                   });
+      futures.emplace_back(std::move(f));
+      begin = end;
+      dispathedCnt += batchSize;
+    }
+
+    prepareF = folly::collect(futures).via(runner()).thenValue([](auto &&results) {
+      UNUSED(results);
+      return Status::OK();
+    });
   }
 
   LOG(ERROR) << "point3: " << dur.elapsedInUSec();
-  return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
-    time::Duration dur1;
-    for (auto &r : results) {
-      auto &&rows = std::move(r).value();
-      result_.rows.insert(result_.rows.end(),
-                          std::make_move_iterator(rows.begin()),
-                          std::make_move_iterator(rows.end()));
+  return std::move(prepareF).via(runner()).thenValue([this, inputIterNew = std::move(inputIter)](
+                                                         auto &&prepareResult) {
+    UNUSED(prepareResult);
+    size_t totalSize = inputIterNew->size();
+    size_t batchSize = getBatchSize(totalSize);
+    // Start multiple jobs for handling the results
+    std::vector<folly::Future<StatusOr<DataSet>>> futures;
+    size_t begin = 0, end = 0, dispathedCnt = 0;
+    while (dispathedCnt < totalSize) {
+      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+      auto f = folly::makeFuture<Status>(Status::OK())
+                   .via(runner())
+                   .thenValue([this, begin, end, tmpIter = inputIterNew->copy()](auto &&r) mutable {
+                     UNUSED(r);
+                     return handleJob(begin, end, tmpIter.get());
+                   });
+      futures.emplace_back(std::move(f));
+      begin = end;
+      dispathedCnt += batchSize;
     }
-    LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
-    return finish(ResultBuilder().value(Value(std::move(result_))).build());
+
+    return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
+      time::Duration dur1;
+      for (auto &r : results) {
+        auto &&rows = std::move(r).value();
+        result_.rows.insert(result_.rows.end(),
+                            std::make_move_iterator(rows.begin()),
+                            std::make_move_iterator(rows.end()));
+      }
+      LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
+      return finish(ResultBuilder().value(Value(std::move(result_))).build());
+    });
   });
+}
+
+DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, Iterator *iter) {
+  // Iterates to the begin pos
+  size_t tmp = 0;
+  while (iter->valid() && ++tmp < begin) {
+    iter->next();
+  }
+
+  auto *av = asNode<AppendVertices>(node());
+  auto vFilter = av->vFilter() ? av->vFilter()->clone() : nullptr;
+  DataSet ds;
+  ds.colNames = av->colNames();
+  ds.rows.reserve(end - begin);
+  QueryExpressionContext ctx(qctx()->ectx());
+  for (; iter->valid() && tmp++ < end; iter->next()) {
+    if (vFilter != nullptr) {
+      auto &vFilterVal = vFilter->eval(ctx(iter));
+      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+        continue;
+      }
+    }
+    Row row;
+    row.values.emplace_back(iter->getVertex());
+    ds.rows.emplace_back(std::move(row));
+  }
+
+  return ds;
+}
+
+void AppendVerticesExecutor::buildMap(size_t begin, size_t end, Iterator *iter) {
+  // Iterates to the begin pos
+  size_t tmp = 0;
+  while (iter->valid() && ++tmp < begin) {
+    iter->next();
+  }
+
+  auto *av = asNode<AppendVertices>(node());
+  auto vFilter = av->vFilter() ? av->vFilter()->clone() : nullptr;
+  QueryExpressionContext ctx(qctx()->ectx());
+  for (; iter->valid() && tmp++ < end; iter->next()) {
+    if (vFilter != nullptr) {
+      auto &vFilterVal = vFilter->eval(ctx(iter));
+      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+        continue;
+      }
+    }
+    dsts_.emplace(iter->getColumn(kVid), iter->getVertex());
+  }
 }
 
 DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
