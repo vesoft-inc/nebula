@@ -25,8 +25,6 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
   }
   void setThreadManager(std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager);
   void setInterface(std::shared_ptr<apache::thrift::ServerInterface> handler);
-  void stop();
-  void serve();
 
  public:
   folly::Future<cpp2::GetNeighborsResponse> future_getNeighbors(
@@ -61,9 +59,6 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
  private:
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager_;
   std::shared_ptr<apache::thrift::ServerInterface> handler_;
-  folly::fibers::Semaphore sem_{0};
-  static std::mutex mutex_;
-  bool serving_ = {false};
 };
 }  // namespace nebula::storage
 #endif

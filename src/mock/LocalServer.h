@@ -17,18 +17,13 @@ namespace mock {
 
 struct LocalServer {
   ~LocalServer() {
-    if (server_ != nullptr) {
-      server_->stop();
-    }
-    if (thread_ != nullptr) {
-      thread_->join();
-    }
     VLOG(3) << "~LocalServer";
   }
 
   void start(const std::string& name,
              uint16_t port,
              std::shared_ptr<apache::thrift::ServerInterface> handler) {
+    UNUSED(name);
     UNUSED(port);
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers =
         apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
@@ -38,15 +33,10 @@ struct LocalServer {
     server_ = storage::GraphStorageLocalServer::getInstance();
     server_->setThreadManager(workers);
     server_->setInterface(std::move(handler));
-    thread_ = std::make_unique<thread::NamedThread>(name, [this, name] {
-      server_->serve();
-      LOG(INFO) << "The " << name << " server has been stopped";
-    });
     usleep(10000);
   }
 
   std::shared_ptr<storage::GraphStorageLocalServer> server_{nullptr};
-  std::unique_ptr<thread::NamedThread> thread_{nullptr};
   uint16_t port_{0};
 };
 
