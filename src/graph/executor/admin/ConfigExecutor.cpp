@@ -1,15 +1,11 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/ConfigExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
-
 #include "common/conf/Configuration.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -49,7 +45,7 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
       .thenValue([this, scNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
         if (!resp.ok()) {
           auto module = apache::thrift::util::enumNameSafe(scNode->getModule());
-          LOG(ERROR) << "Show configs `" << module << "' failed: " << resp.status();
+          LOG(WARNING) << "Show configs `" << module << "' failed: " << resp.status();
           return Status::Error(
               "Show config `%s' failed: %s", module.c_str(), resp.status().toString().c_str());
         }
@@ -90,7 +86,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
       .via(runner())
       .thenValue([scNode](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Set config `" << scNode->getName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Set config `" << scNode->getName() << "' failed: " << resp.status();
           return Status::Error("Set config `%s' failed: %s",
                                scNode->getName().c_str(),
                                resp.status().toString().c_str());
@@ -109,7 +105,7 @@ folly::Future<Status> GetConfigExecutor::execute() {
       .via(runner())
       .thenValue([this, gcNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Get config `" << gcNode->getName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Get config `" << gcNode->getName() << "' failed: " << resp.status();
           return Status::Error("Get config `%s' failed: %s",
                                gcNode->getName().c_str(),
                                resp.status().toString().c_str());

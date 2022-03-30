@@ -34,8 +34,6 @@ class MockCluster {
 
   ~MockCluster() {
     stop();
-    storageAdminServer_.reset();
-    graphStorageServer_.reset();
   }
 
   void startAll();
@@ -94,6 +92,16 @@ class MockCluster {
   }
 
   void stop() {
+    if (storageKV_) {
+      storageKV_->stop();
+    }
+    if (metaKV_) {
+      metaKV_->stop();
+    }
+
+    storageAdminServer_.reset();
+    graphStorageServer_.reset();
+
     if (metaClient_) {
       metaClient_->notifyStop();
       metaClient_->stop();
@@ -101,12 +109,6 @@ class MockCluster {
     if (lMetaClient_) {
       metaClient_->notifyStop();
       lMetaClient_->stop();
-    }
-    if (metaKV_) {
-      metaKV_->stop();
-    }
-    if (storageKV_) {
-      storageKV_->stop();
     }
     if (esListener_) {
       esListener_->stop();

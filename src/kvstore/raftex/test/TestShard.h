@@ -79,14 +79,15 @@ class TestShard : public RaftPart {
   void onDiscoverNewLeader(HostAddr) override {}
 
   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
-                                                                bool wait) override;
+                                                                bool wait,
+                                                                bool needLock) override;
 
   bool preProcessLog(LogID, TermID, ClusterID, const std::string& log) override {
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::ADD_LEARNER: {
           auto learner = decodeLearner(log);
-          addLearner(learner);
+          addLearner(learner, false);
           LOG(INFO) << idStr_ << "Add learner " << learner;
           break;
         }

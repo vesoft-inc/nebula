@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/Executor.h"
 
@@ -13,9 +12,7 @@
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
 #include "common/stats/StatsManager.h"
-#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
-#include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
 #include "graph/executor/admin/AddHostsExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
