@@ -5,7 +5,7 @@ Feature: Parameter
 
   Background:
     Given a graph with space named "nba"
-    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}}}
+    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}}, "p8":"Manu Ginobili"}
 
   Scenario: return parameters
     When executing query:
@@ -17,6 +17,23 @@ Feature: Parameter
       | 2    | false | "Tim Duncanef" | 4.1  | [1,true,3] | 3    | true |
 
   Scenario: cypher with parameters
+    When executing query:
+      """
+      MATCH (v) WHERE id(v)==$p3
+      RETURN id(v) AS v
+      """
+    Then the result should be, in any order:
+      | v            |
+      | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN [$p3,$p8]
+      RETURN id(v) AS v
+      """
+    Then the result should be, in any order:
+      | v               |
+      | "Tim Duncan"    |
+      | "Manu Ginobili" |
     When executing query:
       """
       MATCH (v:player)-[:like]->(n) WHERE id(v)==$p3 and n.player.age>$p1+29
