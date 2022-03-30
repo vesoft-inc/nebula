@@ -156,7 +156,8 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                         folly::sformat("Succeeded:{}", succeeded),
                         folly::sformat("Failed:{}", failed),
                         folly::sformat("In Progress:{}", inProgress),
-                        folly::sformat("Invalid:{}", invalid)}));
+                        folly::sformat("Invalid:{}", invalid),
+                        ("")}));
     return v;
   } else {
     nebula::DataSet v(
