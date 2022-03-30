@@ -345,6 +345,9 @@ TEST_F(FunctionManagerTest, functionCall) {
                   std::vector<Value>({"Hello Nebula Graph", "\\w+"}),
                   List({"Hello", "Nebula", "Graph"}));
     TEST_FUNCTION(extract,
+                  std::vector<Value>({"你好，Nebula 图数据库", "(图|数据库|测试|Nebula)"}),
+                  List({"Nebula", "图", "数据库"}));
+    TEST_FUNCTION(extract,
                   std::vector<Value>({"Hello Nebula Graph", "(Nebula|Graph)"}),
                   List({"Nebula", "Graph"}));
     TEST_FUNCTION(extract, std::vector<Value>({"Hello Nebula Graph", "testing"}), List());
