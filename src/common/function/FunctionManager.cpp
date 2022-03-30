@@ -2716,7 +2716,7 @@ FunctionManager::FunctionManager() {
       std::regex rgx(args[1].get().getStr());
       List res;
       for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
-        res.emplace_back(std::move(beg->str()));
+        res.emplace_back(beg->str());
       }
       return res;
     };
