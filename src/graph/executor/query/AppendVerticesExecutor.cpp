@@ -164,7 +164,7 @@ DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *it
     ds.rows.emplace_back(std::move(row));
   }
 
-  LOG(ERROR) << "handleJob: " << dur.elapsedInUSec() << begin << " " << end;
+  LOG(ERROR) << "handleJob: " << dur.elapsedInUSec() << " " << begin << " " << end;
   return ds;
 }
 
