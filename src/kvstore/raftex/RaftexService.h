@@ -27,20 +27,20 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   /**
    * @brief Create a raft service
    *
-   * @param pool IOThreadPool to use
+   * @param ioPool IOThreadPool to use
    * @param workers Worker thread pool to use
    * @param port Listen port of thrift server
    * @return std::shared_ptr<RaftexService>
    */
   static std::shared_ptr<RaftexService> createService(
-      std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
       std::shared_ptr<folly::Executor> workers,
       uint16_t port = 0);
 
   /**
    * @brief Destroy the Raftex Service
    */
-  virtual ~RaftexService();
+  virtual ~RaftexService() = default;
 
   /**
    * @brief Return the raft thrift server port
@@ -64,21 +64,9 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   std::shared_ptr<folly::Executor> getThreadManager();
 
   /**
-   * @brief Start the raft thrift server
-   *
-   * @return Whether start succeed
-   */
-  bool start();
-
-  /**
-   * @brief Set the state to stopped
+   * @brief Stop all partitions and wait thrift server stops
    */
   void stop();
-
-  /**
-   * @brief Wait until the thrift server has been stopped
-   */
-  void waitUntilStop();
 
   /**
    * @brief Handle leader election request in worker thread
@@ -143,39 +131,10 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId, PartitionID partId);
 
  private:
-  /**
-   * @brief Start the thrift server
-   *
-   * @param pool IO thread pool
-   * @param workers Worker thread pool
-   * @param port Thrift port to listener
-   */
-  void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                        std::shared_ptr<folly::Executor> workers,
-                        uint16_t port = 0);
-
-  /**
-   * @brief Prepare the setup of thrift server
-   *
-   * @return Return whether succeed
-   */
-  bool setup();
-  void serve();
-
-  /**
-   * @brief Wait until the service is ready to serve
-   */
-  void waitUntilReady();
-
   RaftexService() = default;
 
- private:
   std::unique_ptr<apache::thrift::ThriftServer> server_;
-  std::unique_ptr<std::thread> serverThread_;
   uint32_t serverPort_;
-
-  enum RaftServiceStatus { STATUS_NOT_RUNNING = 0, STATUS_SETUP_FAILED = 1, STATUS_RUNNING = 2 };
-  std::atomic_int status_{STATUS_NOT_RUNNING};
 
   folly::RWSpinLock partsLock_;
   std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts_;

@@ -341,6 +341,8 @@ void RaftPart::stop() {
 
   VLOG(1) << idStr_ << "Invoked stop() on all peer hosts";
 
+  // Host::waitForStop will wait a callback executed in ioThreadPool, so make sure the
+  // RaftPart::stop SHOULD NOT be executed in the same ioThreadPool
   for (auto& h : hosts) {
     VLOG(1) << idStr_ << "Waiting " << h->idStr() << " to stop";
     h->waitForStop();
