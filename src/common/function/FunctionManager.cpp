@@ -2708,17 +2708,17 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-        if (!args[0].get().isStr() || !args[1].get().isStr()) {
-            return Value::kNullBadType;
-        }
+      if (!args[0].get().isStr() || !args[1].get().isStr()) {
+        return Value::kNullBadType;
+      }
 
-        const auto &s = args[0].get().getStr();
-        std::regex rgx(args[1].get().getStr());
-        List res;
-        for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
-            res.emplace_back(std::move(beg->str()));
-        }
-        return res;
+      const auto &s = args[0].get().getStr();
+      std::regex rgx(args[1].get().getStr());
+      List res;
+      for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
+        res.emplace_back(std::move(beg->str()));
+      }
+      return res;
     };
   }
 }  // NOLINT
