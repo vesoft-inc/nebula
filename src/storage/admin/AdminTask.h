@@ -9,15 +9,14 @@
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/thrift/ThriftTypes.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
+
+using TaskFunction = std::function<nebula::cpp2::ErrorCode()>;
 
 /**
  * @brief Subtask class for admin tasks. An admin task comprises a sequence of subtasks.
@@ -27,7 +26,7 @@ class AdminSubTask {
  public:
   AdminSubTask() = default;
 
-  explicit AdminSubTask(std::function<nebula::cpp2::ErrorCode()> f) : run_(f) {}
+  explicit AdminSubTask(TaskFunction f) : run_(f) {}
 
   /**
    * @brief Entry point to invoke sub tasks function.
@@ -39,7 +38,7 @@ class AdminSubTask {
   }
 
  private:
-  std::function<nebula::cpp2::ErrorCode()> run_;
+  TaskFunction run_;
 };
 
 enum class TaskPriority : int8_t { LO, MID, HI };
@@ -88,6 +87,12 @@ class AdminTask {
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() = 0;
 
   virtual ~AdminTask() {}
+
+  /**
+   * @brief Check the argument
+   *
+   */
+  virtual bool check() = 0;
 
   /**
    * @brief Set the Callback object
@@ -172,7 +177,7 @@ class AdminTask {
    * @param rc Errorcode.
    */
   virtual void subTaskFinish(nebula::cpp2::ErrorCode rc) {
-    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    nebula::cpp2::ErrorCode suc = nebula::cpp2::ErrorCode::SUCCEEDED;
     rc_.compare_exchange_strong(suc, rc);
   }
 
@@ -183,7 +188,7 @@ class AdminTask {
   virtual void cancel() {
     FLOG_INFO("task(%d, %d) cancelled", ctx_.jobId_, ctx_.taskId_);
     canceled_ = true;
-    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    nebula::cpp2::ErrorCode suc = nebula::cpp2::ErrorCode::SUCCEEDED;
     rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
   }
 

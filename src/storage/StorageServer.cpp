@@ -27,8 +27,6 @@
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/StorageFlags.h"
 #include "storage/http/StorageHttpAdminHandler.h"
-#include "storage/http/StorageHttpDownloadHandler.h"
-#include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpPropertyHandler.h"
 #include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/transaction/TransactionManager.h"
@@ -104,16 +102,6 @@ bool StorageServer::initWebService() {
   webSvc_ = std::make_unique<WebService>();
   auto& router = webSvc_->router();
 
-  router.get("/download").handler([this](web::PathParams&&) {
-    auto* handler = new storage::StorageHttpDownloadHandler();
-    handler->init(hdfsHelper_.get(), webWorkers_.get(), kvstore_.get(), dataPaths_);
-    return handler;
-  });
-  router.get("/ingest").handler([this](web::PathParams&&) {
-    auto handler = new nebula::storage::StorageHttpIngestHandler();
-    handler->init(kvstore_.get());
-    return handler;
-  });
   router.get("/admin").handler([this](web::PathParams&&) {
     return new storage::StorageHttpAdminHandler(schemaMan_.get(), kvstore_.get());
   });

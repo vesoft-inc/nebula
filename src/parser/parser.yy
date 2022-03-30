@@ -3237,10 +3237,18 @@ delete_tag_sentence
 
 download_sentence
     : KW_DOWNLOAD KW_HDFS STRING {
-        auto sentence = new DownloadSentence();
-        sentence->setUrl(*$3);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::DOWNLOAD);
+        sentence->addPara(*$3);
         $$ = sentence;
-        delete $3;
+    }
+    ;
+
+ingest_sentence
+    : KW_INGEST {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::INGEST);
+        $$ = sentence;
     }
     ;
 
@@ -3256,13 +3264,6 @@ delete_edge_sentence
     }
     ;
 
-ingest_sentence
-    : KW_INGEST {
-        auto sentence = new IngestSentence();
-        $$ = sentence;
-    }
-    ;
-
 admin_job_sentence
     : KW_SUBMIT KW_JOB KW_COMPACT {
         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
@@ -3272,6 +3273,17 @@ admin_job_sentence
     | KW_SUBMIT KW_JOB KW_FLUSH {
         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
                                              meta::cpp2::JobType::FLUSH);
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_DOWNLOAD KW_HDFS STRING {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::DOWNLOAD);
+        sentence->addPara(*$5);
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_INGEST {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::INGEST);
         $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_STATS {

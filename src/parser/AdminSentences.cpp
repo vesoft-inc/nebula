@@ -258,10 +258,9 @@ std::string AdminJobSentence::toString() const {
         case meta::cpp2::JobType::STATS:
           return "SUBMIT JOB STATS";
         case meta::cpp2::JobType::DOWNLOAD:
-          return paras_.empty() ? "DOWNLOAD HDFS "
-                                : folly::stringPrintf("DOWNLOAD HDFS %s", paras_[0].c_str());
+          return folly::stringPrintf("SUBMIT JOB DOWNLOAD HDFS \"%s\"", paras_[0].c_str());
         case meta::cpp2::JobType::INGEST:
-          return "INGEST";
+          return "SUBMIT JOB INGEST";
         case meta::cpp2::JobType::DATA_BALANCE:
           if (paras_.empty()) {
             return "SUBMIT JOB BALANCE IN ZONE";

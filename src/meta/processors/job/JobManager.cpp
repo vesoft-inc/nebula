@@ -121,7 +121,7 @@ void JobManager::scheduleThread() {
     std::tuple<JbOp, JobID, GraphSpaceID> opJobId;
     while (!tryDequeue(opJobId)) {
       if (status_.load(std::memory_order_acquire) == JbmgrStatus::STOPPED) {
-        LOG(INFO) << "[JobManager] detect shutdown called, exit";
+        LOG(INFO) << "Detect shutdown called, exit";
         break;
       }
       usleep(FLAGS_job_check_intervals);
@@ -133,12 +133,12 @@ void JobManager::scheduleThread() {
     std::lock_guard<std::recursive_mutex> lk(muJobFinished_[spaceId]);
     auto jobDescRet = JobDescription::loadJobDescription(spaceId, jodId, kvStore_);
     if (!nebula::ok(jobDescRet)) {
-      LOG(INFO) << "[JobManager] load an invalid job from space " << spaceId << " jodId " << jodId;
+      LOG(INFO) << "Load an invalid job from space " << spaceId << " jodId " << jodId;
       continue;  // leader change or archive happened
     }
     auto jobDesc = nebula::value(jobDescRet);
     if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING, jobOp == JbOp::RECOVER)) {
-      LOG(INFO) << "[JobManager] skip job space " << spaceId << " jodId " << jodId;
+      LOG(INFO) << "Skip job space " << spaceId << " jodId " << jodId;
       continue;
     }
 
@@ -158,8 +158,7 @@ void JobManager::scheduleThread() {
 }
 
 bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
-  std::unique_ptr<JobExecutor> je =
-      JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
+  auto je = JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
   JobExecutor* jobExec = je.get();
 
   runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
@@ -370,7 +369,7 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
   });
   if (task == tasks.end()) {
     LOG(INFO) << folly::sformat(
-        "report an invalid or outdate task, will ignore this report, job={}, "
+        "Report an invalid or outdate task, will ignore this report, job={}, "
         "task={}",
         jobId,
         taskId);
@@ -517,7 +516,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJob
       // skip expired job, default 1 week
       if (isExpiredJob(optJob)) {
         lastExpiredJobId = optJob.getJobId();
-        LOG(INFO) << "remove expired job " << lastExpiredJobId;
+        LOG(INFO) << "Remove expired job " << lastExpiredJobId;
         expiredJobKeys.emplace_back(jobKey);
         continue;
       }
@@ -701,7 +700,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
 nebula::cpp2::ErrorCode JobManager::save(const std::string& k, const std::string& v) {
   std::vector<kvstore::KV> data{std::make_pair(k, v)};
   folly::Baton<true, std::atomic> baton;
-  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+  nebula::cpp2::ErrorCode rc = nebula::cpp2::ErrorCode::SUCCEEDED;
   kvStore_->asyncMultiPut(
       kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
         rc = code;

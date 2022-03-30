@@ -48,8 +48,8 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     LOG(INFO) << "Get space edge schema failed";
     return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
   }
-  auto schemas = schemasRet.value();
 
+  auto schemas = schemasRet.value();
   auto vidSize = vidSizeRet.value();
   std::unique_ptr<kvstore::KVIterator> iter;
   const auto& prefix = NebulaKeyUtils::edgePrefix(part);
@@ -114,8 +114,8 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
       iter->next();
       continue;
     }
-    auto* schema = schemaIter->second.get();
 
+    auto* schema = schemaIter->second.get();
     auto ttlProp = CommonUtils::ttlProps(schema);
     if (ttlProp.first && CommonUtils::checkDataExpiredForTTL(
                              schema, reader.get(), ttlProp.second.second, ttlProp.second.first)) {

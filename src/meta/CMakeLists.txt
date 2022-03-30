@@ -45,8 +45,6 @@ nebula_add_library(
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
-    processors/job/BalancePlan.cpp
-    processors/job/BalanceTask.cpp
     processors/admin/AdminClient.cpp
     processors/admin/SnapShot.cpp
     processors/admin/CreateBackupProcessor.cpp
@@ -70,6 +68,10 @@ nebula_add_library(
     processors/job/SimpleConcurrentJobExecutor.cpp
     processors/job/CompactJobExecutor.cpp
     processors/job/FlushJobExecutor.cpp
+    processors/job/DownloadJobExecutor.cpp
+    processors/job/IngestJobExecutor.cpp
+    processors/job/BalancePlan.cpp
+    processors/job/BalanceTask.cpp
     processors/job/BalanceJobExecutor.cpp
     processors/job/ZoneBalanceJobExecutor.cpp
     processors/job/DataBalanceJobExecutor.cpp
@@ -112,6 +114,7 @@ add_dependencies(
 )
 
 set(meta_test_deps
+    $<TARGET_OBJECTS:hdfs_helper_obj>
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
