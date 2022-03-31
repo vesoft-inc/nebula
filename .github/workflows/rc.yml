@@ -6,7 +6,6 @@ on:
       version:
         description: "version such as '3.1.0'"
         required: true
-        default: '3.1.0'
 
 concurrency:
   group: rc
