@@ -6,6 +6,13 @@ nebula_add_test(
     NAME parser_fuzzer
     FUZZER ON
     SOURCES ParserFuzzer.cpp
-    LIBRARIES ${PARSER_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} wangle
+)
+
+target_link_libraries(
+        parser_fuzzer
+        PRIVATE
+    ${PARSER_TEST_LIBS}
+    ${THRIFT_LIBRARIES}
+    wangle
+        ${NEBULA_LIBS}
 )

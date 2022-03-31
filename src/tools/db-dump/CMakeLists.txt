@@ -44,7 +44,6 @@ set(tools_test_deps
     base_obj
     expression_obj
     function_manager_obj
-    wkt_wkb_io_obj
     agg_function_manager_obj
     time_utils_obj
     datetime_parser_obj
@@ -61,15 +60,19 @@ nebula_add_executable(
     SOURCES
         DbDumpTool.cpp
         DbDumper.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        db_dump
+        PRIVATE
         ${tools_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 install(
     TARGETS
         db_dump

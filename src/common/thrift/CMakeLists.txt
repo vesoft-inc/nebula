@@ -6,5 +6,4 @@ nebula_add_library(
     thrift_obj SHARED
     ThriftClientManager.cpp
 )
-target_link_libraries(thrift_obj PUBLIC ${Glog_LIBRARY})
 

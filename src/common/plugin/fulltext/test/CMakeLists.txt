@@ -19,3 +19,17 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         gtest
 )
+target_link_libraries(
+        plugin_fulltext_test
+        PRIVATE
+        base_obj
+        network_obj
+        fs_obj
+        process_obj
+        ft_es_storage_adapter_obj
+        ft_es_graph_adapter_obj
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        gtest
+        ${NEBULA_LIBS}
+)

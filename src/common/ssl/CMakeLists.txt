@@ -7,5 +7,3 @@ nebula_add_library(
     SHARED
     SSLConfig.cpp
 )
-
-target_link_libraries(ssl_obj PUBLIC folly glog)

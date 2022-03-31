@@ -155,5 +155,33 @@ endif()
 if (Breakpad_FOUND)
     include_directories(AFTER SYSTEM ${Breakpad_INCLUDE_DIR}/breakpad)
 endif()
+set (NEBULA_LIBS
+        folly
+        ${DoubleConversion_LIBRARY}
+        fmt
+        boost_context
+        boost_system
+        boost_regex
+        boost_program_options
+        event
+        s2
+        ${OPENSSL_SSL_LIBRARY}
+        ${OPENSSL_CRYPTO_LIBRARY}
+        ${KRB5_LIBRARIES}
+        ${COMPRESSION_LIBRARIES}
+        ${JEMALLOC_LIB}
+        keyutils
+        resolv
+        ${GETTIME_LIB}
+        ${libatomic_link_flags}
+        -pthread
+        z
+        ${COVERAGES}
+        ${Breakpad_LIBRARY}
+        glog
+        ${LIBUNWIND_LIBRARIES}
+        gflags
+        dl
+)
 
 message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")

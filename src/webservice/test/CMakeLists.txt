@@ -7,7 +7,11 @@ nebula_add_test(
         flags_access_test
     SOURCES
         FlagsAccessTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        flags_access_test
+        PRIVATE
         http_client_obj
         ws_obj
         ws_common_obj
@@ -16,21 +20,28 @@ nebula_add_test(
         fs_obj
         stats_obj
         datatypes_obj
+    storage_thrift_obj
+    meta_thrift_obj
+    common_thrift_obj
         time_obj
         version_obj
         wkt_wkb_io_obj
-    LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME
         stats_read_test
     SOURCES
         StatsReaderTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        stats_read_test
+        PRIVATE
         http_client_obj
         ws_obj
         ws_common_obj
@@ -39,21 +50,28 @@ nebula_add_test(
         fs_obj
         stats_obj
         datatypes_obj
+    storage_thrift_obj
+    meta_thrift_obj
+    common_thrift_obj
         time_obj
         version_obj
         wkt_wkb_io_obj
-    LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME
         router_test
     SOURCES
         RouterTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        router_test
+        PRIVATE
         http_client_obj
         ws_obj
         ws_common_obj
@@ -62,32 +80,40 @@ nebula_add_test(
         fs_obj
         stats_obj
         datatypes_obj
+    storage_thrift_obj
+    meta_thrift_obj
+    common_thrift_obj
         time_obj
         version_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         http_status_test
     SOURCES
         StatusHandlerTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        http_status_test
+        PRIVATE
         http_client_obj
         ws_obj
         ws_common_obj
         stats_obj
         datatypes_obj
+    storage_thrift_obj
+    meta_thrift_obj
+    common_thrift_obj
         process_obj
         fs_obj
         time_obj
         base_obj
         version_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

@@ -7,11 +7,15 @@ nebula_add_test(
         process_test
     SOURCES
         ProcessTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        process_test
+        PRIVATE
         process_obj
         fs_obj
         base_obj
-    LIBRARIES
         gtest
         gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

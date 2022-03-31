@@ -3,7 +3,10 @@ nebula_add_executable(
         simple_kv_verify
     SOURCES
         SimpleKVVerifyTool.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        simple_kv_verify
+        PRIVATE
         meta_service_handler
         meta_version_man_obj
         meta_v2_thrift_obj
@@ -56,10 +59,11 @@ nebula_add_executable(
         ssl_obj
         geo_index_obj
         datetime_parser_obj
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

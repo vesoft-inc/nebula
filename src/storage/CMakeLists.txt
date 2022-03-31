@@ -4,7 +4,7 @@ nebula_add_library(
     CommonUtils.cpp
 )
 
-target_link_libraries(storage_common_obj PUBLIC "${Glog_LIBRARY}"  meta_obj )
+target_link_libraries(storage_common_obj PUBLIC  meta_obj )
 
 nebula_add_library(
     storage_admin_service_handler SHARED
@@ -56,6 +56,26 @@ nebula_add_library(
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
+)
+nebula_add_subdirectory(stats)
+
+nebula_add_library(
+    internal_storage_service_handler SHARED
+    InternalStorageServiceHandler.cpp
+)
+
+nebula_add_library(
+    storage_http_handler SHARED
+    http/StorageHttpIngestHandler.cpp
+    http/StorageHttpDownloadHandler.cpp
+    http/StorageHttpAdminHandler.cpp
+    http/StorageHttpStatsHandler.cpp
+    http/StorageHttpPropertyHandler.cpp
+)
+
+
+nebula_add_library(
+    storage_transaction_executor SHARED
     transaction/TransactionManager.cpp
     transaction/ConsistUtil.cpp
     transaction/ChainUpdateEdgeLocalProcessor.cpp
@@ -74,27 +94,8 @@ nebula_add_library(
     transaction/ChainDeleteEdgesResumeProcessor.cpp
     transaction/ChainDeleteEdgesResumeRemoteProcessor.cpp
 )
-nebula_add_subdirectory(stats)
-
-nebula_add_library(
-    internal_storage_service_handler SHARED
-    InternalStorageServiceHandler.cpp
-)
-
-target_link_libraries(internal_storage_service_handler PUBLIC "${Glog_LIBRARY}")
-nebula_add_library(
-    storage_http_handler SHARED
-    http/StorageHttpIngestHandler.cpp
-    http/StorageHttpDownloadHandler.cpp
-    http/StorageHttpAdminHandler.cpp
-    http/StorageHttpStatsHandler.cpp
-    http/StorageHttpPropertyHandler.cpp
-)
-
-target_link_libraries(storage_http_handler PUBLIC "${Glog_LIBRARY}")
-
-target_link_libraries(graph_storage_service_handler PUBLIC "${Glog_LIBRARY}" storage_common_obj  storage_stats_obj codec_obj expression_obj)
-add_library(storage_transaction_executor ALIAS   graph_storage_service_handler )
+target_link_libraries(storage_transaction_executor PUBLIC  storage_common_obj  )
+target_link_libraries(graph_storage_service_handler PUBLIC  storage_common_obj  storage_stats_obj codec_obj storage_transaction_executor expression_obj)
 
 nebula_add_library(
     storage_server SHARED
@@ -108,6 +109,6 @@ nebula_add_library(
     storage_local_server_obj SHARED
     GraphStorageLocalServer.cpp
 )
-target_link_libraries(storage_admin_service_handler PUBLIC "${Glog_LIBRARY}" kv_stats_obj storage_common_obj kvstore_obj )
+target_link_libraries(storage_admin_service_handler PUBLIC  kv_stats_obj storage_common_obj kvstore_obj )
 
 nebula_add_subdirectory(test)

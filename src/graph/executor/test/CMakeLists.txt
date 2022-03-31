@@ -3,6 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 SET(EXEC_QUERY_TEST_OBJS
+    ws_obj
     expression_obj
     network_obj
     process_obj
@@ -101,8 +102,13 @@ nebula_add_test(
         AssignTest.cpp
         ShowQueriesTest.cpp
         JobTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        executor_test
+        PRIVATE
         ${EXEC_QUERY_TEST_OBJS}
-    LIBRARIES
         ${EXEC_QUERY_TEST_LIBS}
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

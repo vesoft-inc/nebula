@@ -3,6 +3,7 @@ set(WAL_TEST_LIBS
     disk_man_obj
     meta_thrift_obj
     common_thrift_obj
+    storage_thrift_obj
     datatypes_obj
     base_obj
     thread_obj
@@ -17,11 +18,14 @@ nebula_add_test(
         file_based_wal_test
     SOURCES
         FileBasedWalTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        file_based_wal_test
+        PRIVATE
         ${WAL_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -30,23 +34,30 @@ nebula_add_test(
     SOURCES
         InMemoryLogBufferTest.cpp
         InMemoryLogBuffer.cpp
-    LIBRARIES
-        ${WAL_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        gtest
 )
 
+target_link_libraries(
+        inmemory_log_buffer_test
+        PRIVATE
+        ${WAL_TEST_LIBS}
+        ${THRIFT_LIBRARIES}
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         atomic_log_buffer_test
     SOURCES
         AtomicLogBufferTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        atomic_log_buffer_test
+        PRIVATE
         ${WAL_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_executable(
@@ -55,22 +66,28 @@ nebula_add_executable(
     SOURCES
         LogBufferBenchmark.cpp
         InMemoryLogBuffer.cpp
-    LIBRARIES
-        ${WAL_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        follybenchmark
-        boost_regex
 )
 
+target_link_libraries(
+        log_bufferr_bm
+        PRIVATE
+        ${WAL_TEST_LIBS}
+        follybenchmark
+        boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         wal_file_iter_test
     SOURCES
         WalFileIterTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        wal_file_iter_test
+        PRIVATE
         ${WAL_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

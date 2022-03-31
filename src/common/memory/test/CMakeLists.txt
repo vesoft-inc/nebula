@@ -5,15 +5,28 @@
 nebula_add_executable(
   NAME sys_info_read_bm
   SOURCES SysInfoReadBenchmark.cpp
-  LIBRARIES  follybenchmark gflags ${Glog_LIBRARY} boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+)
+target_link_libraries(
+        sys_info_read_bm
+        PRIVATE
+  follybenchmark
+  boost_regex
+  ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
   NAME memory_utils_test
   SOURCES MemoryUtilsTest.cpp
-  LIBRARIES
+)
+target_link_libraries(
+        memory_utils_test
+        PRIVATE
     base_obj
     fs_obj
     memory_obj
-  LIBRARIES gtest gtest_main
+  gtest gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

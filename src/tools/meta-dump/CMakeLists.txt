@@ -3,7 +3,11 @@ nebula_add_executable(
         meta_dump
     SOURCES
         MetaDumpTool.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        meta_dump
+        PRIVATE
         meta_service_handler
         meta_version_man_obj
         meta_v2_thrift_obj
@@ -58,14 +62,14 @@ nebula_add_executable(
         ssl_obj
         storage_thrift_obj
         geo_index_obj
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         glog
         gflags
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 install(
     TARGETS
         meta_dump

@@ -5,20 +5,42 @@
 nebula_add_test(
     NAME file_utils_test
     SOURCES FileUtilsTest.cpp
-    LIBRARIES fs_obj base_obj
-    LIBRARIES gtest
 )
 
+target_link_libraries(
+        file_utils_test
+        PRIVATE
+    fs_obj base_obj
+    gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME temp_dir_test
     SOURCES TempDirTest.cpp
     LIBRARIES fs_obj base_obj
     LIBRARIES gtest
 )
+target_link_libraries(
+        temp_dir_test
+        PRIVATE
+    fs_obj base_obj
+    gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 
 nebula_add_test(
     NAME temp_file_test
     SOURCES TempFileTest.cpp
-    LIBRARIES fs_obj base_obj
-    LIBRARIES gtest gtest_main
 )
+target_link_libraries(
+        temp_file_test
+        PRIVATE
+    fs_obj base_obj
+    gtest
+    gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
+

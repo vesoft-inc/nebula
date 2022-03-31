@@ -12,7 +12,6 @@ nebula_add_library(
     agg_function_manager_obj SHARED
     AggFunctionManager.cpp
 )
-target_link_libraries(function_manager_obj PUBLIC "${Glog_LIBRARY}" time_obj  time_utils_obj  )
-target_link_libraries(agg_function_manager_obj PUBLIC "${Glog_LIBRARY}"  )
+target_link_libraries(function_manager_obj PUBLIC  time_obj  time_utils_obj  )
 
 nebula_add_subdirectory(test)

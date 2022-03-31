@@ -7,13 +7,17 @@ nebula_add_test(
         network_utils_test
     SOURCES
         NetworkUtilsTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        network_utils_test
+        PRIVATE
         base_obj
         network_obj
         fs_obj
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 
@@ -22,13 +26,17 @@ nebula_add_executable(
         network_utils_bm
     SOURCES
         NetworkUtilsBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        network_utils_bm
+        PRIVATE
         base_obj
         network_obj
         fs_obj
-    LIBRARIES
         wangle
         fizz
         sodium
         follybenchmark
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

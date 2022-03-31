@@ -8,7 +8,6 @@ set(OPTIMIZER_TEST_LIB
     datatypes_obj
     expression_obj
     function_manager_obj
-    wkt_wkb_io_obj
     agg_function_manager_obj
     time_obj
     meta_thrift_obj
@@ -65,11 +64,14 @@ nebula_add_test(
         index_scan_rule_test
     SOURCES
         IndexScanRuleTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        index_scan_rule_test
+        PRIVATE
         ${OPTIMIZER_TEST_LIB}
-    LIBRARIES
-        ${PROXYGEN_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         gtest
         gtest_main
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

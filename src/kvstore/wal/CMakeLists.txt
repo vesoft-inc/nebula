@@ -5,5 +5,5 @@ nebula_add_library(
     AtomicLogBuffer.cpp
 )
 
-target_link_libraries(wal_obj PUBLIC "${Glog_LIBRARY}"  time_obj)
+target_link_libraries(wal_obj PUBLIC  disk_man_obj time_obj)
 nebula_add_subdirectory(test)

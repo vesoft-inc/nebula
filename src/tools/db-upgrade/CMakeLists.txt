@@ -7,7 +7,11 @@ nebula_add_executable(
         NebulaKeyUtilsV2.cpp
         NebulaKeyUtilsV3.cpp
         DbUpgrader.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        db_upgrader
+        PRIVATE
         meta_service_handler
         meta_version_man_obj
         meta_v2_thrift_obj
@@ -61,12 +65,10 @@ nebula_add_executable(
         version_obj
         ssl_obj
         geo_index_obj
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 install(
     TARGETS
         db_upgrader

@@ -8,6 +8,5 @@ nebula_add_library(
     GenericWorker.cpp
     GenericThreadPool.cpp
 )
-target_link_libraries(thread_obj PUBLIC "${Glog_LIBRARY}"  )
 
 nebula_add_subdirectory(test)

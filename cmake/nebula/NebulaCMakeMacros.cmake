@@ -11,10 +11,6 @@ macro(nebula_add_executable)
         ${nebula_exec_SOURCES}
         ${nebula_exec_OBJECTS}
     )
-    nebula_link_libraries(
-        ${nebula_exec_NAME}
-        ${nebula_exec_LIBRARIES}
-    )
 
     if(TARGET common_project)
         add_dependencies(
@@ -37,7 +33,7 @@ macro(nebula_add_test)
         NAME ${nebula_test_NAME}
         SOURCES ${nebula_test_SOURCES}
         OBJECTS ${nebula_test_OBJECTS}
-        LIBRARIES ${nebula_test_LIBRARIES} glog
+        LIBRARIES  ${nebula_test_LIBRARIES}
     )
 
     if (${nebula_test_FUZZER})
@@ -61,39 +57,7 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-# A wrapper for target_link_libraries()
-macro(nebula_link_libraries target)
-    target_link_libraries(
-        ${target}
-        ${ARGN}
-        ${Folly_LIBRARY}
-        fmt
-        ${Glog_LIBRARY}
-        ${Gflags_LIBRARY}
-        boost_context
-        boost_system
-        boost_regex
-        boost_program_options
-        ${Libevent_LIBRARY}
-        ${DoubleConversion_LIBRARY}
-        s2
-        ${OPENSSL_SSL_LIBRARY}
-        ${OPENSSL_CRYPTO_LIBRARY}
-        ${KRB5_LIBRARIES}
-        ${COMPRESSION_LIBRARIES}
-        ${JEMALLOC_LIB}
-        ${LIBUNWIND_LIBRARIES}
-        keyutils
-        resolv
-        dl
-        ${GETTIME_LIB}
-        ${libatomic_link_flags}
-        -pthread
-        z
-        ${COVERAGES}
-        ${Breakpad_LIBRARY}
-    )
-endmacro(nebula_link_libraries)
+
 
 function(nebula_add_subdirectory dir_name)
     if ((NOT ENABLE_TESTING) AND (${dir_name} MATCHES test))

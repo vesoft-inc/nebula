@@ -5,10 +5,15 @@
 nebula_add_test(
     NAME file_based_cluster_id_man_test
     SOURCES FileBasedClusterIdManTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+    file_based_cluster_id_man_test
+        PRIVATE
         file_based_cluster_id_man_obj
         base_obj
         fs_obj
         ssl_obj
-    LIBRARIES gtest
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

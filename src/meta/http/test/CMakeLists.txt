@@ -5,47 +5,59 @@
 nebula_add_test(
   NAME meta_http_download_test
   SOURCES MetaHttpDownloadHandlerTest.cpp
-  LIBRARIES
+  )
+
+target_link_libraries(
+        meta_http_download_test
+        PRIVATE
     storage_http_handler
     meta_http_handler
     ${meta_test_deps}
-  LIBRARIES
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     ${PROXYGEN_LIBRARIES}
     wangle
     gtest
-  )
-
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
   NAME meta_http_ingest_test
   SOURCES MetaHttpIngestHandlerTest.cpp
-  LIBRARIES
+  )
+
+target_link_libraries(
+        meta_http_ingest_test
+        PRIVATE
     storage_http_handler
     meta_http_handler
     ${meta_test_deps}
-  LIBRARIES
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     ${PROXYGEN_LIBRARIES}
     wangle
     gtest
-  )
-
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 
 nebula_add_test(
    NAME
        meta_http_replace_test
    SOURCES
        MetaHttpReplaceHandlerTest.cpp
-   LIBRARIES
+)
+target_link_libraries(
+        meta_http_replace_test
+        PRIVATE
        storage_http_handler
        meta_http_handler
        ${meta_test_deps}
-   LIBRARIES
        ${ROCKSDB_LIBRARIES}
        ${THRIFT_LIBRARIES}
        ${PROXYGEN_LIBRARIES}
        wangle
        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

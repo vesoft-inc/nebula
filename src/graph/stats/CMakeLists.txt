@@ -7,3 +7,4 @@ nebula_add_library(
   SHARED
   GraphStats.cpp
   )
+  target_link_libraries(graph_stats_obj PUBLIC storage_client_stats_obj stats_obj )

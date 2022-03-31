@@ -12,6 +12,6 @@ nebula_add_library(
     elasticsearch/ESStorageAdapter.cpp
 )
 
-target_link_libraries(ft_es_graph_adapter_obj PUBLIC "${Glog_LIBRARY}"  )
-target_link_libraries(ft_es_storage_adapter_obj PUBLIC "${Glog_LIBRARY}" process_obj    )
+target_link_libraries(ft_es_storage_adapter_obj PUBLIC  process_obj    )
+target_link_libraries(ft_es_graph_adapter_obj PUBLIC  process_obj    )
 nebula_add_subdirectory(test)

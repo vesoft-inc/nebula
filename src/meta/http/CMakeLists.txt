@@ -10,5 +10,4 @@ nebula_add_library(
   MetaHttpReplaceHostHandler.cpp
   )
 
-target_link_libraries(meta_http_handler PUBLIC   "${Glog_LIBRARY}")
 nebula_add_subdirectory(test)

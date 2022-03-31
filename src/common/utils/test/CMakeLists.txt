@@ -17,18 +17,15 @@ nebula_add_test(
         function_manager_obj
         agg_function_manager_obj
         time_utils_obj
-        datetime_parser_obj        
+        datetime_parser_obj
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
 )
 
-nebula_add_test(
-    NAME
-        index_key_utils_test
-    SOURCES
-        IndexKeyUtilsTest.cpp
-    LIBRARIES
+target_link_libraries(
+        nebula_key_utils_test
+        PRIVATE
         keyutils_obj
         time_obj
         base_obj
@@ -42,10 +39,39 @@ nebula_add_test(
         function_manager_obj
         agg_function_manager_obj
         time_utils_obj
-        datetime_parser_obj        
-    LIBRARIES
+        datetime_parser_obj
         gtest
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
+nebula_add_test(
+    NAME
+        index_key_utils_test
+    SOURCES
+        IndexKeyUtilsTest.cpp
+)
+target_link_libraries(
+        index_key_utils_test
+        PRIVATE
+        keyutils_obj
+        time_obj
+        base_obj
+        datatypes_obj
+        meta_thrift_obj
+        common_thrift_obj
+        storage_thrift_obj
+        geo_index_obj
+        expression_obj
+        function_manager_obj
+        agg_function_manager_obj
+        time_utils_obj
+        datetime_parser_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -53,7 +79,10 @@ nebula_add_test(
         operation_key_utils_test
     SOURCES
         OperationKeyUtilsTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        operation_key_utils_test
+        PRIVATE
         keyutils_obj
         meta_keyutils_obj
         network_obj
@@ -61,7 +90,6 @@ nebula_add_test(
         time_obj
         base_obj
         datatypes_obj
-        wkt_wkb_io_obj
         meta_thrift_obj
         common_thrift_obj
         storage_thrift_obj
@@ -70,10 +98,10 @@ nebula_add_test(
         function_manager_obj
         agg_function_manager_obj
         time_utils_obj
-        datetime_parser_obj        
-    LIBRARIES
+        datetime_parser_obj
         gtest
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -81,7 +109,10 @@ nebula_add_test(
         meta_key_utils_test
     SOURCES
         MetaKeyUtilsTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        meta_key_utils_test
+        PRIVATE
         meta_thrift_obj
         meta_keyutils_obj
         common_thrift_obj
@@ -91,11 +122,13 @@ nebula_add_test(
         network_obj
         thread_obj
         datatypes_obj
-        wkt_wkb_io_obj
         process_obj
         ft_es_storage_adapter_obj
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         gtest
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

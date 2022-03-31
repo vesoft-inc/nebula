@@ -18,7 +18,10 @@ nebula_add_test(
     NAME execution_plan_test
     SOURCES
         ExecutionPlanTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        execution_plan_test
+        PRIVATE
         conf_obj
         expression_obj
         http_client_obj
@@ -43,7 +46,6 @@ nebula_add_test(
         fs_obj
         base_obj
         datatypes_obj
-        wkt_wkb_io_obj
         conf_obj
         file_based_cluster_id_man_obj
         charset_obj
@@ -62,8 +64,8 @@ nebula_add_test(
         idgenerator_obj
         graph_context_obj
         memory_obj
-    LIBRARIES
         gtest
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

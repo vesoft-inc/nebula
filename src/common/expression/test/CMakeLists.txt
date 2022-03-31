@@ -61,7 +61,6 @@ nebula_add_library(
     TestBase.cpp
 )
 
-target_link_libraries(expr_ctx_mock_obj PUBLIC "${Glog_LIBRARY}"  )
 
 nebula_add_test(
     NAME
@@ -88,38 +87,52 @@ nebula_add_test(
         SubscriptExpressionTest.cpp
         TypeCastingExpressionTest.cpp
         VersionedVariableExpressionTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        expression_test
+        PRIVATE
         expr_ctx_mock_obj
         ${expression_test_common_libs}
-    LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         expression_bm
     SOURCES
         ExpressionBenchmark.cpp
-    LIBRARIES
-        expr_ctx_mock_obj
-        ${expression_test_common_libs}
-    LIBRARIES
-        follybenchmark
-        boost_regex
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
 )
 
+target_link_libraries(
+        expression_bm
+        PRIVATE
+        expr_ctx_mock_obj
+        ${expression_test_common_libs}
+        follybenchmark
+        boost_regex
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_executable(
     NAME
         func_call_expression_bm
     SOURCES
         FunctionCallExpressionBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        func_call_expression_bm
+        PRIVATE
         expression_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         base_obj
         expr_ctx_mock_obj
         function_manager_obj
@@ -129,20 +142,25 @@ nebula_add_executable(
         datetime_parser_obj
         fs_obj
         agg_function_manager_obj
-    LIBRARIES
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         aggregate_expression_bm
     SOURCES
         AggregateExpressionBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        aggregate_expression_bm
+        PRIVATE
         expression_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         base_obj
         expr_ctx_mock_obj
         function_manager_obj
@@ -152,8 +170,8 @@ nebula_add_executable(
         time_utils_obj
         datetime_parser_obj
         fs_obj
-    LIBRARIES
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

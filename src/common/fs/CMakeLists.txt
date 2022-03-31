@@ -8,6 +8,6 @@ nebula_add_library(
     TempDir.cpp
     TempFile.cpp
 )
+target_link_libraries(fs_obj PUBLIC base_obj)
 
-target_link_libraries(fs_obj PUBLIC "${Glog_LIBRARY}" folly )
 nebula_add_subdirectory(test)

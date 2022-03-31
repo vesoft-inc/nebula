@@ -6,4 +6,3 @@ nebula_add_library(
     log_monitor_obj SHARED
     LogMonitor.cpp
 )
-target_link_libraries(log_monitor_obj PUBLIC glog )

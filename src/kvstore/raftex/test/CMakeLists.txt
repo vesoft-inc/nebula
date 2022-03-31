@@ -5,6 +5,7 @@ set(RAFTEX_TEST_LIBS
     raftex_thrift_obj
     common_thrift_obj
     meta_thrift_obj
+    storage_thrift_obj
     base_obj
     log_str_list_iterator_obj
     datatypes_obj
@@ -29,12 +30,15 @@ nebula_add_test(
         LeaderElectionTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        leader_election_test
+        PRIVATE
         ${RAFTEX_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
 
 
@@ -45,14 +49,28 @@ nebula_add_test(
         LogAppendTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
-        ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
 )
 
+target_link_libraries(
+        log_append_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        time_utils_obj
+        thread_obj
+        datatypes_obj
+        fs_obj
+        wkt_wkb_io_obj
+        datetime_parser_obj
+        base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 
 nebula_add_test(
     NAME
@@ -60,15 +78,18 @@ nebula_add_test(
     SOURCES
         LogCASTest.cpp
         RaftexTestBase.cpp
-         TestShard.cpp
-    LIBRARIES
-        ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
+        TestShard.cpp
 )
 
+target_link_libraries(
+        log_cas_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 
 nebula_add_test(
     NAME
@@ -77,14 +98,17 @@ nebula_add_test(
         LearnerTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
-        ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
 )
 
+target_link_libraries(
+        learner_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 
 nebula_add_test(
     NAME
@@ -93,12 +117,16 @@ nebula_add_test(
         LogCommandTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        log_command_test
+        PRIVATE
         ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -116,6 +144,15 @@ nebula_add_test(
         gtest
 )
 
+target_link_libraries(
+        raft_case_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         leader_transfer_test
@@ -123,14 +160,17 @@ nebula_add_test(
         LeaderTransferTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
-        ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
 )
 
+target_link_libraries(
+        leader_transfer_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         member_change_test
@@ -138,11 +178,14 @@ nebula_add_test(
         MemberChangeTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
-    LIBRARIES
-        ${RAFTEX_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
 )
 
+target_link_libraries(
+        member_change_test
+        PRIVATE
+        ${RAFTEX_TEST_LIBS}
+        wangle
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)

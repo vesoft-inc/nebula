@@ -12,6 +12,5 @@ nebula_add_library(
     Symbols.cpp
 )
 
-#target_link_libraries(graph_context_obj PUBLIC ${Glog_LIBRARY} graph_flags_obj memory_obj util_obj )
 
 nebula_add_subdirectory(test)

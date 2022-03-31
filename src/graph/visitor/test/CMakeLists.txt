@@ -24,7 +24,10 @@ nebula_add_test(
         RewriteRelExprVisitorTest.cpp
         FilterTransformTest.cpp
         ExtractFilterExprVisitorTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        expr_visitor_test
+        PRIVATE
         mock_schema_obj
         util_obj
         validator_obj
@@ -73,8 +76,8 @@ nebula_add_test(
         version_obj
         ssl_obj
         memory_obj
-    LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${NEBULA_LIBS}
 )

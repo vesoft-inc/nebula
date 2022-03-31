@@ -18,12 +18,11 @@ endif()
 print_config(NEBULA_USE_LINKER)
 
 nebula_add_exe_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
-nebula_add_exe_linker_flag(-static-libstdc++)
-nebula_add_exe_linker_flag(-static-libgcc)
-nebula_add_exe_linker_flag(-no-pie)
-nebula_add_exe_linker_flag(-rdynamic)
-
 nebula_add_shared_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
+nebula_add_exe_linker_flag(-Wl,--no-undefined)
+#nebula_add_exe_linker_flag(-Wl,--allow-shlib-undefined)
+#nebula_add_exe_linker_flag(-no-pie)
+nebula_add_exe_linker_flag(-rdynamic)
 
 if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_FORTIFY_SOURCE=2)

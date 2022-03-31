@@ -58,33 +58,65 @@ endif()
 nebula_add_test(
     NAME parser_test
     SOURCES ParserTest.cpp
-    LIBRARIES
-      ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )
 
+target_link_libraries(
+        parser_test
+        PRIVATE
+      ${PARSER_TEST_LIBS}
+    gtest
+    gtest_main 
+    ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME scanner_test
     SOURCES ScannerTest.cpp
-    LIBRARIES
-      ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )
 
+target_link_libraries(
+        scanner_test
+        PRIVATE
+      ${PARSER_TEST_LIBS}
+    gtest 
+    gtest_main 
+    ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_executable(
     NAME parser_bm
     SOURCES ParserBenchmark.cpp
-    LIBRARIES ${PARSER_TEST_LIBS}
-    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )
 
+target_link_libraries(
+        parser_bm
+        PRIVATE
+    ${PARSER_TEST_LIBS}
+    follybenchmark
+    boost_regex 
+    ${THRIFT_LIBRARIES}
+    ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME expression_parsing_test
     SOURCES ExpressionParsingTest.cpp
-    LIBRARIES ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )
 
+target_link_libraries(
+        expression_parsing_test
+        PRIVATE
+    ${PARSER_TEST_LIBS}
+    gtest
+    gtest_main
+    ${THRIFT_LIBRARIES}
+    ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 if(ENABLE_FUZZ_TEST)
     nebula_add_subdirectory(fuzzing)
 endif()

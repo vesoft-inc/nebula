@@ -59,15 +59,19 @@ nebula_add_executable(
         storage_perf
     SOURCES
         StoragePerfTool.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_perf
+        PRIVATE
         ${perf_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 #install(
 #    TARGETS
 #        storage_perf
@@ -82,15 +86,18 @@ nebula_add_executable(
         storage_integrity
     SOURCES
         StorageIntegrityTool.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_integrity
+        PRIVATE
         ${perf_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         gtest
+        ${NEBULA_LIBS}
 )
-
 #install(
 #    TARGETS
 #        storage_integrity

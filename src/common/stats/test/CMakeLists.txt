@@ -7,61 +7,85 @@ nebula_add_test(
         stats_manager_test
     SOURCES
         StatsManagerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        stats_manager_test
+        PRIVATE
         stats_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         time_obj
         base_obj
         thread_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         stats_manager_rate_test
     SOURCES
         StatsManagerRateTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        stats_manager_rate_test
+        PRIVATE
         stats_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         time_obj
         base_obj
         thread_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         stats_manager_cross_level_test
     SOURCES
         StatsManagerCrossLevelTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        stats_manager_cross_level_test
+        PRIVATE
         stats_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         time_obj
         base_obj
         thread_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_executable(
     NAME
         stats_manager_bm
     SOURCES
         StatsManagerBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        stats_manager_bm
+        PRIVATE
         stats_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         time_obj
         base_obj
-        wkt_wkb_io_obj
-    LIBRARIES
         follybenchmark boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

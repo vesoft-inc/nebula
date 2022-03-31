@@ -7,6 +7,6 @@ nebula_add_library(
   memory_obj SHARED
   MemoryUtils.cpp
 )
-target_link_libraries(memory_obj PUBLIC "${Glog_LIBRARY}" base_obj  fs_obj )
+target_link_libraries(memory_obj PUBLIC  base_obj  fs_obj )
 
 nebula_add_subdirectory(test)

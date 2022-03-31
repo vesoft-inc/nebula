@@ -28,6 +28,7 @@ set(storage_test_deps
     time_obj
     meta_thrift_obj
     common_thrift_obj
+    storage_thrift_obj
     raftex_thrift_obj
     meta_obj
     thrift_obj
@@ -69,181 +70,223 @@ nebula_add_test(
         task_manager_test
     SOURCES
         AdminTaskManagerTest.cpp
-    LIBRARIES
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        gtest
 )
 
+target_link_libraries(
+        task_manager_test
+        PRIVATE
+        ${storage_test_deps}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         rebuild_index_test
     SOURCES
         RebuildIndexTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        rebuild_index_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         stats_task_test
     SOURCES
         StatsTaskTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        stats_task_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         add_vertices_test
     SOURCES
         AddVerticesTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        add_vertices_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         add_edges_test
     SOURCES
         AddEdgesTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        add_edges_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         delete_vertices_test
     SOURCES
         DeleteVerticesTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        delete_vertices_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         delete_tags_test
     SOURCES
         DeleteTagsTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        delete_tags_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         delete_edges_test
     SOURCES
         DeleteEdgesTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        delete_edges_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         update_vertex_test
     SOURCES
         UpdateVertexTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        update_vertex_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         update_edge_test
     SOURCES
         UpdateEdgeTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        update_edge_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_dag_test
     SOURCES
         StorageDAGTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_dag_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         storage_dag_bm
     SOURCES
         StorageDAGBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_dag_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 
 nebula_add_test(
@@ -251,70 +294,87 @@ nebula_add_test(
         index_write_test
     SOURCES
         IndexWriteTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        index_write_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         checkpoint_test
     SOURCES
         CheckpointTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        checkpoint_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         shuffle_ip_test
     SOURCES
         ShuffleIpTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        shuffle_ip_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         get_neighbors_test
     SOURCES
         GetNeighborsTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        get_neighbors_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_executable(
     NAME
         get_neighbors_bm
     SOURCES
         GetNeighborsBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        get_neighbors_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -322,48 +382,60 @@ nebula_add_executable(
         gtest
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         scan_edge_prop_bm
     SOURCES
         ScanEdgePropBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        scan_edge_prop_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         get_prop_test
     SOURCES
         GetPropTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        get_prop_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         add_update_vertex_edge_bm
     SOURCES
         AddAndUpdateVertexAndEdgeBenchmark.cpp
         ../../codec/test/RowWriterV1.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        add_update_vertex_edge_bm
+        PRIVATE
         ${storage_test_deps}
         codec_test_obj
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -371,53 +443,63 @@ nebula_add_executable(
         follybenchmark
         boost_regex
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         lookup_index_test
     SOURCES
         LookupIndexTest.cpp
         ../../codec/test/RowWriterV1.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        lookup_index_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_http_stats_test
     SOURCES
         StorageHttpStatsHandlerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_http_stats_test
+        PRIVATE
         storage_http_handler
         http_client_obj
         ws_obj
         ws_common_obj
         process_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_executable(
     NAME
         prefix_bloom_filter_bm
     SOURCES
         PrefixBloomFilterBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        prefix_bloom_filter_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -425,136 +507,166 @@ nebula_add_executable(
         wangle
         boost_regex
         gtest
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         compaction_test
     SOURCES
         CompactionTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        compaction_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_http_admin_test
     SOURCES
         StorageHttpAdminHandlerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_http_admin_test
+        PRIVATE
         storage_http_handler
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_http_download_test
     SOURCES
         StorageHttpDownloadHandlerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_http_download_test
+        PRIVATE
         storage_http_handler
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_http_ingest_test
     SOURCES
         StorageHttpIngestHandlerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_http_ingest_test
+        PRIVATE
         storage_http_handler
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_http_property_test
     SOURCES
         StorageHttpPropertyHandlerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_http_property_test
+        PRIVATE
         storage_http_handler
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         scan_edge_test
     SOURCES
         ScanEdgeTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        scan_edge_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         memory_lock_test
     SOURCES
         MemoryLockTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        memory_lock_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         scan_vertex_test
     SOURCES
         ScanVertexTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        scan_vertex_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 #nebula_add_executable(
 #    NAME
 #        storage_lookup_bm
@@ -576,188 +688,230 @@ nebula_add_test(
         kv_test
     SOURCES
         KVTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        kv_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         kv_client_test
     SOURCES
         KVClientTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        kv_client_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         index_ttl_test
     SOURCES
         IndexWithTTLTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        index_ttl_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         storage_kill_query_test
     SOURCES
         KillQueryTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        storage_kill_query_test
+        PRIVATE
         storage_common_obj
         meta_service_handler
         mock_obj
         ws_common_obj
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         index_scan_limit_test
     SOURCES
         IndexScanLimitTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        index_scan_limit_test
+        PRIVATE
         storage_common_obj
         meta_service_handler
         mock_obj
         ws_common_obj
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         index_scan_topN_test
     SOURCES
         IndexScanTopNTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        index_scan_topN_test
+        PRIVATE
         storage_common_obj
         meta_service_handler
         mock_obj
         ws_common_obj
         ws_obj
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         es_bulk_example
     SOURCES
         ElasticSearchBulkInsertTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        es_bulk_example
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         mem_lock_bm
     SOURCES
         MemoryLockBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        mem_lock_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         chain_add_edge_test
     SOURCES
         ChainAddEdgesTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        chain_add_edge_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         index_test
     SOURCES
         IndexTest.cpp
-    LIBRARIES
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        gtest
 )
 
+target_link_libraries(
+        index_test
+        PRIVATE
+        ${storage_test_deps}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_executable(
     NAME
         chain_update_edge_test
     SOURCES
         ChainUpdateEdgeTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        chain_update_edge_test
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         storage_index_write_bm
     SOURCES
         StorageIndexWriteBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        storage_index_write_bm
+        PRIVATE
         ${storage_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -765,5 +919,6 @@ nebula_add_executable(
         boost_regex
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-

@@ -66,7 +66,11 @@ nebula_add_executable(
         StorageDaemon.cpp
         SetupLogging.cpp
         SetupBreakpad.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        nebula-storaged
+        PRIVATE
         storage_server
         internal_storage_service_handler
         graph_storage_service_handler
@@ -79,13 +83,12 @@ nebula_add_executable(
         storage_common_obj
         ${common_deps}
         ${storage_meta_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
         wangle
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         nebula-metad
@@ -94,7 +97,11 @@ nebula_add_executable(
         MetaDaemonInit.cpp
         SetupLogging.cpp
         SetupBreakpad.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        nebula-metad
+        PRIVATE
         meta_service_handler
         meta_http_handler
         meta_version_man_obj
@@ -102,13 +109,12 @@ nebula_add_executable(
         meta_v2_thrift_obj
         ${common_deps}
         ${storage_meta_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         nebula-graphd
@@ -116,7 +122,11 @@ nebula_add_executable(
         GraphDaemon.cpp
         SetupLogging.cpp
         SetupBreakpad.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        nebula-graphd
+        PRIVATE
         graph_stats_obj
         meta_client_stats_obj
         storage_client_stats_obj
@@ -145,12 +155,12 @@ nebula_add_executable(
         ft_es_graph_adapter_obj
         storage_thrift_obj
         ${common_deps}
-    LIBRARIES
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 install(
     TARGETS
         nebula-graphd
@@ -200,7 +210,11 @@ nebula_add_executable(
         MetaDaemonInit.cpp
         SetupLogging.cpp
         SetupBreakpad.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        nebula-standalone
+        PRIVATE
         graph_stats_obj
         meta_client_stats_obj
         storage_client_stats_obj
@@ -244,13 +258,13 @@ nebula_add_executable(
         meta_v2_thrift_obj
         ${storage_meta_deps}
         ${common_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 install(
     TARGETS
         nebula-standalone

@@ -14,3 +14,13 @@ nebula_add_test(
         gtest
         gtest_main
 )
+target_link_libraries(
+       charset_test
+        PRIVATE
+        charset_obj
+        base_obj
+        gtest
+        gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)

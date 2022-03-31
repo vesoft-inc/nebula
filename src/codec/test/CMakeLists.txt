@@ -3,7 +3,6 @@ nebula_add_library(
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
 )
-target_link_libraries(codec_test_obj PUBLIC "${Glog_LIBRARY}"  )
 
 set(CODEC_TEST_LIBS
     codec_obj
@@ -13,6 +12,7 @@ set(CODEC_TEST_LIBS
     meta_thrift_obj
     common_thrift_obj
     raftex_thrift_obj
+    storage_thrift_obj
     meta_client_obj
     ws_obj
     ws_common_obj
@@ -32,7 +32,6 @@ set(CODEC_TEST_LIBS
     process_obj
     expression_obj
     function_manager_obj
-    wkt_wkb_io_obj
     agg_function_manager_obj
     time_utils_obj
     datetime_parser_obj
@@ -44,69 +43,92 @@ set(CODEC_TEST_LIBS
 nebula_add_test(
     NAME row_reader_v1_test
     SOURCES RowReaderV1Test.cpp
-    LIBRARIES ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
+)
+
+target_link_libraries(
+        row_reader_v1_test
+        PRIVATE
+    ${CODEC_TEST_LIBS}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME row_reader_v2_test
     SOURCES RowReaderV2Test.cpp
-    LIBRARIES ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
+)
+
+target_link_libraries(
+        row_reader_v2_test
+        PRIVATE
+    ${CODEC_TEST_LIBS}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME row_writer_v2_test
     SOURCES RowWriterV2Test.cpp
-    LIBRARIES ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
+)
+
+target_link_libraries(
+        row_writer_v2_test
+        PRIVATE
+    ${CODEC_TEST_LIBS}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME row_reader_bm
     SOURCES
         RowReaderBenchmark.cpp
         RowWriterV1.cpp
-    LIBRARIES ${CODEC_TEST_LIBS}
-    LIBRARIES
+)
+
+target_link_libraries(
+        row_reader_bm
+        PRIVATE
+        ${CODEC_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         follybenchmark
         wangle
         boost_regex
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_executable(
     NAME row_writer_bm
     SOURCES
         RowWriterBenchmark.cpp
         RowWriterV1.cpp
-    LIBRARIES ${CODEC_TEST_LIBS}
-    LIBRARIES
+)
+
+target_link_libraries(
+        row_writer_bm
+        PRIVATE
+    ${CODEC_TEST_LIBS}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         follybenchmark
         wangle
         boost_regex
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 #nebula_add_test(
 #    NAME nebula_codec_test
 #    SOURCES NebulaCodecTest.cpp

@@ -48,59 +48,71 @@ nebula_add_test(
         part_test
     SOURCES
         PartTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        part_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
         gtest
 )
-
 nebula_add_test(
     NAME
         rocks_engine_test
     SOURCES
         RocksEngineTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        rocks_engine_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         nebula_store_test
     SOURCES
         NebulaStoreTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        nebula_store_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         nebula_listener_test
     SOURCES
         NebulaListenerTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        nebula_listener_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -108,85 +120,105 @@ nebula_add_test(
         rocks_engine_config_test
     SOURCES
         RocksEngineConfigTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        rocks_engine_config_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         disk_man_test
     SOURCES
         DiskManagerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        disk_man_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         log_encoder_test
     SOURCES
         LogEncoderTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        log_encoder_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         snapshot_link_test
     SOURCES
         SnapshotLinkTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        snapshot_link_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         multi_versions_perf_test_bm
     SOURCES
         MultiVersionBenchmark.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        multi_versions_perf_test_bm
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_executable(
     NAME
         part_performance_test
     SOURCES
         PartPerformanceTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        part_performance_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
@@ -194,19 +226,24 @@ nebula_add_executable(
         follybenchmark
         gtest
         boost_regex
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         rate_limiter_test
     SOURCES
         RateLimiterTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        rate_limiter_test
+        PRIVATE
         ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

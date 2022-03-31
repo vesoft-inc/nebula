@@ -5,6 +5,13 @@
 nebula_add_test(
     NAME reservoir_sampling_test
     SOURCES ReservoirSamplingTest.cpp
-    LIBRARIES time_obj
-    LIBRARIES gtest gtest_main
+)
+target_link_libraries(
+     reservoir_sampling_test
+        PRIVATE
+        time_obj
+        gtest
+        gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

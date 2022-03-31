@@ -9,10 +9,14 @@ nebula_add_test(
         ThreadTest.cpp
         GenericWorkerTest.cpp
         GenericThreadPoolTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        thread_test
+        PRIVATE
         thread_obj
         time_obj
-    LIBRARIES
         gtest
         gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

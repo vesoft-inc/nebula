@@ -60,13 +60,16 @@ nebula_add_test(
         IteratorTest.cpp
         ExpressionContextTest.cpp
         ExecutionContextTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        context_test
+        PRIVATE
         ${CONTEXT_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
         gtest
         wangle
         ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_executable(
@@ -74,12 +77,15 @@ nebula_add_executable(
         iterator_bm
     SOURCES
         IteratorBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        iterator_bm
+        PRIVATE
         ${CONTEXT_TEST_LIBS}
-    LIBRARIES
         follybenchmark
         boost_regex
-        ${THRIFT_LIBRARIES}
         wangle
         ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

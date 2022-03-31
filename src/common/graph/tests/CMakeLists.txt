@@ -7,15 +7,21 @@ nebula_add_test(
         response_encode_decode_test
     SOURCES
         ResponseEncodeDecodeTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        response_encode_decode_test
+        PRIVATE
         base_obj
         graph_obj
         graph_thrift_obj
         common_thrift_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         datatypes_obj
         wkt_wkb_io_obj
-    LIBRARIES
         gtest
         gtest_main
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

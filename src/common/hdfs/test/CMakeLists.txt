@@ -7,12 +7,16 @@ nebula_add_test(
         hdfs_helper_test
     SOURCES
         HdfsHelperTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        hdfs_helper_test
+        PRIVATE
         hdfs_helper_obj
         process_obj
         fs_obj
         base_obj
-    LIBRARIES
         gtest
         gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

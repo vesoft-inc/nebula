@@ -23,12 +23,14 @@ nebula_add_test(
     SOURCES
         ExpressionUtilsTest.cpp
         IdGeneratorTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        utils_test
+        PRIVATE
         base_obj
         datatypes_obj
         expression_obj
         function_manager_obj
-        wkt_wkb_io_obj
         agg_function_manager_obj
         time_obj
         meta_thrift_obj
@@ -67,10 +69,10 @@ nebula_add_test(
         graph_stats_obj
         meta_client_stats_obj
         storage_client_stats_obj
-    LIBRARIES
         gtest
         gtest_main
         ${Boost_Thread_LIBRARY}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

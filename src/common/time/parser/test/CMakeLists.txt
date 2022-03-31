@@ -7,14 +7,21 @@ nebula_add_test(
         datetime_parser_test
     SOURCES
         DateTimeParserTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        datetime_parser_test
+        PRIVATE
         time_utils_obj
         thread_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         base_obj
         fs_obj
-        wkt_wkb_io_obj
         datetime_parser_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+        
 )

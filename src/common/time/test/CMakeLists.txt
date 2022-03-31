@@ -8,12 +8,16 @@ nebula_add_test(
     SOURCES
         DurationTest.cpp
         ScopedTimerTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        duration_test
+        PRIVATE
         base_obj
         time_obj
         thread_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -21,40 +25,56 @@ nebula_add_test(
         wallclock_test
     SOURCES
         WallClockTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        wallclock_test
+        PRIVATE
         time_obj
         thread_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
+
 
 nebula_add_test(
     NAME
         timezone_info_test
     SOURCES
         TimezoneInfoTest.cpp
-    LIBRARIES
-        base_obj
-    LIBRARIES
-        gtest
 )
+target_link_libraries(
+        timezone_info_test
+        PRIVATE
+        base_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
+
 
 nebula_add_test(
     NAME
         time_utils_test
     SOURCES
         TimeUtilsTest.cpp
-    LIBRARIES
-		"${Glog_LIBRARY}"
-        gtest
-    LIBRARIES
+)
+target_link_libraries(
+        time_utils_test
+        PRIVATE
         time_utils_obj
         thread_obj
         datatypes_obj
-        base_obj
         fs_obj
         wkt_wkb_io_obj
         datetime_parser_obj
+        base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_executable(
@@ -62,19 +82,31 @@ nebula_add_executable(
         duration_bm
     SOURCES
         DurationBenchmark.cpp
-    LIBRARIES
-        base_obj
+)
+target_link_libraries(
+        duration_bm
+        PRIVATE
         time_obj
         thread_obj
-    LIBRARIES
+        base_obj
+        gtest
         follybenchmark
         boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_executable(
     NAME wallclock_bm
     SOURCES WallClockBenchmark.cpp
-    LIBRARIES
+)
+
+
+target_link_libraries(
+        wallclock_bm
+        PRIVATE
         time_obj
-    LIBRARIES follybenchmark boost_regex
+    follybenchmark boost_regex
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

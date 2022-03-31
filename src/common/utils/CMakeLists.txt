@@ -6,19 +6,18 @@ nebula_add_library(
     IndexKeyUtils.cpp
     OperationKeyUtils.cpp
 )
-target_link_libraries(keyutils_obj PUBLIC "${Glog_LIBRARY}" time_utils_obj  time_obj )
+target_link_libraries(keyutils_obj PUBLIC  time_utils_obj  time_obj )
 
 nebula_add_library(
     meta_keyutils_obj SHARED
     MetaKeyUtils.cpp
 )
-target_link_libraries(meta_keyutils_obj PUBLIC "${Glog_LIBRARY}" network_obj )
+target_link_libraries(meta_keyutils_obj PUBLIC  network_obj )
 
 nebula_add_library(
     log_str_list_iterator_obj SHARED
     LogStrListIterator.cpp
 )
-target_link_libraries(log_str_list_iterator_obj PUBLIC "${Glog_LIBRARY}"  )
 
 
 nebula_add_subdirectory(test)

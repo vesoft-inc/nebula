@@ -32,6 +32,7 @@ nebula_add_library(
     ngql/FetchEdgesPlanner.cpp
     ngql/MaintainPlanner.cpp
 )
+target_link_libraries(planner_obj PRIVATE meta_manager_obj)
 
 nebula_add_library(
     plan_obj_impl OBJECT
@@ -44,5 +45,3 @@ nebula_add_library(
     plan/Mutate.cpp
     plan/Maintain.cpp
 )
-target_link_libraries(planner_obj PUBLIC ${Glog_LIBRARY} expression_obj expr_visitor_obj memory_obj idgenerator_obj graph_context_obj_impl  plan_obj_impl)
-#target_link_libraries(plan_obj PUBLIC ${Glog_LIBRARY} idgenerator_obj graph_context_obj )

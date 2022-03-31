@@ -7,7 +7,10 @@ nebula_add_test(
         http_client_test
     SOURCES
         HttpClientTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        http_client_test
+        PRIVATE
         http_client_obj
         ws_obj
         ws_common_obj
@@ -18,9 +21,12 @@ nebula_add_test(
         base_obj
         version_obj
         datatypes_obj
-        wkt_wkb_io_obj
-    LIBRARIES
-        ${PROXYGEN_LIBRARIES}
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         gtest
         gtest_main
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

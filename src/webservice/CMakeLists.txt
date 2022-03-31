@@ -19,6 +19,6 @@ nebula_add_library(
     ws_common_obj SHARED
     Common.cpp
 )
-target_link_libraries(ws_obj PUBLIC "${Glog_LIBRARY}" ws_common_obj  )
+target_link_libraries(ws_obj PUBLIC  ws_common_obj  )
 
 nebula_add_subdirectory(test)

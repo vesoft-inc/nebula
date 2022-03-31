@@ -6,11 +6,18 @@ nebula_add_test(
         host_addr_test
     SOURCES
         HostAddrTest.cpp
-    LIBRARIES
-        base_obj
+)
+target_link_libraries(
+       host_addr_test
+        PRIVATE
         datatypes_obj
-    LIBRARIES
+        base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 
@@ -19,12 +26,20 @@ nebula_add_test(
         date_test
     SOURCES
         DateTest.cpp
-    LIBRARIES
-        base_obj
-        datatypes_obj
-    LIBRARIES
-        gtest
 )
+target_link_libraries(
+       date_test
+        PRIVATE
+        datatypes_obj
+        base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
+
 
 
 nebula_add_test(
@@ -32,19 +47,25 @@ nebula_add_test(
         value_test
     SOURCES
         ValueTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+       value_test
+        PRIVATE
         base_obj
         expression_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         function_manager_obj
         agg_function_manager_obj
         time_utils_obj
         time_obj
         datetime_parser_obj
         fs_obj
-    LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 
@@ -54,17 +75,23 @@ nebula_add_test(
     SOURCES
         PathTest.cpp
         EdgeTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+       structural_value_test
+        PRIVATE
         base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         datatypes_obj
         function_manager_obj
         time_obj
         time_utils_obj
         datetime_parser_obj
         fs_obj
-    LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -72,23 +99,37 @@ nebula_add_test(
         data_set_test
     SOURCES
         DataSetTest.cpp
-    LIBRARIES
-        base_obj
-        datatypes_obj
-    LIBRARIES
-        gtest
 )
 
+target_link_libraries(
+      data_set_test
+        PRIVATE
+        base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        datatypes_obj
+        gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
+)
 nebula_add_test(
     NAME
         geography_test
     SOURCES
         GeographyTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+      geography_test
+        PRIVATE
         base_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         datatypes_obj
-    LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -96,33 +137,48 @@ nebula_add_test(
         value_to_json_test
     SOURCES
         ValueToJsonTest.cpp
-    LIBRARIES
-        base_obj
+)
+target_link_libraries(
+      value_to_json_test
+        PRIVATE
         expression_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         function_manager_obj
         agg_function_manager_obj
         time_utils_obj
         datetime_parser_obj
         time_obj
         fs_obj
-    LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
+
 
 nebula_add_executable(
     NAME
         edge_bm
     SOURCES
         EdgeBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+      edge_bm
+        PRIVATE
         base_obj
         datatypes_obj
-    LIBRARIES
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_executable(
@@ -130,29 +186,42 @@ nebula_add_executable(
         value_bm
     SOURCES
         ValueBenchmark.cpp
-    LIBRARIES
+)
+target_link_libraries(
+      value_bm
+        PRIVATE
         base_obj
         datatypes_obj
-    LIBRARIES
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 nebula_add_test(
     NAME
         geo_function_test
     SOURCES
         GeoFunctionTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+     geo_function_test
+        PRIVATE
         function_manager_obj
         base_obj
         datatypes_obj
+        storage_thrift_obj
+        meta_thrift_obj
+        common_thrift_obj
         time_utils_obj
         datetime_parser_obj
         time_obj
-    LIBRARIES
         gtest
         gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
 
 nebula_add_test(
@@ -160,19 +229,22 @@ nebula_add_test(
         geo_index_test
     SOURCES
         GeoIndexTest.cpp
-    LIBRARIES
+)
+
+
+target_link_libraries(
+     geo_index_test
+        PRIVATE
         base_obj
         datatypes_obj
         storage_thrift_obj
         meta_thrift_obj
         common_thrift_obj
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
         gtest_main
+        ${NEBULA_LIBS}
 )
-
-

@@ -5,6 +5,12 @@
 nebula_add_test(
     NAME configuration_test
     SOURCES ConfigurationTest.cpp
-    LIBRARIES conf_obj fs_obj base_obj
-    LIBRARIES gtest gtest_main
+)
+target_link_libraries(
+        configuration_test
+        PRIVATE
+    conf_obj fs_obj base_obj
+    gtest gtest_main
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

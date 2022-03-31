@@ -7,108 +7,131 @@ nebula_add_test(
         processor_test
     SOURCES
         ProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        processor_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         index_processor_test
     SOURCES
         IndexProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        index_processor_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         hb_processor_test
     SOURCES
         HBProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        hb_processor_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         agent_hb_processor_test
     SOURCES
         AgentHBProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        agent_hb_processor_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         meta_client_test
     SOURCES
         MetaClientTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        meta_client_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         active_hosts_man_test
     SOURCES
         ActiveHostsManTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        active_hosts_man_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME
         balancer_test
     SOURCES
         BalancerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        balancer_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
         gmock
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 #nebula_add_test(
 #    NAME
@@ -137,135 +160,168 @@ nebula_add_test(
         admin_client_test
     SOURCES
         AdminClientTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        admin_client_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 
 nebula_add_test(
     NAME
         authentication_test
     SOURCES
         AuthProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        authentication_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         cluster_id_man_test
     SOURCES
         ClusterIdManTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        cluster_id_man_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         job_manager_test
     SOURCES
         JobManagerTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        job_manager_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
         gmock
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         get_stats_test
     SOURCES
         GetStatsTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        get_stats_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
         gmock
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         create_backup_test
     SOURCES
         CreateBackupProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        create_backup_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         restore_test
     SOURCES
         RestoreProcessorTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        restore_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         list_meta_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
-    LIBRARIES
+)
+
+target_link_libraries(
+        list_meta_cluster_info_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
-
 nebula_add_test(
     NAME
         verify_client_version_test
     SOURCES
         VerifyClientVersionTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        verify_client_version_test
+        PRIVATE
         ${meta_test_deps}
-    LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )

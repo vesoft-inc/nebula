@@ -7,7 +7,6 @@ nebula_add_library(
     MockSchemaManager.cpp
     MockIndexManager.cpp
 )
-target_link_libraries(mock_schema_obj PUBLIC  "${Glog_LIBRARY}")
 
 set(VALIDATOR_TEST_LIBS
     mock_schema_obj
@@ -37,7 +36,6 @@ set(VALIDATOR_TEST_LIBS
     thrift_obj
     thread_obj
     datatypes_obj
-    wkt_wkb_io_obj
     base_obj
     memory_obj
     meta_thrift_obj
@@ -89,10 +87,14 @@ nebula_add_test(
         MatchValidatorTest.cpp
         LookupValidatorTest.cpp
         SymbolsTest.cpp
-    LIBRARIES
+)
+target_link_libraries(
+        validator_test
+        PRIVATE
         ${VALIDATOR_TEST_LIBS}
-    LIBRARIES
         gtest
-        ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${NEBULA_LIBS}
 )
