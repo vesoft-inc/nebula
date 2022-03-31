@@ -31,7 +31,6 @@ Status TraverseExecutor::close() {
 }
 
 Status TraverseExecutor::buildRequestDataSet() {
-  time::Duration dur;
   SCOPED_TIMER(&execTime_);
   auto inputVar = traverse_->inputVar();
   auto& inputResult = ectx_->getResult(inputVar);
@@ -66,7 +65,6 @@ Status TraverseExecutor::buildRequestDataSet() {
     reqDs_.emplace_back(Row({std::move(vid)}));
   }
   paths_.emplace_back(std::move(prev));
-  LOG(ERROR) << "buildRequestDataSet:" << dur.elapsedInUSec();
   return Status::OK();
 }
 
@@ -162,11 +160,9 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
     if (dataset == nullptr) {
       continue;
     }
-    VLOG(1) << "resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
   auto listVal = std::make_shared<Value>(std::move(list));
-  VLOG(1) << "storage response:" << *listVal;
 
   return std::move(buildInterimPath(std::make_unique<GetNeighborsIter>(listVal)))
       .via(runner())
@@ -220,7 +216,6 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
               return handleJob(begin, end, tmpIter.get(), prev);
             });
     futures.emplace_back(std::move(f));
-    VLOG(1) << "begin: " << begin << " end:" << end;
     begin = end;
     dispathedCnt += batchSize;
   }
@@ -228,8 +223,6 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   // Gather all results and do post works
   return folly::collect(futures).via(runner()).thenValue(
       [this, total = pathCnt](auto&& results) mutable {
-        VLOG(1) << "path cnt: " << total;
-        time::Duration dur;
         reqDs_.clear();
         std::unordered_map<Value, Paths>& current = paths_.back();
         size_t mapCnt = 0;
@@ -257,7 +250,6 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
           }
         }
         releasePrevPaths(total);
-        LOG(ERROR) << "collect paths:" << dur.elapsedInUSec();
         return Status::OK();
       });
 }
@@ -266,10 +258,9 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
                                                 size_t end,
                                                 Iterator* iter,
                                                 const std::unordered_map<Value, Paths>& prev) {
-  time::Duration dur;
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 
@@ -325,7 +316,6 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
         List neighbors;
         neighbors.values.emplace_back(e);
         path.values.emplace_back(std::move(neighbors));
-        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
         ++pathCnt;
       } else {
@@ -333,13 +323,11 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
-        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
         ++pathCnt;
       }
     }  // `prevPath'
   }    // `iter'
-  LOG(ERROR) << "handleJob: " << dur.elapsedInUSec() << " begin:" << begin << " end:" << end;
   return jobResult;
 }
 
@@ -358,7 +346,6 @@ void TraverseExecutor::buildPath(std::unordered_map<Dst, std::vector<Row>>& curr
 }
 
 Status TraverseExecutor::buildResult() {
-  time::Duration dur;
   // This means we are reaching a dead end, return empty.
   if (range_ != nullptr && currentStep_ < range_->min()) {
     return finish(ResultBuilder().value(Value(DataSet())).build());
@@ -372,8 +359,6 @@ Status TraverseExecutor::buildResult() {
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
-  VLOG(1) << "result: " << result;
-  LOG(ERROR) << "buildResult:" << dur.elapsedInUSec();
 
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }

@@ -10,7 +10,6 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> FilterExecutor::execute() {
-  time::Duration dur;
   SCOPED_TIMER(&execTime_);
   auto *filter = asNode<Filter>(node());
   auto iter = ectx_->getResult(filter->inputVar()).iter();
@@ -42,10 +41,8 @@ folly::Future<Status> FilterExecutor::execute() {
     dispathedCnt += batchSize;
   }
 
-  LOG(ERROR) << "prepare: " << dur.elapsedInUSec();
   return folly::collect(futures).via(runner()).thenValue(
       [this, result = std::move(ds)](auto &&results) mutable {
-        time::Duration dur1;
         for (auto &r : results) {
           auto &&rows = std::move(r).value();
           result.rows.insert(result.rows.end(),
@@ -53,16 +50,14 @@ folly::Future<Status> FilterExecutor::execute() {
                              std::make_move_iterator(rows.end()));
         }
         finish(ResultBuilder().value(Value(std::move(result))).build());
-        LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
         return Status::OK();
       });
 }
 
 DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  time::Duration dur;
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 

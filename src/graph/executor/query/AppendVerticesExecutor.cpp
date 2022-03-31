@@ -6,8 +6,6 @@
 
 #include <iterator>
 
-#include "common/time/Duration.h"
-
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
@@ -28,7 +26,6 @@ DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
 
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
-  time::Duration dur;
 
   auto *av = asNode<AppendVertices>(node());
   StorageClient *storageClient = qctx()->getStorageClient();
@@ -43,7 +40,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
 
-  LOG(ERROR) << "appendVertices: " << dur.elapsedInUSec();
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
@@ -69,7 +65,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
 
 folly::Future<Status> AppendVerticesExecutor::handleResp(
     storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp) {
-  time::Duration dur;
   auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
   NG_RETURN_IF_ERROR(result);
   auto *av = asNode<AppendVertices>(node());
@@ -77,8 +72,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
   auto inputIter = qctx()->ectx()->getResult(av->inputVar()).iter();
   result_.colNames = av->colNames();
   result_.rows.reserve(inputIter->size());
-
-  LOG(ERROR) << "point1: " << dur.elapsedInUSec();
 
   nebula::DataSet v;
   for (auto &resp : rpcResp.responses()) {
@@ -91,7 +84,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
     }
   }
   auto propIter = PropIter(std::make_shared<Value>(std::move(v)));
-  LOG(ERROR) << "point2: " << dur.elapsedInUSec();
 
   folly::Future<Status> prepareF = folly::makeFuture<Status>(Status::OK());
   if (!av->trackPrevPath()) {
@@ -114,14 +106,12 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
     }
 
     prepareF = folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
-      time::Duration dur1;
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result_.rows.insert(result_.rows.end(),
                             std::make_move_iterator(rows.begin()),
                             std::make_move_iterator(rows.end()));
       }
-      LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
     });
   } else {
@@ -149,7 +139,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
     });
   }
 
-  LOG(ERROR) << "point3: " << dur.elapsedInUSec();
   return std::move(prepareF).via(runner()).thenValue([this, inputIterNew = std::move(inputIter)](
                                                          auto &&prepareResult) {
     UNUSED(prepareResult);
@@ -172,14 +161,12 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
     }
 
     return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
-      time::Duration dur1;
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result_.rows.insert(result_.rows.end(),
                             std::make_move_iterator(rows.begin()),
                             std::make_move_iterator(rows.end()));
       }
-      LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
     });
   });
@@ -188,7 +175,7 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
 DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, Iterator *iter) {
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 
@@ -216,7 +203,7 @@ DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, It
 void AppendVerticesExecutor::buildMap(size_t begin, size_t end, Iterator *iter) {
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 
@@ -235,10 +222,9 @@ void AppendVerticesExecutor::buildMap(size_t begin, size_t end, Iterator *iter) 
 }
 
 DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  time::Duration dur;
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 
@@ -258,7 +244,6 @@ DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *it
     ds.rows.emplace_back(std::move(row));
   }
 
-  LOG(ERROR) << "handleJob: " << dur.elapsedInUSec() << " " << begin << " " << end;
   return ds;
 }
 

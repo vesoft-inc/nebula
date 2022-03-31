@@ -11,7 +11,6 @@ namespace graph {
 
 folly::Future<Status> ProjectExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  time::Duration dur;
   auto *project = asNode<Project>(node());
   auto iter = ectx_->getResult(project->inputVar()).iter();
   DCHECK(!!iter);
@@ -39,10 +38,8 @@ folly::Future<Status> ProjectExecutor::execute() {
     dispathedCnt += batchSize;
   }
 
-  LOG(ERROR) << "prepare: " << dur.elapsedInUSec();
   return folly::collect(futures).via(runner()).thenValue(
       [this, result = std::move(ds)](auto &&results) mutable {
-        time::Duration dur1;
         for (auto &r : results) {
           auto &&rows = std::move(r).value();
           result.rows.insert(result.rows.end(),
@@ -50,16 +47,14 @@ folly::Future<Status> ProjectExecutor::execute() {
                              std::make_move_iterator(rows.end()));
         }
         finish(ResultBuilder().value(Value(std::move(result))).build());
-        LOG(ERROR) << "gather: " << dur1.elapsedInUSec();
         return Status::OK();
       });
 }
 
 DataSet ProjectExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  time::Duration dur;
   // Iterates to the begin pos
   size_t tmp = 0;
-  while (iter->valid() && ++tmp < begin) {
+  for (; iter->valid() && tmp < begin; ++tmp) {
     iter->next();
   }
 
