@@ -13,6 +13,7 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
+#include "common/time/WallClock.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
@@ -65,7 +66,6 @@ bool NebulaStore::init() {
   // todo(doodle): we could support listener and normal storage start at same
   // instance
   if (!isListener()) {
-    fillPartPeers();
     // TODO(spw): need to refactor, we could load data from local regardless of partManager,
     // then adjust the data in loadPartFromPartManager.
     loadPartFromDataPath();
@@ -83,66 +83,11 @@ bool NebulaStore::init() {
   return true;
 }
 
-void NebulaStore::fillPartPeers() {
-  CHECK(!!options_.partMan_);
-
-  auto partsMap = options_.partMan_->parts(storeSvcAddr_);
-
-  // fill empty parts with part manager
-  for (auto& path : options_.dataPaths_) {
-    auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
-    auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
-    for (auto& dir : dirs) {
-      LOG(INFO) << "Scan path \"" << rootPath << "/" << dir << "\"";
-      try {
-        GraphSpaceID spaceId;
-        try {
-          spaceId = folly::to<GraphSpaceID>(dir);
-        } catch (const std::exception& ex) {
-          LOG(ERROR) << folly::sformat("Data path {} invalid {}", dir, ex.what());
-          continue;
-        }
-
-        if (spaceId == 0) {
-          // skip the system space, only handle data space here.
-          continue;
-        }
-
-        if (partsMap.find(spaceId) == partsMap.end()) {
-          // skip if the space not in the part manager
-          continue;
-        }
-
-        std::vector<KV> data;
-        auto& partPeers = partsMap[spaceId];
-        auto engine = newEngine(spaceId, path, options_.walPath_);
-        for (auto& [partId, raftPeers] : engine->allPartPeers()) {
-          if (partPeers.find(partId) == partPeers.end()) {
-            continue;
-          }
-
-          if (raftPeers.size() == 0) {
-            Peers peersToPersist;
-            for (auto& peer : partPeers[partId].hosts_) {
-              peersToPersist.addOrUpdate(Peer(getRaftAddr(peer)));
-            }
-            data.emplace_back(NebulaKeyUtils::systemPartKey(partId), peersToPersist.toString());
-          }
-        }
-
-        auto code = engine->multiPut(data);
-        CHECK(code == nebula::cpp2::ErrorCode::SUCCEEDED);
-      } catch (std::exception& e) {
-        LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
-      }
-    }
-  }
-}
-
 void NebulaStore::loadPartFromDataPath() {
   CHECK(!!options_.partMan_);
   LOG(INFO) << "Scan the local path, and init the spaces_";
-  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> spacePartIdSet;
+  // avoid duplicate engine created
+  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> partSet;
   for (auto& path : options_.dataPaths_) {
     auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
     auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
@@ -162,36 +107,77 @@ void NebulaStore::loadPartFromDataPath() {
           continue;
         }
 
-        // Load raft peers info which persisted to local engine.
-        // If the partition was in balancing process before restart, we should keep it
-        // though the part is not in the meta.
         auto engine = newEngine(spaceId, path, options_.walPath_);
         std::map<PartitionID, Peers> partRaftPeers;
-        for (auto& [partId, raftPeers] : engine->allPartPeers()) {
+
+        // load balancing part info which persisted to local engine.
+        for (auto& [partId, raftPeers] : engine->balancePartPeers()) {
           CHECK_NE(raftPeers.size(), 0);
 
-          bool isNormalPeer = true;
-          Peer raftPeer;
-          bool exist = raftPeers.get(raftAddr_, &raftPeer);
-          if (exist) {
-            if (raftPeer.status != Peer::Status::kNormalPeer) {
-              isNormalPeer = false;
-            }
-          }
+          auto spacePart = std::make_pair(spaceId, partId);
+          if (partSet.find(spacePart) == partSet.end()) {
+            partSet.insert(std::make_pair(spaceId, partId));
 
-          if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok() && isNormalPeer) {
-            LOG(INFO) << "Part " << partId
-                      << " is a normal peer and does not exist in meta any more, will remove it!";
-            engine->removePart(partId);
-            continue;
-          } else {
-            auto spacePart = std::make_pair(spaceId, partId);
-            if (spacePartIdSet.find(spacePart) == spacePartIdSet.end()) {
-              spacePartIdSet.emplace(spacePart);
-              partRaftPeers.emplace(partId, raftPeers);
+            // join the balancing peers with meta peers
+            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+            if (!metaStatus.ok()) {
+              LOG(INFO) << "space: " << spaceId << "; partId: " << partId
+                        << " does not exist in part manager.";
+              continue;
             }
+
+            auto partMeta = metaStatus.value();
+            for (auto& h : partMeta.hosts_) {
+              if (h != storeSvcAddr_) {
+                auto raftAddr = getRaftAddr(h);
+                if (!raftPeers.exist(raftAddr)) {
+                  VLOG(1) << "Add raft peer " << raftAddr;
+                  raftPeers.addOrUpdate(Peer(raftAddr));
+                }
+              }
+            }
+            partRaftPeers.emplace(partId, raftPeers);
           }
         }
+
+        // load normal part ids which persisted to local engine.
+        std::map<PartitionID, Peers> normalPartPeers;
+        for (auto& partId : engine->allParts()) {
+          // first priority: balancing
+          bool inBalancing = partRaftPeers.find(partId) != partRaftPeers.end();
+          if (inBalancing) {
+            continue;
+          }
+
+          // second priority: meta
+          if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
+            LOG(INFO)
+                << "Part " << partId
+                << " is not in balancing and does not exist in meta any more, will remove it!";
+            engine->removePart(partId);
+            continue;
+          }
+
+          auto spacePart = std::make_pair(spaceId, partId);
+          if (partSet.find(spacePart) == partSet.end()) {
+            partSet.emplace(spacePart);
+
+            // fill the peers
+            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+            CHECK(metaStatus.ok());
+            auto partMeta = metaStatus.value();
+            Peers peers;
+            for (auto& h : partMeta.hosts_) {
+              if (h != storeSvcAddr_) {
+                VLOG(1) << "Add raft peer " << getRaftAddr(h);
+                peers.addOrUpdate(Peer(getRaftAddr(h)));
+              }
+            }
+            normalPartPeers.emplace(partId, peers);
+          }
+        }
+
+        // there is no valid part in this engine, remove it
         if (partRaftPeers.empty()) {
           engine.reset();  // close engine
           if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
@@ -203,7 +189,7 @@ void NebulaStore::loadPartFromDataPath() {
           continue;
         }
 
-        // add to spaces if the part should exist
+        // add to spaces
         KVEngine* enginePtr = nullptr;
         {
           folly::RWSpinLock::WriteHolder wh(&lock_);

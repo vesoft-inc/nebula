@@ -120,6 +120,17 @@ std::string NebulaKeyUtils::systemPartKey(PartitionID partId) {
 }
 
 // static
+std::string NebulaKeyUtils::systemBalanceKey(PartitionID partId) {
+  uint32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kSystem);
+  uint32_t type = static_cast<uint32_t>(NebulaSystemKeyType::kSystemBalance);
+  std::string key;
+  key.reserve(kSystemLen);
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+      .append(reinterpret_cast<const char*>(&type), sizeof(NebulaSystemKeyType));
+  return key;
+}
+
+// static
 std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& name) {
   std::string key;
   key.reserve(sizeof(PartitionID) + name.size());

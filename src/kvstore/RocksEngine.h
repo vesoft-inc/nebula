@@ -358,11 +358,11 @@ class RocksEngine : public KVEngine {
   void addPart(PartitionID partId, const Peers& raftPeers = {}) override;
 
   /**
-   * @brief Update part info. Could only update the persist peers info now.
+   * @brief Update part info. Could only update the persist peers info in balancing now.
    *
    * @param partId
-   * @param raftPeer 1. if raftPeer.status is kDeleted, delete this peer.
-   *                 2. if raftPeer.status is others, add or update this peer
+   * @param raftPeer
+   *
    */
   void updatePart(PartitionID partId, const Peer& raftPeer) override;
 
@@ -381,11 +381,11 @@ class RocksEngine : public KVEngine {
   std::vector<PartitionID> allParts() override;
 
   /**
-   * @brief Retrun all the part->raft peers in rocksdb engine by scanning system part key.
+   * @brief Retrun all the balancing part->raft peers in rocksdb engine by scanning system part key.
    *
    * @return std::map<Partition, Peers>
    */
-  std::map<PartitionID, Peers> allPartPeers() override;
+  std::map<PartitionID, Peers> balancePartPeers() override;
 
   /**
    * @brief Return total partition numbers
@@ -484,6 +484,14 @@ class RocksEngine : public KVEngine {
    * @return std::string
    */
   std::string partKey(PartitionID partId);
+
+  /**
+   * @brief System balance key, containing balancing info
+   *
+   * @param partId
+   * @return std::string
+   */
+  std::string balanceKey(PartitionID partId);
 
   /**
    * @brief Open the rocksdb backup engine, mainly for rocksdb PlainTable mounted on tmpfs/ramfs
