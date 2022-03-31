@@ -152,7 +152,8 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        expr->right()->kind() != Expression::Kind::kList ||
+        !(expr->right()->kind() == Expression::Kind::kList ||
+          expr->right()->kind() == Expression::Kind::kAttribute) ||
         !ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
       vidPattern_ = VidPattern{};
       return;
