@@ -85,7 +85,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
   }
   auto propIter = PropIter(std::make_shared<Value>(std::move(v)));
 
-  folly::Future<Status> prepareF = folly::makeFuture<Status>(Status::OK());
   if (!av->trackPrevPath()) {
     size_t totalSize = propIter.size();
     size_t batchSize = getBatchSize(totalSize);
@@ -105,61 +104,6 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
       dispathedCnt += batchSize;
     }
 
-    prepareF = folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
-      for (auto &r : results) {
-        auto &&rows = std::move(r).value();
-        result_.rows.insert(result_.rows.end(),
-                            std::make_move_iterator(rows.begin()),
-                            std::make_move_iterator(rows.end()));
-      }
-      return finish(ResultBuilder().value(Value(std::move(result_))).build());
-    });
-  } else {
-    size_t totalSize = propIter.size();
-    size_t batchSize = getBatchSize(totalSize);
-    // Start multiple jobs for handling the results
-    std::vector<folly::Future<StatusOr<folly::Unit>>> futures;
-    size_t begin = 0, end = 0, dispathedCnt = 0;
-    while (dispathedCnt < totalSize) {
-      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-      auto f = folly::makeFuture<Status>(Status::OK())
-                   .via(runner())
-                   .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
-                     UNUSED(r);
-                     return buildMap(begin, end, tmpIter.get());
-                   });
-      futures.emplace_back(std::move(f));
-      begin = end;
-      dispathedCnt += batchSize;
-    }
-
-    prepareF = folly::collect(futures).via(runner()).thenValue([](auto &&results) {
-      UNUSED(results);
-      return Status::OK();
-    });
-  }
-
-  return std::move(prepareF).via(runner()).thenValue([this, inputIterNew = std::move(inputIter)](
-                                                         auto &&prepareResult) {
-    UNUSED(prepareResult);
-    size_t totalSize = inputIterNew->size();
-    size_t batchSize = getBatchSize(totalSize);
-    // Start multiple jobs for handling the results
-    std::vector<folly::Future<StatusOr<DataSet>>> futures;
-    size_t begin = 0, end = 0, dispathedCnt = 0;
-    while (dispathedCnt < totalSize) {
-      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-      auto f = folly::makeFuture<Status>(Status::OK())
-                   .via(runner())
-                   .thenValue([this, begin, end, tmpIter = inputIterNew->copy()](auto &&r) mutable {
-                     UNUSED(r);
-                     return handleJob(begin, end, tmpIter.get());
-                   });
-      futures.emplace_back(std::move(f));
-      begin = end;
-      dispathedCnt += batchSize;
-    }
-
     return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
@@ -169,7 +113,60 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
       }
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
     });
-  });
+  } else {
+    std::vector<folly::Future<StatusOr<folly::Unit>>> prepareFs;
+    {
+      size_t totalSize = propIter.size();
+      size_t batchSize = getBatchSize(totalSize);
+      // Start multiple jobs for handling the results
+      size_t begin = 0, end = 0, dispathedCnt = 0;
+      while (dispathedCnt < totalSize) {
+        end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+        auto f = folly::makeFuture<Status>(Status::OK())
+                     .via(runner())
+                     .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
+                       UNUSED(r);
+                       return buildMap(begin, end, tmpIter.get());
+                     });
+        prepareFs.emplace_back(std::move(f));
+        begin = end;
+        dispathedCnt += batchSize;
+      }
+    }
+
+    return folly::collect(prepareFs).via(runner()).thenValue(
+        [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) {
+          UNUSED(prepareResult);
+          size_t totalSize = inputIterNew->size();
+          size_t batchSize = getBatchSize(totalSize);
+          // Start multiple jobs for handling the results
+          std::vector<folly::Future<StatusOr<DataSet>>> futures;
+          size_t begin = 0, end = 0, dispathedCnt = 0;
+          while (dispathedCnt < totalSize) {
+            end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+            auto f = folly::makeFuture<Status>(Status::OK())
+                         .via(runner())
+                         .thenValue(
+                             [this, begin, end, tmpIter = inputIterNew->copy()](auto &&r) mutable {
+                               UNUSED(r);
+                               return handleJob(begin, end, tmpIter.get());
+                             });
+            futures.emplace_back(std::move(f));
+            begin = end;
+            dispathedCnt += batchSize;
+          }
+
+          return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
+            for (auto &r : results) {
+              auto &&rows = std::move(r).value();
+              result_.rows.insert(result_.rows.end(),
+                                  std::make_move_iterator(rows.begin()),
+                                  std::make_move_iterator(rows.end()));
+            }
+            return finish(ResultBuilder().value(Value(std::move(result_))).build());
+          });
+        });
+  }
 }
 
 DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, Iterator *iter) {
