@@ -125,11 +125,18 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
 
   // Check if job not exists
   JobID jId = 0;
-  auto jobExist = jobMgr_->checkJobExist(spaceId_, type, paras, jId);
-  if (jobExist) {
+  auto runningJobExist = jobMgr_->checkOnRunningJobExist(spaceId_, type, paras, jId);
+  if (runningJobExist) {
     LOG(INFO) << "Job has already exists: " << jId;
     result.job_id_ref() = jId;
     return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+  if (type == cpp2::JobType::DATA_BALANCE || type == cpp2::JobType::ZONE_BALANCE) {
+    auto retCode = jobMgr_->checkNotFinishedJobExist(spaceId_, type);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "There are not finished data balance jobs or zone balance jobs.";
+      return retCode;
+    }
   }
 
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());

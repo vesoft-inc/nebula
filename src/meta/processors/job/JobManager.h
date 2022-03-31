@@ -92,18 +92,28 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   nebula::cpp2::ErrorCode addJob(JobDescription& jobDesc, AdminClient* client);
 
   /**
-   * @brief The same job is in jobMap
+   * @brief The same job is queue or running status.
    *
    * @param spaceId
    * @param type
    * @param paras
    * @param jobId If the job exists, jobId is the id of the existing job
-   * @return
+   * @return True if job exists.
    */
-  bool checkJobExist(GraphSpaceID spaceId,
-                     const cpp2::JobType& type,
-                     const std::vector<std::string>& paras,
-                     JobID& jobId);
+  bool checkOnRunningJobExist(GraphSpaceID spaceId,
+                              const cpp2::JobType& type,
+                              const std::vector<std::string>& paras,
+                              JobID& jobId);
+  /**
+   * @brief In the space, for jobs of DATA_BALANCE and ZONE_BALANCE,
+   * except for FINISHED and INVALID status, only one job of other status is allowed in the queue.
+   *
+   * @param spaceId
+   * @param jobType
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode checkNotFinishedJobExist(GraphSpaceID spaceId,
+                                                   const cpp2::JobType& jobType);
 
   /**
    * @brief Load all jobs of the space from kvStore and convert to cpp2::JobDesc

@@ -90,6 +90,22 @@ TEST_F(JobManagerTest, AddJob) {
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::COMPACT);
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  // If there is a failed data balance job, a new job cannot be added
+  JobID jobId3 = 3;
+  JobDescription jobDesc3(spaceId, jobId3, cpp2::JobType::DATA_BALANCE);
+  jobDesc3.setStatus(cpp2::JobStatus::FAILED);
+  auto jobKey = MetaKeyUtils::jobKey(jobDesc3.getSpace(), jobDesc3.getJobId());
+  auto jobVal = MetaKeyUtils::jobVal(jobDesc3.getJobType(),
+                                     jobDesc3.getParas(),
+                                     jobDesc3.getStatus(),
+                                     jobDesc3.getStartTime(),
+                                     jobDesc3.getStopTime(),
+                                     jobDesc3.getErrorCode());
+  jobMgr->save(std::move(jobKey), std::move(jobVal));
+
+  rc = jobMgr->checkNotFinishedJobExist(spaceId, jobDesc3.getJobType());
+  ASSERT_EQ(rc, nebula::cpp2::ErrorCode::E_JOB_MAYBE_RECOVER);
 }
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
@@ -287,7 +303,8 @@ TEST_F(JobManagerTest, JobDeduplication) {
   JobID jobId3 = 17;
   JobDescription jobDesc3(spaceId, jobId3, cpp2::JobType::LEADER_BALANCE);
   JobID jId3 = 0;
-  auto jobExist = jobMgr->checkJobExist(spaceId, jobDesc3.getJobType(), jobDesc3.getParas(), jId3);
+  auto jobExist =
+      jobMgr->checkOnRunningJobExist(spaceId, jobDesc3.getJobType(), jobDesc3.getParas(), jId3);
   if (!jobExist) {
     auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
     ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -296,7 +313,8 @@ TEST_F(JobManagerTest, JobDeduplication) {
   JobID jobId4 = 18;
   JobDescription jobDesc4(spaceId, jobId4, cpp2::JobType::COMPACT);
   JobID jId4 = 0;
-  jobExist = jobMgr->checkJobExist(spaceId, jobDesc4.getJobType(), jobDesc4.getParas(), jId4);
+  jobExist =
+      jobMgr->checkOnRunningJobExist(spaceId, jobDesc4.getJobType(), jobDesc4.getParas(), jId4);
   if (!jobExist) {
     auto rc4 = jobMgr->addJob(jobDesc4, adminClient_.get());
     ASSERT_NE(rc4, nebula::cpp2::ErrorCode::SUCCEEDED);

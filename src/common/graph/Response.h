@@ -106,6 +106,8 @@
   X(E_BALANCER_FAILURE, -2047)                                                \
   X(E_JOB_NOT_FINISHED, -2048)                                                \
   X(E_TASK_REPORT_OUT_DATE, -2049)                                            \
+  X(E_JOB_NOT_IN_SPACE, -2050)                                                \
+  X(E_JOB_MAYBE_RECOVER, -2051)                                               \
   X(E_INVALID_JOB, -2065)                                                     \
                                                                               \
   /* Backup Failure */                                                        \
