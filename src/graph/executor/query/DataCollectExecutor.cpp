@@ -1,11 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/DataCollectExecutor.h"
-
-#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -342,7 +339,6 @@ Status DataCollectExecutor::collectPathProp(const std::vector<std::string>& vars
     }
     ds.rows.emplace_back(Row({std::move(path)}));
   }
-  VLOG(2) << "Path with props : \n" << ds;
   result_.setDataSet(std::move(ds));
   return Status::OK();
 }

@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/algo/CartesianProductExecutor.h"
 
@@ -33,7 +32,6 @@ folly::Future<Status> CartesianProductExecutor::execute() {
                            std::make_move_iterator(cols.begin()),
                            std::make_move_iterator(cols.end()));
   }
-  VLOG(1) << "Cartesian Product is : " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
@@ -66,7 +64,6 @@ folly::Future<Status> BiCartesianProductExecutor::execute() {
   DataSet result;
   doCartesianProduct(lds, rds, result);
   result.colNames = BiCP->colNames();
-  VLOG(1) << "Cartesian Product is : " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 }  // namespace graph

@@ -36,9 +36,6 @@ NebulaStore::~NebulaStore() {
   stop();
   LOG(INFO) << "Cut off the relationship with meta client";
   options_.partMan_.reset();
-  raftService_->stop();
-  LOG(INFO) << "Waiting for the raft service stop...";
-  raftService_->waitUntilStop();
   bgWorkers_->stop();
   bgWorkers_->wait();
   storeWorker_->stop();
@@ -56,7 +53,7 @@ bool NebulaStore::init() {
   CHECK(storeWorker_->start());
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
-  if (!raftService_->start()) {
+  if (raftService_ == nullptr) {
     LOG(ERROR) << "Start the raft service failed";
     return false;
   }
@@ -192,7 +189,7 @@ void NebulaStore::loadPartFromDataPath() {
                     }
 
                     if (raftPeer.status == Peer::Status::kLearner) {
-                      part->addLearner(addr);
+                      part->addLearner(addr, true);
                     }
                   }
                 }
@@ -273,6 +270,7 @@ void NebulaStore::stop() {
   LOG(INFO) << "Stop the raft service...";
   raftService_->stop();
 
+  LOG(INFO) << "Stop kv engine...";
   for (const auto& space : spaces_) {
     for (const auto& engine : space.second->engines_) {
       engine->stop();

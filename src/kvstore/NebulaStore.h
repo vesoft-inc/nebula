@@ -111,7 +111,7 @@ class NebulaStore : public KVStore, public Handler {
   bool init();
 
   /**
-   * @brief Stop the raft service and kv engine
+   * @brief Stop the engine
    */
   void stop() override;
 

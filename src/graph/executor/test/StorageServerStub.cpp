@@ -31,25 +31,6 @@ void GraphStorageLocalServer::setInterface(
   handler_ = handler;
 }
 
-void GraphStorageLocalServer::serve() {
-  if (serving_) {
-    LOG(WARNING) << "Server already serving";
-    return;
-  }
-  // do nothing, wait stop
-  serving_ = true;
-  sem_.wait();
-}
-
-void GraphStorageLocalServer::stop() {
-  if (!serving_) {
-    LOG(WARNING) << "Can't stop server not serving";
-    return;
-  }
-  sem_.signal();
-  serving_ = false;
-}
-
 folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_getNeighbors(
     const cpp2::GetNeighborsRequest& request) {
   LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_getNeighbors);

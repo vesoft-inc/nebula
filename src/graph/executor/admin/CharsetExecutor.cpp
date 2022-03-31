@@ -1,12 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/CharsetExecutor.h"
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
