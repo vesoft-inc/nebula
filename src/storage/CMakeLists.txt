@@ -101,7 +101,7 @@ nebula_add_library(
     storage_server SHARED
     StorageServer.cpp
 )
-target_link_libraries(storage_server PUBLIC internal_storage_service_handler graph_storage_service_handler meta_client_obj   hdfs_helper_obj storage_http_handler  ws_obj storage_admin_service_handler internal_storage_client_obj log_monitor_obj )
+target_link_libraries(storage_server PUBLIC internal_storage_service_handler graph_storage_service_handler meta_client_obj meta_manager_obj hdfs_helper_obj storage_http_handler  ws_obj storage_admin_service_handler internal_storage_client_obj log_monitor_obj )
 
 
 

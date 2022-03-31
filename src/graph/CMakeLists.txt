@@ -18,6 +18,6 @@ $<TARGET_OBJECTS:util_obj_impl>
 $<TARGET_OBJECTS:graph_context_obj_impl>
 $<TARGET_OBJECTS:plan_obj_impl>
 )
-target_link_libraries(util_obj PUBLIC graph_session_obj meta_client_obj graph_flags_obj memory_obj  ft_es_graph_adapter_obj expression_obj expr_visitor_obj  meta_obj idgenerator_obj )
+target_link_libraries(util_obj PUBLIC sentence_obj graph_session_obj meta_client_obj graph_flags_obj memory_obj  ft_es_graph_adapter_obj expression_obj expr_visitor_obj  meta_obj idgenerator_obj )
 add_library(graph_context_obj ALIAS util_obj)
 add_library(plan_obj ALIAS util_obj)

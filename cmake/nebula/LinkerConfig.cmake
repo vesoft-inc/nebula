@@ -1,5 +1,5 @@
 set(NEBULA_USE_LINKER
-  "gold"
+  "bfd"
   CACHE STRING "Linker to be used")
 set(USER_LINKER_OPTION_VALUES "lld" "gold" "bfd")
 set_property(CACHE NEBULA_USE_LINKER PROPERTY STRINGS ${USER_LINKER_OPTION_VALUES})
@@ -20,8 +20,6 @@ print_config(NEBULA_USE_LINKER)
 nebula_add_exe_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
 nebula_add_shared_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
 nebula_add_exe_linker_flag(-Wl,--no-undefined)
-#nebula_add_exe_linker_flag(-Wl,--allow-shlib-undefined)
-#nebula_add_exe_linker_flag(-no-pie)
 nebula_add_exe_linker_flag(-rdynamic)
 
 if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")

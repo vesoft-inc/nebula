@@ -40,6 +40,11 @@ nebula_add_library(
     UserSentences.cpp
     ProcessControlSentences.cpp
     ExplainSentence.cpp
+)
+nebula_add_library(
+    sentence_obj SHARED
+    Clauses.cpp
+    EdgeKey.cpp
     MatchSentence.cpp
 )
 target_link_libraries(parser_obj PUBLIC util_obj agg_function_manager_obj function_manager_obj )
